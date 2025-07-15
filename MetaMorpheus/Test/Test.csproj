@@ -652,6 +652,12 @@
     <None Update="TopDownTestData\TopDownSearchToml.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Transcriptomics\TestData\16mer2.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\16mer2.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Transcriptomics\TestData\20mer1.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
