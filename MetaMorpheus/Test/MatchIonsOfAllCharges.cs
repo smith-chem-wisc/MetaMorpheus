@@ -30,7 +30,7 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters();
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -130,7 +130,7 @@ namespace Test
                scoreCutoff: 1,
                assumeOrphanPeaksAreZ1Fragments: false);
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             // test output file name (should be proteoform and not peptide)
             Assert.That(GlobalVariables.AnalyteType.ToString() == "Proteoform");
@@ -194,7 +194,7 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters();
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -246,7 +246,7 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters();
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
