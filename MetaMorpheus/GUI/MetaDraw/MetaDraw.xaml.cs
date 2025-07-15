@@ -47,6 +47,8 @@ namespace MetaMorpheusGUI
             InitializeComponent();
 
             MetaDrawLogic = new MetaDrawLogic();
+            SettingsButton.SettingsChanged += RefreshPlotsAfterSettingsChange;
+            ChimeraAnalysisTabView.SettingsButton.SettingsChanged += RefreshPlotsAfterSettingsChange;
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchResultFilePaths, MetaDrawLogic.ThreadLocker);
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectraFilePaths, MetaDrawLogic.ThreadLocker);
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.FilteredListOfPsms, MetaDrawLogic.ThreadLocker);
@@ -446,21 +448,40 @@ namespace MetaMorpheusGUI
         /// <summary>
         /// Will be fired by settings button control if settings change. 
         /// </summary>
-        private void RefreshPlotsAfterSettingsChange()
+        private void RefreshPlotsAfterSettingsChange(object sender, MetaDrawSettingsChangedEventArgs e)
         {
             // save current selected PSM
-            var selectedItem = dataGridScanNums.SelectedItem;
+            var selectedItem = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
+            var selectedChimeraGroup = ChimeraAnalysisTabViewModel.SelectedChimeraGroup;
+
             exportPdfs.Content = MetaDrawSettings.ExportType;
 
-            // refresh chart
-            dataGridScanNums_SelectedCellsChanged(null, null);
-
             // filter based on new settings
-            MetaDrawLogic.FilterPsms();
+            if (e.FilterChanged)
+            {
+                MetaDrawLogic.FilterPsms();
 
+                ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Clear();
+                foreach (var chimeraGroup in ChimeraAnalysisTabViewModel.ConstructChimericPsms(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles)
+                             .OrderByDescending(p => p.Count)
+                             .ThenByDescending(p => p.TotalFragments)
+                             .ThenByDescending(p => p.UniqueFragments))
+                {
+                    ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Add(chimeraGroup);
+                }
+            }
+
+            // Reselect items and refresh plots
             if (selectedItem != null)
             {
                 dataGridScanNums.SelectedItem = selectedItem;
+            }
+            if (selectedChimeraGroup != null)
+            {
+                ChimeraAnalysisTabViewModel.SelectedChimeraGroup = selectedChimeraGroup;
+                ChimeraAnalysisTabViewModel.Ms1ChimeraPlot = new Ms1ChimeraPlot(ChimeraAnalysisTabView.ms1ChimeraOverlaPlot, selectedChimeraGroup);
+                ChimeraAnalysisTabViewModel.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(ChimeraAnalysisTabView.ms2ChimeraPlot, selectedChimeraGroup);
+                ChimeraAnalysisTabViewModel.ChimeraDrawnSequence = new ChimeraDrawnSequence(ChimeraAnalysisTabView.chimeraSequenceCanvas, selectedChimeraGroup, ChimeraAnalysisTabViewModel);
             }
         }
 

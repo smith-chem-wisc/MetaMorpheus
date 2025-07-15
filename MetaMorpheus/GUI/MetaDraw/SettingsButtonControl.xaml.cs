@@ -10,6 +10,8 @@ namespace MetaMorpheusGUI;
 /// </summary>
 public partial class SettingsButtonControl : UserControl
 {
+    public event EventHandler<MetaDrawSettingsChangedEventArgs> SettingsChanged;
+
     public SettingsButtonControl()
     {
         InitializeComponent();
@@ -27,16 +29,6 @@ public partial class SettingsButtonControl : UserControl
         set => SetValue(SettingsViewModelProperty, value);
     }
 
-    // DependencyProperty for the refresh action
-    public static readonly DependencyProperty RefreshActionProperty =
-        DependencyProperty.Register(nameof(RefreshAction), typeof(Action), typeof(SettingsButtonControl));
-
-    public Action RefreshAction
-    {
-        get => GetValue(RefreshActionProperty) as Action;
-        set => SetValue(RefreshActionProperty, value);
-    }
-
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         // Open the settings window
@@ -45,12 +37,35 @@ public partial class SettingsButtonControl : UserControl
             Owner = Window.GetWindow(this)
         };
 
+        var originalQ = MetaDrawSettings.QValueFilter;
+        var originalShowDecoys = MetaDrawSettings.ShowDecoys;
+        var originalAmbiguityFilter = MetaDrawSettings.AmbiguityFilter;
+        var originalGlycoLevelMin = MetaDrawSettings.LocalizationLevelStart;
+        var originalGlycoLevelMax = MetaDrawSettings.LocalizationLevelEnd;
+
         var result = settingsWindow.ShowDialog();
 
-        // If settings were changed, call the refresh action
-        if (result == true)
+        // If canceled or closed, return and don't save settings. 
+        if (result != true) 
+            return;
+
+        var args = new MetaDrawSettingsChangedEventArgs();
+
+        // If any filtering setting has changed, set the filter changed flag to ensure the data grids are refreshed. 
+        if (Math.Abs(MetaDrawSettings.QValueFilter - originalQ) > 0.00001 
+            || originalShowDecoys != MetaDrawSettings.ShowDecoys
+            || originalAmbiguityFilter != MetaDrawSettings.AmbiguityFilter
+            || originalGlycoLevelMin != MetaDrawSettings.LocalizationLevelStart
+            || originalGlycoLevelMax != MetaDrawSettings.LocalizationLevelEnd
+            )
         {
-            RefreshAction?.Invoke();
+            args.FilterChanged = true;
         }
+        SettingsChanged?.Invoke(this, args);
     }
+}
+
+public class MetaDrawSettingsChangedEventArgs : EventArgs
+{
+    public bool FilterChanged { get; set; } = false;
 }

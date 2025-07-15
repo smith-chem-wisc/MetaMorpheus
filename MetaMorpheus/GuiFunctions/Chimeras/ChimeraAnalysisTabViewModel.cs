@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
+using Easy.Common.Extensions;
 using Point = System.Windows.Point;
 
 namespace GuiFunctions;
@@ -22,7 +23,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     #region Displayed in GUI
     public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
     public Ms1ChimeraPlot Ms1ChimeraPlot { get; set; }
-    public List<ChimeraGroupViewModel> ChimeraGroupViewModels { get; set; }
+    public ObservableCollection<ChimeraGroupViewModel> ChimeraGroupViewModels { get; set; }
 
     private ChimeraGroupViewModel _selectedChimeraGroup;
     public ChimeraGroupViewModel SelectedChimeraGroup
@@ -31,7 +32,8 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         set
         {
             _selectedChimeraGroup = value;
-            ChimeraLegendViewModel.ChimeraLegendItems = value.LegendItems;
+            if (value != null)
+                ChimeraLegendViewModel.ChimeraLegendItems = value.LegendItems;
             OnPropertyChanged(nameof(SelectedChimeraGroup));
         }
     }
@@ -82,9 +84,10 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     public ChimeraAnalysisTabViewModel(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles, string? exportDirectory = null)
     {
         ChimeraLegendViewModel = new ChimeraLegendViewModel();
-        ChimeraGroupViewModels = ConstructChimericPsms(allPsms, dataFiles)
+        ChimeraGroupViewModels = [..ConstructChimericPsms(allPsms, dataFiles)
             .OrderByDescending(p => p.Count)
-            .ToList();
+            .ThenByDescending(p => p.TotalFragments)
+            .ThenByDescending(p => p.UniqueFragments)];
         ExportDirectory = exportDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         SelectedExportType = "Png";
         ExportTypes = [ "Pdf", "Png", "Svg"];
@@ -96,7 +99,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         ExportLegendCommand = new DelegateCommand(ExportLegend);
     }
 
-    private static List<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles)
+    public static List<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles)
     {
         // Groups are made from psms that pass the MetaDraw quality filter and only include decoys if we are showing decoys.
         var filteredPsms = new List<SpectrumMatchFromTsv>(psms.Count);

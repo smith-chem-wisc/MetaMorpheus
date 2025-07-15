@@ -126,8 +126,9 @@
             <oxy:PlotView x:Name="ms1ChimeraOverlaPlot" 
                           FontSize="16" FontStretch="Expanded"
                           Margin="0 0 0 0" VerticalAlignment="Stretch" />
-            <local:SettingsButtonControl Height="52" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                         Panel.ZIndex="1" RefreshAction="RefreshPlotsAfterSettingsChange"/>
+            <local:SettingsButtonControl Height="52" x:Name="SettingsButton"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                                         Panel.ZIndex="1" />
         </Grid>
 
         <!-- Splitter between MS1 and MS2 plots -->

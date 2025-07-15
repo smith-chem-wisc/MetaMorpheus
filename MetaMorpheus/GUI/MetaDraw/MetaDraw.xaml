@@ -153,8 +153,7 @@
 
                                 <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
                                 <!--Settings menu-->
-                                <local:SettingsButtonControl x:Name="SettingsButton" Grid.Row="0" Grid.Column="1"
-                                                             RefreshAction="RefreshPlotsAfterSettingsChange"/>
+                                <local:SettingsButtonControl x:Name="SettingsButton" Grid.Row="0" Grid.Column="1"/>
 
                                 <!-- Scrolling Sequence and Ambiguous Textbox-->
                                 <Grid Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" >
