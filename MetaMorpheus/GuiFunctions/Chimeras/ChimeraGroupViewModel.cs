@@ -27,6 +27,7 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
     public int Ms2ScanNumber { get; }
     public int Count => ChimericPsms.Count;
     public int ProteinCount { get; }
+    public int PrimarySequenceCount { get; }
     public int TotalFragments { get; }
     public int UniqueFragments { get; }
     public MsDataScan Ms1Scan { get; }
@@ -168,7 +169,7 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
         LegendItems = new();
         Letters = new (_letters);
 
-        ChimericPsms = [.. ConstructChimericPsmModels(chimericSpectrumMatches)];
+        ChimericPsms = [.. ConstructChimericPsmModels(chimericSpectrumMatches).OrderByDescending(p => p.Psm.Score)];
         var representative = chimericSpectrumMatches.FirstOrDefault()!;
         FileNameWithoutExtension = representative.FileNameWithoutExtension;
         OneBasedPrecursorScanNumber = representative.PrecursorScanNum;
@@ -181,6 +182,7 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
             .Distinct()
             .Count();
         ProteinCount = ChimericPsms.GroupBy(p => p.Psm.Accession).Count();
+        PrimarySequenceCount = ChimericPsms.Select(p => p.Psm.BaseSeq.Split('|')[0]).Distinct().Count();
     }
 
     private IEnumerable<ChimericSpectralMatchModel> ConstructChimericPsmModels(IEnumerable<SpectrumMatchFromTsv> psms)

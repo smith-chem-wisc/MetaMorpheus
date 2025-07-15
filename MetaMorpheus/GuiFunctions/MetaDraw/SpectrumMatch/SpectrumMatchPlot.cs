@@ -236,7 +236,7 @@ namespace GuiFunctions
             }
 
             // peak annotation
-            string prefix = "";
+            string prefix = string.Empty;
             if (SpectrumMatch.IsCrossLinkedPeptide())
             {
                 if (isBetaPeptide)
@@ -252,10 +252,21 @@ namespace GuiFunctions
             }
 
             var peakAnnotation = new TextAnnotation();
-            if (MetaDrawSettings.DisplayIonAnnotations)
-            {
-                string peakAnnotationText = prefix;
+            string peakAnnotationText = prefix;
 
+            // Fast path: direct annotation
+            if (annotation != null)
+            {
+                peakAnnotationText += annotation;
+                intensity += intensity * 0.05;
+                peakAnnotation.TextColor = ionColor;
+            }
+            // Main annotation logic
+            else if (MetaDrawSettings.DisplayIonAnnotations)
+            {
+                peakAnnotation.TextColor = ionColor;
+
+                // Fragment Number annotation
                 if (MetaDrawSettings.SubAndSuperScriptIons)
                     foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
                     {
@@ -277,6 +288,7 @@ namespace GuiFunctions
                 else
                     peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
 
+                // Charge annotation
                 if (MetaDrawSettings.AnnotateCharges)
                 {
                     char chargeAnnotation = matchedIon.Charge > 0 ? '+' : '-';
@@ -296,36 +308,33 @@ namespace GuiFunctions
                         peakAnnotationText += chargeAnnotation.ToString() + matchedIon.Charge;
                 }
 
+                // m/z annotation
                 if (MetaDrawSettings.AnnotateMzValues)
                 {
                     peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
                 }
-                else
-                {
-                    peakAnnotationText += annotation;
-                    intensity += intensity * 0.05;
-                }
-
-                peakAnnotation.Font = "Arial";
-                peakAnnotation.FontSize = MetaDrawSettings.AnnotatedFontSize;
-                peakAnnotation.FontWeight = MetaDrawSettings.AnnotationBold ? FontWeights.Bold : 2.0;
-                peakAnnotation.TextColor = ionColor;
-                peakAnnotation.StrokeThickness = 0;
-                peakAnnotation.Text = peakAnnotationText;
-                peakAnnotation.TextPosition = new DataPoint(mz, intensity);
-                peakAnnotation.TextVerticalAlignment = intensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom;
-                peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Center;
             }
             else
             {
-                peakAnnotation.Text = string.Empty;
+                peakAnnotationText = string.Empty;
             }
 
+            // Hide internal fragment annotation if not displaying
             if (matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null &&
                 !MetaDrawSettings.DisplayInternalIonAnnotations) //if internal fragment
             {
-                peakAnnotation.Text = string.Empty;
+                peakAnnotationText = string.Empty;
             }
+
+            // Set annotation properties
+            peakAnnotation.Text = peakAnnotationText;
+            peakAnnotation.Font = "Arial";
+            peakAnnotation.FontSize = MetaDrawSettings.AnnotatedFontSize;
+            peakAnnotation.FontWeight = MetaDrawSettings.AnnotationBold ? FontWeights.Bold : 2.0;
+            peakAnnotation.StrokeThickness = 0;
+            peakAnnotation.TextPosition = new DataPoint(mz, intensity);
+            peakAnnotation.TextVerticalAlignment = intensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom;
+            peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Center;
 
             DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
         }
