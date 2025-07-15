@@ -21,6 +21,12 @@ namespace GuiFunctions
     /// </summary>
     public class MetaDrawSettingsViewModel : BaseViewModel, IAsyncInitialization
     {
+        private static readonly Lazy<MetaDrawSettingsViewModel> _instance =
+            new(() => new MetaDrawSettingsViewModel());
+
+        // Singleton to ensure only one instance of MetaDrawSettingsViewModel exists
+        public static MetaDrawSettingsViewModel Instance => _instance.Value;
+
         #region Private Properties
 
         private ObservableCollection<ModTypeForTreeViewModel> _Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
@@ -64,11 +70,75 @@ namespace GuiFunctions
             }
         }
 
+        public ObservableCollection<SpectrumDescriptorViewModel> SpectrumDescriptors { get; }
+
         public ObservableCollection<string> PossibleColors { get; set; }
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
         public static string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
+
+        public bool DisplayIonAnnotations
+        {
+            get => MetaDrawSettings.DisplayIonAnnotations;
+            set { MetaDrawSettings.DisplayIonAnnotations = value; OnPropertyChanged(nameof(DisplayIonAnnotations)); }
+        }
+        public bool AnnotateMzValues
+        {
+            get => MetaDrawSettings.AnnotateMzValues;
+            set { MetaDrawSettings.AnnotateMzValues = value; OnPropertyChanged(nameof(AnnotateMzValues)); }
+        }
+        public bool AnnotateCharges
+        {
+            get => MetaDrawSettings.AnnotateCharges;
+            set { MetaDrawSettings.AnnotateCharges = value; OnPropertyChanged(nameof(AnnotateCharges)); }
+        }
+        public bool DisplayInternalIonAnnotations
+        {
+            get => MetaDrawSettings.DisplayInternalIonAnnotations;
+            set { MetaDrawSettings.DisplayInternalIonAnnotations = value; OnPropertyChanged(nameof(DisplayInternalIonAnnotations)); }
+        }
+        public bool DisplayInternalIons
+        {
+            get => MetaDrawSettings.DisplayInternalIons;
+            set { MetaDrawSettings.DisplayInternalIons = value; OnPropertyChanged(nameof(DisplayInternalIons)); }
+        }
+        public bool AnnotationBold
+        {
+            get => MetaDrawSettings.AnnotationBold;
+            set { MetaDrawSettings.AnnotationBold = value; OnPropertyChanged(nameof(AnnotationBold)); }
+        }
+        public bool SubAndSuperScriptIons
+        {
+            get => MetaDrawSettings.SubAndSuperScriptIons;
+            set { MetaDrawSettings.SubAndSuperScriptIons = value; OnPropertyChanged(nameof(SubAndSuperScriptIons)); }
+        }
+
+        public int AnnotatedFontSize
+        {
+            get => MetaDrawSettings.AnnotatedFontSize;
+            set { MetaDrawSettings.AnnotatedFontSize = value; OnPropertyChanged(nameof(AnnotatedFontSize)); }
+        }
+        public int AxisLabelTextSize
+        {
+            get => MetaDrawSettings.AxisLabelTextSize;
+            set { MetaDrawSettings.AxisLabelTextSize = value; OnPropertyChanged(nameof(AxisLabelTextSize)); }
+        }
+        public int AxisTitleTextSize
+        {
+            get => MetaDrawSettings.AxisTitleTextSize;
+            set { MetaDrawSettings.AxisTitleTextSize = value; OnPropertyChanged(nameof(AxisTitleTextSize)); }
+        }
+        public double StrokeThicknessAnnotated
+        {
+            get => MetaDrawSettings.StrokeThicknessAnnotated;
+            set { MetaDrawSettings.StrokeThicknessAnnotated = value; OnPropertyChanged(nameof(StrokeThicknessAnnotated)); }
+        }
+        public double StrokeThicknessUnannotated
+        {
+            get => MetaDrawSettings.StrokeThicknessUnannotated;
+            set { MetaDrawSettings.StrokeThicknessUnannotated = value; OnPropertyChanged(nameof(StrokeThicknessUnannotated)); }
+        }
 
         #endregion
 
@@ -78,8 +148,10 @@ namespace GuiFunctions
         /// Constructs the instance asynchronously
         /// </summary>
         /// <param name="loadAsync"></param>
-        public MetaDrawSettingsViewModel(bool loadAsync = true)
+        internal MetaDrawSettingsViewModel(bool loadAsync = true)
         {
+            SpectrumDescriptors = [.. MetaDrawSettings.SpectrumDescription.Select(p => new SpectrumDescriptorViewModel(p.Key))];
+
             if (loadAsync)
                 Initialization = InitializeAsync();
             else
@@ -93,6 +165,7 @@ namespace GuiFunctions
                 LoadPTMs();
                 LoadIonTypes();
                 LoadSequenceCoverage();
+                Initialization = Task.CompletedTask;
             }
         }
 
@@ -234,5 +307,25 @@ namespace GuiFunctions
         /// The result of the asynchronous initialization of this instance.
         /// </summary>
         Task Initialization { get; }
+    }
+
+    /// <summary>
+    /// Class to represent each component of the Spectrum Description
+    /// </summary>
+    /// <param name="key"></param>
+    public class SpectrumDescriptorViewModel(string key) : BaseViewModel
+    {
+        private string _displayName;
+        public string DisplayName => _displayName ??= key.Split(":")[0];
+
+        public bool IsSelected
+        {
+            get => MetaDrawSettings.SpectrumDescription[key];
+            set
+            {
+                MetaDrawSettings.SpectrumDescription[key] = value;
+                OnPropertyChanged(nameof(IsSelected));
+            }
+        }
     }
 }

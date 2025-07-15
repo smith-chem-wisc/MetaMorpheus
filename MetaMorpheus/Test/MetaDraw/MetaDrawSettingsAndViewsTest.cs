@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
 using GuiFunctions.ViewModels.Legends;
@@ -12,6 +13,8 @@ using OxyPlot;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Readers;
+using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 
 namespace Test.MetaDraw
 {
@@ -168,7 +171,7 @@ namespace Test.MetaDraw
         [Test]
         public static void TestSettingsViewLoading()
         {
-            MetaDrawSettingsViewModel BlankSettingsView = new MetaDrawSettingsViewModel(false);
+            MetaDrawSettingsViewModel BlankSettingsView = MetaDrawSettingsViewModel.Instance;
             BlankSettingsView.Modifications = new();
             BlankSettingsView.IonGroups = new();
             BlankSettingsView.CoverageColors = new();
@@ -378,9 +381,121 @@ namespace Test.MetaDraw
         }
 
         [Test]
+        public static void TestMetaDrawSettingsViewModelPublicProperties()
+        {
+            // Arrange
+            var viewModel = new MetaDrawSettingsViewModel(false);
+
+            // Test Modifications property
+            Assert.That(viewModel.Modifications, Is.Not.Null);
+            Assert.That(viewModel.Modifications, Is.InstanceOf<ObservableCollection<ModTypeForTreeViewModel>>());
+
+            // Test IonGroups property
+            Assert.That(viewModel.IonGroups, Is.Not.Null);
+            Assert.That(viewModel.IonGroups, Is.InstanceOf<ObservableCollection<IonTypeForTreeViewModel>>());
+
+            // Test CoverageColors property
+            Assert.That(viewModel.CoverageColors, Is.Not.Null);
+            Assert.That(viewModel.CoverageColors, Is.InstanceOf<ObservableCollection<CoverageTypeForTreeViewModel>>());
+
+            // Test SpectrumDescriptors property
+            Assert.That(viewModel.SpectrumDescriptors, Is.Not.Null);
+            Assert.That(viewModel.SpectrumDescriptors, Is.InstanceOf<ObservableCollection<SpectrumDescriptorViewModel>>());
+
+            // Test PossibleColors property
+            Assert.That(viewModel.PossibleColors, Is.Not.Null);
+            Assert.That(viewModel.PossibleColors, Is.InstanceOf<ObservableCollection<string>>());
+
+            // Test HasDefaultSaved property
+            Assert.That(viewModel.HasDefaultSaved, Is.TypeOf<bool>());
+
+            // Test CanOpen property
+            Assert.That(viewModel.CanOpen, Is.TypeOf<bool>());
+
+            // Test Initialization property
+            Assert.That(viewModel.Initialization, Is.Not.Null);
+            Assert.That(viewModel.Initialization, Is.InstanceOf<Task>());
+
+            // Test static SettingsPath property
+            Assert.That(MetaDrawSettingsViewModel.SettingsPath, Is.Not.Null.And.Not.Empty);
+
+            // Test DisplayIonAnnotations property
+            bool originalDisplayIonAnnotations = viewModel.DisplayIonAnnotations;
+            viewModel.DisplayIonAnnotations = !originalDisplayIonAnnotations;
+            Assert.That(viewModel.DisplayIonAnnotations, Is.EqualTo(!originalDisplayIonAnnotations));
+            viewModel.DisplayIonAnnotations = originalDisplayIonAnnotations;
+
+            // Test AnnotateMzValues property
+            bool originalAnnotateMzValues = viewModel.AnnotateMzValues;
+            viewModel.AnnotateMzValues = !originalAnnotateMzValues;
+            Assert.That(viewModel.AnnotateMzValues, Is.EqualTo(!originalAnnotateMzValues));
+            viewModel.AnnotateMzValues = originalAnnotateMzValues;
+
+            // Test AnnotateCharges property
+            bool originalAnnotateCharges = viewModel.AnnotateCharges;
+            viewModel.AnnotateCharges = !originalAnnotateCharges;
+            Assert.That(viewModel.AnnotateCharges, Is.EqualTo(!originalAnnotateCharges));
+            viewModel.AnnotateCharges = originalAnnotateCharges;
+
+            // Test DisplayInternalIonAnnotations property
+            bool originalDisplayInternalIonAnnotations = viewModel.DisplayInternalIonAnnotations;
+            viewModel.DisplayInternalIonAnnotations = !originalDisplayInternalIonAnnotations;
+            Assert.That(viewModel.DisplayInternalIonAnnotations, Is.EqualTo(!originalDisplayInternalIonAnnotations));
+            viewModel.DisplayInternalIonAnnotations = originalDisplayInternalIonAnnotations;
+
+            // Test DisplayInternalIons property
+            bool originalDisplayInternalIons = viewModel.DisplayInternalIons;
+            viewModel.DisplayInternalIons = !originalDisplayInternalIons;
+            Assert.That(viewModel.DisplayInternalIons, Is.EqualTo(!originalDisplayInternalIons));
+            viewModel.DisplayInternalIons = originalDisplayInternalIons;
+
+            // Test AnnotationBold property
+            bool originalAnnotationBold = viewModel.AnnotationBold;
+            viewModel.AnnotationBold = !originalAnnotationBold;
+            Assert.That(viewModel.AnnotationBold, Is.EqualTo(!originalAnnotationBold));
+            viewModel.AnnotationBold = originalAnnotationBold;
+
+            // Test SubAndSuperScriptIons property
+            bool originalSubAndSuperScriptIons = viewModel.SubAndSuperScriptIons;
+            viewModel.SubAndSuperScriptIons = !originalSubAndSuperScriptIons;
+            Assert.That(viewModel.SubAndSuperScriptIons, Is.EqualTo(!originalSubAndSuperScriptIons));
+            viewModel.SubAndSuperScriptIons = originalSubAndSuperScriptIons;
+
+            // Test AnnotatedFontSize property
+            int originalAnnotatedFontSize = viewModel.AnnotatedFontSize;
+            viewModel.AnnotatedFontSize = originalAnnotatedFontSize + 1;
+            Assert.That(viewModel.AnnotatedFontSize, Is.EqualTo(originalAnnotatedFontSize + 1));
+            viewModel.AnnotatedFontSize = originalAnnotatedFontSize;
+
+            // Test AxisLabelTextSize property
+            int originalAxisLabelTextSize = viewModel.AxisLabelTextSize;
+            viewModel.AxisLabelTextSize = originalAxisLabelTextSize + 1;
+            Assert.That(viewModel.AxisLabelTextSize, Is.EqualTo(originalAxisLabelTextSize + 1));
+            viewModel.AxisLabelTextSize = originalAxisLabelTextSize;
+
+            // Test AxisTitleTextSize property
+            int originalAxisTitleTextSize = viewModel.AxisTitleTextSize;
+            viewModel.AxisTitleTextSize = originalAxisTitleTextSize + 1;
+            Assert.That(viewModel.AxisTitleTextSize, Is.EqualTo(originalAxisTitleTextSize + 1));
+            viewModel.AxisTitleTextSize = originalAxisTitleTextSize;
+
+            // Test StrokeThicknessAnnotated property
+            double originalStrokeThicknessAnnotated = viewModel.StrokeThicknessAnnotated;
+            viewModel.StrokeThicknessAnnotated = originalStrokeThicknessAnnotated + 0.1;
+            Assert.That(viewModel.StrokeThicknessAnnotated, Is.EqualTo(originalStrokeThicknessAnnotated + 0.1));
+            viewModel.StrokeThicknessAnnotated = originalStrokeThicknessAnnotated;
+
+            // Test StrokeThicknessUnannotated property
+            double originalStrokeThicknessUnannotated = viewModel.StrokeThicknessUnannotated;
+            viewModel.StrokeThicknessUnannotated = originalStrokeThicknessUnannotated + 0.1;
+            Assert.That(viewModel.StrokeThicknessUnannotated, Is.EqualTo(originalStrokeThicknessUnannotated + 0.1));
+            viewModel.StrokeThicknessUnannotated = originalStrokeThicknessUnannotated;
+        }
+
+        [Test]
         public static void TestModTypeForTreeView()
         {
-            var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType);
+            var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType).ToList();
             var key = modGroups.First().Key;
             ModTypeForTreeViewModel modTypeForTreeView = new(key, false);
             Assert.That(!modTypeForTreeView.Expanded);
@@ -392,6 +507,23 @@ namespace Test.MetaDraw
             modTypeForTreeView = new(modGroups.First().Key, true);
             Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color ==
                         new SolidColorBrush(Colors.Red).Color);
+
+            modGroups.First().Select(p =>
+                    new ModForTreeViewModel(p.ToString(), false, p.IdWithMotif, false, modTypeForTreeView))
+                .ForEach(mod => modTypeForTreeView.Children.Add(mod));
+            Assert.That(modTypeForTreeView.Children.Count == modGroups.First().Count());
+            Assert.That(modTypeForTreeView.Children.All(p => p.Parent == modTypeForTreeView));
+            Assert.That(modTypeForTreeView.Children.All(p => p.Use == false));
+            modTypeForTreeView.VerifyCheckState();
+            Assert.That(modTypeForTreeView.Use == false);
+
+            modTypeForTreeView.Children.First().Use = true;
+            modTypeForTreeView.VerifyCheckState();
+            Assert.That(modTypeForTreeView.Use == null);
+
+            modTypeForTreeView.Children.ForEach(mod => mod.Use = true);
+            modTypeForTreeView.VerifyCheckState();
+            Assert.That(modTypeForTreeView.Use == true);
         }
 
         [Test]
@@ -527,9 +659,9 @@ namespace Test.MetaDraw
             // object setup
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
-            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmsPath, out List<string> warnings);
+            List<SpectrumMatchFromTsv> psms = SpectrumMatchTsvReader.ReadTsv(psmsPath, out List<string> warnings);
             Assert.That(warnings.Count, Is.EqualTo(0));
-            List<PsmFromTsv> filteredChimeras =
+            List<SpectrumMatchFromTsv> filteredChimeras =
                 psms.Where(p => p.QValue <= 0.01 && p.PEP <= 0.5 && p.PrecursorScanNum == 1557).ToList();
             Assert.That(filteredChimeras.Count, Is.EqualTo(3));
 
@@ -544,7 +676,7 @@ namespace Test.MetaDraw
 
             // test chimera legend overflow colors
             // more unique proteins than colored
-            List<PsmFromTsv> overflowInducingProteins = psms.DistinctBy(p => p.BaseSeq)
+            List<SpectrumMatchFromTsv> overflowInducingProteins = psms.DistinctBy(p => p.BaseSeq)
                 .Take(ChimeraSpectrumMatchPlot.ColorByProteinDictionary.Keys.Count + 1).ToList();
             chimeraLegend = new(overflowInducingProteins);
             Assert.That(chimeraLegend.ChimeraLegendItems.Values.DistinctBy(p =>
@@ -557,7 +689,7 @@ namespace Test.MetaDraw
             // more unique proteoforms than colored
             overflowInducingProteins = psms
                 .Take(ChimeraSpectrumMatchPlot.ColorByProteinDictionary.First().Value.Count)
-                .Select(p => p = new(p, overflowInducingProteins.First().FullSequence, 0,
+                .Select(p => p = new PsmFromTsv(p as PsmFromTsv, overflowInducingProteins.First().FullSequence, 0,
                     overflowInducingProteins.First().BaseSeq)).ToList();
             Assert.That(overflowInducingProteins.All(p => p.BaseSeq == overflowInducingProteins.First().BaseSeq));
             Assert.That(overflowInducingProteins.All(p =>
@@ -579,7 +711,7 @@ namespace Test.MetaDraw
             chimeraLegendItem = new(null, OxyColors.Chocolate);
             Assert.That(chimeraLegendItem.Name == "No Modifications");
 
-            chimeraLegend = new ChimeraLegendViewModel(new List<PsmFromTsv>() { psms.First() });
+            chimeraLegend = new ChimeraLegendViewModel(new List<SpectrumMatchFromTsv>() { psms.First() });
             Assert.That(chimeraLegend.DisplaySharedIonLabel == false);
         }
 
@@ -606,6 +738,32 @@ namespace Test.MetaDraw
 
             var colorFromOxy = DrawnSequence.ParseColorFromOxyColor(oxyBlue);
             Assert.That(colorFromOxy == colorBlue);
+        }
+
+        [Test]
+        public static void TestSpectrumDescriptorViewModelSyncsWithStaticSettings()
+        {
+            // Arrange: Reset settings and create a new view model
+            MetaDrawSettings.ResetSettings();
+            var vm = new MetaDrawSettingsViewModel(false);
+
+            // Assert: Each SpectrumDescriptorViewModel reflects the static settings
+            foreach (var descVm in vm.SpectrumDescriptors)
+            {
+                // The initial IsSelected should match the static MetaDrawSettings.SpectrumDescription
+                Assert.That(descVm.IsSelected, Is.EqualTo(MetaDrawSettings.SpectrumDescription[descVm.DisplayName + ": "]));
+            }
+
+            // Act: Change IsSelected in the view model for each descriptor
+            foreach (var descVm in vm.SpectrumDescriptors)
+            {
+                bool newValue = !descVm.IsSelected;
+                descVm.IsSelected = newValue;
+
+                // Assert: The static settings are updated accordingly
+                Assert.That(MetaDrawSettings.SpectrumDescription[descVm.DisplayName + ": "], Is.EqualTo(newValue));
+                Assert.That(descVm.IsSelected, Is.EqualTo(newValue));
+            }
         }
     }
 }

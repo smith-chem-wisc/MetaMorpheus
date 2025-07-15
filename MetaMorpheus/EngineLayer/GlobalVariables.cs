@@ -15,6 +15,7 @@ using Omics.Modifications;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
 using Easy.Common.Extensions;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer
 {
@@ -63,13 +64,13 @@ namespace EngineLayer
         public static string ExperimentalDesignFileName { get; private set; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
-        public static List<string> OGlycanLocations { get; private set; }
-        public static List<string> NGlycanLocations { get; private set; }
+        public static List<string> OGlycanDatabasePaths { get; private set; }
+        public static List<string> NGlycanDatabasePaths { get; private set; }
 
         public static void SetUpGlobalVariables()
         {
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };
-            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
+            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf", ".msalign" };
             AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
@@ -417,6 +418,7 @@ namespace EngineLayer
             }
             ProteaseMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
             ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
+            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
         }
 
         private static void LoadRnaModifications()
@@ -449,42 +451,40 @@ namespace EngineLayer
 
         private static void LoadGlycans()
         {
-            OGlycanLocations = new List<string>();
-            NGlycanLocations = new List<string>();
+            OGlycanDatabasePaths = new List<string>();
+            NGlycanDatabasePaths = new List<string>();
 
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"OGlycan")))
             {
-                OGlycanLocations.Add(glycanFile);
+                OGlycanDatabasePaths.Add(glycanFile);
             }
 
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
             {
-                NGlycanLocations.Add(glycanFile);
+                NGlycanDatabasePaths.Add(glycanFile);
             }
 
             //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
             //The reason why not include Glycan into modification database is for users to apply their own database.
-            foreach (var path in OGlycanLocations)
+            foreach (var path in OGlycanDatabasePaths)
             {
-                var og = GlycanDatabase.LoadGlycan(path, false, false);
-                foreach (var g in og)
+                var oGlycans = GlycanDatabase.LoadGlycan(path, false, true);
+                foreach (var glycan in oGlycans)
                 {
-                    var ogmod = Glycan.OGlycanToModification(g);
-                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
                     {
-                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                        AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                     }
                 }
             }
-            foreach (var path in NGlycanLocations)
+            foreach (var path in NGlycanDatabasePaths)
             {
-                var og = GlycanDatabase.LoadGlycan(path, false, false);
-                foreach (var g in og)
+                var nGlycans = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var glycan in nGlycans)
                 {
-                    var ogmod = Glycan.NGlycanToModification(g);
-                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
                     {
-                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                        AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                     }
                 }
             }

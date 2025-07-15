@@ -19,6 +19,7 @@ using System.Windows.Input;
 using System.Windows.Navigation;
 using Omics.Modifications;
 using TaskLayer;
+using System.Text.RegularExpressions;
 
 namespace MetaMorpheusGUI
 {
@@ -517,7 +518,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddSpectraFile_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf)|*.raw;*.mzML;*.mgf");
+            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*ms2.msalign;*.tdf;*.tdf_bin)|*.raw;*.mzML;*.mgf;*ms2.msalign;*.tdf;*.tdf_bin");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -1571,14 +1572,14 @@ namespace MetaMorpheusGUI
         {
             foreach (string path in paths.OrderBy(p => Path.GetFileName(p)))
             {
-                if (Directory.Exists(path))
+                if (Directory.Exists(path) & !Regex.IsMatch(path, @".d$")) // don't add directories that end in ".d" (bruker data files)
                 {
                     foreach (string file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
                     {
                         AddPreRunFile(file);
                     }
                 }
-                else if (File.Exists(path))
+                else if (File.Exists(path) || Regex.IsMatch(path, @".d$"))
                 {
                     AddPreRunFile(path);
                 }
@@ -1594,8 +1595,27 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            // this line is NOT used because .xml.gz (extensions with two dots) mess up with Path.GetExtension
-            //var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
+            // Handle Windows shortcut (.lnk) files: resolve to the target file if possible
+            if (Path.GetExtension(filePath).Equals(".lnk", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    string resolvedPath = ResolveShortcutTarget(filePath);
+                    if (!string.IsNullOrEmpty(resolvedPath) && (File.Exists(resolvedPath) || Directory.Exists(resolvedPath)))
+                    {
+                        AddPreRunFile(resolvedPath);
+                    }
+                    else
+                    {
+                        NotificationHandler(null, new StringEventArgs("Could not resolve shortcut: " + filePath, null));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    NotificationHandler(null, new StringEventArgs("Error resolving shortcut: " + filePath + " (" + ex.Message + ")", null));
+                }
+                return;
+            }
 
             // we need to get the filename before parsing out the extension because if we assume that everything after the dot
             // is the extension and there are dots in the file path (i.e. in a folder name), this will mess up
@@ -1629,13 +1649,30 @@ namespace MetaMorpheusGUI
                             return;
                         }
                     }
-
                     goto case ".mzml";
-
                 case ".mgf":
                     NotificationHandler(null, new StringEventArgs(".mgf files lack MS1 spectra, which are needed for quantification and searching for coisolated peptides. All other features of MetaMorpheus will function.", null));
                     goto case ".mzml";
-
+                case ".msalign":
+                    if (filePath.Contains("_ms2."))
+                    {
+                        NotificationHandler(null, new StringEventArgs("MS2-only msalign files lack MS1 spectra, which are needed for quantification and searching for coisolated peptides. All other features of MetaMorpheus will function.", null));
+                        goto case ".mzml";
+                    }
+                    else if (filePath.Contains("_ms1."))
+                    {
+                        NotificationHandler(null, new StringEventArgs("MS1 align file type not currently supported " + theExtension, null));
+                    }
+                    break;
+                case ".tdf":
+                case ".tdf_bin":
+                    // for Bruker timsTof files, the .tdf file is in a ".d" directory which also contains a .tdf_bin file 
+                    // the fileReader is designed to take the path to the .d directory instead of either/both individual files
+                    filePath = Path.GetDirectoryName(filePath);
+                    goto case ".d";
+                case ".d": // Bruker data files are directories that contain .d files
+                    NotificationHandler(null, new StringEventArgs("Quantification and calibration are not currently supported for Bruker data files. All other features of MetaMorpheus will function.", null));
+                    goto case ".mzml";
                 case ".mzml":
                     if (compressed) // not implemented yet
                     {
@@ -1650,7 +1687,6 @@ namespace MetaMorpheusGUI
                     UpdateFileSpecificParamsDisplay(Path.ChangeExtension(filePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
-
                 case ".xml":
                 case ".fasta":
                 case ".fa":
@@ -1736,6 +1772,31 @@ namespace MetaMorpheusGUI
                 default:
                     NotificationHandler(null, new StringEventArgs("Unrecognized file type: " + theExtension, null));
                     break;
+            }
+        }
+
+        // Helper method to resolve Windows shortcut (.lnk) files to their target path
+        private static string ResolveShortcutTarget(string shortcutPath)
+        {
+            // Only works on Windows
+            if (!OperatingSystem.IsWindows())
+                return null;
+
+            try
+            {
+                Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType == null)
+                    return null;
+                dynamic shell = Activator.CreateInstance(shellType);
+                dynamic shortcut = shell.CreateShortcut(shortcutPath);
+                string targetPath = shortcut.TargetPath as string;
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shortcut);
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
+                return targetPath;
+            }
+            catch
+            {
+                return null;
             }
         }
 

@@ -18,6 +18,7 @@ using LinearAxis = OxyPlot.Axes.LinearAxis;
 using LineSeries = OxyPlot.Series.LineSeries;
 using Plot = mzPlot.Plot;
 using TextAnnotation = OxyPlot.Annotations.TextAnnotation;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -31,14 +32,14 @@ namespace GuiFunctions
             get => new Queue<OxyColor>(overflowColors.ToList());
         }
 
-        public List<PsmFromTsv> SpectrumMatches { get; private set; }
-        public Dictionary<string, List<PsmFromTsv>> PsmsByProteinDictionary { get; private set; }
+        public List<SpectrumMatchFromTsv> SpectrumMatches { get; private set; }
+        public Dictionary<string, List<SpectrumMatchFromTsv>> PsmsByProteinDictionary { get; private set; }
 
-        public ChimeraSpectrumMatchPlot(PlotView plotView, MsDataScan scan, List<PsmFromTsv> psms) : base(plotView, null, scan)
+        public ChimeraSpectrumMatchPlot(PlotView plotView, MsDataScan scan, List<SpectrumMatchFromTsv> sms) : base(plotView, null, scan)
         {
-            SpectrumMatches = psms;
+            SpectrumMatches = sms;
             PsmsByProteinDictionary = SpectrumMatches.GroupBy(p => p.BaseSeq).ToDictionary(p => p.Key, p => p.ToList());
-            psms.Select(p => p.MatchedIons).ForEach(p => matchedFragmentIons.AddRange(p));
+            sms.Select(p => p.MatchedIons).ForEach(p => MatchedFragmentIons.AddRange(p));
             
             AnnotateMatchedIons();
             ZoomAxes();
@@ -64,7 +65,8 @@ namespace GuiFunctions
                 {
                     proteinMatchedIons.AddRange(proteinGroup[j].MatchedIons);
                     allMatchedIons.AddRange(proteinGroup[j].MatchedIons);
-                    PeptideWithSetModifications pepWithSetMods = new(proteinGroup[j].FullSequence.Split('|')[0], GlobalVariables.AllModsKnownDictionary);
+                    var bioPolymerWithSetMods = proteinGroup.First()
+                        .ToBioPolymerWithSetMods(proteinGroup[j].FullSequence.Split('|')[0]);
 
                     // more proteins than protein programmed colors
                     if (proteinIndex >= ColorByProteinDictionary.Keys.Count)

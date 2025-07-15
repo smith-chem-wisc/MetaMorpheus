@@ -30,7 +30,7 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters();
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -130,7 +130,7 @@ namespace Test
                scoreCutoff: 1,
                assumeOrphanPeaksAreZ1Fragments: false);
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             // test output file name (should be proteoform and not peptide)
             Assert.That(GlobalVariables.AnalyteType.ToString() == "Proteoform");
@@ -194,7 +194,7 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters();
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -246,7 +246,7 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters();
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -349,7 +349,9 @@ namespace Test
         public static void TestLibraryGeneration()
         {
             string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput");
-            _ = Directory.CreateDirectory(thisTaskOutputFolder);
+            if(Directory.Exists(thisTaskOutputFolder))
+                Directory.Delete(thisTaskOutputFolder, true);
+            Directory.CreateDirectory(thisTaskOutputFolder);
 
             SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
             task.SearchParameters.WriteMzId = true;
@@ -369,10 +371,12 @@ namespace Test
             var lib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
             var libPath = Path.Combine(thisTaskOutputFolder, matchingvalue);
            
-            string testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGenaration");
+            string testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGeneration");
             string outputDir = Path.Combine(testDir, @"SpectralLibraryTest");
 
-            _ = Directory.CreateDirectory(outputDir);
+            if(Directory.Exists(outputDir))
+                Directory.Delete(outputDir, true);
+            Directory.CreateDirectory(outputDir);
 
             SearchTask searchTask = new();
 

@@ -11,6 +11,7 @@ using Omics.BioPolymer;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -156,11 +157,11 @@ namespace Test
             Assert.That(digestedList.Count, Is.EqualTo(4));
 
             //Set Peptide with 1 mod at position 3
-            PeptideWithSetModifications pepWithSetMods1 = digestedList[1];
+            var pepWithSetMods1 = digestedList[1];
 
             //Finally Write MZML file
             Assert.That(pepWithSetMods1.FullSequence, Is.EqualTo("PEP[ConnorModType:ConnorMod on P]TID"));//this might be base sequence
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
@@ -285,14 +286,14 @@ namespace Test
             var digestedList = protein[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
             //Set Peptide with 1 mod at position 3
-            PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
-            PeptideWithSetModifications pepWithSetMods2 = digestedList[1];
-            PeptideWithSetModifications pepWithSetMods3 = digestedList[2];
-            PeptideWithSetModifications pepWithSetMods4 = digestedList[3];
-            PeptideWithSetModifications pepWithSetMods5 = digestedList[4];
+            var pepWithSetMods1 = digestedList[0];
+            var pepWithSetMods2 = digestedList[1];
+            var pepWithSetMods3 = digestedList[2];
+            var pepWithSetMods4 = digestedList[3];
+            var pepWithSetMods5 = digestedList[4];
 
             //CUSTOM PEP
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             { pepWithSetMods1, pepWithSetMods2, pepWithSetMods3, pepWithSetMods4, pepWithSetMods5 });
             string mzmlName = @"newMzml.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -364,8 +365,8 @@ namespace Test
             List<Omics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Omics.Fragmentation.MatchedFragmentIon>() { };
             MzSpectrum spectrum = new MzSpectrum(noiseData);
             MsDataScan scan = new MsDataScan(spectrum , 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
-            testPostTaskParameters.ProteinList = new List<Protein>() { protein1, protein2 };
-            testPostTaskParameters.AllPsms = new List<SpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
+            testPostTaskParameters.BioPolymerList = new List<IBioPolymer>() { protein1, protein2 };
+            testPostTaskParameters.AllSpectralMatches = new List<SpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
             testPostTaskParameters.SearchParameters = new SearchParameters();
             testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
             testPostTaskParameters.SearchParameters.DoLabelFreeQuantification = false;
@@ -381,7 +382,7 @@ namespace Test
             numSpectraPerFile.Add("", stuffForSpectraFile);
             testPostTaskParameters.NumMs2SpectraPerFile = numSpectraPerFile;
 
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             { peptideObserved});
             string mzmlName = @"newMzml.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -469,8 +470,8 @@ namespace Test
             List<Omics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Omics.Fragmentation.MatchedFragmentIon>() { };
             MzSpectrum spectrum = new MzSpectrum(noiseData);
             MsDataScan scan = new MsDataScan(spectrum, 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
-            testPostTaskParameters.ProteinList = proteinList;
-            testPostTaskParameters.AllPsms = new List<SpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
+            testPostTaskParameters.BioPolymerList = proteinList.Cast<IBioPolymer>().ToList();
+            testPostTaskParameters.AllSpectralMatches = new List<SpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
             testPostTaskParameters.SearchParameters = new SearchParameters();
             testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
             testPostTaskParameters.SearchParameters.DoLabelFreeQuantification = false;
@@ -486,7 +487,7 @@ namespace Test
             numSpectraPerFile.Add("", stuffForSpectraFile);
             testPostTaskParameters.NumMs2SpectraPerFile = numSpectraPerFile;
 
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             { peptideObserved});
             string mzmlName = @"newMzml.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -531,6 +532,39 @@ namespace Test
             Assert.That(modPruned.Count().Equals(2));
             Assert.That(modPruned.ElementAt(0).OneBasedPossibleLocalizedModifications.Count().Equals(1));
             Assert.That(modPruned.ElementAt(1).OneBasedPossibleLocalizedModifications.Count().Equals(1));
+        }
+
+        [Test]
+        public static void TestContaminantGPTMD()
+        {
+            GptmdTask task1 = new GptmdTask
+            {
+                CommonParameters = new CommonParameters(),
+                GptmdParameters = new GptmdParameters
+                {
+                    ListOfModsGptmd = GlobalVariables.AllModsKnown.Where(b =>
+                        b.ModificationType.Equals("Common Artifact")
+                        || b.ModificationType.Equals("Common Biological")
+                        || b.ModificationType.Equals("Metal")
+                        || b.ModificationType.Equals("Less Common")
+                        ).Select(b => (b.ModificationType, b.IdWithMotif)).ToList()
+                }
+            };
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1) };
+            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
+            string fastaName = @"TestData\DbForPrunedDb.fasta";
+            string contaminantName = @"DatabaseTests\ProteaseModTest.fasta";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedGeneration");
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
+                new List<DbForTask> { new DbForTask(fastaName, false), new DbForTask(contaminantName, true) },
+                outputFolder);
+            engine.Run();
+            string final = Path.Combine(MySetUpClass.outputFolder, "task1", "DbForPrunedDbGPTMD.xml");
+            string contaminantFinal = Path.Combine(MySetUpClass.outputFolder, "task1", "ProteaseModTestGPTMD.xml");
+            Assert.That(File.Exists(final));
+            Assert.That(File.Exists(contaminantFinal));
+            Directory.Delete(outputFolder, true);
         }
     }
 }

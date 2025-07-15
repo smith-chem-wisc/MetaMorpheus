@@ -19,6 +19,8 @@ namespace Test
         public static void TestIndividualFileOutput()
         {
             string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"IndividualOutputTest");
+            if(Directory.Exists(subFolder)) 
+                Directory.Delete(subFolder, true);
             Directory.CreateDirectory(subFolder);
             string outputFolder = Path.Combine(subFolder, "Results");
             SearchTask allowFilesTask = new SearchTask();

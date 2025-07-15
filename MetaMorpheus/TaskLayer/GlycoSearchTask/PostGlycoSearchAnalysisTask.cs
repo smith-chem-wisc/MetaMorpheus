@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FlashLFQ;
+using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using pepXML.Generated;
@@ -13,6 +14,7 @@ using Proteomics.ProteolyticDigestion;
 using Readers;
 using ThermoFisher.CommonCore.Data;
 using ProteinGroup = EngineLayer.ProteinGroup;
+using Omics;
 
 namespace TaskLayer
 {
@@ -323,8 +325,8 @@ namespace TaskLayer
                 foreach (var psm in _filteredPsms)
                 {
                     List<Protein> proteinList = psm.BestMatchingBioPolymersWithSetMods.Select(p => ((PeptideWithSetModifications)p.SpecificBioPolymer).Protein).ToList();
-                    ProteinGroup newProteinGroup = new ProteinGroup(new HashSet<Protein>(proteinList),
-                        new HashSet<PeptideWithSetModifications>(new List<PeptideWithSetModifications>(psm.BestMatchingBioPolymersWithSetMods.Select(p=> (PeptideWithSetModifications)p.SpecificBioPolymer).ToList())), new HashSet<PeptideWithSetModifications>());
+                    ProteinGroup newProteinGroup = new ProteinGroup(new HashSet<IBioPolymer>(proteinList),
+                        new HashSet<IBioPolymerWithSetMods>(new List<IBioPolymerWithSetMods>(psm.BestMatchingBioPolymersWithSetMods.Select(p=> (PeptideWithSetModifications)p.SpecificBioPolymer).ToList())), new HashSet<IBioPolymerWithSetMods>());
 
                     if (_proteinGroups.Any(p => p.Equals(newProteinGroup)))
                     {
@@ -476,8 +478,8 @@ namespace TaskLayer
             // the peptides should still be quantified but not considered for protein quantification
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
             //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-            Dictionary<Protease, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<Protease, List<SpectralMatch>>();
-            Dictionary<Protease, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<Protease, FlashLfqResults>();
+            Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
+            Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
 
             foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
             {
@@ -493,7 +495,7 @@ namespace TaskLayer
                     psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { undefinedPg });
                 }
 
-                proteaseSortedPsms[psm.DigestionParams.Protease].Add(psm);
+                proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
             }
 
             // pass PSM info to FlashLFQ

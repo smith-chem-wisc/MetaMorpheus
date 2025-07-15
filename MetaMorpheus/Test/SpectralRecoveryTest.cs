@@ -16,6 +16,7 @@ using Omics;
 using UsefulProteomicsDatabases;
 using System.Threading;
 using Readers;
+using Omics.Digestion;
 
 namespace Test
 {
@@ -52,7 +53,6 @@ namespace Test
             psms = new List<SpectralMatch>();
             myFileManager = new MyFileManager(true);
 
-            Loaders.LoadElements();
             string databasePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta");
             proteinList = ProteinDbLoader.LoadProteinFasta(databasePath, true, DecoyType.Reverse, false, out List<string> errors)
                 .Where(protein => protein.AppliedSequenceVariations != null).ToList();
@@ -68,7 +68,7 @@ namespace Test
                     filePath, commonParameters);
                 Protein protein = proteinList.First(protein => protein.Accession == readPsm.ProteinAccession);
 
-                //string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
+                //string[] startAndEndResidues = readPsm.StartAndEndResiduesInParentSequence.Split(" ");
                 //int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 //int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
 
@@ -115,13 +115,13 @@ namespace Test
             {
                 Parameters = new PostSearchAnalysisParameters()
                 {
-                    ProteinList = proteinList,
-                    AllPsms = psms,
+                    BioPolymerList = proteinList.Cast<IBioPolymer>().ToList(),
+                    AllSpectralMatches = psms,
                     CurrentRawFileList = rawSlices,
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = [new DigestionParams(generateUnlabeledProteinsForSilac: false)],
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "individual"),
@@ -292,13 +292,13 @@ namespace Test
             {
                 Parameters = new PostSearchAnalysisParameters()
                 {
-                    ProteinList = proteinList,
-                    AllPsms = psms,
+                    BioPolymerList = proteinList.Cast<IBioPolymer>().ToList(),
+                    AllSpectralMatches = psms,
                     CurrentRawFileList = rawSlices,
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = [new DigestionParams(generateUnlabeledProteinsForSilac: false)],
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),
@@ -341,13 +341,13 @@ namespace Test
             {
                 Parameters = new PostSearchAnalysisParameters()
                 {
-                    ProteinList = proteinList,
-                    AllPsms = psms.GetRange(0, 80),
+                    BioPolymerList = proteinList.Cast<IBioPolymer>().ToList(),
+                    AllSpectralMatches = psms.GetRange(0, 80),
                     CurrentRawFileList = rawSlices,
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = [new DigestionParams(generateUnlabeledProteinsForSilac: false)],
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),

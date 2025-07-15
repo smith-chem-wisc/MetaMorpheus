@@ -21,7 +21,7 @@ namespace MetaMorpheusCommandLine
         [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats); space-delimited")]
         public IEnumerable<string> _databases { get; set; }
 
-        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats) or folder(s) containing spectra; space-delimited")]
+        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf, ms2.msalign file formats) or folder(s) containing spectra; space-delimited")]
         public IEnumerable<string> _spectra { get; set; }
 
         [Option('o', HelpText = "[Optional] Output folder")]
