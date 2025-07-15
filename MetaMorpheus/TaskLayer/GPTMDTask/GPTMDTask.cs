@@ -33,14 +33,13 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-            MyFileManager myFileManager = new MyFileManager(true);
             bool isProtein = GlobalVariables.AnalyteType != AnalyteType.Oligo;
+            MyFileManager myFileManager = new MyFileManager(true);
 
             // start loading first spectra file in the background
             Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(currentRawFileList[0], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
             nextFileLoadingTask.Start();
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
-
 
             // start loading proteins in the background
             List<IBioPolymer> proteinList = null;

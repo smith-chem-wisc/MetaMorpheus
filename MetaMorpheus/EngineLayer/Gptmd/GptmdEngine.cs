@@ -188,7 +188,7 @@ namespace EngineLayer.Gptmd
             });
 
             //UpdateModDictionary(modDict);
-            foreach (var kvp in modDict)
+            foreach(var kvp in modDict)
                 ModDictionary.MergeOrCreate(kvp.Key, new HashSet<Tuple<int, Modification>>(kvp.Value));
             return new GptmdResults(this, ModDictionary, modsAdded);
         }
