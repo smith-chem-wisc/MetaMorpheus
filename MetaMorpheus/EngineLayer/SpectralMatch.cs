@@ -307,7 +307,7 @@ namespace EngineLayer
         /// <summary>
         /// This method is used by protein parsimony to remove PeptideWithSetModifications objects that have non-parsimonious protein associations
         /// </summary>
-        public void TrimProteinMatches(HashSet<Protein> parsimoniousProteins)
+        public void TrimProteinMatches(HashSet<IBioPolymer> parsimoniousProteins)
         {
             if (IsDecoy)
             {
@@ -439,11 +439,11 @@ namespace EngineLayer
                 !this.MatchedFragmentIons.Any()) return;
             //Pull C terminal and N terminal Fragments and amino acid numbers
             var nTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
-                    p.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
+                    p.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime)
                 .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
 
             var cTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
-                    p.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
+                    p.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime)
                 .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
 
             //Create a hashset to store the covered amino acid positions
@@ -531,8 +531,8 @@ namespace EngineLayer
         {
             if (matchedFragments != null && matchedFragments.Count != 0)
             {
-                List<int> nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.FragmentNumber).ToList();
-                List<int> cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).Select(f => (peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.FragmentNumber)).ToList();
+                List<int> nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime).Select(f => f.NeutralTheoreticalProduct.FragmentNumber).ToList();
+                List<int> cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime).Select(f => (peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.FragmentNumber)).ToList();
                 if (nIons.Any() && cIons.Any())
                 {
                     return nIons.Intersect(cIons).Count();
