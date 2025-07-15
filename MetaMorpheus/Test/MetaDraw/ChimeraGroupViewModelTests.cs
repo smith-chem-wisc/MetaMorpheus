@@ -17,17 +17,16 @@ namespace Test.MetaDraw;
 
 [TestFixture]
 [ExcludeFromCodeCoverage]
-public class ChimeraPlottingTests
+public class ChimeraGroupViewModelTests
 {
     public static ChimeraTestCase OneProteinTwoProteoformChimeraGroup;
     public static ChimeraTestCase TwoProteinsTwoProteoformChimeraGroup;
     public static List<SpectrumMatchFromTsv> AllMatches;
     public static MsDataFile DataFile;
     public static string TestExportDirectory => Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", "ChimeraPlottingTests");
-
     public record ChimeraTestCase(ChimeraGroupViewModel ChimeraGroup, Dictionary<OxyColor, List<MatchedFragmentIon>> ExpectedIonsByColor);
 
-    static ChimeraPlottingTests()
+    static ChimeraGroupViewModelTests()
     {
         var psmPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchResults.psmtsv");
         string msDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchSingleSpectra.mzML");
@@ -78,95 +77,9 @@ public class ChimeraPlottingTests
         }
     }
 
-    #region Tab View Model
 
     [Test]
-    [NonParallelizable]
-    public void ChimeraTabViewModel_ResultsFilteredCorrectly()
-    {
-        var dataFiles = new Dictionary<string, MsDataFile>()
-        {
-            {"FXN3_tr1_032017-calib", DataFile }
-        };
-
-        var chimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(AllMatches, dataFiles, TestExportDirectory);
-        Assert.That(chimeraAnalysisTabViewModel.ChimeraGroupViewModels.All(p => p.Count > 1),
-            Is.True, "All chimera groups should have at least two PSMs.");
-        Assert.That(chimeraAnalysisTabViewModel.ChimeraGroupViewModels.Count, Is.GreaterThan(0), "There should be at least one chimera group.");
-
-        // Check that all PSMs in chimera groups pass the Q-value filter and do not contain decoys if ShowDecoys is false
-        chimeraAnalysisTabViewModel.ChimeraGroupViewModels.SelectMany(p => p.ChimericPsms)
-            .ToList()
-            .ForEach(p =>
-            {
-                Assert.That(p.Psm.QValue, Is.LessThanOrEqualTo(MetaDrawSettings.QValueFilter), "Chimeric PSMs should pass the Q-value filter.");
-                Assert.That(p.Psm.DecoyContamTarget, Does.Not.Contain('D'), "Chimeric PSMs should not contain decoys if ShowDecoys is false.");
-            });
-
-        MetaDrawSettings.QValueFilter = 0.5; // set filter higher
-        MetaDrawSettings.ShowDecoys = true; // show decoys
-
-        chimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(AllMatches, dataFiles, TestExportDirectory);
-        Assert.That(chimeraAnalysisTabViewModel.ChimeraGroupViewModels.All(p => p.Count > 1),
-            Is.True, "All chimera groups should have at least two PSMs after changing settings.");
-        Assert.That(chimeraAnalysisTabViewModel.ChimeraGroupViewModels.Count, Is.GreaterThan(0), "There should still be at least one chimera group after changing settings.");
-
-        // Check that all PSMs in chimera groups pass the new Q-value filter and may contain decoys
-        chimeraAnalysisTabViewModel.ChimeraGroupViewModels.SelectMany(p => p.ChimericPsms)
-            .ToList()
-            .ForEach(p =>
-            {
-                Assert.That(p.Psm.QValue, Is.LessThanOrEqualTo(MetaDrawSettings.QValueFilter), "Chimeric PSMs should pass the new Q-value filter.");
-            });
-        Assert.That(chimeraAnalysisTabViewModel.ChimeraGroupViewModels.Any(p => p.ChimericPsms.Any(q => q.Psm.DecoyContamTarget.Contains('D'))),
-            Is.True, "Some chimeric PSMs should contain decoys after changing ShowDecoys to true.");
-
-        // Reset settings for other tests
-        MetaDrawSettings.QValueFilter = 0.01; // reset filter
-        MetaDrawSettings.ShowDecoys = false; // reset to not show decoys
-    }
-
-    [Test]
-    public static void ChimeraTabViewModel_PrecursorAssignmentIsCorrectInGroups()
-    {
-        var dataFiles = new Dictionary<string, MsDataFile>()
-        {
-            {"FXN3_tr1_032017-calib", DataFile }
-        };
-        var chimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(AllMatches, dataFiles, TestExportDirectory);
-
-        foreach (var chimeraGroup in chimeraAnalysisTabViewModel.ChimeraGroupViewModels)
-        {
-            // Only test groups with at least 2 PSMs
-            if (chimeraGroup.Count < 2)
-                continue;
-
-            var chimericPsms = chimeraGroup.ChimericPsms.ToList();
-            for (int i = 0; i < chimericPsms.Count; i++)
-            {
-                var psm = chimericPsms[i].Psm;
-                var envelope = chimericPsms[i].PrecursorEnvelope;
-
-                // Compare to all other envelopes in the group
-                double minDiff = Math.Abs(psm.PrecursorMass - envelope.MonoisotopicMass);
-                for (int j = 0; j < chimericPsms.Count; j++)
-                {
-                    if (i == j) continue;
-                    var otherEnvelope = chimericPsms[j].PrecursorEnvelope;
-                    double diff = Math.Abs(psm.PrecursorMass - otherEnvelope.MonoisotopicMass);
-                    Assert.That(minDiff, Is.LessThanOrEqualTo(diff),
-                        $"PSM {i} in group (scan {chimeraGroup.Ms2ScanNumber}) should be assigned to its closest envelope.");
-                }
-            }
-        }
-    }
-
-    #endregion
-
-    #region Group View Model
-
-    [Test]
-    public static void ChimeraGroupViewModel_FragmentCounts_OneProteinTwoProteoforms()
+    public static void FragmentCounts_OneProteinTwoProteoforms()
     {
         // Arrange
         var chimeraGroup = OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
@@ -176,7 +89,7 @@ public class ChimeraPlottingTests
         var terminalFragments = chimeraGroup.ChimericPsms.SelectMany(p => p.Psm.MatchedIons)
             .Where(p => !p.IsInternalFragment)
             .ToList();
-        Assert.That(terminalFragments.Count, Is.EqualTo(chimeraGroup.TotalFragments),  chimeraGroup.TotalFragments + " terminal fragments should match total fragments in the group.");
+        Assert.That(terminalFragments.Count, Is.EqualTo(chimeraGroup.TotalFragments), chimeraGroup.TotalFragments + " terminal fragments should match total fragments in the group.");
 
         var uniqueFragments = terminalFragments.Select(p => (p.NeutralTheoreticalProduct.Annotation, p.Mz.RoundedDouble(1)))
             .Distinct()
@@ -185,7 +98,7 @@ public class ChimeraPlottingTests
     }
 
     [Test]
-    public static void ChimeraGroupViewModel_FragmentCounts_TwoProteinsTwoProteoforms()
+    public static void FragmentCounts_TwoProteinsTwoProteoforms()
     {
         // Arrange
         var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
@@ -204,7 +117,7 @@ public class ChimeraPlottingTests
     }
 
     [Test]
-    public static void ChimeraGroupViewModel_PrecursorAssignmentIsCorrect_OneProteinTwoProteoforms()
+    public static void PrecursorAssignmentIsCorrect_OneProteinTwoProteoforms()
     {
         // Arrange
         var chimeraGroup = OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
@@ -229,7 +142,7 @@ public class ChimeraPlottingTests
     }
 
     [Test]
-    public static void ChimeraGroupViewModel_PrecursorAssignmentIsCorrect_TwoProteinsTwoProteoforms()
+    public static void PrecursorAssignmentIsCorrect_TwoProteinsTwoProteoforms()
     {
         // Arrange
         var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
@@ -253,7 +166,7 @@ public class ChimeraPlottingTests
     }
 
     [Test]
-    public static void ChimeraGroupViewModel_PrecursorColorAssignmentIsCorrect_OneProteinTwoProteoforms()
+    public static void PrecursorColorAssignmentIsCorrect_OneProteinTwoProteoforms()
     {
         // Arrange
         var chimeraGroup = OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
@@ -281,7 +194,7 @@ public class ChimeraPlottingTests
     }
 
     [Test]
-    public static void ChimeraGroupViewModel_PrecursorColorAssignmentIsCorrect_TwoProteinsTwoProteoforms()
+    public static void PrecursorColorAssignmentIsCorrect_TwoProteinsTwoProteoforms()
     {
         // Arrange
         var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
@@ -314,7 +227,7 @@ public class ChimeraPlottingTests
     }
 
     [Test]
-    public static void ChimeraGroupViewModel_FragmentColorAssignmentIsCorrect_OneProteinTwoProteoforms()
+    public static void FragmentColorAssignmentIsCorrect_OneProteinTwoProteoforms()
     {
         // Arrange
         var chimeraGroup = OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
@@ -342,7 +255,7 @@ public class ChimeraPlottingTests
     }
 
     [Test]
-    public static void ChimeraGroupViewModel_FragmentColorAssignmentIsCorrect_TwoProteinsTwoProteoforms()
+    public static void FragmentColorAssignmentIsCorrect_TwoProteinsTwoProteoforms()
     {
         // Arrange
         var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
@@ -367,66 +280,5 @@ public class ChimeraPlottingTests
             }
 
         }
-    }
-
-
-    #endregion
-}
-
-[TestFixture]
-public class HungarianAlgorithmTests
-{
-    [Test]
-    public void SimpleSquareMatrix_AssignsDiagonal()
-    {
-        // Arrange
-        double[,] cost = new double[,]
-        {
-            { 1, 2, 3 },
-            { 2, 1, 3 },
-            { 3, 2, 1 }
-        };
-
-        // Act
-        int[] assignment = HungarianAlgorithm.FindAssignments(cost);
-
-        // Assert
-        Assert.That(assignment, Is.EqualTo(new[] { 0, 1, 2 }));
-    }
-
-    [Test]
-    public void RectangularMatrix_AssignsOptimal()
-    {
-        // Arrange: 2x3 matrix, optimal is row 0 to col 1, row 1 to col 2
-        double[,] cost = new double[,]
-        {
-            { 10, 1, 10 },
-            { 10, 10, 1 }
-        };
-
-        // Act
-        int[] assignment = HungarianAlgorithm.FindAssignments(cost);
-
-        // Assert
-        Assert.That(assignment[0], Is.EqualTo(1));
-        Assert.That(assignment[1], Is.EqualTo(2));
-    }
-
-    [Test]
-    public void ChargeMismatchPenalty_AvoidsHighCost()
-    {
-        // Arrange: simulate charge mismatch with high penalty
-        double[,] cost = new double[,]
-        {
-            { 0, 1000 },
-            { 1000, 0 }
-        };
-
-        // Act
-        int[] assignment = HungarianAlgorithm.FindAssignments(cost);
-
-        // Assert
-        Assert.That(assignment[0], Is.EqualTo(0));
-        Assert.That(assignment[1], Is.EqualTo(1));
     }
 }

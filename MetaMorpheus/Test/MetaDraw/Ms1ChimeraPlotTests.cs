@@ -14,7 +14,7 @@ public class Ms1ChimeraPlotTests
     public void Ms1ChimeraPlot_Constructor_InitializesProperties()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         var plotView = new PlotView();
 
         // Act
@@ -32,7 +32,7 @@ public class Ms1ChimeraPlotTests
     public void Ms1ChimeraPlot_AnnotateIsolationWindow_AddsDashedRedBox()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         var plotView = new PlotView();
         var ms1Plot = new Ms1ChimeraPlot(plotView, chimeraGroup);
 
@@ -53,7 +53,7 @@ public class Ms1ChimeraPlotTests
     public void Ms1ChimeraPlot_AnnotateChimericPeaks_AddsColoredPeaks()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
         var plotView = new PlotView();
 
         // Act
@@ -74,7 +74,7 @@ public class Ms1ChimeraPlotTests
     public void Ms1ChimeraPlot_ZoomAxes_SetsCorrectAxisRanges()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         var plotView = new PlotView();
         var ms1Plot = new Ms1ChimeraPlot(plotView, chimeraGroup);
 

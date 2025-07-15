@@ -22,7 +22,7 @@ public class ChimeraSpectrumMatchPlotTests
     public void ChimeraSpectrumMatchPlot_Constructor_InitializesProperties()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         var plotView = new PlotView();
 
         // Act
@@ -38,7 +38,7 @@ public class ChimeraSpectrumMatchPlotTests
     public void ChimeraSpectrumMatchPlot_AnnotatesMatchedIonsWithCorrectColors()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
         var expectedColors = chimeraGroup.MatchedFragmentIonsByColor.Keys;
         var plotView = new PlotView();
 
@@ -60,7 +60,7 @@ public class ChimeraSpectrumMatchPlotTests
     public void ChimeraSpectrumMatchPlot_SetsMzMaxIfProvided()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         var plotView = new PlotView();
         double mzMax = 1000.0;
 
@@ -75,7 +75,7 @@ public class ChimeraSpectrumMatchPlotTests
     public void ChimeraSpectrumMatchPlot_ExportPlot_CreatesExportedFile()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         var plotView = new PlotView();
         var plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraSpectrumMatchPlotTests");
@@ -97,7 +97,7 @@ public class ChimeraSpectrumMatchPlotTests
     public void ChimeraSpectrumMatchPlot_ExportPlot_WithLegend_CreatesExportedFile()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         var plotView = new PlotView();
         var plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
 

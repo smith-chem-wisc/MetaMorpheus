@@ -15,7 +15,7 @@ public class ChimeraDrawnSequenceTests
     public void ChimeraDrawnSequence_CreatesCanvasWithCorrectDimensions()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         var canvas = new Canvas();
 
         // Act
@@ -33,7 +33,7 @@ public class ChimeraDrawnSequenceTests
     public void ChimeraDrawnSequence_DrawsAllSequences()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
+        var chimeraGroup = ChimeraGroupViewModelTests.TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
         var canvas = new Canvas();
 
         // Act
@@ -50,8 +50,8 @@ public class ChimeraDrawnSequenceTests
     public void ChimeraDrawnSequence_AddsMatchedIonsWithCorrectColors()
     {
         // Arrange
-        var chimeraGroup = ChimeraPlottingTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
-        var expectedIons = ChimeraPlottingTests.OneProteinTwoProteoformChimeraGroup.ExpectedIonsByColor;
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var expectedIons = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ExpectedIonsByColor;
         var canvas = new Canvas();
 
         // Act
