@@ -91,16 +91,9 @@ namespace EngineLayer
             MS2ChildScanDissociationType = ms2childScanDissociationType;
             MS3ChildScanDissociationType = ms3childScanDissociationType;
             UseMostAbundantPrecursorIntensity = useMostAbundantPrecursorIntensity;
-
-            CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
-            // reset custom fragmentation product types to default empty list
-            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
-
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
-
             MaxHeterozygousVariants = maxHeterozygousVariants;
             MinVariantDepth = minVariantDepth;
-
             AddTruncations = addTruncations;
 
             // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
@@ -118,6 +111,14 @@ namespace EngineLayer
                 ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(-10,
                     -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
             }
+
+            CustomIons = DeconvolutionMaxAssumedChargeState < 0
+                ? Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType
+                    [DissociationType.Custom]
+                : DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
+
+            // reset custom fragmentation product types to default empty list
+            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
         }
 
         // Notes:
@@ -246,7 +247,7 @@ namespace EngineLayer
                                 PrecursorMassTolerance,
                                 DeconvolutionMassTolerance,
                                 MaxThreadsToUsePerFile,
-                                (DigestionParams)DigestionParams.Clone(terminus),
+                                DigestionParams.Clone(terminus),
                                 ListOfModsVariable,
                                 ListOfModsFixed,
                                 AssumeOrphanPeaksAreZ1Fragments,
