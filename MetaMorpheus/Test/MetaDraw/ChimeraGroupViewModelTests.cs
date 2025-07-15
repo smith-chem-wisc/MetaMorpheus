@@ -8,6 +8,7 @@ using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using Omics.Fragmentation;
 using OxyPlot;
 using Readers;
@@ -77,7 +78,6 @@ public class ChimeraGroupViewModelTests
         }
     }
 
-
     [Test]
     public static void FragmentCounts_OneProteinTwoProteoforms()
     {
@@ -85,6 +85,7 @@ public class ChimeraGroupViewModelTests
         var chimeraGroup = OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         Assert.That(chimeraGroup.Count, Is.EqualTo(2));
         Assert.That(chimeraGroup.ProteinCount, Is.EqualTo(1));
+        Assert.That(chimeraGroup.OneBasedPrecursorScanNumber, Is.EqualTo(chimeraGroup.ChimericPsms.First().Psm.PrecursorScanNum));
 
         var terminalFragments = chimeraGroup.ChimericPsms.SelectMany(p => p.Psm.MatchedIons)
             .Where(p => !p.IsInternalFragment)
@@ -280,5 +281,126 @@ public class ChimeraGroupViewModelTests
             }
 
         }
+    }
+
+    [Test]
+    public void ChimeraGroupViewModel_AssignIonColors_UsesLetterOption()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var group = vm.ChimeraGroupViewModels[0];
+
+        // Act
+        group.AssignIonColors(useLetterOnly: true);
+
+        // Assert
+        foreach (var kvp in group.PrecursorIonsByColor)
+        {
+            foreach (var tuple in kvp.Value)
+            {
+                // If annotation is not "Miso", it should contain a letter from the Letters list
+                if (!tuple.Item2.Contains("Miso"))
+                {
+                    Assert.That(tuple.Item2, Is.Not.Empty, "Annotation should not be empty when using letter only.");
+                    Assert.That(tuple.Item2.Length, Is.EqualTo(1), "Annotation should be a single letter when using letter only.");
+                    Assert.That("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Contains(tuple.Item2), Is.True, "Annotation should be a letter.");
+                }
+            }
+        }
+    }
+
+    [Test]
+    public void AssignIonColors_ProduceExpectedAnnotations()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var group = vm.ChimeraGroupViewModels[0];
+
+        // Act
+        group.AssignIonColors(useLetterOnly: false);
+
+        // Assert
+        foreach (var kvp in group.PrecursorIonsByColor)
+        {
+            foreach (var tuple in kvp.Value)
+            {
+                // If annotation is not "Miso", it should contain the expected details
+                if (!tuple.Item2.Contains("Miso"))
+                {
+                    Assert.That(tuple.Item2, Does.Contain("Charge ="), "Annotation should contain charge info.");
+                    Assert.That(tuple.Item2, Does.Contain("m/z ="), "Annotation should contain m/z info.");
+                    Assert.That(tuple.Item2, Does.Contain("Mono Mass ="), "Annotation should contain mono mass info.");
+                    Assert.That(tuple.Item2, Does.Contain("Protein ="), "Annotation should contain protein info.");
+                }
+            }
+        }
+    }
+
+    [Test]
+    public void AssignIonColors_ProduceLetterOnlyAnnotations()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles)
+        {
+            UseLetterOnly = true
+        };
+        vm.UseLetterOnly = true;
+        var group = vm.ChimeraGroupViewModels[0];
+
+        // Act
+        group.AssignIonColors(useLetterOnly: true);
+
+        // Assert
+        foreach (var kvp in group.PrecursorIonsByColor)
+        {
+            foreach (var tuple in kvp.Value)
+            {
+                // If annotation is not "Miso", it should be a single uppercase letter
+                if (!tuple.Item2.Contains("Miso"))
+                {
+                    Assert.That(tuple.Item2, Is.Not.Empty, "Annotation should not be empty when using letter only.");
+                    Assert.That(tuple.Item2.Length, Is.EqualTo(1), "Annotation should be a single letter when using letter only.");
+                    Assert.That("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Contains(tuple.Item2), Is.True, "Annotation should be a letter.");
+                }
+            }
+        }
+    }
+
+    [Test]
+    public void ChimeraGroupViewModel_IEnumerable_EnumeratesAllChimericPsms()
+    {
+        // Arrange
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+
+        // Act
+        var enumerated = chimeraGroup.ToList();
+
+        // Assert
+        Assert.That(enumerated.Count, Is.EqualTo(chimeraGroup.ChimericPsms.Count));
+        CollectionAssert.AreEqual(chimeraGroup.ChimericPsms, enumerated);
+    }
+
+    [Test]
+    public void ChimeraGroupViewModel_IEnumerable_NonGenericEnumeratesAllChimericPsms()
+    {
+        // Arrange
+        var chimeraGroup = ChimeraGroupViewModelTests.TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
+
+        // Act
+        var enumerated = new List<ChimericSpectralMatchModel>();
+        foreach (object item in (System.Collections.IEnumerable)chimeraGroup)
+        {
+            enumerated.Add((ChimericSpectralMatchModel)item);
+        }
+
+        // Assert
+        Assert.That(enumerated.Count, Is.EqualTo(chimeraGroup.ChimericPsms.Count));
+        CollectionAssert.AreEqual(chimeraGroup.ChimericPsms, enumerated);
     }
 }

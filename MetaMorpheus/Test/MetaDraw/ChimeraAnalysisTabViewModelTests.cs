@@ -469,4 +469,80 @@ public class ChimeraAnalysisTabViewModelTests
             File.Delete(file);
         Directory.Delete(tempDir, true);
     }
+
+    [Test]
+    public void ConstructChimericPsms_ContinuesIfDataFileNotFound()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        // Provide an empty dataFiles dictionary so no data file can be found
+        var dataFiles = new Dictionary<string, MsDataFile>();
+
+        // Act
+        var result = typeof(ChimeraAnalysisTabViewModel)
+            .GetMethod("ConstructChimericPsms", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .Invoke(null, new object[] { allPsms, dataFiles }) as List<ChimeraGroupViewModel>;
+
+        // Assert
+        Assert.That(result, Is.Empty, "No groups should be constructed if no data file is found.");
+    }
+
+    [Test]
+    public void PrecursorIonAnnotations_AreLetterOnly_WhenUseLetterOnlyIsTrue()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+
+        // Act
+        vm.UseLetterOnly = true;
+
+        // Assert
+        foreach (var group in vm.ChimeraGroupViewModels)
+        {
+            foreach (var kvp in group.PrecursorIonsByColor)
+            {
+                foreach (var tuple in kvp.Value)
+                {
+                    if (!tuple.Item2.Contains("Miso"))
+                    {
+                        Assert.That(tuple.Item2, Is.Not.Empty, "Annotation should not be empty when using letter only.");
+                        Assert.That(tuple.Item2.Length, Is.EqualTo(1), "Annotation should be a single letter when using letter only.");
+                        Assert.That("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Contains(tuple.Item2), Is.True, "Annotation should be a letter.");
+                    }
+                }
+            }
+        }
+    }
+
+    [Test]
+    public void ExportMs1_ThrowsOnUnsupportedExportType()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
+        vm.Ms1ChimeraPlot = new Ms1ChimeraPlot(new OxyPlot.Wpf.PlotView(), vm.SelectedChimeraGroup);
+        vm.SelectedExportType = "UnsupportedType";
+
+        // Act & Assert
+        Assert.Throws<ArgumentOutOfRangeException>(() => vm.ExportMs1Command.Execute(null));
+    }
+
+    [Test]
+    public void ExportMs2_ThrowsOnUnsupportedExportType()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
+        vm.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(new OxyPlot.Wpf.PlotView(), vm.SelectedChimeraGroup);
+        vm.SelectedExportType = "UnsupportedType";
+
+        // Act & Assert
+        Assert.Throws<ArgumentOutOfRangeException>(() => vm.ExportMs2Command.Execute(null));
+    }
 }
