@@ -76,14 +76,16 @@
                             ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
                 <DataGridTextColumn Header="IDs" Binding="{Binding Count}" Width="30" 
                             ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
-                <DataGridTextColumn Header="Total Fragments" Binding="{Binding TotalFragments}" Width="100"
+                <DataGridTextColumn Header="Total Fragments" Binding="{Binding TotalFragments}" Width="60"
                             ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
-                <DataGridTextColumn Header="Unique Fragments" Binding="{Binding UniqueFragments}" Width="110"
+                <DataGridTextColumn Header="Unique Fragments" Binding="{Binding UniqueFragments}" Width="80"
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="Proteins" Binding="{Binding ProteinCount}" Width="50"
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="Primary Sequences" Binding="{Binding PrimarySequenceCount}" Width="74"
                             ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
                 <DataGridTextColumn Header="DataFile" Binding="{Binding FileNameWithoutExtension}" Width="140"
                                     ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
-                <DataGridTextColumn Header="Base Sequence Count" Binding="{Binding ProteinCount}" Width="60"
-                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
             </DataGrid.Columns>
         </DataGrid>
 
