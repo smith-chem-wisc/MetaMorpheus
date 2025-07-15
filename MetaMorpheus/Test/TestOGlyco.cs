@@ -1047,13 +1047,13 @@ namespace Test
                 for (int j = 0; j < boxes.Length; j++)
                 {
                     localizationGraph.array[i][j] = new AdjNode(i, j, modPos.Keys.ElementAt(i), boxes[j]);
-                    localizationGraph.array[i][j].CummulativeSources = new List<int> { j }; 
+                    localizationGraph.array[i][j].CumulativeSources = new List<int> { j }; 
                     localizationGraph.array[i][j].maxCost = 1;
                 }
             }
-            localizationGraph.array[2][5].CummulativeSources = new List<int> {  4, 5 };
+            localizationGraph.array[2][5].CumulativeSources = new List<int> {  4, 5 };
 
-            localizationGraph.array[1][4].CummulativeSources = new List<int> { 2, 4 };
+            localizationGraph.array[1][4].CumulativeSources = new List<int> { 2, 4 };
 
             var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, boxes);
 
@@ -1079,7 +1079,7 @@ namespace Test
                 for (int j = 0; j < boxes.Length; j++)
                 {
                     localizationGraph.array[i][j] = new AdjNode(i, j, modPos.Keys.ElementAt(i), boxes[j]);
-                    localizationGraph.array[i][j].CummulativeSources = new List<int> { j };
+                    localizationGraph.array[i][j].CumulativeSources = new List<int> { j };
                 }
             }
             localizationGraph.TotalScore = 1;

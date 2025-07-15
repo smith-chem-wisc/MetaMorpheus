@@ -110,15 +110,15 @@ namespace EngineLayer.GlycoSearch
                                     var tempCost = cost + localizationGraph.array[x - 1][preY].maxCost; //Try to get the max cost from previous AdjNode.
                                     if (tempCost > maxCost)
                                     {
-                                        adjNode.CummulativeSources.Clear();
+                                        adjNode.CumulativeSources.Clear();
                 
-                                        adjNode.CummulativeSources.Add(preY);
+                                        adjNode.CumulativeSources.Add(preY);
              
                                         maxCost = tempCost;
                                     }
                                     else if (tempCost == maxCost)
                                     {
-                                        adjNode.CummulativeSources.Add(preY);              
+                                        adjNode.CumulativeSources.Add(preY);              
                                     }
 
                                 }
@@ -244,7 +244,7 @@ namespace EngineLayer.GlycoSearch
                 return;
             }
 
-            foreach (var pre in array[xind][yind].CummulativeSources)
+            foreach (var pre in array[xind][yind].CumulativeSources)
             {
                 xind--;
                 yind = pre;
@@ -283,7 +283,7 @@ namespace EngineLayer.GlycoSearch
                 return; // temp[0] = last one in the childBox = length-1.
             }
 
-            var pre = array[xind][yind].CummulativeSources.First(); // The first one in the CummulativeSources is the toppest previous node.
+            var pre = array[xind][yind].CumulativeSources.First(); // The first one in the CumulativeSources is the toppest previous node.
             xind--;
             yind = pre;
             temp[xind] = yind;
