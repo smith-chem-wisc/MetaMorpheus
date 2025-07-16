@@ -94,7 +94,7 @@ public class HungarianAlgorithmTests
         int[] assignment = HungarianAlgorithm.FindAssignments(cost);
 
         // Assert
-        // The optimal assignment is [0,1,2]
+        // The optimal assignment is [2,1,0]
         Assert.That(assignment, Is.EqualTo(new[] { 2, 1, 0 }));
     }
 
@@ -113,7 +113,7 @@ public class HungarianAlgorithmTests
         int[] assignment = HungarianAlgorithm.FindAssignments(cost);
 
         // Assert
-        // The optimal assignment is [2,0,1]
+        // The optimal assignment is [0,2,1]
         Assert.That(assignment, Is.EqualTo(new[] { 0, 2, 1 }));
     }
 
