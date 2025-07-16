@@ -446,6 +446,9 @@ namespace GuiFunctions
                 DrawStationarySequence = DrawStationarySequence,
                 DrawNumbersUnderStationary = DrawNumbersUnderStationary,
                 ShowLegend = ShowLegend,
+                DisplayChimeraLegend = DisplayChimeraLegend,
+                ChimeraLegendMainTextType = ChimeraLegendMainTextType,
+                ChimeraLegendSubTextType = ChimeraLegendSubTextType,
                 LocalizationLevelStart = LocalizationLevelStart,
                 LocalizationLevelEnd = LocalizationLevelEnd,
                 ExportType = ExportType,
@@ -485,6 +488,9 @@ namespace GuiFunctions
             DrawStationarySequence = settings.DrawStationarySequence;
             DrawNumbersUnderStationary = settings.DrawNumbersUnderStationary;
             ShowLegend = settings.ShowLegend;
+            DisplayChimeraLegend = settings.DisplayChimeraLegend;
+            ChimeraLegendMainTextType = settings.ChimeraLegendMainTextType;
+            ChimeraLegendSubTextType = settings.ChimeraLegendSubTextType;
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
             ExportType = settings.ExportType;

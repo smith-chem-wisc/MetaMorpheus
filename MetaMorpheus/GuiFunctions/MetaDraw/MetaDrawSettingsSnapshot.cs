@@ -39,6 +39,9 @@ namespace GuiFunctions
         public double StrokeThicknessUnannotated { get; set; } = 0.7;
         public double StrokeThicknessAnnotated { get; set; } = 1.0;
         public double SpectrumDescriptionFontSize { get; set; } = 10;
+        public bool DisplayChimeraLegend { get; set; } = true;
+        public LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
+        public LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;

@@ -46,6 +46,9 @@ namespace Test.MetaDraw
             Assert.That(snapshot.AnnotatedFontSize, Is.EqualTo(MetaDrawSettings.AnnotatedFontSize));
             Assert.That(snapshot.AxisLabelTextSize, Is.EqualTo(MetaDrawSettings.AxisLabelTextSize));
             Assert.That(snapshot.AxisTitleTextSize, Is.EqualTo(MetaDrawSettings.AxisTitleTextSize));
+            Assert.That(snapshot.DisplayChimeraLegend, Is.EqualTo(MetaDrawSettings.DisplayChimeraLegend));
+            Assert.That(snapshot.ChimeraLegendMainTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendMainTextType));
+            Assert.That(snapshot.ChimeraLegendSubTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendSubTextType));
 
             MetaDrawSettings.ShowContaminants = true;
             MetaDrawSettings.AnnotateMzValues = false;
@@ -84,6 +87,10 @@ namespace Test.MetaDraw
             snapshot.ShowLegend = false;
             snapshot.DrawNumbersUnderStationary = false;
             snapshot.SubAndSuperScriptIons = false;
+            snapshot.DisplayChimeraLegend = false;
+            snapshot.ChimeraLegendMainTextType = LegendDisplayProperty.ProteinAccession;
+            snapshot.ChimeraLegendSubTextType = LegendDisplayProperty.FullSequence;
+
             MetaDrawSettings.LoadSettings(snapshot, out bool flaggedError);
             Assert.That(!flaggedError);
             Assert.That(snapshot.DisplayIonAnnotations.Equals(MetaDrawSettings.DisplayIonAnnotations));
@@ -97,6 +104,9 @@ namespace Test.MetaDraw
             Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
             Assert.That(snapshot.DisplayInternalIons, Is.EqualTo(MetaDrawSettings.DisplayInternalIons));
             Assert.That(snapshot.SubAndSuperScriptIons, Is.EqualTo(MetaDrawSettings.SubAndSuperScriptIons));
+            Assert.That(snapshot.DisplayChimeraLegend, Is.EqualTo(MetaDrawSettings.DisplayChimeraLegend));
+            Assert.That(snapshot.ChimeraLegendMainTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendMainTextType));
+            Assert.That(snapshot.ChimeraLegendSubTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendSubTextType));
             colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
             betaColorValues = MetaDrawSettings.BetaProductTypeToColor
