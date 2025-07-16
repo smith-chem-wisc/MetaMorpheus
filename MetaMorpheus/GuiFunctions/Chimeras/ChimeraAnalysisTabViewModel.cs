@@ -7,6 +7,7 @@ using MassSpectrometry;
 using Readers;
 using EngineLayer;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
@@ -33,19 +34,21 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         {
             _selectedChimeraGroup = value;
             if (value != null)
-                ChimeraLegendViewModel.ChimeraLegendItems = value.LegendItems;
+            {
+                LegendCanvas = new ChimeraLegendCanvas(value);
+            }
             OnPropertyChanged(nameof(SelectedChimeraGroup));
         }
     }
 
-    private ChimeraLegendViewModel _chimeraLegendViewModel;
-    public ChimeraLegendViewModel ChimeraLegendViewModel
+    private ChimeraLegendCanvas _legendCanvas;
+    public ChimeraLegendCanvas LegendCanvas
     {
-        get => _chimeraLegendViewModel;
+        get => _legendCanvas;
         set
         {
-            _chimeraLegendViewModel = value;
-            OnPropertyChanged(nameof(ChimeraLegendViewModel));
+            _legendCanvas = value;
+            OnPropertyChanged(nameof(LegendCanvas));
         }
     }
 
@@ -83,7 +86,6 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
 
     public ChimeraAnalysisTabViewModel(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles, string? exportDirectory = null)
     {
-        ChimeraLegendViewModel = new ChimeraLegendViewModel();
         ChimeraGroupViewModels = [..ConstructChimericPsms(allPsms, dataFiles)
             .OrderByDescending(p => p.Count)
             .ThenByDescending(p => p.TotalFragments)

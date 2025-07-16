@@ -3,6 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows.Controls;
+using System.Windows.Shapes;
+using System.Windows.Media;
+using System.Windows;
 using Chemistry;
 using EngineLayer;
 using GuiFunctions.ViewModels.Legends;
@@ -14,6 +18,7 @@ using OxyPlot;
 using OxyPlot.Reporting;
 using Readers;
 using ClassExtensions = Chemistry.ClassExtensions;
+using FontWeights = System.Windows.FontWeights;
 
 namespace GuiFunctions;
 
@@ -38,7 +43,6 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
 
     private List<string> _letters = new List<string> { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
     public Queue<string> Letters { get; }
-    public Dictionary<string, List<ChimeraLegendItemViewModel>> LegendItems { get; }
 
     private bool IsColorInitialized { get; set; } = false;
     private Dictionary<OxyColor, List<(MatchedFragmentIon, string)>> _matchedFragmentIonsByColor = [];
@@ -166,7 +170,6 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
     {
         Ms1Scan = precursorSpectrum;
         Ms2Scan = fragmentationSpectrum;
-        LegendItems = new();
         Letters = new (_letters);
 
         ChimericPsms = [.. ConstructChimericPsmModels(chimericSpectrumMatches).OrderByDescending(p => p.Psm.Score)];
@@ -238,18 +241,25 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
                      .OrderByDescending(p => p.Count()))
         {
             var proteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][0];
-            LegendItems.Add(group.Key, new List<ChimeraLegendItemViewModel>());
 
             if (group.Count() > 1)
-                LegendItems[group.Key].Add(new ChimeraLegendItemViewModel("Shared Ions", proteinColor));
-
-            for (int i = 0; i < group.Count(); i++)
             {
-                var color = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][i + 1];
-                var chimericPsm = new ChimericSpectralMatchModel(group.ElementAt(i).Item1, group.ElementAt(i).Item2,
+                for (int i = 0; i < group.Count(); i++)
+                {
+                    var color = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][i + 1];
+                    var chimericPsm = new ChimericSpectralMatchModel(group.ElementAt(i).Item1, group.ElementAt(i).Item2,
+                            color, proteinColor)
+                        { Letter = Letters.Dequeue() };
+
+                    yield return chimericPsm;
+                }
+            }
+            else
+            {
+                var color = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][1];
+                var chimericPsm = new ChimericSpectralMatchModel(group.First().Item1, group.First().Item2,
                         color, proteinColor)
                     { Letter = Letters.Dequeue() };
-                LegendItems[group.Key].Add(new(chimericPsm.ModString, color));
                 yield return chimericPsm;
             }
             proteinIndex++;

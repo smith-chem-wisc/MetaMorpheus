@@ -1,6 +1,8 @@
 ﻿using GuiFunctions;
+using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace MetaMorpheusGUI
 {
@@ -9,9 +11,13 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class ChimeraAnalysisTabView : UserControl
     {
+
         public ChimeraAnalysisTabView()
         {
             InitializeComponent();
+
+            this.DataContextChanged += (s, e) => AttachLegendCanvasEvents();
+            ChimeraLegend.DataContextChanged += (s, e) => AttachLegendCanvasEvents();
         }
 
         private void ChermicDataGrid_OnSelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
@@ -31,6 +37,90 @@ namespace MetaMorpheusGUI
             dataContext.Ms1ChimeraPlot = new Ms1ChimeraPlot(ms1ChimeraOverlaPlot, chimeraGroup);
             dataContext.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(ms2ChimeraPlot, chimeraGroup);
             dataContext.ChimeraDrawnSequence = new ChimeraDrawnSequence(chimeraSequenceCanvas, chimeraGroup, dataContext);
+            AttachLegendCanvasEvents();
         }
+
+        #region Movable Legend
+
+        private bool isDragging = false;
+        private Point clickPosition; 
+        private Canvas _legendCanvas;
+
+        private void AttachLegendCanvasEvents()
+        {
+            var dataContext = DataContext as ChimeraAnalysisTabViewModel;
+            var legendCanvas = dataContext?.LegendCanvas;
+
+            double lastLeft = 0, lastTop = 0;
+            if (_legendCanvas != null && _legendCanvas.Parent is Canvas)
+            {
+                lastLeft = Canvas.GetLeft(_legendCanvas);
+                lastTop = Canvas.GetTop(_legendCanvas);
+            }
+
+            if (legendCanvas != null)
+            {
+                ChimeraLegend.Children.Clear();
+                ChimeraLegend.Children.Add(legendCanvas);
+
+                // Restore previous position if available
+                if (!double.IsNaN(lastLeft) && !double.IsNaN(lastTop) && (lastLeft != 0 || lastTop != 0))
+                {
+                    Canvas.SetLeft(legendCanvas, lastLeft);
+                    Canvas.SetTop(legendCanvas, lastTop);
+                }
+                else
+                {
+                    double parentWidth = ChimeraLegend.ActualWidth;
+                    double legendWidth = legendCanvas.Width;
+                    double initialLeft = Math.Max(0, parentWidth - legendWidth - 10);
+                    Canvas.SetLeft(legendCanvas, initialLeft);
+                    Canvas.SetTop(legendCanvas, 10);
+                }
+
+                legendCanvas.MouseLeftButtonDown += Legend_MouseLeftButtonDown;
+                legendCanvas.MouseLeftButtonUp += Legend_MouseLeftButtonUp;
+                legendCanvas.MouseMove += Legend_MouseMove;
+
+                _legendCanvas = legendCanvas;
+            }
+        }
+
+        private void Legend_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            isDragging = true;
+            clickPosition = e.GetPosition(_legendCanvas);
+            _legendCanvas.CaptureMouse();
+        }
+
+        private void Legend_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            isDragging = false;
+            _legendCanvas.ReleaseMouseCapture();
+        }
+
+        private void Legend_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (isDragging && _legendCanvas.Parent is Canvas parent)
+            {
+                Point mousePos = e.GetPosition(parent);
+                double left = mousePos.X - clickPosition.X;
+                double top = mousePos.Y - clickPosition.Y;
+
+                // Clamp to parent bounds
+                double maxLeft = parent.ActualWidth - _legendCanvas.ActualWidth;
+                double maxTop = parent.ActualHeight - _legendCanvas.ActualHeight;
+
+                if (left < 0) left = 0;
+                if (top < 0) top = 0;
+                if (left > maxLeft) left = maxLeft;
+                if (top > maxTop) top = maxTop;
+
+                Canvas.SetLeft(_legendCanvas, left);
+                Canvas.SetTop(_legendCanvas, top);
+            }
+        }
+
+        #endregion
     }
 }

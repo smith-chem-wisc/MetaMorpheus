@@ -144,11 +144,11 @@
                   FontSize="16" FontStretch="Expanded" VerticalAlignment="Stretch" />
 
         <!-- Sequence Coverage -->
-        <Expander Grid.Row="3" Grid.Column="2" IsExpanded="False">
+        <Expander Grid.Row="3" Grid.Column="2" IsExpanded="True" ExpandDirection="Up">
             <Expander.Header>
                 <Label Content="Sequence Annotation" Margin="0 0 10 0" />
             </Expander.Header>
-            <ScrollViewer HorizontalScrollBarVisibility="Visible" CanContentScroll="True"
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" CanContentScroll="True"
                       VerticalScrollBarVisibility="Disabled"
                       HorizontalAlignment="Left">
                 <Canvas x:Name="chimeraSequenceCanvas" />
@@ -156,10 +156,9 @@
         </Expander>
 
 
-        <Expander Grid.Column="2" Grid.Row="4" Header="Colorized Legend" IsExpanded="False">
-            <local:ChimeraLegendControl x:Name="ChimeraLegendControlInTab"
-                                    DataContext="{Binding ChimeraLegendViewModel}" Height="Auto" />
-        </Expander>
+        <Canvas x:Name="ChimeraLegend"
+                Grid.Column="2" Grid.Row="0" Grid.RowSpan="5" >
+        </Canvas>
 
         <DataGrid x:Name="chimericResultDataGrid" Grid.Column="2" Grid.Row="5" Grid.RowSpan="2" Height="Auto"
           ItemsSource="{Binding SelectedChimeraGroup.ChimericPsms}"
