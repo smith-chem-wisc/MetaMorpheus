@@ -440,9 +440,7 @@ public class ChimeraAnalysisTabViewModelTests
         var dataFiles = new Dictionary<string, MsDataFile>();
 
         // Act
-        var result = typeof(ChimeraAnalysisTabViewModel)
-            .GetMethod("ConstructChimericPsms", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
-            .Invoke(null, new object[] { allPsms, dataFiles }) as List<ChimeraGroupViewModel>;
+        var result = ChimeraAnalysisTabViewModel.ConstructChimericPsms(allPsms, dataFiles);
 
         // Assert
         Assert.That(result, Is.Empty, "No groups should be constructed if no data file is found.");
