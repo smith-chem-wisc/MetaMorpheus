@@ -10,15 +10,36 @@ namespace EngineLayer.GlycoSearch
 {
     public class LocalizationGraph
     {
+        /// <summary>
+        /// The localization graph matrix, where each node represents a possible position in this graph.
+        /// </summary>
         public AdjNode[][] array { get; set; }
-        public SortedDictionary<int, string> ModPos { get; } // Motif information, easily to track the aminoAcid index with corresponding motif.
+        /// <summary>
+        /// Motif information mapping amino acid indices to their corresponding motif strings for glycosylation sites.
+        /// </summary>
+        public SortedDictionary<int, string> ModPos { get; }
 
+        /// <summary>
+        /// The index of the ModBox (within all ModBoxes) that is associated with this localization graph.
+        /// </summary>
         public int ModBoxId { get; }
+        /// <summary>
+        /// The modification box representing the combined set of modifications for the peptide.
+        /// </summary>
         public ModBox ModBox { get; }
+        /// <summary>
+        /// The array of child ModBoxes, each ModBoxes representing a possible combination of modifications from the ModBox.
+        /// </summary>
         public ModBox[] ChildModBoxes { get; set; }
 
-        public double NoLocalCost{get; set;}   // Note that we have node for each glycosite, the matched ions before the first node and after the last node is scored here.
-        public double TotalScore { get; set; } // Total score is the score of matched ions that are used for localization. For O-glycan, it is the score of all matched c/zDot ions. 
+        /// <summary>
+        /// The score for matched ions that are not localized to any glycosylation site (before the first node and after the last node).
+        /// </summary>
+        public double NoLocalCost { get; set; }
+        /// <summary>
+        /// The total score for all matched ions used for localization, typically the sum of scores for all c/zDot ions in O-glycan localization.
+        /// </summary>
+        public double TotalScore { get; set; }
 
         public LocalizationGraph(SortedDictionary<int, string> modPos, ModBox modBox, ModBox[] childModBoxes, int id)
         {
@@ -89,15 +110,15 @@ namespace EngineLayer.GlycoSearch
                                     var tempCost = cost + localizationGraph.array[x - 1][preY].maxCost; //Try to get the max cost from previous AdjNode.
                                     if (tempCost > maxCost)
                                     {
-                                        adjNode.CummulativeSources.Clear();
+                                        adjNode.CumulativeSources.Clear();
                 
-                                        adjNode.CummulativeSources.Add(preY);
+                                        adjNode.CumulativeSources.Add(preY);
              
                                         maxCost = tempCost;
                                     }
                                     else if (tempCost == maxCost)
                                     {
-                                        adjNode.CummulativeSources.Add(preY);              
+                                        adjNode.CumulativeSources.Add(preY);              
                                     }
 
                                 }
@@ -223,7 +244,7 @@ namespace EngineLayer.GlycoSearch
                 return;
             }
 
-            foreach (var pre in array[xind][yind].CummulativeSources)
+            foreach (var pre in array[xind][yind].CumulativeSources)
             {
                 xind--;
                 yind = pre;
@@ -262,7 +283,7 @@ namespace EngineLayer.GlycoSearch
                 return; // temp[0] = last one in the childBox = length-1.
             }
 
-            var pre = array[xind][yind].CummulativeSources.First(); // The first one in the CummulativeSources is the toppest previous node.
+            var pre = array[xind][yind].CumulativeSources.First(); // The first one in the CumulativeSources is the toppest previous node.
             xind--;
             yind = pre;
             temp[xind] = yind;
@@ -400,11 +421,11 @@ namespace EngineLayer.GlycoSearch
                 matrix[i] = new Tuple<int, int, double>[routes.Count];
                 for (int j = 0; j < routes.Count; j++)
                 {
-                    foreach (var m in routes[j].Mods)
+                    foreach (var modSitePair in routes[j].ModSitePairs)
                     {
-                        if (m.Item1 == modPos[i])
+                        if (modSitePair.SiteIndex == modPos[i])
                         {
-                            matrix[i][j] = new Tuple<int, int, double>(m.Item1, m.Item2, routes[j].ReversePScore);
+                            matrix[i][j] = new Tuple<int, int, double>(modSitePair.SiteIndex, modSitePair.ModId, routes[j].ReversePScore);
                         }
                     }
                 }

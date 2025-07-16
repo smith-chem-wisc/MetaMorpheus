@@ -15,24 +15,36 @@ namespace EngineLayer
     /// </summary>
     public class GlycanBox:ModBox
     {
-        public static Glycan[] GlobalOGlycans { get; set; } // The glycan list in the database file
+        /// <summary>
+        /// The global list of O-glycans loaded from the glycan database file.
+        /// </summary>
+        public static Glycan[] GlobalOGlycans { get; set; }
 
-        public GlycanBox[] ChildGlycanBoxes { get; set; }   // all possible glycan combinations in the glycanBox
+        /// <summary>
+        /// All possible child glycan box combinations derived from this glycan box.
+        /// </summary>
+        public GlycanBox[] ChildGlycanBoxes { get; set; }
 
-        public static GlycanBox[] OGlycanBoxes { get; set; } // all possible glycan boxes
+        /// <summary>
+        /// The global collection of all possible O-glycan boxes.
+        /// </summary>
+        public static GlycanBox[] OGlycanBoxes { get; set; }
 
-        public byte[] Kind { get; private set; } 
+        /// <summary>
+        /// The summed glycan composition for this box, where each element represents the count of a specific monosaccharide type.
+        /// </summary>
+        public byte[] Kind { get; private set; }
 
-        //TO DO: Decoy O-glycan can be created, but the results need to be reasoned.
-        //public static int[] SugarShift = new int[]{ -16205282, -20307937, -29109542, -14605791, -30709033, -15005282, -36513219, -40615874, 16205282, 20307937, 29109542, 14605791, 30709033, 15005282, 36513219, 40615874 };
-        private readonly static int[] SugarShift = new int[] //still unclear about the shift...
-        {
-            7103710, 10300920, 11502690, 12904260, 14706840, 5702150, 13705890, 12809500, 11308410, 13104050,
-            11404290, 9705280, 12805860, 15610110, 8703200, 10104770, 9906840, 18607930, 16306330,
-            -7103710, -10300920, -11502690, -12904260, -14706840, -5702150, -13705890, -12809500, -11308410, -13104050,
-            -11404290, -9705280, -12805860, -15610110, -8703200, -10104770, -9906840, -18607930, -16306330,
+            //TO DO: Decoy O-glycan can be created, but the results need to be reasoned.
+            //public static int[] SugarShift = new int[]{ -16205282, -20307937, -29109542, -14605791, -30709033, -15005282, -36513219, -40615874, 16205282, 20307937, 29109542, 14605791, 30709033, 15005282, 36513219, 40615874 };
+            private readonly static int[] SugarShift = new int[] //still unclear about the shift...
+            {
+                7103710, 10300920, 11502690, 12904260, 14706840, 5702150, 13705890, 12809500, 11308410, 13104050,
+                11404290, 9705280, 12805860, 15610110, 8703200, 10104770, 9906840, 18607930, 16306330,
+                -7103710, -10300920, -11502690, -12904260, -14706840, -5702150, -13705890, -12809500, -11308410, -13104050,
+                -11404290, -9705280, -12805860, -15610110, -8703200, -10104770, -9906840, -18607930, -16306330,
 
-        };
+            };
 
         /// <summary>
         /// Use the glycan from database to create all possible combination glycan set into GlycanBox. 
