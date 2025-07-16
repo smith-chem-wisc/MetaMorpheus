@@ -76,18 +76,6 @@ public class ChimeraLegendCanvas : Canvas
             else
             {
                 maxTextWidth = Math.Max(maxTextWidth, MeasureTextWidth("Shared Ions", 12, FontWeights.Regular));
-
-                var header = new TextBlock
-                {
-                    Text = GetMainText(proteoforms[0]),
-                    FontWeight = FontWeights.DemiBold,
-                    FontSize = 12
-                };
-                SetLeft(header, x);
-                SetTop(header, y);
-                this.Children.Add(header);
-                y += rowHeight;
-
                 var sharedEllipse = new Ellipse
                 {
                     Width = 12,
@@ -96,22 +84,20 @@ public class ChimeraLegendCanvas : Canvas
                     Stroke = Brushes.Black,
                     StrokeThickness = 1
                 };
-                SetLeft(sharedEllipse, x + 10);
+                SetLeft(sharedEllipse, x);
                 SetTop(sharedEllipse, y);
 
-                var sharedText = new TextBlock
+                var header = new TextBlock
                 {
-                    Text = "Shared Ions",
+                    Text = GetMainText(proteoforms[0]),
                     FontWeight = FontWeights.DemiBold,
-                    FontSize = 12,
-                    Margin = new Thickness(6, 0, 0, 0)
+                    FontSize = 12
                 };
-                SetLeft(sharedText, x + 28);
-                SetTop(sharedText, y - 2);
+                SetLeft(header, x + 18);
+                SetTop(header, y - 2);
 
                 this.Children.Add(sharedEllipse);
-                this.Children.Add(sharedText);
-
+                this.Children.Add(header);
                 y += rowHeight;
 
                 for (int i = 0; i < proteoforms.Count; i++)
