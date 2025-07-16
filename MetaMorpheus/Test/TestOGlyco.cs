@@ -1,25 +1,25 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
+using EngineLayer.GlycoSearch;
+using FlashLFQ;
 using MassSpectrometry;
+using MzLibUtil;
+using Nett;
 using NUnit.Framework; 
-using Proteomics;
+using NUnit.Framework.Legacy;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
+using SpectralAveraging;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
-using UsefulProteomicsDatabases;
-using Nett;
-using EngineLayer.GlycoSearch;
-using FlashLFQ;
-using SpectralAveraging;
-using NUnit.Framework.Legacy;
-using Omics.Modifications;
-using Easy.Common.Extensions;
 using TopDownProteomics;
-using MzLibUtil;
-using Readers;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -483,8 +483,8 @@ namespace Test
 
             //Get localized Route
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v=>v.Item1), new List<int>{ 2, 3, 10}));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v => v.Item2), new List<int> { 3, 3, 0 }));
+            Assert.That(Enumerable.SequenceEqual(local.ModSitePairs.Select(v=>v.SiteIndex), new List<int>{ 2, 3, 10}));
+            Assert.That(Enumerable.SequenceEqual(local.ModSitePairs.Select(v => v.ModId), new List<int> { 3, 3, 0 }));
 
 
             //Get all paths, calculate PScore and calculate position probability. 
@@ -569,8 +569,8 @@ namespace Test
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
             //There is only one path, [4,1] means in position 4 with glycan 1
 
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int> { 4}));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 1 }));
+            Assert.That(Enumerable.SequenceEqual(local.ModSitePairs.Select(p=>p.SiteIndex), new List<int> { 4}));
+            Assert.That(Enumerable.SequenceEqual(local.ModSitePairs.Select(p => p.ModId), new List<int> { 1 }));
         }
 
         [Test]
@@ -1047,13 +1047,13 @@ namespace Test
                 for (int j = 0; j < boxes.Length; j++)
                 {
                     localizationGraph.array[i][j] = new AdjNode(i, j, modPos.Keys.ElementAt(i), boxes[j]);
-                    localizationGraph.array[i][j].CummulativeSources = new List<int> { j }; 
+                    localizationGraph.array[i][j].CumulativeSources = new List<int> { j }; 
                     localizationGraph.array[i][j].maxCost = 1;
                 }
             }
-            localizationGraph.array[2][5].CummulativeSources = new List<int> {  4, 5 };
+            localizationGraph.array[2][5].CumulativeSources = new List<int> {  4, 5 };
 
-            localizationGraph.array[1][4].CummulativeSources = new List<int> { 2, 4 };
+            localizationGraph.array[1][4].CumulativeSources = new List<int> { 2, 4 };
 
             var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, boxes);
 
@@ -1079,7 +1079,7 @@ namespace Test
                 for (int j = 0; j < boxes.Length; j++)
                 {
                     localizationGraph.array[i][j] = new AdjNode(i, j, modPos.Keys.ElementAt(i), boxes[j]);
-                    localizationGraph.array[i][j].CummulativeSources = new List<int> { j };
+                    localizationGraph.array[i][j].CumulativeSources = new List<int> { j };
                 }
             }
             localizationGraph.TotalScore = 1;
@@ -1088,7 +1088,7 @@ namespace Test
 
             var route = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
 
-            Assert.That(route.Mods.First().Item3);
+            Assert.That(route.ModSitePairs.First().HasMs2Spectrum);
         }
 
         [Test]
