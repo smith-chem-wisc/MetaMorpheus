@@ -33,7 +33,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         set
         {
             _selectedChimeraGroup = value;
-            if (value != null)
+            if (value != null && MetaDrawSettings.DisplayChimeraLegend)
             {
                 LegendCanvas = new ChimeraLegendCanvas(value);
             }
@@ -88,8 +88,8 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     {
         ChimeraGroupViewModels = [..ConstructChimericPsms(allPsms, dataFiles)
             .OrderByDescending(p => p.Count)
-            .ThenByDescending(p => p.TotalFragments)
-            .ThenByDescending(p => p.UniqueFragments)];
+            .ThenByDescending(p => p.UniqueFragments)
+            .ThenByDescending(p => p.TotalFragments)];
         ExportDirectory = exportDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         SelectedExportType = "Png";
         ExportTypes = [ "Pdf", "Png", "Svg"];

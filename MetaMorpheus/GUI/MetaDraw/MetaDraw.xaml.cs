@@ -467,8 +467,8 @@ namespace MetaMorpheusGUI
                 ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Clear();
                 foreach (var chimeraGroup in ChimeraAnalysisTabViewModel.ConstructChimericPsms(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles)
                              .OrderByDescending(p => p.Count)
-                             .ThenByDescending(p => p.TotalFragments)
-                             .ThenByDescending(p => p.UniqueFragments))
+                             .ThenByDescending(p => p.UniqueFragments)
+                             .ThenByDescending(p => p.TotalFragments))
                 {
                     ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Add(chimeraGroup);
                 }

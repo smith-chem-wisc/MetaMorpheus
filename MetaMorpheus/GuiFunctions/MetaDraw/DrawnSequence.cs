@@ -27,6 +27,7 @@ namespace GuiFunctions
         public bool Stationary;
         public bool Annotation;
         public SpectrumMatchFromTsv SpectrumMatch;
+
         public DrawnSequence(Canvas sequenceDrawingCanvas, SpectrumMatchFromTsv psm, bool stationary, bool annotation = false)
         {
             SequenceDrawingCanvas = sequenceDrawingCanvas;
@@ -462,7 +463,6 @@ namespace GuiFunctions
             Canvas.SetLeft(tb, loc.X);
             Panel.SetZIndex(tb, 2); //lower priority
             cav.Children.Add(tb);
-            cav.UpdateLayout();
         }
 
         /// <summary>

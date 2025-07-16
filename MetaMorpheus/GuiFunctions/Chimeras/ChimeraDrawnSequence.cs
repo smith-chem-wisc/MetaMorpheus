@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Shapes;
+using Easy.Common.Extensions;
 using Omics.Fragmentation;
 
 namespace GuiFunctions;
@@ -16,6 +19,14 @@ public class ChimeraDrawnSequence
     private static readonly int _canvasBuffer = 20;
     private ChimeraAnalysisTabViewModel? _parent;
 
+    // Pools for UI elements
+    private readonly List<TextBlock> _textBlockPool = new();
+    private int _textBlockPoolIndex = 0;
+    private readonly List<Ellipse> _ellipsePool = new();
+    private int _ellipsePoolIndex = 0;
+    private readonly List<Polyline> _polyLinePool = new();
+    private int _polyLinePoolIndex = 0;
+
     public ChimeraDrawnSequence(Canvas sequenceDrawingCanvas, ChimeraGroupViewModel chimeraGroupViewModel,
         ChimeraAnalysisTabViewModel parent = null)
     {
@@ -24,16 +35,33 @@ public class ChimeraDrawnSequence
         _numSequences = ChimeraGroupViewModel.ChimericPsms.Count;
         _parent = parent;
 
-        DrawnSequence.ClearCanvas(SequenceDrawingCanvas);
-        SetDrawingDimensions();
-        DrawSequences();
+        Draw();
     }
-
-    private void SetDrawingDimensions()
+    private void Draw()
     {
+        DrawnSequence.ClearCanvas(SequenceDrawingCanvas);
+        _textBlockPoolIndex = 0;
+        _ellipsePoolIndex = 0;
+        _polyLinePoolIndex = 0;
+
+        // Set dimensions
         var longestSequenceLength = ChimeraGroupViewModel.ChimericPsms.Max(psm => psm.Psm.BaseSeq.Split('|')[0].Length);
         SequenceDrawingCanvas.Width = (longestSequenceLength + 4) * MetaDrawSettings.AnnotatedSequenceTextSpacing + _canvasBuffer;
         SequenceDrawingCanvas.Height = _yStep * _numSequences + _canvasBuffer;
+
+        DrawSequences();
+
+        // Remove unused pooled elements from the canvas
+        for (int i = _textBlockPoolIndex; i < _textBlockPool.Count; i++)
+        {
+            if (_textBlockPool[i].Parent == SequenceDrawingCanvas)
+                SequenceDrawingCanvas.Children.Remove(_textBlockPool[i]);
+        }
+        for (int i = _ellipsePoolIndex; i < _ellipsePool.Count; i++)
+        {
+            if (_ellipsePool[i].Parent == SequenceDrawingCanvas)
+                SequenceDrawingCanvas.Children.Remove(_ellipsePool[i]);
+        }
     }
 
     private void DrawSequences()
@@ -102,6 +130,9 @@ public class ChimeraDrawnSequence
 
     private void AddMatchedIon(MatchedFragmentIon ion, Color color, int row, int sequenceLength)
     {
+        if (ion.IsInternalFragment) 
+            return;
+
         double x, y;
         var residueNum = ion.NeutralTheoreticalProduct.ProductType == ProductType.y
             ? sequenceLength - ion.NeutralTheoreticalProduct.FragmentNumber
@@ -109,25 +140,22 @@ public class ChimeraDrawnSequence
         x = GetX(residueNum);
         y = GetY(row) + MetaDrawSettings.ProductTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType];
 
-        // is internal
-        if (!ion.IsInternalFragment)
+        
+        if (ion.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime)
         {
-            if (ion.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime)
-            {
-                DrawnSequence.DrawCTermIon(SequenceDrawingCanvas, new Point(x, y), color, "", 2);
-            }
-            else if (ion.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime)
-            {
-                DrawnSequence.DrawNTermIon(SequenceDrawingCanvas, new Point(x, y), color, "", 2);
-            }
+            DrawCTermIonPooled(new Point(x, y), color,2);
+        }
+        else if (ion.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime)
+        {
+            DrawNTermIonPooled(new Point(x, y), color, 2);
         }
     }
 
     private void AddCircles(ChimericSpectralMatchModel psm, int row, int maxBaseSeqLength)
     {
         var color = DrawnSequence.ParseColorBrushFromOxyColor(psm.Color);
-        DrawnSequence.DrawCircle(SequenceDrawingCanvas, new Point(GetX(maxBaseSeqLength + 1), GetY(row)), color);
-        DrawnSequence.DrawCircle(SequenceDrawingCanvas, new Point(GetX(-2), GetY(row)), color);
+        DrawCirclePooled(new Point(GetX(maxBaseSeqLength + 1), GetY(row)), color);
+        DrawCirclePooled(new Point(GetX(-2), GetY(row)), color);
     }
 
     private void DrawBaseSequence(ChimericSpectralMatchModel psm, int row)
@@ -138,7 +166,7 @@ public class ChimeraDrawnSequence
         {
             var x = GetX(index);
             var y = GetY(row);
-            DrawnSequence.DrawText(SequenceDrawingCanvas, new Point(x, y), baseSeq[index].ToString(), Brushes.Black);
+            DrawTextPooled(new Point(x, y), baseSeq[index].ToString(), Brushes.Black);
         }
     }
 
@@ -149,7 +177,7 @@ public class ChimeraDrawnSequence
             var x = GetX(mod.Key - 2);
             var y = GetY(row);
             var color = DrawnSequence.ParseColorBrushFromOxyColor(psm.Color);
-            DrawnSequence.DrawCircle(SequenceDrawingCanvas, new Point(x, y), color);
+            DrawCirclePooled(new Point(x, y), color);
         }
     }
 
@@ -161,5 +189,110 @@ public class ChimeraDrawnSequence
     private static double GetX(int residueIndex)
     {
         return (residueIndex + 1) * MetaDrawSettings.AnnotatedSequenceTextSpacing + 22;
+    }
+
+    private void DrawTextPooled(Point loc, string txt, Brush clr)
+    {
+        TextBlock tb;
+        if (_textBlockPoolIndex < _textBlockPool.Count)
+        {
+            tb = _textBlockPool[_textBlockPoolIndex];
+        }
+        else
+        {
+            tb = new TextBlock();
+            _textBlockPool.Add(tb);
+        }
+        _textBlockPoolIndex++;
+
+        tb.Foreground = clr;
+        tb.Text = txt;
+        tb.Height = 30;
+        tb.FontSize = 25;
+        tb.FontWeight = FontWeights.Bold;
+        tb.FontFamily = new FontFamily("Arial");
+        tb.TextAlignment = TextAlignment.Center;
+        tb.HorizontalAlignment = HorizontalAlignment.Center;
+        tb.Width = 24;
+
+        Canvas.SetTop(tb, loc.Y);
+        Canvas.SetLeft(tb, loc.X);
+        Panel.SetZIndex(tb, 2);
+
+        if (tb.Parent != SequenceDrawingCanvas)
+            SequenceDrawingCanvas.Children.Add(tb);
+    }
+
+    private void DrawCirclePooled(Point loc, SolidColorBrush clr)
+    {
+        Ellipse circle;
+        if (_ellipsePoolIndex < _ellipsePool.Count)
+        {
+            circle = _ellipsePool[_ellipsePoolIndex];
+        }
+        else
+        {
+            circle = new Ellipse();
+            _ellipsePool.Add(circle);
+        }
+        _ellipsePoolIndex++;
+
+        circle.Width = 24;
+        circle.Height = 24;
+        circle.Stroke = clr;
+        circle.StrokeThickness = 1;
+        circle.Fill = clr;
+        circle.Opacity = 0.7;
+
+        Canvas.SetLeft(circle, loc.X);
+        Canvas.SetTop(circle, loc.Y);
+        Panel.SetZIndex(circle, 1);
+
+        if (circle.Parent != SequenceDrawingCanvas)
+            SequenceDrawingCanvas.Children.Add(circle);
+    }
+    private void DrawCTermIonPooled(Point topLoc, Color clr, int thickness = 1)
+    {
+        Polyline bot;
+        if (_polyLinePoolIndex < _polyLinePool.Count)
+        {
+            bot = _polyLinePool[_polyLinePoolIndex];
+        }
+        else
+        {
+            bot = new Polyline();
+            _polyLinePool.Add(bot);
+        }
+        _polyLinePoolIndex++;
+
+
+        double x = topLoc.X, y = topLoc.Y;
+        bot.Points = new PointCollection() { new Point(x + 10, y + 10), new Point(x, y + 10), new Point(x, y + 24) };
+        bot.Stroke = new SolidColorBrush(clr);
+        bot.StrokeThickness = thickness;
+        Canvas.SetZIndex(bot, 1); //on top of any other things in canvas
+        SequenceDrawingCanvas.Children.Add(bot);
+    }
+
+    private void DrawNTermIonPooled(Point botLoc, Color clr, int thickness = 1)
+    {
+        Polyline bot;
+        if (_polyLinePoolIndex < _polyLinePool.Count)
+        {
+            bot = _polyLinePool[_polyLinePoolIndex];
+        }
+        else
+        {
+            bot = new Polyline();
+            _polyLinePool.Add(bot);
+        }
+        _polyLinePoolIndex++;
+
+        double x = botLoc.X, y = botLoc.Y;
+        bot.Points = new PointCollection() { new Point(x - 10, y - 10), new Point(x, y - 10), new Point(x, y - 24) };
+        bot.Stroke = new SolidColorBrush(clr);
+        bot.StrokeThickness = thickness;
+        Canvas.SetZIndex(bot, 1); //on top of any other things in canvas
+        SequenceDrawingCanvas.Children.Add(bot);
     }
 }
