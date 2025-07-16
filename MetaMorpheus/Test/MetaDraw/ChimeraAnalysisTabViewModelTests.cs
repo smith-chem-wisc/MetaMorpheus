@@ -136,7 +136,6 @@ public class ChimeraAnalysisTabViewModelTests
         var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles, exportDir);
 
         // Assert
-        Assert.That(vm.ChimeraLegendViewModel, Is.Not.Null);
         Assert.That(vm.ChimeraGroupViewModels, Is.Not.Null.And.Not.Empty);
         Assert.That(vm.ExportDirectory, Is.EqualTo(exportDir));
         Assert.That(vm.SelectedExportType, Is.EqualTo("Png"));
@@ -145,45 +144,6 @@ public class ChimeraAnalysisTabViewModelTests
         Assert.That(vm.ExportMs2Command, Is.Not.Null);
         Assert.That(vm.ExportSequenceCoverageCommand, Is.Not.Null);
         Assert.That(vm.ExportLegendCommand, Is.Not.Null);
-    }
-
-    [Test]
-    public void SelectedChimeraGroup_Setter_UpdatesLegendItemsAndNotifies()
-    {
-        // Arrange
-        var allPsms = ChimeraGroupViewModelTests.AllMatches;
-        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
-        var group = vm.ChimeraGroupViewModels[0];
-        bool propertyChanged = false;
-        vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.SelectedChimeraGroup)) propertyChanged = true; };
-
-        // Act
-        vm.SelectedChimeraGroup = group;
-
-        // Assert
-        Assert.That(vm.SelectedChimeraGroup, Is.EqualTo(group));
-        Assert.That(vm.ChimeraLegendViewModel.ChimeraLegendItems, Is.EqualTo(group.LegendItems));
-        Assert.That(propertyChanged, Is.True);
-    }
-
-    [Test]
-    public void ChimeraLegendViewModel_Setter_Notifies()
-    {
-        // Arrange
-        var allPsms = ChimeraGroupViewModelTests.AllMatches;
-        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
-        var legendVm = new ChimeraLegendViewModel();
-        bool propertyChanged = false;
-        vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.ChimeraLegendViewModel)) propertyChanged = true; };
-
-        // Act
-        vm.ChimeraLegendViewModel = legendVm;
-
-        // Assert
-        Assert.That(vm.ChimeraLegendViewModel, Is.EqualTo(legendVm));
-        Assert.That(propertyChanged, Is.True);
     }
 
     [Test]

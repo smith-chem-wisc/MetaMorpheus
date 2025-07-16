@@ -6,7 +6,6 @@ using System.Windows.Media;
 using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
-using GuiFunctions.ViewModels.Legends;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using OxyPlot;
@@ -662,69 +661,6 @@ namespace Test.MetaDraw
                 Assert.That(false);
             }
         }
-
-        [Test]
-        public static void TestChimeraLegendViewModels()
-        {
-            // object setup
-            string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
-                @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
-            List<SpectrumMatchFromTsv> psms = SpectrumMatchTsvReader.ReadTsv(psmsPath, out List<string> warnings);
-            Assert.That(warnings.Count, Is.EqualTo(0));
-            List<SpectrumMatchFromTsv> filteredChimeras =
-                psms.Where(p => p.QValue <= 0.01 && p.PEP <= 0.5 && p.PrecursorScanNum == 1557).ToList();
-            Assert.That(filteredChimeras.Count, Is.EqualTo(3));
-
-            // test chimera legend basic functionality
-            ChimeraLegendViewModel chimeraLegend = new ChimeraLegendViewModel(filteredChimeras);
-            Assert.That(chimeraLegend.ChimeraLegendItems.Count == 2);
-            Assert.That(chimeraLegend.TopOffset == 0);
-            Assert.That(chimeraLegend.DisplaySharedIonLabel == true);
-            Assert.That(chimeraLegend.Visibility == true);
-            Assert.That(chimeraLegend.ChimeraLegendItems.Values.First().Count == 3);
-            Assert.That(chimeraLegend.ChimeraLegendItems.Values.ToList()[1].Count == 1);
-
-            // test chimera legend overflow colors
-            // more unique proteins than colored
-            List<SpectrumMatchFromTsv> overflowInducingProteins = psms.DistinctBy(p => p.BaseSeq)
-                .Take(ChimeraSpectrumMatchPlot.ColorByProteinDictionary.Keys.Count + 1).ToList();
-            chimeraLegend = new(overflowInducingProteins);
-            Assert.That(chimeraLegend.ChimeraLegendItems.Values.DistinctBy(p =>
-                p.Select(m => m.ColorBrush.Color)).Count(), Is.EqualTo(overflowInducingProteins.Count()));
-            Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.First().ColorBrush.Color !=
-                        chimeraLegend.ChimeraLegendItems[overflowInducingProteins[1].BaseSeq].First().ColorBrush.Color);
-            Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.First().ColorBrush.Color ==
-                        chimeraLegend.ChimeraLegendItems.Last().Value.First().ColorBrush.Color);
-
-            // more unique proteoforms than colored
-            overflowInducingProteins = psms
-                .Take(ChimeraSpectrumMatchPlot.ColorByProteinDictionary.First().Value.Count)
-                .Select(p => p = new PsmFromTsv(p as PsmFromTsv, overflowInducingProteins.First().FullSequence, 0,
-                    overflowInducingProteins.First().BaseSeq)).ToList();
-            Assert.That(overflowInducingProteins.All(p => p.BaseSeq == overflowInducingProteins.First().BaseSeq));
-            Assert.That(overflowInducingProteins.All(p =>
-                p.FullSequence == overflowInducingProteins.First().FullSequence));
-            chimeraLegend = new(overflowInducingProteins);
-            Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.DistinctBy(p => p.ColorBrush.Color).Count(),
-                Is.EqualTo(overflowInducingProteins.Count()));
-            Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.Count() == overflowInducingProteins.Count + 1);
-            Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.Last().ColorBrush.Color, Is.EqualTo(DrawnSequence
-                .ParseColorBrushFromOxyColor(ChimeraSpectrumMatchPlot.OverflowColors.Dequeue()).Color));
-
-            // test chimera legend item
-            ChimeraLegendItemViewModel chimeraLegendItem = new("tacos", OxyColors.Chocolate);
-            Assert.That(chimeraLegendItem.Name == "tacos");
-            Assert.That(chimeraLegendItem.ColorBrush.Color ==
-                        DrawnSequence.ParseColorBrushFromOxyColor(OxyColors.Chocolate).Color);
-            chimeraLegendItem = new("", OxyColors.Chocolate);
-            Assert.That(chimeraLegendItem.Name == "No Modifications");
-            chimeraLegendItem = new(null, OxyColors.Chocolate);
-            Assert.That(chimeraLegendItem.Name == "No Modifications");
-
-            chimeraLegend = new ChimeraLegendViewModel(new List<SpectrumMatchFromTsv>() { psms.First() });
-            Assert.That(chimeraLegend.DisplaySharedIonLabel == false);
-        }
-
 
         [Test]
         public static void TestDrawnSequenceColorConversions()

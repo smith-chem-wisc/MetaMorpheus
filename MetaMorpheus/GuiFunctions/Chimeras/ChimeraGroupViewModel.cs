@@ -3,22 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows.Controls;
-using System.Windows.Shapes;
-using System.Windows.Media;
-using System.Windows;
 using Chemistry;
 using EngineLayer;
-using GuiFunctions.ViewModels.Legends;
 using MassSpectrometry;
-using MzLibUtil;
-using Nett;
 using Omics.Fragmentation;
 using OxyPlot;
-using OxyPlot.Reporting;
 using Readers;
-using ClassExtensions = Chemistry.ClassExtensions;
-using FontWeights = System.Windows.FontWeights;
 
 namespace GuiFunctions;
 
