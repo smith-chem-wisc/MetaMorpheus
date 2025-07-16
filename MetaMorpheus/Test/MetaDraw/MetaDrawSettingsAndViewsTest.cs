@@ -14,6 +14,7 @@ using Proteomics.ProteolyticDigestion;
 using Readers;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using GuiFunctions.MetaDraw.Chimeras;
 
 namespace Test.MetaDraw
 {

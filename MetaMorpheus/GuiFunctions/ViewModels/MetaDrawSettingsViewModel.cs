@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using GuiFunctions;
 using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
@@ -12,6 +11,7 @@ using System.Threading.Tasks;
 using Nett;
 using System.Windows.Input;
 using MassSpectrometry;
+using GuiFunctions.MetaDraw.Chimeras;
 
 namespace GuiFunctions
 {

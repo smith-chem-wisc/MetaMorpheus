@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Readers;
+using GuiFunctions.MetaDraw.Chimeras;
 
 namespace GuiFunctions
 {

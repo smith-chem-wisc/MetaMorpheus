@@ -11,6 +11,7 @@ using MassSpectrometry;
 using OxyPlot.Wpf;
 using System.Drawing.Imaging;
 using System;
+using GuiFunctions.MetaDraw.Chimeras;
 
 namespace Test.MetaDraw;
 

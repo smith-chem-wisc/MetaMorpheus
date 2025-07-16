@@ -13,7 +13,7 @@ using System.Windows.Media;
 using Easy.Common.Extensions;
 using Point = System.Windows.Point;
 
-namespace GuiFunctions;
+namespace GuiFunctions.MetaDraw.Chimeras;
 
 /// <summary>
 /// All data and user triggered manipulations for the Chimera Analysis tab
@@ -33,9 +33,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         {
             _selectedChimeraGroup = value;
             if (value != null && MetaDrawSettings.DisplayChimeraLegend)
-            {
                 LegendCanvas = new ChimeraLegendCanvas(value);
-            }
             OnPropertyChanged(nameof(SelectedChimeraGroup));
         }
     }
@@ -83,7 +81,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
 
     #endregion
 
-    public ChimeraAnalysisTabViewModel(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles, string? exportDirectory = null)
+    public ChimeraAnalysisTabViewModel(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles, string exportDirectory = null)
     {
         ChimeraGroupViewModels = [..ConstructChimericPsms(allPsms, dataFiles)
             .OrderByDescending(p => p.Count)
@@ -260,15 +258,15 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             (int)height, //height
             dpi, //dpi x
             dpi, //dpi y
-            System.Windows.Media.PixelFormats.Default // pixelformat
+            PixelFormats.Default // pixelformat
         );
-        var size = new System.Windows.Size(width, height);
+        var size = new Size(width, height);
 
         DrawingVisual dv = new();
         using (DrawingContext dc = dv.RenderOpen())
         {
             VisualBrush vb = new(ChimeraDrawnSequence.SequenceDrawingCanvas);
-            dc.DrawRectangle(vb, null, new Rect(new System.Windows.Point(0,0), size));
+            dc.DrawRectangle(vb, null, new Rect(new Point(0,0), size));
         }
 
         rtb.Render(dv);
@@ -299,8 +297,8 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         var bounds = VisualTreeHelper.GetDescendantBounds(element);
         double dpi = 96d;
 
-        RenderTargetBitmap rtb = new RenderTargetBitmap((int)(bounds.Width),
-            (int)(bounds.Height),
+        RenderTargetBitmap rtb = new RenderTargetBitmap((int)bounds.Width,
+            (int)bounds.Height,
             dpi,
             dpi,
             PixelFormats.Pbgra32);

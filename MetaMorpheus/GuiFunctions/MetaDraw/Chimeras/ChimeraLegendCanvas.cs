@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace GuiFunctions;
+namespace GuiFunctions.MetaDraw.Chimeras;
 public enum LegendDisplayProperty
 {
     ProteinName,
@@ -27,7 +27,7 @@ public class ChimeraLegendCanvas : Canvas
 
     private void BuildLegend()
     {
-        this.Children.Clear();
+        Children.Clear();
         double y = 10;
         double x = 10;
         double rowHeight = 24;
@@ -68,8 +68,8 @@ public class ChimeraLegendCanvas : Canvas
                 SetLeft(text, x + 18);
                 SetTop(text, y - 2);
 
-                this.Children.Add(ellipse);
-                this.Children.Add(text);
+                Children.Add(ellipse);
+                Children.Add(text);
 
                 y += rowHeight;
             }
@@ -96,8 +96,8 @@ public class ChimeraLegendCanvas : Canvas
                 SetLeft(header, x + 18);
                 SetTop(header, y - 2);
 
-                this.Children.Add(sharedEllipse);
-                this.Children.Add(header);
+                Children.Add(sharedEllipse);
+                Children.Add(header);
                 y += rowHeight;
 
                 for (int i = 0; i < proteoforms.Count; i++)
@@ -124,8 +124,8 @@ public class ChimeraLegendCanvas : Canvas
                     SetLeft(text, x + 28);
                     SetTop(text, y - 2);
 
-                    this.Children.Add(ellipse);
-                    this.Children.Add(text);
+                    Children.Add(ellipse);
+                    Children.Add(text);
 
                     y += rowHeight;
                     if (!string.IsNullOrEmpty(proteoforms[i].ModString))
@@ -138,8 +138,8 @@ public class ChimeraLegendCanvas : Canvas
         double leftMargin = 10;
         double ellipseAndSpacing = 28;
         double rightMargin = 10;
-        this.Width = leftMargin + ellipseAndSpacing + maxTextWidth + rightMargin;
-        this.Height = y + 10;
+        Width = leftMargin + ellipseAndSpacing + maxTextWidth + rightMargin;
+        Height = y + 10;
     }
 
     private string GetMainText(ChimericSpectralMatchModel psm)

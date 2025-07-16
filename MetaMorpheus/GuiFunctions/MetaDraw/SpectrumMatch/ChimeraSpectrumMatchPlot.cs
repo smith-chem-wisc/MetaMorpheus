@@ -8,6 +8,7 @@ using OxyPlot.Wpf;
 using Point = System.Windows.Point;
 using Canvas = System.Windows.Controls.Canvas;
 using System;
+using GuiFunctions.MetaDraw.Chimeras;
 
 namespace GuiFunctions
 {

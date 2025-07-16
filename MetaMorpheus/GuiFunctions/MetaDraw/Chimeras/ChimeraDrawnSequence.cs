@@ -7,7 +7,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using Omics.Fragmentation;
 
-namespace GuiFunctions;
+namespace GuiFunctions.MetaDraw.Chimeras;
 
 public class ChimeraDrawnSequence
 {
@@ -16,7 +16,7 @@ public class ChimeraDrawnSequence
     private int _numSequences;
     private static readonly int _yStep = 40;
     private static readonly int _canvasBuffer = 20;
-    private ChimeraAnalysisTabViewModel? _parent;
+    private ChimeraAnalysisTabViewModel _parent;
 
     // Pools for UI elements
     private readonly List<TextBlock> _textBlockPool = new();
@@ -156,9 +156,7 @@ public class ChimeraDrawnSequence
 
         
         if (ion.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime)
-        {
             DrawCTermIonPooled(new Point(x, y), color,2);
-        }
         else if (ion.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime)
         {
             DrawNTermIonPooled(new Point(x, y), color, 2);
@@ -197,7 +195,7 @@ public class ChimeraDrawnSequence
 
     private static double GetY(int row)
     {
-        return (row * _yStep) + 10;
+        return row * _yStep + 10;
     }
 
     private static double GetX(int residueIndex)
@@ -209,9 +207,7 @@ public class ChimeraDrawnSequence
     {
         TextBlock tb;
         if (_textBlockPoolIndex < _textBlockPool.Count)
-        {
             tb = _textBlockPool[_textBlockPoolIndex];
-        }
         else
         {
             tb = new TextBlock();
@@ -241,9 +237,7 @@ public class ChimeraDrawnSequence
     {
         Ellipse circle;
         if (_ellipsePoolIndex < _ellipsePool.Count)
-        {
             circle = _ellipsePool[_ellipsePoolIndex];
-        }
         else
         {
             circle = new Ellipse();
@@ -269,9 +263,7 @@ public class ChimeraDrawnSequence
     {
         Polyline bot;
         if (_polyLinePoolIndex < _polyLinePool.Count)
-        {
             bot = _polyLinePool[_polyLinePoolIndex];
-        }
         else
         {
             bot = new Polyline();
@@ -284,7 +276,7 @@ public class ChimeraDrawnSequence
         bot.Points = new PointCollection() { new Point(x + 10, y + 10), new Point(x, y + 10), new Point(x, y + 24) };
         bot.Stroke = new SolidColorBrush(clr);
         bot.StrokeThickness = thickness;
-        Canvas.SetZIndex(bot, 1); //on top of any other things in canvas
+        Panel.SetZIndex(bot, 1); //on top of any other things in canvas
         SequenceDrawingCanvas.Children.Add(bot);
     }
 
@@ -292,9 +284,7 @@ public class ChimeraDrawnSequence
     {
         Polyline bot;
         if (_polyLinePoolIndex < _polyLinePool.Count)
-        {
             bot = _polyLinePool[_polyLinePoolIndex];
-        }
         else
         {
             bot = new Polyline();
@@ -306,7 +296,7 @@ public class ChimeraDrawnSequence
         bot.Points = new PointCollection() { new Point(x - 10, y - 10), new Point(x, y - 10), new Point(x, y - 24) };
         bot.Stroke = new SolidColorBrush(clr);
         bot.StrokeThickness = thickness;
-        Canvas.SetZIndex(bot, 1); //on top of any other things in canvas
+        Panel.SetZIndex(bot, 1); //on top of any other things in canvas
         SequenceDrawingCanvas.Children.Add(bot);
     }
 }

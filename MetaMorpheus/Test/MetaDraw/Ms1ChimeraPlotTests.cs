@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading;
 using GuiFunctions;
+using GuiFunctions.MetaDraw.Chimeras;
 using NUnit.Framework;
 using OxyPlot;
 using OxyPlot.Wpf;

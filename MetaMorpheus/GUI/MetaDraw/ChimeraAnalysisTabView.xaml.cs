@@ -1,4 +1,5 @@
 ﻿using GuiFunctions;
+using GuiFunctions.MetaDraw.Chimeras;
 using System;
 using System.Windows;
 using System.Windows.Controls;

@@ -10,7 +10,7 @@ using Omics.Fragmentation;
 using OxyPlot;
 using Readers;
 
-namespace GuiFunctions;
+namespace GuiFunctions.MetaDraw.Chimeras;
 
 /// <summary>
 /// View model for a group of chimeric IDs from a single MS2 scan
@@ -94,9 +94,7 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
                 string annotation = "";
 
                 if (useLetterOnly)
-                {
                     annotation += psm.Letter;
-                }
                 else
                 {
                     annotation += $"Charge = {group.Key.Charge}";
@@ -130,9 +128,7 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
         {
             var first = mzGroup.First();
             if (mzGroup.Count() == 1)
-            {
                 toReturn.AddOrReplace(first.Color, first.ion, "");
-            }
             // if only one protein present
             else if (mzGroup.Select(p => p.Accession).Distinct().Count() == 1)
             {
@@ -221,9 +217,7 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
         {
             int j = assignment[i];
             if (j >= 0 && j < m) 
-            {
                 matchedPsms.Add((psmList[i], envelopes[j]));
-            }
         }
 
         int proteinIndex = 0;
