@@ -76,6 +76,7 @@ namespace GuiFunctions
         public DeconHostViewModel DeconHostViewModel { get; set; }
 
         public ObservableCollection<string> PossibleColors { get; set; }
+        public ObservableCollection<LegendDisplayProperty> ChimericLegendDisplayProperties { get; } = [..Enum.GetValues<LegendDisplayProperty>()];
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
@@ -141,6 +142,21 @@ namespace GuiFunctions
         {
             get => MetaDrawSettings.StrokeThicknessUnannotated;
             set { MetaDrawSettings.StrokeThicknessUnannotated = value; OnPropertyChanged(nameof(StrokeThicknessUnannotated)); }
+        }
+        public bool DisplayChimeraLegend
+        {
+            get => MetaDrawSettings.DisplayChimeraLegend;
+            set { MetaDrawSettings.DisplayChimeraLegend = value; OnPropertyChanged(nameof(DisplayChimeraLegend)); }
+        }
+        public LegendDisplayProperty ChimeraLegendMainTextType
+        {
+            get => MetaDrawSettings.ChimeraLegendMainTextType;
+            set { MetaDrawSettings.ChimeraLegendMainTextType = value; OnPropertyChanged(nameof(ChimeraLegendMainTextType)); }
+        }
+        public LegendDisplayProperty ChimeraLegendSubTextType
+        {
+            get => MetaDrawSettings.ChimeraLegendSubTextType;
+            set { MetaDrawSettings.ChimeraLegendSubTextType = value; OnPropertyChanged(nameof(ChimeraLegendSubTextType)); }
         }
 
         #endregion

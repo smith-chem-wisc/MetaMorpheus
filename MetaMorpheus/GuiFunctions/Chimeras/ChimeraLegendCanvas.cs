@@ -11,7 +11,8 @@ public enum LegendDisplayProperty
     ProteinName,
     ProteinAccession,
     BaseSequence,
-    FullSequence
+    FullSequence,
+    Modifications
 }
 
 public class ChimeraLegendCanvas : Canvas
@@ -59,7 +60,7 @@ public class ChimeraLegendCanvas : Canvas
 
                 var text = new TextBlock
                 {
-                    Text = group.Key,
+                    Text = GetMainText(proteoforms[0]),
                     FontWeight = FontWeights.DemiBold,
                     FontSize = 12,
                     Margin = new Thickness(6, 0, 0, 0)
@@ -78,7 +79,7 @@ public class ChimeraLegendCanvas : Canvas
 
                 var header = new TextBlock
                 {
-                    Text = group.Key,
+                    Text = GetMainText(proteoforms[0]),
                     FontWeight = FontWeights.DemiBold,
                     FontSize = 12
                 };
@@ -129,7 +130,7 @@ public class ChimeraLegendCanvas : Canvas
 
                     var text = new TextBlock
                     {
-                        Text = string.IsNullOrEmpty(proteoforms[i].ModString) ? "" : proteoforms[i].ModString,
+                        Text = GetSubText(proteoforms[i]),
                         FontWeight = FontWeights.Regular,
                         FontSize = 12,
                         Margin = new Thickness(6, 0, 0, 0)
@@ -155,19 +156,26 @@ public class ChimeraLegendCanvas : Canvas
         this.Height = y + 10;
     }
 
-    private string GetLegendKey(ChimericSpectralMatchModel psm)
+    private string GetMainText(ChimericSpectralMatchModel psm)
     {
-        switch (MetaDrawSettings.LegendDisplayMode)
+        switch (MetaDrawSettings.ChimeraLegendMainTextType)
         {
-            case LegendDisplayProperty.ProteinAccession:
-                return psm.Psm.Accession;
-            case LegendDisplayProperty.BaseSequence:
-                return psm.Psm.BaseSeq;
-            case LegendDisplayProperty.FullSequence:
-                return psm.Psm.FullSequence ?? psm.Psm.BaseSeq;
-            case LegendDisplayProperty.ProteinName:
-            default:
-                return psm.Psm.Name;
+            case LegendDisplayProperty.ProteinAccession: return psm.Psm.Accession;
+            case LegendDisplayProperty.BaseSequence: return psm.Psm.BaseSeq;
+            case LegendDisplayProperty.FullSequence: return psm.Psm.FullSequence ?? psm.Psm.BaseSeq;
+            case LegendDisplayProperty.ProteinName: default: return psm.Psm.Name;
+        }
+    }
+
+    private string GetSubText(ChimericSpectralMatchModel psm)
+    {
+        switch (MetaDrawSettings.ChimeraLegendSubTextType)
+        {
+            case LegendDisplayProperty.ProteinAccession: return psm.Psm.Accession;
+            case LegendDisplayProperty.BaseSequence: return psm.Psm.BaseSeq;
+            case LegendDisplayProperty.FullSequence: return psm.Psm.FullSequence ?? psm.Psm.BaseSeq;
+            case LegendDisplayProperty.ProteinName: return psm.Psm.Name;
+            case LegendDisplayProperty.Modifications: default: return string.IsNullOrEmpty(psm.ModString) ? "" : psm.ModString;
         }
     }
 

@@ -450,6 +450,9 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void RefreshPlotsAfterSettingsChange(object sender, MetaDrawSettingsChangedEventArgs e)
         {
+            if (MetaDrawLogic.FilteredListOfPsms.Count == 0)
+                return;
+
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
             var selectedChimeraGroup = ChimeraAnalysisTabViewModel.SelectedChimeraGroup;

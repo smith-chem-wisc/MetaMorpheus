@@ -23,7 +23,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TabControl Grid.Row="0">
+        <TabControl Grid.Row="0" x:Name="SettingsWindowTabControl">
             <!-- Main Settings Tab -->
             <TabItem Header="General Settings">
                 <!-- main settings content -->
@@ -358,13 +358,15 @@
                     <GroupBox Header="Spectral Match Display"  Grid.Row="0">
                         <Grid Margin="15 0 0 0">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -382,6 +384,30 @@
                                           Content="Show internal ions" Margin="5" />
                             <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIons}"
                                           Content="Display internal ion annotations" Margin="5" />
+
+                            <GroupBox Grid.Column="0" Grid.Row="5" Grid.RowSpan="4"   Header="Legend" >
+                                <StackPanel Margin="10,5,10,5" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Stretch" >
+                                    <CheckBox Content="Show Legend"
+                                              Margin="0,0,0,10"
+                                              IsChecked="{Binding DisplayChimeraLegend}" />
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                                        <Label Content="Main text:" Width="80" VerticalAlignment="Center"/>
+                                        <ComboBox Width="140"
+                                                  ItemsSource="{Binding ChimericLegendDisplayProperties, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
+                                                  SelectedItem="{Binding ChimeraLegendMainTextType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Mode=TwoWay}"
+                                                  ToolTip="Legend main text" />
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Label Content="Sub text:" Width="80" VerticalAlignment="Center"/>
+                                        <ComboBox Width="140"
+                                                  ItemsSource="{Binding ChimericLegendDisplayProperties, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
+                                                  SelectedItem="{Binding ChimeraLegendSubTextType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Mode=TwoWay}"
+                                                  ToolTip="Legend sub text" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
 
                             <CheckBox Content="Bold ion annotations"  Margin="7 5"  Grid.Column="1" Grid.Row="0" 
                                           IsChecked="{Binding AnnotationBold}" />

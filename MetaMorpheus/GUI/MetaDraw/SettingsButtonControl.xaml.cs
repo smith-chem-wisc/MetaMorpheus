@@ -29,6 +29,19 @@ public partial class SettingsButtonControl : UserControl
         set => SetValue(SettingsViewModelProperty, value);
     }
 
+    public static readonly DependencyProperty SelectedTabIndexProperty =
+        DependencyProperty.Register(
+            nameof(SelectedTabIndex),
+            typeof(int),
+            typeof(MetaDrawSettingsWindow),
+            new PropertyMetadata(0));
+
+    public int SelectedTabIndex
+    {
+        get => (int)GetValue(SelectedTabIndexProperty);
+        set => SetValue(SelectedTabIndexProperty, value);
+    }
+
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         // Open the settings window
@@ -36,6 +49,8 @@ public partial class SettingsButtonControl : UserControl
         {
             Owner = Window.GetWindow(this)
         };
+
+        settingsWindow.SettingsWindowTabControl.SelectedIndex = SelectedTabIndex;
 
         var originalQ = MetaDrawSettings.QValueFilter;
         var originalShowDecoys = MetaDrawSettings.ShowDecoys;

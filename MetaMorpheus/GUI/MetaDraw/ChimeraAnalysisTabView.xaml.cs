@@ -16,8 +16,16 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
-            this.DataContextChanged += (s, e) => AttachLegendCanvasEvents();
-            ChimeraLegend.DataContextChanged += (s, e) => AttachLegendCanvasEvents();
+            MetaDrawSettingsViewModel.Instance.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName is nameof(MetaDrawSettingsViewModel.ChimeraLegendMainTextType) or nameof(MetaDrawSettingsViewModel.ChimeraLegendSubTextType))
+                {
+                    if (DataContext is ChimeraAnalysisTabViewModel { SelectedChimeraGroup: not null } context)
+                        context.LegendCanvas = new(context.SelectedChimeraGroup);
+                    AttachLegendCanvasEvents();
+                }
+            };
+
         }
 
         private void ChermicDataGrid_OnSelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
@@ -57,10 +65,13 @@ namespace MetaMorpheusGUI
                 lastLeft = Canvas.GetLeft(_legendCanvas);
                 lastTop = Canvas.GetTop(_legendCanvas);
             }
+            ChimeraLegend.Children.Clear();
+
+            if (!MetaDrawSettings.DisplayChimeraLegend)
+                return;
 
             if (legendCanvas != null)
             {
-                ChimeraLegend.Children.Clear();
                 ChimeraLegend.Children.Add(legendCanvas);
 
                 // Restore previous position if available
