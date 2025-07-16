@@ -134,7 +134,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             if (ms1Scan == null || ms2Scan == null)
                 continue;
 
-            var orderedGroup = group.OrderBy(p => p.PrecursorMz);
+            var orderedGroup = group.OrderByDescending(p => p.Score);
             var groupVm = new ChimeraGroupViewModel(orderedGroup, ms1Scan, ms2Scan);
             if (groupVm.ChimericPsms.Count > 0)
                 toReturn.Add(groupVm);

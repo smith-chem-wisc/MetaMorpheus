@@ -14,7 +14,7 @@ public class ChimeraDrawnSequence
 {
     public Canvas SequenceDrawingCanvas;
     public ChimeraGroupViewModel ChimeraGroupViewModel;
-    private readonly int _numSequences;
+    private int _numSequences;
     private static readonly int _yStep = 40;
     private static readonly int _canvasBuffer = 20;
     private ChimeraAnalysisTabViewModel? _parent;
@@ -37,6 +37,16 @@ public class ChimeraDrawnSequence
 
         Draw();
     }
+
+    public ChimeraDrawnSequence UpdateData(ChimeraGroupViewModel newGroup)
+    {
+        ChimeraGroupViewModel = newGroup;
+        _numSequences = ChimeraGroupViewModel.ChimericPsms.Count;
+        Draw();
+
+        return this;
+    }
+
     private void Draw()
     {
         DrawnSequence.ClearCanvas(SequenceDrawingCanvas);
@@ -61,6 +71,11 @@ public class ChimeraDrawnSequence
         {
             if (_ellipsePool[i].Parent == SequenceDrawingCanvas)
                 SequenceDrawingCanvas.Children.Remove(_ellipsePool[i]);
+        }
+        for (int i = _polyLinePoolIndex; i < _polyLinePool.Count; i++)
+        {
+            if (_polyLinePool[i].Parent == SequenceDrawingCanvas)
+                SequenceDrawingCanvas.Children.Remove(_polyLinePool[i]);
         }
     }
 

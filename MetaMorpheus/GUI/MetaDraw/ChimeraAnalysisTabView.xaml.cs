@@ -18,7 +18,7 @@ namespace MetaMorpheusGUI
 
             MetaDrawSettingsViewModel.Instance.PropertyChanged += (s, e) =>
             {
-                if (e.PropertyName is nameof(MetaDrawSettingsViewModel.ChimeraLegendMainTextType) or nameof(MetaDrawSettingsViewModel.ChimeraLegendSubTextType))
+                if (e.PropertyName is nameof(MetaDrawSettingsViewModel.ChimeraLegendMainTextType) or nameof(MetaDrawSettingsViewModel.ChimeraLegendSubTextType) or nameof(MetaDrawSettingsViewModel.DisplayChimeraLegend))
                 {
                     if (DataContext is ChimeraAnalysisTabViewModel { SelectedChimeraGroup: not null } context)
                         context.LegendCanvas = new(context.SelectedChimeraGroup);
@@ -44,7 +44,11 @@ namespace MetaMorpheusGUI
             }
             dataContext.Ms1ChimeraPlot = new Ms1ChimeraPlot(ms1ChimeraOverlaPlot, chimeraGroup);
             dataContext.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(ms2ChimeraPlot, chimeraGroup);
-            dataContext.ChimeraDrawnSequence = new ChimeraDrawnSequence(chimeraSequenceCanvas, chimeraGroup, dataContext);
+            dataContext.ChimeraDrawnSequence =
+                  dataContext.ChimeraDrawnSequence is null ?
+                 new ChimeraDrawnSequence(chimeraSequenceCanvas, chimeraGroup, dataContext)
+                 : dataContext.ChimeraDrawnSequence.UpdateData(chimeraGroup)
+                 ;
             AttachLegendCanvasEvents();
         }
 
@@ -74,16 +78,22 @@ namespace MetaMorpheusGUI
             {
                 ChimeraLegend.Children.Add(legendCanvas);
 
-                // Restore previous position if available
-                if (!double.IsNaN(lastLeft) && !double.IsNaN(lastTop) && (lastLeft != 0 || lastTop != 0))
+                double parentWidth = ChimeraLegend.ActualWidth;
+                double parentHeight = ChimeraLegend.ActualHeight;
+                double legendWidth = legendCanvas.Width;
+                double legendHeight = legendCanvas.Height;
+
+                // Check if previous position is valid and within bounds
+                bool validLeft = !double.IsNaN(lastLeft) && lastLeft >= 0 && lastLeft + legendWidth <= parentWidth;
+                bool validTop = !double.IsNaN(lastTop) && lastTop >= 0 && lastTop + legendHeight <= parentHeight;
+
+                if (validLeft && validTop && (lastLeft != 0 || lastTop != 0))
                 {
                     Canvas.SetLeft(legendCanvas, lastLeft);
                     Canvas.SetTop(legendCanvas, lastTop);
                 }
                 else
                 {
-                    double parentWidth = ChimeraLegend.ActualWidth;
-                    double legendWidth = legendCanvas.Width;
                     double initialLeft = Math.Max(0, parentWidth - legendWidth - 10);
                     Canvas.SetLeft(legendCanvas, initialLeft);
                     Canvas.SetTop(legendCanvas, 10);

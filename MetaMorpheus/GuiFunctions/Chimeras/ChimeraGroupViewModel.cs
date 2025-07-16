@@ -172,8 +172,8 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
         Ms2Scan = fragmentationSpectrum;
         Letters = new (_letters);
 
-        ChimericPsms = [.. ConstructChimericPsmModels(chimericSpectrumMatches).OrderByDescending(p => p.Psm.Score)];
-        var representative = chimericSpectrumMatches.FirstOrDefault()!;
+        ChimericPsms = [.. ConstructChimericPsmModels(chimericSpectrumMatches)];
+        var representative = ChimericPsms.FirstOrDefault()!.Psm;
         FileNameWithoutExtension = representative.FileNameWithoutExtension;
         OneBasedPrecursorScanNumber = representative.PrecursorScanNum;
         Ms2ScanNumber = representative.Ms2ScanNumber;

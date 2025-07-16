@@ -63,56 +63,67 @@
         </Grid.RowDefinitions>
 
         <!-- Data Grid -->
-        <DataGrid x:Name="chermicDataGrid" Grid.Column="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" 
-          ItemsSource="{Binding  ChimeraGroupViewModels}" SelectedItem="{Binding SelectedChimeraGroup}"
-                  SelectionMode="Single" SelectionUnit="FullRow" HorizontalScrollBarVisibility="Disabled"
-                  SelectedCellsChanged="ChermicDataGrid_OnSelectedCellsChanged"
-                  ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" 
-                  CanUserDeleteRows="false" CanUserAddRows="false" Grid.Row="0" Grid.RowSpan="5">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="MS2 " Binding="{Binding Ms2ScanNumber}" Width="50" 
-                            ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
-                <DataGridTextColumn Header="MS1 " Binding="{Binding OneBasedPrecursorScanNumber}" Width="50"
-                            ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
-                <DataGridTextColumn Header="IDs" Binding="{Binding Count}" Width="30" 
-                            ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
-                <DataGridTextColumn Header="Total Fragments" Binding="{Binding TotalFragments}" Width="60"
-                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
-                <DataGridTextColumn Header="Unique Fragments" Binding="{Binding UniqueFragments}" Width="80"
-                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
-                <DataGridTextColumn Header="Proteins" Binding="{Binding ProteinCount}" Width="50"
-                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
-                <DataGridTextColumn Header="Primary Sequences" Binding="{Binding PrimarySequenceCount}" Width="74"
-                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
-                <DataGridTextColumn Header="DataFile" Binding="{Binding FileNameWithoutExtension}" Width="140"
-                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <!-- Export -->
-        <Grid Grid.Column="0" Grid.Row="5" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+        <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="7">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="4">
-                <ComboBox ItemsSource="{Binding ExportTypes}"  
-                          SelectedItem="{Binding SelectedExportType}"
-                          HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10 0"/>
-                <CheckBox Content="Use Letter" IsChecked="{Binding UseLetterOnly}" VerticalContentAlignment="Center" />
- 
-            </StackPanel>
-            <UniformGrid Grid.Row="1" Columns="2" HorizontalAlignment="Center" Margin="0,10,0,0">
-                <Button Content="Export MS1" Command="{Binding ExportMs1Command}" Width="100" Height="32"
-                        Style="{StaticResource MetaDrawButtonStyle}" />
-                <Button Content="Export MS2" Command="{Binding ExportMs2Command}" Width="100" Height="32"
-                        Style="{StaticResource MetaDrawButtonStyle}" />
-                <Button Content="Export Cov" Command="{Binding ExportSequenceCoverageCommand}" Width="100" Height="32"
-                        Style="{StaticResource MetaDrawButtonStyle}" />
-                <Button Content="Export Legend" Command="{Binding ExportLegendCommand}" Width="100" Height="32"
-                        CommandParameter="{Binding ElementName=chimericResultDataGrid}" 
-                        Style="{StaticResource MetaDrawButtonStyle}" />
-            </UniformGrid>
+            
+            <DataGrid x:Name="chermicDataGrid" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" 
+              ItemsSource="{Binding  ChimeraGroupViewModels}" SelectedItem="{Binding SelectedChimeraGroup}"
+                      SelectionMode="Single" SelectionUnit="FullRow" HorizontalScrollBarVisibility="Disabled"
+                      SelectedCellsChanged="ChermicDataGrid_OnSelectedCellsChanged"
+                      ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" 
+                      CanUserDeleteRows="false" CanUserAddRows="false" >
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="MS2 " Binding="{Binding Ms2ScanNumber}" Width="50" 
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                    <DataGridTextColumn Header="MS1 " Binding="{Binding OneBasedPrecursorScanNumber}" Width="50"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                    <DataGridTextColumn Header="IDs" Binding="{Binding Count}" Width="30" 
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                    <DataGridTextColumn Header="Total Fragments" Binding="{Binding TotalFragments}" Width="60"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                    <DataGridTextColumn Header="Unique Fragments" Binding="{Binding UniqueFragments}" Width="80"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                    <DataGridTextColumn Header="Proteins" Binding="{Binding ProteinCount}" Width="50"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                    <DataGridTextColumn Header="Primary Sequences" Binding="{Binding PrimarySequenceCount}" Width="74"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                    <DataGridTextColumn Header="DataFile" Binding="{Binding FileNameWithoutExtension}" Width="140"
+                                        ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Export -->
+            <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="4">
+                    <ComboBox ItemsSource="{Binding ExportTypes}"  
+                              SelectedItem="{Binding SelectedExportType}"
+                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10 0"/>
+                    <StackPanel>
+                        <CheckBox Content="Use Letter" IsChecked="{Binding UseLetterOnly}" VerticalContentAlignment="Center" />
+                        <CheckBox Content="Show Legend" IsChecked="{Binding DisplayChimeraLegend, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}" VerticalContentAlignment="Center" />
+                    </StackPanel>
+
+                </StackPanel>
+                <UniformGrid Grid.Row="1" Columns="2" HorizontalAlignment="Center" Margin="0,10,0,0">
+                    <Button Content="Export MS1" Command="{Binding ExportMs1Command}" Width="100" Height="32"
+                            Style="{StaticResource MetaDrawButtonStyle}" />
+                    <Button Content="Export MS2" Command="{Binding ExportMs2Command}" Width="100" Height="32"
+                            Style="{StaticResource MetaDrawButtonStyle}" />
+                    <Button Content="Export Cov" Command="{Binding ExportSequenceCoverageCommand}" Width="100" Height="32"
+                            Style="{StaticResource MetaDrawButtonStyle}" />
+                    <Button Content="Export Legend" Command="{Binding ExportLegendCommand}" Width="100" Height="32"
+                            CommandParameter="{Binding ElementName=chimericResultDataGrid}" 
+                            Style="{StaticResource MetaDrawButtonStyle}" />
+                </UniformGrid>
+            </Grid>
+
         </Grid>
 
         <!--Moveable splitter-->
@@ -152,7 +163,7 @@
             <ScrollViewer HorizontalScrollBarVisibility="Auto" CanContentScroll="True"
                       VerticalScrollBarVisibility="Disabled"
                       HorizontalAlignment="Left">
-                <Canvas x:Name="chimeraSequenceCanvas" />
+                <Canvas x:Name="chimeraSequenceCanvas"  />
             </ScrollViewer>
         </Expander>
 
