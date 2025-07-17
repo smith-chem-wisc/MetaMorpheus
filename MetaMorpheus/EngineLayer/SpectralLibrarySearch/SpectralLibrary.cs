@@ -182,7 +182,6 @@ namespace EngineLayer
             bool readingPeaks = false;
             string sequence = null;
             int z = 2;
-            double mw = 0;
             double precursorMz = 0;
             double rt = 0;
             List<MatchedFragmentIon> matchedFragmentIons = new List<MatchedFragmentIon>();
