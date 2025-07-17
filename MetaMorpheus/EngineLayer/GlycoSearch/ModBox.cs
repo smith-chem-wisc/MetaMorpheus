@@ -10,24 +10,43 @@ namespace EngineLayer
         //ModBox -- a defined combination of modifications will be considered to modify on one peptide. The box means the combined group of modification. 
         public ModBox(int[] ids, bool targetDecoy = true)
         {
+            // ModBox setting
             ModIds = ids;
             NumberOfMods = ids.Length;
             TargetDecoy = targetDecoy;
+
+            // Glycan setting
+            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            foreach (var id in ModIds.Where(id=> GlobalModifications[id] is Glycan)) // iterate through all glycan in the box to generate the glycan kind
+            {
+                for (int i = 0; i < kind.Length; i++)
+                {
+                    kind[i] += GlobalOGlycans[id].Kind[i]; //kind is the sum of all glycan Kind in the Box.
+                }
+            }
+            Kind = kind;
         }
 
         public int[] ModIds { get;  }
-
         public int NumberOfMods { get; }
-
         public double Mass { get; set; }
-
         public double DecoyMass { get; set; }
-
         public bool TargetDecoy { get; set; }
-
         public static Modification[] GlobalModifications { get; set; }
-
         public ModBox[] ChildModBoxes { get; set; }
+
+        // Glycans properties
+        public byte[] Kind { get; private set; }
+        /// <summary>
+        /// The global list of O-glycans loaded from the glycan database file.
+        /// </summary>
+        public static Glycan[] GlobalOGlycans
+        {
+            get
+            {
+                return GlobalModifications.Where(p => p is Glycan).Cast<Glycan>().ToArray();
+            }
+        }
 
 
         public static IEnumerable<ModBox> BuildModBoxes(int maxNum,  bool buildDecoy = false)

@@ -488,7 +488,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="oxoniumIonsintensities"> From the Scan </param>
         /// <param name="glycanBox"> The glycanBox to be tested </param>
         /// <returns >True : The Oglycan pass the filter, False : The OGl</returns>
-        public static bool DiagonsticFilter(double[] oxoniumIonsintensities, GlycanBox glycanBox)
+        public static bool DiagonsticFilter(double[] oxoniumIonsintensities, ModBox modBox)
         {
             double HexNAc_diagnostic = oxoniumIonsintensities[4];
             double NeuAc_diagnostic1 = oxoniumIonsintensities[10];
@@ -498,7 +498,7 @@ namespace EngineLayer.GlycoSearch
             //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
             if (NeuAc_diagnostic1 / HexNAc_diagnostic > 0.02 && NeuAc_diagnostic2 / HexNAc_diagnostic > 0.02)
             {
-                if (glycanBox.Kind[2] == 0 )
+                if (modBox.Kind[2] == 0 )
                 {
                     return false;
                 }
@@ -506,7 +506,7 @@ namespace EngineLayer.GlycoSearch
 
             if(NeuAc_diagnostic1 / HexNAc_diagnostic < 0.02 && NeuAc_diagnostic2 / HexNAc_diagnostic < 0.02)
             {
-                if (glycanBox.Kind[2] != 0)
+                if (modBox.Kind[2] != 0)
                 {
                     return false;
                 }
@@ -515,7 +515,7 @@ namespace EngineLayer.GlycoSearch
             //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more. Here use the total glycan of glycanBox to calculate. 
             else if (HexNAcPlusHex_diagnostic / HexNAc_diagnostic > 0.02)
             {
-                if (glycanBox.Kind[0] < 1 && glycanBox.Kind[1] < 1)
+                if (modBox.Kind[0] < 1 && modBox.Kind[1] < 1)
                 {
                     return false;
                 }

@@ -16,11 +16,6 @@ namespace EngineLayer
     public class GlycanBox:ModBox
     {
         /// <summary>
-        /// The global list of O-glycans loaded from the glycan database file.
-        /// </summary>
-        public static Glycan[] GlobalOGlycans { get; set; }
-
-        /// <summary>
         /// All possible child glycan box combinations derived from this glycan box.
         /// </summary>
         public GlycanBox[] ChildGlycanBoxes { get; set; }
@@ -30,10 +25,6 @@ namespace EngineLayer
         /// </summary>
         public static GlycanBox[] OGlycanBoxes { get; set; }
 
-        /// <summary>
-        /// The summed glycan composition for this box, where each element represents the count of a specific monosaccharide type.
-        /// </summary>
-        public byte[] Kind { get; private set; }
 
             //TO DO: Decoy O-glycan can be created, but the results need to be reasoned.
             //public static int[] SugarShift = new int[]{ -16205282, -20307937, -29109542, -14605791, -30709033, -15005282, -36513219, -40615874, 16205282, 20307937, 29109542, 14605791, 30709033, 15005282, 36513219, 40615874 };
@@ -120,16 +111,6 @@ namespace EngineLayer
         /// <param name="targetDecoy"></param>
         public GlycanBox(int[] ids, bool Istarget = true):base(ids)
         {
-            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            foreach (var id in ModIds) //ModIds is the same as ids.
-            {
-                for (int i = 0; i < kind.Length; i++)   
-                {
-                    kind[i] += GlobalOGlycans[id].Kind[i]; //kind is the sum of all glycan Kind in the Box.
-                }
-            }
-            Kind = kind;
-
             if (Istarget)
             {
                 Mass = (double)Glycan.GetMass(Kind) / 1E5;

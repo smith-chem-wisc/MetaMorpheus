@@ -49,7 +49,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="peptide"> full peptide sequence ex. "PTLFKNVSLYK" </param>
         /// <param name="motifs"> modificatino AA ex. "S","T"</param>
         /// <returns> int[], the Modpositon index list ex.[9,3] </returns>
-        public static SortedDictionary<int, string> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
+        public static SortedDictionary<int, string> GetPossibleModSites(PeptideWithSetModifications peptide, HashSet<string> motifs)
         {
             SortedDictionary<int, string> modMotif = new SortedDictionary<int, string>();
 
