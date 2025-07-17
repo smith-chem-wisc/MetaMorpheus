@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Nett;
 using System.Windows.Input;
 using MassSpectrometry;
-using GuiFunctions.MetaDraw.Chimeras;
+using GuiFunctions.MetaDraw;
 
 namespace GuiFunctions
 {
@@ -72,6 +72,7 @@ namespace GuiFunctions
         }
 
         public ObservableCollection<SpectrumDescriptorViewModel> SpectrumDescriptors { get; }
+        public ObservableCollection<string> ExportTypes { get; } = [.. MetaDrawSettings.ExportTypes];
 
         public DeconHostViewModel DeconHostViewModel { get; set; }
 
@@ -82,6 +83,16 @@ namespace GuiFunctions
         public Task Initialization { get; private set; }
         public static string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
 
+        public string ExportType
+        {
+            get => MetaDrawSettings.ExportType;
+            set { MetaDrawSettings.ExportType = value; OnPropertyChanged(nameof(ExportType)); }
+        }
+        public double Dpi
+        {
+            get => MetaDrawSettings.CanvasPdfExportDpi;
+            set { MetaDrawSettings.CanvasPdfExportDpi = value; OnPropertyChanged(nameof(Dpi)); }
+        }
         public bool DisplayIonAnnotations
         {
             get => MetaDrawSettings.DisplayIonAnnotations;
