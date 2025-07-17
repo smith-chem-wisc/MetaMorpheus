@@ -413,6 +413,55 @@ namespace Test
             File.Delete(writtenPath);
         }
 
+        [Test]
+        public static void SpectralLibraryReaderTest_Ms2Pip()
+        {
+            var libraryPath = @"TestData\SpectralLibrarySearch\mspLibraryFileWithExtraLineBreaks.msp";
+            var pathList = new List<string> { libraryPath }
+    ;       var library = new SpectralLibrary(pathList);
+            var librarySpectra = library.GetAllLibrarySpectra().ToList();
+
+            Assert.That(librarySpectra.Count, Is.EqualTo(3));
+            Assert.That(library.TryGetSpectrum("ACDEFGHIKLR", 3, out var spectrum2));
+            Assert.That(spectrum2.PrecursorMz, Is.EqualTo(430.2209553149999));
+            Assert.That(spectrum2.ChargeState, Is.EqualTo(3));
+
+            var frags = new List<(double mz, double intensity, ProductType ProductType, int fragmentNumber, int charge, double ppm)>
+            {
+                (72.04434967, 74.10194699, ProductType.b, 1, 1, 0.0),
+                (175.05354309, 632.40809361, ProductType.b, 2, 1, 0.0),
+                (175.11891174, 3279.07850031, ProductType.y, 1, 1, 0.0),
+                (288.20297241, 1577.68064374, ProductType.y, 2, 1, 0.0),
+                (290.08047485, 177.88392646, ProductType.b, 3, 1, 0.0),
+                (416.29794312, 457.91485614, ProductType.y, 3, 1, 0.0),
+                (419.12307739, 208.68302331, ProductType.b, 4, 1, 0.0),
+                (529.38201904, 2348.67177179, ProductType.y, 4, 1, 0.0),
+                (566.19152832, 0.00000000, ProductType.b, 5, 1, 0.0),
+                (623.21301270, 9.09656728, ProductType.b, 6, 1, 0.0),
+                (666.44091797, 906.56324191, ProductType.y, 5, 1, 0.0),
+                (723.46240234, 10000.00000000, ProductType.y, 6, 1, 0.0),
+                (760.27191162, 0.00000000, ProductType.b, 7, 1, 0.0),
+                (870.53082275, 1021.45991330, ProductType.y, 7, 1, 0.0),
+                (873.35595703, 11.69348484, ProductType.b, 8, 1, 0.0),
+                (999.57342529, 0.00000000, ProductType.y, 8, 1, 0.0),
+                (1001.45092773, 3.20265984, ProductType.b, 9, 1, 0.0),
+                (1114.53491211, 0.00000000, ProductType.b, 10, 1, 0.0),
+                (1114.60034180, 25.10399987, ProductType.y, 9, 1, 0.0),
+                (1217.60949707, 3.53704878, ProductType.y, 10, 1, 0.0)
+            };
+
+            for (int i = 0; i < frags.Count; i++)
+            {
+                var frag = frags[i];
+                var readFrag = spectrum2.MatchedFragmentIons[i];
+
+                Assert.That(frag.mz == readFrag.Mz);
+                Assert.That(frag.intensity == readFrag.Intensity);
+                Assert.That(frag.ProductType == readFrag.NeutralTheoreticalProduct.ProductType);
+                Assert.That(frag.fragmentNumber == readFrag.NeutralTheoreticalProduct.FragmentNumber);
+                Assert.That(frag.charge == readFrag.Charge);
+            }
+        }
     }
     
 }
