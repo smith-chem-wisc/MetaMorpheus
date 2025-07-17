@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace GuiFunctions.MetaDraw.Chimeras;
+namespace GuiFunctions.MetaDraw;
 
 /// <summary>
 /// The Hungarian algorithm, also known as the Kuhn-Munkres algorithm or Munkres assignment algorithm, is a powerful combinatorial optimization algorithm used to solve the assignment problem. The goal is to find the optimal assignment between two sets of equal size(e.g., psms and precursor envelopes) to minimize the total cost or maximize the total value, given a cost matrix representing the cost of assigning each psms to each envelopes where cost is mass error.

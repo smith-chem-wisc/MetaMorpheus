@@ -10,7 +10,7 @@ using Omics.Fragmentation;
 using OxyPlot;
 using Readers;
 
-namespace GuiFunctions.MetaDraw.Chimeras;
+namespace GuiFunctions.MetaDraw;
 
 /// <summary>
 /// View model for a group of chimeric IDs from a single MS2 scan

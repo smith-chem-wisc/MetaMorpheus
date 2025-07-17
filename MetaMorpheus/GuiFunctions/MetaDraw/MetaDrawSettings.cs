@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Media;
 using Readers;
-using GuiFunctions.MetaDraw.Chimeras;
+using GuiFunctions.MetaDraw;
 
 namespace GuiFunctions
 {

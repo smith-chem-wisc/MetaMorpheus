@@ -1,7 +1,7 @@
 using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
-using GuiFunctions.MetaDraw.Chimeras;
+using GuiFunctions.MetaDraw;
 using MassSpectrometry;
 using Omics.Fragmentation;
 using OxyPlot;

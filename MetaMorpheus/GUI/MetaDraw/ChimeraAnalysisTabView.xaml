@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:MetaMorpheusGUI"
              xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
              xmlns:oxy="http://oxyplot.org/wpf"
-             xmlns:chimeras="clr-namespace:GuiFunctions.MetaDraw.Chimeras;assembly=GuiFunctions"
+             xmlns:chimeras="clr-namespace:GuiFunctions.MetaDraw;assembly=GuiFunctions"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800"
              d:DataContext="{d:DesignInstance chimeras:ChimeraAnalysisTabViewModel, IsDesignTimeCreatable=True}">
@@ -68,8 +68,8 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="4">
-                    <ComboBox ItemsSource="{Binding ExportTypes}"  
-                              SelectedItem="{Binding SelectedExportType}"
+                    <ComboBox ItemsSource="{Binding ExportTypes, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
+                              SelectedItem="{Binding ExportType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
                               HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10 0"/>
                     <StackPanel>
                         <CheckBox Content="Use Letter" IsChecked="{Binding UseLetterOnly}" VerticalContentAlignment="Center" />
@@ -93,7 +93,7 @@
                             Style="{StaticResource MetaDrawButtonStyle}" />
                     <Button Content="Export All" Width="100" Height="32" FontSize="12" 
                             Command="{Binding ExportAllCommand}" 
-                            CommandParameter="{Binding ElementName=chimeraSequenceCanvas}" 
+                            CommandParameter="{Binding ElementName=ChimeraLegend}" 
                             Style="{StaticResource MetaDrawButtonStyle}" />
                 </UniformGrid>
             </Grid>

@@ -7,7 +7,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using Omics.Fragmentation;
 
-namespace GuiFunctions.MetaDraw.Chimeras;
+namespace GuiFunctions.MetaDraw;
 
 public class ChimeraDrawnSequence
 {

@@ -5,7 +5,7 @@ using OxyPlot;
 using OxyPlot.Wpf;
 using LineSeries = OxyPlot.Series.LineSeries;
 
-namespace GuiFunctions.MetaDraw.Chimeras;
+namespace GuiFunctions.MetaDraw;
 
 public class Ms1ChimeraPlot : SpectrumMatchPlot
 {

@@ -1,5 +1,5 @@
 ﻿using GuiFunctions;
-using GuiFunctions.MetaDraw.Chimeras;
+using GuiFunctions.MetaDraw;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,6 +23,7 @@ namespace MetaMorpheusGUI
                 {
                     if (DataContext is ChimeraAnalysisTabViewModel { SelectedChimeraGroup: not null } context)
                         context.LegendCanvas = new(context.SelectedChimeraGroup);
+
                     AttachLegendCanvasEvents();
                 }
             };
@@ -45,11 +46,10 @@ namespace MetaMorpheusGUI
             }
             dataContext.Ms1ChimeraPlot = new Ms1ChimeraPlot(ms1ChimeraOverlaPlot, chimeraGroup);
             dataContext.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(ms2ChimeraPlot, chimeraGroup);
-            dataContext.ChimeraDrawnSequence =
-                  dataContext.ChimeraDrawnSequence is null ?
-                 new ChimeraDrawnSequence(chimeraSequenceCanvas, chimeraGroup, dataContext)
-                 : dataContext.ChimeraDrawnSequence.UpdateData(chimeraGroup)
-                 ;
+            dataContext.ChimeraDrawnSequence = dataContext.ChimeraDrawnSequence is null
+                    ? new ChimeraDrawnSequence(chimeraSequenceCanvas, chimeraGroup, dataContext)
+                    : dataContext.ChimeraDrawnSequence.UpdateData(chimeraGroup)
+                ;
             AttachLegendCanvasEvents();
         }
 
@@ -57,13 +57,14 @@ namespace MetaMorpheusGUI
 
         private bool isDragging = false;
         private Point clickPosition; 
-        private Canvas _legendCanvas;
+        private ChimeraLegendCanvas _legendCanvas;
 
         private void AttachLegendCanvasEvents()
         {
             var dataContext = DataContext as ChimeraAnalysisTabViewModel;
             var legendCanvas = dataContext?.LegendCanvas;
 
+            // Preserve last position if it exists
             double lastLeft = 0, lastTop = 0;
             if (_legendCanvas != null && _legendCanvas.Parent is Canvas)
             {
@@ -77,7 +78,7 @@ namespace MetaMorpheusGUI
 
             if (legendCanvas != null)
             {
-                ChimeraLegend.Children.Add(legendCanvas);
+                ChimeraLegend.Children.Add(dataContext?.LegendCanvas);
 
                 double parentWidth = ChimeraLegend.ActualWidth;
                 double parentHeight = ChimeraLegend.ActualHeight;

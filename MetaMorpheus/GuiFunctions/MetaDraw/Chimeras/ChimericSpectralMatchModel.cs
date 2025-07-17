@@ -7,7 +7,7 @@ using Omics.Modifications;
 using OxyPlot;
 using Readers;
 
-namespace GuiFunctions.MetaDraw.Chimeras;
+namespace GuiFunctions.MetaDraw;
 
 /// <summary>
 /// View model for a single chimeric spectral match
