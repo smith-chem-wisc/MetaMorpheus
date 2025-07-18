@@ -387,9 +387,9 @@
                             <CheckBox Grid.Column="0" Grid.Row="2" IsChecked="{Binding AnnotateCharges}"
                                           Content="Annotate charges" Margin="5" />
                             <CheckBox Grid.Column="0" Grid.Row="3"
-                                          IsChecked="{Binding DisplayInternalIonAnnotations}"
+                                          IsChecked="{Binding DisplayInternalIons}"
                                           Content="Show internal ions" Margin="5" />
-                            <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIons}"
+                            <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIonAnnotations}"
                                           Content="Display internal ion annotations" Margin="5" />
 
                             <CheckBox Content="Bold ion annotations"  Margin="7 5"  Grid.Column="1" Grid.Row="0" 

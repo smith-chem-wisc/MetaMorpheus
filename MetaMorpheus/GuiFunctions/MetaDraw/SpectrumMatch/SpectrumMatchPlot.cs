@@ -47,7 +47,6 @@ namespace GuiFunctions
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
             Scan = scan;
-            MatchedFragmentIons = new();
 
             DrawSpectrum();
             if (matchedIons is null && sm is not null)
@@ -62,6 +61,8 @@ namespace GuiFunctions
                 MatchedFragmentIons = matchedIons;
                 AnnotateMatchedIons(false, matchedIons);
             }
+            else
+                MatchedFragmentIons = new();
 
             ZoomAxes();
             RefreshChart();
@@ -130,8 +131,9 @@ namespace GuiFunctions
                 double mz = xArray[i];
                 double intensity = yArray[i];
                 // Add as vertical line (two points per peak)
-                unannotatedSeries.Points.Add(new DataPoint(mz, 0));
+                unannotatedSeries.Points.Add(new DataPoint(mz - 0.0001, 0));
                 unannotatedSeries.Points.Add(new DataPoint(mz, intensity));
+                unannotatedSeries.Points.Add(new DataPoint(mz + 0.0001, 0));
             }
             Model.Series.Add(unannotatedSeries);
         }
