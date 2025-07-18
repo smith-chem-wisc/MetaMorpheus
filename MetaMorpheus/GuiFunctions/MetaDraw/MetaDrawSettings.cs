@@ -467,6 +467,7 @@ namespace GuiFunctions
                 StrokeThicknessUnannotated = StrokeThicknessUnannotated,
                 StrokeThicknessAnnotated = StrokeThicknessAnnotated,
                 SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
+                SuppressMessageBoxes = SuppressMessageBoxes
             };
         }
 
@@ -504,6 +505,7 @@ namespace GuiFunctions
             SpectrumDescriptionFontSize = settings.SpectrumDescriptionFontSize;
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
+            SuppressMessageBoxes = settings.SuppressMessageBoxes;
 
             try // Product Type Colors
             {

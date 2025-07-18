@@ -631,7 +631,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
+                MessageBoxHelper.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
             }
         }
 
@@ -673,8 +673,8 @@ namespace MetaMorpheusGUI
                     psm.MatchedIons = oldIons;
                 }
             }
-            
-            MessageBox.Show("Spectral Library exported to: " + libraryPath);
+
+            MessageBoxHelper.Show("Spectral Library exported to: " + libraryPath);
         }
 
         private void SequenceCoverageExportButton_Click(object sender, RoutedEventArgs e)
@@ -692,7 +692,7 @@ namespace MetaMorpheusGUI
             
             if (Directory.Exists(directoryPath))
             {
-                MessageBox.Show(MetaDrawSettings.ExportType + " exported to: " + directoryPath);
+                MessageBoxHelper.Show(MetaDrawSettings.ExportType + " exported to: " + directoryPath);
             }
         }    
 
@@ -713,7 +713,7 @@ namespace MetaMorpheusGUI
             
             if (Directory.Exists(directoryPath))
             {
-                MessageBox.Show(MetaDrawSettings.ExportType + " exported to: " + directoryPath);
+                MessageBoxHelper.Show(MetaDrawSettings.ExportType + " exported to: " + directoryPath);
             }
         }
 
@@ -807,7 +807,7 @@ namespace MetaMorpheusGUI
             }
             plotViewStat.Width = tmpW;
             plotViewStat.Height = tmpH;
-            MessageBox.Show(MetaDrawSettings.ExportType + " Created at " + Path.Combine(fileDirectory, fileName) + "!");
+            MessageBoxHelper.Show(MetaDrawSettings.ExportType + " Created at " + Path.Combine(fileDirectory, fileName) + "!");
         }
 
         private async void PlotSelected(object sender, SelectionChangedEventArgs e)

@@ -14,7 +14,7 @@ using Proteomics.ProteolyticDigestion;
 using Readers;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using GuiFunctions.MetaDraw.Chimeras;
+using GuiFunctions.MetaDraw;
 
 namespace Test.MetaDraw
 {
@@ -49,6 +49,7 @@ namespace Test.MetaDraw
             Assert.That(snapshot.DisplayChimeraLegend, Is.EqualTo(MetaDrawSettings.DisplayChimeraLegend));
             Assert.That(snapshot.ChimeraLegendMainTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendMainTextType));
             Assert.That(snapshot.ChimeraLegendSubTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendSubTextType));
+            Assert.That(snapshot.SuppressMessageBoxes, Is.EqualTo(MetaDrawSettings.SuppressMessageBoxes));
 
             MetaDrawSettings.ShowContaminants = true;
             MetaDrawSettings.AnnotateMzValues = false;
@@ -58,6 +59,9 @@ namespace Test.MetaDraw
             Assert.That(snapshot.QValueFilter.Equals(MetaDrawSettings.QValueFilter));
             Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
             Assert.That(snapshot.ExportType.Equals(MetaDrawSettings.ExportType));
+            Assert.That(snapshot.DisplayInternalIons, Is.EqualTo(MetaDrawSettings.DisplayInternalIons));
+            Assert.That(snapshot.SubAndSuperScriptIons, Is.EqualTo(MetaDrawSettings.SubAndSuperScriptIons));
+            Assert.That(snapshot.SuppressMessageBoxes.Equals(MetaDrawSettings.SuppressMessageBoxes));
 
             var colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
@@ -90,6 +94,7 @@ namespace Test.MetaDraw
             snapshot.DisplayChimeraLegend = false;
             snapshot.ChimeraLegendMainTextType = LegendDisplayProperty.ProteinAccession;
             snapshot.ChimeraLegendSubTextType = LegendDisplayProperty.FullSequence;
+            snapshot.SuppressMessageBoxes = true;
 
             MetaDrawSettings.LoadSettings(snapshot, out bool flaggedError);
             Assert.That(!flaggedError);
@@ -107,6 +112,7 @@ namespace Test.MetaDraw
             Assert.That(snapshot.DisplayChimeraLegend, Is.EqualTo(MetaDrawSettings.DisplayChimeraLegend));
             Assert.That(snapshot.ChimeraLegendMainTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendMainTextType));
             Assert.That(snapshot.ChimeraLegendSubTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendSubTextType));
+            Assert.That(snapshot.SuppressMessageBoxes, Is.EqualTo(MetaDrawSettings.SuppressMessageBoxes));
             colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
             betaColorValues = MetaDrawSettings.BetaProductTypeToColor
