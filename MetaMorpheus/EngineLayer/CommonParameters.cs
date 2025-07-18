@@ -8,6 +8,7 @@ using System.Reflection;
 using Nett;
 using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer
 {
@@ -84,23 +85,15 @@ namespace EngineLayer
             PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
-            ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
-            ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
+
             DissociationType = dissociationType;
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;
             MS3ChildScanDissociationType = ms3childScanDissociationType;
             UseMostAbundantPrecursorIntensity = useMostAbundantPrecursorIntensity;
-
-            CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
-            // reset custom fragmentation product types to default empty list
-            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
-
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
-
             MaxHeterozygousVariants = maxHeterozygousVariants;
             MinVariantDepth = minVariantDepth;
-
             AddTruncations = addTruncations;
 
             // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
@@ -118,6 +111,24 @@ namespace EngineLayer
                 ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(-10,
                     -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
             }
+
+            if (digestionParams is RnaDigestionParams)
+            {
+                CustomIons =  Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
+                ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Digestion Termini", "Cyclic Phosphate on X") };
+                ListOfModsFixed = listOfModsFixed ?? [];
+                PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+                ProductDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+            }
+            else
+            {
+                CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
+                ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
+                ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
+            }
+                
+            // reset custom fragmentation product types to default empty list
+            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
         }
 
         // Notes:
