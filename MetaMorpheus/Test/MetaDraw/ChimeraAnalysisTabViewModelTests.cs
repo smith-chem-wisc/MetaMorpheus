@@ -11,7 +11,7 @@ using MassSpectrometry;
 using OxyPlot.Wpf;
 using System.Drawing.Imaging;
 using System;
-using GuiFunctions.MetaDraw.Chimeras;
+using GuiFunctions.MetaDraw;
 
 namespace Test.MetaDraw;
 
@@ -139,8 +139,6 @@ public class ChimeraAnalysisTabViewModelTests
         // Assert
         Assert.That(vm.ChimeraGroupViewModels, Is.Not.Null.And.Not.Empty);
         Assert.That(vm.ExportDirectory, Is.EqualTo(exportDir));
-        Assert.That(vm.SelectedExportType, Is.EqualTo("Png"));
-        Assert.That(vm.ExportTypes, Is.EquivalentTo(new[] { "Pdf", "Png", "Svg" }));
         Assert.That(vm.ExportMs1Command, Is.Not.Null);
         Assert.That(vm.ExportMs2Command, Is.Not.Null);
         Assert.That(vm.ExportSequenceCoverageCommand, Is.Not.Null);
@@ -214,24 +212,6 @@ public class ChimeraAnalysisTabViewModelTests
     }
 
     [Test]
-    public void SelectedExportType_Setter_Notifies()
-    {
-        // Arrange
-        var allPsms = ChimeraGroupViewModelTests.AllMatches;
-        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
-        bool propertyChanged = false;
-        vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.SelectedExportType)) propertyChanged = true; };
-
-        // Act
-        vm.SelectedExportType = "Pdf";
-
-        // Assert
-        Assert.That(vm.SelectedExportType, Is.EqualTo("Pdf"));
-        Assert.That(propertyChanged, Is.True);
-    }
-
-    [Test]
     public void ExportMs1Command_DoesNothing_WhenSelectedChimeraGroupIsNull()
     {
         // Arrange
@@ -290,18 +270,15 @@ public class ChimeraAnalysisTabViewModelTests
         Directory.Delete(tempDir, true);
     }
 
-    [TestCase("Pdf")]
-    [TestCase("Png")]
-    [TestCase("Svg")]
-    public void ExportMs1Command_ExportsCorrectFormat(string format)
+
+    public void ExportMs1Command_ExportsCorrectFormat()
     {
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
         var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
-        vm.SelectedExportType = format;
-        string tempDir = Path.Combine(Path.GetTempPath(), $"ChimeraAnalysisTabViewModelTests_ExportMs1_{format}");
+        string tempDir = Path.Combine(Path.GetTempPath(), $"ChimeraAnalysisTabViewModelTests_ExportMs1_{MetaDrawSettings.ExportType}");
         vm.ExportDirectory = tempDir;
         Directory.CreateDirectory(tempDir);
         vm.Ms1ChimeraPlot = new Ms1ChimeraPlot(new OxyPlot.Wpf.PlotView(), vm.SelectedChimeraGroup);
@@ -310,7 +287,7 @@ public class ChimeraAnalysisTabViewModelTests
         Assert.DoesNotThrow(() => vm.ExportMs1Command.Execute(null));
 
         // Assert
-        string ext = format.ToLower();
+        string ext = MetaDrawSettings.ExportType.ToLower();
         Assert.That(Directory.GetFiles(tempDir, $"*_MS1.{ext}").Length, Is.GreaterThan(0));
 
         // Cleanup
@@ -319,18 +296,15 @@ public class ChimeraAnalysisTabViewModelTests
         Directory.Delete(tempDir, true);
     }
 
-    [TestCase("Pdf")]
-    [TestCase("Png")]
-    [TestCase("Svg")]
-    public void ExportMs2Command_ExportsCorrectFormat(string format)
+
+    public void ExportMs2Command_ExportsCorrectFormat()
     {
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
         var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
-        vm.SelectedExportType = format;
-        string tempDir = Path.Combine(Path.GetTempPath(), $"ChimeraAnalysisTabViewModelTests_ExportMs2_{format}");
+        string tempDir = Path.Combine(Path.GetTempPath(), $"ChimeraAnalysisTabViewModelTests_ExportMs2_{MetaDrawSettings.ExportType}");
         vm.ExportDirectory = tempDir;
         Directory.CreateDirectory(tempDir);
         var plotView = new OxyPlot.Wpf.PlotView { Width = 200, Height = 100 };
@@ -340,7 +314,7 @@ public class ChimeraAnalysisTabViewModelTests
         Assert.DoesNotThrow(() => vm.ExportMs2Command.Execute(null));
 
         // Assert
-        string ext = format.ToLower();
+        string ext = MetaDrawSettings.ExportType.ToLower();
         Assert.That(Directory.GetFiles(tempDir, $"*_MS2.{ext}").Length, Is.GreaterThan(0));
 
         // Cleanup
@@ -357,7 +331,6 @@ public class ChimeraAnalysisTabViewModelTests
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
         var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
-        vm.SelectedExportType = "Png";
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportSeqCov");
         vm.ExportDirectory = tempDir;
         Directory.CreateDirectory(tempDir);
@@ -398,7 +371,6 @@ public class ChimeraAnalysisTabViewModelTests
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
         var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
-        vm.SelectedExportType = "Png";
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportLegend");
         vm.ExportDirectory = tempDir;
         Directory.CreateDirectory(tempDir);
@@ -422,7 +394,7 @@ public class ChimeraAnalysisTabViewModelTests
         Assert.DoesNotThrow(() => vm.ExportLegendCommand.Execute(legend));
 
         // Assert
-        string[] files = Directory.GetFiles(tempDir, "*_Legend.png");
+        string[] files = Directory.GetFiles(tempDir, "*_Legend.pdf");
         Assert.That(files.Length, Is.GreaterThan(0));
 
         // Cleanup
@@ -473,35 +445,5 @@ public class ChimeraAnalysisTabViewModelTests
                 }
             }
         }
-    }
-
-    [Test]
-    public void ExportMs1_ThrowsOnUnsupportedExportType()
-    {
-        // Arrange
-        var allPsms = ChimeraGroupViewModelTests.AllMatches;
-        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
-        vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
-        vm.Ms1ChimeraPlot = new Ms1ChimeraPlot(new OxyPlot.Wpf.PlotView(), vm.SelectedChimeraGroup);
-        vm.SelectedExportType = "UnsupportedType";
-
-        // Act & Assert
-        Assert.Throws<ArgumentOutOfRangeException>(() => vm.ExportMs1Command.Execute(null));
-    }
-
-    [Test]
-    public void ExportMs2_ThrowsOnUnsupportedExportType()
-    {
-        // Arrange
-        var allPsms = ChimeraGroupViewModelTests.AllMatches;
-        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
-        vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
-        vm.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(new OxyPlot.Wpf.PlotView(), vm.SelectedChimeraGroup);
-        vm.SelectedExportType = "UnsupportedType";
-
-        // Act & Assert
-        Assert.Throws<ArgumentOutOfRangeException>(() => vm.ExportMs2Command.Execute(null));
     }
 }

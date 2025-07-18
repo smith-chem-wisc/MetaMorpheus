@@ -31,8 +31,9 @@ namespace GuiFunctions
 
         #region Customizable Settings
 
-        // graphic settings
         public static bool SuppressMessageBoxes { get; set; } = false;
+
+        // graphic settings
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
         public static bool DisplayIonAnnotations { get; set; } = true;
         public static bool AnnotateMzValues { get; set; } = false;
@@ -56,6 +57,8 @@ namespace GuiFunctions
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double SpectrumDescriptionFontSize { get; set; } = 10;
+
+        public static bool ChimeraLegendTakeFirstIfAmbiguous { get; set; } = false;
         public static bool DisplayChimeraLegend { get; set; } = true;
         public static LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
         public static LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
@@ -467,7 +470,8 @@ namespace GuiFunctions
                 StrokeThicknessUnannotated = StrokeThicknessUnannotated,
                 StrokeThicknessAnnotated = StrokeThicknessAnnotated,
                 SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
-                SuppressMessageBoxes = SuppressMessageBoxes
+                SuppressMessageBoxes = SuppressMessageBoxes,
+                ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous
             };
         }
 
@@ -506,6 +510,7 @@ namespace GuiFunctions
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
             SuppressMessageBoxes = settings.SuppressMessageBoxes;
+            ChimeraLegendTakeFirstIfAmbiguous = settings.ChimeraLegendTakeFirstIfAmbiguous;
 
             try // Product Type Colors
             {

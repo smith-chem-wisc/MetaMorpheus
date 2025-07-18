@@ -48,9 +48,10 @@ namespace GuiFunctions
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
-            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType);
-            string tempStationarySequencePngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "annotation.png");
-            string tempPtmLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "legend.png");
+            // Use unique temp file names to ensure thread safety
+            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), Path.GetRandomFileName() + "." + MetaDrawSettings.ExportType);
+            string tempStationarySequencePngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), Path.GetRandomFileName() + "_annotation.png");
+            string tempPtmLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), Path.GetRandomFileName() + "_legend.png");
             List<System.Drawing.Bitmap> bitmaps = new();
             List<Point> points = new();
 

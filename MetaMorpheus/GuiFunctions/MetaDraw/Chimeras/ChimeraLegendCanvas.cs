@@ -145,10 +145,12 @@ public class ChimeraLegendCanvas : Canvas
     {
         switch (MetaDrawSettings.ChimeraLegendMainTextType)
         {
-            case LegendDisplayProperty.ProteinAccession: return psm.Psm.Accession;
-            case LegendDisplayProperty.BaseSequence: return psm.Psm.BaseSeq;
-            case LegendDisplayProperty.FullSequence: return psm.Psm.FullSequence ?? psm.Psm.BaseSeq;
-            case LegendDisplayProperty.ProteinName: default: return psm.Psm.Name;
+            case LegendDisplayProperty.ProteinAccession: return SanitizeIfAmbiguous(psm.Psm.Accession);
+            case LegendDisplayProperty.BaseSequence: return SanitizeIfAmbiguous(psm.Psm.BaseSeq);
+            case LegendDisplayProperty.FullSequence: return SanitizeIfAmbiguous(psm.Psm.FullSequence ?? psm.Psm.BaseSeq);
+            case LegendDisplayProperty.Modifications: return string.IsNullOrEmpty(psm.ModString) ? "Unmodified" : psm.ModString;
+            case LegendDisplayProperty.ProteinName: 
+            default: return SanitizeIfAmbiguous(psm.Psm.Name);
         }
     }
 
@@ -156,11 +158,12 @@ public class ChimeraLegendCanvas : Canvas
     {
         switch (MetaDrawSettings.ChimeraLegendSubTextType)
         {
-            case LegendDisplayProperty.ProteinAccession: return psm.Psm.Accession;
-            case LegendDisplayProperty.BaseSequence: return psm.Psm.BaseSeq;
-            case LegendDisplayProperty.FullSequence: return psm.Psm.FullSequence ?? psm.Psm.BaseSeq;
-            case LegendDisplayProperty.ProteinName: return psm.Psm.Name;
-            case LegendDisplayProperty.Modifications: default: return string.IsNullOrEmpty(psm.ModString) ? "" : psm.ModString;
+            case LegendDisplayProperty.ProteinAccession: return SanitizeIfAmbiguous(psm.Psm.Accession);
+            case LegendDisplayProperty.BaseSequence: return SanitizeIfAmbiguous(psm.Psm.BaseSeq);
+            case LegendDisplayProperty.FullSequence: return SanitizeIfAmbiguous(psm.Psm.FullSequence ?? psm.Psm.BaseSeq);
+            case LegendDisplayProperty.ProteinName: return SanitizeIfAmbiguous(psm.Psm.Name);
+            case LegendDisplayProperty.Modifications: 
+            default: return string.IsNullOrEmpty(psm.ModString) ? "Unmodified" : psm.ModString;
         }
     }
 
@@ -181,5 +184,18 @@ public class ChimeraLegendCanvas : Canvas
             formattedText.SetFontWeight(fontWeight.Value);
 
         return formattedText.WidthIncludingTrailingWhitespace;
+    }
+
+    private string SanitizeIfAmbiguous(string input)
+    {
+        if (MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous)
+        {
+            var parts = input.Split('|');
+            if (parts.Length > 1)
+            {
+                return parts[0]; // Return the first part if ambiguous
+            }
+        }
+        return input; // Return the original input if not ambiguous or if setting is false
     }
 }

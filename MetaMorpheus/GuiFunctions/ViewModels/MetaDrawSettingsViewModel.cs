@@ -169,6 +169,11 @@ namespace GuiFunctions
             get => MetaDrawSettings.DisplayChimeraLegend;
             set { MetaDrawSettings.DisplayChimeraLegend = value; OnPropertyChanged(nameof(DisplayChimeraLegend)); }
         }
+        public bool ChimeraLegendTakeFirstIfAmbiguous
+        {
+            get => MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous;
+            set { MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous = value; OnPropertyChanged(nameof(ChimeraLegendTakeFirstIfAmbiguous)); }
+        }
         public LegendDisplayProperty ChimeraLegendMainTextType
         {
             get => MetaDrawSettings.ChimeraLegendMainTextType;

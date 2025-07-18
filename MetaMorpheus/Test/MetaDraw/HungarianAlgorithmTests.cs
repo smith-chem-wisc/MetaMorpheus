@@ -1,4 +1,4 @@
-﻿using GuiFunctions.MetaDraw.Chimeras;
+﻿using GuiFunctions.MetaDraw;
 using NUnit.Framework;
 
 namespace Test.MetaDraw;

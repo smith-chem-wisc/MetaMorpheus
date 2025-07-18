@@ -42,6 +42,7 @@ namespace GuiFunctions
         public double SpectrumDescriptionFontSize { get; set; } = 10;
         public bool DisplayChimeraLegend { get; set; } = true;
         public bool SuppressMessageBoxes { get; set; } = true;
+        public bool ChimeraLegendTakeFirstIfAmbiguous { get; set; }
         public LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
         public LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
 

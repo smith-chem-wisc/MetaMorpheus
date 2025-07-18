@@ -7,15 +7,11 @@ using MassSpectrometry;
 using Readers;
 using EngineLayer;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using Easy.Common.Extensions;
 using Point = System.Windows.Point;
-using System.Reflection.Emit;
-using OxyPlot.Wpf;
-using OxyPlot;
 
 namespace GuiFunctions.MetaDraw;
 

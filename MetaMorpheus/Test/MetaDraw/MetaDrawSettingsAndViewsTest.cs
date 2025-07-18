@@ -50,6 +50,8 @@ namespace Test.MetaDraw
             Assert.That(snapshot.ChimeraLegendMainTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendMainTextType));
             Assert.That(snapshot.ChimeraLegendSubTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendSubTextType));
             Assert.That(snapshot.SuppressMessageBoxes, Is.EqualTo(MetaDrawSettings.SuppressMessageBoxes));
+            Assert.That(snapshot.ChimeraLegendTakeFirstIfAmbiguous, Is.EqualTo(MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous));
+
 
             MetaDrawSettings.ShowContaminants = true;
             MetaDrawSettings.AnnotateMzValues = false;
@@ -95,6 +97,7 @@ namespace Test.MetaDraw
             snapshot.ChimeraLegendMainTextType = LegendDisplayProperty.ProteinAccession;
             snapshot.ChimeraLegendSubTextType = LegendDisplayProperty.FullSequence;
             snapshot.SuppressMessageBoxes = true;
+            snapshot.ChimeraLegendTakeFirstIfAmbiguous = true;
 
             MetaDrawSettings.LoadSettings(snapshot, out bool flaggedError);
             Assert.That(!flaggedError);
@@ -113,6 +116,7 @@ namespace Test.MetaDraw
             Assert.That(snapshot.ChimeraLegendMainTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendMainTextType));
             Assert.That(snapshot.ChimeraLegendSubTextType, Is.EqualTo(MetaDrawSettings.ChimeraLegendSubTextType));
             Assert.That(snapshot.SuppressMessageBoxes, Is.EqualTo(MetaDrawSettings.SuppressMessageBoxes));
+            Assert.That(snapshot.ChimeraLegendTakeFirstIfAmbiguous, Is.EqualTo(MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous));
             colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
             betaColorValues = MetaDrawSettings.BetaProductTypeToColor

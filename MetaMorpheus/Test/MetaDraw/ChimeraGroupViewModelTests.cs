@@ -6,7 +6,7 @@ using System.Linq;
 using Chemistry;
 using EngineLayer;
 using GuiFunctions;
-using GuiFunctions.MetaDraw.Chimeras;
+using GuiFunctions.MetaDraw;
 using MassSpectrometry;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;

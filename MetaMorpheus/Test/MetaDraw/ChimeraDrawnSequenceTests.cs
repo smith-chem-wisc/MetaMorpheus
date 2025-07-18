@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using GuiFunctions;
-using GuiFunctions.MetaDraw.Chimeras;
+using GuiFunctions.MetaDraw;
 using NUnit.Framework;
 
 namespace Test.MetaDraw;

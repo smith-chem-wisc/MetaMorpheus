@@ -394,12 +394,16 @@
                                           Content="Display internal ion annotations" Margin="5" />
 
                             <GroupBox Grid.Column="0" Grid.Row="5" Grid.RowSpan="4"   Header="Legend" >
-                                <StackPanel Margin="10,5,10,5" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Stretch" >
-                                    <CheckBox Content="Show Legend"
-                                              Margin="0,0,0,10"
-                                              IsChecked="{Binding DisplayChimeraLegend}" />
+                                <StackPanel Margin="1" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Stretch" >
+                                    <StackPanel Orientation="Vertical" Margin="0 0 0 5">
+                                        <CheckBox Content="Show Legend" VerticalAlignment="Center" 
+                                                  IsChecked="{Binding DisplayChimeraLegend}" />
+                                        <CheckBox Content="Take first on ambiguous results" VerticalAlignment="Center"
+                                                  IsChecked="{Binding ChimeraLegendTakeFirstIfAmbiguous}" />
 
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
                                         <Label Content="Main text:" Width="80" VerticalAlignment="Center"/>
                                         <ComboBox Width="140"
                                                   ItemsSource="{Binding ChimericLegendDisplayProperties, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"

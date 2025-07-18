@@ -726,6 +726,14 @@ namespace GuiFunctions
                 finalImage?.Dispose();
                 throw;
             }
+            finally
+            {
+                //clean up memory
+                foreach (System.Drawing.Bitmap image in images)
+                {
+                    image.Dispose();
+                }
+            }
         }
 
         public void FilterPsms()
