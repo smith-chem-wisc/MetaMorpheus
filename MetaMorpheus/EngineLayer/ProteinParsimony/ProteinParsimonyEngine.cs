@@ -280,27 +280,23 @@ namespace EngineLayer
             foreach (var peptide in _fdrFilteredPeptides)
             {
                 ParsimonySequence sequence = new ParsimonySequence(peptide, _treatModPeptidesAsDifferentPeptides);
-                if (peptide.Parent is not Protein protein)
-                {
-                    continue;
-                }
 
                 if (peptideSequenceToProteins.TryGetValue(sequence, out List<IBioPolymer> proteinsForThisPeptideSequence))
                 {
-                    proteinsForThisPeptideSequence.Add(protein);
+                    proteinsForThisPeptideSequence.Add(peptide.Parent);
                 }
                 else
                 {
-                    peptideSequenceToProteins.Add(sequence, new List<IBioPolymer> { protein });
+                    peptideSequenceToProteins.Add(sequence, new List<IBioPolymer> { peptide.Parent });
                 }
 
-                if (proteinToPepSeqMatch.TryGetValue(protein, out var peptideSequences))
+                if (proteinToPepSeqMatch.TryGetValue(peptide.Parent, out var peptideSequences))
                 {
                     peptideSequences.Add(sequence);
                 }
                 else
                 {
-                    proteinToPepSeqMatch.Add(protein, new HashSet<ParsimonySequence> { sequence });
+                    proteinToPepSeqMatch.Add(peptide.Parent, new HashSet<ParsimonySequence> { sequence });
                 }
             }
 
@@ -422,7 +418,7 @@ namespace EngineLayer
                     }
                 }
 
-                foreach (Protein protein in indistinguishableProteins)
+                foreach (var protein in indistinguishableProteins)
                 {
                     parsimoniousProteinList.Add(protein);
                 }
