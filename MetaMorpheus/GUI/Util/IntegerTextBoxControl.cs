@@ -25,6 +25,14 @@ namespace MetaMorpheusGUI
             {
                 if (!char.IsDigit(character))
                 {
+                    if (character == '-')
+                    {
+                        // Allow '-' only at the start and only once
+                        if (CaretIndex == 0 && !Text.Contains("-"))
+                        {
+                            continue;
+                        }
+                    }
                     e.Handled = true;
                     return;
                 }

@@ -181,6 +181,7 @@ public class DeconHostViewModel : BaseViewModel
     /// This enables the user to set parameters, switch to another, and switch back without losing their settings
     /// </summary>
     public ObservableCollection<DeconParamsViewModel> PrecursorDeconvolutionParametersList { get; protected set; }
+    public ObservableCollection<Polarity> Polarities { get; } = [.. Enum.GetValues<Polarity>().Skip(1).Take(2)];
     private DeconParamsViewModel? _precursorDeconvolutionParameters;
 
     /// <summary>
