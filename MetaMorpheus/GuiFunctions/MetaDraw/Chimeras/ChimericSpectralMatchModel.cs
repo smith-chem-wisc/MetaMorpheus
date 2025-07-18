@@ -34,8 +34,15 @@ public class ChimericSpectralMatchModel : BaseViewModel
             _ => GlobalVariables.AllModsKnownDictionary
         };
 
-        // If ambiguous, takes the first sequence. 
-        AllModsOneIsNterminus = IBioPolymerWithSetMods.GetModificationDictionaryFromFullSequence(psm.FullSequence.Split('|')[0], modDict);
-        ModString = string.Join(", ", AllModsOneIsNterminus.Select(m => $"{m.Key} - {m.Value.IdWithMotif}"));
+        // If ambiguous, process all sequences and concatenate their mod strings with '|'
+        var sequences = psm.FullSequence.Split('|');
+        var modStrings = new List<string>();
+        foreach (var seq in sequences)
+        {
+            var mods = IBioPolymerWithSetMods.GetModificationDictionaryFromFullSequence(seq, modDict);
+            modStrings.Add(string.Join(", ", mods.Select(m => $"{m.Key} - {m.Value.IdWithMotif}")));
+        }
+        AllModsOneIsNterminus = IBioPolymerWithSetMods.GetModificationDictionaryFromFullSequence(sequences[0], modDict);
+        ModString = string.Join(" | ", modStrings);
     }
 }

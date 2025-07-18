@@ -557,6 +557,16 @@ namespace Test.MetaDraw
                 Assert.That(viewModel.ChimeraLegendSubTextType, Is.EqualTo(newSubTextType));
                 viewModel.ChimeraLegendSubTextType = originalChimeraLegendSubTextType;
             }
+
+            double originalDpi = viewModel.Dpi;
+            viewModel.Dpi = originalDpi + 10.0;
+            Assert.That(viewModel.Dpi, Is.EqualTo(originalDpi + 10.0));
+            viewModel.Dpi = originalDpi;
+
+            string originalExportType = viewModel.ExportType;
+            viewModel.ExportType = originalExportType + "10.0";
+            Assert.That(viewModel.ExportType, Is.EqualTo(originalExportType + "10.0"));
+            viewModel.ExportType = originalExportType;
         }
 
         [Test]

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using MzLibUtil;
+using Omics.Fragmentation;
 using OxyPlot;
 using OxyPlot.Wpf;
 using LineSeries = OxyPlot.Series.LineSeries;
@@ -20,7 +21,6 @@ public class Ms1ChimeraPlot : SpectrumMatchPlot
 
         ZoomAxes();
         AnnotateChimericPeaks(chimeraGroupVm);
-        SetTitle();
         AnnotateIsolationWindow();
         RefreshChart();
     }
@@ -28,17 +28,20 @@ public class Ms1ChimeraPlot : SpectrumMatchPlot
     private void AnnotateIsolationWindow()
     {
         var isolationWindow = ChimeraGroup.Ms2Scan.IsolationRange;
-        List<DataPoint> points = new List<DataPoint>()
-            {
-                new(isolationWindow.Minimum, Model.Axes[1].AbsoluteMaximum),
-                new(isolationWindow.Minimum, 0),
-                new(isolationWindow.Maximum, 0),
-                new(isolationWindow.Maximum, Model.Axes[1].AbsoluteMaximum),
-            };
-        var lineSeries = new LineSeries();
+        var yMax = Model.Axes[1].AbsoluteMaximum;
+        var points = new DataPoint[]
+        {
+            new(isolationWindow.Minimum, yMax),
+            new(isolationWindow.Minimum, 0),
+            new(isolationWindow.Maximum, 0),
+            new(isolationWindow.Maximum, yMax),
+        };
+        var lineSeries = new LineSeries
+        {
+            LineStyle = LineStyle.Dash,
+            Color = OxyColors.Red
+        };
         lineSeries.Points.AddRange(points);
-        lineSeries.LineStyle = LineStyle.Dash;
-        lineSeries.Color = OxyColors.Red;
         Model.Series.Add(lineSeries);
     }
 
@@ -47,23 +50,28 @@ public class Ms1ChimeraPlot : SpectrumMatchPlot
         foreach (var ionGroup in chimeraGroupVm.PrecursorIonsByColor)
         {
             var color = ionGroup.Key;
-            ionGroup.Value.ForEach(p => AnnotatePeak(p.Item1, false, false, color, p.Item2));
+            var ions = ionGroup.Value;
+            foreach (var tuple in ions)
+            {
+                AnnotatePeak(tuple.Item1, false, false, color, tuple.Item2);
+            }
         }
-    }
-
-    private void SetTitle()
-    {
-        string title = "";
-
-
-        Model.Title = title;
     }
 
     public void ZoomAxes()
     {
         Model.Axes[0].MajorStep = 1;
         Model.Axes[0].MinorStep = 0.2;
-        var maxIntensity = ChimeraGroup.Ms1Scan.MassSpectrum.Extract(Range).Max(p => p.Intensity) * 1.4;
+
+        var extracted = ChimeraGroup.Ms1Scan.MassSpectrum.Extract(Range);
+        double maxIntensity = 0;
+        foreach (var p in extracted)
+        {
+            if (p.Intensity > maxIntensity)
+                maxIntensity = p.Intensity;
+        }
+        maxIntensity *= 1.4;
+
         Model.Axes[0].Zoom(Range.Minimum - 1, Range.Maximum + 1);
         Model.Axes[1].Zoom(0, maxIntensity);
     }

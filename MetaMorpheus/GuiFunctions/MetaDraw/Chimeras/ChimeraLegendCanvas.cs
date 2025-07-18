@@ -4,6 +4,7 @@ using System;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Collections.Generic;
 
 namespace GuiFunctions.MetaDraw;
 public enum LegendDisplayProperty
@@ -17,6 +18,7 @@ public enum LegendDisplayProperty
 
 public class ChimeraLegendCanvas : Canvas
 {
+    private const int TextFontSize = 12;
     public ChimeraGroupViewModel GroupViewModel { get; }
 
     public ChimeraLegendCanvas(ChimeraGroupViewModel groupViewModel)
@@ -33,7 +35,6 @@ public class ChimeraLegendCanvas : Canvas
         double rowHeight = 24;
         double maxTextWidth = 0;
 
-        // Group by legend key (refactor to allow dynamic grouping if needed)
         var proteinGroups = GroupViewModel.ChimericPsms
             .GroupBy(psm => psm.Psm.Name)
             .OrderByDescending(g => g.Count());
@@ -41,17 +42,24 @@ public class ChimeraLegendCanvas : Canvas
         int proteinIndex = 0;
         foreach (var group in proteinGroups)
         {
+            // Avoid repeated ToList() calls and repeated property access
             var proteoforms = group.ToList();
-            var proteinColor = proteoforms[0].ProteinColor;
+            int proteoformCount = proteoforms.Count;
+            var firstProteoform = proteoforms[0];
+            var proteinColor = firstProteoform.ProteinColor;
 
-            if (proteoforms.Count == 1)
+            if (proteoformCount == 1)
             {
-                maxTextWidth = Math.Max(maxTextWidth, MeasureTextWidth(GetMainText(proteoforms[0]), 12, FontWeights.Regular));
+                // Cache main text and its width
+                string mainText = GetMainText(firstProteoform);
+                double mainTextWidth = MeasureTextWidth(mainText, TextFontSize, FontWeights.Regular);
+                maxTextWidth = Math.Max(maxTextWidth, mainTextWidth);
+
                 var ellipse = new Ellipse
                 {
-                    Width = 12,
-                    Height = 12,
-                    Fill = new SolidColorBrush(DrawnSequence.ParseColorFromOxyColor(proteoforms[0].Color)),
+                    Width = TextFontSize,
+                    Height = TextFontSize,
+                    Fill = new SolidColorBrush(DrawnSequence.ParseColorFromOxyColor(firstProteoform.Color)),
                     Stroke = Brushes.Black,
                     StrokeThickness = 1
                 };
@@ -60,15 +68,14 @@ public class ChimeraLegendCanvas : Canvas
 
                 var text = new TextBlock
                 {
-                    Text = GetMainText(proteoforms[0]),
+                    Text = mainText,
                     FontWeight = FontWeights.DemiBold,
-                    FontSize = 12,
+                    FontSize = TextFontSize,
                     Margin = new Thickness(6, 0, 0, 0),
                     TextWrapping = TextWrapping.Wrap,
                     MaxWidth = MetaDrawSettings.ChimeraLegendMaxWidth
                 };
 
-                // Measure the text to get the wrapped height
                 text.Measure(new Size(MetaDrawSettings.ChimeraLegendMaxWidth, double.PositiveInfinity));
                 double textHeight = Math.Max(rowHeight, text.DesiredSize.Height);
 
@@ -82,11 +89,15 @@ public class ChimeraLegendCanvas : Canvas
             }
             else
             {
-                maxTextWidth = Math.Max(maxTextWidth, MeasureTextWidth("Shared Ions", 12, FontWeights.Regular));
+                // Only measure "Shared Ions" once
+                const string sharedIonsText = "Shared Ions";
+                double sharedIonsWidth = MeasureTextWidth(sharedIonsText, TextFontSize, FontWeights.Regular);
+                maxTextWidth = Math.Max(maxTextWidth, sharedIonsWidth);
+
                 var sharedEllipse = new Ellipse
                 {
-                    Width = 12,
-                    Height = 12,
+                    Width = TextFontSize,
+                    Height = TextFontSize,
                     Fill = new SolidColorBrush(DrawnSequence.ParseColorFromOxyColor(proteinColor)),
                     Stroke = Brushes.Black,
                     StrokeThickness = 1
@@ -94,16 +105,16 @@ public class ChimeraLegendCanvas : Canvas
                 SetLeft(sharedEllipse, x);
                 SetTop(sharedEllipse, y);
 
+                string headerText = GetMainText(firstProteoform);
                 var header = new TextBlock
                 {
-                    Text = GetMainText(proteoforms[0]),
+                    Text = headerText,
                     FontWeight = FontWeights.DemiBold,
-                    FontSize = 12,
+                    FontSize = TextFontSize,
                     TextWrapping = TextWrapping.Wrap,
                     MaxWidth = MetaDrawSettings.ChimeraLegendMaxWidth
                 };
 
-                // Measure the text to get the wrapped height
                 header.Measure(new Size(MetaDrawSettings.ChimeraLegendMaxWidth, double.PositiveInfinity));
                 double textHeight = Math.Max(rowHeight, header.DesiredSize.Height);
 
@@ -114,13 +125,18 @@ public class ChimeraLegendCanvas : Canvas
 
                 y += textHeight;
 
-                for (int i = 0; i < proteoforms.Count; i++)
+                // Cache subtexts and their widths to avoid repeated calls
+                for (int i = 0; i < proteoformCount; i++)
                 {
-                    var color = proteoforms[i].Color;
+                    var pf = proteoforms[i];
+                    var color = pf.Color;
+                    string subText = GetSubText(pf);
+                    double subTextWidth = MeasureTextWidth(subText, TextFontSize, FontWeights.Regular);
+
                     var ellipse = new Ellipse
                     {
-                        Width = 12,
-                        Height = 12,
+                        Width = TextFontSize,
+                        Height = TextFontSize,
                         Fill = new SolidColorBrush(DrawnSequence.ParseColorFromOxyColor(color)),
                         Stroke = Brushes.Black,
                         StrokeThickness = 1
@@ -130,15 +146,14 @@ public class ChimeraLegendCanvas : Canvas
 
                     var text = new TextBlock
                     {
-                        Text = GetSubText(proteoforms[i]),
+                        Text = subText,
                         FontWeight = FontWeights.Regular,
-                        FontSize = 12,
+                        FontSize = TextFontSize,
                         Margin = new Thickness(6, 0, 0, 0),
                         TextWrapping = TextWrapping.Wrap,
                         MaxWidth = MetaDrawSettings.ChimeraLegendMaxWidth
                     };
 
-                    // Measure the text to get the wrapped height
                     text.Measure(new Size(MetaDrawSettings.ChimeraLegendMaxWidth, double.PositiveInfinity));
                     textHeight = Math.Max(rowHeight, text.DesiredSize.Height);
 
@@ -149,11 +164,12 @@ public class ChimeraLegendCanvas : Canvas
                     Children.Add(text);
 
                     y += textHeight;
-                    maxTextWidth = Math.Max(maxTextWidth, MeasureTextWidth(GetSubText(proteoforms[i]), 12, FontWeights.Regular));
+                    maxTextWidth = Math.Max(maxTextWidth, subTextWidth);
                 }
             }
             proteinIndex++;
         }
+
 
         double leftMargin = 10;
         double ellipseAndSpacing = 18;
@@ -168,8 +184,8 @@ public class ChimeraLegendCanvas : Canvas
         {
             case LegendDisplayProperty.ProteinAccession: return SanitizeIfAmbiguous(psm.Psm.Accession);
             case LegendDisplayProperty.BaseSequence: return SanitizeIfAmbiguous(psm.Psm.BaseSeq);
-            case LegendDisplayProperty.FullSequence: return SanitizeIfAmbiguous(psm.Psm.FullSequence ?? psm.Psm.BaseSeq);
-            case LegendDisplayProperty.Modifications: return string.IsNullOrEmpty(psm.ModString) ? "Unmodified" : psm.ModString;
+            case LegendDisplayProperty.FullSequence: return SanitizeIfAmbiguous(psm.Psm.FullSequence);
+            case LegendDisplayProperty.Modifications: return string.IsNullOrEmpty(psm.ModString) ? "Unmodified" : SanitizeIfAmbiguous(psm.ModString);
             case LegendDisplayProperty.ProteinName: 
             default: return SanitizeIfAmbiguous(psm.Psm.Name);
         }
@@ -181,14 +197,14 @@ public class ChimeraLegendCanvas : Canvas
         {
             case LegendDisplayProperty.ProteinAccession: return SanitizeIfAmbiguous(psm.Psm.Accession);
             case LegendDisplayProperty.BaseSequence: return SanitizeIfAmbiguous(psm.Psm.BaseSeq);
-            case LegendDisplayProperty.FullSequence: return SanitizeIfAmbiguous(psm.Psm.FullSequence ?? psm.Psm.BaseSeq);
+            case LegendDisplayProperty.FullSequence: return SanitizeIfAmbiguous(psm.Psm.FullSequence);
             case LegendDisplayProperty.ProteinName: return SanitizeIfAmbiguous(psm.Psm.Name);
             case LegendDisplayProperty.Modifications: 
-            default: return string.IsNullOrEmpty(psm.ModString) ? "Unmodified" : psm.ModString;
+            default: return string.IsNullOrEmpty(psm.ModString) ? "Unmodified" : SanitizeIfAmbiguous(psm.ModString);
         }
     }
 
-    private double MeasureTextWidth(string text, double fontSize = 12, FontWeight? fontWeight = null)
+    private double MeasureTextWidth(string text, double fontSize = TextFontSize, FontWeight? fontWeight = null)
     {
         var typeface = new Typeface("Segoe UI");
         var formattedText = new FormattedText(
