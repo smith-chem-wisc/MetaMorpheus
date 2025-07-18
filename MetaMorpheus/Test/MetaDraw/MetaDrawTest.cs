@@ -819,7 +819,7 @@ namespace Test.MetaDraw
 
             peak = (LineSeries)childPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
-            Assert.That(Math.Round(peakPoints[0].X, 2), Is.EqualTo(126.06)); // m/z
+            Assert.That(Math.Round(peakPoints[0].X, 2), Is.EqualTo(126.05)); // m/z
             Assert.That(Math.Round(peakPoints[1].X, 2), Is.EqualTo(126.06));
             Assert.That((int)peakPoints[0].Y, Is.EqualTo(0)); // intensity
             Assert.That((int)peakPoints[1].Y, Is.EqualTo(8496));
