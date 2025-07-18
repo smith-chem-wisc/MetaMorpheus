@@ -43,6 +43,7 @@
     <None Remove="Icons\mail_20.bmp" />
     <None Remove="Icons\MMnice.ico" />
     <None Remove="Icons\proxl-ms.bmp" />
+    <None Remove="Icons\rna_4.bmp" />
     <None Remove="Icons\Slack_Mark_Web.bmp" />
     <None Remove="Icons\spritz20.png" />
     <None Remove="Icons\Twitter_Logo_Blue.bmp" />
@@ -107,7 +108,13 @@
     <Resource Include="Icons\MMnice.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="Icons\IconProtein.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Icons\proxl-ms.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\IconRna.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Icons\Slack_Mark_Web.bmp">
