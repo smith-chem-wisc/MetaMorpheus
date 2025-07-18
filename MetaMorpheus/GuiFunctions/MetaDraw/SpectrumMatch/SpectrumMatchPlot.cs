@@ -5,6 +5,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Windows.Media.Imaging;
+using System.Windows.Media;
 using Chemistry;
 using Easy.Common.Extensions;
 using iText.IO.Image;
@@ -31,6 +33,7 @@ namespace GuiFunctions
         public List<MatchedFragmentIon> MatchedFragmentIons { get; protected set; }
         public MsDataScan Scan { get; protected set; }
         public SpectrumMatchFromTsv SpectrumMatch { get; set; }
+        public OxyPlot.Wpf.PlotView PlotView { get; protected set; }
 
         /// <summary>
         /// Base Spectrum match constructor
@@ -43,6 +46,7 @@ namespace GuiFunctions
         public SpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, SpectrumMatchFromTsv sm,
             MsDataScan scan, List<MatchedFragmentIon> matchedIons = null) : base(plotView)
         {
+            PlotView = plotView;
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
             Scan = scan;
@@ -391,7 +395,7 @@ namespace GuiFunctions
         /// <param name="combinedBitmaps"></param>
         /// <param name="width"></param>
         /// <param name="height"></param>
-        public void ExportPlot(string path, Bitmap combinedBitmaps, double width = 700, double height = 370)
+        public static void ExportPlot(string path, Bitmap combinedBitmaps, double width = 700, double height = 370)
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;

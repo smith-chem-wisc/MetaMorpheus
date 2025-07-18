@@ -709,7 +709,7 @@ namespace GuiFunctions
                 using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(finalImage))
                 {
                     //set background color
-                    g.Clear(System.Drawing.Color.White);
+                    g.Clear(System.Drawing.Color.Transparent);
 
                     //go through each image and draw it on the final image
                     for (int i = 0; i < images.Count; i++)
@@ -725,14 +725,6 @@ namespace GuiFunctions
             {
                 finalImage?.Dispose();
                 throw;
-            }
-            finally
-            {
-                //clean up memory
-                foreach (System.Drawing.Bitmap image in images)
-                {
-                    image.Dispose();
-                }
             }
         }
 
@@ -911,7 +903,7 @@ namespace GuiFunctions
         /// </summary>
         /// <param name="bitmap">image to be exported</param>
         /// <param name="path">where it should be exported to</param>
-        private void ExportBitmap(System.Drawing.Bitmap bitmap, string path)
+        internal static void ExportBitmap(System.Drawing.Bitmap bitmap, string path)
         {
             switch (MetaDrawSettings.ExportType)
             {

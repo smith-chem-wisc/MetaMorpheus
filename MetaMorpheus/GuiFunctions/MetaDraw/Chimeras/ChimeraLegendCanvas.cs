@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace GuiFunctions.MetaDraw.Chimeras;
+namespace GuiFunctions.MetaDraw;
 public enum LegendDisplayProperty
 {
     ProteinName,
@@ -42,11 +42,11 @@ public class ChimeraLegendCanvas : Canvas
         foreach (var group in proteinGroups)
         {
             var proteoforms = group.ToList();
-            var proteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][0];
+            var proteinColor = proteoforms[0].ProteinColor;
 
             if (proteoforms.Count == 1)
             {
-                maxTextWidth = Math.Max(maxTextWidth, MeasureTextWidth(group.Key, 12, FontWeights.Regular));
+                maxTextWidth = Math.Max(maxTextWidth, MeasureTextWidth(GetMainText(proteoforms[0]), 12, FontWeights.Regular));
                 var ellipse = new Ellipse
                 {
                     Width = 12,
@@ -102,7 +102,7 @@ public class ChimeraLegendCanvas : Canvas
 
                 for (int i = 0; i < proteoforms.Count; i++)
                 {
-                    var color = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][i + 1];
+                    var color = proteoforms[i].Color;
                     var ellipse = new Ellipse
                     {
                         Width = 12,
@@ -128,15 +128,14 @@ public class ChimeraLegendCanvas : Canvas
                     Children.Add(text);
 
                     y += rowHeight;
-                    if (!string.IsNullOrEmpty(proteoforms[i].ModString))
-                        maxTextWidth = Math.Max(maxTextWidth, MeasureTextWidth(proteoforms[i].ModString, 12, FontWeights.Regular));
+                    maxTextWidth = Math.Max(maxTextWidth, MeasureTextWidth(GetSubText(proteoforms[i]), 12, FontWeights.Regular));
                 }
             }
             proteinIndex++;
         }
 
         double leftMargin = 10;
-        double ellipseAndSpacing = 28;
+        double ellipseAndSpacing = 18;
         double rightMargin = 10;
         Width = leftMargin + ellipseAndSpacing + maxTextWidth + rightMargin;
         Height = y + 10;

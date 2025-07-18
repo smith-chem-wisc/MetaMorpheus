@@ -8,7 +8,7 @@ using OxyPlot.Wpf;
 using Point = System.Windows.Point;
 using Canvas = System.Windows.Controls.Canvas;
 using System;
-using GuiFunctions.MetaDraw.Chimeras;
+using GuiFunctions.MetaDraw;
 
 namespace GuiFunctions
 {
@@ -44,7 +44,7 @@ namespace GuiFunctions
             }
         }
 
-        public void ExportPlot(string path, Canvas legend = null,  double width = 700, double height = 370)
+        public void ExportPlot(string path, Canvas legend = null, Point? legendPosition = null,  double width = 700, double height = 370)
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
@@ -59,14 +59,11 @@ namespace GuiFunctions
             bitmaps.Add(new System.Drawing.Bitmap(tempModelPath));
             points.Add(new Point(0, 0));
 
-            // render legend as bitmap and export as png if used
-            System.Drawing.Bitmap ptmLegendBitmap = null;
-            Point legendPoint;
-            if (legend != null && MetaDrawSettings.ShowLegend)
+            // Render legend as bitmap and export as png if used
+            if (legend != null && MetaDrawSettings.ShowLegend && legendPosition.HasValue)
             {
-                // Saving Canvas as a usable Png
                 RenderTargetBitmap legendRenderBitmap = new((int)(dpiScale * legend.ActualWidth), (int)(dpiScale * legend.ActualHeight),
-                         MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+                    MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
                 legendRenderBitmap.Render(legend);
                 var legendEncoder = new PngBitmapEncoder();
                 legendEncoder.Frames.Add(BitmapFrame.Create(legendRenderBitmap));
@@ -75,22 +72,19 @@ namespace GuiFunctions
                     legendEncoder.Save(file);
                 }
 
-                // converting png to the final bitmap format
                 System.Drawing.Bitmap tempLegendBitmap = new(tempLegendPngPath);
-                ptmLegendBitmap = new System.Drawing.Bitmap(tempLegendBitmap, new System.Drawing.Size((int)legend.ActualWidth, (int)legend.ActualHeight));
+                var ptmLegendBitmap = new System.Drawing.Bitmap(tempLegendBitmap, new System.Drawing.Size((int)legend.ActualWidth, (int)legend.ActualHeight));
                 bitmaps.Add(ptmLegendBitmap);
-                legendPoint = new Point(0, height);
-                points.Add(legendPoint);
-                base.ExportPlot(path, ptmLegendBitmap, width, height);
+                points.Add(legendPosition.Value);
                 tempLegendBitmap.Dispose();
             }
 
             // combine the bitmaps
-            var combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points, false);
+            var combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points, true);
             bitmaps.ForEach(p => p.Dispose());
             File.Delete(tempModelPath);
             File.Delete(tempLegendPngPath);
-            base.ExportPlot(path, combinedBitmaps, width, height);
+            ExportPlot(path, combinedBitmaps, width, height);
         }
 
         /// <summary>

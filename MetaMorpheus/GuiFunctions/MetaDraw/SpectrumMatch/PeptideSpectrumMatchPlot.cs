@@ -118,7 +118,7 @@ namespace GuiFunctions
             File.Delete(tempModelPath);
             File.Delete(tempStationarySequencePngPath);
             File.Delete(tempPtmLegendPngPath);
-            base.ExportPlot(path, combinedBitmaps, width, height);
+            ExportPlot(path, combinedBitmaps, width, height);
         }
     }
 
