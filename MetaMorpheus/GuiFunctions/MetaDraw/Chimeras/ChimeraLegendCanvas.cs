@@ -63,15 +63,22 @@ public class ChimeraLegendCanvas : Canvas
                     Text = GetMainText(proteoforms[0]),
                     FontWeight = FontWeights.DemiBold,
                     FontSize = 12,
-                    Margin = new Thickness(6, 0, 0, 0)
+                    Margin = new Thickness(6, 0, 0, 0),
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = MetaDrawSettings.ChimeraLegendMaxWidth
                 };
+
+                // Measure the text to get the wrapped height
+                text.Measure(new Size(MetaDrawSettings.ChimeraLegendMaxWidth, double.PositiveInfinity));
+                double textHeight = Math.Max(rowHeight, text.DesiredSize.Height);
+
                 SetLeft(text, x + 18);
                 SetTop(text, y - 2);
 
                 Children.Add(ellipse);
                 Children.Add(text);
 
-                y += rowHeight;
+                y += textHeight;
             }
             else
             {
@@ -91,14 +98,21 @@ public class ChimeraLegendCanvas : Canvas
                 {
                     Text = GetMainText(proteoforms[0]),
                     FontWeight = FontWeights.DemiBold,
-                    FontSize = 12
+                    FontSize = 12,
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = MetaDrawSettings.ChimeraLegendMaxWidth
                 };
+
+                // Measure the text to get the wrapped height
+                header.Measure(new Size(MetaDrawSettings.ChimeraLegendMaxWidth, double.PositiveInfinity));
+                double textHeight = Math.Max(rowHeight, header.DesiredSize.Height);
+
                 SetLeft(header, x + 18);
                 SetTop(header, y - 2);
-
                 Children.Add(sharedEllipse);
                 Children.Add(header);
-                y += rowHeight;
+
+                y += textHeight;
 
                 for (int i = 0; i < proteoforms.Count; i++)
                 {
@@ -119,15 +133,22 @@ public class ChimeraLegendCanvas : Canvas
                         Text = GetSubText(proteoforms[i]),
                         FontWeight = FontWeights.Regular,
                         FontSize = 12,
-                        Margin = new Thickness(6, 0, 0, 0)
+                        Margin = new Thickness(6, 0, 0, 0),
+                        TextWrapping = TextWrapping.Wrap,
+                        MaxWidth = MetaDrawSettings.ChimeraLegendMaxWidth
                     };
+
+                    // Measure the text to get the wrapped height
+                    text.Measure(new Size(MetaDrawSettings.ChimeraLegendMaxWidth, double.PositiveInfinity));
+                    textHeight = Math.Max(rowHeight, text.DesiredSize.Height);
+
                     SetLeft(text, x + 28);
                     SetTop(text, y - 2);
 
                     Children.Add(ellipse);
                     Children.Add(text);
 
-                    y += rowHeight;
+                    y += textHeight;
                     maxTextWidth = Math.Max(maxTextWidth, MeasureTextWidth(GetSubText(proteoforms[i]), 12, FontWeights.Regular));
                 }
             }

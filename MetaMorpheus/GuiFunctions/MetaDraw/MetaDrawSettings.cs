@@ -58,8 +58,9 @@ namespace GuiFunctions
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double SpectrumDescriptionFontSize { get; set; } = 10;
 
-        public static bool ChimeraLegendTakeFirstIfAmbiguous { get; set; } = false;
         public static bool DisplayChimeraLegend { get; set; } = true;
+        public static double ChimeraLegendMaxWidth { get; set; } = 420;
+        public static bool ChimeraLegendTakeFirstIfAmbiguous { get; set; } = false;
         public static LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
         public static LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
 
@@ -471,7 +472,8 @@ namespace GuiFunctions
                 StrokeThicknessAnnotated = StrokeThicknessAnnotated,
                 SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
                 SuppressMessageBoxes = SuppressMessageBoxes,
-                ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous
+                ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous,
+                ChimeraLegendMaxWidth = ChimeraLegendMaxWidth   
             };
         }
 
@@ -511,6 +513,7 @@ namespace GuiFunctions
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
             SuppressMessageBoxes = settings.SuppressMessageBoxes;
             ChimeraLegendTakeFirstIfAmbiguous = settings.ChimeraLegendTakeFirstIfAmbiguous;
+            ChimeraLegendMaxWidth = settings.ChimeraLegendMaxWidth;
 
             try // Product Type Colors
             {

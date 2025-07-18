@@ -43,6 +43,7 @@ namespace GuiFunctions
         public bool DisplayChimeraLegend { get; set; } = true;
         public bool SuppressMessageBoxes { get; set; } = true;
         public bool ChimeraLegendTakeFirstIfAmbiguous { get; set; }
+        public double ChimeraLegendMaxWidth { get; set; } = 420;
         public LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
         public LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
 

@@ -20,7 +20,7 @@ namespace MetaMorpheusGUI
             // Update legend automatically if legend plotting settings change
             MetaDrawSettingsViewModel.Instance.PropertyChanged += (s, e) =>
             {
-                if (e.PropertyName is nameof(MetaDrawSettingsViewModel.ChimeraLegendMainTextType) or nameof(MetaDrawSettingsViewModel.ChimeraLegendSubTextType) or nameof(MetaDrawSettingsViewModel.DisplayChimeraLegend) or nameof(MetaDrawSettingsViewModel.ChimeraLegendTakeFirstIfAmbiguous))
+                if (e.PropertyName is nameof(MetaDrawSettingsViewModel.ChimeraLegendMainTextType) or nameof(MetaDrawSettingsViewModel.ChimeraLegendSubTextType) or nameof(MetaDrawSettingsViewModel.DisplayChimeraLegend) or nameof(MetaDrawSettingsViewModel.ChimeraLegendTakeFirstIfAmbiguous)or nameof(MetaDrawSettingsViewModel.ChimeraLegendMaxWidth))
                 {
                     if (DataContext is ChimeraAnalysisTabViewModel { SelectedChimeraGroup: not null } context)
                         context.LegendCanvas = new(context.SelectedChimeraGroup);

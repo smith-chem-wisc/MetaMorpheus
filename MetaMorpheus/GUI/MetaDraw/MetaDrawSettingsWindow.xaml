@@ -357,17 +357,16 @@
             </TabItem>
             
             <!-- Chimera Analysis Tab -->
-            <TabItem Header="Chimera Analysis">
+            <TabItem Header="Chimera Annotation">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <GroupBox Header="Spectral Match Display"  Grid.Row="0">
                         <Grid Margin="15 0 0 0">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="30"/>
-                                <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
@@ -392,34 +391,6 @@
                                           Content="Show internal ions" Margin="5" />
                             <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIons}"
                                           Content="Display internal ion annotations" Margin="5" />
-
-                            <GroupBox Grid.Column="0" Grid.Row="5" Grid.RowSpan="4"   Header="Legend" >
-                                <StackPanel Margin="1" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Stretch" >
-                                    <StackPanel Orientation="Vertical" Margin="0 0 0 5">
-                                        <CheckBox Content="Show Legend" VerticalAlignment="Center" 
-                                                  IsChecked="{Binding DisplayChimeraLegend}" />
-                                        <CheckBox Content="Take first on ambiguous results" VerticalAlignment="Center"
-                                                  IsChecked="{Binding ChimeraLegendTakeFirstIfAmbiguous}" />
-
-                                    </StackPanel>
-
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
-                                        <Label Content="Main text:" Width="80" VerticalAlignment="Center"/>
-                                        <ComboBox Width="140"
-                                                  ItemsSource="{Binding ChimericLegendDisplayProperties, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
-                                                  SelectedItem="{Binding ChimeraLegendMainTextType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Mode=TwoWay}"
-                                                  ToolTip="Legend main text" />
-                                    </StackPanel>
-
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Label Content="Sub text:" Width="80" VerticalAlignment="Center"/>
-                                        <ComboBox Width="140"
-                                                  ItemsSource="{Binding ChimericLegendDisplayProperties, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
-                                                  SelectedItem="{Binding ChimeraLegendSubTextType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Mode=TwoWay}"
-                                                  ToolTip="Legend sub text" />
-                                    </StackPanel>
-                                </StackPanel>
-                            </GroupBox>
 
                             <CheckBox Content="Bold ion annotations"  Margin="7 5"  Grid.Column="1" Grid.Row="0" 
                                           IsChecked="{Binding AnnotationBold}" />
@@ -472,7 +443,58 @@
                             </StackPanel>
                         </Grid>
                     </GroupBox>
-                    <local:HostDeconParamControl x:Name="DeisotopingControl" DockPanel.Dock="Bottom" Grid.Row="1"
+                    
+                    <GroupBox Grid.Column="0" Grid.Row="1" Header="Legend">
+                        <Grid Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Legend display options -->
+                            <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Orientation="Vertical" Margin="0 0 10 0">
+                                <CheckBox Content="Show Legend" VerticalAlignment="Center"
+                                          IsChecked="{Binding DisplayChimeraLegend}" Margin="0 0 0 5"/>
+                                <CheckBox Content="Take first on ambiguous results" VerticalAlignment="Center"
+                                          IsChecked="{Binding ChimeraLegendTakeFirstIfAmbiguous}" />
+                            </StackPanel>
+
+                            <!-- Main text and sub text selection -->
+                            <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal" Margin="0 0 0 5" VerticalAlignment="Center">
+                                <Label Content="Main text:" Width="80" VerticalAlignment="Center"/>
+                                <ComboBox Width="140"
+                                          ItemsSource="{Binding ChimericLegendDisplayProperties, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
+                                          SelectedItem="{Binding ChimeraLegendMainTextType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Mode=TwoWay}"
+                                          ToolTip="Legend main text" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Label Content="Sub text:" Width="80" VerticalAlignment="Center"/>
+                                <ComboBox Width="140"
+                                          ItemsSource="{Binding ChimericLegendDisplayProperties, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
+                                          SelectedItem="{Binding ChimeraLegendSubTextType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Mode=TwoWay}"
+                                          ToolTip="Legend sub text" />
+                            </StackPanel>
+
+                            <!-- Max width setting -->
+                            <StackPanel Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0 8 0 0" VerticalAlignment="Center">
+                                <Label Content="Legend max width:" Width="120" VerticalAlignment="Center"/>
+                                <local:DoubleTextBoxControl Width="80" Height="24"
+                                        Text="{Binding ChimeraLegendMaxWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        VerticalContentAlignment="Center"
+                                        HorizontalContentAlignment="Center"/>
+                                <Label Content="px" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                    
+                    <local:HostDeconParamControl x:Name="DeisotopingControl"
+                                                 Grid.Row="2"
                                                  GroupBoxHeader="Precursor Deconvolution Parameters for Aligning Search Results to Spectra"
                                                  ShowMs2Section="False" 
                                                  DataContext="{Binding DeconHostViewModel}">
