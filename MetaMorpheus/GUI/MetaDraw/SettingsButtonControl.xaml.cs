@@ -10,7 +10,7 @@ namespace MetaMorpheusGUI;
 /// </summary>
 public partial class SettingsButtonControl : UserControl
 {
-    public event EventHandler<MetaDrawSettingsChangedEventArgs> SettingsChanged;
+    public static event EventHandler<MetaDrawSettingsChangedEventArgs> SettingsChanged;
 
     public SettingsButtonControl()
     {
@@ -52,6 +52,7 @@ public partial class SettingsButtonControl : UserControl
 
         settingsWindow.SettingsWindowTabControl.SelectedIndex = SelectedTabIndex;
 
+        // filter
         var originalQ = MetaDrawSettings.QValueFilter;
         var originalShowDecoys = MetaDrawSettings.ShowDecoys;
         var originalAmbiguityFilter = MetaDrawSettings.AmbiguityFilter;

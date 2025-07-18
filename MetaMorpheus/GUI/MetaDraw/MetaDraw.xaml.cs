@@ -48,8 +48,7 @@ namespace MetaMorpheusGUI
             InitializeComponent();
 
             MetaDrawLogic = new MetaDrawLogic();
-            SettingsButton.SettingsChanged += RefreshPlotsAfterSettingsChange;
-            ChimeraAnalysisTabView.SettingsButton.SettingsChanged += RefreshPlotsAfterSettingsChange;
+            SettingsButtonControl.SettingsChanged += RefreshPlotsAfterSettingsChange;
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchResultFilePaths, MetaDrawLogic.ThreadLocker);
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectraFilePaths, MetaDrawLogic.ThreadLocker);
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.FilteredListOfPsms, MetaDrawLogic.ThreadLocker);
@@ -78,8 +77,6 @@ namespace MetaMorpheusGUI
             plotTypes = new ObservableCollection<string>();
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
-
-            exportPdfs.Content = MetaDrawSettings.ExportType;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -457,8 +454,6 @@ namespace MetaMorpheusGUI
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
             var selectedChimeraGroup = ChimeraAnalysisTabViewModel.SelectedChimeraGroup;
-
-            exportPdfs.Content = MetaDrawSettings.ExportType;
 
             // filter based on new settings
             if (e.FilterChanged)
