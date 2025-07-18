@@ -26,8 +26,8 @@
                 <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Row="0" Grid.Column="0" x:Name="SearchButton" Content="Search"
-                    VerticalAlignment="Center" Margin="5 3"
+            <Button Grid.Row="0" Grid.Column="0" x:Name="SearchButton" Content="Search" Width="48" Height="26"
+                    VerticalAlignment="Center" Margin="5 3" Style="{StaticResource MetaDrawButtonStyle}"
                     VerticalContentAlignment="Center" Click="SearchWithNewIons_OnClick" />
 
             <CheckBox Grid.Row="0" Grid.Column="1" Content="Persist?" VerticalAlignment="Center"

@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using GuiFunctions;
 using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
@@ -11,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Nett;
 using System.Windows.Input;
+using MassSpectrometry;
+using GuiFunctions.MetaDraw;
 
 namespace GuiFunctions
 {
@@ -71,13 +72,27 @@ namespace GuiFunctions
         }
 
         public ObservableCollection<SpectrumDescriptorViewModel> SpectrumDescriptors { get; }
+        public ObservableCollection<string> ExportTypes { get; } = [.. MetaDrawSettings.ExportTypes];
+
+        public DeconHostViewModel DeconHostViewModel { get; set; }
 
         public ObservableCollection<string> PossibleColors { get; set; }
+        public ObservableCollection<LegendDisplayProperty> ChimericLegendDisplayProperties { get; } = [..Enum.GetValues<LegendDisplayProperty>()];
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
         public static string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
 
+        public string ExportType
+        {
+            get => MetaDrawSettings.ExportType;
+            set { MetaDrawSettings.ExportType = value; OnPropertyChanged(nameof(ExportType)); }
+        }
+        public double Dpi
+        {
+            get => MetaDrawSettings.CanvasPdfExportDpi;
+            set { MetaDrawSettings.CanvasPdfExportDpi = value; OnPropertyChanged(nameof(Dpi)); }
+        }
         public bool DisplayIonAnnotations
         {
             get => MetaDrawSettings.DisplayIonAnnotations;
@@ -87,6 +102,16 @@ namespace GuiFunctions
         {
             get => MetaDrawSettings.AnnotateMzValues;
             set { MetaDrawSettings.AnnotateMzValues = value; OnPropertyChanged(nameof(AnnotateMzValues)); }
+        }
+        public bool SuppressMessageBoxes
+        {
+            get => MetaDrawSettings.SuppressMessageBoxes;
+            set 
+            {
+                MessageBoxHelper.SuppressMessageBoxes = value;
+                MetaDrawSettings.SuppressMessageBoxes = value; 
+                OnPropertyChanged(nameof(AnnotateMzValues)); 
+            }
         }
         public bool AnnotateCharges
         {
@@ -139,6 +164,31 @@ namespace GuiFunctions
             get => MetaDrawSettings.StrokeThicknessUnannotated;
             set { MetaDrawSettings.StrokeThicknessUnannotated = value; OnPropertyChanged(nameof(StrokeThicknessUnannotated)); }
         }
+        public bool DisplayChimeraLegend
+        {
+            get => MetaDrawSettings.DisplayChimeraLegend;
+            set { MetaDrawSettings.DisplayChimeraLegend = value; OnPropertyChanged(nameof(DisplayChimeraLegend)); }
+        }
+        public bool ChimeraLegendTakeFirstIfAmbiguous
+        {
+            get => MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous;
+            set { MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous = value; OnPropertyChanged(nameof(ChimeraLegendTakeFirstIfAmbiguous)); }
+        }
+        public double ChimeraLegendMaxWidth
+        {
+            get => MetaDrawSettings.ChimeraLegendMaxWidth;
+            set { MetaDrawSettings.ChimeraLegendMaxWidth = value; OnPropertyChanged(nameof(ChimeraLegendMaxWidth)); }
+        }
+        public LegendDisplayProperty ChimeraLegendMainTextType
+        {
+            get => MetaDrawSettings.ChimeraLegendMainTextType;
+            set { MetaDrawSettings.ChimeraLegendMainTextType = value; OnPropertyChanged(nameof(ChimeraLegendMainTextType)); }
+        }
+        public LegendDisplayProperty ChimeraLegendSubTextType
+        {
+            get => MetaDrawSettings.ChimeraLegendSubTextType;
+            set { MetaDrawSettings.ChimeraLegendSubTextType = value; OnPropertyChanged(nameof(ChimeraLegendSubTextType)); }
+        }
 
         #endregion
 
@@ -167,6 +217,12 @@ namespace GuiFunctions
                 LoadSequenceCoverage();
                 Initialization = Task.CompletedTask;
             }
+
+            // This defaults to classic decon, and we set the charge to ensure it will work for top-down and bottom-up.
+            // This is not the best approach, in the future we could try to locate the search toml when loading in a psm file and use those decon params. 
+            DeconHostViewModel = new();
+             // Ensure it will work for top-down and bottom-up.
+            DeconHostViewModel.SetAllPrecursorMaxChargeState(60); 
         }
 
         private async Task InitializeAsync()

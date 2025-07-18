@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MzLibUtil;
+using System.Linq;
 
 namespace Test
 {
@@ -385,6 +386,37 @@ namespace Test
 
             // Assert
             Assert.That(dictionary["key1"], Is.EquivalentTo(new HashSet<int> { 1, 2, 3 }));
+        }
+
+        [Test]
+        public void AddOrReplace_AddsNewKeyValue_WhenKeyNotPresent()
+        {
+            var dict = new Dictionary<string, List<(int, string)>>();
+            dict.AddOrReplace("A", 1, "one");
+            Assert.That(dict.ContainsKey("A"), Is.True);
+            Assert.That(dict["A"].Count, Is.EqualTo(1));
+            Assert.That(dict["A"].First(), Is.EqualTo((1, "one")));
+        }
+
+        [Test]
+        public void AddOrReplace_ReplacesValue_WhenKeyAndValuePresent()
+        {
+            var dict = new Dictionary<string, List<(int, string)>>();
+            dict.AddOrReplace("A", 1, "one");
+            dict.AddOrReplace("A", 1, "uno");
+            Assert.That(dict["A"].Count, Is.EqualTo(1));
+            Assert.That(dict["A"].First(), Is.EqualTo((1, "uno")));
+        }
+
+        [Test]
+        public void AddOrReplace_AddsValue_WhenKeyPresentButValueNotPresent()
+        {
+            var dict = new Dictionary<string, List<(int, string)>>();
+            dict.AddOrReplace("A", 1, "one");
+            dict.AddOrReplace("A", 2, "two");
+            Assert.That(dict["A"].Count, Is.EqualTo(2));
+            Assert.That(dict["A"].Any(x => x == (1, "one")), Is.True);
+            Assert.That(dict["A"].Any(x => x == (2, "two")), Is.True);
         }
     }
 }
