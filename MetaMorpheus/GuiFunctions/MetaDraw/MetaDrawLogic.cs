@@ -709,7 +709,7 @@ namespace GuiFunctions
                 using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(finalImage))
                 {
                     //set background color
-                    g.Clear(System.Drawing.Color.Transparent);
+                    g.Clear(System.Drawing.Color.White);
 
                     //go through each image and draw it on the final image
                     for (int i = 0; i < images.Count; i++)

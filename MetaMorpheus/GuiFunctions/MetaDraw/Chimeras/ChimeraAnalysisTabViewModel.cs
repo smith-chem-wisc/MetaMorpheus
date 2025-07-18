@@ -293,7 +293,62 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         MessageBoxHelper.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
     }
 
-    private void ExportAll(object frameworkElement) { }
+    private void ExportAll(object frameworkElement) {
+        if (SelectedChimeraGroup == null)
+        {
+            MessageBoxHelper.Warn("No chimera group selected for export.");
+            return;
+        }
+
+        string path = Path.Combine(ExportDirectory,
+            $"{SelectedChimeraGroup.FileNameWithoutExtension}_{SelectedChimeraGroup.Ms1Scan.OneBasedScanNumber}_{SelectedChimeraGroup.Ms2Scan.OneBasedScanNumber}_All.{MetaDrawSettings.ExportType.ToLower()}");
+
+        var dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
+
+        // Render individual components
+        var (ms1Bitmap, _) = RenderFrameworkElementToBitmap(Ms1ChimeraPlot.PlotView);
+        var (ms2Bitmap, _) = RenderFrameworkElementToBitmap(ChimeraSpectrumMatchPlot.PlotView);
+        var (sequenceBitmap, _) = RenderFrameworkElementToBitmap(ChimeraDrawnSequence.SequenceDrawingCanvas);
+
+        var bitmaps = new List<System.Drawing.Bitmap> { ms1Bitmap, ms2Bitmap, sequenceBitmap };
+
+        // Stack vertically
+        var stackedImage = MetaDrawLogic.CombineBitmap(bitmaps, new List<Point>
+        {
+            new(0, 0),
+            new(0, ms1Bitmap.Height),
+            new(0, ms1Bitmap.Height + ms2Bitmap.Height)
+        }, overlap: false);
+
+        // Legend overlay
+        if (MetaDrawSettings.DisplayChimeraLegend && LegendCanvas != null)
+        {
+            var (legendBitmap, legendVisualOffset) = RenderFrameworkElementToBitmap(LegendCanvas);
+            var commonAncestor = FindCommonAncestor(Ms1ChimeraPlot.PlotView, LegendCanvas) as Visual;
+
+            if (commonAncestor != null)
+            {
+                Point ms1Position = Ms1ChimeraPlot.PlotView.TransformToAncestor(commonAncestor).Transform(new Point(0, 0));
+                Point legendPosition = LegendCanvas.TransformToAncestor(commonAncestor).Transform(new Point(0, 0));
+
+                Vector offsetInLayout = legendPosition - ms1Position;
+
+                Point legendOffsetInStackedImage = new(
+                    (offsetInLayout.X - legendVisualOffset.X + 20) * dpiScale,
+                    (offsetInLayout.Y - legendVisualOffset.Y + 20) * dpiScale); // already in ms1 space
+
+                // Overlay the legend on the stacked image
+                stackedImage = MetaDrawLogic.CombineBitmap(
+                    new List<System.Drawing.Bitmap> { stackedImage, legendBitmap },
+                    new List<Point> { new(0, 0), legendOffsetInStackedImage },
+                    overlap: true);
+            }
+        }
+
+        // Export
+        SpectrumMatchPlot.ExportPlot(path, stackedImage, stackedImage.Width, stackedImage.Height);
+        MessageBoxHelper.Show("Exported all to: " + path);
+    }
 
     private System.Drawing.Bitmap CombinePlotAndLegend(FrameworkElement plotView, FrameworkElement legend = null)
     {
