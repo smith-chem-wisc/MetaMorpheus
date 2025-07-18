@@ -25,13 +25,14 @@ namespace GuiFunctions
         public static readonly char[] SuperScriptNumbers = {
             '\u2070', '\u00b9', '\u00b2', '\u00b3', '\u2074',
             '\u2075', '\u2076', '\u2077', '\u2078', '\u2079'
-        }; 
-        
+        };
+
         #endregion
 
         #region Customizable Settings
 
         // graphic settings
+        public static bool SuppressMessageBoxes { get; set; } = false;
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
         public static bool DisplayIonAnnotations { get; set; } = true;
         public static bool AnnotateMzValues { get; set; } = false;

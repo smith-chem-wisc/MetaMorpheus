@@ -103,6 +103,16 @@ namespace GuiFunctions
             get => MetaDrawSettings.AnnotateMzValues;
             set { MetaDrawSettings.AnnotateMzValues = value; OnPropertyChanged(nameof(AnnotateMzValues)); }
         }
+        public bool SuppressMessageBoxes
+        {
+            get => MetaDrawSettings.SuppressMessageBoxes;
+            set 
+            {
+                MessageBoxHelper.SuppressMessageBoxes = value;
+                MetaDrawSettings.SuppressMessageBoxes = value; 
+                OnPropertyChanged(nameof(AnnotateMzValues)); 
+            }
+        }
         public bool AnnotateCharges
         {
             get => MetaDrawSettings.AnnotateCharges;

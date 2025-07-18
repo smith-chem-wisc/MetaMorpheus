@@ -78,6 +78,9 @@
                                 Text="{Binding Dpi}" VerticalContentAlignment="Center"
                                 HorizontalContentAlignment="Center"/>
                         </StackPanel>
+
+                        <CheckBox Content="Suppress Export Popup " Margin="5" HorizontalAlignment="Center" VerticalContentAlignment="Center"
+                                  IsChecked="{Binding SuppressMessageBoxes}" />
                     </StackPanel>
 
                     <!-- slider -->
