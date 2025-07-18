@@ -107,9 +107,9 @@ namespace EngineLayer
             else // negative mode
             {
                 PrecursorDeconvolutionParameters = precursorDeconParams ?? new ClassicDeconvolutionParameters(deconvolutionMaxAssumedChargeState,
-                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
+                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative, new OxyriboAveragine());
                 ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(-10,
-                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
+                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative, new OxyriboAveragine());
             }
 
             CustomIons = DeconvolutionMaxAssumedChargeState < 0
