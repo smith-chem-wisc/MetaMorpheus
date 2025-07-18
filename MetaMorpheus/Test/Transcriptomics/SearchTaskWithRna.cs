@@ -90,6 +90,6 @@ public class SearchTaskWithRna
         {
             Assert.That(files, Does.Contain(expectedFile), $"Expected output file {expectedFile} not found.");
         }
-        Directory.Delete(outputDir, true);
+        // Directory.Delete(outputDir, true);
     }
 }
