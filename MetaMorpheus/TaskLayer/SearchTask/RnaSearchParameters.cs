@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer;
 
@@ -14,6 +15,7 @@ public class RnaSearchParameters : SearchParameters
         DoLabelFreeQuantification = false;
         MinAllowedInternalFragmentLength = 0;
 
+        DecoyType = DecoyType.Reverse;
         SearchType = SearchType.Classic;
 
         // Output Options
@@ -21,6 +23,7 @@ public class RnaSearchParameters : SearchParameters
         WriteMzId = false;
         UpdateSpectralLibrary = false;
         WriteSpectralLibrary = false;
+        
         ModsToWriteSelection = new Dictionary<string, int>
         {
             //Key is modification type.
