@@ -6,6 +6,7 @@ using GuiFunctions;
 using System.Windows.Controls;
 using System.IO;
 using System.Threading;
+using GuiFunctions.MetaDraw;
 
 namespace Test.MetaDraw;
 
@@ -146,8 +147,8 @@ public class ChimeraSpectrumMatchPlotTests
     public void ChimeraSpectrumMatchPlot_StaticColorDictionaries_AreInitialized()
     {
         // Act & Assert
-        Assert.That(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor, Is.EqualTo(OxyColors.Black));
-        Assert.That(ChimeraSpectrumMatchPlot.ColorByProteinDictionary, Is.Not.Null.And.Not.Empty);
-        Assert.That(ChimeraSpectrumMatchPlot.OverflowColors, Is.Not.Null.And.Not.Empty);
+        Assert.That(ChimeraGroupViewModel.MultipleProteinSharedColor, Is.EqualTo(OxyColors.Black));
+        Assert.That(ChimeraGroupViewModel.ColorByProteinDictionary, Is.Not.Null.And.Not.Empty);
+        Assert.That(ChimeraGroupViewModel.OverflowColors, Is.Not.Null.And.Not.Empty);
     }
 }

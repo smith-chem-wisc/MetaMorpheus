@@ -182,9 +182,9 @@ public class ChimeraGroupViewModelTests
         var envelope1Peaks = envelope1.Peaks;
         var envelope2Peaks = envelope2.Peaks;
 
-        var sharedPeakColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[0][0];
-        var firstColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[0][1];
-        var secondColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[0][2];
+        var sharedPeakColor = ChimeraGroupViewModel.ColorByProteinDictionary[0][0];
+        var firstColor = ChimeraGroupViewModel.ColorByProteinDictionary[0][1];
+        var secondColor = ChimeraGroupViewModel.ColorByProteinDictionary[0][2];
 
         // One color for each of the precursor envelopes. 
         Assert.That(chimeraGroup.PrecursorIonsByColor.Count(), Is.EqualTo(2));
@@ -211,10 +211,10 @@ public class ChimeraGroupViewModelTests
         var envelope2Peaks = envelope2.Peaks;
 
         var sharedPeakColor = OxyColors.Black;
-        var firstProteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[0][0];
-        var firstProteoformOfFirstProteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[0][1];
-        var secondProteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[1][0];
-        var firstProteoformOfSecondProteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[1][1];
+        var firstProteinColor = ChimeraGroupViewModel.ColorByProteinDictionary[0][0];
+        var firstProteoformOfFirstProteinColor = ChimeraGroupViewModel.ColorByProteinDictionary[0][1];
+        var secondProteinColor = ChimeraGroupViewModel.ColorByProteinDictionary[1][0];
+        var firstProteoformOfSecondProteinColor = ChimeraGroupViewModel.ColorByProteinDictionary[1][1];
 
         // One color for each of the precursor envelopes. 
         Assert.That(chimeraGroup.PrecursorIonsByColor.Count(), Is.EqualTo(2));

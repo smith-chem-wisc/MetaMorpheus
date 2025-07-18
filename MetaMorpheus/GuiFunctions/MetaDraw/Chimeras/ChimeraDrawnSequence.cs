@@ -96,11 +96,11 @@ public class ChimeraDrawnSequence
         Color color;
 
         // Shared Ions
-        if (ChimeraGroupViewModel.MatchedFragmentIonsByColor.ContainsKey(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor))
+        if (ChimeraGroupViewModel.MatchedFragmentIonsByColor.ContainsKey(ChimeraGroupViewModel.MultipleProteinSharedColor))
         {
-            color = DrawnSequence.ParseColorFromOxyColor(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor);
+            color = DrawnSequence.ParseColorFromOxyColor(ChimeraGroupViewModel.MultipleProteinSharedColor);
             foreach (var ion in ChimeraGroupViewModel
-                         .MatchedFragmentIonsByColor[ChimeraSpectrumMatchPlot.MultipleProteinSharedColor]
+                         .MatchedFragmentIonsByColor[ChimeraGroupViewModel.MultipleProteinSharedColor]
                          .Select(p => p.Item1))
             {
                 var matchedIon = psm.Psm.MatchedIons.FirstOrDefault(mi =>

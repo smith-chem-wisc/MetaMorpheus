@@ -932,18 +932,18 @@ namespace Test.MetaDraw
                 var accessionToSharedProteinColor = chimeraGroup.ChimericPsms
                     .GroupBy(p => p.Psm.Accession)
                     .Select((p, i) =>
-                    (p.Key, Color: ChimeraSpectrumMatchPlot.ColorByProteinDictionary[i][0])).ToDictionary(p => p.Key, p => p.Color);
+                    (p.Key, Color: ChimeraGroupViewModel.ColorByProteinDictionary[i][0])).ToDictionary(p => p.Key, p => p.Color);
                 var fullSequenceToUniqueColorDict = chimeraGroup.ChimericPsms
                     .GroupBy(p => p.Psm.Accession)
                     .SelectMany((p, i) =>
                     {
                         if (p.Count() == 1)
                         {
-                            return [(p.First().Psm.FullSequence, Color: ChimeraSpectrumMatchPlot.ColorByProteinDictionary[i][1])];
+                            return [(p.First().Psm.FullSequence, Color: ChimeraGroupViewModel.ColorByProteinDictionary[i][1])];
                         }
                         else
                         {
-                            return p.Select((m, j) => (m.Psm.FullSequence, Color: ChimeraSpectrumMatchPlot.ColorByProteinDictionary[i][j+1]));
+                            return p.Select((m, j) => (m.Psm.FullSequence, Color: ChimeraGroupViewModel.ColorByProteinDictionary[i][j+1]));
                         }
                     }).ToDictionary(p => p.FullSequence, p => p.Color);
 
@@ -997,13 +997,13 @@ namespace Test.MetaDraw
                         {
                             foreach (var ion in ionGroup)
                             {
-                                if (ionDict.ContainsKey(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor))
+                                if (ionDict.ContainsKey(ChimeraGroupViewModel.MultipleProteinSharedColor))
                                 {
-                                    ionDict[ChimeraSpectrumMatchPlot.MultipleProteinSharedColor].Add(ion.ion);
+                                    ionDict[ChimeraGroupViewModel.MultipleProteinSharedColor].Add(ion.ion);
                                 }
                                 else
                                 {
-                                    ionDict[ChimeraSpectrumMatchPlot.MultipleProteinSharedColor] = [ion.ion];
+                                    ionDict[ChimeraGroupViewModel.MultipleProteinSharedColor] = [ion.ion];
                                 }
                             }
                         }
@@ -1012,21 +1012,21 @@ namespace Test.MetaDraw
                 }
 
                 // shared matched ions are default color
-                var expectedSharedIons = ionDict[ChimeraSpectrumMatchPlot.MultipleProteinSharedColor].DistinctBy(p => p.Mz).ToList();
-                int drawnIonsShared = model.Series.Count(p => ((LineSeries)p).Color == ChimeraSpectrumMatchPlot.MultipleProteinSharedColor);
+                var expectedSharedIons = ionDict[ChimeraGroupViewModel.MultipleProteinSharedColor].DistinctBy(p => p.Mz).ToList();
+                int drawnIonsShared = model.Series.Count(p => ((LineSeries)p).Color == ChimeraGroupViewModel.MultipleProteinSharedColor);
                 Assert.That(drawnIonsShared, Is.EqualTo(expectedSharedIons.Count));
                 if (expectedSharedIons.Count > 0 ) 
                 {
-                    Assert.That(chimeraGroup.MatchedFragmentIonsByColor.ContainsKey(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor));
-                    Assert.That(chimeraGroup.MatchedFragmentIonsByColor[ChimeraSpectrumMatchPlot.MultipleProteinSharedColor].Count, Is.EqualTo(expectedSharedIons.Count));
+                    Assert.That(chimeraGroup.MatchedFragmentIonsByColor.ContainsKey(ChimeraGroupViewModel.MultipleProteinSharedColor));
+                    Assert.That(chimeraGroup.MatchedFragmentIonsByColor[ChimeraGroupViewModel.MultipleProteinSharedColor].Count, Is.EqualTo(expectedSharedIons.Count));
                 }
                 else
-                    Assert.That(!chimeraGroup.MatchedFragmentIonsByColor.ContainsKey(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor));
+                    Assert.That(!chimeraGroup.MatchedFragmentIonsByColor.ContainsKey(ChimeraGroupViewModel.MultipleProteinSharedColor));
 
                 // Ions Shared by multiple proteoforms are annotated correctly
                 foreach (var color in chimeraGroup.MatchedFragmentIonsByColor.Keys)
                 {
-                    if (color == ChimeraSpectrumMatchPlot.MultipleProteinSharedColor) continue;
+                    if (color == ChimeraGroupViewModel.MultipleProteinSharedColor) continue;
                     Assert.That(ionDict.ContainsKey(color));
                     Assert.That(chimeraGroup.MatchedFragmentIonsByColor[color].Count, Is.EqualTo(ionDict[color].Count));
                 }

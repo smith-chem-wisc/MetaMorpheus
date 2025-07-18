@@ -14,11 +14,6 @@ namespace GuiFunctions
 {
     public class ChimeraSpectrumMatchPlot : SpectrumMatchPlot
     {
-        private static Queue<OxyColor> overflowColors;
-        public static OxyColor MultipleProteinSharedColor;
-        public static Dictionary<int, List<OxyColor>> ColorByProteinDictionary;
-        public static Queue<OxyColor> OverflowColors => new(overflowColors);
-
         public ChimeraSpectrumMatchPlot(PlotView plotView, ChimeraGroupViewModel chimeraGroupVm, double mzMax = double.MaxValue) : base(plotView, null, chimeraGroupVm.Ms2Scan)
         {
             MatchedFragmentIons = chimeraGroupVm.MatchedFragmentIonsByColor.SelectMany(p => p.Value.Select(q => q.Item1)).ToList();
@@ -88,99 +83,5 @@ namespace GuiFunctions
             File.Delete(tempLegendPngPath);
             ExportPlot(path, combinedBitmaps, width, height);
         }
-
-        /// <summary>
-        /// Initializes the colors to be used by the Chimera Plotter
-        /// </summary>
-        static ChimeraSpectrumMatchPlot()
-        {
-            MultipleProteinSharedColor = OxyColors.Black;
-            ColorByProteinDictionary = new()
-            {
-                {
-                    0, [
-                        OxyColors.Blue, OxyColors.MediumBlue, OxyColors.CornflowerBlue,
-                        OxyColors.DarkBlue, OxyColors.CadetBlue, OxyColors.SteelBlue, OxyColors.DodgerBlue,
-                        OxyColors.AliceBlue, OxyColors.DarkSlateBlue, OxyColors.DeepSkyBlue, OxyColors.DodgerBlue
-                    ]
-                },
-                {
-                    1, [
-                        OxyColors.Red, OxyColors.IndianRed, OxyColors.PaleVioletRed,
-                        OxyColors.LightCoral, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
-                    ]
-                },
-                {
-                    2, [
-                        OxyColors.Green, OxyColors.MediumSpringGreen, OxyColors.LightGreen,
-                        OxyColors.Linen, OxyColors.SpringGreen, OxyColors.Chartreuse, OxyColors.DarkSeaGreen
-                    ]
-                },
-                {
-                    3, [
-                        OxyColors.Purple, OxyColors.MediumPurple, OxyColors.Violet,
-                        OxyColors.Plum, OxyColors.Orchid, OxyColors.BlueViolet, OxyColors.Magenta
-                    ]
-                },
-                {
-                    4, [
-                        OxyColors.Brown, OxyColors.SaddleBrown, OxyColors.Sienna, OxyColors.Chocolate,
-                        OxyColors.SandyBrown, OxyColors.Chocolate, OxyColors.Peru, OxyColors.Tan
-                    ]
-                },
-                {
-                    5, [
-                        OxyColors.Gold, OxyColors.DarkGoldenrod, OxyColors.Wheat, OxyColors.Goldenrod,
-                        OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
-                    ]
-                },
-                {
-                    6, [
-                        OxyColors.Cornsilk, OxyColors.BlanchedAlmond, OxyColors.Wheat, OxyColors.Goldenrod,
-                        OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
-                    ]
-                },
-                {
-                    7, [
-                        OxyColors.Cornsilk, OxyColors.BlanchedAlmond, OxyColors.Wheat, OxyColors.Goldenrod,
-                        OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
-                    ]
-                },
-                {
-                    8, [
-                        OxyColors.Cornsilk, OxyColors.BlanchedAlmond, OxyColors.Wheat, OxyColors.Goldenrod,
-                        OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
-                    ]
-                },
-                {
-                    9, [
-                        OxyColors.DarkBlue, OxyColors.SkyBlue, OxyColors.CornflowerBlue,
-                        OxyColors.DarkBlue, OxyColors.CadetBlue, OxyColors.SteelBlue, OxyColors.DodgerBlue,
-                        OxyColors.AliceBlue, OxyColors.DarkSlateBlue
-                    ]
-                },
-                {
-                    10, [
-                        OxyColors.DarkRed, OxyColors.LightCoral, OxyColors.PaleVioletRed,
-                        OxyColors.IndianRed, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
-                    ]
-                },
-                {
-                    11, [
-                        OxyColors.Green, OxyColors.MediumSpringGreen, OxyColors.LightGreen,
-                        OxyColors.Linen, OxyColors.SpringGreen, OxyColors.Chartreuse, OxyColors.DarkSeaGreen
-                    ]
-                }
-            };
-
-            IEnumerable<OxyColor> overflow = new List<OxyColor>()
-            {
-                OxyColors.Cornsilk, OxyColors.BlanchedAlmond, OxyColors.Aqua, OxyColors.Aquamarine, 
-                OxyColors.HotPink, OxyColors.PaleGreen, OxyColors.Gray, OxyColors.SeaGreen,
-                OxyColors.LemonChiffon, OxyColors.RosyBrown, OxyColors.MediumSpringGreen
-            };
-            overflowColors = new Queue<OxyColor>(overflow);
-        }
-
     }
 }
