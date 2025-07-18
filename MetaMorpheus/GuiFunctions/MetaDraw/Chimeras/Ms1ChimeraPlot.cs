@@ -10,8 +10,8 @@ namespace GuiFunctions.MetaDraw;
 
 public class Ms1ChimeraPlot : SpectrumMatchPlot
 {
-    public ChimeraGroupViewModel ChimeraGroup { get; private set; }
-    public DoubleRange Range { get; private set; }
+    public ChimeraGroupViewModel ChimeraGroup { get; }
+    public DoubleRange Range { get; }
 
     public Ms1ChimeraPlot(PlotView plotView, ChimeraGroupViewModel chimeraGroupVm) : base(plotView, null,
         chimeraGroupVm.Ms1Scan)

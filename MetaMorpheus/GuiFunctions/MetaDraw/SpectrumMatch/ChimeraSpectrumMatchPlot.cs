@@ -9,6 +9,8 @@ using Point = System.Windows.Point;
 using Canvas = System.Windows.Controls.Canvas;
 using System;
 using GuiFunctions.MetaDraw;
+using Easy.Common.Extensions;
+using Omics.Fragmentation;
 
 namespace GuiFunctions
 {
@@ -16,7 +18,16 @@ namespace GuiFunctions
     {
         public ChimeraSpectrumMatchPlot(PlotView plotView, ChimeraGroupViewModel chimeraGroupVm, double mzMax = double.MaxValue) : base(plotView, null, chimeraGroupVm.Ms2Scan)
         {
-            MatchedFragmentIons = chimeraGroupVm.MatchedFragmentIonsByColor.SelectMany(p => p.Value.Select(q => q.Item1)).ToList();
+            var matchedIonsByColor = chimeraGroupVm.MatchedFragmentIonsByColor;
+            int totalCount = 0;
+            foreach (var group in matchedIonsByColor.Values)
+                totalCount += group.Count;
+            var matchedIons = new List<MatchedFragmentIon>(totalCount);
+            foreach (var group in matchedIonsByColor.Values)
+                for (int i = 0; i < group.Count; i++)
+                    matchedIons.Add(group[i].Item1);
+            MatchedFragmentIons = matchedIons;
+
             AnnotateMatchedIons(chimeraGroupVm);
             if (Math.Abs(mzMax - double.MaxValue) > 0.001)
             {
@@ -35,7 +46,12 @@ namespace GuiFunctions
             foreach (var ionGroup in chimeraGroupVm.MatchedFragmentIonsByColor)
             {
                 var color = ionGroup.Key;
-                ionGroup.Value.ForEach(p => AnnotatePeak(p.Item1, false, false, color));
+                var ions = ionGroup.Value;
+                for (int i = 0; i < ions.Count; i++)
+                {
+                    var tuple = ions[i];
+                    AnnotatePeak(tuple.Item1, false, false, color);
+                }
             }
         }
 

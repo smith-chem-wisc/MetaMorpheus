@@ -72,6 +72,13 @@ namespace GuiFunctions
         /// </summary>
         protected void DrawSpectrum()
         {
+            var yArray = Scan.MassSpectrum.YArray;
+            var xArray = Scan.MassSpectrum.XArray;
+            double yMax = 0;
+            for (int i = 0; i < yArray.Length; i++)
+            {
+                if (yArray[i] > yMax) yMax = yArray[i];
+            }
             // set up axes
             Model.Axes.Add(new LinearAxis
             {
@@ -94,11 +101,11 @@ namespace GuiFunctions
                 Position = AxisPosition.Left,
                 Title = "Intensity",
                 Minimum = 0,
-                Maximum = Scan.MassSpectrum.YArray.Max(),
+                Maximum = yMax,
                 AbsoluteMinimum = 0,
-                AbsoluteMaximum = Scan.MassSpectrum.YArray.Max() * 2,
-                MajorStep = Scan.MassSpectrum.YArray.Max() / 10,
-                MinorStep = Scan.MassSpectrum.YArray.Max() / 50,
+                AbsoluteMaximum = yMax * 2,
+                MajorStep = yMax / 10,
+                MinorStep = yMax / 50,
                 StringFormat = "0e-0",
                 MajorTickSize = 2,
                 TitleFontWeight = FontWeights.Bold,
@@ -110,15 +117,23 @@ namespace GuiFunctions
                 ExtraGridlineThickness = 1
             });
 
-            // draw all peaks in the scan
-            for (int i = 0; i < Scan.MassSpectrum.XArray.Length; i++)
+            // Batch peaks into a single LineSeries for unannotated peaks
+            var unannotatedSeries = new LineSeries
             {
-                double mz = Scan.MassSpectrum.XArray[i];
-                double intensity = Scan.MassSpectrum.YArray[i];
+                Color = MetaDrawSettings.UnannotatedPeakColor,
+                StrokeThickness = MetaDrawSettings.StrokeThicknessUnannotated,
+                LineStyle = LineStyle.Solid
+            };
 
-                DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessUnannotated,
-                    MetaDrawSettings.UnannotatedPeakColor, null);
+            for (int i = 0; i < xArray.Length; i++)
+            {
+                double mz = xArray[i];
+                double intensity = yArray[i];
+                // Add as vertical line (two points per peak)
+                unannotatedSeries.Points.Add(new DataPoint(mz, 0));
+                unannotatedSeries.Points.Add(new DataPoint(mz, intensity));
             }
+            Model.Series.Add(unannotatedSeries);
         }
 
         /// <summary>
@@ -133,9 +148,11 @@ namespace GuiFunctions
             TextAnnotation annotation)
         {
             // peak line
-            var line = new LineSeries();
-            line.Color = color;
-            line.StrokeThickness = strokeWidth;
+            var line = new LineSeries
+            {
+                Color = color,
+                StrokeThickness = strokeWidth
+            };
             line.Points.Add(new DataPoint(mz, 0));
             line.Points.Add(new DataPoint(mz, intensity));
 
@@ -154,16 +171,18 @@ namespace GuiFunctions
                 for (int j = splits.Length - 1; j >= 0; j--)
                 {
                     var split = splits[j];
-                    var annotationLine = new TextAnnotation();
-                    annotationLine.Font = annotation.Font;
-                    annotationLine.FontSize = annotation.FontSize;
-                    annotationLine.FontWeight = annotation.FontWeight;
-                    annotationLine.TextColor = annotation.TextColor;
-                    annotationLine.StrokeThickness = annotation.StrokeThickness;
-                    annotationLine.Text = split;
-                    annotationLine.TextPosition = new DataPoint(x, y);
-                    annotationLine.TextVerticalAlignment = annotation.TextVerticalAlignment;
-                    annotationLine.TextHorizontalAlignment = HorizontalAlignment.Center;
+                    var annotationLine = new TextAnnotation
+                    {
+                        Font = annotation.Font,
+                        FontSize = annotation.FontSize,
+                        FontWeight = annotation.FontWeight,
+                        TextColor = annotation.TextColor,
+                        StrokeThickness = annotation.StrokeThickness,
+                        Text = split,
+                        TextPosition = new DataPoint(x, y),
+                        TextVerticalAlignment = annotation.TextVerticalAlignment,
+                        TextHorizontalAlignment = HorizontalAlignment.Center
+                    };
                     Model.Annotations.Add(annotationLine);
                     y += yStep;
                 }
@@ -181,9 +200,20 @@ namespace GuiFunctions
         protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons,
             bool useLiteralPassedValues = false)
         {
-            List<MatchedFragmentIon> ionsToDisplay = !MetaDrawSettings.DisplayInternalIons
-                ? matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.SecondaryProductType == null).ToList()
-                : matchedFragmentIons;
+            List<MatchedFragmentIon> ionsToDisplay;
+            if (!MetaDrawSettings.DisplayInternalIons)
+            {
+                ionsToDisplay = new List<MatchedFragmentIon>(matchedFragmentIons.Count);
+                foreach (var p in matchedFragmentIons)
+                {
+                    if (p.NeutralTheoreticalProduct.SecondaryProductType == null)
+                        ionsToDisplay.Add(p);
+                }
+            }
+            else
+            {
+                ionsToDisplay = matchedFragmentIons;
+            }
 
             foreach (MatchedFragmentIon matchedIon in ionsToDisplay)
             {
@@ -352,12 +382,13 @@ namespace GuiFunctions
             double highestAnnotatedIntensity = 0;
             double highestAnnotatedMz = double.MinValue;
             double lowestAnnotatedMz = double.MaxValue;
+            var yArray = Scan.MassSpectrum.YArray;
 
-            foreach (var ion in MatchedFragmentIons)
+            foreach (var ion in matchedFramgentIons)
             {
                 double mz = ion.NeutralTheoreticalProduct.NeutralMass.ToMz(ion.Charge);
                 int i = Scan.MassSpectrum.GetClosestPeakIndex(mz);
-                double intensity = Scan.MassSpectrum.YArray[i];
+                double intensity = yArray[i];
 
                 if (intensity > highestAnnotatedIntensity)
                 {
