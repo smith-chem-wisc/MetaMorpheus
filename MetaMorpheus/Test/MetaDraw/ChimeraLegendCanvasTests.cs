@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -130,5 +131,75 @@ public class ChimeraLegendCanvasTests
 
         // Assert
         Assert.That(result, Is.EqualTo("A"));
+    }
+
+    [Test]
+    public void BuildLegend_HandlesAllLegendDisplayPropertyCases_ForMainAndSubText_UsingCachedPsmValues()
+    {
+        var group = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var psms = group.ChimericPsms.Select(p => p.Psm).ToList();
+        var modStrings = group.ChimericPsms.Select(p => p.ModString ?? "Unmodified").ToList();
+
+        // Cache all property values for each PSM
+        var cached = group.ChimericPsms.Select(p => new
+        {
+            Name = p.Psm.Name,
+            Accession = p.Psm.Accession,
+            BaseSeq = p.Psm.BaseSeq,
+            FullSequence = p.Psm.FullSequence,
+            ModString = p.ModString ?? "Unmodified"
+        }).ToList();
+
+        // Test all main text types
+        foreach (LegendDisplayProperty mainType in Enum.GetValues(typeof(LegendDisplayProperty)))
+        {
+            MetaDrawSettings.ChimeraLegendMainTextType = mainType;
+            var legend = new ChimeraLegendCanvas(group);
+
+            // The main text is the header for the group (first proteoform)
+            var mainTextBlock = legend.Children.OfType<TextBlock>().FirstOrDefault();
+            Assert.That(mainTextBlock, Is.Not.Null);
+
+            string expectedMain = mainType switch
+            {
+                LegendDisplayProperty.ProteinName => cached[0].Name,
+                LegendDisplayProperty.ProteinAccession => cached[0].Accession,
+                LegendDisplayProperty.BaseSequence => cached[0].BaseSeq,
+                LegendDisplayProperty.FullSequence => cached[0].FullSequence,
+                LegendDisplayProperty.Modifications => cached[0].ModString,
+                _ => throw new NotImplementedException()
+            };
+            Assert.That(mainTextBlock.Text, Is.EqualTo(expectedMain));
+        }
+
+        // Test all sub text types
+        foreach (LegendDisplayProperty subType in Enum.GetValues(typeof(LegendDisplayProperty)))
+        {
+            MetaDrawSettings.ChimeraLegendSubTextType = subType;
+            // Use a main type that triggers subtexts (e.g., ProteinName)
+            MetaDrawSettings.ChimeraLegendMainTextType = LegendDisplayProperty.ProteinName;
+            var legend = new ChimeraLegendCanvas(group);
+
+            // The subtexts are after the header, so skip the first TextBlock (header)
+            var subTextBlocks = legend.Children.OfType<TextBlock>().Skip(1).ToList();
+            Assert.That(subTextBlocks.Count, Is.EqualTo(group.ChimericPsms.Count));
+
+            string[] expectedSubs = cached.Select(c =>
+                subType switch
+                {
+                    LegendDisplayProperty.ProteinName => c.Name,
+                    LegendDisplayProperty.ProteinAccession => c.Accession,
+                    LegendDisplayProperty.BaseSequence => c.BaseSeq,
+                    LegendDisplayProperty.FullSequence => c.FullSequence,
+                    LegendDisplayProperty.Modifications => c.ModString,
+                    _ => throw new NotImplementedException()
+                }
+            ).ToArray();
+
+            for (int i = 0; i < subTextBlocks.Count; i++)
+            {
+                Assert.That(subTextBlocks[i].Text, Is.EqualTo(expectedSubs[i]));
+            }
+        }
     }
 }
