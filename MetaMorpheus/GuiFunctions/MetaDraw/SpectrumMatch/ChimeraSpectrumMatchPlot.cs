@@ -44,14 +44,14 @@ namespace GuiFunctions
             }
         }
 
-        public void ExportPlot(string path, Canvas legend = null, Point? legendPosition = null,  double width = 700, double height = 370)
+        public void ExportPlot(string path, Canvas legend = null, Point? legendPoint = null,  double width = 700, double height = 370)
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
             var tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType);
             var tempLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "legend.png");
-            List<System.Drawing.Bitmap> bitmaps = [];
-            List<Point> points = [];
+            List<System.Drawing.Bitmap> bitmaps = new();
+            List<Point> points = new();
             var dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
             // export model as png and load as bitmap
@@ -60,10 +60,12 @@ namespace GuiFunctions
             points.Add(new Point(0, 0));
 
             // Render legend as bitmap and export as png if used
-            if (legend != null && MetaDrawSettings.ShowLegend && legendPosition.HasValue)
+            System.Drawing.Bitmap ptmLegendBitmap = null;
+
+            if (legend != null && MetaDrawSettings.ShowLegend && legendPoint.HasValue)
             {
                 RenderTargetBitmap legendRenderBitmap = new((int)(dpiScale * legend.ActualWidth), (int)(dpiScale * legend.ActualHeight),
-                    MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+                MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
                 legendRenderBitmap.Render(legend);
                 var legendEncoder = new PngBitmapEncoder();
                 legendEncoder.Frames.Add(BitmapFrame.Create(legendRenderBitmap));
@@ -73,9 +75,9 @@ namespace GuiFunctions
                 }
 
                 System.Drawing.Bitmap tempLegendBitmap = new(tempLegendPngPath);
-                var ptmLegendBitmap = new System.Drawing.Bitmap(tempLegendBitmap, new System.Drawing.Size((int)legend.ActualWidth, (int)legend.ActualHeight));
+                ptmLegendBitmap = new System.Drawing.Bitmap(tempLegendBitmap, new System.Drawing.Size((int)legend.ActualWidth, (int)legend.ActualHeight));
                 bitmaps.Add(ptmLegendBitmap);
-                points.Add(legendPosition.Value);
+                points.Add(legendPoint.Value);
                 tempLegendBitmap.Dispose();
             }
 

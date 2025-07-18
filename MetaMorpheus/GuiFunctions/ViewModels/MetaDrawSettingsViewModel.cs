@@ -218,8 +218,11 @@ namespace GuiFunctions
                 Initialization = Task.CompletedTask;
             }
 
+            // This defaults to classic decon, and we set the charge to ensure it will work for top-down and bottom-up.
+            // This is not the best approach, in the future we could try to locate the search toml when loading in a psm file and use those decon params. 
             DeconHostViewModel = new();
-            DeconHostViewModel.SetAllPrecursorMaxChargeState(60); // Ensure it will work for top-down and bottom-up. Eventually we can set the GlobalVariables.AnalyteType dynamically in MetaDraw and have the decon params just work.  
+             // Ensure it will work for top-down and bottom-up.
+            DeconHostViewModel.SetAllPrecursorMaxChargeState(60); 
         }
 
         private async Task InitializeAsync()

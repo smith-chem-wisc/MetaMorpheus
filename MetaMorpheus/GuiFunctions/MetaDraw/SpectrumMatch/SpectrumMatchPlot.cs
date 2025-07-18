@@ -5,10 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Windows.Media.Imaging;
-using System.Windows.Media;
 using Chemistry;
-using Easy.Common.Extensions;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using iText.Layout;
@@ -142,6 +139,7 @@ namespace GuiFunctions
             line.Points.Add(new DataPoint(mz, 0));
             line.Points.Add(new DataPoint(mz, intensity));
 
+            // Miso is a tag used in chimeric ms1 plotting to indicate that we should not annotate this peak with a label. 
             if (annotation != null && !annotation.Text.Contains("Miso"))
             {
                 var x = annotation.TextPosition.X;
