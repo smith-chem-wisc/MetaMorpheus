@@ -67,4 +67,28 @@ public class ChimeraDrawnSequenceTests
             Assert.That(found, Is.True, $"Expected to find a shape with color {wpfColor} for ion color {color}.");
         }
     }
+
+    [Test]
+    public void UpdateData_UpdatesCanvasWithNewChimeraGroup()
+    {
+        // Arrange
+        var initialGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var newGroup = ChimeraGroupViewModelTests.TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
+        var canvas = new Canvas();
+        var drawnSequence = new ChimeraDrawnSequence(canvas, initialGroup);
+
+        // Act
+        var updatedDrawnSequence = drawnSequence.UpdateData(newGroup);
+
+        // Assert
+        // The returned object should not be null and should reference the new group
+        Assert.That(updatedDrawnSequence, Is.Not.Null);
+        Assert.That(updatedDrawnSequence.ChimeraGroupViewModel, Is.EqualTo(newGroup));
+
+        // The canvas should be updated to reflect the new group's sequence count
+        int expectedTextBlocks = newGroup.ChimericPsms.Sum(psm => psm.Psm.BaseSeq.Split('|')[0].Length);
+        int actualTextBlocks = canvas.Children.OfType<System.Windows.Controls.TextBlock>().Count();
+        Assert.That(actualTextBlocks, Is.GreaterThanOrEqualTo(expectedTextBlocks));
+    }
+
 }

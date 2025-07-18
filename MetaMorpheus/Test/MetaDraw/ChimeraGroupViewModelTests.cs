@@ -87,6 +87,7 @@ public class ChimeraGroupViewModelTests
         Assert.That(chimeraGroup.Count, Is.EqualTo(2));
         Assert.That(chimeraGroup.ProteinCount, Is.EqualTo(1));
         Assert.That(chimeraGroup.OneBasedPrecursorScanNumber, Is.EqualTo(chimeraGroup.ChimericPsms.First().Psm.PrecursorScanNum));
+        Assert.That(chimeraGroup.PrimarySequenceCount, Is.EqualTo(1));
 
         var terminalFragments = chimeraGroup.ChimericPsms.SelectMany(p => p.Psm.MatchedIons)
             .Where(p => !p.IsInternalFragment)
@@ -106,6 +107,7 @@ public class ChimeraGroupViewModelTests
         var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
         Assert.That(chimeraGroup.Count, Is.EqualTo(2));
         Assert.That(chimeraGroup.ProteinCount, Is.EqualTo(2));
+        Assert.That(chimeraGroup.PrimarySequenceCount, Is.EqualTo(2));
 
         var terminalFragments = chimeraGroup.ChimericPsms.SelectMany(p => p.Psm.MatchedIons)
             .Where(p => !p.IsInternalFragment)

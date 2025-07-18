@@ -513,6 +513,50 @@ namespace Test.MetaDraw
             viewModel.StrokeThicknessUnannotated = originalStrokeThicknessUnannotated + 0.1;
             Assert.That(viewModel.StrokeThicknessUnannotated, Is.EqualTo(originalStrokeThicknessUnannotated + 0.1));
             viewModel.StrokeThicknessUnannotated = originalStrokeThicknessUnannotated;
+
+            // Test SuppressMessageBoxes property
+            bool originalSuppressMessageBoxes = viewModel.SuppressMessageBoxes;
+            viewModel.SuppressMessageBoxes = !originalSuppressMessageBoxes;
+            Assert.That(viewModel.SuppressMessageBoxes, Is.EqualTo(!originalSuppressMessageBoxes));
+            viewModel.SuppressMessageBoxes = originalSuppressMessageBoxes;
+
+            // Test DisplayChimeraLegend property
+            bool originalDisplayChimeraLegend = viewModel.DisplayChimeraLegend;
+            viewModel.DisplayChimeraLegend = !originalDisplayChimeraLegend;
+            Assert.That(viewModel.DisplayChimeraLegend, Is.EqualTo(!originalDisplayChimeraLegend));
+            viewModel.DisplayChimeraLegend = originalDisplayChimeraLegend;
+
+            // Test ChimeraLegendTakeFirstIfAmbiguous property
+            bool originalChimeraLegendTakeFirstIfAmbiguous = viewModel.ChimeraLegendTakeFirstIfAmbiguous;
+            viewModel.ChimeraLegendTakeFirstIfAmbiguous = !originalChimeraLegendTakeFirstIfAmbiguous;
+            Assert.That(viewModel.ChimeraLegendTakeFirstIfAmbiguous, Is.EqualTo(!originalChimeraLegendTakeFirstIfAmbiguous));
+            viewModel.ChimeraLegendTakeFirstIfAmbiguous = originalChimeraLegendTakeFirstIfAmbiguous;
+
+            // Test ChimeraLegendMaxWidth property
+            double originalChimeraLegendMaxWidth = viewModel.ChimeraLegendMaxWidth;
+            viewModel.ChimeraLegendMaxWidth = originalChimeraLegendMaxWidth + 10.0;
+            Assert.That(viewModel.ChimeraLegendMaxWidth, Is.EqualTo(originalChimeraLegendMaxWidth + 10.0));
+            viewModel.ChimeraLegendMaxWidth = originalChimeraLegendMaxWidth;
+
+            // Test ChimeraLegendMainTextType property
+            var originalChimeraLegendMainTextType = viewModel.ChimeraLegendMainTextType;
+            var newMainTextType = viewModel.ChimericLegendDisplayProperties.FirstOrDefault(x => !x.Equals(originalChimeraLegendMainTextType));
+            if (newMainTextType != null)
+            {
+                viewModel.ChimeraLegendMainTextType = newMainTextType;
+                Assert.That(viewModel.ChimeraLegendMainTextType, Is.EqualTo(newMainTextType));
+                viewModel.ChimeraLegendMainTextType = originalChimeraLegendMainTextType;
+            }
+
+            // Test ChimeraLegendSubTextType property
+            var originalChimeraLegendSubTextType = viewModel.ChimeraLegendSubTextType;
+            var newSubTextType = viewModel.ChimericLegendDisplayProperties.FirstOrDefault(x => !x.Equals(originalChimeraLegendSubTextType));
+            if (newSubTextType != null)
+            {
+                viewModel.ChimeraLegendSubTextType = newSubTextType;
+                Assert.That(viewModel.ChimeraLegendSubTextType, Is.EqualTo(newSubTextType));
+                viewModel.ChimeraLegendSubTextType = originalChimeraLegendSubTextType;
+            }
         }
 
         [Test]

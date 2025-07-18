@@ -11,7 +11,12 @@ using MassSpectrometry;
 using OxyPlot.Wpf;
 using System.Drawing.Imaging;
 using System;
+using System.Drawing;
+using System.Reflection;
 using GuiFunctions.MetaDraw;
+using System.Windows;
+using Point = System.Windows.Point;
+using Size = System.Windows.Size;
 
 namespace Test.MetaDraw;
 
@@ -270,7 +275,7 @@ public class ChimeraAnalysisTabViewModelTests
         Directory.Delete(tempDir, true);
     }
 
-
+    [Test]
     public void ExportMs1Command_ExportsCorrectFormat()
     {
         // Arrange
@@ -281,7 +286,13 @@ public class ChimeraAnalysisTabViewModelTests
         string tempDir = Path.Combine(Path.GetTempPath(), $"ChimeraAnalysisTabViewModelTests_ExportMs1_{MetaDrawSettings.ExportType}");
         vm.ExportDirectory = tempDir;
         Directory.CreateDirectory(tempDir);
-        vm.Ms1ChimeraPlot = new Ms1ChimeraPlot(new OxyPlot.Wpf.PlotView(), vm.SelectedChimeraGroup);
+
+        var plotView = new OxyPlot.Wpf.PlotView { Width = 200, Height = 100 };
+        plotView.Measure(new Size(200, 100));
+        plotView.Arrange(new Rect(0, 0, 200, 100));
+        plotView.UpdateLayout();
+
+        vm.Ms1ChimeraPlot = new Ms1ChimeraPlot(plotView, vm.SelectedChimeraGroup);
 
         // Act
         Assert.DoesNotThrow(() => vm.ExportMs1Command.Execute(null));
@@ -296,7 +307,7 @@ public class ChimeraAnalysisTabViewModelTests
         Directory.Delete(tempDir, true);
     }
 
-
+    [Test]
     public void ExportMs2Command_ExportsCorrectFormat()
     {
         // Arrange
@@ -307,7 +318,12 @@ public class ChimeraAnalysisTabViewModelTests
         string tempDir = Path.Combine(Path.GetTempPath(), $"ChimeraAnalysisTabViewModelTests_ExportMs2_{MetaDrawSettings.ExportType}");
         vm.ExportDirectory = tempDir;
         Directory.CreateDirectory(tempDir);
+
         var plotView = new OxyPlot.Wpf.PlotView { Width = 200, Height = 100 };
+        plotView.Measure(new Size(200, 100));
+        plotView.Arrange(new Rect(0, 0, 200, 100));
+        plotView.UpdateLayout();
+
         vm.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(plotView, vm.SelectedChimeraGroup);
 
         // Act
@@ -445,5 +461,273 @@ public class ChimeraAnalysisTabViewModelTests
                 }
             }
         }
+    }
+
+    [Test]
+    public void ChimeraSpectrumMatchPlot_GetterSetter_Works()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var plotView = new OxyPlot.Wpf.PlotView();
+        var group = vm.ChimeraGroupViewModels[0];
+        var plot = new ChimeraSpectrumMatchPlot(plotView, group);
+
+        // Act
+        vm.ChimeraSpectrumMatchPlot = plot;
+
+        // Assert
+        Assert.That(vm.ChimeraSpectrumMatchPlot, Is.EqualTo(plot));
+    }
+
+    [Test]
+    public void Ms1ChimeraPlot_GetterSetter_Works()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var plotView = new OxyPlot.Wpf.PlotView();
+        var group = vm.ChimeraGroupViewModels[0];
+        var plot = new Ms1ChimeraPlot(plotView, group);
+
+        // Act
+        vm.Ms1ChimeraPlot = plot;
+
+        // Assert
+        Assert.That(vm.Ms1ChimeraPlot, Is.EqualTo(plot));
+    }
+
+    [Test]
+    public void ExportMs2Command_ExportsWithLegend_AndLegendWithinBounds()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
+        string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportMs2_Legend");
+        vm.ExportDirectory = tempDir;
+        Directory.CreateDirectory(tempDir);
+
+        // Setup plot and legend
+        var plotView = new OxyPlot.Wpf.PlotView { Width = 400, Height = 200 };
+        plotView.Measure(new System.Windows.Size(400, 200));
+        plotView.Arrange(new System.Windows.Rect(0, 0, 400, 200));
+        plotView.UpdateLayout();
+        vm.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(plotView, vm.SelectedChimeraGroup);
+
+        var legend = new ChimeraLegendCanvas(vm.SelectedChimeraGroup)
+        {
+            Width = 100,
+            Height = 50
+        };
+        Canvas.SetLeft(legend, 10);
+        Canvas.SetTop(legend, 10);
+
+        var parentCanvas = new Canvas { Width = 400, Height = 200 };
+        parentCanvas.Children.Add(legend);
+        legend.Measure(new System.Windows.Size(100, 50));
+        legend.Arrange(new System.Windows.Rect(10, 10, 100, 50));
+        legend.UpdateLayout();
+
+        vm.LegendCanvas = legend;
+
+        Assert.That(Canvas.GetLeft(legend) + legend.Width <= plotView.Width);
+        Assert.That(Canvas.GetTop(legend) + legend.Height <= plotView.Height);
+
+        // Act
+        Assert.DoesNotThrow(() => vm.ExportMs2Command.Execute(null));
+
+        // Assert
+        string ext = MetaDrawSettings.ExportType.ToLower();
+        Assert.That(Directory.GetFiles(tempDir, $"*_MS2.{ext}").Length, Is.GreaterThan(0));
+
+        // Cleanup
+        foreach (var file in Directory.GetFiles(tempDir))
+            File.Delete(file);
+        Directory.Delete(tempDir, true);
+    }
+
+    [Test]
+    public void ExportAllCommand_ExportsWithLegend_AndLegendWithinBounds()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
+        string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportAll_Legend");
+        vm.ExportDirectory = tempDir;
+        Directory.CreateDirectory(tempDir);
+
+        // Setup plot and legend
+        var ms1PlotView = new OxyPlot.Wpf.PlotView { Width = 400, Height = 200 };
+        ms1PlotView.Measure(new System.Windows.Size(400, 200));
+        ms1PlotView.Arrange(new System.Windows.Rect(0, 0, 400, 200));
+        ms1PlotView.UpdateLayout();
+        vm.Ms1ChimeraPlot = new Ms1ChimeraPlot(ms1PlotView, vm.SelectedChimeraGroup);
+
+        var ms2PlotView = new OxyPlot.Wpf.PlotView { Width = 400, Height = 200 };
+        ms2PlotView.Measure(new System.Windows.Size(400, 200));
+        ms2PlotView.Arrange(new System.Windows.Rect(0, 0, 400, 200));
+        ms2PlotView.UpdateLayout();
+        vm.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(ms2PlotView, vm.SelectedChimeraGroup);
+
+        vm.ChimeraDrawnSequence = new ChimeraDrawnSequence(new Canvas { Width = 200, Height = 100 }, vm.SelectedChimeraGroup);
+
+        var legend = new ChimeraLegendCanvas(vm.SelectedChimeraGroup)
+        {
+            Width = 100,
+            Height = 50
+        };
+        Canvas.SetLeft(legend, 10);
+        Canvas.SetTop(legend, 10);
+
+        var parentCanvas = new Canvas { Width = 400, Height = 200 };
+        parentCanvas.Children.Add(legend);
+        legend.Measure(new System.Windows.Size(100, 50));
+        legend.Arrange(new System.Windows.Rect(10, 10, 100, 50));
+        legend.UpdateLayout();
+
+        vm.LegendCanvas = legend;
+
+        Assert.That(Canvas.GetLeft(legend) + legend.Width <= ms1PlotView.Width);
+        Assert.That(Canvas.GetTop(legend) + legend.Height <= ms1PlotView.Height);
+
+        // Act
+        Assert.DoesNotThrow(() => vm.ExportAllCommand.Execute(legend));
+
+        // Assert
+        string ext = MetaDrawSettings.ExportType.ToLower();
+        Assert.That(Directory.GetFiles(tempDir, $"*_ALL.{ext}").Length, Is.GreaterThan(0));
+
+        // Cleanup
+        foreach (var file in Directory.GetFiles(tempDir))
+            File.Delete(file);
+        Directory.Delete(tempDir, true);
+    }
+
+    
+    [Test]
+    public void CombinePlotAndLegend_CombinesBitmaps_WhenLegendPresent()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+
+        var plotView = new Canvas { Width = 200, Height = 100, Background = System.Windows.Media.Brushes.White };
+        var legend = new Canvas { Width = 50, Height = 30, Background = System.Windows.Media.Brushes.White };
+        Canvas.SetLeft(legend, 10);
+        Canvas.SetTop(legend, 10);
+
+        // Add both to a parent to simulate a shared visual tree
+        var parent = new Canvas { Width = 220, Height = 140 };
+        parent.Children.Add(plotView);
+        parent.Children.Add(legend);
+
+        // Add to a Window and show (hidden)
+        var window = new Window
+        {
+            Content = parent,
+            Width = 220,
+            Height = 140,
+            WindowStyle = WindowStyle.None,
+            ShowInTaskbar = false,
+            ShowActivated = false,
+            Visibility = Visibility.Hidden
+        };
+        window.Show();
+
+        // Force layout
+        parent.UpdateLayout();
+        plotView.UpdateLayout();
+        legend.UpdateLayout();
+
+        // Let dispatcher process layout/render
+        System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(
+            System.Windows.Threading.DispatcherPriority.Background,
+            new Action(delegate { }));
+
+        // Use reflection to access the private method
+        var method = typeof(ChimeraAnalysisTabViewModel).GetMethod("CombinePlotAndLegend", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.That(method, Is.Not.Null);
+
+        // Act
+        var bitmap = method.Invoke(vm, new object[] { plotView, legend }) as Bitmap;
+
+        // Assert
+        Assert.That(bitmap, Is.Not.Null);
+        Assert.That(bitmap.Width, Is.GreaterThan(0));
+        Assert.That(bitmap.Height, Is.GreaterThan(0));
+        bitmap.Dispose();
+    }
+
+    [Test]
+    public void CombinePlotAndLegend_ReturnsPlotBitmap_WhenLegendIsNull()
+    {
+        // Arrange
+        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+
+        var plotView = new Canvas { Width = 200, Height = 100, Background = System.Windows.Media.Brushes.White };
+
+        // Add both to a parent to simulate a shared visual tree
+        var parent = new Canvas { Width = 220, Height = 140 };
+        parent.Children.Add(plotView);
+
+        // Add to a Window and show (hidden)
+        var window = new Window
+        {
+            Content = parent,
+            Width = 220,
+            Height = 140,
+            WindowStyle = WindowStyle.None,
+            ShowInTaskbar = false,
+            ShowActivated = false,
+            Visibility = Visibility.Hidden
+        };
+        window.Show();
+
+        // Force layout
+        parent.UpdateLayout();
+        plotView.UpdateLayout();
+
+        // Let dispatcher process layout/render
+        System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(
+            System.Windows.Threading.DispatcherPriority.Background,
+            new Action(delegate { }));
+
+        var method = typeof(ChimeraAnalysisTabViewModel).GetMethod("CombinePlotAndLegend", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.That(method, Is.Not.Null);
+
+        // Act
+        var bitmap = method.Invoke(vm, new object[] { plotView, null }) as Bitmap;
+
+        // Assert
+        Assert.That(bitmap, Is.Not.Null);
+        Assert.That(bitmap.Width, Is.EqualTo(1250));
+        Assert.That(bitmap.Height, Is.EqualTo(625));
+        bitmap.Dispose();
+    }
+
+    [Test]
+    public void FindCommonAncestor_ReturnsNull_WhenNoCommonAncestor()
+    {
+        // Arrange
+        var method = typeof(ChimeraAnalysisTabViewModel).GetMethod("FindCommonAncestor", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.That(method, Is.Not.Null);
+
+        var a = new Canvas();
+        var b = new Canvas();
+
+        // Act
+        var ancestor = method.Invoke(null, new object[] { a, b });
+
+        // Assert
+        Assert.That(ancestor, Is.Null);
     }
 }

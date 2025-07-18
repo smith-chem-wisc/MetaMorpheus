@@ -408,8 +408,16 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         // Get the true visual bounds of the element and all children
         Rect bounds = VisualTreeHelper.GetDescendantBounds(element);
 
-        int pixelWidth = (int)Math.Ceiling(bounds.Width * dpiScale);
-        int pixelHeight = (int)Math.Ceiling(bounds.Height * dpiScale);
+        int pixelWidth, pixelHeight;
+        if (double.IsNegativeInfinity(bounds.Width) || double.IsNaN(bounds.Width) || bounds.Width <= 0)
+            pixelWidth = (int)Math.Ceiling(700 * dpiScale);
+        else
+            pixelWidth = (int)Math.Ceiling(bounds.Width * dpiScale);
+
+        if (double.IsNegativeInfinity(bounds.Height) || double.IsNaN(bounds.Height) || bounds.Height <= 0)
+            pixelHeight = (int)Math.Ceiling(400 * dpiScale);
+        else
+            pixelHeight = (int)Math.Ceiling(bounds.Height * dpiScale);
 
         if (pixelWidth <= 0 || pixelHeight <= 0)
             return (null, new Point(0, 0));
@@ -447,7 +455,6 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
 
         return null;
     }
-
 
     #endregion
 }
