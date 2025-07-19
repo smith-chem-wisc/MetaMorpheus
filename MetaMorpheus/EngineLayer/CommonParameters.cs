@@ -114,7 +114,7 @@ namespace EngineLayer
             {
                 CustomIons =  Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
                 ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Digestion Termini", "Cyclic Phosphate on X") };
-                ListOfModsFixed = listOfModsFixed ?? [];
+                ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
                 PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
                 ProductDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
             }
