@@ -56,7 +56,7 @@ namespace MetaMorpheusGUI
                 {
                     Title = "RNA Search Task";
                     TheTask.SearchParameters = new RnaSearchParameters();
-                    TheTask.CommonParameters = new CommonParameters("RnaSearchTask", digestionParams: new RnaDigestionParams("RNase T1"), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20);
+                    TheTask.CommonParameters = new CommonParameters("RnaSearchTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20);
                 }
                 else
                 {
@@ -278,6 +278,10 @@ namespace MetaMorpheusGUI
 
                 CheckBoxQuantifyUnlabeledForSilac.IsChecked = digestionParams.GeneratehUnlabeledProteinsForSilac;
                 InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
+            }
+            else
+            {
+                ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.DigestionAgent;
             }
             ClassicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             ModernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
