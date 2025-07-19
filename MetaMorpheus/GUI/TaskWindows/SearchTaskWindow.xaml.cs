@@ -56,7 +56,7 @@ namespace MetaMorpheusGUI
                 {
                     Title = "RNA Search Task";
                     TheTask.SearchParameters = new RnaSearchParameters();
-                    TheTask.CommonParameters = new CommonParameters("RnaSearchTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20);
+                    TheTask.CommonParameters = new CommonParameters("RnaSearchTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20, precursorMassTolerance: new PpmTolerance(15));
                 }
                 else
                 {
@@ -899,6 +899,7 @@ namespace MetaMorpheusGUI
         //this one is used by the GUI
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
+            bool isRnaMode = UpdateGUISettings.Globals.IsRnaMode;
             string proteaseName = ((DigestionAgent)ProteaseComboBox.SelectedItem).Name;
             MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
 
@@ -919,20 +920,30 @@ namespace MetaMorpheusGUI
                         {
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
                             DeconHostViewModel.UseProvidedPrecursors = false;
-                            DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
-                            DeconHostViewModel.SetAllProductMaxChargeState(20);
-                            TrimMsMs.IsChecked = false;
-                            CheckBoxNoQuant.IsChecked = true; 
-                            _massDifferenceAcceptorViewModel.SelectedType =
-                                _massDifferenceAcceptorViewModel.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
-                            maxModificationIsoformsTextBox.Text = "4096";
-                            InternalIonsCheckBox.IsChecked = true;
-                            MinInternalFragmentLengthTextBox.Text = "10";
-                            //uncheck all variable mods
-                            foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                            if (isRnaMode)
                             {
-                                mod.Use = false;
+                                DeconHostViewModel.SetAllPrecursorMaxChargeState(-40);
+                                DeconHostViewModel.SetAllProductMaxChargeState(-20);
                             }
+                            else
+                            {
+                                DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
+                                DeconHostViewModel.SetAllProductMaxChargeState(20);
+                                InternalIonsCheckBox.IsChecked = true;
+                                MinInternalFragmentLengthTextBox.Text = "10";
+                                CheckBoxNoQuant.IsChecked = true; 
+                                _massDifferenceAcceptorViewModel.SelectedType =
+                                    _massDifferenceAcceptorViewModel.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
+
+                                //uncheck all variable mods
+                                foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                                {
+                                    mod.Use = false;
+                                }
+                            }
+                            TrimMsMs.IsChecked = false;
+                            maxModificationIsoformsTextBox.Text = "4096";
+
                         }
                         break;
                     case "Arg-C":
