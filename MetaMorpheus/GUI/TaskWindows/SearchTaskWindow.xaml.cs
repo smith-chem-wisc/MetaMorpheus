@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 using Omics.Digestion;
 using Omics.Modifications;
 using Transcriptomics.Digestion;
+using MetaMorpheusGUI.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -48,7 +49,23 @@ namespace MetaMorpheusGUI
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
-            TheTask = task ?? new SearchTask();
+            if (task is null) // Happens when there is no default saved. 
+            {
+                TheTask = new SearchTask();
+                if (UpdateGUISettings.Globals.IsRnaMode)
+                {
+                    Title = "RNA Search Task";
+                    TheTask.SearchParameters = new RnaSearchParameters();
+                    TheTask.CommonParameters = new CommonParameters(digestionParams: new RnaDigestionParams("RNase T1"), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20);
+                }
+                else
+                {
+                    Title = "Search Task";
+                }
+            }
+            else
+                TheTask = task;
+
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             PopulateChoices();

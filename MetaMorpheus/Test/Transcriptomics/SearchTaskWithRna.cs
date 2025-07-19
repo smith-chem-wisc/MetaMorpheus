@@ -32,7 +32,6 @@ public class SearchTaskWithRna
     {
         SearchParameters = new RnaSearchParameters
         {
-            DecoyType = DecoyType.Reverse,
             MassDiffAcceptorType = MassDiffAcceptorType.Custom,
             CustomMdac = "Custom interval [-5,5]",
             DisposeOfFileWhenDone = true
