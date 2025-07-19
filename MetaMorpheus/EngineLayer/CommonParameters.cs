@@ -80,12 +80,10 @@ namespace EngineLayer
             TrimMs1Peaks = trimMs1Peaks;
             TrimMsMsPeaks = trimMsMsPeaks;
             MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1 ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1 : maxThreadsToUsePerFile;
-
             ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
             PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
-
             DissociationType = dissociationType;
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;

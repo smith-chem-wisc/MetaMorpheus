@@ -77,11 +77,7 @@ namespace TaskLayer
         public MassDiffAcceptorType MassDiffAcceptorType { get; set; }
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
-        public bool DoLocalizationAnalysis 
-        { 
-            get; 
-            set; 
-        }
+        public bool DoLocalizationAnalysis { get; set; }
         public bool DoLabelFreeQuantification { get; set; }
         public bool UseSharedPeptidesForLFQ { get; set; }
         public bool DoMultiplexQuantification { get; set; }
