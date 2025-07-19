@@ -21,6 +21,7 @@ using Proteomics;
 using System.Threading.Tasks;
 using Omics.Digestion;
 using Omics.Modifications;
+using Transcriptomics.Digestion;
 
 namespace MetaMorpheusGUI
 {
@@ -84,23 +85,13 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
-            {
-                ProteaseComboBox.Items.Add(protease);
-            }
-            Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
-            ProteaseComboBox.SelectedItem = trypsin;
-
-            foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
-            {
-                InitiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
-            }
+            bool isRnaMode = UpdateGUISettings.Globals.IsRnaMode;
+            List<Modification> modsToUse = isRnaMode ? GlobalVariables.AllRnaModsKnown.ToList() : GlobalVariables.AllModsKnown.ToList();
 
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
             }
-
 
             foreach (string separationType in GlobalVariables.SeparationTypes)
             {
@@ -115,14 +106,14 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.Items.Add("Da");
             PrecursorMassToleranceComboBox.Items.Add("ppm");
 
-            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
+            foreach (var hm in modsToUse.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForGrid(hm.Key);
                 ModSelectionGridItems.Add(theModType);
             }
             ModSelectionGrid.ItemsSource = ModSelectionGridItems;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
+            foreach (var hm in modsToUse.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeViewModel(hm.Key, false);
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
@@ -133,7 +124,7 @@ namespace MetaMorpheusGUI
             }
             FixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
+            foreach (var hm in modsToUse.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeViewModel(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
@@ -144,17 +135,41 @@ namespace MetaMorpheusGUI
             }
             VariableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
+            foreach (var hm in modsToUse.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             }
 
-            foreach (string labelModType in GlobalVariables.AllModsKnown.Where(m => m.ModificationType.Equals("Multiplex Label"))
-                         .Select(m => m.OriginalId).Distinct())
+            if (isRnaMode)
             {
-                MultiplexComboBox.Items.Add(labelModType);
+                foreach (Rnase rnase in RnaseDictionary.Dictionary.Values)
+                {
+                    ProteaseComboBox.Items.Add(rnase);
+                }
+                Rnase t1 = RnaseDictionary.Dictionary["RNase T1"];
+                ProteaseComboBox.SelectedItem = t1;
             }
-            MultiplexComboBox.SelectedItem = _defaultMultiplexType;
+            else
+            {
+                foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
+                {
+                    ProteaseComboBox.Items.Add(protease);
+                }
+                Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
+                ProteaseComboBox.SelectedItem = trypsin;
+
+                foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
+                {
+                    InitiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
+                }
+
+                foreach (string labelModType in GlobalVariables.AllModsKnown.Where(m => m.ModificationType.Equals("Multiplex Label"))
+                             .Select(m => m.OriginalId).Distinct())
+                {
+                    MultiplexComboBox.Items.Add(labelModType);
+                }
+                MultiplexComboBox.SelectedItem = _defaultMultiplexType;
+            }
         }
 
         /// <summary>
@@ -454,7 +469,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            Protease protease = (Protease)ProteaseComboBox.SelectedItem;
+            DigestionAgent protease = (DigestionAgent)ProteaseComboBox.SelectedItem;
 
             string separationType = SeparationTypeComboBox.SelectedItem.ToString();
 
@@ -849,7 +864,7 @@ namespace MetaMorpheusGUI
         //this one is used by the GUI
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
+            string proteaseName = ((DigestionAgent)ProteaseComboBox.SelectedItem).Name;
             MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
 
             if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
@@ -928,7 +943,7 @@ namespace MetaMorpheusGUI
         //this is an overload for co-dependent parameters
         private void ProteaseSpecificUpdate(object sender, TextChangedEventArgs e)
         {
-            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            if (((DigestionAgent)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
                 try
                 {
@@ -1127,7 +1142,7 @@ namespace MetaMorpheusGUI
         {
             if (searchModeType != CleavageSpecificity.Full)
             {
-                if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+                if (((DigestionAgent)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
                     searchModeType = CleavageSpecificity.None; //prevents an accidental semi attempt of a non-specific protease
 

@@ -66,5 +66,9 @@
         <!-- Icons -->
         <BitmapImage x:Key="ProteinIcon" UriSource="Icons/IconProtein.bmp"/>
         <BitmapImage x:Key="RnaIcon" UriSource="Icons/IconRna.bmp"/>
+        
+        <!-- Converters -->
+        <local:ProteinRnaTerminologyConverter x:Key="ProteinRnaTerminologyConverter"/>
+        <local:CollapseOnRnaModeConverter x:Key="CollapseOnRnaModeConverter"/>
     </Application.Resources>
 </Application>
