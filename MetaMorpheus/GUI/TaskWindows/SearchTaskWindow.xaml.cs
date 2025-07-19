@@ -56,7 +56,7 @@ namespace MetaMorpheusGUI
                 {
                     Title = "RNA Search Task";
                     TheTask.SearchParameters = new RnaSearchParameters();
-                    TheTask.CommonParameters = new CommonParameters(digestionParams: new RnaDigestionParams("RNase T1"), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20);
+                    TheTask.CommonParameters = new CommonParameters("RnaSearchTask", digestionParams: new RnaDigestionParams("RNase T1"), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20);
                 }
                 else
                 {
@@ -519,18 +519,32 @@ namespace MetaMorpheusGUI
             int maxModificationIsoformsValue = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             int maxModsForPeptideValue = (int.Parse(MaxModNumTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex);
-
-            DigestionParams digestionParamsToSave = new DigestionParams(
-                protease: protease.Name,
-                maxMissedCleavages: maxMissedCleavages,
-                minPeptideLength: minPeptideLengthValue,
-                maxPeptideLength: maxPeptideLengthValue,
-                maxModificationIsoforms: maxModificationIsoformsValue,
-                initiatorMethionineBehavior: initiatorMethionineBehavior,
-                maxModsForPeptides: maxModsForPeptideValue,
-                searchModeType: searchModeType,
-                fragmentationTerminus: fragmentationTerminus,
-                generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value);
+            IDigestionParams digestionParamsToSave;
+            if (UpdateGUISettings.Globals.IsRnaMode)
+            {
+                digestionParamsToSave = new RnaDigestionParams(protease.Name, 
+                    maxMissedCleavages, 
+                    minPeptideLengthValue, 
+                    maxPeptideLengthValue, 
+                    maxModificationIsoformsValue, 
+                    maxModsForPeptideValue, 
+                    fragmentationTerminus);
+            }
+            else
+            {
+                digestionParamsToSave = new DigestionParams(
+                    protease: protease.Name,
+                    maxMissedCleavages: maxMissedCleavages,
+                    minPeptideLength: minPeptideLengthValue,
+                    maxPeptideLength: maxPeptideLengthValue,
+                    maxModificationIsoforms: maxModificationIsoformsValue,
+                    initiatorMethionineBehavior: initiatorMethionineBehavior,
+                    maxModsForPeptides: maxModsForPeptideValue,
+                    searchModeType: searchModeType,
+                    fragmentationTerminus: fragmentationTerminus,
+                    generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value);
+            }
+                
 
             Tolerance ProductMassTolerance;
             if (ProductMassToleranceComboBox.SelectedIndex == 0)

@@ -113,6 +113,9 @@ namespace EngineLayer
             if (digestionParams is RnaDigestionParams)
             {
                 CustomIons =  Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
+                // reset custom fragmentation product types to default empty list
+                Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
+
                 ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Digestion Termini", "Cyclic Phosphate on X") };
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
                 PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
@@ -121,12 +124,13 @@ namespace EngineLayer
             else
             {
                 CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
+
+                // reset custom fragmentation product types to default empty list
+                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
+
                 ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             }
-                
-            // reset custom fragmentation product types to default empty list
-            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
         }
 
         // Notes:
