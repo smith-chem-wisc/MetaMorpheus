@@ -1362,7 +1362,8 @@ namespace MetaMorpheusGUI
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
         {
             SaveButton_Click(sender, e);
-            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
+            var prefix = UpdateGUISettings.Globals.IsRnaMode ? "Rna" : "";
+            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", $"{prefix}SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
 
         /// <summary>

@@ -1822,15 +1822,16 @@ namespace MetaMorpheusGUI
             Window dialog = null;
             MetaMorpheusTask task = null;
             string defaultTomlName = null;
+            var prefix = UpdateGUISettings.Globals.IsRnaMode ? "Rna" : "";
 
             // determine if there is a default .toml for this task
             switch (taskType)
             {
-                case MyTask.Search: defaultTomlName = "SearchTaskDefault.toml"; break;
-                case MyTask.Calibrate: defaultTomlName = "CalibrationTaskDefault.toml"; break;
-                case MyTask.Gptmd: defaultTomlName = "GptmdTaskDefault.toml"; break;
-                case MyTask.XLSearch: defaultTomlName = "XLSearchTaskDefault.toml"; break;
-                case MyTask.GlycoSearch: defaultTomlName = "GlycoSearchTaskDefault.toml"; break;
+                case MyTask.Search: defaultTomlName = $"{prefix}SearchTaskDefault.toml"; break;
+                case MyTask.Calibrate: defaultTomlName = $"{prefix}CalibrationTaskDefault.toml"; break;
+                case MyTask.Gptmd: defaultTomlName = $"{prefix}GptmdTaskDefault.toml"; break;
+                case MyTask.XLSearch: defaultTomlName = $"XLSearchTaskDefault.toml"; break;
+                case MyTask.GlycoSearch: defaultTomlName = $"GlycoSearchTaskDefault.toml"; break;
                 case MyTask.Average: defaultTomlName = "SpectralAverageTaskDefault.toml"; break;
             }
 
