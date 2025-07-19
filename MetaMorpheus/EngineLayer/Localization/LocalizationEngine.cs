@@ -31,6 +31,9 @@ namespace EngineLayer.Localization
             // don't try to localize mass differences for ambiguous peptides
             SpectralMatch[] unambiguousPsms = AllResultingIdentifications.Where(b => b.FullSequence != null).ToArray();
 
+            if (unambiguousPsms.Length == 0)
+                return new LocalizationEngineResults(this);
+
             double psmsSearched = 0;
             int oldPercentProgress = 0;
 

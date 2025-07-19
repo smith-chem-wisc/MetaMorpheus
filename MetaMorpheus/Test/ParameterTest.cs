@@ -188,7 +188,7 @@ namespace Test
         {
             CommonParameters defaultParameters = new CommonParameters();
 
-            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
+            Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
                 new List<ProductType> { ProductType.b, ProductType.y, ProductType.c };
             CommonParameters notDefaultParameters = new CommonParameters(
                 dissociationType: DissociationType.ETD,

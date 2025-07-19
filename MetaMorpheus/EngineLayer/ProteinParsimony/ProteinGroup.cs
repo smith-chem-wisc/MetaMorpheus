@@ -441,9 +441,9 @@ namespace EngineLayer
                     psm.GetAminoAcidCoverage();
                     if (psm.FragmentCoveragePositionInPeptide == null) continue;
                     //loop through each peptide within the psm
-                    IEnumerable<PeptideWithSetModifications> pwsms = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer as PeptideWithSetModifications)
-                        .Where(p => p.Protein.Accession == protein.Accession);
-                    foreach (PeptideWithSetModifications pwsm in pwsms)
+                    IEnumerable<IBioPolymerWithSetMods> pwsms = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer)
+                        .Where(p => p.Parent.Accession == protein.Accession);
+                    foreach (var pwsm in pwsms)
                     {
                         //create a hashset to store the covered residues for the peptide, converted to the corresponding indices of the protein
                         HashSet<int> coveredResiduesInPeptide = new();

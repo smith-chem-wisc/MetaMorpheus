@@ -169,7 +169,7 @@ namespace TaskLayer
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append($"{GlobalVariables.AnalyteType.GetDigestionAgentLabel()} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
-            ProseCreatedWhileRunning.Append("search for truncated proteins and proteolysis products = " + CommonParameters.AddTruncations + "; ");
+            ProseCreatedWhileRunning.Append($"search for truncated {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} and proteolysis products = " + CommonParameters.AddTruncations + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinLength + "; ");
             ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxLength == int.MaxValue ?
@@ -251,7 +251,7 @@ namespace TaskLayer
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
-                SpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                SpectralMatch[] fileSpecificPsms = new SpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
                 // ensure proteins are loaded in before proceeding with search
                 switch (proteinLoadingTask.IsCompleted)
@@ -302,10 +302,10 @@ namespace TaskLayer
                 // nonspecific search
                 else if (SearchParameters.SearchType == SearchType.NonSpecific)
                 {
-                    SpectralMatch[][] fileSpecificPsmsSeparatedByFdrCategory = new PeptideSpectralMatch[numFdrCategories][]; //generate an array of all possible locals
+                    SpectralMatch[][] fileSpecificPsmsSeparatedByFdrCategory = new SpectralMatch[numFdrCategories][]; //generate an array of all possible locals
                     for (int i = 0; i < numFdrCategories; i++) //only add if we're using for FDR, else ignore it as null.
                     {
-                        fileSpecificPsmsSeparatedByFdrCategory[i] = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                        fileSpecificPsmsSeparatedByFdrCategory[i] = new SpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                     }
 
                     //create params for N, C, or both if semi
