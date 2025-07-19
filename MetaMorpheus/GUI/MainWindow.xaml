@@ -10,6 +10,7 @@
         WindowStartupLocation="CenterScreen" MinHeight="400" 
         MinWidth="800" Height="550" Width="1000"
         Loaded="MyWindow_Loaded"
+        Title="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=MainWindowTitle}"
         PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.Resources>

@@ -1,5 +1,6 @@
 ﻿using GuiFunctions;
 using System.Windows;
+using EngineLayer;
 
 namespace MetaMorpheusGUI.Util
 {
@@ -9,10 +10,19 @@ namespace MetaMorpheusGUI.Util
     /// </summary>
     public class GuiGlobalParamsViewModel(GuiGlobalParams parameters) : BaseViewModel
     {
+        public string MainWindowTitle => IsRnaMode
+            ? $"MetaMorpheus RNA: {GlobalVariables.MetaMorpheusVersion}"
+            : $"MetaMorpheus Protein: {GlobalVariables.MetaMorpheusVersion}";
+
         public bool IsRnaMode
         {
             get => parameters.IsRnaMode;
-            set { parameters.IsRnaMode = value; OnPropertyChanged(nameof(IsRnaMode)); }
+            set 
+            { 
+                parameters.IsRnaMode = value; 
+                OnPropertyChanged(nameof(IsRnaMode));
+                OnPropertyChanged(nameof(MainWindowTitle));
+            }
         }
 
         public bool ExposeRnaToUser

@@ -42,8 +42,6 @@ namespace MetaMorpheusGUI
             UpdateGUISettings.LoadGUISettings();
             InitializeComponent();
 
-            Title = "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
-
             dataGridProteinDatabases.DataContext = ProteinDatabases;
             proteinDbSummaryDataGrid.DataContext = ProteinDatabases;
 
