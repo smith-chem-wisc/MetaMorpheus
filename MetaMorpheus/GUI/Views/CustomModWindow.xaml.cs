@@ -22,11 +22,17 @@ namespace MetaMorpheusGUI
         public CustomModWindow()
         {
             InitializeComponent();
+            locationRestrictions = new Dictionary<string, string> { { "Anywhere", "Anywhere." } };
 
-            if (locationRestrictions == null)
+            if (UpdateGUISettings.Globals.IsRnaMode)
             {
-                locationRestrictions = new Dictionary<string, string>();
-                locationRestrictions.Add("Anywhere", "Anywhere.");
+                locationRestrictions.Add("Oligo 5'-Terminus", "Oligo 5'-terminal.");
+                locationRestrictions.Add("Oligo 3'-Terminus", "Oligo 3'-terminal.");
+                locationRestrictions.Add("Transcript 5'-Terminus", "5'-terminal.");
+                locationRestrictions.Add("Transcript 3'-Terminus", "3'-terminal.");
+            }
+            else
+            {
                 locationRestrictions.Add("Peptide N-Terminus", "Peptide N-terminal.");
                 locationRestrictions.Add("Peptide C-Terminus", "Peptide C-terminal.");
                 locationRestrictions.Add("Protein N-Terminus", "N-terminal.");
@@ -51,7 +57,8 @@ namespace MetaMorpheusGUI
         public void SaveCustomMod_Click(object sender, RoutedEventArgs e)
         {
             string modsDirectory = Path.Combine(GlobalVariables.DataDir, @"Mods");
-            string customModsPath = Path.Combine(modsDirectory, @"CustomModifications.txt");
+            var path = UpdateGUISettings.Globals.IsRnaMode ? @"RnaCustomModifications.txt" : @"CustomModifications.txt";
+            string customModsPath = Path.Combine(modsDirectory, path);
             List<string> customModsText = new List<string>();
 
             if (!File.Exists(customModsPath))
@@ -173,7 +180,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            GlobalVariables.AddMods(new List<Modification> { modification }, false);
+            GlobalVariables.AddMods(new List<Modification> { modification }, false, UpdateGUISettings.Globals.IsRnaMode);
 
             DialogResult = true;
         }
