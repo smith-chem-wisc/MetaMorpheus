@@ -9,6 +9,19 @@ namespace MetaMorpheusGUI
     /// </summary>
     public class IntegerTexBoxControl : TextBox
     {
+        public static readonly DependencyProperty AllowNegativeProperty =
+            DependencyProperty.Register(
+                nameof(AllowNegative),
+                typeof(bool),
+                typeof(IntegerTexBoxControl),
+                new PropertyMetadata(false));
+
+        public bool AllowNegative
+        {
+            get => (bool)GetValue(AllowNegativeProperty);
+            set => SetValue(AllowNegativeProperty, value);
+        }
+
         public IntegerTexBoxControl()
         {
             HorizontalContentAlignment = HorizontalAlignment.Center;
@@ -25,7 +38,7 @@ namespace MetaMorpheusGUI
             {
                 if (!char.IsDigit(character))
                 {
-                    if (character == '-')
+                    if (character == '-' && AllowNegative)
                     {
                         // Allow '-' only at the start and only once
                         if (CaretIndex == 0 && !Text.Contains("-"))

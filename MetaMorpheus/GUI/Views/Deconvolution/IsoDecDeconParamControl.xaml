@@ -45,7 +45,7 @@
         </CheckBox>
         <Label Grid.Row="2" Grid.Column="0" Content="Max Assumed Charge State:" />
         <local:IntegerTexBoxControl Grid.Row="2" Grid.Column="1" x:Name="DeconvolutionMaxAssumedChargeStateTextBox"
-                                    Width="45" ToolTipService.ShowDuration="999999"
+                                    Width="45" ToolTipService.ShowDuration="999999" AllowNegative="True"
                                     ToolTipService.InitialShowDelay="500"
                                     Text="{Binding MaxAssumedChargeState}">
             <TextBox.ToolTip>
@@ -60,7 +60,7 @@
         </local:IntegerTexBoxControl>
         <Label Grid.Row="2" Grid.Column="2" Content="Min Assumed Charge State:" />
         <local:IntegerTexBoxControl Grid.Row="2" Grid.Column="3" Width="45" ToolTipService.ShowDuration="999999"
-                                    ToolTipService.InitialShowDelay="500"
+                                    ToolTipService.InitialShowDelay="500" AllowNegative="True"
                                     Text="{Binding MinAssumedChargeState}">
             <TextBox.ToolTip>
                 <TextBlock>
