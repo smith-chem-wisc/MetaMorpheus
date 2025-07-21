@@ -94,7 +94,7 @@
                                             <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}" Width="70" 
                                                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
                                             <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}" Width="160" />
-                                            <DataGridTextColumn Header="Protein Name" Binding="{Binding ProteinName}" Width="100" 
+                                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="100" 
                                                                 />
                                             <DataGridTextColumn Header="Organism Name" Binding="{Binding OrganismName}" Width="100" />
                                             <DataGridTextColumn Header="Q-Value" Binding="{Binding QValue}" Width="60"

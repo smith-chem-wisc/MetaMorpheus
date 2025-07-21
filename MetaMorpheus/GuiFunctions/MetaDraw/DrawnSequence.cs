@@ -64,7 +64,7 @@ namespace GuiFunctions
         {
             // Clear the canvas if we are plotting the NOT Sequence Coverage Map or if we are NOT plotting a Cross-Linked Peptide
             // This is so that we can add the XL sequence to the same canvas by one call with the alpha sequence and one call with the beta sequence. 
-            if (!Annotation && (match is PsmFromTsv psm && (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence))))
+            if (!Annotation || (match is PsmFromTsv psm && (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence))))
             {
                 ClearCanvas(SequenceDrawingCanvas);
             }
@@ -203,7 +203,7 @@ namespace GuiFunctions
         /// <param name="xShift"></param>
         public static void AnnotateModifications(SpectrumMatchFromTsv spectrumMatch, Canvas sequenceDrawingCanvas, string fullSequence, int yLoc, double? spacer = null, int xShift = 12, int chunkPositionInRow = 0, int annotationRow = 0, bool annotation = false)
         {
-            var modDict = IBioPolymerWithSetMods.GetModificationDictionaryFromFullSequence(fullSequence, GlobalVariables.AllModsKnownDictionary);
+            IBioPolymerWithSetMods peptide = spectrumMatch.ToBioPolymerWithSetMods();
 
             // read glycans if applicable
             List<Tuple<int, string, double>> localGlycans = null;
@@ -213,7 +213,7 @@ namespace GuiFunctions
             }
 
             // annotate mods
-            foreach (var mod in modDict)
+            foreach (var mod in peptide.AllModsOneIsNterminus)
             {
                 double xLocation = (mod.Key - 1) * (spacer ?? MetaDrawSettings.AnnotatedSequenceTextSpacing) - xShift;
                 // adjust for spacing in sequence annotation

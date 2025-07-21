@@ -38,7 +38,7 @@ namespace MetaMorpheusGUI
         public ChimeraLegendViewModel ChimeraLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private static List<string> AcceptedSpectraFormats => SpectrumMatchFromTsvHeader.AcceptedSpectraFormats.Concat(new List<string> { ".msalign", ".tdf", ".tdf_bin" }).Select(format => format.ToLower()).ToList();
-        private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
+        private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".osmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
 
