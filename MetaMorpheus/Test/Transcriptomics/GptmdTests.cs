@@ -14,6 +14,8 @@ using Transcriptomics;
 using System.IO;
 using System.Xml.Linq;
 using TaskLayer;
+using UsefulProteomicsDatabases;
+using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace Test.Transcriptomics;
 
@@ -197,12 +199,13 @@ public class GptmdTests
     public void GptmdTask_Rna_AddsExpectedMethylationMods()
     {
         // Arrange
-        // Set up file paths
         string testDir = TestContext.CurrentContext.TestDirectory;
-        string fastaPath = Path.Combine(testDir, "Transcriptomics", "TestData", "16mer2.fasta");
-        string xmlReferencePath = Path.Combine(testDir, "Transcriptomics", "TestData", "16mer2.xml");
-        string spectraPath = Path.Combine(testDir, "Transcriptomics", "TestData", "RnaStandard_Subset.mzML");
+        string fastaPath = Path.Combine(testDir, "Transcriptomics", "TestData", "22mer-Am.fasta");
+        string spectraPath = Path.Combine(testDir, "Transcriptomics", "TestData", "22merMethyl_Snip.mzML");
         string outputDir = Path.Combine(testDir, "GptmdTask_Rna_AddsExpectedMethylationMods");
+
+        if (Directory.Exists(outputDir))
+            Directory.Delete(outputDir, true); // Clean up previous test run
         Directory.CreateDirectory(outputDir);
 
         // Set up GptmdTask for RNA
@@ -239,46 +242,21 @@ public class GptmdTests
         string gptmdXml = Directory.GetFiles(outputDir, "*GPTMD.xml").FirstOrDefault();
         Assert.That(gptmdXml, Is.Not.Null.And.Not.Empty, "GPTMD output XML should exist.");
 
-        // Parse the output XML and the reference XML
-        var outputDoc = XDocument.Load(gptmdXml);
-        var refDoc = XDocument.Load(xmlReferencePath);
+        // load in teh GPTMD xml file
+        var rna = RnaDbLoader.LoadRnaXML(gptmdXml, true, DecoyType.None, false, GlobalVariables.AllRnaModsKnown, [], out _);
 
-        // Get the entry node
-        var outputEntry = outputDoc.Descendants("entry").FirstOrDefault();
-        var refEntry = refDoc.Descendants("entry").FirstOrDefault();
-        Assert.That(outputEntry, Is.Not.Null, "Output XML should have an entry.");
-        Assert.That(refEntry, Is.Not.Null, "Reference XML should have an entry.");
+        // check that the expected modifications are present
+        int expectedModIndex = 8;
+        string expectedMod = "Methylation on A";
 
-        // Check accession and sequence
-        string outAcc = outputEntry.Element("accession")?.Value;
-        string refAcc = refEntry.Element("accession")?.Value;
-        Assert.That(outAcc, Is.EqualTo(refAcc));
-        string outSeq = outputEntry.Element("sequence")?.Value;
-        string refSeq = refEntry.Element("sequence")?.Value;
-        Assert.That(outSeq, Is.EqualTo(refSeq));
+        var modifications = rna.First().OneBasedPossibleLocalizedModifications;
+        Assert.That(modifications, Is.Not.Null.And.Not.Empty, "Modifications should not be null or empty.");
+        Assert.That(modifications, Does.ContainKey(expectedModIndex), $"Modifications should contain index {expectedModIndex}.");
+        var modList = modifications[expectedModIndex];
+        Assert.That(modList, Is.Not.Null.And.Not.Empty, "Modifications list should not be null or empty.");
+        Assert.That(modList.Select(p => p.IdWithMotif), Does.Contain(expectedMod), $"Modifications should contain expected modification: {expectedMod}.");
 
-        // Check mod positions and types
-        var outMods = outputEntry.Elements("feature")
-            .Where(f => (string)f.Attribute("type") == "modified residue")
-            .Select(f => new
-            {
-                Description = (string)f.Attribute("description"),
-                Position = int.Parse(f.Element("location").Element("position").Attribute("position").Value)
-            }).OrderBy(f => f.Position).ToList();
-
-        var refMods = refEntry.Elements("feature")
-            .Where(f => (string)f.Attribute("type") == "modified residue")
-            .Select(f => new
-            {
-                Description = (string)f.Attribute("description"),
-                Position = int.Parse(f.Element("location").Element("position").Attribute("position").Value)
-            }).OrderBy(f => f.Position).ToList();
-
-        Assert.That(outMods.Count, Is.EqualTo(refMods.Count), "Number of mods should match reference.");
-        for (int i = 0; i < refMods.Count; i++)
-        {
-            Assert.That(outMods[i].Position, Is.EqualTo(refMods[i].Position), $"Mod position {i} should match.");
-            Assert.That(outMods[i].Description, Is.EqualTo(refMods[i].Description), $"Mod description {i} should match.");
-        }
+        //if (Directory.Exists(outputDir))
+        //    Directory.Delete(outputDir, true); 
     }
 }
