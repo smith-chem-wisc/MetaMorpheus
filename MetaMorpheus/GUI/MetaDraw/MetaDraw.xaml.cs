@@ -347,7 +347,7 @@ namespace MetaMorpheusGUI
                 {
                     propertyView.Rows.Add(temp[i].Name, string.Join(", ", psm.MatchedIons.Select(p => p.Annotation)));
                 }
-                else if (temp[i].Name == nameof(psm.VariantCrossingIons))
+                else if (temp[i].Name == nameof(psm.VariantCrossingIons) && psm.VariantCrossingIons != null)
                 {
                     propertyView.Rows.Add(temp[i].Name, string.Join(", ", psm.VariantCrossingIons.Select(p => p.Annotation)));
                 }
@@ -528,6 +528,13 @@ namespace MetaMorpheusGUI
             foreach (var item in MetaDrawLogic.SpectralMatchesGroupedByFile)
             {
                 PsmStatPlotFiles.Add(item.Key);
+            }
+
+            bool isRna = MetaDrawLogic.SpectralMatchResultFilePaths.Any(p => p.EndsWith(".osmtsv", StringComparison.OrdinalIgnoreCase));
+            if (isRna)
+            {
+                plotTypes.Remove("Histogram of Hydrophobicity scores");
+                plotTypes.Remove("Predicted RT vs. Observed RT");
             }
 
             // done loading - restore controls
@@ -757,6 +764,14 @@ namespace MetaMorpheusGUI
             foreach (var item in MetaDrawLogic.SpectralMatchesGroupedByFile)
             {
                 PsmStatPlotFiles.Add(item.Key);
+            }
+
+
+            bool isRna = MetaDrawLogic.SpectralMatchResultFilePaths.Any(p => p.EndsWith(".osmtsv", StringComparison.OrdinalIgnoreCase));
+            if (isRna)
+            {
+                plotTypes.Remove("Histogram of Hydrophobicity scores");
+                plotTypes.Remove("Predicted RT vs. Observed RT");
             }
 
             // done loading - restore controls
