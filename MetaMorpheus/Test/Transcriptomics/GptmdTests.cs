@@ -256,7 +256,7 @@ public class GptmdTests
         Assert.That(modList, Is.Not.Null.And.Not.Empty, "Modifications list should not be null or empty.");
         Assert.That(modList.Select(p => p.IdWithMotif), Does.Contain(expectedMod), $"Modifications should contain expected modification: {expectedMod}.");
 
-        if (Directory.Exists(outputDir))
-            Directory.Delete(outputDir, true); // Clean up previous test run
+        //if (Directory.Exists(outputDir))
+        //    Directory.Delete(outputDir, true); 
     }
 }
