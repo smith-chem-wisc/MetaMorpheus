@@ -4,6 +4,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace MetaMorpheusGUI
 {
@@ -52,10 +53,34 @@ namespace MetaMorpheusGUI
                     : dataContext.ChimeraDrawnSequence.UpdateData(chimeraGroup)
                 ;
             AttachLegendCanvasEvents();
+
+            // Reposition the initial location of the legend to be the upper right of the ms2 plot. 
+            if (!legendHasBeenMoved)
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    var ms2Plot = ms2ChimeraPlot;
+                    var legend = ChimeraLegend;
+
+                    // If you use a child legend canvas, get it:
+                    var legendCanvas = legend.Children.Count > 0 ? legend.Children[0] as Canvas : null;
+                    if (legendCanvas == null) return;
+
+                    // Get MS2 plot position relative to the parent grid
+                    var transform = ms2Plot.TransformToAncestor(MainGrid as Visual);
+                    var ms2PlotTopLeft = transform.Transform(new Point(0, 0));
+
+                    // Calculate top-right position for the legend
+                    double legendLeft = ms2PlotTopLeft.X + ms2Plot.ActualWidth - SelectionDataGrid.ActualWidth - legendCanvas.Width - 16; // 10px margin
+                    double legendTop = ms2PlotTopLeft.Y + 10; // 10px margin from top
+
+                    Canvas.SetLeft(legendCanvas, legendLeft);
+                    Canvas.SetTop(legendCanvas, legendTop);
+                }));
         }
 
         #region Movable Legend
 
+        private bool legendHasBeenMoved = false;
         private bool isDragging = false;
         private Point clickPosition; 
         private ChimeraLegendCanvas _legendCanvas;
@@ -142,6 +167,9 @@ namespace MetaMorpheusGUI
 
                 Canvas.SetLeft(_legendCanvas, left);
                 Canvas.SetTop(_legendCanvas, top);
+
+                // Mark as moved
+                legendHasBeenMoved = true;
             }
         }
 

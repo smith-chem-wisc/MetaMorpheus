@@ -11,7 +11,7 @@
              d:DesignHeight="450" d:DesignWidth="800"
              d:DataContext="{d:DesignInstance chimeras:ChimeraAnalysisTabViewModel, IsDesignTimeCreatable=True}">
 
-    <Grid>
+    <Grid x:Name="MainGrid">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
@@ -29,7 +29,7 @@
         </Grid.RowDefinitions>
 
         <!-- Data Grid -->
-        <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="7">
+        <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="7" x:Name="SelectionDataGrid">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -130,7 +130,7 @@
                   FontSize="16" FontStretch="Expanded" VerticalAlignment="Stretch" />
 
         <!-- Sequence Coverage -->
-        <Expander Grid.Row="3" Grid.Column="2" IsExpanded="True" ExpandDirection="Up">
+        <Expander Grid.Row="3" Grid.Column="2" IsExpanded="False" ExpandDirection="Up">
             <Expander.Header>
                 <Label Content="Sequence Annotation" Margin="0 0 10 0" />
             </Expander.Header>
