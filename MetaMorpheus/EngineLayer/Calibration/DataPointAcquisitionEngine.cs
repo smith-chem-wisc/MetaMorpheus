@@ -58,7 +58,7 @@ namespace EngineLayer.Calibration
             List<LabeledDataPoint> Ms2List = new List<LabeledDataPoint>();
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
-            int[] threads = Enumerable.Range(0, 1).ToArray();
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (matchIndex) =>
             {
                 //foreach psm
