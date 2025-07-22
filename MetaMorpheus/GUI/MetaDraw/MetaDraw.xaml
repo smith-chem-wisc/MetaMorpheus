@@ -102,6 +102,8 @@
                                             <DataGridTextColumn Header="PEP Value" Binding="{Binding PEP}" Width="70" />
                                             <DataGridTextColumn Header="MetaMorpheus Score" Binding="{Binding Score}" 
                                                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                                            <DataGridTextColumn Header="File Name" Binding="{Binding FileNameWithoutExtension}" 
+                                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </Grid>
