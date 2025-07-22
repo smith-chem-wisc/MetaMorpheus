@@ -1212,19 +1212,17 @@
                                     </GroupBox>
                                     <GroupBox Header="Pruned Database Writing">
                                         <StackPanel Margin="5">
-                                            <CheckBox Margin="0 0 0 5" x:Name="WritePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox Margin="0 0 0 5" x:Name="WritePrunedDBCheckBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox.Content>
+                                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Write Two Pruned Databases (Mod and Mod+Protein pruned)"/>
+                                                </CheckBox.Content>
                                                 <ToolTipService.ToolTip>
-                                                    <TextBlock>
-                                                This is very uncommon and not recommended for the typical user.
-                                                <LineBreak />
-                                                This option writes two databases:
-                                                <LineBreak />
-                                                1) Retain all proteins but only keeps modifications found at a 1% FDR.
-                                                <LineBreak />
-                                                2) Retain only proteins and modifications found at a 1% FDR.
-                                                <LineBreak />
-                                                This is intended for further analysis, such as importing into Proteoform Suite to analyse top-down and intact-mass data.
-                                                    </TextBlock>
+                                                    <ToolTip>
+                                                        <ToolTip.Content>
+                                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                                     ConverterParameter="This is very uncommon and not recommended for the typical user.&#x0a;This option writes two databases:&#x0a;  1) Retain all proteins but only keeps modifications found at a 1% FDR.&#x0a;  2) Retain only proteins and modifications found at a 1% FDR.&#x0a;This is intended for further analysis, such as importing into Proteoform Suite to analyse top-down and intact-mass data."/>
+                                                        </ToolTip.Content>
+                                                    </ToolTip>
                                                 </ToolTipService.ToolTip>
                                             </CheckBox>
                                             <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
