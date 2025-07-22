@@ -315,19 +315,20 @@ namespace GuiFunctions
                 string fullSequence = baseSequence;
                 foreach (var mod in modDictionary)
                 {
-                    // if first chunk in the row
-                    if (i % segmentsPerRow == 0 && mod.Key - 1 >= i && mod.Key - 1 <= i + residuesPerSegment)
+                    int insertIndex = mod.Key - i - 1;
+                    // If the modification is on the 3' terminal end, append to the end
+                    if (insertIndex == fullSequence.Length)
                     {
-                        fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
+                        fullSequence += "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]";
                     }
-                    else if (mod.Key - 1 > i && mod.Key - 1 <= i + residuesPerSegment)
+                    // If the modification is within the bounds of the segment, insert at the correct position
+                    else if (insertIndex >= 0 && insertIndex < fullSequence.Length)
                     {
-                        fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
+                        fullSequence = fullSequence.Insert(insertIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                     }
-
-                    
+                    // Otherwise, skip (modification not in this segment)
                 }
-                
+
                 SpectrumMatchFromTsv tempSm = sm.ReplaceFullSequence(fullSequence, baseSequence);
                 segments.Add(tempSm);
                 matchedIonSegments.Add(ions);
