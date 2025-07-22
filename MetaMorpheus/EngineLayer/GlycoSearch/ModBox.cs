@@ -33,7 +33,7 @@ namespace EngineLayer
         public double DecoyMass { get; set; }
         public bool TargetDecoy { get; set; }
         public static Modification[] GlobalModifications { get; set; }
-        public ModBox[] ChildModBoxes { get; set; }
+        public ModBox[] ChildBoxes { get; set; }
 
         // Glycans properties
         public byte[] Kind { get; private set; }
@@ -48,7 +48,11 @@ namespace EngineLayer
             }
         }
 
-
+        /// <summary>
+        /// Use the glycan from database to create all possible combination glycan set into GlycanBox. 
+        /// </summary>
+        /// <param name="maxNum"> The maxNum is maximum glycans allowed on one peptides </param>
+        /// <returns> The glycanBox collection, glycanBox[]</returns>
         public static IEnumerable<ModBox> BuildModBoxes(int maxNum,  bool buildDecoy = false)
         {
             for (int i = 1; i <= maxNum; i++)
@@ -57,7 +61,7 @@ namespace EngineLayer
                 {
                     ModBox modBox = new ModBox(idCombine.ToArray());
                     modBox.TargetDecoy = true;
-                    modBox.ChildModBoxes = BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds, modBox.TargetDecoy).ToArray();
+                    modBox.ChildBoxes = BuildChildBoxes(modBox.NumberOfMods, modBox.ModIds, modBox.TargetDecoy).ToArray();
 
                     yield return modBox;
 
@@ -65,14 +69,22 @@ namespace EngineLayer
                     {
                         ModBox modBox_decoy = new ModBox(idCombine.ToArray(), false); // decoy glycanBox
                         modBox_decoy.TargetDecoy = false;
-                        modBox_decoy.ChildModBoxes = BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds, modBox.TargetDecoy).ToArray();
+                        modBox_decoy.ChildBoxes = BuildChildBoxes(modBox.NumberOfMods, modBox.ModIds, modBox.TargetDecoy).ToArray();
                         yield return modBox_decoy;
                     }
                 }
             }
         }
 
-        public static IEnumerable<ModBox> BuildChildModBoxes(int maxNum, int[] modIds, bool targetDecoy = true)
+
+        /// <summary>
+        /// Generate all possible child/fragment box of the specific glycanBox. The childBoxes is uesd for LocalizationGraph.
+        /// </summary>
+        /// <param name="maxNum"></param>
+        /// <param name="glycanIds"> The glycanBox, ex. [0,0,1] means glycan0 + glycan0 + glycan1 </param>
+        /// <param name="targetDecoy"></param>
+        /// <returns> The ChildBox collection, ChildBox[] </returns>
+        public static IEnumerable<ModBox> BuildChildBoxes(int maxNum, int[] modIds, bool targetDecoy = true)
         {
             yield return new GlycanBox(new int[0], targetDecoy);
             HashSet<string> seen = new HashSet<string>();

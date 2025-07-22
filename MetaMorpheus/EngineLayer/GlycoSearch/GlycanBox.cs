@@ -15,16 +15,6 @@ namespace EngineLayer
     /// </summary>
     public class GlycanBox:ModBox
     {
-        /// <summary>
-        /// All possible child glycan box combinations derived from this glycan box.
-        /// </summary>
-        public GlycanBox[] ChildGlycanBoxes { get; set; }
-
-        /// <summary>
-        /// The global collection of all possible O-glycan boxes.
-        /// </summary>
-        public static GlycanBox[] OGlycanBoxes { get; set; }
-
 
             //TO DO: Decoy O-glycan can be created, but the results need to be reasoned.
             //public static int[] SugarShift = new int[]{ -16205282, -20307937, -29109542, -14605791, -30709033, -15005282, -36513219, -40615874, 16205282, 20307937, 29109542, 14605791, 30709033, 15005282, 36513219, 40615874 };
@@ -42,66 +32,14 @@ namespace EngineLayer
         /// </summary>
         /// <param name="maxNum"> The maxNum is maximum glycans allowed on one peptides </param>
         /// <returns> The glycanBox collection, glycanBox[]</returns>
-        public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum)
+        public static IEnumerable<ModBox> BuildOGlycanBoxes(int maxNum)
         {
-            return BuildOGlycanBoxes(maxNum, false);
-        }
-        public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum, bool buildDecoy)
-        {
-
-            for (int i = 1; i <= maxNum; i++)
-            {
-                foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, GlobalOGlycans.Length), i))
-                {
-                    GlycanBox glycanBox = new GlycanBox(idCombine.ToArray());
-                    glycanBox.TargetDecoy = true;
-                    glycanBox.ChildGlycanBoxes = BuildChildOGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
-
-                    yield return glycanBox;
-
-                    if (buildDecoy)
-                    {
-                        GlycanBox glycanBox_decoy = new GlycanBox(idCombine.ToArray(),false); // decoy glycanBox
-                        glycanBox_decoy.TargetDecoy = false;
-                        glycanBox_decoy.ChildGlycanBoxes = BuildChildOGlycanBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
-                        yield return glycanBox_decoy;
-                    }
-                }
-            }
+            return BuildModBoxes(maxNum, false);
         }
 
-        /// <summary>
-        /// Generate all possible child/fragment box of the specific glycanBox. The childBoxes is uesd for LocalizationGraph.
-        /// </summary>
-        /// <param name="maxNum"></param>
-        /// <param name="glycanIds"> The glycanBox, ex. [0,0,1] means glycan0 + glycan0 + glycan1 </param>
-        /// <param name="targetDecoy"></param>
-        /// <returns> The ChildBox collection, ChildBox[] </returns>
-        public static IEnumerable<GlycanBox> BuildChildOGlycanBoxes(int maxNum, int[] glycanIds, bool targetDecoy = true)
+        public static IEnumerable<GlycanBox> BuildModBoxes(int maxNum, bool buildDecoy = false)
         {
-            yield return new GlycanBox(new int[0], targetDecoy);
-            HashSet<string> seen = new HashSet<string>();
-            for (int i = 1; i <= maxNum; i++)
-            {
-                foreach (var idCombine in Glycan.GetKCombs(Enumerable.Range(0, maxNum), i)) //get all combinations of glycans on the peptide, ex. we have three glycosite and three glycan maybe on that (A,B,C) 
-                {                                                                           //the combination of glycans on the peptide can be (A),(A+B),(A+C),(B+C),(A+B+C) totally six 
-                    List<int> ids = new List<int>(); 
-                    foreach (var id in idCombine)    
-                    {
-                        ids.Add(glycanIds[id]);      
-                    }
-
-                    if (!seen.Contains(string.Join(",", ids.Select(p => p.ToString()))))
-                    {
-                        seen.Add(string.Join(",", ids.Select(p => p.ToString())));
-
-                        GlycanBox glycanBox = new GlycanBox(ids.ToArray(), targetDecoy);
-
-                        yield return glycanBox;
-                    }
-
-                }
-            }
+            return ModBox.BuildModBoxes(maxNum, buildDecoy).OfType<GlycanBox>();
         }
 
         /// <summary>

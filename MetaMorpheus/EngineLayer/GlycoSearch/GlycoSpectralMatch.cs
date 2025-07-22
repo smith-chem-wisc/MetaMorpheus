@@ -286,7 +286,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(DiagnosticIonScore + "\t");
 
-                var glycanBox = GlycanBox.OGlycanBoxes[Routes.First().ModBoxId];
+                var glycanBox = GlycoSearchEngine.ModBoxes[Routes.First().ModBoxId];
 
                 sb.Append(glycanBox.NumberOfMods + "\t");
 

@@ -469,7 +469,7 @@ namespace EngineLayer.GlycoSearch
             //MinModNum: the least mods we can have up to current mod pos. In order to get min number, the min = number of glycan in the box - number of node from the last.
             //Ex. 3 glycan in the box, end position is 7, then for position 5, the min = 3 - (7-5) = 1.
             int minModNum = ModBox.ModIds.Length - (modPos_motif.Length - 1 - x);
-            var childBox = ModBox.ChildGlycanBoxes[y]; // Get the childBox from the ModBox, which is the glycanBox in the localization graph.
+            var childBox = ModBox.ChildBoxes[y]; // Get the childBox from the ModBox, which is the glycanBox in the localization graph.
             if (childBox.NumberOfMods < minModNum || childBox.NumberOfMods > maxModNum)
             {
                 return false; // The number of modifications is not within the valid range
@@ -520,8 +520,8 @@ namespace EngineLayer.GlycoSearch
         /// <returns></returns>
         public static bool MotifCheck(GlycanBox modBox, int preY, int currentY, string motif)
         {
-            var preModBoxId = modBox.ChildGlycanBoxes[preY].ModIds;
-            var currentModBoxId = modBox.ChildGlycanBoxes[currentY].ModIds;
+            var preModBoxId = modBox.ChildBoxes[preY].ModIds;
+            var currentModBoxId = modBox.ChildBoxes[currentY].ModIds;
 
             var modDiff = GetDiff(preModBoxId, currentModBoxId);
 
