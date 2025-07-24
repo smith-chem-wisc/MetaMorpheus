@@ -48,8 +48,20 @@ namespace EngineLayer
             }
         }
 
+        //TO DO: Decoy O-glycan can be created, but the results need to be reasoned.
+        //public static int[] SugarShift = new int[]{ -16205282, -20307937, -29109542, -14605791, -30709033, -15005282, -36513219, -40615874, 16205282, 20307937, 29109542, 14605791, 30709033, 15005282, 36513219, 40615874 };
+        protected readonly static int[] SugarShift = new int[] //still unclear about the shift...
+        {
+            7103710, 10300920, 11502690, 12904260, 14706840, 5702150, 13705890, 12809500, 11308410, 13104050,
+            11404290, 9705280, 12805860, 15610110, 8703200, 10104770, 9906840, 18607930, 16306330,
+            -7103710, -10300920, -11502690, -12904260, -14706840, -5702150, -13705890, -12809500, -11308410, -13104050,
+            -11404290, -9705280, -12805860, -15610110, -8703200, -10104770, -9906840, -18607930, -16306330,
+
+        };
+
+
         /// <summary>
-        /// Use the glycan from database to create all possible combination glycan set into GlycanBox. 
+        /// Use the Mod from database to create all possible combination Mods set into ModBox. 
         /// </summary>
         /// <param name="maxNum"> The maxNum is maximum glycans allowed on one peptides </param>
         /// <returns> The glycanBox collection, glycanBox[]</returns>
@@ -86,7 +98,7 @@ namespace EngineLayer
         /// <returns> The ChildBox collection, ChildBox[] </returns>
         public static IEnumerable<ModBox> BuildChildBoxes(int maxNum, int[] modIds, bool targetDecoy = true)
         {
-            yield return new GlycanBox(new int[0], targetDecoy);
+            yield return new ModBox(new int[0], targetDecoy);
             HashSet<string> seen = new HashSet<string>();
             for (int i = 1; i <= maxNum; i++)
             {

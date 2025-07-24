@@ -28,18 +28,38 @@ namespace EngineLayer
             };
 
         /// <summary>
-        /// Use the glycan from database to create all possible combination glycan set into GlycanBox. 
+        /// Use the glycan from the database to create all possible combination glycans set into GlycanBox.
         /// </summary>
-        /// <param name="maxNum"> The maxNum is maximum glycans allowed on one peptides </param>
-        /// <returns> The glycanBox collection, glycanBox[]</returns>
-        public static IEnumerable<ModBox> BuildOGlycanBoxes(int maxNum)
-        {
-            return BuildModBoxes(maxNum, false);
-        }
-
+        /// <param name="maxNum"></param>
+        /// <param name="buildDecoy"></param>
+        /// <returns></returns>
         public static IEnumerable<GlycanBox> BuildModBoxes(int maxNum, bool buildDecoy = false)
         {
-            return ModBox.BuildModBoxes(maxNum, buildDecoy).OfType<GlycanBox>();
+            for (int i = 1; i <= maxNum; i++)
+            {
+                foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, GlobalModifications.Length), i))
+                {
+                    GlycanBox glycanBox = new GlycanBox(idCombine.ToArray());
+                    glycanBox.TargetDecoy = true;
+                    glycanBox.ChildBoxes = BuildChildBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
+
+                    yield return glycanBox;
+
+                    if (buildDecoy)
+                    {
+                        GlycanBox glycanBox_decoy = new GlycanBox(idCombine.ToArray(), false); // decoy glycanBox
+                        glycanBox_decoy.TargetDecoy = false;
+                        glycanBox_decoy.ChildBoxes = BuildChildBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
+                        yield return glycanBox_decoy;
+                    }
+                }
+            }
+        }
+
+
+        public static IEnumerable<GlycanBox> BuildChildBoxes(int maxNum, int[] ids, bool targetDecoy = true)
+        {
+            return ModBox.BuildChildBoxes(maxNum, ids, targetDecoy).OfType<GlycanBox>();
         }
 
         /// <summary>
@@ -53,7 +73,7 @@ namespace EngineLayer
             {
                 Mass = (double)Glycan.GetMass(Kind) / 1E5;
             }
-            else
+            else // For decoy glycanBox, the mass is shifted by a random value.
             {
                 Random random = new Random();
                 int shiftInd = random.Next(SugarShift.Length);
