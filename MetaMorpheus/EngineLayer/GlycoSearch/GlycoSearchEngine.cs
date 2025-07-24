@@ -450,7 +450,7 @@ namespace EngineLayer.GlycoSearch
                     boxIdForThisMass++; // if the oxonium ions don't make sense (there is no 204, or without their diagnostic ion), we can skip this glycan.
                     continue;
                 }
-                SortedDictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(thePeptideCandidate, GetMotifs()); //list all of the possible glycoslation site/postition
+                SortedDictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(thePeptideCandidate, GetMotifs(boxIdForThisMass)); //list all of the possible glycoslation site/postition
                 if (GraphCheck(modPos, ModBoxes[boxIdForThisMass])) // the glycosite number should be larger than the possible glycan number.
                 {
                     LocalizationGraph localizationGraph = new LocalizationGraph(modPos, ModBoxes[boxIdForThisMass], ModBoxes[boxIdForThisMass].ChildBoxes, boxIdForThisMass);
