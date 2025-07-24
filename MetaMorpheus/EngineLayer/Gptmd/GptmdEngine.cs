@@ -23,6 +23,7 @@ namespace EngineLayer.Gptmd
         //The ScoreTolerance property is used to differentiatie when a PTM candidate is added to a peptide. We check the score at each position and then add that mod where the score is highest.
         private readonly double ScoreTolerance = 0.1;
         public Dictionary<string, HashSet<Tuple<int, Modification>>> ModDictionary { get; init; }
+        private readonly List<IGptmdFilter> Filters;
 
         public GptmdEngine(
             List<SpectralMatch> allIdentifications, 
@@ -32,7 +33,8 @@ namespace EngineLayer.Gptmd
             CommonParameters commonParameters, 
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, 
             List<string> nestedIds,
-            Dictionary<string, HashSet<Tuple<int, Modification>>> modDictionary) 
+            Dictionary<string, HashSet<Tuple<int, Modification>>> modDictionary,
+            List<IGptmdFilter> filters = null) 
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllIdentifications = allIdentifications;
@@ -40,6 +42,8 @@ namespace EngineLayer.Gptmd
             Combos = combos;
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
             ModDictionary = modDictionary ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
+            Filters = filters ?? new List<IGptmdFilter>();
+
         }
 
         public static bool ModFits(Modification attemptToLocalize, IBioPolymer protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
@@ -109,7 +113,7 @@ namespace EngineLayer.Gptmd
                         var possibleModifications = GetPossibleMods(precursorMass, GptmdModifications, Combos,
                             FilePathToPrecursorMassTolerance[fileName], pepWithSetMods);
 
-                        double bestScore = originalScore; // Initialize with the original score of the PSM to ensure gptmd only adds if new modified forms scores higher
+                        // Initialize with the original score of the PSM to ensure gptmd only adds if new modified forms scores higher
                         Modification bestMod = null;
                         int bestIndex = -1;
                         string bestProteinAccession = null;
@@ -133,10 +137,10 @@ namespace EngineLayer.Gptmd
                                 var matchedIons = MatchFragmentIons(ms2ScanWithSpecificMass, peptideTheorProducts, CommonParameters, matchAllCharges: false);
                                 double score = CalculatePeptideScore(scan, matchedIons, false);
 
-                                if (score <= bestScore)
+                                // plus 2 is to translate from zero based string array index to OneBasedModification index
+                                if (!Filters.All(f => f.Passes(newPep, psm, score, originalScore, matchedIons, j + 2, pepWithSetMods.Length)))
                                     continue;
 
-                                bestScore = score;
                                 bestMod = mod;
                                 bestIndex = j;
                                 bestProteinAccession = null;
