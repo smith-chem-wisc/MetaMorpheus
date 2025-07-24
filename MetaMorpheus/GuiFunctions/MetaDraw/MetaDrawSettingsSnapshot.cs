@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Readers;
+using GuiFunctions.MetaDraw;
 
 namespace GuiFunctions
 {
@@ -39,6 +40,12 @@ namespace GuiFunctions
         public double StrokeThicknessUnannotated { get; set; } = 0.7;
         public double StrokeThicknessAnnotated { get; set; } = 1.0;
         public double SpectrumDescriptionFontSize { get; set; } = 10;
+        public bool DisplayChimeraLegend { get; set; } = true;
+        public bool SuppressMessageBoxes { get; set; } = true;
+        public bool ChimeraLegendTakeFirstIfAmbiguous { get; set; }
+        public double ChimeraLegendMaxWidth { get; set; } = 420;
+        public LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
+        public LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;
