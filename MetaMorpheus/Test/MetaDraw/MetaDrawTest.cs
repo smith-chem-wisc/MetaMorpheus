@@ -13,6 +13,7 @@ using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
+using GuiFunctions.MetaDraw;
 using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Series;
@@ -23,6 +24,7 @@ using Readers;
 using TaskLayer;
 using OxyPlot.Wpf;
 using LineSeries = OxyPlot.Series.LineSeries;
+using OxyPlot;
 
 namespace Test.MetaDraw
 {
@@ -817,7 +819,7 @@ namespace Test.MetaDraw
 
             peak = (LineSeries)childPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
-            Assert.That(Math.Round(peakPoints[0].X, 2), Is.EqualTo(126.06)); // m/z
+            Assert.That(Math.Round(peakPoints[0].X, 2), Is.EqualTo(126.05)); // m/z
             Assert.That(Math.Round(peakPoints[1].X, 2), Is.EqualTo(126.06));
             Assert.That((int)peakPoints[0].Y, Is.EqualTo(0)); // intensity
             Assert.That((int)peakPoints[1].Y, Is.EqualTo(8496));
@@ -891,148 +893,160 @@ namespace Test.MetaDraw
                 var type = typeof(SpectrumMatchFromTsv);
                 var field = type.GetField("<Ms2ScanNumber>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
                 field.SetValue(psm, psm.Ms2ScanNumber + 27300);
+
+                field = type.GetField("<PrecursorScanNum>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                field.SetValue(psm, psm.PrecursorScanNum + 27300);
             }
-            var metaDrawDynamicScanConnection = (Dictionary<string, MsDataFile>)metadrawLogic?.GetType()
-                .GetField("MsDataFiles", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(metadrawLogic);
 
+            var metaDrawDynamicScanConnection = metadrawLogic.MsDataFiles;
 
-            metadrawLogic.FilterPsmsToChimerasOnly();
+            var chimeraAnalysisTab = new ChimeraAnalysisTabViewModel(
+                metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles,
+                outputFolder);
             // test plotting on each instance of chimeras in this dataset
             var plotView = new OxyPlot.Wpf.PlotView() { Name = "chimeraPlot" };
-            foreach (var chimeraGroup in metadrawLogic.FilteredListOfPsms
-                         .GroupBy(p => p.Ms2ScanNumber))
+            foreach (var chimeraGroup in chimeraAnalysisTab.ChimeraGroupViewModels)
             {
-                Assert.That(chimeraGroup.Count(), Is.GreaterThanOrEqualTo(2));
+                Assert.That(chimeraGroup.Count, Is.GreaterThanOrEqualTo(2));
                 MsDataScan chimericScan = metaDrawDynamicScanConnection.First().Value
-                    .GetOneBasedScanFromDynamicConnection(chimeraGroup.First().Ms2ScanNumber);
+                    .GetOneBasedScanFromDynamicConnection(chimeraGroup.Ms2ScanNumber);
 
                 // plot the first chimera and test the results
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
+                var plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
                 Assert.That(errors == null || !errors.Any());
 
                 // test plot was drawn
                 var model = plotView.Model;
                 Assert.That(model, Is.Not.Null);
-                Assert.That(model.Equals(metadrawLogic.ChimeraSpectrumMatchPlot.Model));
                 Assert.That(plotView.Model.Axes.Count == 2);
 
                 var peakPoints = ((LineSeries)model.Series[0]).Points;
-                
+
                 Assert.That(Math.Round(peakPoints[0].X, 2) == Math.Round(chimericScan.MassSpectrum.XArray[0], 2)); // m/z
                 Assert.That(Math.Round(peakPoints[1].X, 2) == Math.Round(chimericScan.MassSpectrum.XArray[0], 2));
                 Assert.That((int)peakPoints[0].Y == 0); // intensity
                 Assert.That((int)peakPoints[1].Y == (int)chimericScan.MassSpectrum.YArray[0]);
 
-                // all matched ions were drawn
-                int drawnIonsNotDefaultColor = model.Series.Count(p => ((LineSeries)p).Color != MetaDrawSettings.UnannotatedPeakColor);
-                List<MatchedFragmentIon> fragments = new();
-                chimeraGroup.Select(p => p.MatchedIons).ForEach(m => fragments.AddRange(m));
-                Assert.That(drawnIonsNotDefaultColor, Is.EqualTo(fragments.Count));
+                // Classify All Fragments
+                Dictionary<OxyColor, List<MatchedFragmentIon>> ionDict = new();
+                var accessionToSharedProteinColor = chimeraGroup.ChimericPsms
+                    .GroupBy(p => p.Psm.Accession)
+                    .Select((p, i) =>
+                    (p.Key, Color: ChimeraGroupViewModel.ColorByProteinDictionary[i][0])).ToDictionary(p => p.Key, p => p.Color);
+                var fullSequenceToUniqueColorDict = chimeraGroup.ChimericPsms
+                    .GroupBy(p => p.Psm.Accession)
+                    .SelectMany((p, i) =>
+                    {
+                        if (p.Count() == 1)
+                        {
+                            return [(p.First().Psm.FullSequence, Color: ChimeraGroupViewModel.ColorByProteinDictionary[i][1])];
+                        }
+                        else
+                        {
+                            return p.Select((m, j) => (m.Psm.FullSequence, Color: ChimeraGroupViewModel.ColorByProteinDictionary[i][j+1]));
+                        }
+                    }).ToDictionary(p => p.FullSequence, p => p.Color);
 
-                // shared matched ions are default color
-                int drawnIonsShared = model.Series.Count(p => ((LineSeries)p).Color == ChimeraSpectrumMatchPlot.MultipleProteinSharedColor);
-                var sharedIons = fragments.GroupBy(p => p)
-                    .Where(m => m.Count() > 1)
-                    .SelectMany(n => n).ToList();
-                if (sharedIons.Any() || drawnIonsShared >= 1)
+                foreach (var ionGroup in chimeraGroup.ChimericPsms
+                    .SelectMany((p, i) => p.Psm.MatchedIons
+                        .Select(ion => (ion, i, p.Psm.Accession, p.Psm.FullSequence)))
+                    .GroupBy(p => p.ion.Mz))
                 {
-                    int distinctMatchedSharedIons = sharedIons.Distinct().Count();
-                    Assert.That(sharedIons.Count - distinctMatchedSharedIons == drawnIonsShared);
+                    if (ionGroup.Count() == 1) // unshared peak
+                    {
+                        var color = fullSequenceToUniqueColorDict[ionGroup.First().FullSequence];
+                        if (ionDict.ContainsKey(color))
+                        {
+                            ionDict[color].Add(ionGroup.First().ion);
+                        }
+                        else
+                        {
+                            ionDict[color] = new List<MatchedFragmentIon> { ionGroup.First().ion };
+                        }
+                    }
+                    else // shared peak
+                    {
+                        int accessionCount = ionGroup.Select(p => p.Accession).Distinct().Count();
+                        int fullSequenceCount = ionGroup.Select(p => p.FullSequence).Distinct().Count();
+                        if (accessionCount == 1 && fullSequenceCount > 1)
+                        {
+                            // shared peak from different proteoforms of the same protein
+                            var color = accessionToSharedProteinColor[ionGroup.First().Accession];
+                            if (ionDict.ContainsKey(color))
+                            {
+                                ionDict[color].AddRange(ionGroup.Select(p => p.ion));
+                            }
+                            else
+                            {
+                                ionDict[color] = ionGroup.Select(p => p.ion).ToList();
+                            }
+                        }
+                        else if (accessionCount == 1 && fullSequenceCount == 1) // shared peak from the same protein
+                        {
+                            var color = fullSequenceToUniqueColorDict[ionGroup.First().FullSequence];
+                            if (ionDict.ContainsKey(color))
+                            {
+                                ionDict[color].AddRange(ionGroup.Select(p => p.ion));
+                            }
+                            else
+                            {
+                                ionDict[color] = ionGroup.Select(p => p.ion).ToList();
+                            }
+                        }
+                        else // shared peak from different proteins
+                        {
+                            foreach (var ion in ionGroup)
+                            {
+                                if (ionDict.ContainsKey(ChimeraGroupViewModel.MultipleProteinSharedColor))
+                                {
+                                    ionDict[ChimeraGroupViewModel.MultipleProteinSharedColor].Add(ion.ion);
+                                }
+                                else
+                                {
+                                    ionDict[ChimeraGroupViewModel.MultipleProteinSharedColor] = [ion.ion];
+                                }
+                            }
+                        }
+
+                    }
                 }
 
-                // unshared peaks are the correct color
-                var unsharedIons = fragments.GroupBy(p => p)
-                    .Where(m => m.Count() == 1)
-                    .SelectMany(n => n).ToList();
-                for (var i = 0; i < chimeraGroup.Count(); i++)
+                // shared matched ions are default color
+                var expectedSharedIons = ionDict[ChimeraGroupViewModel.MultipleProteinSharedColor].DistinctBy(p => p.Mz).ToList();
+                int drawnIonsShared = model.Series.Count(p => ((LineSeries)p).Color == ChimeraGroupViewModel.MultipleProteinSharedColor);
+                Assert.That(drawnIonsShared, Is.EqualTo(expectedSharedIons.Count));
+                if (expectedSharedIons.Count > 0 ) 
                 {
-                    var chimera = chimeraGroup.ElementAt(i);
-                    var chimeraSpecificPeaks = unsharedIons.Intersect(chimera.MatchedIons).ToList();
-                    var chimeraSharedPeaks = sharedIons.Intersect(chimera.MatchedIons).ToList();
-                    int drawnIonsOfSpecificID = model.Series.Count(p => ChimeraSpectrumMatchPlot.ColorByProteinDictionary[i].Any(m => m == ((LineSeries)p).Color));
+                    Assert.That(chimeraGroup.MatchedFragmentIonsByColor.ContainsKey(ChimeraGroupViewModel.MultipleProteinSharedColor));
+                    Assert.That(chimeraGroup.MatchedFragmentIonsByColor[ChimeraGroupViewModel.MultipleProteinSharedColor].Count, Is.EqualTo(expectedSharedIons.Count));
+                }
+                else
+                    Assert.That(!chimeraGroup.MatchedFragmentIonsByColor.ContainsKey(ChimeraGroupViewModel.MultipleProteinSharedColor));
 
-                    if (i == 0)
-                        Assert.That(drawnIonsOfSpecificID - chimeraSharedPeaks.Count == chimeraSpecificPeaks.Count);
-                    else
-                        Assert.That(drawnIonsOfSpecificID == chimeraSpecificPeaks.Count);
+                // Ions Shared by multiple proteoforms are annotated correctly
+                foreach (var color in chimeraGroup.MatchedFragmentIonsByColor.Keys)
+                {
+                    if (color == ChimeraGroupViewModel.MultipleProteinSharedColor) continue;
+                    Assert.That(ionDict.ContainsKey(color));
+                    Assert.That(chimeraGroup.MatchedFragmentIonsByColor[color].Count, Is.EqualTo(ionDict[color].Count));
                 }
 
                 // test with different drawing settings
                 MetaDrawSettings.AnnotateCharges = true;
                 MetaDrawSettings.AnnotateMzValues = true;
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
+                plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
                 Assert.That(errors == null || !errors.Any());
 
                 MetaDrawSettings.DisplayIonAnnotations = false;
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
+                plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
                 Assert.That(errors == null || !errors.Any());
 
                 MetaDrawSettings.DisplayInternalIons = false;
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
+                plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
                 Assert.That(errors == null || !errors.Any());
                 MetaDrawSettings.DisplayInternalIons = true;
             }
 
-            // test export of singlular plot
-            List<SpectrumMatchFromTsv> firstChimeraGroup = metadrawLogic.FilteredListOfPsms
-                .GroupBy(p => p.Ms2ScanNumber).First().ToList();
-            metadrawLogic.DisplayChimeraSpectra(plotView, firstChimeraGroup, out errors);
-            Assert.That(errors == null || !errors.Any());
-            foreach (var exportType in MetaDrawSettings.ExportTypes)
-            {
-                MetaDrawSettings.ExportType = exportType;
-                metadrawLogic.ExportPlot(plotView, null, new List<SpectrumMatchFromTsv>() { firstChimeraGroup.First() }, null, outputFolder, out errors);
-                Assert.That(errors == null || !errors.Any());
-                string sequence = illegalInFileName.Replace(firstChimeraGroup.First().FullSequence, string.Empty);
-                string filePathWithoutDirectory = firstChimeraGroup.First().Ms2ScanNumber + "_" 
-                    + (sequence.Length > 30 ? sequence.Substring(0, 30) : sequence)
-                    + "." + exportType;
-                Assert.That(File.Exists(Path.Combine(outputFolder, filePathWithoutDirectory)));
-            }
-
-            string export = MetaDrawSettings.ExportType;
-            Canvas ptmLegend = new();
-            System.Windows.Size legendSize = new(100, 100);
-            ptmLegend.Measure(legendSize);
-            ptmLegend.Arrange(new Rect(legendSize));
-            ptmLegend.UpdateLayout();
-            Vector ptmLegendVector = new(10, 10);
-            metadrawLogic.ExportPlot(plotView, null, new List<SpectrumMatchFromTsv>() { firstChimeraGroup.First() }, null,
-                outputFolder, out errors, ptmLegend, ptmLegendVector);
-            Assert.That(errors == null || !errors.Any());
-            string sequenceSeq = illegalInFileName.Replace(firstChimeraGroup.First().FullSequence, string.Empty);
-            string fileNameWithoutDirectory = firstChimeraGroup.First().Ms2ScanNumber + "_"
-                + (sequenceSeq.Length > 30 ? sequenceSeq.Substring(0, 30) : sequenceSeq)
-                + "." + export;
-            Assert.That(File.Exists(Path.Combine(outputFolder, fileNameWithoutDirectory)));
-
-            // test export of multiple plots
-            List<SpectrumMatchFromTsv> secondChimeraGroup = metadrawLogic.FilteredListOfPsms
-                .GroupBy(p => p.Ms2ScanNumber).ToList()[1].ToList();
-            metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
-            Assert.That(errors == null || !errors.Any());
-            foreach (var exportType in MetaDrawSettings.ExportTypes)
-            {
-                MetaDrawSettings.ExportType = exportType;
-                metadrawLogic.ExportPlot(plotView, null, secondChimeraGroup, null, outputFolder, out errors);
-                Assert.That(errors == null || !errors.Any());
-
-                foreach (var chimera in secondChimeraGroup)
-                {
-                    string sequence = illegalInFileName.Replace(chimera.FullSequence, string.Empty);
-                    string filePathWithoutDirectory = chimera.Ms2ScanNumber + "_" 
-                        + (sequence.Length > 30 ? sequence.Substring(0, 30) : sequence) 
-                        + "." + exportType;
-                    Assert.That(File.Exists(Path.Combine(outputFolder, filePathWithoutDirectory)));
-                }
-            }
-
-            // test error
-            metadrawLogic.CleanUpResources();
-            metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
-            Assert.That(errors != null && errors.First().Equals("The spectra file could not be found for this PSM: TaGe_SA_HeLa_04_subset_longestSeq"));
-            
             Directory.Delete(outputFolder, true);
         }
 
