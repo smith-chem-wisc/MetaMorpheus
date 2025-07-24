@@ -1,4 +1,3 @@
-using EngineLayer.Gptmd;
 using NUnit.Framework;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -6,7 +5,6 @@ using System.Collections.Generic;
 using Chemistry;
 using EngineLayer;
 using MassSpectrometry;
-using Polarity = ThermoFisher.CommonCore.Data.Business.Polarity;
 
 namespace Test
 {
