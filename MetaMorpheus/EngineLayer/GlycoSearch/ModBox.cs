@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Omics.Modifications;
+using System;
+using System.Collections.Generic;
 using System.Linq;
-using Omics.Modifications;
 
 namespace EngineLayer
 {
@@ -29,7 +30,20 @@ namespace EngineLayer
 
         public int[] ModIds { get;  }
         public int NumberOfMods { get; }
-        public double Mass { get; set; }
+        public double Mass
+        {
+            get
+            {
+                if (TargetDecoy)
+                {
+                    return Glycan.GetMass(Kind) / 1E5;
+                }
+                // if decoy, we randomly shift the mass of the glycan by a random value from SugarShift.
+                Random random = new Random();
+                int shiftInd = random.Next(SugarShift.Length);
+                return (Glycan.GetMass(Kind) + SugarShift[shiftInd]) / 1E5;
+            }
+        }
         public double DecoyMass { get; set; }
         public bool TargetDecoy { get; set; }
         public static Modification[] GlobalModifications { get; set; }

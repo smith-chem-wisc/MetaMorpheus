@@ -273,12 +273,12 @@ namespace EngineLayer.GlycoSearch
         /// <param name="peptide"></param>
         /// <param name="glycanBox"></param>
         /// <returns> A modfiied peptide.</returns>
-        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(int[] theModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
+        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(int[] theModPositions, PeptideWithSetModifications peptide, ModBox glycanBox)
         {
             Modification[] modifications = new Modification[glycanBox.NumberOfMods];
             for (int i = 0; i < glycanBox.NumberOfMods; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds.ElementAt(i)]; // transfer the glycanBox information to a new list.
+                modifications[i] = ModBox.GlobalOGlycans[glycanBox.ModIds.ElementAt(i)]; // transfer the glycanBox information to a new list.
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
@@ -309,7 +309,7 @@ namespace EngineLayer.GlycoSearch
             Modification[] modifications = new Modification[theModPositions.ModSitePairs.Count];
             for (int i = 0; i < theModPositions.ModSitePairs.Count; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycans[theModPositions.ModSitePairs[i].ModId];
+                modifications[i] = ModBox.GlobalOGlycans[theModPositions.ModSitePairs[i].ModId];
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
@@ -386,7 +386,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="OGlycanBoxes"></param>
         /// <param name="FragmentBinsPerDalton"></param>
         /// <returns></returns>
-        public static int[] GetFragmentHash(List<Product> products, Tuple<int, int[]> keyValuePair, GlycanBox[] OGlycanBoxes, int FragmentBinsPerDalton)
+        public static int[] GetFragmentHash(List<Product> products, Tuple<int, int[]> keyValuePair, ModBox[] OGlycanBoxes, int FragmentBinsPerDalton)
         {
             double[] newFragments = products.OrderBy(p=>p.ProductType).ThenBy(p=>p.FragmentNumber).Select(p => p.NeutralMass).ToArray(); // store the fragment mass in the order of c1, c2, c3, y1, y2, y3, z1, z2, z3
             var len = products.Count / 3;
@@ -397,13 +397,13 @@ namespace EngineLayer.GlycoSearch
                     var j = keyValuePair.Item2[i];
                     while (j <= len + 1) // for c ions
                     {
-                        newFragments[j - 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
+                        newFragments[j - 2] += (double)ModBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
                         j++;
                     }
                     j = keyValuePair.Item2[i]; // reset the j to the position of the glycan
                     while (j >= 3)             // for z ions
                     {
-                        newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
+                        newFragments[len * 3 - j + 2] += (double)ModBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
                         j--;
                     }
                 }

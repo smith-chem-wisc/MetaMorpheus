@@ -306,7 +306,7 @@ namespace EngineLayer.GlycoSearch
                 var glycans = new Glycan[glycanBox.NumberOfMods];
                 for (int i = 0; i < glycanBox.NumberOfMods; i++)
                 {
-                    glycans[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]];
+                    glycans[i] = ModBox.GlobalOGlycans[glycanBox.ModIds[i]];
                 } //Convert the glycanBox index into the real glycan object. ex. [H1N1, H2N2A1, H2N2A1F1]
 
                 if (glycans.First().Struc != null)
@@ -518,10 +518,10 @@ namespace EngineLayer.GlycoSearch
             {
                 var site_glycanProb = siteSpeciLocalProb[glycositePair.SiteIndex].Where(p => p.Item1 == glycositePair.ModId).First().Item2; // get the probability of the specfic glycan on the specific site.
                 var peptide_site = glycositePair.SiteIndex - 1;
-                local_peptide += "[" + peptide_site + "," + GlycanBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
+                local_peptide += "[" + peptide_site + "," + ModBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
 
                 var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + glycositePair.SiteIndex - 2 : -1;
-                local_protein += "[" + protein_site + "," + GlycanBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
+                local_protein += "[" + protein_site + "," + ModBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
             }
 
         }
