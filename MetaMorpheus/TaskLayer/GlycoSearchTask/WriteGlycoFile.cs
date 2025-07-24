@@ -60,7 +60,7 @@ namespace TaskLayer
                                 protein.Key.proteinAccession + "\t" +
                                 protein.Key.proteinPosition + "\t" +
                                 protein.Value.AminoAcid + "\t" +
-                                GlycanBox.GlobalOGlycans[protein.Key.glycanId].Composition + "\t" +
+                                ModBox.GlobalOGlycans[protein.Key.glycanId].Composition + "\t" +
                                 protein.Value.IsLocalized + "\t" +
                                 protein.Value.MinQValue.ToString("0.000") + "\t" +
                                 protein.Value.BestLocalizeLevel + "\t" +
@@ -109,7 +109,7 @@ namespace TaskLayer
                         x[0] + "\t" +
                         x[1] + "\t" +
                         local.Value.Count() + "\t" +
-                        String.Join(",", local.Value.Select(p => GlycanBox.GlobalOGlycans[int.Parse(p)].Composition))
+                        String.Join(",", local.Value.Select(p => ModBox.GlobalOGlycans[int.Parse(p)].Composition))
                         );
                 }
             }

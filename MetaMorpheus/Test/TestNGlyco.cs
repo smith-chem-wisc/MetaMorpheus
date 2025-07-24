@@ -89,7 +89,7 @@ namespace Test
         public static void GlyTest_ModificationSites()
         {
             PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 
-            string[] motifs = new string[] { "Nxs", "Nxt"};
+            HashSet<string> motifs = new HashSet<string> { "Nxs", "Nxt" };
             var sites = GlycoSpectralMatch.GetPossibleModSites(pep, motifs).Select(p => p.Key).ToList();
             Assert.That(sites.Count() == 1 && sites[0] == 4);
 
@@ -114,7 +114,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 7);
             var aPeptideWithSetModifications = pep.Digest(digestionParams, new List<Modification>(), new List<Modification>());
 
-            string[] motifs = new string[] { "Nxs", "Nxt" };
+            HashSet<string> motifs = new HashSet<string> { "Nxs", "Nxt" };
             var sites = GlycoSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs).Select(p => p.Key).ToList();
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0).FirstOrDefault();
 
@@ -169,7 +169,7 @@ namespace Test
             var fixedModifications = new List<Modification>() { mod2 };
             var aPeptideWithSetModifications = pep.Digest(digestionParams, fixedModifications, new List<Modification>());
 
-            string[] motifs = new string[] { "Nxs", "Nxt" };
+            HashSet<string> motifs = new HashSet<string> { "Nxs", "Nxt" };
             var sites = GlycoSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs).Select(p => p.Key).ToList();
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H(H(H)))(H(H(H(H(H))))))))", 0).FirstOrDefault();
 

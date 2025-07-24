@@ -26,13 +26,13 @@ namespace Test
     [TestFixture]
     public class TestOGlyco
     {
-        private static GlycanBox[] OGlycanBoxes { get; set; }
+        private static ModBox[] OGlycanBoxes { get; set; }
 
         [OneTimeSetUp]
         public static void Setup()
         {
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
-            OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
+            ModBox.GlobalModifications = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
+            OGlycanBoxes = ModBox.BuildModBoxes(3).OrderBy(p => p.Mass).ToArray();
         }
 
         [Test]
@@ -126,10 +126,10 @@ namespace Test
         [Test]
         public static void OGlycanTest_GetGlycanBox_Decoy()
         {
-            GlycanBox[] OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).ToArray();
-            Assert.That(OGlycanBoxes.All(p => p.TargetDecoy = true));
+            ModBox[] OGlycanBoxes = ModBox.BuildModBoxes(3).Select(p => p as ModBox).ToArray();
+            Assert.That(OGlycanBoxes.All(p => p.TargetDecoy == true));
 
-            GlycanBox[] OGlycanBoxes_withDecoys = GlycanBox.BuildOGlycanBoxes(3, true).ToArray();
+            ModBox[] OGlycanBoxes_withDecoys = ModBox.BuildModBoxes(3, true).Select(p => p as ModBox).ToArray();
             var group_target = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == true);
             var group_decoy = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == false);
             Assert.That(group_target.Count() == group_decoy.Count());
@@ -247,9 +247,9 @@ namespace Test
         public static void OGlycoTest_OGlycanChildIons()
         {
             // Reload the glycan database to test the child ions.
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
+            ModBox.GlobalModifications = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
 
-            var glycan = GlycanBox.GlobalOGlycans[10]; // we use the glycan (N(H)(N(H)))
+            var glycan = ModBox.GlobalOGlycans[10]; // we use the glycan (N(H)(N(H)))
 
             Assert.That(glycan.Ions.Count == 5);
 
@@ -454,8 +454,8 @@ namespace Test
             List<Product> products = new List<Product>();
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
-            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
-            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
+            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new HashSet<string> { "S", "T" });
+            var boxes = ModBox.BuildChildBoxes(3, glycanBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 6);
 
             //Get Unlocal Fragment
@@ -513,8 +513,8 @@ namespace Test
             List<Product> products = new List<Product>();
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
-            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
-            var boxes = GlycanBox.BuildChildOGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds).ToArray();
+            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new HashSet<string> { "S", "T" });
+            var boxes = ModBox.BuildChildBoxes(glycanBox.NumberOfMods, glycanBox.ModIds).ToArray();
 
             //Load scan.
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.ETD, trimMsMsPeaks: false);
@@ -1039,7 +1039,7 @@ namespace Test
             modPos.Add(4, "T");
             modPos.Add(6, "N");
             var glycanBox = OGlycanBoxes[64];
-            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
+            var boxes = ModBox.BuildChildBoxes(3, glycanBox.ModIds).ToArray();
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
 
             for (int i = 0; i < modPos.Count; i++)
@@ -1071,7 +1071,7 @@ namespace Test
         {
             SortedDictionary<int, string> modPos = new SortedDictionary<int, string> { { 4, "S" } };
             var glycanBox = OGlycanBoxes[1];
-            var boxes = GlycanBox.BuildChildOGlycanBoxes(1, glycanBox.ModIds).ToArray();
+            var boxes = ModBox.BuildChildBoxes(1, glycanBox.ModIds).ToArray();
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
 
             for (int i = 0; i < modPos.Count; i++)
