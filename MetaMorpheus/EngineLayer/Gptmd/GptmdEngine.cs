@@ -107,9 +107,9 @@ namespace EngineLayer.Gptmd
                     Ms2ScanWithSpecificMass ms2ScanWithSpecificMass = null;
                     var peptideTheorProducts = new List<Product>();
 
-                    foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer as PeptideWithSetModifications))
+                    foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer))
                     {
-                        var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Protein.NonVariantProtein;
+                        var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Parent.ConsensusVariant;
                         var possibleModifications = GetPossibleMods(precursorMass, GptmdModifications, Combos,
                             FilePathToPrecursorMassTolerance[fileName], pepWithSetMods);
 
@@ -127,7 +127,7 @@ namespace EngineLayer.Gptmd
                                 if (!ModFits(mod, pepWithSetMods.Parent, j + 1, pepWithSetMods.Length, indexInProtein))
                                     continue;
 
-                                var newPep = (PeptideWithSetModifications)pepWithSetMods.Localize(j, mod.MonoisotopicMass.Value);
+                                var newPep = pepWithSetMods.Localize(j, mod.MonoisotopicMass.Value);
                                 peptideTheorProducts.Clear();
                                 newPep.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
 
@@ -148,13 +148,13 @@ namespace EngineLayer.Gptmd
                                 int adjustedSite = modSite;
                                 if (!isVariantProtein)
                                 {
-                                    accession = pepWithSetMods.Protein.Accession;
+                                    accession = pepWithSetMods.Parent.Accession;
                                 }
                                 else
                                 {
                                     accession = null;
                                     int offset = 0;
-                                    foreach (var variant in pepWithSetMods.Protein.AppliedSequenceVariations.OrderBy(v => v.OneBasedBeginPosition))
+                                    foreach (var variant in pepWithSetMods.Parent.AppliedSequenceVariations.OrderBy(v => v.OneBasedBeginPosition))
                                     {
                                         bool modIsBeforeVariant = indexInProtein < variant.OneBasedBeginPosition + offset;
                                         bool modIsOnVariant = variant.OneBasedBeginPosition + offset <= indexInProtein &&
@@ -162,13 +162,13 @@ namespace EngineLayer.Gptmd
 
                                         if (modIsOnVariant)
                                         {
-                                            accession = pepWithSetMods.Protein.Accession;
+                                            accession = pepWithSetMods.Parent.Accession;
                                             break;
                                         }
 
                                         if (modIsBeforeVariant)
                                         {
-                                            accession = pepWithSetMods.Protein.NonVariantProtein.Accession;
+                                            accession = pepWithSetMods.Parent.ConsensusVariant.Accession;
                                             adjustedSite = indexInProtein - offset;
                                             break;
                                         }
@@ -178,7 +178,7 @@ namespace EngineLayer.Gptmd
 
                                     if (accession == null)
                                     {
-                                        accession = pepWithSetMods.Protein.NonVariantProtein.Accession;
+                                        accession = pepWithSetMods.Parent.ConsensusVariant.Accession;
                                         adjustedSite = indexInProtein - offset;
                                     }
                                 }
@@ -222,7 +222,7 @@ namespace EngineLayer.Gptmd
                 });
         }
 
-        private static IEnumerable<Modification> GetPossibleMods(double totalMassToGetTo, IEnumerable<Modification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
+        private static IEnumerable<Modification> GetPossibleMods(double totalMassToGetTo, IEnumerable<Modification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, IBioPolymerWithSetMods peptideWithSetModifications)
         {
             foreach (var Mod in allMods.Where(b => b.ValidModification == true))
             {
