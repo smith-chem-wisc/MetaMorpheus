@@ -18,6 +18,36 @@
          the other components  -->
     <Grid>
         <TabControl >
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border Name="Border"
+                                        BorderThickness="1,1,1,0"
+                                        BorderBrush="Gainsboro"
+                                        CornerRadius="4,4,0,0"
+                                        Margin="2,0"
+                                        Height="{TemplateBinding Height}">
+                                    <ContentPresenter x:Name="ContentSite"
+                                                      VerticalAlignment="Center"
+                                                      HorizontalAlignment="Center"
+                                                      ContentSource="Header"
+                                                      Margin="10,2"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Border" Property="Background" Value="LightSkyBlue" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource BackgroundColor}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
             <TabItem Header="PSM Annotation" Background="DarkGray">
                 <DockPanel>
                     <Grid>
@@ -111,7 +141,7 @@
                             <!--Select spectra file-->
                             <DockPanel Grid.Row="5" LastChildFill="True" Grid.ColumnSpan="3"  >
                                 <Label Content="Export As: " Width="75"  DockPanel.Dock="Left"/>
-                                <Button Name="exportPdfs" Content="{Binding}" DockPanel.Dock="Left" IsEnabled="False" Width="40" Click="PDFButton_Click" Margin="5 0 5 0"/>
+                                <Button Name="exportPdfs" Content="{Binding ExportType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}" DockPanel.Dock="Left" IsEnabled="False" Width="40" Click="PDFButton_Click" Margin="5 0 5 0"/>
                                 <Button Name="exportSpectrumLibrary" Content="Spectrum Library" DockPanel.Dock="Right" IsEnabled="False" Click="ExportSpectrumLibraryButton_Click" 
                                         Width="100" Margin="5 0 5 0" />
                             </DockPanel>
@@ -155,8 +185,7 @@
 
                                 <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
                                 <!--Settings menu-->
-                                <local:SettingsButtonControl x:Name="SettingsButton" Grid.Row="0" Grid.Column="1"
-                                                             RefreshAction="{Binding RedrawPlotsAction}"/>
+                                <local:SettingsButtonControl x:Name="SettingsButton" Grid.Row="0" Grid.Column="1"/>
 
                                 <!-- Scrolling Sequence and Ambiguous Textbox-->
                                 <Grid Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" >
@@ -397,28 +426,6 @@
                                         </Expander>
                                     </Grid>
                                 </TabItem>
-
-                                <!-- ChimeraPlot -->
-                                <TabItem x:Name="ChimeraScanPlot" >
-                                    <TabItem.Header>
-                                        <Label Content="Chimeric Scan View" x:Name="ChimeraScanPlotTabItem" />
-                                    </TabItem.Header>
-                                    <Grid Name="chimeraPlotGrid">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition />
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-
-                                        <!-- spectrum annotation -->
-                                        <Grid Grid.Row="0" >
-                                            <oxy:PlotView x:Name="chimeraPlot" FontSize="16" FontStretch="Expanded"
-                                                          Margin="0 0 0 0"  VerticalAlignment="Stretch"/>
-                                        </Grid>
-
-                                        <!-- Chimera Legend -->
-                                        <local:ChimeraLegendControl Grid.Row="1" x:Name="ChimeraLegendControl" DataContext="{Binding}" Height="Auto"/>
-                                    </Grid>
-                                </TabItem>
                             </TabControl>
 
                             <!--Detailed PSM properties-->
@@ -440,6 +447,11 @@
                 </DockPanel>
             </TabItem>
 
+            <!-- Chimera Analysis tab -->
+            <TabItem Header="Chimera Annotation" Background="DarkGray" x:Name="ChimeraTab">
+                <local:ChimeraAnalysisTabView x:Name="ChimeraAnalysisTabView" />
+            </TabItem>
+            
             <!--Stats tab-->
             <TabItem Header="Data Visualization" Background="DarkGray">
                 <DockPanel>

@@ -27,6 +27,7 @@ namespace GuiFunctions
         public bool Stationary;
         public bool Annotation;
         public SpectrumMatchFromTsv SpectrumMatch;
+
         public DrawnSequence(Canvas sequenceDrawingCanvas, SpectrumMatchFromTsv psm, bool stationary, bool annotation = false)
         {
             SequenceDrawingCanvas = sequenceDrawingCanvas;
@@ -418,13 +419,13 @@ namespace GuiFunctions
         /// <summary>
         /// Draw the line seperator @ top
         /// </summary>
-        private static void DrawCTermIon(Canvas cav, Point topLoc, Color clr, string footnote)
+        internal static void DrawCTermIon(Canvas cav, Point topLoc, Color clr, string footnote, int thickness = 1)
         {
             double x = topLoc.X, y = topLoc.Y;
             Polyline bot = new Polyline();
             bot.Points = new PointCollection() { new Point(x + 10, y + 10), new Point(x, y + 10), new Point(x, y + 24) };
             bot.Stroke = new SolidColorBrush(clr);
-            bot.StrokeThickness = 1;
+            bot.StrokeThickness = thickness;
             cav.Children.Add(bot);
             Canvas.SetZIndex(bot, 1); //on top of any other things in canvas
         }
@@ -432,13 +433,13 @@ namespace GuiFunctions
         /// <summary>
         /// Draw the line seperator @ bottom
         /// </summary>
-        private static void DrawNTermIon(Canvas cav, Point botLoc, Color clr, string footnote)
+        internal static void DrawNTermIon(Canvas cav, Point botLoc, Color clr, string footnote, int thickness = 1)
         {
             double x = botLoc.X, y = botLoc.Y;
             Polyline bot = new Polyline();
             bot.Points = new PointCollection() { new Point(x - 10, y - 10), new Point(x, y - 10), new Point(x, y - 24) };
             bot.Stroke = new SolidColorBrush(clr);
-            bot.StrokeThickness = 1;
+            bot.StrokeThickness = thickness;
             Canvas.SetZIndex(bot, 1); //on top of any other things in canvas
             cav.Children.Add(bot);
         }
@@ -446,7 +447,7 @@ namespace GuiFunctions
         /// <summary>
         /// Create text blocks on canvas
         /// </summary>
-        private static void DrawText(Canvas cav, Point loc, string txt, Brush clr)
+        internal static void DrawText(Canvas cav, Point loc, string txt, Brush clr)
         {
             TextBlock tb = new TextBlock();
             tb.Foreground = clr;
@@ -463,13 +464,12 @@ namespace GuiFunctions
             Canvas.SetLeft(tb, loc.X);
             Panel.SetZIndex(tb, 2); //lower priority
             cav.Children.Add(tb);
-            cav.UpdateLayout();
         }
 
         /// <summary>
         /// Draws a circle
         /// </summary>
-        private static void DrawCircle(Canvas cav, Point loc, SolidColorBrush clr)
+        internal static void DrawCircle(Canvas cav, Point loc, SolidColorBrush clr)
         {
             Ellipse circle = new Ellipse()
             {

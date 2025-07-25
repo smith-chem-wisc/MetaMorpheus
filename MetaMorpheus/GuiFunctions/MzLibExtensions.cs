@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using EngineLayer;
 using MassSpectrometry;
+using MzLibUtil;
 using Omics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
@@ -64,6 +67,18 @@ namespace GuiFunctions
                 return new PsmFromTsv(sm as PsmFromTsv, fullSequence, baseSequence: baseSequence);
             else
                 return new OsmFromTsv(sm as OsmFromTsv, fullSequence, baseSequence: baseSequence);
+        }
+
+        /// <summary>
+        /// Determines if a majority of values are within a range
+        /// </summary>
+        /// <param name="range"></param>
+        /// <param name="values"></param>
+        /// <returns></returns>
+        public static bool MajorityWithin(this MzRange range, IEnumerable<double> values)
+        {
+            int within = values.Count(p => p >= range.Minimum && p <= range.Maximum);
+            return within > values.Count() / 2;
         }
     }
 }
