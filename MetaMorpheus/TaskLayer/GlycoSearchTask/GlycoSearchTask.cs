@@ -11,6 +11,7 @@ using System.Linq;
 using MzLibUtil;
 using EngineLayer.FdrAnalysis;
 using System;
+using EngineLayer.ModSearch;
 using FlashLFQ;
 using Omics;
 using Readers;
@@ -131,9 +132,22 @@ namespace TaskLayer
                     List<int>[] secondFragmentIndex = null;
 
                     Status("Searching files...", taskId);
-                    new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, this.FileSpecificParameters,
-                        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId).Run();
-
+                    if (_glycoSearchParameters.GlycoSearchType == GlycoSearchType.ModSearch)
+                    {
+                        new ModSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex,
+                                fragmentIndex, secondFragmentIndex, currentPartition, combinedParams,
+                                FileSpecificParameters,
+                                _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile,
+                                _glycoSearchParameters.ListOfInterestedMods, _glycoSearchParameters.GlycoSearchTopNum,
+                                _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt,
+                                thisId)
+                            .Run();
+                    }
+                    else
+                    {
+                        new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, this.FileSpecificParameters,
+                            _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId).Run();
+                    }
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                     if (GlobalVariables.StopLoops) { break; }
                 }

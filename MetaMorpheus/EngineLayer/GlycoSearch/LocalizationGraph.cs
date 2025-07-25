@@ -84,12 +84,12 @@ namespace EngineLayer.GlycoSearch
                         double cost = 0;
                         if (x != modPos.Count - 1) // check the node is not the last one.
                         {              
-                            var fragments = GlycoPeptides.GetLocalFragment(products, modPos_index, x, localizationGraph.ModBox, localizationGraph.ChildModBoxes[y]);
+                            var fragments = GlycoPeptides.GetModifiedFragment(products, modPos_index, x, localizationGraph.ModBox, localizationGraph.ChildModBoxes[y]);
                             cost = CalculateCost(theScan, productTolerance, fragments);
                         }
 
                         adjNode.CurrentCost = cost;
-                        //The first line of the graph didnot have Sources.
+                        //The first line of the graph did not have Sources.
                         if (x == 0)
                         {
                             //Get cost                             
@@ -134,7 +134,7 @@ namespace EngineLayer.GlycoSearch
 
             }
 
-            var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, modPos_index, localizationGraph.ModBox);
+            var unlocalFragments = GlycoPeptides.GetUnmodifiedFragment(products, modPos_index, localizationGraph.ModBox);
             var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
             localizationGraph.NoLocalCost = noLocalScore;
             localizationGraph.TotalScore = localizationGraph.array[modPos.Count - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;

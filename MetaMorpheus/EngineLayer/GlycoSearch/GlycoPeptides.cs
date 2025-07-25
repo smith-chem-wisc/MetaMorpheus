@@ -379,6 +379,7 @@ namespace EngineLayer.GlycoSearch
 
 
         /// <summary>
+        /// This is a demo function for Unit Test.
         /// Generate the new fragment list, we add the glycan mass to the c ions and z ions from the peptide fragment list
         /// </summary>
         /// <param name="products"></param>
@@ -418,20 +419,20 @@ namespace EngineLayer.GlycoSearch
             return fragmentHash;
         }
 
- 
+
         /// <summary>
         /// Generate the fragment list with the specific childBox located on specific modPos. At here, the ModInd is the index for modPos. Not used in the current version.
         /// </summary>
         /// <param name="products"></param>
         /// <param name="modPoses"> ModPos list </param>
-        /// <param name="modInd"> Specific ModPos, index in ModPos</param>
+        /// <param name="currentX"> Specific ModPos, index of the ModPos</param>
         /// <param name="OGlycanBox"> Whole glycanBox</param>
         /// <param name="localOGlycanBox">Partial glycanBox, at here is the childBox</param>
         /// <returns></returns>
-        public static List<double> GetLocalFragment(List<Product> products, int[] modPoses, int modInd, ModBox OGlycanBox, ModBox localOGlycanBox)
+        public static List<double> GetModifiedFragment(List<Product> products, int[] modPoses, int currentX, ModBox OGlycanBox, ModBox localOGlycanBox)
         {
             List<double> newFragments = new List<double>();
-            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses[modInd] - 1 && p.AminoAcidPosition < modPoses[modInd + 1] - 1).ToList();
+            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses[currentX] - 1 && p.AminoAcidPosition < modPoses[currentX + 1] - 1).ToList();
 
             foreach (var c in local_c_fragments)
             {
@@ -439,7 +440,7 @@ namespace EngineLayer.GlycoSearch
                 newFragments.Add(newMass);
             }
 
-            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= modPoses[modInd] && p.AminoAcidPosition < modPoses[modInd + 1]).ToList();
+            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= modPoses[currentX] && p.AminoAcidPosition < modPoses[currentX + 1]).ToList();
 
             foreach (var z in local_z_fragments)
             {
@@ -450,16 +451,23 @@ namespace EngineLayer.GlycoSearch
             return newFragments;
         }
 
-        //Find FragmentMass for the fragments that doesn't contain localization Information. For example, "A|TAABBS|B", c1 and c7, z1 and z7, z8 ion don't contain localization information.
-        public static List<double> GetUnlocalFragment(List<Product> products, int[] modPoses, ModBox OGlycanBox)
+        /// <summary>
+        /// Renew the FragmentMass for the fragments that doesn't contain localization Information.
+        /// For example, "A|TAABBS|B", c1 and c7, z1 and z7, z8 ion don't contain localization information.
+        /// </summary>
+        /// <param name="products"></param>
+        /// <param name="modPoses"></param>
+        /// <param name="OGlycanBox"></param>
+        /// <returns></returns>
+        public static List<double> GetUnmodifiedFragment(List<Product> products, int[] modPoses, ModBox OGlycanBox)
         {
             var mass = OGlycanBox.Mass;
 
             List<double> newFragments = new List<double>();
-            var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+            var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass); // The c ions that are before the first modification position.
             newFragments.AddRange(c_fragments);
 
-            var c_fragments_shift = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass);
+            var c_fragments_shift = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass); // The c ions that are after the last modification position.
 
             foreach (var c in c_fragments_shift)
             {
@@ -467,10 +475,10 @@ namespace EngineLayer.GlycoSearch
                 newFragments.Add(newMass);
             }
 
-            var z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition > modPoses.Last() - 1).Select(p => p.NeutralMass);
+            var z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition > modPoses.Last() - 1).Select(p => p.NeutralMass); // The z ions that are after the last modification position.
             newFragments.AddRange(z_fragments);
 
-            var z_fragments_shift = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+            var z_fragments_shift = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass); // The z ions that are before the first modification position.
 
             foreach (var z in z_fragments_shift)
             {

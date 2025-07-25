@@ -653,7 +653,7 @@ namespace EngineLayer.GlycoSearch
                         continue;
                     }
 
-                    //Find O-Glycan
+                    //Find O-Glycan or other Mods
                     MatchModifiedPeptide(theScan, scanIndex, scoreCutOff, thePeptideCandidate, ind, massDiffLow, oxoniumIonIntensities, ref possibleMatches);
                 }
 

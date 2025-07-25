@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using EngineLayer;
 using System.Linq;
 using UsefulProteomicsDatabases;
@@ -33,6 +34,14 @@ namespace TaskLayer
             WriteContaminants = true;
             WriteSpectrumLibrary = false;
             DisposeOfFileWhenDone = true;
+
+            // ModSearch options
+            ListOfInterestedMods = GlobalVariables.AllModsKnown
+                .Where(b => b.ModificationType.Equals("Common Artifact") || 
+                            b.ModificationType.Equals("Common Biological") || 
+                            b.ModificationType.Equals("Metal"))
+                .Select(b => (b.ModificationType, b.IdWithMotif))
+                .ToList();
         }
         public string OGlycanDatabasefile { get; set; }
         public string NGlycanDatabasefile { get; set; }
@@ -58,5 +67,8 @@ namespace TaskLayer
         public bool WriteContaminants { get; set; }
         public bool WriteSpectrumLibrary { get; set; }
         public bool DisposeOfFileWhenDone { get; set; }
+
+        // ModSearch options
+        public List<(string, string)> ListOfInterestedMods { get; set; }
     }
 }

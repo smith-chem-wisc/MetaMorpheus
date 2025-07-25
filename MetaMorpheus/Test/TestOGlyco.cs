@@ -459,7 +459,7 @@ namespace Test
             Assert.That(boxes.Count() == 6);
 
             //Get Unlocal Fragment
-            var unlocalCost = GlycoPeptides.GetUnlocalFragment(products, modPos.Keys.ToArray(), glycanBox);
+            var unlocalCost = GlycoPeptides.GetUnmodifiedFragment(products, modPos.Keys.ToArray(), glycanBox);
             Assert.That(unlocalCost.Count == 4); //Basicly, the unlocal are c/z ions that don't localize glycosylation. 
 
             //Get scan
