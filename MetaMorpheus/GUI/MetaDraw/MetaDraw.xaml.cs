@@ -55,7 +55,7 @@ namespace MetaMorpheusGUI
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchesGroupedByFile, MetaDrawLogic.ThreadLocker);
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
-            ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
+            ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel; 
             AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
             AdditionalFragmentIonControl.LinkMetaDraw(this);
 
@@ -537,6 +537,7 @@ namespace MetaMorpheusGUI
                 plotTypes.Remove("Histogram of Hydrophobicity scores");
                 plotTypes.Remove("Predicted RT vs. Observed RT");
             }
+            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel = new FragmentationReanalysisViewModel(!isRna);
 
             // done loading - restore controls
             this.prgsFeed.IsOpen = false;
@@ -758,6 +759,7 @@ namespace MetaMorpheusGUI
                 plotTypes.Remove("Histogram of Hydrophobicity scores");
                 plotTypes.Remove("Predicted RT vs. Observed RT");
             }
+            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel = new FragmentationReanalysisViewModel(!isRna);
 
             // done loading - restore controls
             this.prgsFeedStat.IsOpen = false;
