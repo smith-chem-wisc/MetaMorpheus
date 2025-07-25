@@ -106,15 +106,16 @@ namespace EngineLayer.Gptmd
                     var originalScore = psm.Score;
                     Ms2ScanWithSpecificMass ms2ScanWithSpecificMass = null;
                     var peptideTheorProducts = new List<Product>();
+                    List<(int site, Modification mod, string proteinAccession)> bestMatches = [];
 
                     foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer))
                     {
+                        bestMatches.Clear();
                         var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Parent.ConsensusVariant;
                         var possibleModifications = GetPossibleMods(precursorMass, GptmdModifications, Combos,
                             FilePathToPrecursorMassTolerance[fileName], pepWithSetMods);
 
                         double bestScore = originalScore; // Initialize with the original score of the PSM to ensure gptmd only adds if new modified forms scores higher
-                        List<(int site, Modification mod, string proteinAccession)> bestMatches = [];
 
                         foreach (var mod in possibleModifications)
                         {
