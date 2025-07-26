@@ -1,5 +1,6 @@
 ﻿using EngineLayer.DIA.Enums;
 using MassSpectrometry;
+using MathNet.Numerics.Statistics;
 using MzLibUtil;
 using System;
 using System.Collections.Generic;
@@ -26,11 +27,36 @@ namespace EngineLayer.DIA
         {
             if (xic1.XYData == null || xic2.XYData == null)
             {
-                var xy1 = xic1.Peaks.Select(p => ((double)p.ZeroBasedScanIndex, p.Intensity)).ToArray();
-                var xy2 = xic2.Peaks.Select(p => ((double)p.ZeroBasedScanIndex, p.Intensity)).ToArray();
+                var xy1 = xic1.Peaks.Select(p => ((float)p.ZeroBasedScanIndex, p.Intensity)).ToArray();
+                var xy2 = xic2.Peaks.Select(p => ((float)p.ZeroBasedScanIndex, p.Intensity)).ToArray();
                 return CalculateCorrelation(xy1, xy2);
             }
             double corr = CalculateCorrelation(xic1.XYData, xic2.XYData);
+            return corr;
+        }
+
+        public static double CalculateCorrelation((float, float)[] xy1, (float, float)[] xy2)
+        {
+            if (xy1 == null || xy2 == null)
+            {
+                return double.NaN;
+            }
+
+            double start = Math.Max(xy1[0].Item1, xy2[0].Item1);
+            double end = Math.Min(xy1[xy1.Length - 1].Item1, xy2[xy2.Length - 1].Item1);
+
+            var validxy1 = xy1.Where(p => p.Item1 >= start && p.Item1 <= end).ToArray();
+            var validxy2 = xy2.Where(p => p.Item1 >= start && p.Item1 <= end).ToArray();
+            int numPoints = Math.Min(validxy1.Length, validxy2.Length);
+            if (numPoints < 3)
+            {
+                return double.NaN;
+            }
+            var xy = validxy1.Take(numPoints).Zip(validxy2.Take(numPoints), (a, b) => (a.Item2, b.Item2)).ToArray();
+            var y1 = xy.Select(p => p.Item1).ToArray();
+            var y2 = xy.Select(p => p.Item2).ToArray();
+            double corr = PearsonCorrelation(y1, y2);
+
             return corr;
         }
 
@@ -54,9 +80,36 @@ namespace EngineLayer.DIA
             var xy = validxy1.Take(numPoints).Zip(validxy2.Take(numPoints), (a, b) => (a.Item2, b.Item2)).ToArray();
             var y1 = xy.Select(p => p.Item1).ToArray();
             var y2 = xy.Select(p => p.Item2).ToArray();
-            double corr = MathNet.Numerics.Statistics.Correlation.Pearson(y1, y2);
+            double corr = Correlation.Pearson(y1, y2);
 
             return corr;
+        }
+
+        public static float PearsonCorrelation(float[] x, float[] y)
+        {
+            if (x.Length != y.Length || x.Length == 0)
+                throw new ArgumentException("Arrays must have the same non-zero length.");
+
+            float meanX = x.Average();
+            float meanY = y.Average();
+
+            float numerator = 0f;
+            float sumSqX = 0f;
+            float sumSqY = 0f;
+
+            for (int i = 0; i < x.Length; i++)
+            {
+                float diffX = x[i] - meanX;
+                float diffY = y[i] - meanY;
+                numerator += diffX * diffY;
+                sumSqX += diffX * diffX;
+                sumSqY += diffY * diffY;
+            }
+
+            float denominator = (float)Math.Sqrt(sumSqX * sumSqY);
+            if (denominator == 0f) return 0f;
+
+            return numerator / denominator;
         }
 
         public static double CalculateXicOverlapRatio(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
