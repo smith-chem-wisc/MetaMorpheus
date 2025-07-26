@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
 using Nett;
@@ -42,10 +43,22 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         set { _current.AskBeforeExitingMetaMorpheus = value; OnPropertyChanged(nameof(AskBeforeExitingMetaMorpheus)); }
     }
 
-    public string UserSpecifiedProteomeDir
+    public string ProteomeDirectory
     {
-        get => _current.UserSpecifiedProteomeDir;
-        set { _current.UserSpecifiedProteomeDir = value; OnPropertyChanged(nameof(UserSpecifiedProteomeDir)); }
+        get
+        {
+            if (_current.ProteomeDirectory.IsNullOrEmpty())
+                _current.ProteomeDirectory = DefaultProteomePath;
+            return _current.ProteomeDirectory;
+        }
+        set
+        {
+            if (value.IsNullOrEmpty())
+                return;
+            if (Directory.Exists(value)) 
+                _current.ProteomeDirectory = value;
+            OnPropertyChanged(nameof(ProteomeDirectory));
+        }
     }
 
     public bool AskAboutTopDownParams
@@ -135,8 +148,9 @@ public class GuiGlobalParamsViewModel : BaseViewModel
     #endregion
 
     #region IO
-
+        
     private static readonly string SettingsPath = Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml");
+    private static readonly string DefaultProteomePath = Path.Combine(GlobalVariables.DataDir, @"Proteomes");
 
     // Load from disk
     public void Load()
@@ -149,13 +163,19 @@ public class GuiGlobalParamsViewModel : BaseViewModel
             }
             catch
             {
-                _current = new GuiGlobalParams();
+                _current = new GuiGlobalParams
+                {
+                    ProteomeDirectory = DefaultProteomePath
+                };
                 Toml.WriteFile(_current, SettingsPath, MetaMorpheusTask.tomlConfig);
             }
         }
         else
         {
-            _current = new GuiGlobalParams();
+            _current = new GuiGlobalParams
+            {
+                ProteomeDirectory = DefaultProteomePath
+            };
             Toml.WriteFile(_current, SettingsPath, MetaMorpheusTask.tomlConfig);
         }
         _loaded = Clone(_current);
@@ -184,7 +204,7 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         return
             AskAboutUpdating == other.AskAboutUpdating &&
             AskBeforeExitingMetaMorpheus == other.AskBeforeExitingMetaMorpheus &&
-            UserSpecifiedProteomeDir == other.UserSpecifiedProteomeDir &&
+            ProteomeDirectory == other.ProteomeDirectory &&
             AskAboutTopDownParams == other.AskAboutTopDownParams &&
             AskAboutChymotrypsinParams == other.AskAboutChymotrypsinParams &&
             AskAboutElastaseParams == other.AskAboutElastaseParams &&
@@ -210,7 +230,7 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         {
             AskAboutUpdating = src.AskAboutUpdating,
             AskBeforeExitingMetaMorpheus = src.AskBeforeExitingMetaMorpheus,
-            UserSpecifiedProteomeDir = src.UserSpecifiedProteomeDir,
+            ProteomeDirectory = src.ProteomeDirectory,
             AskAboutTopDownParams = src.AskAboutTopDownParams,
             AskAboutChymotrypsinParams = src.AskAboutChymotrypsinParams,
             AskAboutElastaseParams = src.AskAboutElastaseParams,

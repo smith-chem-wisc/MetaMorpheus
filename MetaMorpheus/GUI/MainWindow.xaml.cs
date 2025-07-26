@@ -39,8 +39,8 @@ namespace MetaMorpheusGUI
 
         public MainWindow()
         {
-            InitializeComponent();
             GlobalVariables.SetUpGlobalVariables();
+            InitializeComponent();
 
             Title = "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
 
@@ -76,7 +76,6 @@ namespace MetaMorpheusGUI
             MetaMorpheusEngine.WarnHandler += NotificationHandler;
 
             MyFileManager.WarnHandler += NotificationHandler;
-            Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
         }
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
@@ -499,17 +498,6 @@ namespace MetaMorpheusGUI
         #endregion
 
         #region Events triggered by user interaction
-
-        /// <summary>
-        /// Event fires when the window is closing, and finishes prior to close
-        /// </summary>
-        private void MainWindow_OnClosing(object sender, CancelEventArgs e)
-        {
-            if (GuiGlobalParamsViewModel.Instance.IsDirty())
-            {
-                GuiGlobalParamsViewModel.Instance.Save();
-            }
-        }
 
         /// <summary>
         /// Event fires when a file is dragged-and-dropped into MetaMorpheus.
@@ -1164,7 +1152,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-            if (GuiGlobalParamsViewModel.Instance.AskBeforeExitingMetaMorpheus && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (GuiGlobalParamsViewModel.Instance.AskBeforeExitingMetaMorpheus /*&& !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG")*/)
             {
                 var exit = ExitMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
 
@@ -1183,6 +1171,9 @@ namespace MetaMorpheusGUI
                     e.Cancel = true;
                 }
             }
+
+            if (GuiGlobalParamsViewModel.Instance.IsDirty())
+                GuiGlobalParamsViewModel.Instance.Save();
         }
 
         /// <summary>
@@ -1263,12 +1254,6 @@ namespace MetaMorpheusGUI
         private void MenuItem_OpenSettings_Click(object sender, RoutedEventArgs e)
         {
             GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"settings.toml"), useNotepadToOpenToml: true);
-            Application.Current.Shutdown();
-        }
-
-        private void MenuItem_GuiSettings_Click(object sender, RoutedEventArgs e)
-        {
-            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), useNotepadToOpenToml: true);
             Application.Current.Shutdown();
         }
 
@@ -2114,12 +2099,13 @@ namespace MetaMorpheusGUI
 
         private void OpenProteomesFolder_Click(object sender, RoutedEventArgs e)
         {
-            if (GuiGlobalParamsViewModel.Instance.UserSpecifiedProteomeDir != "" && Directory.Exists(GuiGlobalParamsViewModel.Instance.UserSpecifiedProteomeDir))
+            if (Directory.Exists(GuiGlobalParamsViewModel.Instance.ProteomeDirectory))
             {
-                OpenFolder(GuiGlobalParamsViewModel.Instance.UserSpecifiedProteomeDir);
+                OpenFolder(GuiGlobalParamsViewModel.Instance.ProteomeDirectory);
             }
             else
-                OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
+                MessageBox.Show(
+                    $"Cannot find proteome directory ${GuiGlobalParamsViewModel.Instance.ProteomeDirectory}/r/nSee settings tab to update directory path");
         }
     }
 }

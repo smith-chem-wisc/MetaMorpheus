@@ -8,7 +8,7 @@
         Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
         MinWidth="800" Height="550" Width="1000"
         Loaded="MyWindow_Loaded"
-        Closing="MainWindow_OnClosing"
+        Closing="MainWindow_Closing"
         PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.Resources>
@@ -703,50 +703,141 @@
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
                     <Label Content="Settings" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
                     <Grid Grid.Row="2" Style="{StaticResource PageGridStyle}" Margin="5,0,0,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                        </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="20"/>
-                            <ColumnDefinition Width="270"/>
+                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                        <Button Grid.Row="0" Grid.Column="1" Content="Create new modification" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomMod_Click" />
+                        <!-- Left: Existing buttons -->
+                        <Grid Grid.Column="0" Style="{StaticResource PageGridStyle}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                        <Button Grid.Row="1" Grid.Column="1" Content="Create new amino acid" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomAminoAcid_Click" />
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="270"/>
+                            </Grid.ColumnDefinitions>
 
-                        <Button Grid.Row="2" Grid.Column="1" Content="Create new crosslinker" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomCrosslinker_Click" />
+                            <Button Grid.Row="0" Grid.Column="1" Content="Create new modification" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomMod_Click" />
 
-                        <Button Grid.Row="4" Grid.Column="1" Content="Close program and open global settings" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenSettings_Click" />
+                            <Button Grid.Row="1" Grid.Column="1" Content="Create new amino acid" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomAminoAcid_Click" />
 
-                        <Button Grid.Row="5" Grid.Column="1" Content="Close program and open GUI settings" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_GuiSettings_Click" />
+                            <Button Grid.Row="2" Grid.Column="1" Content="Create new crosslinker" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomCrosslinker_Click" />
 
-                        <Button Grid.Row="6" Grid.Column="1" Content="Open mods/data folder" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenDataDir_Click" />
+                            <Button Grid.Row="4" Grid.Column="1" Content="Close program and open global settings" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenSettings_Click" />
 
-                        <Button Grid.Row="7" Grid.Column="1" Content="Reset to factory defaults" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ResetDefaults_Click"
-                                ToolTip="Reset saved tasks and MetaDraw Settings to default values"/>
+                            <Button Grid.Row="5" Grid.Column="1" Content="Open mods/data folder" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenDataDir_Click" />
+
+                            <Button Grid.Row="6" Grid.Column="1" Content="Reset to factory defaults" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ResetDefaults_Click"
+                                    ToolTip="Reset saved tasks and MetaDraw Settings to default values"/>
+
+                            <CheckBox Grid.Row="8" Grid.Column="1" Content="Ask About Updating" 
+                                     FontSize="13" VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                     IsChecked="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=AskAboutUpdating, Mode=TwoWay}" />
+
+                            <CheckBox Grid.Row="9" Grid.Column="1" Content="Ask Before Exiting MetaMorpheus" 
+                                     FontSize="13" VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                     IsChecked="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=AskBeforeExitingMetaMorpheus, Mode=TwoWay}" />
+                        </Grid>
+
+                        <!-- Right: New settings controls -->
+                        <Grid Grid.Column="1" Style="{StaticResource PageGridStyle}"
+                                  DataContext="{x:Static local:GuiGlobalParamsViewModel.Instance}"
+                                  Margin="20,-10,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24"/>
+                                <RowDefinition Height="24"/>
+                                <RowDefinition Height="24"/>
+                                <RowDefinition Height="24"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="280"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="80"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Ask/Use pairs -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Top-Down Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="0" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutTopDownParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="0" Grid.Column="2" Content="Use" IsChecked="{Binding UseTopDownParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Chymotrypsin Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="1" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutChymotrypsinParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="1" Grid.Column="2" Content="Use" IsChecked="{Binding UseChymotrypsinParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Elastase Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="2" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutElastaseParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="2" Grid.Column="2" Content="Use" IsChecked="{Binding UseElastaseParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Non-Specific Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="3" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutNonSpecificParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="3" Grid.Column="2" Content="Use" IsChecked="{Binding UseNonSpecificParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Semi-Trypsin Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="4" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutSemiTrypsinParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="4" Grid.Column="2" Content="Use" IsChecked="{Binding UseSemiTrypsinParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Arg-C Recommendations"
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="5" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutArgCParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="5" Grid.Column="2" Content="Use" IsChecked="{Binding UseArgCParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="6" Grid.Column="0" Text="Spectral Recovery Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="6" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutSpectralRecoveryParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="6" Grid.Column="2" Content="Use" IsChecked="{Binding UseSpectralRecoveryParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                        </Grid>
                     </Grid>
+
+                    <!-- Proteome Directory -->
+                    <StackPanel Grid.Row="3"  Orientation="Horizontal" HorizontalAlignment="Stretch">
+                        <TextBlock  Text="Proteome Directory" Margin ="24 10"
+                                    VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                        <TextBox  FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"
+                            Text="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=ProteomeDirectory, Mode=TwoWay}" 
+                            VerticalAlignment="Center" HorizontalContentAlignment="Left"
+                            MinWidth="600" MaxWidth="700"/>
+                </StackPanel>
                 </Grid>
             </TabItem>
 
