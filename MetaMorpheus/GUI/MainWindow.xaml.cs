@@ -2110,5 +2110,13 @@ namespace MetaMorpheusGUI
             else
                 OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
         }
+
+        private void MainWindow_OnClosing(object sender, CancelEventArgs e)
+        {
+            if (GuiGlobalParamsViewModel.Instance.IsDirty())
+            {
+                GuiGlobalParamsViewModel.Instance.Save();
+            }
+        }
     }
 }

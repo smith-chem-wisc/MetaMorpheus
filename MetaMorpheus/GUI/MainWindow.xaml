@@ -8,6 +8,7 @@
         Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
         MinWidth="800" Height="550" Width="1000"
         Loaded="MyWindow_Loaded"
+        Closing="MainWindow_OnClosing"
         PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.Resources>
