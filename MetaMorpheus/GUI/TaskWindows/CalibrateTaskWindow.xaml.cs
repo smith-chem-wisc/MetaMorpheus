@@ -237,7 +237,7 @@ namespace MetaMorpheusGUI
             string fieldNotUsed = "1";
             bool isRnaMode = UpdateGUISettings.Globals.IsRnaMode;
 
-            if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
+            if (!TaskValidator.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
                  fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, 
                  null, null, null))
@@ -283,7 +283,7 @@ namespace MetaMorpheusGUI
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
-            if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
+            if (!TaskValidator.VariableModCheck(listOfModsVariable))
             {
                 return;
             }

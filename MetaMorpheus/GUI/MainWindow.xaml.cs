@@ -40,7 +40,6 @@ namespace MetaMorpheusGUI
         public MainWindow()
         {
             GlobalVariables.SetUpGlobalVariables();
-            UpdateGUISettings.LoadGUISettings();
             InitializeComponent();
 
             dataGridProteinDatabases.DataContext = ProteinDatabases;
@@ -75,7 +74,6 @@ namespace MetaMorpheusGUI
             MetaMorpheusEngine.WarnHandler += NotificationHandler;
 
             MyFileManager.WarnHandler += NotificationHandler;
-            Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
         }
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
@@ -85,12 +83,12 @@ namespace MetaMorpheusGUI
             SearchModifications.SetUpModSearchBoxes();
             PrintErrorsReadingMods();
 
-            if (!UpdateGUISettings.LoadGUISettings())
+            if (!GuiGlobalParamsViewModel.SettingsFileExists())
             {
                 notificationsTextBox.Document = GetWelcomeText();
             }
 
-            if (UpdateGUISettings.Params.AskAboutUpdating)
+            if (GuiGlobalParamsViewModel.Instance.AskAboutUpdating)
             {
                 UpdateMetaMorpheus();
             }
@@ -1152,7 +1150,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-            if (UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (GuiGlobalParamsViewModel.Instance.AskBeforeExitingMetaMorpheus /*&& !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG")*/)
             {
                 var exit = ExitMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
 
@@ -1162,8 +1160,8 @@ namespace MetaMorpheusGUI
                 }
                 else if (exit == MessageBoxResult.OK) // yes and don't ask me again
                 {
-                    UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus = false;
-                    Toml.WriteFile(UpdateGUISettings.Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    GuiGlobalParamsViewModel.Instance.AskBeforeExitingMetaMorpheus = false;
+                    Toml.WriteFile(GuiGlobalParamsViewModel.Instance, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
                     e.Cancel = false;
                 }
                 else // no, do not exit MetaMorpheus
@@ -1171,6 +1169,9 @@ namespace MetaMorpheusGUI
                     e.Cancel = true;
                 }
             }
+
+            if (GuiGlobalParamsViewModel.Instance.IsDirty())
+                GuiGlobalParamsViewModel.Instance.Save();
         }
 
         /// <summary>
@@ -1251,12 +1252,6 @@ namespace MetaMorpheusGUI
         private void MenuItem_OpenSettings_Click(object sender, RoutedEventArgs e)
         {
             GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"settings.toml"), useNotepadToOpenToml: true);
-            Application.Current.Shutdown();
-        }
-
-        private void MenuItem_GuiSettings_Click(object sender, RoutedEventArgs e)
-        {
-            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), useNotepadToOpenToml: true);
             Application.Current.Shutdown();
         }
 
@@ -2103,12 +2098,13 @@ namespace MetaMorpheusGUI
 
         private void OpenProteomesFolder_Click(object sender, RoutedEventArgs e)
         {
-            if (UpdateGUISettings.Params.UserSpecifiedProteomeDir != "" && Directory.Exists(UpdateGUISettings.Params.UserSpecifiedProteomeDir))
+            if (Directory.Exists(GuiGlobalParamsViewModel.Instance.ProteomeDirectory))
             {
-                OpenFolder(UpdateGUISettings.Params.UserSpecifiedProteomeDir);
+                OpenFolder(GuiGlobalParamsViewModel.Instance.ProteomeDirectory);
             }
             else
-                OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
+                MessageBox.Show(
+                    $"Cannot find proteome directory ${GuiGlobalParamsViewModel.Instance.ProteomeDirectory}/r/nSee settings tab to update directory path");
         }
     }
 }

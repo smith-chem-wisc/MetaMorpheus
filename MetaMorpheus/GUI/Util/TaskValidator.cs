@@ -9,7 +9,7 @@ namespace MetaMorpheusGUI
     /// <summary>
     /// Provides filters and error handling for GUI forms
     /// </summary>
-    public class GlobalGuiSettings
+    public static class TaskValidator
     {
         /// <summary>
         /// Checks the validity of each setting passed from the GUI task windows
@@ -348,6 +348,6 @@ namespace MetaMorpheusGUI
             return true;
         }
 
-            #endregion Check Task Validity
-        }
+        #endregion Check Task Validity
     }
+}

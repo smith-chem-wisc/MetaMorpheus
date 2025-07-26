@@ -1,4 +1,8 @@
-﻿namespace MetaMorpheusGUI
+﻿using System.IO;
+using EngineLayer;
+using Nett;
+
+namespace MetaMorpheusGUI
 {
     /// <summary>
     /// Gui Parameters that are written out to a toml file. 
@@ -10,7 +14,8 @@
         public bool AskBeforeExitingMetaMorpheus { get; internal set; } = true;
 
         // User can set a custom proteome directory. Be sure to use double slashes in the path, otherwise it will not be read in properly. 
-        public string UserSpecifiedProteomeDir { get; internal set; } = "";
+        [TomlMember(Key = "UserSpecifiedProteomeDir")]
+        public string ProteomeDirectory { get; internal set; }
 
         //Ask about protease-specific parameter recommendations
         public bool AskAboutTopDownParams { get; internal set; } = true;
