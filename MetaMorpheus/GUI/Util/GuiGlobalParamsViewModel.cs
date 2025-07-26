@@ -173,6 +173,8 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         return !Equals(_current, _loaded);
     }
 
+    public static bool SettingsFileExists() => File.Exists(SettingsPath);
+
     #endregion
 
     // Deep equality check (can be improved for more complex types)
