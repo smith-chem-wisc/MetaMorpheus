@@ -535,22 +535,23 @@ namespace EngineLayer
                 if (psm.DigestionParams.DigestionAgent.Name != "top-down")
                 {
                     missedCleavages = tentativeSpectralMatch.SpecificBioPolymer.MissedCleavages;
-                    bool fileIsCzeSeparationType = FileSpecificParametersDictionary.ContainsKey(Path.GetFileName(psm.FullFilePath)) && FileSpecificParametersDictionary[Path.GetFileName(psm.FullFilePath)].SeparationType == "CZE";
-
-                    if (!fileIsCzeSeparationType)
+                    var fileName = Path.GetFileName(psm.FullFilePath);
+                    bool fileIsCzeSeparationType = FileSpecificParametersDictionary.TryGetValue(fileName, out var fileParams) && fileParams.SeparationType == "CZE";
+                     
+                    if (searchType != "RNA")
                     {
-                        if (tentativeSpectralMatch.SpecificBioPolymer.BaseSequence.Equals(tentativeSpectralMatch.SpecificBioPolymer.FullSequence))
+                        if (!fileIsCzeSeparationType)
                         {
-                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified) * 10.0, 0);
+                            var isUnmodified = tentativeSpectralMatch.SpecificBioPolymer.BaseSequence.Equals(tentativeSpectralMatch.SpecificBioPolymer.FullSequence);
+                            var dict = isUnmodified
+                                ? FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified
+                                : FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified;
+                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, dict) * 10.0, 0);
                         }
                         else
                         {
-                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified) * 10.0, 0);
+                            hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer) * 10.0, 0);
                         }
-                    }
-                    else
-                    {
-                        hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer) * 10.0, 0);
                     }
                 }
                 //this is not for actual crosslinks but for the byproducts of crosslink loop links, deadends, etc.
@@ -609,6 +610,8 @@ namespace EngineLayer
                 isIntra = Convert.ToSingle(csm.CrossType == PsmCrossType.Intra);
             }
 
+
+            CreateData:
             psm.PsmData_forPEPandPercolator = new PsmData
             {
                 TotalMatchingFragmentCount = totalMatchingFragmentCount,
