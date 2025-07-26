@@ -43,7 +43,7 @@ namespace MetaMorpheusGUI
             }
 
             string input = parameter as string ?? value?.ToString() ?? "";
-            if (UpdateGUISettings.Globals.IsRnaMode)
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
             {
                 // Replace all protein terms with their RNA counterparts
                 foreach (var kvp in ProteinToRna)

@@ -1835,7 +1835,7 @@ namespace MetaMorpheusGUI
             Window dialog = null;
             MetaMorpheusTask task = null;
             string defaultTomlName = null;
-            var prefix = UpdateGUISettings.Globals.IsRnaMode ? "Rna" : "";
+            var prefix = GuiGlobalParamsViewModel.Instance.IsRnaMode ? "Rna" : "";
 
             // determine if there is a default .toml for this task
             switch (taskType)

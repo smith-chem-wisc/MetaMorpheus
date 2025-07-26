@@ -22,7 +22,6 @@ using System.Threading.Tasks;
 using Omics.Digestion;
 using Omics.Modifications;
 using Transcriptomics.Digestion;
-using MetaMorpheusGUI.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -52,7 +51,7 @@ namespace MetaMorpheusGUI
             if (task is null) // Happens when there is no default saved. 
             {
                 TheTask = new SearchTask();
-                if (UpdateGUISettings.Globals.IsRnaMode)
+                if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
                 {
                     Title = "RNA Search Task";
                     TheTask.SearchParameters = new RnaSearchParameters();
@@ -102,7 +101,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            bool isRnaMode = UpdateGUISettings.Globals.IsRnaMode;
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
             List<Modification> modsToUse = isRnaMode ? GlobalVariables.AllRnaModsKnown.ToList() : GlobalVariables.AllModsKnown.ToList();
 
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
@@ -524,7 +523,7 @@ namespace MetaMorpheusGUI
             int maxModsForPeptideValue = (int.Parse(MaxModNumTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex);
             IDigestionParams digestionParamsToSave;
-            if (UpdateGUISettings.Globals.IsRnaMode)
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
             {
                 digestionParamsToSave = new RnaDigestionParams(protease.Name, 
                     maxMissedCleavages, 
@@ -899,7 +898,7 @@ namespace MetaMorpheusGUI
         //this one is used by the GUI
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            bool isRnaMode = UpdateGUISettings.Globals.IsRnaMode;
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
             string proteaseName = ((DigestionAgent)ProteaseComboBox.SelectedItem).Name;
             MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
 
@@ -1377,7 +1376,7 @@ namespace MetaMorpheusGUI
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
         {
             SaveButton_Click(sender, e);
-            var prefix = UpdateGUISettings.Globals.IsRnaMode ? "Rna" : "";
+            var prefix = GuiGlobalParamsViewModel.Instance.IsRnaMode ? "Rna" : "";
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", $"{prefix}SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
 

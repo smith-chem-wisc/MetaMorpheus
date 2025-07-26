@@ -24,7 +24,7 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             locationRestrictions = new Dictionary<string, string> { { "Anywhere", "Anywhere." } };
 
-            if (UpdateGUISettings.Globals.IsRnaMode)
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
             {
                 locationRestrictions.Add("Oligo 5'-Terminus", "Oligo 5'-terminal.");
                 locationRestrictions.Add("Oligo 3'-Terminus", "Oligo 3'-terminal.");
@@ -57,7 +57,7 @@ namespace MetaMorpheusGUI
         public void SaveCustomMod_Click(object sender, RoutedEventArgs e)
         {
             string modsDirectory = Path.Combine(GlobalVariables.DataDir, @"Mods");
-            var path = UpdateGUISettings.Globals.IsRnaMode ? @"RnaCustomModifications.txt" : @"CustomModifications.txt";
+            var path = GuiGlobalParamsViewModel.Instance.IsRnaMode ? @"RnaCustomModifications.txt" : @"CustomModifications.txt";
             string customModsPath = Path.Combine(modsDirectory, path);
             List<string> customModsText = new List<string>();
 
@@ -180,7 +180,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            GlobalVariables.AddMods(new List<Modification> { modification }, false, UpdateGUISettings.Globals.IsRnaMode);
+            GlobalVariables.AddMods(new List<Modification> { modification }, false, GuiGlobalParamsViewModel.Instance.IsRnaMode);
 
             DialogResult = true;
         }

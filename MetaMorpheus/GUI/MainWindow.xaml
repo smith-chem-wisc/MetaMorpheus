@@ -10,7 +10,7 @@
         WindowStartupLocation="CenterScreen" MinHeight="400" 
         MinWidth="800" Height="550" Width="1000"
         Loaded="MyWindow_Loaded"
-        Title="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=MainWindowTitle}"
+        Title="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=MainWindowTitle}"
         Closing="MainWindow_Closing"
         PreviewKeyDown="Window_PreviewKeyDown">
 
@@ -66,7 +66,7 @@
                     </Setter.Value>
                 </Setter>
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                    <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
                         <Setter Property="Background" Value="{StaticResource RnaSideBarMainColor}"/>
                         <Setter Property="BorderBrush" Value="{StaticResource RnaSideBarMainColor}"/>
                     </DataTrigger>
@@ -112,7 +112,7 @@
                     </Setter.Value>
                 </Setter>
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                    <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
                         <Setter Property="Background" Value="{DynamicResource RnaSideBarMainColor}"/>
                         <Setter Property="BorderBrush" Value="{DynamicResource RnaAccentColor}"/>
                     </DataTrigger>
@@ -133,7 +133,7 @@
                 <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
                 <Setter Property="FontSize" Value="12"/>
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                    <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
                         <Setter Property="Background" Value="{StaticResource RnaAccentColor}" />
                     </DataTrigger>
                 </Style.Triggers>
@@ -143,7 +143,7 @@
             <Style x:Key="ImportantButtonStyleNotForRna" TargetType="Button" BasedOn="{StaticResource ImportantButtonStyle}">
                 <Setter Property="Visibility" Value="Visible" />
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                    <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
                         <Setter Property="Visibility" Value="Collapsed" />
                     </DataTrigger>
                 </Style.Triggers>
@@ -206,7 +206,7 @@
                         <Style TargetType="MenuItem">
                             <Setter Property="Visibility" Value="Visible"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                                <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -218,7 +218,7 @@
                         <Style TargetType="MenuItem">
                             <Setter Property="Visibility" Value="Visible"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                                <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -360,7 +360,7 @@
                     <!--This is not great but seems necessary to have a proper background on the tab items...-->
                     <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                        <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
                             <Setter Property="Background" Value="{StaticResource RnaSideBarMainColor}"/>
                         </DataTrigger>
                     </Style.Triggers>
@@ -867,6 +867,9 @@
                             <CheckBox Grid.Row="9" Grid.Column="1" Content="Ask Before Exiting MetaMorpheus" 
                                      FontSize="13" VerticalAlignment="Center" VerticalContentAlignment="Center"
                                      IsChecked="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=AskBeforeExitingMetaMorpheus, Mode=TwoWay}" />
+                            <CheckBox Grid.Row="10" Grid.Column="1" Content="Rna Mode" 
+                                         FontSize="13" VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                         IsChecked="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode, Mode=TwoWay}" />
                         </Grid>
 
                         <!-- Right: New settings controls -->
@@ -1061,7 +1064,7 @@
                 <Style TargetType="Grid">
                     <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                        <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
                             <Setter Property="Background" Value="{StaticResource RnaSideBarMainColor}"/>
                         </DataTrigger>
                     </Style.Triggers>

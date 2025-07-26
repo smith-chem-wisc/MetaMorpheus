@@ -12,6 +12,8 @@ public class GuiGlobalParamsViewModel : BaseViewModel
     private static GuiGlobalParamsViewModel _instance;
     private GuiGlobalParams _current;
     private GuiGlobalParams _loaded;
+    private static readonly string SettingsPath = Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml");
+    private static readonly string DefaultProteomePath = Path.Combine(GlobalVariables.DataDir, @"Proteomes");
 
     public static GuiGlobalParamsViewModel Instance
     {
@@ -32,7 +34,6 @@ public class GuiGlobalParamsViewModel : BaseViewModel
     public string MainWindowTitle => IsRnaMode
         ? $"MetaMorpheus RNA: {GlobalVariables.MetaMorpheusVersion}"
         : $"MetaMorpheus Protein: {GlobalVariables.MetaMorpheusVersion}";
-
 
     #region Parameters
 
@@ -152,10 +153,10 @@ public class GuiGlobalParamsViewModel : BaseViewModel
 
     public bool IsRnaMode
     {
-        get => parameters.IsRnaMode;
+        get => _current.IsRnaMode;
         set
         {
-            parameters.IsRnaMode = value;
+            _current.IsRnaMode = value;
             OnPropertyChanged(nameof(IsRnaMode));
             OnPropertyChanged(nameof(MainWindowTitle));
         }
@@ -163,10 +164,7 @@ public class GuiGlobalParamsViewModel : BaseViewModel
 
     #endregion
 
-        #region IO
-
-    private static readonly string SettingsPath = Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml");
-    private static readonly string DefaultProteomePath = Path.Combine(GlobalVariables.DataDir, @"Proteomes");
+    #region IO
 
     // Load from disk
     public void Load()
@@ -237,7 +235,7 @@ public class GuiGlobalParamsViewModel : BaseViewModel
             UseSpectralRecoveryParams == other.UseSpectralRecoveryParams;
     }
 
-    public override int GetHashCode() => _instance.GetHashCode();
+    public override int GetHashCode() => _current.GetHashCode();
 
     // Helper for deep copy
     private static GuiGlobalParams Clone(GuiGlobalParams src)

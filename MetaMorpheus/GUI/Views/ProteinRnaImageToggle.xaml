@@ -18,11 +18,11 @@
         <!-- Protein Border -->
         <Style x:Key="ProteinBorderStyle" TargetType="Border" BasedOn="{StaticResource BaseBorderStyle}">
             <Style.Triggers>
-                <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="False">
+                <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="False">
                     <Setter Property="BorderBrush" Value="{DynamicResource LightAccentColor}" />
                     <Setter Property="Background" Value="{DynamicResource LightAccentColor}" />
                 </DataTrigger>
-                <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
                     <Setter Property="Background" Value="{DynamicResource RnaSideBarMainColor}" />
                 </DataTrigger>
             </Style.Triggers>
@@ -30,11 +30,11 @@
         <!-- RNA Border -->
         <Style x:Key="RnaBorderStyle" TargetType="Border" BasedOn="{StaticResource BaseBorderStyle}">
             <Style.Triggers>
-                <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
                     <Setter Property="BorderBrush" Value="{DynamicResource LightRnaAccentColor}" />
                     <Setter Property="Background" Value="{DynamicResource LightRnaAccentColor}" />
                 </DataTrigger>
-                <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="False">
+                <DataTrigger Binding="{Binding Source={x:Static local:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="False">
                     <Setter Property="Background" Value="{DynamicResource HighlightBackgroundColor}" />
                 </DataTrigger>
             </Style.Triggers>
@@ -54,11 +54,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid HorizontalAlignment="Stretch" Background="Transparent" 
-          Visibility="{Binding Source={x:Static local:UpdateGUISettings.Globals}, 
-                    Path=ExposeRnaToUser, 
-                    Converter={local:BooleanToVisibilityConverter}, 
-                    FallbackValue=Hidden}">
+    <Grid HorizontalAlignment="Stretch" Background="Transparent" >
         
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />

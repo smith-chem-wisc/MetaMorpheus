@@ -9,7 +9,7 @@ public class CollapseOnRnaModeConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         // Collapse the element if RNA mode is enabled
-        return UpdateGUISettings.Globals == null || !UpdateGUISettings.Globals.IsRnaMode
+        return GuiGlobalParamsViewModel.Instance == null || !GuiGlobalParamsViewModel.Instance.IsRnaMode
             ? System.Windows.Visibility.Visible
             : System.Windows.Visibility.Collapsed;
     }

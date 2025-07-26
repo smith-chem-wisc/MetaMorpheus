@@ -9,7 +9,7 @@ public partial class ProteinRnaImageToggle : UserControl
 {
     public ProteinRnaImageToggle() => InitializeComponent();
 
-    private void Protein_Click(object sender, MouseButtonEventArgs e) => UpdateGUISettings.Globals.IsRnaMode = false;
+    private void Protein_Click(object sender, MouseButtonEventArgs e) => GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
 
-    private void Rna_Click(object sender, MouseButtonEventArgs e) => UpdateGUISettings.Globals.IsRnaMode = true;
+    private void Rna_Click(object sender, MouseButtonEventArgs e) => GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
 }

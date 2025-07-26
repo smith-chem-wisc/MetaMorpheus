@@ -41,7 +41,7 @@ namespace MetaMorpheusGUI
             if (myGPTMDtask is null) // Happens when there is no default saved. 
             {
                 TheTask = new GptmdTask();
-                if (UpdateGUISettings.Globals.IsRnaMode)
+                if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
                 {
                     Title = "RNA Search Task";
                     TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
@@ -210,7 +210,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            bool isRnaMode = UpdateGUISettings.Globals.IsRnaMode;
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
             List<Modification> modsToUse = isRnaMode ? GlobalVariables.AllRnaModsKnown.ToList() : GlobalVariables.AllModsKnown.ToList();
 
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
@@ -288,7 +288,7 @@ namespace MetaMorpheusGUI
         
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            bool isRnaMode = UpdateGUISettings.Globals.IsRnaMode;
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
             string proteaseName = ((DigestionAgent)ProteaseComboBox.SelectedItem).Name;
             MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
 
@@ -506,7 +506,7 @@ namespace MetaMorpheusGUI
 
 
             IDigestionParams digestionParamsToSave;
-            if (UpdateGUISettings.Globals.IsRnaMode)
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
             {
                 digestionParamsToSave = new RnaDigestionParams(protease.Name,
                     maxMissedCleavages,
@@ -632,7 +632,7 @@ namespace MetaMorpheusGUI
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
         {
             SaveButton_Click(sender, e);
-            var prefix = UpdateGUISettings.Globals.IsRnaMode ? "Rna" : "";
+            var prefix = GuiGlobalParamsViewModel.Instance.IsRnaMode ? "Rna" : "";
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", $"{prefix}GptmdTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
     }

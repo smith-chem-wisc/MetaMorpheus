@@ -41,7 +41,7 @@ namespace MetaMorpheusGUI
             if (myCalibrateTask is null) // Happens when there is no default saved. 
             {
                 TheTask = new CalibrationTask();
-                if (UpdateGUISettings.Globals.IsRnaMode)
+                if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
                 {
                     Title = "RNA Search Task";
                     TheTask.CommonParameters = new CommonParameters("RnaCalibrationTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20, precursorMassTolerance: new PpmTolerance(15));
@@ -162,7 +162,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            bool isRnaMode = UpdateGUISettings.Globals.IsRnaMode; 
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode; 
             List<Modification> modsToUse = isRnaMode ? GlobalVariables.AllRnaModsKnown.ToList() : GlobalVariables.AllModsKnown.ToList();
 
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
@@ -235,7 +235,7 @@ namespace MetaMorpheusGUI
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             string fieldNotUsed = "1";
-            bool isRnaMode = UpdateGUISettings.Globals.IsRnaMode;
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
 
             if (!TaskValidator.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
@@ -427,13 +427,13 @@ namespace MetaMorpheusGUI
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
         {
             SaveButton_Click(sender, e);
-            var prefix = UpdateGUISettings.Globals.IsRnaMode ? "Rna" : "";
+            var prefix = GuiGlobalParamsViewModel.Instance.IsRnaMode ? "Rna" : "";
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", $"{prefix}CalibrationTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
 
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            bool isRnaMode = UpdateGUISettings.Globals.IsRnaMode;
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
             string proteaseName = ((DigestionAgent)ProteaseComboBox.SelectedItem).Name;
             MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
 
