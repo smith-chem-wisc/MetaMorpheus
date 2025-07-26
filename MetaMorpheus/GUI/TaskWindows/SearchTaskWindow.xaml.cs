@@ -427,7 +427,7 @@ namespace MetaMorpheusGUI
             CleavageSpecificity searchModeType = GetSearchModeType(); //change search type to semi or non if selected
             SnesUpdates(searchModeType); //decide on singleN/C, make comp ion changes
 
-            if (!GlobalGuiSettings.CheckTaskSettingsValidity(
+            if (!TaskValidator.CheckTaskSettingsValidity(
                 PrecursorMassToleranceTextBox.Text, 
                 ProductMassToleranceTextBox.Text, 
                 MissedCleavagesTextBox.Text,
@@ -533,7 +533,7 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
-            if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
+            if (!TaskValidator.VariableModCheck(listOfModsVariable))
             {
                 return;
             }
