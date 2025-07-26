@@ -345,8 +345,8 @@ namespace Test
 
             // check first protein group
             ProteinGroup pg1 = proteinGroups.Where(v => v.ProteinGroupName == "1").First();
-            PeptideWithSetModifications pg1pep1 = pg1.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
-            PeptideWithSetModifications pg1pep2 = pg1.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
+            IBioPolymerWithSetMods pg1pep1 = pg1.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
+            IBioPolymerWithSetMods pg1pep2 = pg1.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
             Assert.That(pg1.UniquePeptides.Contains(pg1pep1));
             Assert.That(pg1pep1.DigestionParams.DigestionAgent.Name == "testA");
             Assert.That(pg1.UniquePeptides.Contains(pg1pep2));
@@ -356,8 +356,8 @@ namespace Test
 
             // check second protein group
             ProteinGroup pg2 = proteinGroups.Where(v => v.ProteinGroupName == "2").First();
-            PeptideWithSetModifications pg2pep1 = pg2.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
-            PeptideWithSetModifications pg2pep2 = pg2.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
+            IBioPolymerWithSetMods pg2pep1 = pg2.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
+            IBioPolymerWithSetMods pg2pep2 = pg2.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
             Assert.That(pg2.UniquePeptides.Contains(pg2pep1));
             Assert.That(pg2pep1.DigestionParams.DigestionAgent.Name == "testB");
             Assert.That(pg2.UniquePeptides.Contains(pg2pep2));

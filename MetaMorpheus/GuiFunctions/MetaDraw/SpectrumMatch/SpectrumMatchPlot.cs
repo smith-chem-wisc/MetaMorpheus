@@ -27,9 +27,10 @@ namespace GuiFunctions
     public class SpectrumMatchPlot : Plot
     {
         public static int MaxCharactersPerDescriptionLine = 32;
-        protected List<MatchedFragmentIon> matchedFragmentIons;
+        public List<MatchedFragmentIon> MatchedFragmentIons { get; protected set; }
         public MsDataScan Scan { get; protected set; }
         public SpectrumMatchFromTsv SpectrumMatch { get; set; }
+        public OxyPlot.Wpf.PlotView PlotView { get; protected set; }
 
         /// <summary>
         /// Base Spectrum match constructor
@@ -42,24 +43,26 @@ namespace GuiFunctions
         public SpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, SpectrumMatchFromTsv sm,
             MsDataScan scan, List<MatchedFragmentIon> matchedIons = null) : base(plotView)
         {
+            PlotView = plotView;
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
             Scan = scan;
-            matchedFragmentIons = new();
 
             DrawSpectrum();
             if (matchedIons is null && sm is not null)
             {
                 SpectrumMatch = sm;
-                matchedFragmentIons = SpectrumMatch.MatchedIons;
-                AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
+                MatchedFragmentIons = SpectrumMatch.MatchedIons;
+                AnnotateMatchedIons(isBetaPeptide: false, MatchedFragmentIons);
             }
             else if (matchedIons is not null && sm is not null)
             {
                 SpectrumMatch = sm;
-                matchedFragmentIons = matchedIons;
+                MatchedFragmentIons = matchedIons;
                 AnnotateMatchedIons(false, matchedIons);
             }
+            else
+                MatchedFragmentIons = new();
 
             ZoomAxes();
             RefreshChart();
@@ -70,6 +73,13 @@ namespace GuiFunctions
         /// </summary>
         protected void DrawSpectrum()
         {
+            var yArray = Scan.MassSpectrum.YArray;
+            var xArray = Scan.MassSpectrum.XArray;
+            double yMax = 0;
+            for (int i = 0; i < yArray.Length; i++)
+            {
+                if (yArray[i] > yMax) yMax = yArray[i];
+            }
             // set up axes
             Model.Axes.Add(new LinearAxis
             {
@@ -92,11 +102,11 @@ namespace GuiFunctions
                 Position = AxisPosition.Left,
                 Title = "Intensity",
                 Minimum = 0,
-                Maximum = Scan.MassSpectrum.YArray.Max(),
+                Maximum = yMax,
                 AbsoluteMinimum = 0,
-                AbsoluteMaximum = Scan.MassSpectrum.YArray.Max() * 2,
-                MajorStep = Scan.MassSpectrum.YArray.Max() / 10,
-                MinorStep = Scan.MassSpectrum.YArray.Max() / 10,
+                AbsoluteMaximum = yMax * 2,
+                MajorStep = yMax / 10,
+                MinorStep = yMax / 50,
                 StringFormat = "0e-0",
                 MajorTickSize = 2,
                 TitleFontWeight = FontWeights.Bold,
@@ -108,15 +118,24 @@ namespace GuiFunctions
                 ExtraGridlineThickness = 1
             });
 
-            // draw all peaks in the scan
-            for (int i = 0; i < Scan.MassSpectrum.XArray.Length; i++)
+            // Batch peaks into a single LineSeries for unannotated peaks
+            var unannotatedSeries = new LineSeries
             {
-                double mz = Scan.MassSpectrum.XArray[i];
-                double intensity = Scan.MassSpectrum.YArray[i];
+                Color = MetaDrawSettings.UnannotatedPeakColor,
+                StrokeThickness = MetaDrawSettings.StrokeThicknessUnannotated,
+                LineStyle = LineStyle.Solid
+            };
 
-                DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessUnannotated,
-                    MetaDrawSettings.UnannotatedPeakColor, null);
+            for (int i = 0; i < xArray.Length; i++)
+            {
+                double mz = xArray[i];
+                double intensity = yArray[i];
+                // Add as vertical line (two points per peak)
+                unannotatedSeries.Points.Add(new DataPoint(mz - 0.0001, 0));
+                unannotatedSeries.Points.Add(new DataPoint(mz, intensity));
+                unannotatedSeries.Points.Add(new DataPoint(mz + 0.0001, 0));
             }
+            Model.Series.Add(unannotatedSeries);
         }
 
         /// <summary>
@@ -131,15 +150,44 @@ namespace GuiFunctions
             TextAnnotation annotation)
         {
             // peak line
-            var line = new LineSeries();
-            line.Color = color;
-            line.StrokeThickness = strokeWidth;
+            var line = new LineSeries
+            {
+                Color = color,
+                StrokeThickness = strokeWidth
+            };
             line.Points.Add(new DataPoint(mz, 0));
             line.Points.Add(new DataPoint(mz, intensity));
 
-            if (annotation != null)
+            // Miso is a tag used in chimeric ms1 plotting to indicate that we should not annotate this peak with a label. 
+            if (annotation != null && !annotation.Text.Contains("Miso"))
             {
-                Model.Annotations.Add(annotation);
+                var x = annotation.TextPosition.X;
+                var y = annotation.TextPosition.Y + 20;
+                var splits = annotation.Text.Split('\n');
+
+                // Calculate y step for annotation lines based on Y-axis range
+                var yAxis = Model.Axes.FirstOrDefault(a => a.Position == AxisPosition.Left);
+                double yRange = yAxis != null ? Math.Abs(yAxis.ActualMaximum - yAxis.ActualMinimum) : 1.0;
+                double yStep = yRange * 0.05; // 5% of the y-range per line 
+
+                for (int j = splits.Length - 1; j >= 0; j--)
+                {
+                    var split = splits[j];
+                    var annotationLine = new TextAnnotation
+                    {
+                        Font = annotation.Font,
+                        FontSize = annotation.FontSize,
+                        FontWeight = annotation.FontWeight,
+                        TextColor = annotation.TextColor,
+                        StrokeThickness = annotation.StrokeThickness,
+                        Text = split,
+                        TextPosition = new DataPoint(x, y),
+                        TextVerticalAlignment = annotation.TextVerticalAlignment,
+                        TextHorizontalAlignment = HorizontalAlignment.Center
+                    };
+                    Model.Annotations.Add(annotationLine);
+                    y += yStep;
+                }
             }
 
             Model.Series.Add(line);
@@ -154,9 +202,20 @@ namespace GuiFunctions
         protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons,
             bool useLiteralPassedValues = false)
         {
-            List<MatchedFragmentIon> ionsToDisplay = !MetaDrawSettings.DisplayInternalIons
-                ? matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.SecondaryProductType == null).ToList()
-                : matchedFragmentIons;
+            List<MatchedFragmentIon> ionsToDisplay;
+            if (!MetaDrawSettings.DisplayInternalIons)
+            {
+                ionsToDisplay = new List<MatchedFragmentIon>(matchedFragmentIons.Count);
+                foreach (var p in matchedFragmentIons)
+                {
+                    if (p.NeutralTheoreticalProduct.SecondaryProductType == null)
+                        ionsToDisplay.Add(p);
+                }
+            }
+            else
+            {
+                ionsToDisplay = matchedFragmentIons;
+            }
 
             foreach (MatchedFragmentIon matchedIon in ionsToDisplay)
             {
@@ -171,7 +230,7 @@ namespace GuiFunctions
         /// <param name="isBetaPeptide">is a beta x-linked peptide</param>
         /// <param name="useLiteralPassedValues"></param>
         protected void AnnotatePeak(MatchedFragmentIon matchedIon, bool isBetaPeptide,
-            bool useLiteralPassedValues = false, OxyColor? ionColorNullable = null)
+            bool useLiteralPassedValues = false, OxyColor? ionColorNullable = null, string annotation = null)
         {
             OxyColor ionColor;
             if (ionColorNullable == null)
@@ -211,7 +270,7 @@ namespace GuiFunctions
             }
 
             // peak annotation
-            string prefix = "";
+            string prefix = string.Empty;
             if (SpectrumMatch.IsCrossLinkedPeptide())
             {
                 if (isBetaPeptide)
@@ -227,10 +286,21 @@ namespace GuiFunctions
             }
 
             var peakAnnotation = new TextAnnotation();
-            if (MetaDrawSettings.DisplayIonAnnotations)
-            {
-                string peakAnnotationText = prefix;
+            string peakAnnotationText = prefix;
 
+            // Fast path: direct annotation
+            if (annotation != null)
+            {
+                peakAnnotationText += annotation;
+                intensity += intensity * 0.05;
+                peakAnnotation.TextColor = ionColor;
+            }
+            // Main annotation logic
+            else if (MetaDrawSettings.DisplayIonAnnotations)
+            {
+                peakAnnotation.TextColor = ionColor;
+
+                // Fragment Number annotation
                 if (MetaDrawSettings.SubAndSuperScriptIons)
                     foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
                     {
@@ -251,13 +321,8 @@ namespace GuiFunctions
                     }
                 else
                     peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
-                
-                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 &&
-                    !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
-                {
-                    peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
-                }
 
+                // Charge annotation
                 if (MetaDrawSettings.AnnotateCharges)
                 {
                     char chargeAnnotation = matchedIon.Charge > 0 ? '+' : '-';
@@ -277,32 +342,33 @@ namespace GuiFunctions
                         peakAnnotationText += chargeAnnotation.ToString() + matchedIon.Charge;
                 }
 
+                // m/z annotation
                 if (MetaDrawSettings.AnnotateMzValues)
                 {
                     peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
                 }
-
-
-                peakAnnotation.Font = "Arial";
-                peakAnnotation.FontSize = MetaDrawSettings.AnnotatedFontSize;
-                peakAnnotation.FontWeight = MetaDrawSettings.AnnotationBold ? FontWeights.Bold : 2.0;
-                peakAnnotation.TextColor = ionColor;
-                peakAnnotation.StrokeThickness = 0;
-                peakAnnotation.Text = peakAnnotationText;
-                peakAnnotation.TextPosition = new DataPoint(mz, intensity);
-                peakAnnotation.TextVerticalAlignment = intensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom;
-                peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Center;
             }
             else
             {
-                peakAnnotation.Text = string.Empty;
+                peakAnnotationText = string.Empty;
             }
 
+            // Hide internal fragment annotation if not displaying
             if (matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null &&
                 !MetaDrawSettings.DisplayInternalIonAnnotations) //if internal fragment
             {
-                peakAnnotation.Text = string.Empty;
+                peakAnnotationText = string.Empty;
             }
+
+            // Set annotation properties
+            peakAnnotation.Text = peakAnnotationText;
+            peakAnnotation.Font = "Arial";
+            peakAnnotation.FontSize = MetaDrawSettings.AnnotatedFontSize;
+            peakAnnotation.FontWeight = MetaDrawSettings.AnnotationBold ? FontWeights.Bold : 2.0;
+            peakAnnotation.StrokeThickness = 0;
+            peakAnnotation.TextPosition = new DataPoint(mz, intensity);
+            peakAnnotation.TextVerticalAlignment = intensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom;
+            peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Center;
 
             DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
         }
@@ -311,19 +377,20 @@ namespace GuiFunctions
         /// Zooms the axis of the graph to the matched ions
         /// </summary>
         /// <param name="yZoom"></param>
-        /// <param name="matchedFramgentIons">ions to zoom to. if null, it will used the stored protected matchedFragmentIons</param>
+        /// <param name="matchedFramgentIons">ions to zoom to. if null, it will used the stored protected MatchedFragmentIons</param>
         protected void ZoomAxes(IEnumerable<MatchedFragmentIon> matchedFramgentIons = null, double yZoom = 1.2)
         {
-            matchedFramgentIons ??= matchedFragmentIons;
+            matchedFramgentIons ??= MatchedFragmentIons;
             double highestAnnotatedIntensity = 0;
             double highestAnnotatedMz = double.MinValue;
             double lowestAnnotatedMz = double.MaxValue;
+            var yArray = Scan.MassSpectrum.YArray;
 
-            foreach (var ion in matchedFragmentIons)
+            foreach (var ion in matchedFramgentIons)
             {
                 double mz = ion.NeutralTheoreticalProduct.NeutralMass.ToMz(ion.Charge);
                 int i = Scan.MassSpectrum.GetClosestPeakIndex(mz);
-                double intensity = Scan.MassSpectrum.YArray[i];
+                double intensity = yArray[i];
 
                 if (intensity > highestAnnotatedIntensity)
                 {
@@ -359,7 +426,7 @@ namespace GuiFunctions
         /// <param name="combinedBitmaps"></param>
         /// <param name="width"></param>
         /// <param name="height"></param>
-        public void ExportPlot(string path, Bitmap combinedBitmaps, double width = 700, double height = 370)
+        public static void ExportPlot(string path, Bitmap combinedBitmaps, double width = 700, double height = 370)
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
@@ -552,7 +619,7 @@ namespace GuiFunctions
                 if (librarySpectrum != null)
                 {
                     text.Append("Displayed Spectral Angle: ");
-                    text.Append(librarySpectrum.CalculateSpectralAngleOnTheFly(this.matchedFragmentIons) + "\r\n");
+                    text.Append(librarySpectrum.CalculateSpectralAngleOnTheFly(this.MatchedFragmentIons) + "\r\n");
                 }
             }
 

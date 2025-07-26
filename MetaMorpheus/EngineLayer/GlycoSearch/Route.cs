@@ -1,17 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using EngineLayer.ModSearch;
+using Omics;
 
 namespace EngineLayer.GlycoSearch
 {
+    /// <summary>
+    /// Presents a possible hypothesis in the glycan localization graph, which contains a set of modification site pairs and their associated scores.
+    /// </summary>
     public class Route
     { 
 
         public int ModBoxId { get; set; }
 
-        //Tuple<int, int, double> mod pos, glycan id, local peak exist
-        //For the local peak exist, the idea is that, in the localization graph matrix, if the node is detected as a mod, then the node score and the previous node has a current score >0.
-        public List<Tuple<int, int, bool>> Mods { get; private set; } = new List<Tuple<int, int, bool>>();
+        /// <summary>
+        /// The all modification site pairs in this route.
+        /// </summary>
+        public List<ModSitePair> ModSitePairs { get; private set; } = new List<ModSitePair>();
 
         public double Score { get; set; }
 
@@ -19,7 +25,7 @@ namespace EngineLayer.GlycoSearch
 
         public void AddPos(int pos, int id, bool localPeakExist)
         {
-            Mods.Add(new Tuple<int, int, bool>(pos, id, localPeakExist));
+            ModSitePairs.Add(new ModSitePair(pos, id, localPeakExist));
         }
 
     }

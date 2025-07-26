@@ -12,6 +12,7 @@ using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
+using Transcriptomics;
 
 namespace Test
 {
@@ -259,7 +260,7 @@ namespace Test
         [Test]
         public static void TestProteinGroupsAccessionOutputOrder()
         {
-            var p = new HashSet<Protein>();
+            var p = new HashSet<IBioPolymer>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
 
             // make protein B
@@ -267,6 +268,26 @@ namespace Test
 
             // make protein A
             p.Add(new Protein("-----F----**", "A", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
+
+            // add protein B and A to the protein group
+            ProteinGroup testGroup = new ProteinGroup(p, null, null);
+
+            // test order is AB and not BA
+            Assert.That(testGroup.ProteinGroupName.Equals("A|B"));
+            Assert.That(testGroup.Proteins.First().Accession.Equals("B"));
+        }
+
+        [Test]
+        public static void TestTranscriptGroupsAccessionOutputOrder()
+        {
+            var p = new HashSet<IBioPolymer>();
+            List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
+
+            // make protein B
+            p.Add(new RNA("AAAAACAAAAU", "B", isDecoy: true));
+
+            // make protein A
+            p.Add(new RNA("AAAAACAAAAUU", "A", isDecoy: true));
 
             // add protein B and A to the protein group
             ProteinGroup testGroup = new ProteinGroup(p, null, null);

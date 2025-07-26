@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Chemistry;
 using System;
-using Proteomics;
+using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using Omics.Modifications;
 
@@ -24,43 +23,131 @@ namespace EngineLayer
         public byte[] IonKind { get; set; }
     }
 
-    public class Glycan
+    /// <summary>
+    /// Glycan represents a glycan modification, which can be O-glycan or N-glycan.
+    /// Included information like glycan structure, mass, kind, ions, and type.
+    /// </summary>
+    public class Glycan :  Modification
     {
-        public Glycan(string struc, int mass, byte[] kind, List<GlycanIon> ions, bool decoy)
+        public Glycan(string struc, int mass, byte[] kind, List<GlycanIon> ions, bool decoy, string motif, GlycanType type = GlycanType.O_glycan) 
+            : base( _monoisotopicMass: mass / 1E5, _locationRestriction: "Anywhere.") // Divide the mass by 1E5 to convert it to monoisotopic mass in Daltons (Da).
         {
+            // Glycan Properties
             Struc = struc;
-            Mass = mass;
+            Mass = mass; // Glycan mass is stored as an integer scaled by 1e5 to improve performance. Divide by 1e5 to obtain the monoisotopic mass in Daltons (Da).
             Kind = kind;
             Ions = ions;
             Decoy = decoy;
+            Type = type;
+
+            // Modification Properties
+            Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
+            // Generate the neural loss and diagnostic ions for O_glycan.
+            if (type == GlycanType.O_glycan)
+            {
+                ModificationType = "O-Glycosylation"; // Set the modification type.
+                if (Ions != null)
+                {
+                    List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
+                    neutralLosses.Add(DissociationType.HCD, lossMasses);
+                    neutralLosses.Add(DissociationType.CID, lossMasses);
+                    neutralLosses.Add(DissociationType.EThcD, lossMasses);
+                }
+            }
+
+            // Generate the neural loss and diagnostic ions for N_glycan.
+            else if (type == GlycanType.N_glycan)
+            {
+                ModificationType = "N-Glycosylation"; // Set the modification type.
+                if (Ions != null)
+                {
+                    List<double> lossMasses = Ions.Where(p=>p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
+                    neutralLosses.Add(DissociationType.HCD, lossMasses);
+                    neutralLosses.Add(DissociationType.CID, lossMasses);
+                    neutralLosses.Add(DissociationType.EThcD, lossMasses);
+                }
+            }
+
+            Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
+            diagnosticIons.Add(DissociationType.HCD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList()); // Divided by 1E5 to convert mass(int) to monoisotopic mass(double).
+            diagnosticIons.Add(DissociationType.CID, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.EThcD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            ModificationMotif.TryGetMotif(motif, out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
+            var id = Glycan.GetKindString(Kind);
+
+            OriginalId = id; // Set the original ID to the glycan kind string, which is unique for each glycan.
+            Target = finalMotif; // Set the target motif for the modification.
+            NeutralLosses = neutralLosses; // Set the neutral losses for the modification.
+            base.DiagnosticIons = diagnosticIons; // Set the diagnostic ions for the modification.
+
+            if (OriginalId != null)
+            {
+                IdWithMotif = OriginalId + " on " + Target.ToString();
+                OriginalId = OriginalId;
+            }
+            else
+                OriginalId = OriginalId;
         }
 
-        public Glycan(byte[] kind)
+        /// <summary>
+        /// In this constructor, we will generate the glycan only by the glycan kind and type.
+        /// So there is no ions information, and the diagnostic ions will not be generated.
+        /// </summary>
+        /// <param name="kind"></param>
+        /// <param name="type"></param>
+        public Glycan(byte[] kind, string motif, GlycanType type)
+            : this(null, GetMass(kind), kind, null, false, motif, type)
         {
-            Kind = kind;
-            Mass = GetMass(kind);
         }
 
-        public int GlyId { get; set; }            // Glycan ID, which is the index of glycan in the glycan database.
-        public string Struc { get; private set; } // Glycan structure string represented the glycan structure and linkage. Ex. (N(H(A))(N(H(A))(F)))
+        /// <summary>
+        /// Glycan ID, which is the index of glycan in the glycan database.
+        /// </summary>
+        public int GlyId { get; set; }
+        /// <summary>
+        /// Glycan structure string representing the glycan structure and linkage. Example: (N(H(A))(N(H(A))(F)))
+        /// </summary>
+        public string Struc { get; private set; }
+        /// <summary>
+        /// Glycan mass, stored as an integer scaled by 1e5.
+        /// </summary>
         public int Mass { get; private set; }
+        /// <summary>
+        /// Type of glycan (N-glycan, O-glycan).
+        /// </summary>
+        public GlycanType Type;
 
-         
-        public byte[] Kind { get; private set; }  // Glycans are composed of several types of mono suagr. In Kind, each number correspond to one type (corresponded order as Glycan.CharMassDic).
-        public string Composition                 // Glycan composition string. Ex. H2N2A2F1.
+
+        /// <summary>
+        /// Glycan composition array. Each number corresponds to one type of monosaccharide (order matches Glycan.CharMassDic).
+        /// </summary>
+        public byte[] Kind { get; private set; }
+        /// <summary>
+        /// Glycan composition string. Example: H2N2A2F1.
+        /// </summary>
+        public string Composition
         {
             get
             {
                 return Glycan.GetKindString(Kind);
             }
         }
+        /// <summary>
+        /// List of glycan fragment ions.
+        /// </summary>
         public List<GlycanIon> Ions { get; set; }
+        /// <summary>
+        /// Indicates whether the glycan is a decoy.
+        /// </summary>
         public bool Decoy { get; private set; }
 
-        public HashSet<int> DiagnosticIons // B ions (the sugar fragment dropped from the glycopeptide), used for the N-glycan. There are more ions to set...
+        /// <summary>
+        /// Set of diagnostic ion masses (B ions) for the glycan, used for glycopeptide identification.
+        /// </summary>
+        public HashSet<int> GlycanDiagnosticIons
         {
             get
-            {   
+            {
                 HashSet<int> diagnosticIons = new HashSet<int>();
                 if (Kind[0] >= 1) //if we have Hexose(the number more than one), then we have the corresponding diagonsitic ions as below.
                 {
@@ -93,7 +180,6 @@ namespace EngineLayer
                 }
                 return diagnosticIons;
             }
-
         }
 
         #region Glycan information
@@ -102,6 +188,9 @@ namespace EngineLayer
 
 
         //Glycan mass dictionary
+        /// <summary>
+        /// Dictionary mapping monosaccharide character codes to their integer mass (scaled by 1e5).
+        /// </summary>
         //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
         //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium, C:Acetyl for Neu5Ac
         //X: C5H10O5 Xylose
@@ -119,7 +208,9 @@ namespace EngineLayer
             { 'K', 25006897 },
         };
 
-        // The corresponding index for sugar and Kind.
+        /// <summary>
+        /// Dictionary mapping monosaccharide names to their character code and index in the Kind array.
+        /// </summary>
         public readonly static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
         {
             {"Hex", new Tuple<char, int>('H', 0) },
@@ -135,15 +226,21 @@ namespace EngineLayer
             {"Kdn", new Tuple<char,int>('K',10)}
         };
 
-        //The same ion as we describe above in the diagnostic ions. That just for the initial filtering for glycopeptide peaks. Not used now.
-        public readonly static HashSet<int> CommonOxoniumIons = new HashSet<int> 
+        /// <summary>
+        /// Set of common oxonium ion masses (int, scaled by 1e5) used for initial glycopeptide peak filtering.
+        /// </summary>
+        public readonly static HashSet<int> CommonOxoniumIons = new HashSet<int>
         {13805550, 16806607, 18607663, 20408720, 36614002 };
 
-        //The same ion as we describe above in the diagnostic ions. Used for building the oxoniumIntensity list.
-        public readonly static int[] AllOxoniumIons = new int[] 
+        /// <summary>
+        /// Array of all oxonium ion masses (int, scaled by 1e5) used for building oxonium intensity lists.
+        /// </summary>
+        public readonly static int[] AllOxoniumIons = new int[]
         {10902895, 11503951, 12605550, 12703952, 13805550, 14406607, 16306064, 16806607, 18607663, 20408720, 27409268, 29008759, 29210324, 30809816, 36614002, 65723544, 67323035};
 
-        //TrimannosylCore. Only useful for N-Glyco peptides.
+        /// <summary>
+        /// Dictionary mapping N-glycan core ion indices to their monoisotopic mass (double).
+        /// </summary>
         public readonly static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>
         {
             //Each of the mass represent as a N-Glycan core. 
@@ -156,7 +253,6 @@ namespace EngineLayer
             { 892, 892.317215}, //Y5
             { 349, 349.137281}, //Y2F
             { 552, 552.216654}  //Y3F
-
         };
 
         #endregion
@@ -174,7 +270,7 @@ namespace EngineLayer
         /// <param name="id"></param>
         /// <param name="isOglycan"></param>
         /// <returns> Glycan Object </returns>
-        public static Glycan Struct2Glycan(string theGlycanStruct, int id, bool isOglycan = false)
+        public static List<Glycan> Struct2Glycan(string theGlycanStruct, int id, bool isOglycan = false)
         {
             Node node = Struct2Node(theGlycanStruct);              // String to tree structure.
             List<Node> nodeIons = GetAllChildrenCombination(node); // Get all possible fragmentation & neutralLoss of a glycan.
@@ -200,9 +296,29 @@ namespace EngineLayer
             }
             glycanIons.Add(new GlycanIon(null, 0, kind, mass)); //That is Y0 ion. The whole glycan dropped from the glycopeptide. Like a netural loss.
 
-            Glycan glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false);
-            glycan.GlyId = id;
-            return glycan;
+            List<Glycan> glycans = new List<Glycan>();
+            if (isOglycan) //Because we will generate two o-Glycan with different motifs
+            {
+                GlycanType glycanType = GlycanType.O_glycan;
+                Glycan Oglycan_S = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false, "S", glycanType);
+                Oglycan_S.GlyId = id;
+                Glycan Oglycan_T = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false, "T", glycanType);
+                Oglycan_T.GlyId = id+1;
+
+                glycans.Add(Oglycan_S);
+                glycans.Add(Oglycan_T);
+
+                return glycans;
+            }
+            else 
+            {
+                GlycanType glycanType = GlycanType.N_glycan;
+                Glycan N_glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false, "N", glycanType);
+                N_glycan.GlyId = id;
+                glycans.Add(N_glycan);
+                return glycans;
+            }
+
         }
 
 
@@ -510,79 +626,6 @@ namespace EngineLayer
 
         #endregion
 
-        //TO THINK: Is it reasonable to transfer Glycan to Modification the first time Glycan is read in? Which could save time.
-        //Use glycan index and modification index to reduce space.
-
-        /// <summary>
-        /// Input the N-glycan object, and transfer it to the modification object.
-        /// </summary>
-        /// <param name="glycan"></param>
-        /// <returns></returns>
-        public static Modification NGlycanToModification(Glycan glycan)
-        {
-            Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
-            if (glycan.Ions!=null)
-            {
-                List<double> lossMasses = glycan.Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
-                neutralLosses.Add(DissociationType.HCD, lossMasses);
-                neutralLosses.Add(DissociationType.CID, lossMasses);
-                neutralLosses.Add(DissociationType.EThcD, lossMasses);
-            }
-
-            Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
-            diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            diagnosticIons.Add(DissociationType.CID, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            diagnosticIons.Add(DissociationType.EThcD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            ModificationMotif.TryGetMotif("N", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
-            var id = Glycan.GetKindString(glycan.Kind);
-            Modification modification = new Modification(
-                _originalId: id,
-                _modificationType: "N-Glycosylation",
-                _monoisotopicMass: (double)glycan.Mass / 1E5,
-                _locationRestriction: "Anywhere.",
-                _target: finalMotif,
-                _neutralLosses: neutralLosses,
-                _diagnosticIons: diagnosticIons
-            );
-            return modification;
-        }
-
-        /// <summary>
-        /// Input the O-glycan object, and transfer it to the modification object.
-        /// </summary>
-        /// <param name="glycan"></param>
-        /// <returns> The modification object </returns>
-        public static Modification OGlycanToModification(Glycan glycan) //try to transfer the glycan object to modification object.
-        {
-            //TO THINK: what the neutralLoss for O-Glyco?
-            Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
-
-            if (glycan.Ions!=null)
-            {
-                List<double> lossMasses = glycan.Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
-                neutralLosses.Add(DissociationType.HCD, lossMasses);
-                neutralLosses.Add(DissociationType.CID, lossMasses);
-                neutralLosses.Add(DissociationType.EThcD, lossMasses);
-            }
-
-            Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
-            diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            diagnosticIons.Add(DissociationType.CID, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            diagnosticIons.Add(DissociationType.EThcD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            ModificationMotif.TryGetMotif("X", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
-
-            var id = Glycan.GetKindString(glycan.Kind);
-            Modification modification = new Modification(
-                _originalId: id,
-                _modificationType: "O-Glycosylation",
-                _monoisotopicMass: (double)glycan.Mass / 1E5,
-                _locationRestriction: "Anywhere.",
-                _target: finalMotif,
-                _neutralLosses: neutralLosses,
-                _diagnosticIons: diagnosticIons
-            );
-            return modification;
-        }
 
         #region Combination or Permutation functions not directly related to glycan, use carefully these function don't deal duplicate elements.
 
@@ -659,9 +702,9 @@ namespace EngineLayer
                     GlycanIon glycanIon = new GlycanIon(null, ion.IonMass + value, ion.IonKind, ion.LossIonMass - value);
                     glycanIons.Add(glycanIon);
                 }
-                var aDecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass, aGlycan.Kind, glycanIons, true);
-                aDecoyGlycan.GlyId = aGlycan.GlyId;
-                allGlycans.Add(aDecoyGlycan);
+                var DecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass, aGlycan.Kind, glycanIons, true, aGlycan.Target.ToString(), aGlycan.Type);
+                DecoyGlycan.GlyId = aGlycan.GlyId;
+                allGlycans.Add(DecoyGlycan);
             }
             return allGlycans.OrderBy(p => p.Mass).ToArray();
         }
