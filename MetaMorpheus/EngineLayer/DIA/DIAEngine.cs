@@ -43,6 +43,7 @@ namespace EngineLayer.DIA
             foreach(var ms2Group in DIAScanWindowMap)
             {
                 allMs2Xics[ms2Group.Key] = diaParam.Ms2XicConstructor.GetAllXics(ms2Group.Value.ToArray());
+                diaParam.Ms2XicConstructor.XicSplineForAllXics(allMs2Xics[ms2Group.Key], commonParameters.MaxThreadsToUsePerFile);
             }
 
             //Precursor-fragment Grouping

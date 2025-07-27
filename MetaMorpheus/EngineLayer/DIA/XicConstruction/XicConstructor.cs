@@ -1,10 +1,13 @@
 ﻿using MassSpectrometry;
 using MzLibUtil;
+using Proteomics.AminoAcidPolymer;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace EngineLayer.DIA
 {
@@ -14,15 +17,34 @@ namespace EngineLayer.DIA
         public int MaxMissedScansAllowed { get; set; } 
         public double MaxPeakHalfWidth { get; set; }
         public int MinNumberOfPeaks { get; set; }
+        public XicSpline? XicSpline { get; set; }
 
-        public XicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks)
+        public XicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, XicSpline? xicSpline)
         {
             this.PeakFindingTolerance = peakFindingTolerance;
             MaxMissedScansAllowed = maxMissedScansAllowed;
             MaxPeakHalfWidth = maxPeakHalfWidth;
             MinNumberOfPeaks = minNumberOfPeaks;
+            XicSpline = xicSpline;
         }
 
         public abstract List<ExtractedIonChromatogram> GetAllXics(MsDataScan[] scans);
+
+        public void XicSplineForAllXics(List<ExtractedIonChromatogram> xics, int numberOfThreads)
+        {
+            if (XicSpline == null) return;
+            else
+            {
+                Parallel.ForEach(Partitioner.Create(0, xics.Count), new ParallelOptions { MaxDegreeOfParallelism = numberOfThreads },
+                (partitionRange, loopState) =>
+                {
+                    for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
+                    {
+                        var xic = xics[i];
+                        XicSpline.SetXicSplineXYData(xic);
+                    }
+                });
+            }
+        }
     }
 }

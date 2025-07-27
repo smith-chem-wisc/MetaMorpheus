@@ -16,8 +16,8 @@ namespace EngineLayer.DIA.XicConstruction
         public int MinCharge { get; set; }
         public int MaxCharge { get; set; }
         
-        public NeutralMassXicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks)
-    : base(peakFindingTolerance, maxMissedScansAllowed, maxPeakHalfWidth, minNumberOfPeaks)
+        public NeutralMassXicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, XicSpline xicSpline)
+    : base(peakFindingTolerance, maxMissedScansAllowed, maxPeakHalfWidth, minNumberOfPeaks, xicSpline)
         {
         }
 
