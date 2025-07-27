@@ -37,10 +37,32 @@ namespace EngineLayer.DIA
             var ms2Scans = dataFile.GetAllScansList().Where(s => s.MsnOrder == 2).ToArray();
             var DIAScanWindowMap = ConstructMs2Groups(ms2Scans);
 
-            //Get all MS1 XICs
-            var Ms1PeakIndexingEngine = new Dictionary<(double min, double max), IndexingEngine<IIndexedPeak>>();
+            //Get all MS1 and MS2 XICs
+            var ms1Xics = new List<ExtractedIonChromatogram>();
+            var allMs2Xics = new Dictionary<(double min, double max), List<ExtractedIonChromatogram>>();
+            foreach(var ms2Group in DIAScanWindowMap)
+            {
+                allMs2Xics[ms2Group.Key] = diaParam.Ms2XicConstructor.GetAllXics(ms2Group.Value.ToArray());
+            }
 
+            //Precursor-fragment Grouping
+            var allPfGroups = new List<PrecursorFragmentsGroup>();
+            foreach(var ms2Group in DIAScanWindowMap)
+            {
+                var pfGroups = diaParam.PfGroupingEngine.PrecursorFragmentGrouping(ms1Xics, allMs2Xics[ms2Group.Key]);
+                allPfGroups.AddRange(pfGroups);
+            }
+
+            //Convert pfGroups to pseudo MS2 scans
             var pseudoMs2Scans = new List<Ms2ScanWithSpecificMass>();
+            int pfGroupIndex = 1;
+            foreach (var pfGroup in allPfGroups)
+            {
+                pfGroup.PFgroupIndex = pfGroupIndex;
+                var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(pfGroup, diaParam.PseudoMs2ConstructionType, commonParameters, dataFile.FilePath);
+                pseudoMs2Scans.Add(pseudoScan);
+            }
+
             return pseudoMs2Scans;
         }
 
@@ -60,21 +82,6 @@ namespace EngineLayer.DIA
                 }
             }
             return DIAScanWindowMap;
-        }
-
-        public static List<ExtractedIonChromatogram> GetAllXics(MsDataScan[] scans, IndexingEngineType indexingEngineType, Tolerance peakFindingTolerance, int maxMissedScanAllowed, double maxRTRange, int numPeakThreshold, DeconvolutionParameters deconParam = null)
-        {
-            switch (indexingEngineType)
-            {
-                case IndexingEngineType.MzPeak:
-                    var mzPeakIndexingEngine = PeakIndexingEngine.InitializeIndexingEngine(scans);
-                    return mzPeakIndexingEngine.GetAllXics(peakFindingTolerance, maxMissedScanAllowed, maxRTRange, numPeakThreshold);
-                case IndexingEngineType.NeutralMass:
-                    var neutralMassIndexingEngine = MassIndexingEngine.InitializeMassIndexingEngine(scans, deconParam);
-                    return neutralMassIndexingEngine.GetAllXics(peakFindingTolerance, maxMissedScanAllowed, maxRTRange, numPeakThreshold);
-                default:
-                    throw new ArgumentException("Invalid indexing engine type specified.");
-            }
         }
     }
 }
