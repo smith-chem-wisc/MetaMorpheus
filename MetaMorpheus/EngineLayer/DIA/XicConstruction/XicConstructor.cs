@@ -19,7 +19,7 @@ namespace EngineLayer.DIA
         public int MinNumberOfPeaks { get; set; }
         public XicSpline? XicSpline { get; set; }
 
-        public XicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, XicSpline? xicSpline)
+        public XicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, XicSpline? xicSpline = null)
         {
             this.PeakFindingTolerance = peakFindingTolerance;
             MaxMissedScansAllowed = maxMissedScansAllowed;

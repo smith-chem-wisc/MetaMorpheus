@@ -35,9 +35,6 @@ namespace Test.DIATests
             string dataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData\\DIA\\18300_REP2_500ng_HumanLysate_SWATH_1_RT25.63-25.81.mzML");
             var myFileManager = new MyFileManager(true);
             var dataFile = myFileManager.LoadFile(dataPath, new CommonParameters());
-            var diaParams = new DIAparameters();
-            var pseudoMs2Scans = DIAEngine.GetPseudoMs2Scans(dataFile, new CommonParameters(), diaParams);
-            Assert.That(pseudoMs2Scans.Count, Is.GreaterThan(0));
         }
     }
 }

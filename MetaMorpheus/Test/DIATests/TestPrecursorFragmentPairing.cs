@@ -157,21 +157,23 @@ namespace Test
 
             //Find XICs of the ms1 and ms2 scans
             var deconParameters = new ClassicDeconvolutionParameters(1, 20, 4, 3);
-            var ms1PeakIndexingEngine = MassIndexingEngine.InitializeMassIndexingEngine(FakeMs1Scans, deconParameters);
-            var decon = Deconvoluter.Deconvolute(FakeMs1Scans[0], deconParameters);
-            var ms2PeakIndexingEngine = PeakIndexingEngine.InitializeIndexingEngine(fakeMs2Scans);
-            var ms1Xics = ms1PeakIndexingEngine.GetAllXics(new PpmTolerance(20), 2, 1, 3);
-            var ms2Xics = ms2PeakIndexingEngine.GetAllXics(new PpmTolerance(10), 2, 1, 3);
-            foreach(var precursor in ms1Xics)
+            var ms1XicConstructor = new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, deconParameters);
+            var ms2XicConstructor = new MzPeakXicConstructor(new PpmTolerance(10), 2, 1, 3);
+            var ms1Xics = ms1XicConstructor.GetAllXics(FakeMs1Scans);
+            var ms2Xics = ms2XicConstructor.GetAllXics(fakeMs2Scans);
+            var xicGroupingEngine = new XicGrouping(0.1f, 0.5, 0.5);
+            var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
+            //There should be two pfGroups, one for each precursor in FakeMs1Scans
+            Assert.That(allGroups.Count, Is.EqualTo(2));
+            foreach (var pfGroup in allGroups)
             {
-                var pfGroup = PrecursorFragmentsGroup.GroupFragmentsForOnePrecursor(precursor, ms2Xics, 0.1f, 0.5, 0.5);
                 //For each precursor XIC, half of the fragment XICs should be paired with it (which is 10 in this case)
                 Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(10));
                 //All the fragment XICs should have the same apex scan index as the precursor XIC
-                Assert.That(pfGroup.PFpairs.All(pf => pf.FragmentXic.ApexScanIndex == precursor.ApexScanIndex));
+                Assert.That(pfGroup.PFpairs.All(pf => pf.FragmentXic.ApexScanIndex == pf.PrecursorXic.ApexScanIndex));
             }
 
-            //If we set the fragments paired with the second precursor to have an XIC with an opposite trend, they would not be paired with the second precursor and half of the pfGroup should return null
+            //If we set the fragments paired with the second precursor to have an XIC with an opposite trend, they would not be paired with the second precursor and the pfGrouping would return null
             var fakeMs2Scans2 = new MsDataScan[10];
             double[] intensityMultipliers3 = { 0.1, 0.2, 0.3, 0.2, 0.1, 0.3, 0.2, 0.1, 0.2, 0.3 };
             for (int s = 0; s < fakeMs2Scans2.Length; s++)
@@ -181,12 +183,12 @@ namespace Test
                     polarity: Polarity.Positive, retentionTime: 1.01 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
                     mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1));
             }
-            var ms2PeakIndexingEngine2 = PeakIndexingEngine.InitializeIndexingEngine(fakeMs2Scans2);
-            var ms2Xics2 = ms2PeakIndexingEngine2.GetAllXics(new PpmTolerance(10), 2, 1, 3);
-            var pfGroup1 = PrecursorFragmentsGroup.GroupFragmentsForOnePrecursor(ms1Xics[0], ms2Xics2, 0.1f, 0.5, 0.5);
-            Assert.That(pfGroup1.PFpairs.Count, Is.EqualTo(10)); // no changes on the first precursor
-            var pfGroup2 = PrecursorFragmentsGroup.GroupFragmentsForOnePrecursor(ms1Xics[1], ms2Xics2, 0.1f, 0.5, 0.5);
-            Assert.That(pfGroup2 == null); //since all fragments associated with the second precursor are removed, the second pfGroup should return null
+            var ms2Xics2 = ms2XicConstructor.GetAllXics(fakeMs2Scans2);
+            var allGroups2 = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics2);
+            //Only the first precursor should have a pfGroup returned
+            Assert.That(allGroups2.Count, Is.EqualTo(1));
+            Assert.That(allGroups2[0].PFpairs.Count, Is.EqualTo(10));
+            Assert.That(allGroups2[0].PrecursorXic.ApexScanIndex, Is.EqualTo(2));
         }
     }
 }

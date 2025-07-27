@@ -156,7 +156,5 @@ namespace EngineLayer.DIA
 
             return scanWithprecursor;
         }
-
-        
     }
 }
