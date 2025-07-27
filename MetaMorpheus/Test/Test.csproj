@@ -235,6 +235,9 @@
     <None Update="TestData\DbForPrunedDb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\DIA\18300_REP2_500ng_HumanLysate_SWATH_1_RT25.63-25.81.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\DoubleProtease.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

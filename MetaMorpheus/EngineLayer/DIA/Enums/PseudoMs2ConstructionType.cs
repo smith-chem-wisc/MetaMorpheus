@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EngineLayer.DIA.Enums
+namespace EngineLayer.DIA
 {
     public enum PseudoMs2ConstructionType
     {
-        AveragedM,
+        MzPeak,
+        Mass,
     }
 }
