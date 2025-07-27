@@ -26,6 +26,26 @@ namespace EngineLayer.DIA
             Overlap = overlap;
         }
 
+        public static void SetPrecursorRankForPfPairs(List<PrecursorFragmentPair> allPfPairs)
+        {
+            var fragmentPairMap = new Dictionary<ExtractedIonChromatogram, List<PrecursorFragmentPair>>();
+            foreach (var pair in allPfPairs)
+            {
+                if (!fragmentPairMap.ContainsKey(pair.FragmentXic))
+                {
+                    fragmentPairMap[pair.FragmentXic] = new List<PrecursorFragmentPair>();
+                }
+                fragmentPairMap[pair.FragmentXic].Add(pair);
+            }
+            foreach (var fragmentXic in fragmentPairMap.Keys)
+            {
+                fragmentPairMap[fragmentXic].MaxBy(pf => pf.Correlation);
+                for (int i = 0; i < fragmentPairMap[fragmentXic].Count; i++)
+                {
+                    fragmentPairMap[fragmentXic][i].PrecursorRank = i + 1;
+                }
+            }
+        }
     }
 }
 

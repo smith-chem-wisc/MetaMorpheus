@@ -8,9 +8,17 @@ namespace EngineLayer.DIA
 {
     public class DIAparameters
     {
-        public DIAparameters()
+        public DIAAnalysisType DIAAnalysisType { get; set; } 
+        public XicConstructor XicConstructor { get; set; }
+        public PfGroupingEngine PfGroupingEngine { get; set; }
+        public PseudoMs2ConstructionType PseudoMs2ConstructionType { get; set; }
+
+        public DIAparameters(DIAAnalysisType diaAnalysisType, XicConstructor xicConstructor, PfGroupingEngine pfGroupingEngine, PseudoMs2ConstructionType pseudoMs2ConstructionType)
         {
-            // Default constructor
+            DIAAnalysisType = diaAnalysisType;
+            XicConstructor = xicConstructor;
+            PfGroupingEngine = pfGroupingEngine;
+            PseudoMs2ConstructionType = pseudoMs2ConstructionType;
         }
     }
 }

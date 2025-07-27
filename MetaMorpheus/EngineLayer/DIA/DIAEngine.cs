@@ -76,12 +76,5 @@ namespace EngineLayer.DIA
                     throw new ArgumentException("Invalid indexing engine type specified.");
             }
         }
-
-        public static List<PrecursorFragmentsGroup> GetAllPFGroupsInWindow(List<ExtractedIonChromatogram> precursorXics, List<ExtractedIonChromatogram> fragmentXics, DIAparameters diaParam)
-        {
-            return null;
-        }
-
-        
     }
 }

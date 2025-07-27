@@ -17,38 +17,13 @@ namespace EngineLayer.DIA
         public List<PrecursorFragmentPair> PFpairs { get; set; }
         public int PFgroupIndex { get; set; } 
 
-        public PrecursorFragmentsGroup(ExtractedIonChromatogram precursorXic, List<PrecursorFragmentPair> pfPairs = null)
+        public PrecursorFragmentsGroup(ExtractedIonChromatogram precursorXic, List<PrecursorFragmentPair> pfPairs)
         {
             PrecursorXic = precursorXic;
-            PFpairs = pfPairs ?? new List<PrecursorFragmentPair>();
+            PFpairs = pfPairs;
         }
 
-        public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, List<ExtractedIonChromatogram> fragmentXics, float apexRtTolerance, double overlapThreshold, double correlationThreshold)
-        {
-            var pfPairs = new List<PrecursorFragmentPair>();
-            foreach (var fragmentXic in fragmentXics)
-            {
-                if (Math.Abs(fragmentXic.ApexRT - precursorXic.ApexRT) <= apexRtTolerance)
-                {
-                    double overlap = CalculateXicOverlapRatio(precursorXic, fragmentXic);
-                    if (overlap >= overlapThreshold)
-                    {
-                        double correlation = CalculateXicCorrelationXYData(precursorXic, fragmentXic);
-                        if (correlation >= correlationThreshold)
-                        {
-                            var pfPair = new PrecursorFragmentPair(precursorXic, fragmentXic, correlation, overlap);
-                            pfPairs.Add(pfPair);
-                        }
-                    }
-                }
-            }
-            if (pfPairs.Count > 0)
-            {
-                var pfGroup = new PrecursorFragmentsGroup(precursorXic, pfPairs);
-                return pfGroup;
-            }
-            return null;
-        }
+        
 
         public static double CalculateXicCorrelationXYData(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
         {
@@ -181,5 +156,7 @@ namespace EngineLayer.DIA
 
             return scanWithprecursor;
         }
+
+        
     }
 }
