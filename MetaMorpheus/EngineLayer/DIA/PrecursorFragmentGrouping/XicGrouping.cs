@@ -4,9 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MassSpectrometry;
-using System;
-using System.Collections.Generic;
-using System.Security.Policy;
+using System.Collections.Concurrent;
 
 namespace EngineLayer.DIA
 {
@@ -29,16 +27,23 @@ namespace EngineLayer.DIA
 
         public override List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments)
         {
-            var precursorGroups = new List<PrecursorFragmentsGroup>();
-            foreach (var precursorXic in precursors)
-            {
-                var pfGroup = GroupFragmentsForOnePrecursor(precursorXic, fragments, ApexRTTolerance, OverlapThreshold, CorrelationThreshold, MinFragmentCountForPfGroup);
-                if (pfGroup != null)
+            var pfGroups = new List<PrecursorFragmentsGroup>();
+
+            Parallel.ForEach(Partitioner.Create(0, precursors.Count), new ParallelOptions { MaxDegreeOfParallelism = MaxThreadsForGrouping },
+                (partitionRange, loopState) =>
                 {
-                    precursorGroups.Add(pfGroup);
-                }
-            }
-            return precursorGroups;
+                    for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
+                    {
+                        var precursor = precursors[i];
+                        var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragments, ApexRTTolerance, OverlapThreshold, CorrelationThreshold, MinFragmentCountForPfGroup);
+                        if (pfGroup != null)
+                        {
+                            lock (pfGroups)
+                                pfGroups.Add(pfGroup);
+                        }
+                    }
+                });
+            return pfGroups;
         }
 
         public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, List<ExtractedIonChromatogram> fragmentXics, float apexRtTolerance, double overlapThreshold, double correlationThreshold, int minFragmentCountForGrouping)
