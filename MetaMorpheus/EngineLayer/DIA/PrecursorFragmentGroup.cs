@@ -1,4 +1,5 @@
-﻿using MassSpectrometry;
+﻿using Chemistry;
+using MassSpectrometry;
 using MathNet.Numerics.Statistics;
 using MzLibUtil;
 using System;
@@ -153,30 +154,32 @@ namespace EngineLayer.DIA
             return overlap;
         }
 
-        //public static Ms2ScanWithSpecificMass ConstructNewMs2Scans(PrecursorFragmentsGroup pfGroup, CommonParameters commonParameters, PseudoMs2ConstructionType pseudoMs2Type, string dataFilePath)
-        //{
-        //    switch (pseudoMs2Type)
-        //    {
-        //        case:
-        //            PseudoMs2ConstructionType.mzPeak:
-        //            return Ms2ScanWithSpecificMass.GetPseudoMs2Scan_mzPeak(pfGroup, commonParameters, dataFilePath);
-        //        default: return null;
-        //    }
-        //}
+        public static Ms2ScanWithSpecificMass GetPseudoMs2ScanFromPfGroup(PrecursorFragmentsGroup pfGroup, PseudoMs2ConstructionType pseudoMs2ConstructionType, CommonParameters commonParameters, string dataFilePath)
+        {
+            pfGroup.PFpairs.Sort((a, b) => b.FragmentXic.AveragedM.CompareTo(a.FragmentXic.AveragedM));
+            var mzs = pfGroup.PFpairs.Select(pf => pf.FragmentXic.AveragedM).ToArray();
+            var intensities = pfGroup.PFpairs.Select(pf => pf.FragmentXic.Peaks.Max(p => (double)p.Intensity)).ToArray();
+            var newMs2Scan = new MsDataScan(new MzSpectrum(mzs, intensities, false), pfGroup.PFgroupIndex, 2, true, Polarity.Positive, pfGroup.PrecursorXic.ApexRT, new MzRange(mzs.Min(), mzs.Max()), null, MZAnalyzerType.Unknown, intensities.Sum(), null, null, null, oneBasedPrecursorScanNumber: pfGroup.PFgroupIndex);
 
-        //public static Ms2ScanWithSpecificMass GetPseudoMs2Scan_averagedM(PrecursorFragmentsGroup pfGroup, CommonParameters commonParameters, string dataFilePath)
-        //{
-        //    var mzs = pfGroup.PFpairs.Select(pf => pf.FragmentXic.AveragedM).ToArray();
-        //    var intensities = pfGroup.PFpairs.Select(pf => pf.FragmentXic.AveragedM).ToArray();
-        //    var spectrum = new MzSpectrum(mzs, intensities, false);
-        //    var newMs2Scan = new MsDataScan(spectrum, pfGroup.PFgroupIndex, 2, true, Polarity.Positive, pfGroup.PrecursorXic.ApexRT, new MzRange(mzs.Min(), mzs.Max()), null, MZAnalyzerType.Orbitrap, intensities.Sum(), null, null, null, oneBasedPrecursorScanNumber: pfGroup.PrecursorXic.Index);
-        //    var neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(newMs2Scan, commonParameters);
-        //    var charge = pfGroup.PrecursorXic.Charge;
-        //    var monoMz = pfGroup.PrecursorXic.MonoisotopicMass.ToMz(charge);
-        //    Ms2ScanWithSpecificMass scanWithprecursor = new Ms2ScanWithSpecificMass(newMs2Scan, monoMz, charge, dataFilePath,
-        //        commonParameters, neutralExperimentalFragments);
+            IsotopicEnvelope[] neutralExperimentalFragments = null;
+            switch (pseudoMs2ConstructionType)
+            {
+                case PseudoMs2ConstructionType.MzPeak:
+                    neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(newMs2Scan, commonParameters);
+                    break;
+                case PseudoMs2ConstructionType.Mass:
+                    neutralExperimentalFragments = pfGroup.PFpairs.Select(pf => new IsotopicEnvelope(1,
+                            new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.AveragedM, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
+                    break;
+                default:
+                    throw new ArgumentException("Invalid pseudo MS2 construction type specified.");
+            }
+            var charge = pfGroup.PrecursorXic.Peaks.Cast<IndexedMass>().First().Charge;
+            var monoMz = pfGroup.PrecursorXic.Peaks.Cast<IndexedMass>().First().M.ToMz(charge);
+            Ms2ScanWithSpecificMass scanWithprecursor = new Ms2ScanWithSpecificMass(newMs2Scan, monoMz, charge, dataFilePath,
+                commonParameters, neutralExperimentalFragments);
 
-        //    return scanWithprecursor;
-        //}
+            return scanWithprecursor;
+        }
     }
 }

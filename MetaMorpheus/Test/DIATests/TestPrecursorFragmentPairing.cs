@@ -15,6 +15,34 @@ namespace Test
 {
     public class TestPrecursorFragmentPairing
     {
+        public static MsDataScan[] FakeMs1Scans { get; set; }
+        public static IsotopicDistribution Dist { get; set; }
+        public static double Intensity { get; set; } 
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            string peptide = "PEPTIDE";
+            Intensity = 1e6;
+            ChemicalFormula cf = new Proteomics.AminoAcidPolymer.Peptide(peptide).GetChemicalFormula();
+            Dist = IsotopicDistribution.GetDistribution(cf, 0.125, 1e-8);
+
+            //Create MS1 scans with two precursors that do not have any overlap in their retention time; one of the precursors has an apex RT at the third scan, the other at the eighth scan
+            FakeMs1Scans = new MsDataScan[10];
+            double[] intensityMultipliers = { 1, 2, 3, 2, 1, 1, 2, 3, 2, 1 };
+            var massArray1 = Dist.Masses.SelectMany(v => new List<double> { v.ToMz(1) }).ToArray();
+            var massArray2 = Dist.Masses.SelectMany(v => new List<double> { (v + 10).ToMz(1) }).ToArray();
+            double[][] masses = Enumerable.Repeat(massArray1, 5).Concat(Enumerable.Repeat(massArray2, 5)).ToArray();
+
+            for (int s = 0; s < FakeMs1Scans.Length; s++)
+            {
+                double[] intensities = Dist.Intensities.SelectMany(v => new List<double> { v * Intensity * intensityMultipliers[s] }).ToArray();
+                FakeMs1Scans[s] = new MsDataScan(massSpectrum: new MzSpectrum(masses[s], intensities, false), oneBasedScanNumber: s + 1, msnOrder: 1, isCentroid: true,
+                    polarity: Polarity.Positive, retentionTime: 1.0 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
+                    mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1));
+            }
+        }
+
         [Test]
         public static void TestCorrelationCalculation()
         {
@@ -113,44 +141,26 @@ namespace Test
         [Test]
         public static void PrecursorFragmentsGroupTest()
         {
-            string peptide = "PEPTIDE";
-            double intensity = 1e6;
-            ChemicalFormula cf = new Proteomics.AminoAcidPolymer.Peptide(peptide).GetChemicalFormula();
-            var dist = IsotopicDistribution.GetDistribution(cf, 0.125, 1e-8);
-
-            //Create MS1 scans with two precursors that do not have any overlap in their retention time; one of the precursors has an apex RT at the third scan, the other at the eighth scan
-            var fakeMs1Scans = new MsDataScan[10];
-            double[] intensityMultipliers = { 1, 2, 3, 2, 1, 1, 2, 3, 2, 1 };
-            var massArray1 = dist.Masses.SelectMany(v => new List<double> { v.ToMz(1) }).ToArray();
-            var massArray2 = dist.Masses.SelectMany(v => new List<double> { (v + 10).ToMz(1) }).ToArray();
-            double[][] masses = Enumerable.Repeat(massArray1, 5).Concat(Enumerable.Repeat(massArray2, 5)).ToArray();
-
-            for (int s = 0; s < fakeMs1Scans.Length; s++)
-            {
-                double[] intensities = dist.Intensities.SelectMany(v => new List<double> { intensity * intensityMultipliers[s] }).ToArray();
-                fakeMs1Scans[s] = new MsDataScan(massSpectrum: new MzSpectrum(masses[s], intensities, false), oneBasedScanNumber: s + 1, msnOrder: 1, isCentroid: true,
-                    polarity: Polarity.Positive, retentionTime: 1.0 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
-                    mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1));
-            }
-
-            //Create MS2 scans with two sets of fragments each aligning perfectly with one of the precursors in the MS1 scans
+            //Create MS2 scans with two sets of fragments each aligning perfectly with one of the precursors in FakeMs1Scans
             var fakeMs2Scans = new MsDataScan[10];
             double[] intensityMultipliers2 = { 0.1, 0.2, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.2, 0.1 };
-            var fragArray1 = dist.Masses.SelectMany(v => new List<double> { v/2.0.ToMz(1) }).ToArray();
-            var fragArray2 = dist.Masses.SelectMany(v => new List<double> { (v + 10)/2.0.ToMz(1) }).ToArray();
+            var fragArray1 = Dist.Masses.SelectMany(v => new List<double> { v/2.0.ToMz(1) }).ToArray();
+            var fragArray2 = Dist.Masses.SelectMany(v => new List<double> { (v + 10)/2.0.ToMz(1) }).ToArray();
             double[][] frags = Enumerable.Repeat(fragArray1, 5).Concat(Enumerable.Repeat(fragArray2, 5)).ToArray();
             for (int s = 0; s < fakeMs2Scans.Length; s++)
             {
-                double[] intensities = dist.Intensities.SelectMany(v => new List<double> { intensity * intensityMultipliers2[s]}).ToArray();
+                double[] intensities = Dist.Intensities.SelectMany(v => new List<double> { v * Intensity * intensityMultipliers2[s]}).ToArray();
                 fakeMs2Scans[s] = new MsDataScan(massSpectrum: new MzSpectrum(frags[s], intensities, false), oneBasedScanNumber: s + 1, msnOrder: 2, isCentroid: true,
                     polarity: Polarity.Positive, retentionTime: 1.01 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
                     mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1));
             }
 
             //Find XICs of the ms1 and ms2 scans
-            var ms1PeakIndexingEngine = PeakIndexingEngine.InitializeIndexingEngine(fakeMs1Scans);
+            var deconParameters = new ClassicDeconvolutionParameters(1, 20, 4, 3);
+            var ms1PeakIndexingEngine = MassIndexingEngine.InitializeMassIndexingEngine(FakeMs1Scans, deconParameters);
+            var decon = Deconvoluter.Deconvolute(FakeMs1Scans[0], deconParameters);
             var ms2PeakIndexingEngine = PeakIndexingEngine.InitializeIndexingEngine(fakeMs2Scans);
-            var ms1Xics = ms1PeakIndexingEngine.GetAllXics(new PpmTolerance(10), 2, 1, 3);
+            var ms1Xics = ms1PeakIndexingEngine.GetAllXics(new PpmTolerance(20), 2, 1, 3);
             var ms2Xics = ms2PeakIndexingEngine.GetAllXics(new PpmTolerance(10), 2, 1, 3);
             foreach(var precursor in ms1Xics)
             {
@@ -166,26 +176,17 @@ namespace Test
             double[] intensityMultipliers3 = { 0.1, 0.2, 0.3, 0.2, 0.1, 0.3, 0.2, 0.1, 0.2, 0.3 };
             for (int s = 0; s < fakeMs2Scans2.Length; s++)
             {
-                double[] intensities = dist.Intensities.SelectMany(v => new List<double> { intensity * intensityMultipliers3[s]}).ToArray();
+                double[] intensities = Dist.Intensities.SelectMany(v => new List<double> { v * Intensity * intensityMultipliers3[s]}).ToArray();
                 fakeMs2Scans2[s] = new MsDataScan(massSpectrum: new MzSpectrum(frags[s], intensities, false), oneBasedScanNumber: s + 1, msnOrder: 2, isCentroid: true,
                     polarity: Polarity.Positive, retentionTime: 1.01 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
                     mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1));
             }
             var ms2PeakIndexingEngine2 = PeakIndexingEngine.InitializeIndexingEngine(fakeMs2Scans2);
             var ms2Xics2 = ms2PeakIndexingEngine2.GetAllXics(new PpmTolerance(10), 2, 1, 3);
-            foreach (var precursor in ms1Xics)
-            {
-                var pfGroup = PrecursorFragmentsGroup.GroupFragmentsForOnePrecursor(precursor, ms2Xics2, 0.1f, 0.5, 0.5);
-                if (precursor.ApexScanIndex < 5) //first precursor should still have the same fragment XICs paired with it
-                {
-                    Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(10));
-                    Assert.That(pfGroup.PFpairs.All(pf => pf.FragmentXic.ApexScanIndex == precursor.ApexScanIndex));
-                }
-                else //second precursor
-                {
-                    Assert.That(pfGroup == null);
-                }
-            }
+            var pfGroup1 = PrecursorFragmentsGroup.GroupFragmentsForOnePrecursor(ms1Xics[0], ms2Xics2, 0.1f, 0.5, 0.5);
+            Assert.That(pfGroup1.PFpairs.Count, Is.EqualTo(10)); // no changes on the first precursor
+            var pfGroup2 = PrecursorFragmentsGroup.GroupFragmentsForOnePrecursor(ms1Xics[1], ms2Xics2, 0.1f, 0.5, 0.5);
+            Assert.That(pfGroup2 == null); //since all fragments associated with the second precursor are removed, the second pfGroup should return null
         }
     }
 }
