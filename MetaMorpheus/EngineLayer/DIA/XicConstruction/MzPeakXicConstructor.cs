@@ -16,7 +16,7 @@ namespace EngineLayer.DIA
         {
         }
 
-        public override List<ExtractedIonChromatogram> GetAllXics(MsDataScan[] scans)
+        public override List<ExtractedIonChromatogram> GetAllXics(MsDataScan[] scans, MzRange isolationRange = null)
         {
             var mzPeakIndexingEngine = PeakIndexingEngine.InitializeIndexingEngine(scans);
             return mzPeakIndexingEngine.GetAllXics(PeakFindingTolerance, MaxMissedScansAllowed, MaxPeakHalfWidth, MinNumberOfPeaks);

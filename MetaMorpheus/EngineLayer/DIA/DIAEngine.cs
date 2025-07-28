@@ -17,11 +17,42 @@ namespace EngineLayer.DIA
 {
     public class DIAEngine : MetaMorpheusEngine
     {
-        public DIAparameters DIAparameters { get; set; } 
+        public MsDataFile DataFile { get; set; }
+        public DIAparameters DIAparams { get; set; } 
         public List<Ms2ScanWithSpecificMass> PseudoMs2Scans { get; set; } 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
+            //read in scans
+            var ms1Scans = DataFile.GetMS1Scans().ToArray();
+            var ms2Scans = DataFile.GetAllScansList().Where(s => s.MsnOrder == 2).ToArray();
+            var DIAScanWindowMap = ConstructMs2Groups(ms2Scans);
 
+            //Get all MS1 and MS2 XICs
+            var allMs1Xics = new Dictionary<(double min, double max), List<ExtractedIonChromatogram>>();
+            var allMs2Xics = new Dictionary<(double min, double max), List<ExtractedIonChromatogram>>();
+            foreach (var ms2Group in DIAScanWindowMap)
+            {
+                allMs1Xics[ms2Group.Key] = DIAparams.Ms1XicConstructor.GetAllXics(ms1Scans, new MzRange(ms2Group.Key.min, ms2Group.Key.max));
+                allMs2Xics[ms2Group.Key] = DIAparams.Ms2XicConstructor.GetAllXics(ms2Group.Value.ToArray());
+            }
+
+            //Precursor-fragment Grouping
+            var allPfGroups = new List<PrecursorFragmentsGroup>();
+            foreach (var ms2Group in DIAScanWindowMap.Keys)
+            {
+                var pfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics[ms2Group], allMs2Xics[ms2Group]);
+                allPfGroups.AddRange(pfGroups);
+            }
+
+            //Convert pfGroups to pseudo MS2 scans
+            PseudoMs2Scans = new List<Ms2ScanWithSpecificMass>();
+            int pfGroupIndex = 1;
+            foreach (var pfGroup in allPfGroups)
+            {
+                pfGroup.PFgroupIndex = pfGroupIndex;
+                var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(pfGroup, DIAparams.PseudoMs2ConstructionType, CommonParameters, DataFile.FilePath);
+                PseudoMs2Scans.Add(pseudoScan);
+            }
             return new MetaMorpheusEngineResults(this);
         }
 

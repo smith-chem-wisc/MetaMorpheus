@@ -11,23 +11,21 @@ namespace EngineLayer.DIA
     public class NeutralMassXicConstructor : XicConstructor
     {
         public DeconvolutionParameters DeconParameters { get; set; } 
-        public MzRange IsolationRange { get; set; } 
         public double MinMass { get; set; } 
         public int MinCharge { get; set; }
 
-        public NeutralMassXicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, DeconvolutionParameters deconParameters, double minMass = 0, int minCharge = 1, MzRange isolationRange = null, XicSpline? xicSpline = null)
+        public NeutralMassXicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, DeconvolutionParameters deconParameters, double minMass = 0, int minCharge = 1, XicSpline? xicSpline = null)
     : base(peakFindingTolerance, maxMissedScansAllowed, maxPeakHalfWidth, minNumberOfPeaks, xicSpline)
         {
             DeconParameters = deconParameters;
-            IsolationRange = isolationRange;
             MinMass = minMass;
             MinCharge = minCharge;
         }
 
-        public override List<ExtractedIonChromatogram> GetAllXics(MsDataScan[] scans)
+        public override List<ExtractedIonChromatogram> GetAllXics(MsDataScan[] scans, MzRange isolationRange = null)
         {
             var neutralMassIndexingEngine = new MassIndexingEngine();
-            if (neutralMassIndexingEngine.IndexPeaks(scans, DeconParameters, IsolationRange, MinMass, MinCharge))
+            if (neutralMassIndexingEngine.IndexPeaks(scans, DeconParameters, isolationRange, MinMass, MinCharge))
             {
                 return neutralMassIndexingEngine.GetAllXics(PeakFindingTolerance, MaxMissedScansAllowed, MaxPeakHalfWidth, MinNumberOfPeaks);
             }
