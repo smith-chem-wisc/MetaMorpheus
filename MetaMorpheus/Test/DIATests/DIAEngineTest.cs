@@ -142,6 +142,7 @@ namespace Test.DIATests
             var xicGroupingEngine = new XicGrouping(0.1f, 0.5, 0.5);
             var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
             var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.MzPeak, new CommonParameters(), "test");
+
             //The precursor information should match with PrecursorDist
             Assert.That(pseudoScan.PrecursorCharge, Is.EqualTo(1));
             Assert.That(pseudoScan.PrecursorMass, Is.EqualTo(preDist.Masses.First()).Within(0.001));
@@ -156,6 +157,7 @@ namespace Test.DIATests
             ms2Xics = ms1XicConstructor.GetAllXics(fakeaMs2Scans);
             allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
             pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.Mass, new CommonParameters(), "test");
+
             //The precursor information should still match
             Assert.That(pseudoScan.PrecursorCharge, Is.EqualTo(1));
             Assert.That(pseudoScan.PrecursorMass, Is.EqualTo(preDist.Masses.First()).Within(0.001));
@@ -164,6 +166,12 @@ namespace Test.DIATests
             Assert.That(pseudoScan.TheScan.MassSpectrum.XArray.Length, Is.EqualTo(1));
             Assert.That(pseudoScan.ExperimentalFragments.Count(), Is.EqualTo(1));
             Assert.That(pseudoScan.ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(fragDist.Masses.First()).Within(0.001));
+        }
+
+        [Test]
+        public static void TestDIAEngine()
+        {
+            
         }
     }
 }
