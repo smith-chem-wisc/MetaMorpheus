@@ -10,13 +10,13 @@ using EngineLayer;
 using TaskLayer;
 using System.IO;
 using Chemistry;
-using System.Security.Cryptography.X509Certificates;
+using Readers;
 
 namespace Test.DIATests
 {
     public class DIAEngineTest
     {
-        public static MsDataScan[] GetFakeScans(string peptideSequence, double[] intensityMultipliers, double intensity, double retentionTimeStart, int msLevel, out IsotopicDistribution isotopicDistribution)
+        public static MsDataScan[] GetSimpleFakeScans(string peptideSequence,  double[] intensityMultipliers, double intensity, double retentionTimeStart, int msLevel, out IsotopicDistribution isotopicDistribution)
         {
             ChemicalFormula cf = new Proteomics.AminoAcidPolymer.Peptide(peptideSequence).GetChemicalFormula();
             isotopicDistribution = IsotopicDistribution.GetDistribution(cf, 0.125, 1e-4);
@@ -52,8 +52,8 @@ namespace Test.DIATests
         {
             //Test Xic construction with mass indexing on fake scans which contain two different masses
             double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
-            var fakeScans1 = GetFakeScans("PEPTIDE", intensityMultipliers, 1e6, 1.0, 1, out IsotopicDistribution preDist1);
-            var fakeScans2 = GetFakeScans("PEPTIDEP", intensityMultipliers, 1e6, 1.0 + 0.5, 1, out IsotopicDistribution preDist2);
+            var fakeScans1 = GetSimpleFakeScans("PEPTIDE", intensityMultipliers, 1e6, 1.0, 1, out IsotopicDistribution preDist1);
+            var fakeScans2 = GetSimpleFakeScans("PEPTIDEP", intensityMultipliers, 1e6, 1.0 + 0.5, 1, out IsotopicDistribution preDist2);
             var fakeScans = fakeScans1.Concat(fakeScans2).ToArray();
 
             var deconParameters = new ClassicDeconvolutionParameters(1, 20, 4, 3);
@@ -92,8 +92,8 @@ namespace Test.DIATests
         {
             //Create MS1 scans with two precursors that do not have any overlap in their retention time
             double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
-            var fakeaMs1Scans1 = GetFakeScans("PEPTIDE", intensityMultipliers, 1e6, 1.0, 1, out IsotopicDistribution preDist1);
-            var fakeMs1Scans2 = GetFakeScans("PEPTIDEP", intensityMultipliers, 1e6, 1.0 + 0.5, 1, out IsotopicDistribution preDist2);
+            var fakeaMs1Scans1 = GetSimpleFakeScans("PEPTIDE", intensityMultipliers, 1e6, 1.0, 1, out IsotopicDistribution preDist1);
+            var fakeMs1Scans2 = GetSimpleFakeScans("PEPTIDEP", intensityMultipliers, 1e6, 1.0 + 0.5, 1, out IsotopicDistribution preDist2);
             var fakeMs1Scans = fakeaMs1Scans1.Concat(fakeMs1Scans2).ToArray();
 
             //construct all ms1 xics using mass indexing
@@ -102,8 +102,8 @@ namespace Test.DIATests
             var ms1Xics = massXicConstructor.GetAllXics(fakeMs1Scans);
 
             //Create MS2 scans with two sets of fragments each aligning perfectly with one of the precursors in MS1 scans
-            var fakeaMs2Scans1 = GetFakeScans("PEP", intensityMultipliers, 1e6, 1.0, 2, out IsotopicDistribution fragDist1);
-            var fakeMs2Scans2 = GetFakeScans("TIDE", intensityMultipliers, 1e6, 1.0 + 0.5, 2, out IsotopicDistribution fragDist2);
+            var fakeaMs2Scans1 = GetSimpleFakeScans("PEP", intensityMultipliers, 1e6, 1.0, 2, out IsotopicDistribution fragDist1);
+            var fakeMs2Scans2 = GetSimpleFakeScans("TIDE", intensityMultipliers, 1e6, 1.0 + 0.5, 2, out IsotopicDistribution fragDist2);
             var fakeMs2Scans = fakeaMs2Scans1.Concat(fakeMs2Scans2).ToArray();
 
             //construct all ms2 xics using mz peak indexing
@@ -129,8 +129,8 @@ namespace Test.DIATests
         {
             //Make fake MS1 and MS2 scans
             double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
-            var fakeaMs1Scans = GetFakeScans("PEPTIDE", intensityMultipliers, 1e6, 1.0, 1, out IsotopicDistribution preDist);
-            var fakeaMs2Scans = GetFakeScans("PEP", intensityMultipliers, 1e6, 1.0, 2, out IsotopicDistribution fragDist);
+            var fakeaMs1Scans = GetSimpleFakeScans("PEPTIDE", intensityMultipliers, 1e6, 1.0, 1, out IsotopicDistribution preDist);
+            var fakeaMs2Scans = GetSimpleFakeScans("PEP", intensityMultipliers, 1e6, 1.0, 2, out IsotopicDistribution fragDist);
 
             var deconParameters = new ClassicDeconvolutionParameters(1, 20, 4, 3);
             var ms1XicConstructor = new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, deconParameters);
@@ -171,7 +171,65 @@ namespace Test.DIATests
         [Test]
         public static void TestDIAEngine()
         {
-            
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DIATests");
+            var fakeFilePath = Path.Combine(outputFolder, "fakeDIAData.mzML");
+
+            //Create fake MS1 and MS2 scans
+            int numberOfScansPerCycle = 3;
+            string precursorSequence = "PEPTIDEPEPTIDE";
+            double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
+            ChemicalFormula cf = new Proteomics.AminoAcidPolymer.Peptide(precursorSequence).GetChemicalFormula();
+            var preDist = IsotopicDistribution.GetDistribution(cf, 0.125, 1e-4);
+            var fakeMs1Scans = new MsDataScan[intensityMultipliers.Length];
+            int oneBasedScanNumber = 1;
+            for (int s = 0; s < fakeMs1Scans.Length; s++)
+            {
+                double[] mzs = preDist.Masses.SelectMany(v => new List<double> { v.ToMz(3) }).Concat(preDist.Masses.SelectMany(v => new List<double> { v.ToMz(2) })).ToArray();
+                double[] intensities = preDist.Intensities.Select(v => v * 1e6 * intensityMultipliers[s]).Concat(preDist.Intensities.Select(v => v * 1e6 * intensityMultipliers[s])).ToArray();
+                fakeMs1Scans[s] = new MsDataScan(massSpectrum: new MzSpectrum(mzs, intensities, false), oneBasedScanNumber: oneBasedScanNumber, msnOrder: 1, isCentroid: true,
+                    polarity: Polarity.Positive, retentionTime: 1.0 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
+                    mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1));
+                oneBasedScanNumber += numberOfScansPerCycle; // increment by 3 for each MS1 scan to simulate a cycle
+            }
+
+            var ms2ScanGroup1 = new MsDataScan[intensityMultipliers.Length];
+            string fragSequence = "PEPTIDE";
+            ChemicalFormula cf2 = new Proteomics.AminoAcidPolymer.Peptide(fragSequence).GetChemicalFormula();
+            var fragDist = IsotopicDistribution.GetDistribution(cf2, 0.125, 1e-4);
+            oneBasedScanNumber = 2; 
+            for (int s = 0; s < ms2ScanGroup1.Length; s++)
+            {
+                double[] mzs = fragDist.Masses.SelectMany(v => new List<double> { v.ToMz(2) }).ToArray();
+                double[] intensities = fragDist.Intensities.Select(v => v * 1e5 * intensityMultipliers[s]).ToArray();
+                ms2ScanGroup1[s] = new MsDataScan(massSpectrum: new MzSpectrum(mzs, intensities, false), oneBasedScanNumber: oneBasedScanNumber, msnOrder: 2, isCentroid: true,
+                    polarity: Polarity.Positive, retentionTime: 1.0 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
+                    mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1), isolationMZ:preDist.Masses.First().ToMz(3), isolationWidth: 5, oneBasedPrecursorScanNumber: oneBasedScanNumber - 1);
+                oneBasedScanNumber += numberOfScansPerCycle; // increment by 3 for each MS2 scan to simulate a cycle
+            }
+
+            var ms2ScanGroup2 = new MsDataScan[intensityMultipliers.Length];
+            oneBasedScanNumber = 3; 
+            for (int s = 0; s < ms2ScanGroup1.Length; s++)
+            {
+                double[] mzs = fragDist.Masses.SelectMany(v => new List<double> { v.ToMz(1) }).ToArray();
+                double[] intensities = fragDist.Intensities.Select(v => v * 1e5 * intensityMultipliers[s]).ToArray();
+                ms2ScanGroup2[s] = new MsDataScan(massSpectrum: new MzSpectrum(mzs, intensities, false), oneBasedScanNumber: oneBasedScanNumber, msnOrder: 2, isCentroid: true,
+                    polarity: Polarity.Positive, retentionTime: 1.0 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
+                    mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1), isolationMZ: preDist.Masses.First().ToMz(2), isolationWidth: 5, oneBasedPrecursorScanNumber: oneBasedScanNumber - 2);
+                oneBasedScanNumber += numberOfScansPerCycle;
+            }
+
+            var allScans = new MsDataScan[intensityMultipliers.Length * numberOfScansPerCycle];
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                allScans[numberOfScansPerCycle * i] = fakeMs1Scans[i]; 
+                allScans[numberOfScansPerCycle * i + 1] = ms2ScanGroup1[i]; 
+                allScans[numberOfScansPerCycle * i + 2] = ms2ScanGroup2[i];
+            }
+
+            //SourceFile genericSourceFile = new SourceFile("no nativeID format", "mzML format", null, null, null);
+            //GenericMsDataFile genericMsFile = new GenericMsDataFile(allScans, genericSourceFile);
+            //genericMsFile.ExportAsMzML(fakeFilePath, false);
         }
     }
 }

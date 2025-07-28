@@ -167,10 +167,12 @@ namespace Test
             //all and only the Xics in matchedFragXics should be grouped with the ms1 XIC, and there are 5 of them
             Assert.That(pfGroup, Is.Not.Null);
             Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(5));
-            //check that all fragment XICs grouped are from matchedFragXics
+            //check that all fragment XICs grouped are from matchedFragXics, and they all should have perfect correlation and overlap with the precursor XIC
             foreach (var pfPair in pfGroup.PFpairs)
             {
                 Assert.That(matchedFragXics.Contains(pfPair.FragmentXic));
+                Assert.That(pfPair.Correlation, Is.EqualTo(1.0).Within(1e-6));
+                Assert.That(pfPair.Overlap, Is.EqualTo(1.0).Within(1e-6));
             }
 
             //perform XicGrouping with apexTolerance 0.2f, overlap threshold 0.5, correlation threshold 0.5, and minimum number of fragment XICs 10; now there should be no groups returned because only 5 fragment XICs are in the group
