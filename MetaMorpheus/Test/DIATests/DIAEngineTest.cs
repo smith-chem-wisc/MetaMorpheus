@@ -160,7 +160,7 @@ namespace Test.DIATests
             Assert.That(pseudoScan.PrecursorCharge, Is.EqualTo(1));
             Assert.That(pseudoScan.PrecursorMass, Is.EqualTo(preDist.Masses.First()).Within(0.001));
             Assert.That(pseudoScan.PrecursorMonoisotopicPeakMz, Is.EqualTo(preDist.Masses.First().ToMz(1)).Within(0.01));
-            //Because ms2Xics are now in neutral mass space, there should be only one fragment paired with the precursor
+            //Because ms2Xics are now in neutral mass space, there should be only one "peak" in the pseudo spectrum
             Assert.That(pseudoScan.TheScan.MassSpectrum.XArray.Length, Is.EqualTo(1));
             Assert.That(pseudoScan.ExperimentalFragments.Count(), Is.EqualTo(1));
             Assert.That(pseudoScan.ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(fragDist.Masses.First()).Within(0.001));

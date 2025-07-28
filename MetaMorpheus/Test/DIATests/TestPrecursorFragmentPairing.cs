@@ -18,55 +18,7 @@ using Omics.Fragmentation;
 namespace Test
 {
     public class TestPrecursorFragmentPairing
-    {
-        public static MsDataScan[] FakeMs1Scans { get; set; }
-        public static MsDataScan[] FakeMs2Scans { get; set; }
-        public static IsotopicDistribution PrecursorDist { get; set; }
-        public static IsotopicDistribution FragDist { get; set; }
-        public static double Intensity { get; set; } 
-
-        [OneTimeSetUp]
-        public void OneTimeSetup()
-        {
-            string peptide = "PEPTIDE";
-            Intensity = 1e6;
-            ChemicalFormula cf = new Proteomics.AminoAcidPolymer.Peptide(peptide).GetChemicalFormula();
-            PrecursorDist = IsotopicDistribution.GetDistribution(cf, 0.125, 1e-8);
-
-            string fakeFrag1 = "PEP";
-            ChemicalFormula cf2 = new Proteomics.AminoAcidPolymer.Peptide(fakeFrag1).GetChemicalFormula();
-            FragDist = IsotopicDistribution.GetDistribution(cf2, 0.125, 0.0001);
-
-            //Create MS1 scans with two precursors that do not have any overlap in their retention time; one of the precursors has an apex RT at the third scan, the other at the eighth scan
-            FakeMs1Scans = new MsDataScan[10];
-            double[] intensityMultipliers = { 1, 2, 3, 2, 1, 1, 2, 3, 2, 1 };
-            var massArray1 = PrecursorDist.Masses.SelectMany(v => new List<double> { v.ToMz(1) }).ToArray();
-            var massArray2 = PrecursorDist.Masses.SelectMany(v => new List<double> { (v + 1).ToMz(1) }).ToArray();
-            double[][] masses = Enumerable.Repeat(massArray1, 5).Concat(Enumerable.Repeat(massArray2, 5)).ToArray();
-
-            for (int s = 0; s < FakeMs1Scans.Length; s++)
-            {
-                double[] intensities = PrecursorDist.Intensities.SelectMany(v => new List<double> { v * Intensity * intensityMultipliers[s] }).ToArray();
-                FakeMs1Scans[s] = new MsDataScan(massSpectrum: new MzSpectrum(masses[s], intensities, false), oneBasedScanNumber: s + 1, msnOrder: 1, isCentroid: true,
-                    polarity: Polarity.Positive, retentionTime: 1.0 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
-                    mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1));
-            }
-
-            //Create MS2 scans with two sets of fragments each aligning perfectly with one of the precursors in FakeMs1Scans
-            FakeMs2Scans = new MsDataScan[10];
-            double[] intensityMultipliers2 = { 0.1, 0.2, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.2, 0.1 };
-            var fragArray1 = FragDist.Masses.SelectMany(v => new List<double> { v.ToMz(1) }).ToArray();
-            var fragArray2 = FragDist.Masses.SelectMany(v => new List<double> { (v + 1).ToMz(1) }).ToArray();
-            double[][] frags = Enumerable.Repeat(fragArray1, 5).Concat(Enumerable.Repeat(fragArray2, 5)).ToArray();
-            for (int s = 0; s < FakeMs2Scans.Length; s++)
-            {
-                double[] intensities = FragDist.Intensities.SelectMany(v => new List<double> { v * Intensity * intensityMultipliers2[s] }).ToArray();
-                FakeMs2Scans[s] = new MsDataScan(massSpectrum: new MzSpectrum(frags[s], intensities, false), oneBasedScanNumber: s + 1, msnOrder: 2, isCentroid: true,
-                    polarity: Polarity.Positive, retentionTime: 1.01 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
-                    mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1));
-            }
-        }
-
+    { 
         [Test]
         public static void TestCorrelationCalculation()
         {
@@ -166,88 +118,74 @@ namespace Test
         public static void TestXicGrouping()
         {
             //Create two fake precursor peaks with no overlap in their retention time
-            var posMs1Peaks = new List<IIndexedPeak>();
-            var negMs1Peaks = new List<IIndexedPeak>();
+            var ms1Peaks = new List<IIndexedPeak>();
             double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
             for (int i = 0; i < intensityMultipliers.Length; i++)
             {
-                posMs1Peaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
-                negMs1Peaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1.5 + i / 10, zeroBasedScanIndex: i + 5, mz: 499.0));
+                ms1Peaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
             }
-            var posMs1Xic = new ExtractedIonChromatogram(posMs1Peaks);
-            var negMs1Xic = new ExtractedIonChromatogram(negMs1Peaks);
+            var ms1Xic = new ExtractedIonChromatogram(ms1Peaks);
 
             //Create a list of fragment XICs that align with the positive precursor XIC but have no overlap with the negative precursor XIC
-            var fragmentXics = new List<ExtractedIonChromatogram>();
-            int numberOfFragmentXics = 5;
-            for (int j = 0; j < numberOfFragmentXics; j++)
+            var matchedFragXics = new List<ExtractedIonChromatogram>();
+            int numberOfmatchedFragmentXics = 5;
+            for (int j = 0; j < numberOfmatchedFragmentXics; j++)
             {
                 var fragPeaks = new List<IIndexedPeak>();
                 for (int i = 0; i < intensityMultipliers.Length; i++)
-                {
                     fragPeaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1.1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
-                }
                 var fragXic = new ExtractedIonChromatogram(fragPeaks);
-                fragmentXics.Add(fragXic);
+                matchedFragXics.Add(fragXic);
             }
 
-            //Create a list of fragment Xics that passes apexRtTolerance but not overlap threshold
+            //Create a list of fragment Xics that fail to pass apexRtTolerance
+            var apexXics = new List<ExtractedIonChromatogram>();
+            for (int j = 0; j < 4; j++)
+            {
+                var fragPeaks = new List<IIndexedPeak>();
+                for (int i = 0; i < intensityMultipliers.Length; i++)
+                    fragPeaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1.5 + i / 10, zeroBasedScanIndex: i + 50, mz: 500.0));
+                var fragXic = new ExtractedIonChromatogram(fragPeaks);
+                apexXics.Add(fragXic);
+            }
+
             //Create a list of fragment Xics that passes apexRtTolerance and overlap threshold but not correlation threshold
-
-            //perform XicGrouping on the positive precursor XIC and the fragment XICs with apexTolerance 0.1f, overlap threshold 0.5, correlation threshold 0.5, and minimum number of fragment XICs 2
-            //all fragment XICs should be paired with the positive precursor XIC
-            var posPfGroup = XicGrouping.GroupFragmentsForOnePrecursor(posMs1Xic, fragmentXics, 0.1f, 0.5, 0.5, 2);    
-            Assert.That(posPfGroup.PFpairs.Count, Is.EqualTo(numberOfFragmentXics));
-
-            //perform XicGrouping on the negative precursor XIC and the fragment XICs. No fragmentXics should be paired with the negative precursor XIC
-            var negPfGroup = XicGrouping.GroupFragmentsForOnePrecursor(negMs1Xic, fragmentXics, 0.1f, 0.5, 0.5, 2);
-            Assert.That(negPfGroup, Is.Null);
-        }
-
-        [Test]
-        public static void PrecursorFragmentsGroupTest()
-        {
-            //Find XICs of the FakeMs1Scans and FakeMs2Scans
-            var deconParameters = new ClassicDeconvolutionParameters(1, 20, 4, 3);
-            var ms1XicConstructor = new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, deconParameters);
-            var ms2XicConstructor = new MzPeakXicConstructor(new PpmTolerance(10), 2, 1, 3);
-            var ms1Xics = ms1XicConstructor.GetAllXics(FakeMs1Scans);
-            var ms2Xics = ms2XicConstructor.GetAllXics(FakeMs2Scans);
-
-            //Group the XICs to const
-            var xicGroupingEngine = new XicGrouping(0.1f, 0.5, 0.5);
-            var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
-            //There should be two pfGroups, one for each precursor in FakeMs1Scans
-            Assert.That(allGroups.Count, Is.EqualTo(2));
-            foreach (var pfGroup in allGroups)
+            var corrXics = new List<ExtractedIonChromatogram>();
+            double[] intensityMultipliers2 = { 1, 1, 1, 1.5, 1 };
+            for (int j = 0; j < 3; j++)
             {
-                //For each precursor XIC, half of the fragment XICs should be paired with it (which is 10 in this case)
-                Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(10));
-                //All the fragment XICs should have the same apex scan index as the precursor XIC
-                Assert.That(pfGroup.PFpairs.All(pf => pf.FragmentXic.ApexScanIndex == pf.PrecursorXic.ApexScanIndex));
+                var fragPeaks = new List<IIndexedPeak>();
+                for (int i = 0; i < intensityMultipliers.Length; i++)
+                    fragPeaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers2[i], retentionTime: 1.1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
+                var fragXic = new ExtractedIonChromatogram(fragPeaks);
+                corrXics.Add(fragXic);
             }
 
-            //If we set the fragments paired with the second precursor to have an XIC with an opposite trend, they would not be paired with the second precursor and the pfGrouping would return null
-            var fakeMs2Scans2 = new MsDataScan[10];
-            double[] intensityMultipliers = { 0.1, 0.2, 0.3, 0.2, 0.1, 0.3, 0.2, 0.1, 0.2, 0.3 };
-            var fragArray1 = FragDist.Masses.SelectMany(v => new List<double> { v.ToMz(1) }).ToArray();
-            var fragArray2 = FragDist.Masses.SelectMany(v => new List<double> { (v + 1).ToMz(1) }).ToArray();
-            double[][] frags = Enumerable.Repeat(fragArray1, 5).Concat(Enumerable.Repeat(fragArray2, 5)).ToArray();
-            for (int s = 0; s < fakeMs2Scans2.Length; s++)
+            //perform XicGrouping on the ms1 XIC and all fragment XICs with apexTolerance 0.2f, overlap threshold 0.5, correlation threshold 0.5, and minimum number of fragment XICs 2
+            var allFragXics = matchedFragXics.Concat(apexXics).Concat(corrXics).ToList();
+            var pfGroup = XicGrouping.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0.5, 2);
+            //all and only the Xics in matchedFragXics should be grouped with the ms1 XIC, and there are 5 of them
+            Assert.That(pfGroup, Is.Not.Null);
+            Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(5));
+            //check that all fragment XICs grouped are from matchedFragXics
+            foreach (var pfPair in pfGroup.PFpairs)
             {
-                double[] intensities = PrecursorDist.Intensities.SelectMany(v => new List<double> { v * Intensity * intensityMultipliers[s]}).ToArray();
-                fakeMs2Scans2[s] = new MsDataScan(massSpectrum: new MzSpectrum(frags[s], intensities, false), oneBasedScanNumber: s + 1, msnOrder: 2, isCentroid: true,
-                    polarity: Polarity.Positive, retentionTime: 1.01 + s / 10.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
-                    mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + (s + 1));
+                Assert.That(matchedFragXics.Contains(pfPair.FragmentXic));
             }
-            ms2Xics = ms2XicConstructor.GetAllXics(fakeMs2Scans2);
-            allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
-            //Only the first precursor should have a pfGroup returned
-            Assert.That(allGroups.Count, Is.EqualTo(1));
-            Assert.That(allGroups[0].PFpairs.Count, Is.EqualTo(10));
-            Assert.That(allGroups[0].PrecursorXic.ApexScanIndex, Is.EqualTo(2));
-        }
 
-        
+            //perform XicGrouping with apexTolerance 0.2f, overlap threshold 0.5, correlation threshold 0.5, and minimum number of fragment XICs 10; now there should be no groups returned because only 5 fragment XICs are in the group
+            pfGroup = XicGrouping.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0.5, 10);
+            Assert.That(pfGroup, Is.Null);
+
+            //perform XicGrouping with apexTolerance 0.2f, overlap threshold 0.5, correlation threshold 0, and minimum number of fragment XICs 2; now the tolerance on correlation is looser and all fragment XICs in corrXics should be grouped
+            pfGroup = XicGrouping.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0, 2);
+            Assert.That(pfGroup, Is.Not.Null);
+            Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(5 + 3)); //5 from matchedFragXics and 3 from corrXics
+            //check that all fragment XICs grouped are from matchedFragXics and corrXics
+            foreach (var pfPair in pfGroup.PFpairs)
+            {
+                Assert.That(matchedFragXics.Contains(pfPair.FragmentXic) || corrXics.Contains(pfPair.FragmentXic));
+            }
+        }
     }
 }
