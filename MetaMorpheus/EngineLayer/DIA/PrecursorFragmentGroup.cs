@@ -131,9 +131,9 @@ namespace EngineLayer.DIA
 
         public static Ms2ScanWithSpecificMass GetPseudoMs2ScanFromPfGroup(PrecursorFragmentsGroup pfGroup, PseudoMs2ConstructionType pseudoMs2ConstructionType, CommonParameters commonParameters, string dataFilePath)
         {
-            pfGroup.PFpairs.Sort((a, b) => b.FragmentXic.AveragedM.CompareTo(a.FragmentXic.AveragedM));
-            var mzs = pfGroup.PFpairs.Select(pf => pf.FragmentXic.AveragedM).ToArray();
-            var intensities = pfGroup.PFpairs.Select(pf => pf.FragmentXic.Peaks.Max(p => (double)p.Intensity)).ToArray();
+            pfGroup.PFpairs.Sort((a, b) => a.FragmentXic.AveragedM.CompareTo(b.FragmentXic.AveragedM));
+            var mzs = pfGroup.PFpairs.Select(pf => (double)pf.FragmentXic.Peaks.First().M).ToArray();
+            var intensities = pfGroup.PFpairs.Select(pf => (double)pf.FragmentXic.Peaks.First().Intensity).ToArray();
             var newMs2Scan = new MsDataScan(new MzSpectrum(mzs, intensities, false), pfGroup.PFgroupIndex, 2, true, Polarity.Positive, pfGroup.PrecursorXic.ApexRT, new MzRange(mzs.Min(), mzs.Max()), null, MZAnalyzerType.Unknown, intensities.Sum(), null, null, null, oneBasedPrecursorScanNumber: pfGroup.PFgroupIndex);
 
             IsotopicEnvelope[] neutralExperimentalFragments = null;
