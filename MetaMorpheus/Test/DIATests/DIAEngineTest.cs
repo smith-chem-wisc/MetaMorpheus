@@ -124,41 +124,46 @@ namespace Test.DIATests
             }
         }
 
-        //[Test]
-        //public static void PseudoScanConversionTest()
-        //{
-        //    var deconParameters = new ClassicDeconvolutionParameters(1, 20, 4, 3);
-        //    var ms1XicConstructor = new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, deconParameters);
-        //    var ms1Xics = ms1XicConstructor.GetAllXics(FakeMs1Scans);
+        [Test]
+        public static void PseudoScanConversionTest()
+        {
+            //Make fake MS1 and MS2 scans
+            double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
+            var fakeaMs1Scans = GetFakeScans("PEPTIDE", intensityMultipliers, 1e6, 1.0, 1, out IsotopicDistribution preDist);
+            var fakeaMs2Scans = GetFakeScans("PEP", intensityMultipliers, 1e6, 1.0, 2, out IsotopicDistribution fragDist);
 
-        //    //Test with PseudoMs2ConstructionType.MzPeak when we use mzPeak indexing on Ms2 scans
-        //    var ms2XicConstructor = new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3);
-        //    var ms2Xics = ms2XicConstructor.GetAllXics(FakeMs2Scans);
-        //    var xicGroupingEngine = new XicGrouping(0.1f, 0.5, 0.5);
-        //    var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
-        //    var pseudoScan1 = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.MzPeak, new CommonParameters(), "test");
-        //    //The precursor information should match with PrecursorDist
-        //    Assert.That(pseudoScan1.PrecursorCharge, Is.EqualTo(1));
-        //    Assert.That(pseudoScan1.PrecursorMass, Is.EqualTo(PrecursorDist.Masses.First()).Within(0.001));
-        //    Assert.That(pseudoScan1.PrecursorMonoisotopicPeakMz, Is.EqualTo(PrecursorDist.Masses.First().ToMz(1)).Within(0.01));
-        //    //There are 5 mz peaks that should be paired with the first precursor
-        //    Assert.That(pseudoScan1.TheScan.MassSpectrum.XArray.Length, Is.EqualTo(5));
-        //    //The 5 peaks that belong to the same isotopic distribution should give one deconvolution result, and the deconvoluted mass should agree with FragDist from which it is generated
-        //    Assert.That(pseudoScan1.ExperimentalFragments.Count(), Is.EqualTo(1));
-        //    Assert.That(pseudoScan1.ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(FragDist.Masses.First()).Within(0.001));
+            var deconParameters = new ClassicDeconvolutionParameters(1, 20, 4, 3);
+            var ms1XicConstructor = new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, deconParameters);
+            var ms1Xics = ms1XicConstructor.GetAllXics(fakeaMs1Scans);
 
-        //    //Test with PseudoMs2ConstructionType.Mass when we use mass indexing on Ms2 scans
-        //    ms2Xics = ms1XicConstructor.GetAllXics(FakeMs2Scans);
-        //    allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
-        //    var pseudoScan2 = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.Mass, new CommonParameters(), "test");
-        //    //The precursor information should still match
-        //    Assert.That(pseudoScan2.PrecursorCharge, Is.EqualTo(1));
-        //    Assert.That(pseudoScan2.PrecursorMass, Is.EqualTo(PrecursorDist.Masses.First()).Within(0.001));
-        //    Assert.That(pseudoScan2.PrecursorMonoisotopicPeakMz, Is.EqualTo(PrecursorDist.Masses.First().ToMz(1)).Within(0.01));
-        //    //Because ms2Xics are now in neutral mass space, there should be only one fragment paired with the precursor
-        //    Assert.That(pseudoScan2.TheScan.MassSpectrum.XArray.Length, Is.EqualTo(1));
-        //    Assert.That(pseudoScan2.ExperimentalFragments.Count(), Is.EqualTo(1));
-        //    Assert.That(pseudoScan1.ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(FragDist.Masses.First()).Within(0.001));
-        //}
+            //Test with PseudoMs2ConstructionType.MzPeak when we use mzPeak indexing on Ms2 scans
+            var ms2XicConstructor = new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3);
+            var ms2Xics = ms2XicConstructor.GetAllXics(fakeaMs2Scans);
+            var xicGroupingEngine = new XicGrouping(0.1f, 0.5, 0.5);
+            var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
+            var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.MzPeak, new CommonParameters(), "test");
+            //The precursor information should match with PrecursorDist
+            Assert.That(pseudoScan.PrecursorCharge, Is.EqualTo(1));
+            Assert.That(pseudoScan.PrecursorMass, Is.EqualTo(preDist.Masses.First()).Within(0.001));
+            Assert.That(pseudoScan.PrecursorMonoisotopicPeakMz, Is.EqualTo(preDist.Masses.First().ToMz(1)).Within(0.01));
+            //There are 5 fragments so the pseudo spectrum should contain 5 peaks
+            Assert.That(pseudoScan.TheScan.MassSpectrum.XArray.Length, Is.EqualTo(5));
+            //The 5 peaks that belong to the same isotopic distribution should give one deconvolution result, and the deconvoluted mass should agree with FragDist from which it is generated
+            Assert.That(pseudoScan.ExperimentalFragments.Count(), Is.EqualTo(1));
+            Assert.That(pseudoScan.ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(fragDist.Masses.First()).Within(0.001));
+
+            //Test with PseudoMs2ConstructionType.Mass when we use mass indexing on Ms2 scans
+            ms2Xics = ms1XicConstructor.GetAllXics(fakeaMs2Scans);
+            allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
+            pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.Mass, new CommonParameters(), "test");
+            //The precursor information should still match
+            Assert.That(pseudoScan.PrecursorCharge, Is.EqualTo(1));
+            Assert.That(pseudoScan.PrecursorMass, Is.EqualTo(preDist.Masses.First()).Within(0.001));
+            Assert.That(pseudoScan.PrecursorMonoisotopicPeakMz, Is.EqualTo(preDist.Masses.First().ToMz(1)).Within(0.01));
+            //Because ms2Xics are now in neutral mass space, there should be only one fragment paired with the precursor
+            Assert.That(pseudoScan.TheScan.MassSpectrum.XArray.Length, Is.EqualTo(1));
+            Assert.That(pseudoScan.ExperimentalFragments.Count(), Is.EqualTo(1));
+            Assert.That(pseudoScan.ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(fragDist.Masses.First()).Within(0.001));
+        }
     }
 }
