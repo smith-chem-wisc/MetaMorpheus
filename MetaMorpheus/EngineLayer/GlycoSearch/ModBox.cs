@@ -34,10 +34,15 @@ namespace EngineLayer
         {
             get
             {
+
+
+
                 if (TargetDecoy)
                 {
-                    double? mass_mod = ModIds.Sum(id => GlobalModifications[id].MonoisotopicMass); // Alternative way to calculate mass
-                    return Glycan.GetMass(Kind) / 1E5;
+                    double? mass_mod = ModIds.Sum(id => GlobalModifications[id].MonoisotopicMass);
+                    double glycanMass = Glycan.GetMass(Kind);
+                    // If glycan mass is zero, use mass_mod instead
+                    return (glycanMass == 0 ? (double)mass_mod : glycanMass / 1E5);
                 }
                 // if decoy, we randomly shift the mass of the glycan by a random value from SugarShift.
                 Random random = new Random();

@@ -288,9 +288,9 @@ namespace EngineLayer.GlycoSearch
         //For FindOGlycan, generate the gsms for O-glycan search
         private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, Route localization, double[] oxoniumIonIntensities, List<LocalizationGraph> localizationGraphs)
         {
-            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(localization, peptide);
+            var peptideWithMod = GlycoPeptides.GetTheoreticalModPeptide(localization, peptide);
 
-            var fragmentsForEachGlycoPeptide = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.DissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
+            var fragmentsForEachGlycoPeptide = GlycoPeptides.GetTheoreticalFragments(CommonParameters.DissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
 
             var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters);
 
@@ -310,7 +310,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var childScan in theScan.ChildScans)
             {
-                var childFragments = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
+                var childFragments = GlycoPeptides.GetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
 
                 var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters);
 
@@ -410,9 +410,7 @@ namespace EngineLayer.GlycoSearch
         protected void MatchModifiedPeptide(Ms2ScanWithSpecificMass theScan, int scanIndex, int scoreCutOff, PeptideWithSetModifications thePeptideCandidate, int ind, double possibleGlycanMassLow, double[] oxoniumIonIntensities, ref List<SpectralMatch> possibleMatches)
         {
             // The glycanBoxes will be filtered by the oxonium ions. If the oxonium ions don't make sense, we will remove the glycanBox.
-
-
-            int boxIdForThisMass = GlycoPeptides.BinarySearchGetIndex(ModBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow); // try to find the index that closet match to the "possibleGlycanMassLow" within the glycanBox
+            int boxIdForThisMass = BinarySearchGetIndex(ModBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow); // try to find the index that closet match to the "possibleGlycanMassLow" within the glycanBox
 
             var localizationScan = theScan;
             List<Product> products = new List<Product>(); // product list for the theoretical fragment ions
@@ -445,7 +443,7 @@ namespace EngineLayer.GlycoSearch
 
             while (boxIdForThisMass < ModBoxes.Count() && (PrecursorSearchMode.Within(theScan.PrecursorMass, thePeptideCandidate.MonoisotopicMass + ModBoxes[boxIdForThisMass].Mass))) // verify the glycan mass is invaild (within the range and match with mass shift)
             {
-                if (OxoniumIonFilter && !GlycoPeptides.DiagonsticFilter(oxoniumIonIntensities, ModBoxes[boxIdForThisMass])) // if the filter is turned on, we need to check does the oxoiums make sense.
+                if (OxoniumIonFilter && !GlycoPeptides.DiagnosticFilter(oxoniumIonIntensities, ModBoxes[boxIdForThisMass])) // if the filter is turned on, we need to check does the oxoiums make sense.
                 {
                     boxIdForThisMass++; // if the oxonium ions don't make sense (there is no 204, or without their diagnostic ion), we can skip this glycan.
                     continue;
@@ -495,7 +493,7 @@ namespace EngineLayer.GlycoSearch
                 return;
             }
 
-            int iDLow = GlycoPeptides.BinarySearchGetIndex(NGlycans.Select(p => (double)p.Mass / 1E5).ToArray(), possibleGlycanMassLow);
+            int iDLow = BinarySearchGetIndex(NGlycans.Select(p => (double)p.Mass / 1E5).ToArray(), possibleGlycanMassLow);
 
             while (iDLow < NGlycans.Length && PrecursorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)NGlycans[iDLow].Mass / 1E5))
             {
@@ -622,7 +620,6 @@ namespace EngineLayer.GlycoSearch
         protected virtual List<SpectralMatch> FindModPeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<SpectralMatch> possibleMatches = new List<SpectralMatch>();
-
 
             for (int ind = 0; ind < idsOfPeptidesPossiblyObserved.Count; ind++)
             {
@@ -764,6 +761,20 @@ namespace EngineLayer.GlycoSearch
             }
 
             return true;
+        }
+
+        public static int BinarySearchGetIndex(double[] massArray, double targetMass)
+        {
+            var iD = Array.BinarySearch(massArray, targetMass);
+            if (iD < 0) { iD = ~iD; }
+            else
+            {
+                while (iD - 1 >= 0 && massArray[iD - 1] >= targetMass - 0.00000001)
+                {
+                    iD--;
+                }
+            }
+            return iD;
         }
 
 

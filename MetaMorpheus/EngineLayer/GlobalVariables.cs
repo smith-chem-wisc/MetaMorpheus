@@ -1,6 +1,8 @@
 ﻿using Chemistry;
+using Easy.Common.Extensions;
 using MassSpectrometry;
 using Nett;
+using Omics.Modifications;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
@@ -9,13 +11,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using Omics.Modifications;
+using EngineLayer.GlycoSearch;
 using TopDownProteomics;
-using UsefulProteomicsDatabases;
-using Easy.Common.Extensions;
 using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
 
 namespace EngineLayer
 {
@@ -402,6 +404,12 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
+                if (modFile.Contains("glyco.txt"))
+                {
+                    // Glycan modifications are handled separately in LoadGlycans()
+                    continue;
+                }
+
                 AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
@@ -488,6 +496,8 @@ namespace EngineLayer
                     }
                 }
             }
+            GlycoConvert();
+            int iii = 0;
         }
 
         private static void LoadDissociationTypes()
@@ -524,6 +534,32 @@ namespace EngineLayer
             {
                 GlobalSettings = Toml.ReadFile<GlobalSettings>(settingsPath);
             }
+        }
+
+        private static void GlycoConvert()
+        {
+            string glycoFile = Path.Combine(DataDir, @"Mods", "glyco.txt");
+            var glycoMods = PtmListLoader.ReadModsFromFile(glycoFile, out var errorMods);
+            foreach (var glycoMod in glycoMods)
+            {
+                var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+                Glycan glycan;
+                if (glycoMod.ModificationType == "N-linked glycosylation")
+                {
+                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.N_glycan);
+                }
+                else if (glycoMod.ModificationType == "")
+                {
+                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.O_glycan);
+                }
+                else
+                {
+                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.otherType); // Still don't know how to deal with that
+                }
+                _AllModsKnown.Add(glycan);
+            }
+
+            int iiiiii = 0;
         }
     }
 }

@@ -1,33 +1,33 @@
 Glycosylations
-ID   Hex
+ID   Hex(1)
 TG   Nxs or Nxt
 PP   Anywhere.
 NL   C6H10O5
 CF   C6H10O5
 MT   N-linked glycosylation
 //
-ID   HexNAc
+ID   HexNAc(1)
 TG   C
 PP   Anywhere.
 NL   C8H13NO5
 CF   C8H13NO5
 MT   Other glycosylation
 //
-ID   Hex
+ID   Hex(1)
 TG   X
 PP   Peptide N-terminal.
 NL   C6H10O5
 CF   C6H10O5
 MT   Other glycosylation
 //
-ID   Hex
+ID   Hex(1)
 TG   S or T or Y
 PP   Anywhere.
 NL   C6H10O5
 CF   C6H10O5
 MT   O-linked glycosylation
 //
-ID   Hex
+ID   Hex(1)
 TG   K or W or C
 PP   Anywhere.
 NL   C6H10O5
@@ -174,14 +174,14 @@ NL   C40H66N2O30
 CF   C40H66N2O30
 MT   N-linked glycosylation
 //
-ID   dHex
+ID   dHex(1)
 TG   Nxs or Nxt
 PP   Anywhere.
 NL   C6H10O4
 CF   C6H10O4
 MT   N-linked glycosylation
 //
-ID   dHex
+ID   dHex(1)
 TG   S or T
 PP   Anywhere.
 NL   C6H10O4

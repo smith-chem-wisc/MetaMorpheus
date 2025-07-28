@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EngineLayer.ModSearch;
 using Omics.Fragmentation;
 using Proteomics;
 using MzLibUtil;
@@ -203,7 +204,7 @@ namespace EngineLayer.GlycoSearch
                 bool[] idBoxes = new bool[childBoxes.Length];
                 for (int j = 0; j <= i; j++)
                 {
-                    if (childBoxes[i].NumberOfMods <= childBoxes[j].NumberOfMods + 1 && (childBoxes[j].NumberOfMods ==0 || TryGetLeft(childBoxes[i].ModIds, childBoxes[j].ModIds)))
+                    if (childBoxes[i].NumberOfMods <= childBoxes[j].NumberOfMods + 1 && (childBoxes[j].NumberOfMods == 0 || TryGetLeft(childBoxes[i].ModIds, childBoxes[j].ModIds)))
                     { //Check the next node could be the same or one more mod than the previous node. Besdies, the next node should contain all mods that the previous node has.
                         idBoxes[j] = true;
                     }

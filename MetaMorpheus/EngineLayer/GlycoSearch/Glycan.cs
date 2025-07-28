@@ -72,7 +72,7 @@ namespace EngineLayer
             diagnosticIons.Add(DissociationType.HCD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList()); // Divided by 1E5 to convert mass(int) to monoisotopic mass(double).
             diagnosticIons.Add(DissociationType.CID, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
             diagnosticIons.Add(DissociationType.EThcD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            ModificationMotif.TryGetMotif(motif, out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
+           ModificationMotif.TryGetMotif(motif, out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
             var id = Glycan.GetKindString(Kind);
 
             OriginalId = id; // Set the original ID to the glycan kind string, which is unique for each glycan.
@@ -82,7 +82,7 @@ namespace EngineLayer
 
             if (OriginalId != null)
             {
-                IdWithMotif = OriginalId + " on " + Target.ToString();
+                IdWithMotif = OriginalId + " on " + (Target == null ? "Any" : Target.ToString());
                 OriginalId = OriginalId;
             }
             else
@@ -210,6 +210,7 @@ namespace EngineLayer
 
         /// <summary>
         /// Dictionary mapping monosaccharide names to their character code and index in the Kind array.
+        /// Treats "Fuc" and "dHex" as equivalent.
         /// </summary>
         public readonly static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
         {
@@ -218,6 +219,7 @@ namespace EngineLayer
             {"NeuAc", new Tuple<char, int>('A', 2) },
             {"NeuGc", new Tuple<char, int>('G', 3) },
             {"Fuc",  new Tuple<char, int>('F', 4)},
+            {"dHex", new Tuple<char, int>('F', 4)}, // Treat dHex as Fuc
             {"Phospho", new Tuple<char, int>('P', 5)},
             {"Sulfo", new Tuple<char, int>('S', 6) },
             {"Na", new Tuple<char, int>('Y', 7) },

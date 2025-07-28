@@ -4,6 +4,7 @@ using System.Text;
 using System.IO;
 using System.Linq;
 using EngineLayer.GlycoSearch;
+using Omics.Modifications;
 
 namespace EngineLayer
 {
@@ -91,7 +92,7 @@ namespace EngineLayer
                     }
                     else // Load the N-glycan with one motif : N
                     {
-                        var nGlycan = new Glycan(kind, "N", GlycanType.N_glycan); // Use the kind[] to create a glycan object.
+                        var nGlycan = new Glycan(kind, "NxS", GlycanType.N_glycan); // Use the kind[] to create a glycan object.
                         nGlycan.GlyId = id;
                         id++;
                         if (ToGenerateIons)
@@ -116,7 +117,10 @@ namespace EngineLayer
             int i = 0;
             while (i < x.Length - 1)
             {
-                kind[Glycan.NameCharDic[x[i]].Item2] = byte.Parse(x[i + 1]);
+                if (Glycan.NameCharDic.TryGetValue(x[i], out var value))
+                {
+                    kind[value.Item2] = byte.Parse(x[i + 1]);
+                }
                 i = i + 2;
             }
 

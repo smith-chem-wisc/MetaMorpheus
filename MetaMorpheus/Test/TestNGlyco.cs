@@ -265,16 +265,16 @@ namespace Test
             double d = 4.55;
             double t = 4.56;
             double t1 = 5.66;
-            var xid = GlycoPeptides.BinarySearchGetIndex(array, x);
-            var xid1 = GlycoPeptides.BinarySearchGetIndex(array, x1);
-            var xid2 = GlycoPeptides.BinarySearchGetIndex(array, x2);
-            var xid3 = GlycoPeptides.BinarySearchGetIndex(array, x3);
+            var xid = GlycoSearchEngine.BinarySearchGetIndex(array, x);
+            var xid1 = GlycoSearchEngine.BinarySearchGetIndex(array, x1);
+            var xid2 = GlycoSearchEngine.BinarySearchGetIndex(array, x2);
+            var xid3 = GlycoSearchEngine.BinarySearchGetIndex(array, x3);
 
-            var yid = GlycoPeptides.BinarySearchGetIndex(array, y);
-            var zid = GlycoPeptides.BinarySearchGetIndex(array, z);
-            var did = GlycoPeptides.BinarySearchGetIndex(array, d);
-            var tid = GlycoPeptides.BinarySearchGetIndex(array, t);
-            var tid1 = GlycoPeptides.BinarySearchGetIndex(array, t1);
+            var yid = GlycoSearchEngine.BinarySearchGetIndex(array, y);
+            var zid = GlycoSearchEngine.BinarySearchGetIndex(array, z);
+            var did = GlycoSearchEngine.BinarySearchGetIndex(array, d);
+            var tid = GlycoSearchEngine.BinarySearchGetIndex(array, t);
+            var tid1 = GlycoSearchEngine.BinarySearchGetIndex(array, t1);
 
             Assert.That(xid, Is.EqualTo(0));
             Assert.That(yid, Is.EqualTo(2));
