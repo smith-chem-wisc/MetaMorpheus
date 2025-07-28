@@ -90,7 +90,38 @@ namespace Test.DIATests
         [Test]
         public static void TestPfGroupingEngine()
         {
-            
+            //Create MS1 scans with two precursors that do not have any overlap in their retention time
+            double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
+            var fakeaMs1Scans1 = GetFakeScans("PEPTIDE", intensityMultipliers, 1e6, 1.0, 1, out IsotopicDistribution preDist1);
+            var fakeMs1Scans2 = GetFakeScans("PEPTIDEP", intensityMultipliers, 1e6, 1.0 + 0.5, 1, out IsotopicDistribution preDist2);
+            var fakeMs1Scans = fakeaMs1Scans1.Concat(fakeMs1Scans2).ToArray();
+
+            //construct all ms1 xics using mass indexing
+            var deconParameters = new ClassicDeconvolutionParameters(1, 20, 4, 3);
+            var massXicConstructor = new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, deconParameters);
+            var ms1Xics = massXicConstructor.GetAllXics(fakeMs1Scans);
+
+            //Create MS2 scans with two sets of fragments each aligning perfectly with one of the precursors in MS1 scans
+            var fakeaMs2Scans1 = GetFakeScans("PEP", intensityMultipliers, 1e6, 1.0, 2, out IsotopicDistribution fragDist1);
+            var fakeMs2Scans2 = GetFakeScans("TIDE", intensityMultipliers, 1e6, 1.0 + 0.5, 2, out IsotopicDistribution fragDist2);
+            var fakeMs2Scans = fakeaMs2Scans1.Concat(fakeMs2Scans2).ToArray();
+
+            //construct all ms2 xics using mz peak indexing
+            var mzPeakXicConstructor = new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3);
+            var ms2Xics = mzPeakXicConstructor.GetAllXics(fakeMs2Scans);
+
+            //create a XicGroupingEngine to find all precursor-fragment groups in the MS1 and MS2 scans
+            var xicGroupingEngine = new XicGrouping(0.1f, 0.5, 0.5);
+            var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
+            //There should be two pfGroups, one for each precursor in FakeMs1Scans
+            Assert.That(allGroups.Count, Is.EqualTo(2));
+            foreach (var pfGroup in allGroups)
+            {
+                //For each precursor XIC, half of the fragment XICs should be paired with it (which is 5 in this case)
+                Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(5));
+                //All the fragment XICs should have the same apex as the precursor XIC
+                Assert.That(pfGroup.PFpairs.All(pf => pf.FragmentXic.ApexScanIndex == pf.PrecursorXic.ApexScanIndex));
+            }
         }
 
         //[Test]
