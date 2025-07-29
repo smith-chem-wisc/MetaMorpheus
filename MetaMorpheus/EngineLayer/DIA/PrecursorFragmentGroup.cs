@@ -5,6 +5,7 @@ using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,8 +24,6 @@ namespace EngineLayer.DIA
             PFpairs = pfPairs;
         }
 
-        
-
         public static double CalculateXicCorrelationXYData(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
         {
             if (xic1.XYData == null || xic2.XYData == null)
@@ -37,15 +36,15 @@ namespace EngineLayer.DIA
             return corr;
         }
 
-        public static double CalculateCorrelation((float, float)[] xy1, (float, float)[] xy2)
+        public static double CalculateCorrelation<T> ((T, T)[] xy1, (T, T)[] xy2) where T : INumber<T>
         {
             if (xy1 == null || xy2 == null)
             {
                 return double.NaN;
             }
 
-            double start = Math.Max(xy1[0].Item1, xy2[0].Item1);
-            double end = Math.Min(xy1[xy1.Length - 1].Item1, xy2[xy2.Length - 1].Item1);
+            T start = T.Max(xy1[0].Item1, xy2[0].Item1);
+            T end = T.Min(xy1[xy1.Length - 1].Item1, xy2[xy2.Length - 1].Item1);
 
             var validxy1 = xy1.Where(p => p.Item1 >= start && p.Item1 <= end).ToArray();
             var validxy2 = xy2.Where(p => p.Item1 >= start && p.Item1 <= end).ToArray();
@@ -62,54 +61,31 @@ namespace EngineLayer.DIA
             return corr;
         }
 
-        public static double CalculateCorrelation((double, double)[] xy1, (double, double)[] xy2)
+        public static double PearsonCorrelation<T>(T[] x, T[] y) where T : INumber<T>
         {
-            if (xy1 == null || xy2 == null)
+            if (x == null || y == null) throw new ArgumentNullException();
+            if (x.Length != y.Length) throw new ArgumentException("Arrays must have the same length.");
+
+            int n = x.Length;
+            T sumX = T.Zero, sumY = T.Zero, sumXY = T.Zero, sumX2 = T.Zero, sumY2 = T.Zero;
+            for (int i = 0; i < n; i++)
             {
-                return double.NaN;
+                sumX += x[i];
+                sumY += y[i];
+                sumXY += x[i] * y[i];
+                sumX2 += x[i] * x[i];
+                sumY2 += y[i] * y[i];
             }
 
-            double start = Math.Max(xy1[0].Item1, xy2[0].Item1);
-            double end = Math.Min(xy1[xy1.Length - 1].Item1, xy2[xy2.Length - 1].Item1);
+            double meanX = double.CreateChecked(sumX) / n;
+            double meanY = double.CreateChecked(sumY) / n;
 
-            var validxy1 = xy1.Where(p => p.Item1 >= start && p.Item1 <= end).ToArray();
-            var validxy2 = xy2.Where(p => p.Item1 >= start && p.Item1 <= end).ToArray();
-            int numPoints = Math.Min(validxy1.Length, validxy2.Length);
-            if (numPoints < 3)
-            {
-                return double.NaN;
-            }
-            var xy = validxy1.Take(numPoints).Zip(validxy2.Take(numPoints), (a, b) => (a.Item2, b.Item2)).ToArray();
-            var y1 = xy.Select(p => p.Item1).ToArray();
-            var y2 = xy.Select(p => p.Item2).ToArray();
-            double corr = Correlation.Pearson(y1, y2);
+            double numerator = double.CreateChecked(sumXY) - n * meanX * meanY;
+            double denominatorX = double.CreateChecked(sumX2) - n * meanX * meanX;
+            double denominatorY = double.CreateChecked(sumY2) - n * meanY * meanY;
+            double denominator = Math.Sqrt(denominatorX * denominatorY);
 
-            return corr;
-        }
-
-        public static float PearsonCorrelation(float[] x, float[] y)
-        {
-            if (x.Length != y.Length || x.Length == 0)
-                throw new ArgumentException("Arrays must have the same non-zero length.");
-
-            float meanX = x.Average();
-            float meanY = y.Average();
-
-            float numerator = 0f;
-            float sumSqX = 0f;
-            float sumSqY = 0f;
-
-            for (int i = 0; i < x.Length; i++)
-            {
-                float diffX = x[i] - meanX;
-                float diffY = y[i] - meanY;
-                numerator += diffX * diffY;
-                sumSqX += diffX * diffX;
-                sumSqY += diffY * diffY;
-            }
-
-            float denominator = (float)Math.Sqrt(sumSqX * sumSqY);
-            if (denominator == 0f) return 0f;
+            if (denominator == 0) return 0; // Avoid division by zero
 
             return numerator / denominator;
         }

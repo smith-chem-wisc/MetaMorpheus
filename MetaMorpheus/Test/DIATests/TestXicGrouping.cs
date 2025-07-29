@@ -15,7 +15,7 @@ using Proteomics.ProteolyticDigestion;
 using Omics.Modifications;
 using Omics.Fragmentation;
 
-namespace Test
+namespace Test.DIATests
 {
     public class TestXicGrouping
     { 
