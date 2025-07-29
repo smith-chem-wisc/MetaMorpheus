@@ -540,15 +540,22 @@ namespace EngineLayer
         {
             string glycoFile = Path.Combine(DataDir, @"Mods", "glyco.txt");
             var glycoMods = PtmListLoader.ReadModsFromFile(glycoFile, out var errorMods);
+            List<Modification> glycoModList = new List<Modification>();
             foreach (var glycoMod in glycoMods)
             {
                 var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+                if (kind.Sum(p=>p) == 0)
+                {
+                    _AllModsKnown.Add(glycoMod);
+                    continue;
+                }
+
                 Glycan glycan;
                 if (glycoMod.ModificationType == "N-linked glycosylation")
                 {
                     glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.N_glycan);
                 }
-                else if (glycoMod.ModificationType == "")
+                else if (glycoMod.ModificationType == "O-linked glycosylation")
                 {
                     glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.O_glycan);
                 }
@@ -558,8 +565,6 @@ namespace EngineLayer
                 }
                 _AllModsKnown.Add(glycan);
             }
-
-            int iiiiii = 0;
         }
     }
 }

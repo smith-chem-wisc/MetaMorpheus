@@ -120,8 +120,12 @@ namespace EngineLayer
                 if (Glycan.NameCharDic.TryGetValue(x[i], out var value))
                 {
                     kind[value.Item2] = byte.Parse(x[i + 1]);
+                    i = i + 2;
                 }
-                i = i + 2;
+                else
+                {
+                    i++;
+                }
             }
 
             return kind;

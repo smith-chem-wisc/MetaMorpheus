@@ -34,9 +34,6 @@ namespace EngineLayer
         {
             get
             {
-
-
-
                 if (TargetDecoy)
                 {
                     double? mass_mod = ModIds.Sum(id => GlobalModifications[id].MonoisotopicMass);

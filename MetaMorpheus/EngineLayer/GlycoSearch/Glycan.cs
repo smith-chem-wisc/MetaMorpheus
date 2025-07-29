@@ -45,7 +45,7 @@ namespace EngineLayer
             // Generate the neural loss and diagnostic ions for O_glycan.
             if (type == GlycanType.O_glycan)
             {
-                ModificationType = "O-Glycosylation"; // Set the modification type.
+                ModificationType = "O-linked glycosylation"; // Set the modification type.
                 if (Ions != null)
                 {
                     List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
@@ -58,7 +58,7 @@ namespace EngineLayer
             // Generate the neural loss and diagnostic ions for N_glycan.
             else if (type == GlycanType.N_glycan)
             {
-                ModificationType = "N-Glycosylation"; // Set the modification type.
+                ModificationType = "N-linked glycosylation"; // Set the modification type.
                 if (Ions != null)
                 {
                     List<double> lossMasses = Ions.Where(p=>p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
@@ -66,6 +66,10 @@ namespace EngineLayer
                     neutralLosses.Add(DissociationType.CID, lossMasses);
                     neutralLosses.Add(DissociationType.EThcD, lossMasses);
                 }
+            }
+            else // don't know how to deal with this glycan type yet.
+            {
+                ModificationType = "Other glycosylation";
             }
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
@@ -82,7 +86,7 @@ namespace EngineLayer
 
             if (OriginalId != null)
             {
-                IdWithMotif = OriginalId + " on " + (Target == null ? "Any" : Target.ToString());
+                IdWithMotif = OriginalId + " on " + (Target == null ? "AnyWhere" : Target.ToString());
                 OriginalId = OriginalId;
             }
             else
