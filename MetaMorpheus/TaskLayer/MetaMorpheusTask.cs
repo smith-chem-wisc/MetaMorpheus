@@ -139,6 +139,7 @@ namespace TaskLayer
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
+        [TomlIgnore]
         public string OutputFolder { get; private set; }
 
         protected MyTaskResults MyTaskResults;
