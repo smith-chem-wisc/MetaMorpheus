@@ -115,7 +115,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestXicGrouping()
+        public static void TestXicPfGrouping()
         {
             //Create two fake precursor peaks with no overlap in their retention time
             var ms1Peaks = new List<IIndexedPeak>();
