@@ -496,8 +496,7 @@ namespace EngineLayer
                     }
                 }
             }
-            GlycoConvert();
-            int iii = 0;
+            LoadTxtGlycan(); // load the glycans from glyco.txt
         }
 
         private static void LoadDissociationTypes()
@@ -535,8 +534,10 @@ namespace EngineLayer
                 GlobalSettings = Toml.ReadFile<GlobalSettings>(settingsPath);
             }
         }
-
-        private static void GlycoConvert()
+        /// <summary>
+        /// Convert glyco.txt into Glycan objects and add them to AllModsKnown.
+        /// </summary>
+        private static void LoadTxtGlycan()
         {
             string glycoFile = Path.Combine(DataDir, @"Mods", "glyco.txt");
             var glycoMods = PtmListLoader.ReadModsFromFile(glycoFile, out var errorMods);
@@ -544,6 +545,8 @@ namespace EngineLayer
             foreach (var glycoMod in glycoMods)
             {
                 var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+
+                // If we cannot parse the glycan string, we add the glycoMod as a normal modification.
                 if (kind.Sum(p=>p) == 0)
                 {
                     _AllModsKnown.Add(glycoMod);

@@ -37,8 +37,7 @@ namespace TaskLayer
 
             // ModSearch options
             ListOfInterestedMods = GlobalVariables.AllModsKnown
-                .Where(b => b.ModificationType.Equals("Common Artifact") || 
-                            b.ModificationType.Equals("N-linked glycosylation") ||
+                .Where(b =>  b.ModificationType.Equals("N-linked glycosylation") ||
                             b.ModificationType.Equals("Other glycosylation") ||
                             b.ModificationType.Equals("O-linked glycosylation"))
                 .Select(b => (b.ModificationType, b.IdWithMotif))

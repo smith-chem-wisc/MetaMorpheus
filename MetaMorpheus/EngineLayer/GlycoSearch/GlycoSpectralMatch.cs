@@ -52,7 +52,6 @@ namespace EngineLayer.GlycoSearch
         public static SortedDictionary<int, string> GetPossibleModSites(PeptideWithSetModifications peptide, HashSet<string> motifs)
         {
             SortedDictionary<int, string> modMotif = new SortedDictionary<int, string>();
-
             List<Modification> modifications = new List<Modification>();
 
             foreach (var mtf in motifs)

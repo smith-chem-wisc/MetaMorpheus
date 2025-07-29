@@ -184,7 +184,6 @@ namespace EngineLayer.GlycoSearch
                         }
 
                         List<SpectralMatch> gsms;
-
                         if (GlycoSearchType == GlycoSearchType.OGlycanSearch || GlycoSearchType == GlycoSearchType.ModSearch)
                         {
                             gsms = FindModPeptide(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff); // Use the peptide candidate and the scan to generate the gsms.

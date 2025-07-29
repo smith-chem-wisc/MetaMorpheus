@@ -18,11 +18,14 @@ namespace EngineLayer
 
             // Glycan setting
             byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            foreach (var id in ModIds.Where(id=> GlobalModifications[id] is Glycan)) // iterate through all glycan in the box to generate the glycan kind
+
+            // iterate through all glycan in the box to generate the glycan kind
+            foreach (var id in ModIds.Where(id => GlobalModifications[id] is Glycan))
             {
+                var glycan = GlobalModifications[id] as Glycan;
                 for (int i = 0; i < kind.Length; i++)
                 {
-                    kind[i] += GlobalOGlycans[id].Kind[i]; //kind is the sum of all glycan Kind in the Box.
+                    kind[i] += glycan.Kind[i]; //kind is the sum of all glycan Kind in the Box.
                 }
             }
             Kind = kind;
@@ -36,10 +39,7 @@ namespace EngineLayer
             {
                 if (TargetDecoy)
                 {
-                    double? mass_mod = ModIds.Sum(id => GlobalModifications[id].MonoisotopicMass);
-                    double glycanMass = Glycan.GetMass(Kind);
-                    // If glycan mass is zero, use mass_mod instead
-                    return (glycanMass == 0 ? (double)mass_mod : glycanMass / 1E5);
+                    return (double)ModIds.Sum(id => GlobalModifications[id].MonoisotopicMass);
                 }
                 // if decoy, we randomly shift the mass of the glycan by a random value from SugarShift.
                 Random random = new Random();
