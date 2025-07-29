@@ -418,7 +418,7 @@ namespace EngineLayer
                     }
                 }
 
-                foreach (IBioPolymer protein in indistinguishableProteins)
+                foreach (var protein in indistinguishableProteins)
                 {
                     parsimoniousProteinList.Add(protein);
                 }
