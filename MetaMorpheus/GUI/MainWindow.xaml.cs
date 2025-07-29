@@ -21,6 +21,7 @@ using Omics.Modifications;
 using TaskLayer;
 using System.Text.RegularExpressions;
 using Readers.InternalResults;
+using System.Diagnostics;
 
 namespace MetaMorpheusGUI
 {
@@ -1263,8 +1264,35 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_MetaDraw_Click(object sender, RoutedEventArgs e)
         {
-            MetaDraw metaDrawGui = new MetaDraw();
-            metaDrawGui.Show();
+            string[]? filesToLoad = null;
+            try
+            {
+                // get completed search tasks from in progress tasks. 
+                var completedSearchTasks = InProgressTasks.Where(p => p.Task is SearchTask && p.Progress >= 100).ToList();
+
+                // find last search task by the task ID
+                var finalSearchTask = completedSearchTasks.MaxBy(p => p.Id.Split('-')[0].Replace("Task", "").ToNullableInt());
+
+                // Get Spectra files
+                var prose = MetaMorpheusProseFile.LocateInDirectory(finalSearchTask.Task.OutputFolder);
+                var spectraFiles = prose!.SpectraFilePaths;
+
+                // Get search results
+                var searchResult = Directory.GetFiles(finalSearchTask.Task.OutputFolder)
+                    .First(p => p.EndsWith(".psmtsv") || p.EndsWith(".osmtsv"));
+
+                filesToLoad = spectraFiles.Append(searchResult).ToArray();
+            }
+            catch (Exception ex)
+            {
+                Debugger.Break();
+            }
+            finally
+            {
+
+                MetaDraw metaDrawGui = new MetaDraw(filesToLoad);
+                metaDrawGui.Show();
+            }
         }
 
         private void MenuItem_ResetDefaults_Click(object sender, RoutedEventArgs e)
