@@ -490,39 +490,45 @@ namespace TaskLayer
             int maxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxMods;
 
             // set file-specific digestion params based upon the type of digestion params
-            IDigestionParams fileSpecificDigestionParams = commonParams.DigestionParams switch
+            IDigestionParams fileSpecificDigestionParams;
+            switch (commonParams.DigestionParams)
             {
-                DigestionParams digestionParams => new DigestionParams(
-                    protease: (fileSpecificParams.DigestionAgent ?? digestionParams.SpecificProtease).Name,
-                    maxMissedCleavages: maxMissedCleavages,
-                    minPeptideLength: minPeptideLength,
-                    maxPeptideLength: maxPeptideLength,
-                    maxModsForPeptides: maxModsForPeptide,
-                    maxModificationIsoforms: digestionParams.MaxModificationIsoforms,
-                    initiatorMethionineBehavior: digestionParams.InitiatorMethionineBehavior,
-                    fragmentationTerminus: digestionParams.FragmentationTerminus,
-                    searchModeType: digestionParams.SearchModeType
-                ),
-                RnaDigestionParams => new RnaDigestionParams(
-                    rnase: (fileSpecificParams.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent).Name,
-                    maxMissedCleavages: maxMissedCleavages,
-                    minLength: minPeptideLength,
-                    maxLength: maxPeptideLength,
-                    maxMods: maxModsForPeptide,
-                    maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
-                    fragmentationTerminus: commonParams.DigestionParams.FragmentationTerminus
-                ),
-                _ => throw new MetaMorpheusException($"Unrecognized digestion parameters of type {commonParams.DigestionParams.GetType().FullName} in MetaMorpheusTask.SetAllFileSpecificCommonParams")
-            };
+                case DigestionParams digestionParams:
+                    fileSpecificDigestionParams = new DigestionParams(
+                        protease: (fileSpecificParams.DigestionAgent ?? digestionParams.SpecificProtease).Name,
+                        maxMissedCleavages: maxMissedCleavages, minPeptideLength: minPeptideLength,
+                        maxPeptideLength: maxPeptideLength, maxModsForPeptides: maxModsForPeptide,
+                        maxModificationIsoforms: digestionParams.MaxModificationIsoforms,
+                        initiatorMethionineBehavior: digestionParams.InitiatorMethionineBehavior,
+                        fragmentationTerminus: digestionParams.FragmentationTerminus,
+                        searchModeType: digestionParams.SearchModeType);
+
+                    // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
+                    DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
+                        fileSpecificParams.CustomIons ?? commonParams.CustomIons;
+                    break;
+                case RnaDigestionParams:
+                    fileSpecificDigestionParams = new RnaDigestionParams(
+                        rnase: (fileSpecificParams.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent).Name,
+                        maxMissedCleavages: maxMissedCleavages, minLength: minPeptideLength,
+                        maxLength: maxPeptideLength, maxMods: maxModsForPeptide,
+                        maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
+                        fragmentationTerminus: commonParams.DigestionParams.FragmentationTerminus);
+
+                    // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
+                    Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType
+                        [DissociationType.Custom] = fileSpecificParams.CustomIons ?? commonParams.CustomIons;
+                    break;
+                default:
+                    throw new MetaMorpheusException(
+                        $"Unrecognized digestion parameters of type {commonParams.DigestionParams.GetType().FullName} in MetaMorpheusTask.SetAllFileSpecificCommonParams");
+            }
 
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
-
-            // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
-            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = fileSpecificParams.CustomIons ?? commonParams.CustomIons;
 
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
