@@ -80,7 +80,6 @@ namespace EngineLayer
             TrimMs1Peaks = trimMs1Peaks;
             TrimMsMsPeaks = trimMsMsPeaks;
             MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1 ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1 : maxThreadsToUsePerFile;
-
             ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
             PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
@@ -114,6 +113,28 @@ namespace EngineLayer
             if (digestionParams is RnaDigestionParams)
             {
                 CustomIons = Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
+                // reset custom fragmentation product types to default empty list
+                Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
+
+                ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Digestion Termini", "Cyclic Phosphate on X") };
+                ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
+                PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+                ProductDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+            }
+            else
+            {
+                CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
+
+                // reset custom fragmentation product types to default empty list
+                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
+
+                ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
+                ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
+            }
+
+            if (digestionParams is RnaDigestionParams)
+            {
+                CustomIons =  Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
                 // reset custom fragmentation product types to default empty list
                 Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
 
