@@ -11,6 +11,7 @@ using TaskLayer;
 using System.IO;
 using Chemistry;
 using Readers;
+using MathNet.Numerics.Interpolation;
 
 namespace Test.DIATests
 {
@@ -88,6 +89,11 @@ namespace Test.DIATests
             {
                 Assert.That(mzXics.Any(xic => xic.Peaks.First().M == (float)mz));
             }
+
+            //Test excetion handling in XicConstructor
+            var emptyScans = new MsDataScan[0];
+            var ex = Assert.Throws<MetaMorpheusException>(() => massXicConstructor.GetAllXics(emptyScans));
+            Assert.That(ex.Message, Is.EqualTo("XIC construction failed."));
         }
 
         [Test]
