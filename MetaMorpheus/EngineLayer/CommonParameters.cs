@@ -105,17 +105,13 @@ namespace EngineLayer
             else // negative mode
             {
                 PrecursorDeconvolutionParameters = precursorDeconParams ?? new ClassicDeconvolutionParameters(deconvolutionMaxAssumedChargeState,
-                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative, new OxyriboAveragine());
+                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
                 ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(-10,
-                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative, new OxyriboAveragine());
+                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
             }
 
             if (digestionParams is RnaDigestionParams)
             {
-                CustomIons = Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
-                // reset custom fragmentation product types to default empty list
-                Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
-
                 ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Digestion Termini", "Cyclic Phosphate on X") };
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
                 PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
@@ -123,36 +119,14 @@ namespace EngineLayer
             }
             else
             {
-                CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
-
-                // reset custom fragmentation product types to default empty list
-                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
-
                 ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             }
 
-            if (digestionParams is RnaDigestionParams)
-            {
-                CustomIons =  Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
-                // reset custom fragmentation product types to default empty list
-                Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
+            CustomIons = digestionParams.ProductsFromDissociationType()[DissociationType.Custom];
 
-                ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Digestion Termini", "Cyclic Phosphate on X") };
-                ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
-                PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
-                ProductDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
-            }
-            else
-            {
-                CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
-
-                // reset custom fragmentation product types to default empty list
-                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
-
-                ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
-                ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
-            }
+            // reset custom fragmentation product types to default empty list
+            digestionParams.ProductsFromDissociationType()[DissociationType.Custom] = new List<ProductType>() { };
         }
 
         // Notes:
@@ -294,7 +268,7 @@ namespace EngineLayer
 
         public void SetCustomProductTypes()
         {
-            DissociationTypeCollection.ProductsFromDissociationType[MassSpectrometry.DissociationType.Custom] = CustomIons;
+            DigestionParams.ProductsFromDissociationType()[MassSpectrometry.DissociationType.Custom] = CustomIons;
         }
     }
 }

@@ -22,6 +22,8 @@ namespace TaskLayer
     public class GptmdTask : MetaMorpheusTask
     {
         private const double tolForComboLoading = 1e-3;
+        private const string CombosTextFileName = "combos.txt";
+        private const string RnaCombosTextFileName = "rnaCombos.txt";
 
         public GptmdTask() : base(MyTask.Gptmd)
         {
@@ -238,7 +240,7 @@ namespace TaskLayer
 
         private static IEnumerable<Tuple<double, double>> LoadCombos(List<Modification> modificationsThatCanBeCombined, bool isProtein = false)
         {
-            string specificPath = isProtein ? "combos.txt" : "rnaCombos.txt";
+            string specificPath = isProtein ? CombosTextFileName : RnaCombosTextFileName;
             using (StreamReader r = new StreamReader(Path.Combine(GlobalVariables.DataDir, "Data", specificPath)))
             {
                 while (r.Peek() >= 0)
