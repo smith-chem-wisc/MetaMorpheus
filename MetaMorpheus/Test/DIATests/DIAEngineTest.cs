@@ -35,14 +35,17 @@ namespace Test.DIATests
         [Test]
         public static void DIAScanWindowMapTest()
         {
+            //This is a snip file from one of the published DIA datasets; the snip file has 34 different precursor isolation windows, each containing 3 MS2 scans
             string dataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData\\DIA\\18300_REP2_500ng_HumanLysate_SWATH_1_RT25.63-25.81.mzML");
             var myFileManager = new MyFileManager(true);
             var dataFile = myFileManager.LoadFile(dataPath, new CommonParameters());
             var allMs2Scans = dataFile.GetAllScansList().Where(s => s.MsnOrder == 2).ToArray();
             var diaScanWindowMap = DIAEngine.ConstructMs2Groups(allMs2Scans);
+            //There should be 34 different DIA windows
             Assert.That(diaScanWindowMap.Count, Is.EqualTo(34));
             foreach(var group in diaScanWindowMap)
             {
+                //each window has 3 MS2 scans
                 Assert.That(group.Value.Count, Is.EqualTo(3));
             }
         }

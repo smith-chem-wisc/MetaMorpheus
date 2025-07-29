@@ -17,7 +17,7 @@ using Omics.Fragmentation;
 
 namespace Test
 {
-    public class TestPrecursorFragmentPairing
+    public class TestXicGrouping
     { 
         [Test]
         public static void TestCorrelationCalculation()
