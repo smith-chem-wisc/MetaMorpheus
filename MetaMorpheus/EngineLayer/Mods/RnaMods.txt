@@ -21,6 +21,13 @@ MT   Biological
 CF   C1 H2
 DR   Unimod; 34.
 //
+ID   Dimethylation
+TG   A or C or G or U or T or Y
+PP   Anywhere.
+MT   Biological
+CF   C2 H4
+DR   Unimod; 34.
+//
 ID   DeoxyFluoronation
 TG   A or C or G or U
 PP   Anywhere.

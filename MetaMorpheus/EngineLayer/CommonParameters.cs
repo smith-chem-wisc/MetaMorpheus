@@ -105,9 +105,31 @@ namespace EngineLayer
             else // negative mode
             {
                 PrecursorDeconvolutionParameters = precursorDeconParams ?? new ClassicDeconvolutionParameters(deconvolutionMaxAssumedChargeState,
-                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
+                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative, new OxyriboAveragine());
                 ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(-10,
-                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
+                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative, new OxyriboAveragine());
+            }
+
+            if (digestionParams is RnaDigestionParams)
+            {
+                CustomIons = Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
+                // reset custom fragmentation product types to default empty list
+                Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
+
+                ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Digestion Termini", "Cyclic Phosphate on X") };
+                ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
+                PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+                ProductDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+            }
+            else
+            {
+                CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
+
+                // reset custom fragmentation product types to default empty list
+                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
+
+                ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
+                ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             }
 
             if (digestionParams is RnaDigestionParams)
@@ -259,7 +281,7 @@ namespace EngineLayer
                                 PrecursorMassTolerance,
                                 DeconvolutionMassTolerance,
                                 MaxThreadsToUsePerFile,
-                                (DigestionParams)DigestionParams.Clone(terminus),
+                                DigestionParams.Clone(terminus),
                                 ListOfModsVariable,
                                 ListOfModsFixed,
                                 AssumeOrphanPeaksAreZ1Fragments,
