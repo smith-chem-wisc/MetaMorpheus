@@ -1285,11 +1285,11 @@ namespace MetaMorpheusGUI
             }
             catch (Exception ex)
             {
-                Debugger.Break();
+                // Something went wrong in trying to find a completed search task. 
+                // This is expected when we do not have a completed search to parse. 
             }
             finally
             {
-
                 MetaDraw metaDrawGui = new MetaDraw(filesToLoad);
                 metaDrawGui.Show();
             }
