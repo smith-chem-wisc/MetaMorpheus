@@ -15,9 +15,6 @@ namespace EngineLayer.DIA
         public ExtractedIonChromatogram FragmentXic { get; set; }
         public double? Correlation { get; set; }
         public double? Overlap { get; set; } 
-        public int? PrecursorRank { get; set; }
-        public int? FragmentRank { get; set; }
-
         public PrecursorFragmentPair(ExtractedIonChromatogram precursorXic, ExtractedIonChromatogram fragmentXic, double? correlation = null, double? overlap = null)
         {
             PrecursorXic = precursorXic;
