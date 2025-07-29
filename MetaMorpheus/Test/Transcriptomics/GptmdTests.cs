@@ -242,7 +242,7 @@ public class GptmdTests
         string gptmdXml = Directory.GetFiles(outputDir, "*GPTMD.xml").FirstOrDefault();
         Assert.That(gptmdXml, Is.Not.Null.And.Not.Empty, "GPTMD output XML should exist.");
 
-        // load in teh GPTMD xml file
+        // load in the GPTMD xml file
         var rna = RnaDbLoader.LoadRnaXML(gptmdXml, true, DecoyType.None, false, GlobalVariables.AllRnaModsKnown, [], out _);
 
         // check that the expected modifications are present
