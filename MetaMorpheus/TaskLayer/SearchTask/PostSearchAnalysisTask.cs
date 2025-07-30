@@ -25,6 +25,7 @@ using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using Omics;
+using Readers.SpectralLibrary;
 
 namespace TaskLayer
 {
