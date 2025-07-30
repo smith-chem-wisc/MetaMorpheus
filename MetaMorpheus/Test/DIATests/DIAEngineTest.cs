@@ -120,7 +120,7 @@ namespace Test.DIATests
             var ms2Xics = mzPeakXicConstructor.GetAllXics(fakeMs2Scans);
 
             //create a XicGroupingEngine to find all precursor-fragment groups in the MS1 and MS2 scans
-            var xicGroupingEngine = new XicGrouping(0.1f, 0.5, 0.5);
+            var xicGroupingEngine = new XicGroupingEngine(0.1f, 0.5, 0.5);
             var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
             //There should be two pfGroups, one for each precursor in FakeMs1Scans
             Assert.That(allGroups.Count, Is.EqualTo(2));
@@ -148,7 +148,7 @@ namespace Test.DIATests
             //Test with PseudoMs2ConstructionType.MzPeak when we use mzPeak indexing on Ms2 scans
             var ms2XicConstructor = new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3);
             var ms2Xics = ms2XicConstructor.GetAllXics(fakeaMs2Scans);
-            var xicGroupingEngine = new XicGrouping(0.1f, 0.5, 0.5);
+            var xicGroupingEngine = new XicGroupingEngine(0.1f, 0.5, 0.5);
             var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
             var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.MzPeak, new CommonParameters(), "test");
 
@@ -224,7 +224,7 @@ namespace Test.DIATests
             }
             var testMsDataFile = new GenericMsDataFile(allScans, new SourceFile("no nativeID format", "mzML format", null, null, null));
 
-            var DIAparams = new DIAparameters(new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, new ClassicDeconvolutionParameters(1, 20, 4, 3)), new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3), new XicGrouping(0.1f, 0.5, 0.5), PseudoMs2ConstructionType.MzPeak);
+            var DIAparams = new DIAparameters(new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, new ClassicDeconvolutionParameters(1, 20, 4, 3)), new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3), new XicGroupingEngine(0.1f, 0.5, 0.5), PseudoMs2ConstructionType.MzPeak);
             var diaEngine = new DIAEngine(DIAparams, testMsDataFile, new CommonParameters(), new List<(string FileName, CommonParameters Parameters)>(), new List<string> { "test" });
             diaEngine.Run();
 

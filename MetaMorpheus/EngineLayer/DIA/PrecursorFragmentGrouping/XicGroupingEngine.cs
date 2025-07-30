@@ -8,15 +8,17 @@ using System.Collections.Concurrent;
 
 namespace EngineLayer.DIA
 {
-    public class XicGrouping : PfGroupingEngine
+    /// <summary>
+    /// XicGroupingEngine is a specific implementation of PfGroupingEngine that groups precursor and fragment XICs into PrecursorFragmentsGroup objects 
+    /// based on specified criteria including apex RT tolerance, overlap threshold, and correlation threshold.
+    /// <summary>
+    public class XicGroupingEngine : PfGroupingEngine
     {
         public float ApexRTTolerance { get; set; }
         public double OverlapThreshold { get; set; }
         public double CorrelationThreshold { get; set; }
-        public int MaxThreadsForGrouping { get; set; } 
-        public int MinFragmentCountForPfGroup { get; set; } 
 
-        public XicGrouping(float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0)
+        public XicGroupingEngine(float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0)
         {
             ApexRTTolerance = apexRTTolerance;
             OverlapThreshold = overlapThreshold;

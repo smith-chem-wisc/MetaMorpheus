@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.DIA
 {
+    /// <summary>
+    /// PrecursorFragmentsGroup represents a group of precursor-fragment pairs belonging to the same precursor XIC.
+    /// <summary>
     public class PrecursorFragmentsGroup
     {
         public ExtractedIonChromatogram PrecursorXic { get; set; }

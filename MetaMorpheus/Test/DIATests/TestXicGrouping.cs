@@ -163,7 +163,7 @@ namespace Test.DIATests
 
             //perform XicGrouping on the ms1 XIC and all fragment XICs with apexTolerance 0.2f, overlap threshold 0.5, correlation threshold 0.5, and minimum number of fragment XICs 2
             var allFragXics = matchedFragXics.Concat(apexXics).Concat(corrXics).ToList();
-            var pfGroup = XicGrouping.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0.5, 2);
+            var pfGroup = XicGroupingEngine.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0.5, 2);
             //all and only the Xics in matchedFragXics should be grouped with the ms1 XIC, and there are 5 of them
             Assert.That(pfGroup, Is.Not.Null);
             Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(5));
@@ -176,11 +176,11 @@ namespace Test.DIATests
             }
 
             //perform XicGrouping with apexTolerance 0.2f, overlap threshold 0.5, correlation threshold 0.5, and minimum number of fragment XICs 10; now there should be no groups returned because only 5 fragment XICs are in the group
-            pfGroup = XicGrouping.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0.5, 10);
+            pfGroup = XicGroupingEngine.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0.5, 10);
             Assert.That(pfGroup, Is.Null);
 
             //perform XicGrouping with apexTolerance 0.2f, overlap threshold 0.5, correlation threshold 0, and minimum number of fragment XICs 2; now the tolerance on correlation is looser and all fragment XICs in corrXics should be grouped
-            pfGroup = XicGrouping.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0, 2);
+            pfGroup = XicGroupingEngine.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0, 2);
             Assert.That(pfGroup, Is.Not.Null);
             Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(5 + 3)); //5 from matchedFragXics and 3 from corrXics
             //check that all fragment XICs grouped are from matchedFragXics and corrXics
