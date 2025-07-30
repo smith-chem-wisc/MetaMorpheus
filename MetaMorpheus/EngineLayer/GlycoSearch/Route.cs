@@ -28,5 +28,16 @@ namespace EngineLayer.GlycoSearch
             ModSitePairs.Add(new ModSitePair(pos, id, localPeakExist));
         }
 
+        /// <summary>
+        /// Set the reverse p score to each pair in the route.
+        /// </summary>
+        public void SetRPScoreToPair()
+        {
+            foreach (var pair in ModSitePairs)
+            {
+                pair.RouteScore = ReversePScore;
+            }
+        }
+
     }
 }

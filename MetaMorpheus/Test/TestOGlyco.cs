@@ -494,9 +494,10 @@ namespace Test
             Assert.That(allPathWithWeights.Count == 6);
 
             //Calculate Site Specific Localization Probability
-            var y = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPathWithWeights, localizationGraph.ModPos.Select(p=>p.Key).ToArray());
-            Assert.That(y.Count == 8);
-            Assert.That(y.First().Value[0].Item2 > 0.99);
+            var siteProb = LocalizationGraph.CalProbabilityForModSitePair(allPathWithWeights);
+            Assert.That(siteProb.Count == 8); // There are 8 possible modSIte pair in the peptide.
+            var pair = siteProb.Keys.First(p => p.ModId == 3 && p.SiteIndex == 2);
+            Assert.That(pair.Probability > 0.99); // ModId 3 in the position 2 has a high probability.
 
         }
 

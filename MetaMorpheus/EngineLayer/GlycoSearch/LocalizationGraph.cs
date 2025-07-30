@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EngineLayer.ModSearch;
 using Omics.Fragmentation;
 using Proteomics;
 using MzLibUtil;
@@ -387,6 +388,7 @@ namespace EngineLayer.GlycoSearch
                 var route = GetLocalizedPath(localizationGraph, temp);
                 route.Score = k;
                 route.ReversePScore = cp;
+                route.SetRPScoreToPair(); // Set the reverse p score to each pair in the route.
                 allPaths.Add(route);
                 return;
             }
@@ -410,47 +412,25 @@ namespace EngineLayer.GlycoSearch
         /// <param name="routes"></param>
         /// <param name="modPos"></param>
         /// <returns> A dictionary represent the chart for glycosite Probility. Ex. key = 2 (ModPos), [(0,0.1),(1,0.3),(2,0.6)] means glycan 0 is 10 %, glycan 1 is 30%, glycan 2 is 60% </returns>
-        public static Dictionary<int, List<Tuple<int, double>>> CalSiteSpecificLocalizationProbability(List<Route> routes, int[] modPos)
+        public static Dictionary<ModSitePair, double> CalProbabilityForModSitePair(List<Route> routes)
         {
-            Dictionary<int, List<Tuple<int, double>>> probabilityMatrix = new Dictionary<int, List<Tuple<int, double>>>();
-
-            Tuple<int, int, double>[][] matrix = new Tuple<int, int, double>[modPos.Length][];
-
-            for (int i = 0; i < modPos.Length; i++) // There are all localization set in the route, we just try to sort the certain glycosite-glycan pairs into the corresponding glycosite.
+            // Calculate the probability for each ModSitePair in the routes.
+            var modSitePairs_all = routes.SelectMany(p => p.ModSitePairs).ToList();
+            var modPosGroup = modSitePairs_all.GroupBy(p => p.SiteIndex).ToDictionary(p => p.Key, p => p.ToList());
+            double totalScore = routes.Sum(p => p.ReversePScore);
+            foreach (var modPosG in modPosGroup)
             {
-                matrix[i] = new Tuple<int, int, double>[routes.Count];
-                for (int j = 0; j < routes.Count; j++)
+                double prob = modPosG.Value.Sum(p => p.RouteScore) / totalScore;
+                foreach (var modSitePair in modPosG.Value)
                 {
-                    foreach (var modSitePair in routes[j].ModSitePairs)
-                    {
-                        if (modSitePair.SiteIndex == modPos[i])
-                        {
-                            matrix[i][j] = new Tuple<int, int, double>(modSitePair.SiteIndex, modSitePair.ModId, routes[j].ReversePScore);
-                        }
-                    }
+                    modSitePair.Probability = prob; // Set the probability for each pair.
                 }
             }
 
-            var sum = routes.Sum(p => p.ReversePScore);
-
-            for (int i = 0; i < modPos.Length; i++)
-            {
-                var gs = matrix[i].Where(p => p!=null).GroupBy(p => p.Item2);
-
-                List<Tuple<int, double>> value = new List<Tuple<int, double>>();
-
-                foreach (var g in gs)
-                {
-                    var prob = g.Sum(p => p.Item3) / sum;
-
-                    value.Add(new Tuple<int, double>(g.Key, prob));
-
-                }
-
-                probabilityMatrix.Add(modPos[i], value);
-            }
-
-            return probabilityMatrix;
+            // Create a dictionary with each unique ModSitePair (same modId and siteIndex) as key and its probability as value.
+            var modSitePairs_Prob = modSitePairs_all.GroupBy(p => p)
+                .ToDictionary(g => g.Key, g => g.Key.Probability);
+            return modSitePairs_Prob;
         }
 
         /// <summary>
