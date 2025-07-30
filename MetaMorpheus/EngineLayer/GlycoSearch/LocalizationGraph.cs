@@ -124,9 +124,7 @@ namespace EngineLayer.GlycoSearch
 
                                 }
                             }
-
                              adjNode.maxCost = maxCost;
-
                         }
 
                         localizationGraph.array[x][y] = adjNode;
@@ -481,7 +479,7 @@ namespace EngineLayer.GlycoSearch
             var motifInBox = new Dictionary<string, int>();
             foreach (var modId in childBox.ModIds)
             {
-                var motif = ModBox.GlobalOGlycans[modId].Target.ToString();
+                var motif = ModBox.GlobalModifications[modId].Target.ToString();
 
                 if (!motifInBox.ContainsKey(motif))
                 {
@@ -531,7 +529,7 @@ namespace EngineLayer.GlycoSearch
                 return true; // If there is no difference, there is no need for motif checking
             }
             
-            Modification modForthisNode = ModBox.GlobalOGlycans[modDiff[0]];
+            Modification modForthisNode = ModBox.GlobalModifications[modDiff[0]];
             return modForthisNode.Target.ToString() == motif;
         }
 

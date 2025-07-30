@@ -58,8 +58,6 @@ namespace TaskLayer
                     Directory.CreateDirectory(individualFileResults);
                 }
 
-                
-
                 foreach (var fileSpecificPSMs in filteredPsms.GroupBy(p => p.FullFilePath)) //group by file path, and the path will be the key for the dictionary
                 {
                     string individualFileFolder = Path.GetFileNameWithoutExtension(fileSpecificPSMs.Key); //folder name.
@@ -103,8 +101,6 @@ namespace TaskLayer
                         WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_oglyco_localization_file);
                         // Writing the oglyco results to a file and summary text
                         WriteGlycoFile.WritePsmGlycoToTsv(OglyInAllPsms, writtenFileOGlyco, true); //we write this last so localization can be attempted 
-                        
-
                     }
                     break;
                 case GlycoSearchType.NGlycanSearch:

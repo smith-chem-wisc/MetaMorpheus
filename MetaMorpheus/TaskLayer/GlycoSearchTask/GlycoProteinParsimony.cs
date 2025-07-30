@@ -30,7 +30,7 @@ namespace TaskLayer
         }
         public string ProteinAccession { get; }
 
-        public int ProteinPos { get; }
+        public int ProteinPos { get; } // One-based position in the protein sequence
 
         public char AminoAcid { get; }
 
