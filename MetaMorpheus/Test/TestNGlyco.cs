@@ -71,7 +71,7 @@ namespace Test
 
             };
 
-            string nglycoHeaderString = GlycoSpectralMatch.GetTabSepHeaderSingle() + GlycoSpectralMatch.GetTabSeperatedHeaderGlyco();
+            string nglycoHeaderString = GlycoSpectralMatch.GetTabSepHeader_unModifiedPeptide() + GlycoSpectralMatch.GetTabSeparatedHeaderGlyco_ModifiedPeptide();
             List<string> nGlycoHeaderTerms = nglycoHeaderString.Split('\t').ToList();
 
             CollectionAssert.AreEquivalent(headerTerms, nGlycoHeaderTerms);

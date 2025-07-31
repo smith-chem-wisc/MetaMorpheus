@@ -10,7 +10,7 @@ namespace TaskLayer
 {
     public class GlycoProteinParsimony
     {
-        //id: Accession, ProtienPos, GlycanId.islocalized, minQValue, maxProb
+        //id: Accession, ProtienPos, ModId.islocalized, minQValue, maxProb
 
         public GlycoProteinParsimony(string proteinAccess, int proteinPos, char aminoAcid, bool isLocalized, double minQValue, LocalizationLevel bestLocalizeLevel, double maxProb)
         {
@@ -42,10 +42,10 @@ namespace TaskLayer
 
         public double MaxProbability { get; set; }
 
-        public static Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
+        public static Dictionary<(string proteinAccession, string proteinPosition, int modId), GlycoProteinParsimony> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
         {
             //key: proPosId
-            Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> localizedGlycan = new Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony>();
+            Dictionary<(string proteinAccession, string proteinPosition, int modId), GlycoProteinParsimony> localizedMod = new Dictionary<(string proteinAccession, string proteinPosition, int modId), GlycoProteinParsimony>();
 
             foreach (var gsm in allPsmsGly)
             {
@@ -69,28 +69,28 @@ namespace TaskLayer
                         }
 
 
-                        if (!localizedGlycan.ContainsKey(proPosId))
+                        if (!localizedMod.ContainsKey(proPosId))
                         {
                             GlycoProteinParsimony gpp = new GlycoProteinParsimony(gsm.Accession, proteinPos, gsm.BaseSequence[local.SiteIndex -2], local.Confident, gsm.FdrInfo.QValue, gsm.LocalizationLevel, prob);
-                            localizedGlycan.Add(proPosId, gpp);
+                            localizedMod.Add(proPosId, gpp);
                         }
                         else
                         {
-                            bool islocalized = (local.Confident || localizedGlycan[proPosId].IsLocalized);
-                            double minQValue = localizedGlycan[proPosId].MinQValue > gsm.FdrInfo.QValue ? gsm.FdrInfo.QValue : localizedGlycan[proPosId].MinQValue;
-                            double maxProb = localizedGlycan[proPosId].MaxProbability > prob ? localizedGlycan[proPosId].MaxProbability : prob;
-                            var localLevel = localizedGlycan[proPosId].BestLocalizeLevel < gsm.LocalizationLevel ? localizedGlycan[proPosId].BestLocalizeLevel : gsm.LocalizationLevel;
+                            bool islocalized = (local.Confident || localizedMod[proPosId].IsLocalized);
+                            double minQValue = localizedMod[proPosId].MinQValue > gsm.FdrInfo.QValue ? gsm.FdrInfo.QValue : localizedMod[proPosId].MinQValue;
+                            double maxProb = localizedMod[proPosId].MaxProbability > prob ? localizedMod[proPosId].MaxProbability : prob;
+                            var localLevel = localizedMod[proPosId].BestLocalizeLevel < gsm.LocalizationLevel ? localizedMod[proPosId].BestLocalizeLevel : gsm.LocalizationLevel;
 
-                            localizedGlycan[proPosId].IsLocalized = islocalized;
-                            localizedGlycan[proPosId].MinQValue = minQValue;
-                            localizedGlycan[proPosId].BestLocalizeLevel = localLevel;
-                            localizedGlycan[proPosId].MaxProbability = maxProb;
+                            localizedMod[proPosId].IsLocalized = islocalized;
+                            localizedMod[proPosId].MinQValue = minQValue;
+                            localizedMod[proPosId].BestLocalizeLevel = localLevel;
+                            localizedMod[proPosId].MaxProbability = maxProb;
                         }
                     }
                 }
             }
-
-            return localizedGlycan;
+                
+            return localizedMod;
         }
 
     }

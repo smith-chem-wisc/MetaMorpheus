@@ -84,13 +84,17 @@ namespace TaskLayer
             {
                 ProseCreatedWhileRunning.Append("The N-glycan database: " + _glycoSearchParameters.OGlycanDatabasefile + "\n");
             }
-            else
+            else if (_glycoSearchParameters.GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
             {
                 ProseCreatedWhileRunning.Append("The O-glycan database: " + _glycoSearchParameters.OGlycanDatabasefile + "\n");
                 ProseCreatedWhileRunning.Append("The N-glycan database: " + _glycoSearchParameters.NGlycanDatabasefile + "\n");
-            }                
-            
-            ProseCreatedWhileRunning.Append("\n");
+            }
+            else
+            {
+                ProseCreatedWhileRunning.Append("The Mod database: " + _glycoSearchParameters.ListOfInterestedMods.Select(p=>p.Item2.ToString()) + "\n");
+            }
+
+                ProseCreatedWhileRunning.Append("\n");
 
             FlashLfqResults flashLfqResults = null;
 
