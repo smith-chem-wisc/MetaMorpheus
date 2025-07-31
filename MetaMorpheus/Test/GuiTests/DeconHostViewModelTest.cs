@@ -32,6 +32,9 @@ public class DeconHostViewModelTests
         Assert.That(viewModel.ProductDeconvolutionParametersList, Is.Not.Null);
         Assert.That(viewModel.PrecursorDeconvolutionParametersList.Any(), Is.True);
         Assert.That(viewModel.ProductDeconvolutionParametersList.Any(), Is.True);
+        Assert.That(viewModel.Polarities.Count, Is.EqualTo(2));
+        Assert.That(viewModel.Polarities, Does.Contain(Polarity.Positive));
+        Assert.That(viewModel.Polarities, Does.Contain(Polarity.Negative));
     }
     [Test]
     public void Constructor_DefaultParameters_ShouldInitializeCorrectly_IsoDec()

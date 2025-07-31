@@ -69,13 +69,13 @@ namespace EngineLayer.Gptmd
 
             if (attemptToLocalize.LocationRestriction == "Anywhere.")
                 return true;
-            if (attemptToLocalize.LocationRestriction == "N-terminal." && (proteinOneBasedIndex <= 2))
+            if (attemptToLocalize.LocationRestriction is "N-terminal." or "5'-terminal." && (proteinOneBasedIndex <= 2))
                 return true;
-            if (attemptToLocalize.LocationRestriction == "Peptide N-terminal." && peptideOneBasedIndex == 1)
+            if (attemptToLocalize.LocationRestriction is "Peptide N-terminal." or "Oligo 5'-terminal." && peptideOneBasedIndex == 1)
                 return true;
-            if (attemptToLocalize.LocationRestriction == "Peptide C-terminal." && peptideOneBasedIndex == peptideLength)
+            if (attemptToLocalize.LocationRestriction is "Peptide C-terminal." or "Oligo 3'-terminal." && peptideOneBasedIndex == peptideLength)
                 return true;
-            if (attemptToLocalize.LocationRestriction == "C-terminal." && proteinOneBasedIndex == protein.Length)
+            if (attemptToLocalize.LocationRestriction is "C-terminal." or "3'-terminal." && proteinOneBasedIndex == protein.Length)
                 return true;
             return false;
         }
