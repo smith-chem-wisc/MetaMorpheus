@@ -43,7 +43,7 @@ namespace MetaMorpheusGUI
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
         public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
 
-        public MetaDraw()
+        public MetaDraw(string[]? filesToLoad = null)
         {
             InitializeComponent();
 
@@ -77,6 +77,13 @@ namespace MetaMorpheusGUI
             plotTypes = new ObservableCollection<string>();
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
+
+            // if files piped in from a MetaMorpheus search, load them immediately
+            if (filesToLoad is not null)
+            {
+                filesToLoad.ForEach(AddFile);
+                loadFilesButton_Click(null, null);
+            }
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
