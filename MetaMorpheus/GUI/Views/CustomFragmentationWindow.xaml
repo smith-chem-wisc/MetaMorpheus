@@ -18,8 +18,9 @@
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="40">
-            <Button x:Name="Save"  Height="30" Width="244" Content="Save" Click="Save_Click" FontSize="15" Grid.Row="3" />
-            <Button x:Name="Cancel" Height="30" Width="148" Content="Cancel" Click="Cancel_Click" FontSize="15" Grid.Row="3" />
+            <Button x:Name="SelectAll"  Height="30" Width="100" Content="Select All" Click="SelectAll_OnClick" FontSize="15"  Margin="5" />
+            <Button x:Name="Save"  Height="30" Width="150" Content="Save" Click="Save_Click" FontSize="15" Margin="5" />
+            <Button x:Name="Cancel" Height="30" Width="100" Content="Cancel" Click="Cancel_Click" FontSize="15" Margin="5" />
         </StackPanel>
     </StackPanel>
 </Window>
