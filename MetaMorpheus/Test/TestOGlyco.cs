@@ -1,6 +1,7 @@
 ﻿using Easy.Common.Extensions;
 using EngineLayer;
 using EngineLayer.GlycoSearch;
+using EngineLayer.ModSearch;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
@@ -20,6 +21,7 @@ using System.Linq;
 using TaskLayer;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
+using static Nett.TomlObjectFactory;
 
 namespace Test
 {
@@ -1765,6 +1767,78 @@ namespace Test
             Assert.That(spectrumLibrary.Contains(".msp"));
 
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestCalProbabilityForModSitePair()
+        {
+            // In this test, we create two routes with different ModSitePairs and ReversePScore values.
+            // We then call the CalProbabilityForModSitePair method and check that the probabilities are calculated correctly.
+
+            List<ModSitePair> modSitePairs_1 = new List<ModSitePair>()
+            {
+                new ModSitePair(1, 2, false),
+                new ModSitePair(3, 1, false),
+                new ModSitePair(5, 1, false)
+            };
+            var route_1 = new Route();
+            route_1.ModSitePairs.AddRange(modSitePairs_1);
+            route_1.ReversePScore = 70;
+            route_1.SetRPScoreToPair();
+
+            List<ModSitePair> modSitePairs_2 = new List<ModSitePair>()
+            {
+                new ModSitePair(1, 1, false),
+                new ModSitePair(2, 2, false),
+                new ModSitePair(5, 1, false)
+            };
+            var route_2 = new Route();
+            route_2.ModSitePairs.AddRange(modSitePairs_2);
+            route_2.ReversePScore= 30;
+            route_2.SetRPScoreToPair();
+
+            var pairsProbDict = LocalizationGraph.CalProbabilityForModSitePair(new List<Route>() { route_1, route_2 });
+
+            Assert.That(pairsProbDict.Count == 5); // There are 5 pairs in total, so the dictionary should have 5 entries.RT
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 1 && p.ModId == 1).Probability, Is.EqualTo(0.3).Within(1e-6)); // The first pair in route_1 has a reverse p score of 70, so its probability should be 0.7
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 1 && p.ModId == 2).Probability, Is.EqualTo(0.7).Within(1e-6)); // The first pair in route_1 has a reverse p score of 70, so its probability should be 0.7
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 2 && p.ModId == 2).Probability, Is.EqualTo(0.3).Within(1e-6)); // The second pair in route_2 has a reverse p score of 30, so its probability should be 0.3
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 3 && p.ModId == 1).Probability, Is.EqualTo(0.7).Within(1e-6)); // The third pair in route_1 has a reverse p score of 70, so its probability should be 0.7
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 5 && p.ModId == 1).Probability, Is.EqualTo(1.0).Within(1e-6)); // The fifth pair in route_1 has a reverse p score of 70, so its probability should be 0.7
+        }
+
+        [Test]
+        public static void TestGetLocalized()
+        {
+            List<ModSitePair> modSitePairs_1 = new List<ModSitePair>()
+            {
+                new ModSitePair(1, 2, false),
+                new ModSitePair(3, 1, false),
+                new ModSitePair(5, 1, false)
+            };
+            var route_1 = new Route();
+            route_1.ModSitePairs.AddRange(modSitePairs_1);
+            route_1.ReversePScore = 70;
+            route_1.SetRPScoreToPair();
+
+            List<ModSitePair> modSitePairs_2 = new List<ModSitePair>()
+            {
+                new ModSitePair(1, 1, false),
+                new ModSitePair(2, 2, false),
+                new ModSitePair(5, 1, false)
+            };
+            var route_2 = new Route();
+            route_2.ModSitePairs.AddRange(modSitePairs_2);
+            route_2.ReversePScore = 30;
+            route_2.SetRPScoreToPair();
+
+            LocalizationLevel localizedLevel;
+            var localizedMod =
+                GlycoSpectralMatch.GetLocalizedGlycan(new List<Route>() { route_1, route_2 }, out localizedLevel);
+            Assert.That(localizedLevel == LocalizationLevel.Level2);
+            Assert.That(localizedMod.Count == 5); // There are 5 pairs in total, so the dictionary should have 5 entries.
+            Assert.That(localizedMod.Where(p => p.SiteIndex == 5 && p.ModId == 1).All(p => p.Confident)); // The Pair with SiteIndex 5 and ModId 1 should be confident, as it appears in both routes.
+            Assert.That(localizedMod.Where(p => p.SiteIndex != 5 ).All(p => !p.Confident)); // The other pairs should not be confident, as they do not appear in both routes.
         }
     }
 }

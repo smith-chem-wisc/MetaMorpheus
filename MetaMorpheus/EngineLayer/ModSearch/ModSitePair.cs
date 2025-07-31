@@ -35,9 +35,9 @@ namespace EngineLayer.ModSearch
         public double Probability { get; set; } = 0.0;
 
         /// <summary>
-        /// The score of the route that this pair belongs to.
+        /// The ReversePScore of the route that this pair belongs to.
         /// </summary>
-        public double RouteScore { get; set; }
+        public double RouteRPScore { get; set; }
 
         public override bool Equals(object obj)
         {
