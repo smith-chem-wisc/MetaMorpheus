@@ -655,6 +655,9 @@
     <None Update="Transcriptomics\TestData\16mer2.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Transcriptomics\TestData\22mer-Am.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Transcriptomics\TestData\6mer.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
