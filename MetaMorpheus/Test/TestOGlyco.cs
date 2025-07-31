@@ -1799,12 +1799,12 @@ namespace Test
 
             var pairsProbDict = LocalizationGraph.CalProbabilityForModSitePair(new List<Route>() { route_1, route_2 });
 
-            Assert.That(pairsProbDict.Count == 5); // There are 5 pairs in total, so the dictionary should have 5 entries.RT
-            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 1 && p.ModId == 1).Probability, Is.EqualTo(0.3).Within(1e-6)); // The first pair in route_1 has a reverse p score of 70, so its probability should be 0.7
+            Assert.That(pairsProbDict.Count == 5); // There are 5 pairs in total, so the dictionary should have 5 entries.
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 1 && p.ModId == 1).Probability, Is.EqualTo(0.3).Within(1e-6)); // The first pair in route_2 has a reverse p score of 30, so its probability should be 0.3
             Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 1 && p.ModId == 2).Probability, Is.EqualTo(0.7).Within(1e-6)); // The first pair in route_1 has a reverse p score of 70, so its probability should be 0.7
             Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 2 && p.ModId == 2).Probability, Is.EqualTo(0.3).Within(1e-6)); // The second pair in route_2 has a reverse p score of 30, so its probability should be 0.3
-            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 3 && p.ModId == 1).Probability, Is.EqualTo(0.7).Within(1e-6)); // The third pair in route_1 has a reverse p score of 70, so its probability should be 0.7
-            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 5 && p.ModId == 1).Probability, Is.EqualTo(1.0).Within(1e-6)); // The fifth pair in route_1 has a reverse p score of 70, so its probability should be 0.7
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 3 && p.ModId == 1).Probability, Is.EqualTo(0.7).Within(1e-6)); // The second pair in route_1 has a reverse p score of 70, so its probability should be 0.7
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 5 && p.ModId == 1).Probability, Is.EqualTo(1.0).Within(1e-6)); // Both of two routes have the same pair (site 5 - modId 1), so its probability should be 1.0
         }
 
         [Test]

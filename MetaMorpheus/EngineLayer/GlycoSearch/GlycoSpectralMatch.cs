@@ -473,7 +473,7 @@ namespace EngineLayer.GlycoSearch
         /// <returns> level 1 or level 1b</returns>
         public static LocalizationLevel CorrectLocalizationLevel(Dictionary<ModSitePair, double> siteSpeciLocalProb, LocalizationGraph localizationGraph, Route route, List<ModSitePair> localizedGlycan, LocalizationLevel localizationLevel)
         {
-            if (siteSpeciLocalProb != null 
+            if (siteSpeciLocalProb == null 
                 || localizationLevel!=LocalizationLevel.Level1)
             {
                 return localizationLevel;
@@ -514,7 +514,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="local_protein"></param>
         public static void LocalizedSiteSpeciLocalInfo(Dictionary<ModSitePair, double> siteSpeciLocalProb, List<ModSitePair> localizedGlycan, int? OneBasedStartResidueInProtein, ref string local_peptide, ref string local_protein)
         {
-            if (siteSpeciLocalProb != null)
+            if (siteSpeciLocalProb == null)
             {
                 return;
             }
