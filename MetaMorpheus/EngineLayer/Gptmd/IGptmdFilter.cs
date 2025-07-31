@@ -1,8 +1,10 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using Omics.Fragmentation;
 using System.Collections.Generic;
 using Omics;
 using System.Linq;
+using Omics.Modifications;
 
 namespace EngineLayer;
 
@@ -17,7 +19,8 @@ public interface IGptmdFilter : IEquatable<IGptmdFilter>
         double originalScore,
         List<MatchedFragmentIon> matchedIons,
         int peptideOneBasedModSite,
-        int peptideLength);
+        int peptideLength, 
+        Modification modAttemptingToAdd);
 
     bool IEquatable<IGptmdFilter>.Equals(IGptmdFilter? other)
     {
@@ -37,7 +40,8 @@ public sealed class ImprovedScoreFilter : IGptmdFilter
         double originalScore,
         List<MatchedFragmentIon> matchedIons,
         int peptideOneBasedModSite,
-        int peptideLength)
+        int peptideLength,
+        Modification modAttemptingToAdd)
     {
         return newScore > originalScore;
     }
@@ -49,7 +53,6 @@ public sealed class ImprovedScoreFilter : IGptmdFilter
 /// </summary>
 public sealed class DualDirectionalIonCoverageFilter : IGptmdFilter
 {
-    // TODO: Consider N-terminal and C-terminal mods as special cases, where the flanking ion not possible except for the M ion. 
     public bool Passes(
         IBioPolymerWithSetMods candidatePeptide,
         SpectralMatch psm,
@@ -57,7 +60,8 @@ public sealed class DualDirectionalIonCoverageFilter : IGptmdFilter
         double originalScore,
         List<MatchedFragmentIon> matchedIons,
         int peptideOneBasedModSite,
-        int peptideLength)
+        int peptideLength,
+        Modification modAttemptingToAdd)
     {
         if (matchedIons == null || matchedIons.Count == 0)
             return false;
@@ -76,6 +80,9 @@ public sealed class DualDirectionalIonCoverageFilter : IGptmdFilter
             m.NeutralTheoreticalProduct.ResiduePosition < site)
         );
 
+        if (modAttemptingToAdd.LocationRestriction.Contains("terminal", StringComparison.InvariantCultureIgnoreCase))
+            return coveredFromCTerm || coveredFromNTerm;
+
         return coveredFromNTerm && coveredFromCTerm;
     }
 }
@@ -86,7 +93,6 @@ public sealed class DualDirectionalIonCoverageFilter : IGptmdFilter
 /// </summary>
 public sealed class UniDirectionalIonCoverageFilter : IGptmdFilter
 {
-    // TODO: Consider N-terminal and C-terminal mods as special cases, where the flanking ion not possible except for the M ion. 
     public bool Passes(
         IBioPolymerWithSetMods candidatePeptide,
         SpectralMatch psm,
@@ -94,7 +100,8 @@ public sealed class UniDirectionalIonCoverageFilter : IGptmdFilter
         double originalScore,
         List<MatchedFragmentIon> matchedIons,
         int peptideOneBasedModSite,
-        int peptideLength)
+        int peptideLength,
+        Modification modAttemptingToAdd)
     {
         if (matchedIons == null || matchedIons.Count == 0)
             return false;
@@ -131,7 +138,8 @@ public sealed class FlankingIonCoverageFilter : IGptmdFilter
         double originalScore,
         List<MatchedFragmentIon> matchedIons,
         int peptideOneBasedModSite,
-        int peptideLength)
+        int peptideLength,
+        Modification modAttemptingToAdd)
     {
         if (matchedIons == null || matchedIons.Count == 0)
             return false;
@@ -143,6 +151,9 @@ public sealed class FlankingIonCoverageFilter : IGptmdFilter
 
         bool rightFlank = matchedIons.Any(m =>
             m.NeutralTheoreticalProduct.ResiduePosition == site);
+
+        if (modAttemptingToAdd.LocationRestriction.Contains("terminal", StringComparison.InvariantCultureIgnoreCase))
+            return leftFlank || rightFlank;
 
         return leftFlank && rightFlank;
     }
