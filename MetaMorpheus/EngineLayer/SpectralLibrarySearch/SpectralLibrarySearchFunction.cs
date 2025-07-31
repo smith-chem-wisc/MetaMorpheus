@@ -11,6 +11,7 @@ using MassSpectrometry.MzSpectra;
 using Omics;
 using Omics.SpectrumMatch;
 using EngineLayer.SpectrumMatch;
+using Readers.SpectralLibrary;
 
 namespace EngineLayer
 {
@@ -60,7 +61,7 @@ namespace EngineLayer
                                     {
                                         var decoyPeptideTheorProducts = new List<Product>();
                                         bestMatch.SpecificBioPolymer.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
-                                        var decoylibrarySpectrum = GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
+                                        var decoylibrarySpectrum = LibrarySpectrum.GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
                                         SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, decoylibrarySpectrum.Select(x => x.Mz).ToArray(),
                                             decoylibrarySpectrum.Select(x => x.Intensity).ToArray(), SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum,
                                             commonParameters.ProductMassTolerance.Value, false);
@@ -84,25 +85,6 @@ namespace EngineLayer
                     }
                 });
             }
-        }
-
-        // For decoy library spectrum generation, we use the predicted m/z valuse of the decoy sequence and we use the decoy's corresponding target's library spectrum's intensity values as decoy's intensities
-        public static List<MatchedFragmentIon> GetDecoyLibrarySpectrumFromTargetByReverse(LibrarySpectrum targetSpectrum, List<Product> decoyPeptideTheorProducts)
-        {
-            var decoyFragmentIons = new List<MatchedFragmentIon>();
-            foreach (var targetIon in targetSpectrum.MatchedFragmentIons)
-            {
-                foreach (var decoyPeptideTheorIon in decoyPeptideTheorProducts)
-                {
-                    if (targetIon.NeutralTheoreticalProduct.ProductType == decoyPeptideTheorIon.ProductType && targetIon.NeutralTheoreticalProduct.FragmentNumber == decoyPeptideTheorIon.FragmentNumber)
-                    {
-                        double decoyFragmentMz = decoyPeptideTheorIon.NeutralMass.ToMz(targetIon.Charge);
-                        Product temProduct = decoyPeptideTheorIon;
-                        decoyFragmentIons.Add(new MatchedFragmentIon(temProduct, decoyFragmentMz, targetIon.Intensity, targetIon.Charge));
-                    }
-                }
-            }
-            return decoyFragmentIons;
         }
     }
 }

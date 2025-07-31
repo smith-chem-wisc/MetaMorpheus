@@ -13,6 +13,7 @@ using System.Collections.Concurrent;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Omics;
+using Readers.SpectralLibrary;
 
 namespace TaskLayer.MbrAnalysis
 {

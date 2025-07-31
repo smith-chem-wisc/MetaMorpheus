@@ -24,6 +24,7 @@ using Omics.Fragmentation;
 using Omics.SpectrumMatch;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Readers.SpectralLibrary;
 
 [assembly: InternalsVisibleTo("Test")]
 namespace GuiFunctions
