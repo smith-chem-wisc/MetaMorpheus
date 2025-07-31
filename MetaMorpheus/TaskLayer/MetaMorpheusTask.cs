@@ -16,7 +16,6 @@ using System.Threading.Tasks;
 using SpectralAveraging;
 using Omics;
 using Omics.Digestion;
-using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using UsefulProteomicsDatabases;
@@ -25,9 +24,6 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
-using Easy.Common.Extensions;
-using EngineLayer.Gptmd;
-using Readers;
 
 namespace TaskLayer
 {

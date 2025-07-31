@@ -1,5 +1,4 @@
 ﻿using MzLibUtil;
-using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,7 +42,6 @@ namespace EngineLayer.Gptmd
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
             ModDictionary = modDictionary ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
             Filters = filters ?? new List<IGptmdFilter>();
-
         }
 
         public static bool ModFits(Modification attemptToLocalize, IBioPolymer protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
