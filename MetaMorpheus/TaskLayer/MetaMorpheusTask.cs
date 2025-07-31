@@ -503,10 +503,6 @@ namespace TaskLayer
                         initiatorMethionineBehavior: digestionParams.InitiatorMethionineBehavior,
                         fragmentationTerminus: digestionParams.FragmentationTerminus,
                         searchModeType: digestionParams.SearchModeType);
-
-                    // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
-                    DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
-                        fileSpecificParams.CustomIons ?? commonParams.CustomIons;
                     break;
                 case RnaDigestionParams:
                     fileSpecificDigestionParams = new RnaDigestionParams(
@@ -515,15 +511,15 @@ namespace TaskLayer
                         maxLength: maxPeptideLength, maxMods: maxModsForPeptide,
                         maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
                         fragmentationTerminus: commonParams.DigestionParams.FragmentationTerminus);
-
-                    // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
-                    Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType
-                        [DissociationType.Custom] = fileSpecificParams.CustomIons ?? commonParams.CustomIons;
                     break;
                 default:
                     throw new MetaMorpheusException(
                         $"Unrecognized digestion parameters of type {commonParams.DigestionParams.GetType().FullName} in MetaMorpheusTask.SetAllFileSpecificCommonParams");
             }
+
+            // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
+            fileSpecificDigestionParams.ProductsFromDissociationType()[DissociationType.Custom] =
+                fileSpecificParams.CustomIons ?? commonParams.CustomIons;
 
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
