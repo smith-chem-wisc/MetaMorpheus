@@ -113,30 +113,30 @@ namespace EngineLayer.Gptmd
                         var possibleModifications = GetPossibleMods(precursorMass, GptmdModifications, Combos,
                             FilePathToPrecursorMassTolerance[fileName], pepWithSetMods);
 
-                        double bestScore = originalScore; // Initialize with the original score of the PSM to ensure gptmd only adds if new modified forms scores higher
+                        double bestScore = 0;
 
                         foreach (var mod in possibleModifications)
                         {
                             if (!mod.MonoisotopicMass.HasValue)
                                 continue;
 
-                            for (int j = 0; j < pepWithSetMods.Length; j++)
+                            for (int pepSeqIndex = 0; pepSeqIndex < pepWithSetMods.Length; pepSeqIndex++)
                             {
-                                int indexInProtein = pepWithSetMods.OneBasedStartResidue + j;
-                                if (!ModFits(mod, pepWithSetMods.Parent, j + 1, pepWithSetMods.Length, indexInProtein))
+                                int indexInProtein = pepWithSetMods.OneBasedStartResidue + pepSeqIndex;
+                                if (!ModFits(mod, pepWithSetMods.Parent, pepSeqIndex + 1, pepWithSetMods.Length, indexInProtein))
                                     continue;
 
-                                var newPep = pepWithSetMods.Localize(j, mod.MonoisotopicMass.Value);
+                                var newPep = pepWithSetMods.Localize(pepSeqIndex, mod.MonoisotopicMass.Value);
                                 peptideTheorProducts.Clear();
                                 newPep.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
 
                                 ms2ScanWithSpecificMass ??= new Ms2ScanWithSpecificMass(scan, precursorMass, precursorCharge, fileName, CommonParameters);
                                 var matchedIons = MatchFragmentIons(ms2ScanWithSpecificMass, peptideTheorProducts, CommonParameters, matchAllCharges: false);
-                                double score = CalculatePeptideScore(scan, matchedIons, false);
+                                double score = CalculatePeptideScore(scan, matchedIons);
 
-                                // plus 2 is to translate from zero based string array index to OneBasedModification index
-                                int modSite = pepWithSetMods.OneBasedStartResidue + j + 1;
-                                if (!Filters.All(f => f.Passes(newPep, psm, score, originalScore, matchedIons, j + 2, pepWithSetMods.Length, mod)))
+                                int modSiteInProteinIndex = pepWithSetMods.OneBasedStartResidue + pepSeqIndex + 1;
+                                int modSiteInPeptideIndex = pepSeqIndex + 2; // plus 2 is to translate from zero based string array index to OneBasedModification index
+                                if (!Filters.All(f => f.Passes(newPep, psm, score, originalScore, matchedIons, modSiteInPeptideIndex, pepWithSetMods.Length, mod)))
                                     continue;
 
                                 if (score < bestScore - ScoreTolerance)
@@ -144,7 +144,7 @@ namespace EngineLayer.Gptmd
 
                                 // resolve variant protein location
                                 string accession;
-                                int adjustedSite = modSite;
+                                int adjustedSite = modSiteInProteinIndex;
                                 if (!isVariantProtein)
                                 {
                                     accession = pepWithSetMods.Parent.Accession;
