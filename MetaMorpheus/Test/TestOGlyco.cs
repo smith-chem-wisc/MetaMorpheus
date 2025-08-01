@@ -1797,8 +1797,17 @@ namespace Test
             route_2.ReversePScore= 30;
             route_2.SetRPScoreToPair();
 
-            var pairsProbDict = LocalizationGraph.CalProbabilityForModSitePair(new List<Route>() { route_1, route_2 });
+            List<ModSitePair> localiezedPairs = new List<ModSitePair>() { new ModSitePair(1, 1, false), new ModSitePair(1, 2, false) };
+            Assert.That(localiezedPairs[0].Probability.Equals(0.0)); // The default prob is 0
+            Assert.That(localiezedPairs[1].Probability.Equals(0.0));
 
+            var pairsProbDict = LocalizationGraph.CalProbabilityForModSitePair(new List<Route>() { route_1, route_2 }, localiezedPairs);
+
+            //Check the localizedPairs is updated with the correct probabilities
+            Assert.That(localiezedPairs[0].Probability, Is.EqualTo(0.3).Within(1e-6));
+            Assert.That(localiezedPairs[1].Probability, Is.EqualTo(0.7).Within(1e-6));
+
+            //Check the pairsProbDict output is correct
             Assert.That(pairsProbDict.Count == 5); // There are 5 pairs in total, so the dictionary should have 5 entries.
             Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 1 && p.ModId == 1).Probability, Is.EqualTo(0.3).Within(1e-6)); // The first pair in route_2 has a reverse p score of 30, so its probability should be 0.3
             Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 1 && p.ModId == 2).Probability, Is.EqualTo(0.7).Within(1e-6)); // The first pair in route_1 has a reverse p score of 70, so its probability should be 0.7
@@ -1833,8 +1842,7 @@ namespace Test
             route_2.SetRPScoreToPair();
 
             LocalizationLevel localizedLevel;
-            var localizedMod =
-                GlycoSpectralMatch.GetLocalizedGlycan(new List<Route>() { route_1, route_2 }, out localizedLevel);
+            var localizedMod = GlycoSpectralMatch.GetLocalizedGlycan(new List<Route>() { route_1, route_2 }, out localizedLevel);
             Assert.That(localizedLevel == LocalizationLevel.Level2);
             Assert.That(localizedMod.Count == 5); // There are 5 pairs in total, so the dictionary should have 5 entries.
             Assert.That(localizedMod.Where(p => p.SiteIndex == 5 && p.ModId == 1).All(p => p.Confident)); // The Pair with SiteIndex 5 and ModId 1 should be confident, as it appears in both routes.

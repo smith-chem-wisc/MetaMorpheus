@@ -409,33 +409,39 @@ namespace EngineLayer.GlycoSearch
         //Dictionary<int, List<Tuple<int, double>>> is <modPos, List<glycanId, site probability>>
         /// <summary>
         /// Generate the probability chart for each ModSitePair. Note we treat the same ModSitePair from different routes differently by using their RP score.
-        /// However, the ModSitePair with same ModID and SiteIndex are grouped together, and the probability was set equally.
+        /// Then we set the probability to the ModSitePair in the localizedGlycans list.
         /// </summary>
         /// <param name="routes"></param>
         /// <param name="modPos"></param>
         /// <returns> A dictionary represent unique modSitePari and theirs Probability.</returns>
-        public static Dictionary<ModSitePair, double> CalProbabilityForModSitePair(List<Route> routes)
+        public static Dictionary<ModSitePair, double> CalProbabilityForModSitePair(List<Route> routes, List<ModSitePair> localizedGlycans = null)
         {
             // Calculate the probability for each ModSitePair in the routes.
-            var allModSitePairs = routes.SelectMany(p => p.ModSitePairs).ToList();
-            var pairsGroupBySite = allModSitePairs.GroupBy(p => p.SiteIndex).ToDictionary(p => p.Key, p => p.ToList());
+            var allPairs = routes.SelectMany(p => p.ModSitePairs);
+            var pairsGroupBySite = allPairs.GroupBy(p => p.SiteIndex).ToDictionary(p => p.Key, p => p.ToList());
             double totalScore = routes.Sum(p => p.ReversePScore);
 
             // Group all ModSitePairs by SiteIndex
             foreach (var siteGroup in pairsGroupBySite)
             {
                 // then in each siteGroup, group by ModId
-                var groupByModId = siteGroup.Value.GroupBy(p => p.ModId);
-                foreach (var group in groupByModId)
+                var groupsByModId = siteGroup.Value.GroupBy(p => p.ModId);
+                foreach (var groupById in groupsByModId)
                 {
                     // Calculate the probability each ModSitePair
-                    double prob = group.Sum(p => p.RouteRPScore) / totalScore;
-                    group.ForEach(p=>p.Probability = prob); // The probability in this group is the same.
+                    int siteIndex = siteGroup.Key;
+                    int modId = groupById.Key;
+                    double prob = groupById.Sum(p => p.RouteRPScore) / totalScore;
+                    groupById.ForEach(p => p.Probability = prob); // Set the probability to each ModSitePair in the group.
+                    if (localizedGlycans != null) // If localizedGlycans is not null, we will set the probability to the localizedGlycans.
+                    {
+                        localizedGlycans.Where(p => p.ModId == modId && p.SiteIndex == siteIndex).ForEach(p => p.Probability = prob);
+                    }
                 }
             }
 
             // Create a dictionary with each unique ModSitePair (same modId and siteIndex) as key and its probability as value.
-            var modSitePairs_Prob =  allModSitePairs.GroupBy(p => p)
+            var modSitePairs_Prob =  allPairs.GroupBy(p => p)
                 .ToDictionary(g => g.Key, g => g.Key.Probability);
             return modSitePairs_Prob;
         }

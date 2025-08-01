@@ -388,21 +388,21 @@ namespace EngineLayer.GlycoSearch
         public static List<ModSitePair> GetLocalizedGlycan(List<Route> allLocalizationsRoutes, out LocalizationLevel localizationLevel)
         {
             List<ModSitePair> localizedMod = new List<ModSitePair>();
-
+            int totalRoutesCount = allLocalizationsRoutes.Count;
             //This is a more efficient way to count the mod-site pair of all routes.
             var modSiteSeenCount = allLocalizationsRoutes
                 .SelectMany(p => p.ModSitePairs)
                 .GroupBy(p => p)
-                .ToDictionary(g => g.Key, g => g.Count()); 
+                .ToDictionary(g => g.Key, g => g.Count());
 
             localizationLevel = LocalizationLevel.Level3;
-            if (allLocalizationsRoutes.Count == 1) // we just have one hypothesis(route), no other possibility
+            if (totalRoutesCount == 1) // we just have one hypothesis(route), no other possibility
             {
                 localizationLevel = LocalizationLevel.Level1;
             }
-            else if (allLocalizationsRoutes.Count > 1)
+            else if (totalRoutesCount > 1)
             {
-                if (modSiteSeenCount.Values.Any(p => p == allLocalizationsRoutes.Count)) //If anyone of the glycan-site pair is localized in all the cases, then the localization level is 2.
+                if (modSiteSeenCount.Values.Any(p => p == totalRoutesCount)) //If anyone of the glycan-site pair is localized in all the cases, then the localization level is 2.
                 {
                     localizationLevel = LocalizationLevel.Level2;
                 }
@@ -412,9 +412,10 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
+            // Update the pairs and their confidence, then add the confident pairs to the localizedMod list.
             foreach (var seenMod in modSiteSeenCount)
             {
-                if (seenMod.Value == allLocalizationsRoutes.Count) // Try to fine the glycan-site pair that always localized in all the cases. 
+                if (seenMod.Value == totalRoutesCount) // Try to fine the glycan-site pair that always localized in all the cases. 
                 {
                     seenMod.Key.Confident = true; //If yes, then confident will be set as ture.
                 }
