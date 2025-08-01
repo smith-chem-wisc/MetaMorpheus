@@ -63,9 +63,9 @@ namespace TaskLayer
                         (string,string,int) proPosId = new (gsm.Accession, proteinPos.ToString(), local.ModId);
 
                         double prob = -1;
-                        if (gsm.SiteSpeciLocalProb != null && gsm.SiteSpeciLocalProb.ContainsKey(local.SiteIndex))
+                        if (gsm.ModSitePairProbDict != null && gsm.ModSitePairProbDict.ContainsKey(local))
                         {
-                            prob = gsm.SiteSpeciLocalProb[local.SiteIndex].Where(p => p.Item1 == local.ModId).FirstOrDefault().Item2;
+                            prob = local.Probability;
                         }
 
 

@@ -29,6 +29,16 @@ namespace EngineLayer.ModSearch
         /// </summary>
         public bool Confident { get; set; } = false;
 
+        /// <summary>
+        /// Probability of the modification being localized at the site.
+        /// </summary>
+        public double Probability { get; set; } = 0.0;
+
+        /// <summary>
+        /// The ReversePScore of the route that this pair belongs to.
+        /// </summary>
+        public double RouteRPScore { get; set; }
+
         public override bool Equals(object obj)
         {
             if (obj is ModSitePair other)
