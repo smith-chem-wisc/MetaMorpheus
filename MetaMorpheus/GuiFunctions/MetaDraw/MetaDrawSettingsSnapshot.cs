@@ -42,10 +42,16 @@ namespace GuiFunctions
         public double SpectrumDescriptionFontSize { get; set; } = 10;
         public bool DisplayChimeraLegend { get; set; } = true;
         public bool SuppressMessageBoxes { get; set; } = true;
+
+        // chimera settings
         public bool ChimeraLegendTakeFirstIfAmbiguous { get; set; }
         public double ChimeraLegendMaxWidth { get; set; } = 420;
         public LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
         public LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
+
+        // plot model stat settings
+        public bool DisplayFilteredOnly { get; set; } = true;
+        public bool NormalizeHistogramToFile { get; set; } = false;
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;

@@ -58,11 +58,16 @@ namespace GuiFunctions
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double SpectrumDescriptionFontSize { get; set; } = 10;
 
+        // chimera settings
         public static bool DisplayChimeraLegend { get; set; } = true;
         public static double ChimeraLegendMaxWidth { get; set; } = 420;
         public static bool ChimeraLegendTakeFirstIfAmbiguous { get; set; } = false;
         public static LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
         public static LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
+
+        // plot model stat settings
+        public static bool DisplayFilteredOnly { get; set; } = true;
+        public static bool NormalizeHistogramToFile { get; set; } = false;
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -256,6 +261,8 @@ namespace GuiFunctions
             SubAndSuperScriptIons = true;
             DrawStationarySequence = true;
             DrawNumbersUnderStationary = true;
+            NormalizeHistogramToFile = false;
+            DisplayFilteredOnly = true;
             ShowLegend = true;
             ShowDecoys = false;
             ShowContaminants = true;
@@ -473,7 +480,9 @@ namespace GuiFunctions
                 SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
                 SuppressMessageBoxes = SuppressMessageBoxes,
                 ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous,
-                ChimeraLegendMaxWidth = ChimeraLegendMaxWidth   
+                ChimeraLegendMaxWidth = ChimeraLegendMaxWidth,
+                NormalizeHistogramToFile = NormalizeHistogramToFile,
+                DisplayFilteredOnly = DisplayFilteredOnly,
             };
         }
 
@@ -514,6 +523,8 @@ namespace GuiFunctions
             SuppressMessageBoxes = settings.SuppressMessageBoxes;
             ChimeraLegendTakeFirstIfAmbiguous = settings.ChimeraLegendTakeFirstIfAmbiguous;
             ChimeraLegendMaxWidth = settings.ChimeraLegendMaxWidth;
+            NormalizeHistogramToFile = settings.NormalizeHistogramToFile;
+            DisplayFilteredOnly = settings.DisplayFilteredOnly;
 
             try // Product Type Colors
             {

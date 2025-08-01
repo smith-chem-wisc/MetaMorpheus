@@ -52,6 +52,8 @@ namespace Test.MetaDraw
             Assert.That(snapshot.SuppressMessageBoxes, Is.EqualTo(MetaDrawSettings.SuppressMessageBoxes));
             Assert.That(snapshot.ChimeraLegendTakeFirstIfAmbiguous, Is.EqualTo(MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous));
             Assert.That(snapshot.ChimeraLegendMaxWidth, Is.EqualTo(MetaDrawSettings.ChimeraLegendMaxWidth));
+            Assert.That(snapshot.NormalizeHistogramToFile, Is.EqualTo(MetaDrawSettings.NormalizeHistogramToFile));
+            Assert.That(snapshot.DisplayFilteredOnly, Is.EqualTo(MetaDrawSettings.DisplayFilteredOnly));
 
 
             MetaDrawSettings.ShowContaminants = true;
@@ -100,6 +102,8 @@ namespace Test.MetaDraw
             snapshot.SuppressMessageBoxes = true;
             snapshot.ChimeraLegendTakeFirstIfAmbiguous = true;
             snapshot.ChimeraLegendMaxWidth = 323;
+            snapshot.NormalizeHistogramToFile = !snapshot.NormalizeHistogramToFile;
+            snapshot.DisplayFilteredOnly = !snapshot.DisplayFilteredOnly;
 
             MetaDrawSettings.LoadSettings(snapshot, out bool flaggedError);
             Assert.That(!flaggedError);
@@ -120,6 +124,9 @@ namespace Test.MetaDraw
             Assert.That(snapshot.SuppressMessageBoxes, Is.EqualTo(MetaDrawSettings.SuppressMessageBoxes));
             Assert.That(snapshot.ChimeraLegendTakeFirstIfAmbiguous, Is.EqualTo(MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous));
             Assert.That(snapshot.ChimeraLegendMaxWidth, Is.EqualTo(MetaDrawSettings.ChimeraLegendMaxWidth));
+            Assert.That(snapshot.NormalizeHistogramToFile, Is.EqualTo(MetaDrawSettings.NormalizeHistogramToFile));
+            Assert.That(snapshot.DisplayFilteredOnly, Is.EqualTo(MetaDrawSettings.DisplayFilteredOnly));
+
             colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
             betaColorValues = MetaDrawSettings.BetaProductTypeToColor
