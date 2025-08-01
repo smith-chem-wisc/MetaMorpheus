@@ -129,10 +129,21 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             if (ms1Scan == null || ms2Scan == null)
                 continue;
 
-            var orderedGroup = group.OrderByDescending(p => p.Score);
-            var groupVm = new ChimeraGroupViewModel(orderedGroup, ms1Scan, ms2Scan);
-            if (groupVm.ChimericPsms.Count > 0)
-                toReturn.Add(groupVm);
+            // Attempt to construct ChimeraGroupViewModel, but catch any exceptions that may occur
+            // (e.g., due to deconvolution failures or mismatched isotopic envelopes. This could be caused by different decon params in the visualization and the search).
+            // This prevents the program from crashing and skips problematic groups.
+            try
+            {
+                var orderedGroup = group.OrderByDescending(p => p.Score);
+                var groupVm = new ChimeraGroupViewModel(orderedGroup, ms1Scan, ms2Scan);
+                if (groupVm.ChimericPsms.Count > 0)
+                    toReturn.Add(groupVm);
+            }
+            catch (Exception ex)
+            {
+                // Log or handle the exception as needed (e.g., for debugging)
+                // For now, just skip this group and continue processing others.
+            }
         }
         return toReturn;
     }
