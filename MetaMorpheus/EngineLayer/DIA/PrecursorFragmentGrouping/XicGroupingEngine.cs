@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MassSpectrometry;
 using System.Collections.Concurrent;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace EngineLayer.DIA
 {
@@ -17,14 +18,18 @@ namespace EngineLayer.DIA
         public float ApexRTTolerance { get; set; }
         public double OverlapThreshold { get; set; }
         public double CorrelationThreshold { get; set; }
+        public int PrecursorRankThreshold { get; set; } 
+        public int FragmentRankThreshold { get; set; }
 
-        public XicGroupingEngine(float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0)
+        public XicGroupingEngine(float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0, int precursorRankThreshold = 1000, int fragmentRankThreshold = 1000)
         {
             ApexRTTolerance = apexRTTolerance;
             OverlapThreshold = overlapThreshold;
             CorrelationThreshold = correlationThreshold;
             MaxThreadsForGrouping = maxThreadsForGrouping;
             MinFragmentCountForPfGroup = minFragmentCountForGrouping;
+            PrecursorRankThreshold = precursorRankThreshold;
+            FragmentRankThreshold = fragmentRankThreshold;
         }
 
         public override List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments)
@@ -45,6 +50,12 @@ namespace EngineLayer.DIA
                         }
                     }
                 });
+
+            //Filter precursor-fragment pairs by rank
+            FilterPfPairsByRank(pfGroups, PrecursorRankThreshold, FragmentRankThreshold);
+            //Remove groups with insufficient fragment pairs
+            pfGroups.RemoveAll(g => g.PFpairs.Count < MinFragmentCountForPfGroup);
+
             return pfGroups;
         }
 
@@ -73,6 +84,16 @@ namespace EngineLayer.DIA
                 return pfGroup;
             }
             return null;
+        }
+
+        public static void FilterPfPairsByRank(List<PrecursorFragmentsGroup> pfGroups, int precursorRankThreshold, int fragmentRankThreshold)
+        {
+            foreach(var pfGroup in pfGroups)
+            {
+                PrecursorFragmentPair.SetPrecursorRankForPfPairs(pfGroup.PFpairs);
+                pfGroup.SetFragmentRankForPfPairs();
+                pfGroup.PFpairs.RemoveAll(pf => pf.PrecursorRank.Value < precursorRankThreshold|| pf.FragmentRank.Value < fragmentRankThreshold);
+            }
         }
     }
 }

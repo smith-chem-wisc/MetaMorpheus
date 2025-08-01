@@ -135,5 +135,14 @@ namespace EngineLayer.DIA
 
             return scanWithprecursor;
         }
+
+        public void SetFragmentRankForPfPairs()
+        {
+            PFpairs.Sort((a, b) => a.Correlation.Value.CompareTo(b.Correlation.Value));
+            for (int i = 0; i < PFpairs.Count; i++)
+            {
+                PFpairs[i].PrecursorRank = i + 1;
+            }
+        }
     }
 }
