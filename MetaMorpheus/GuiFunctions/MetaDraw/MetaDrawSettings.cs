@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using EngineLayer.GlycoSearch;
 using OxyPlot;
 using Omics.Fragmentation;
 using System;
@@ -58,14 +57,14 @@ namespace GuiFunctions
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double SpectrumDescriptionFontSize { get; set; } = 10;
 
-        // chimera settings
+        // Chimera Settings
         public static bool DisplayChimeraLegend { get; set; } = true;
         public static double ChimeraLegendMaxWidth { get; set; } = 420;
         public static bool ChimeraLegendTakeFirstIfAmbiguous { get; set; } = false;
         public static LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
         public static LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
 
-        // plot model stat settings
+        // Data Visualization Settings
         public static bool DisplayFilteredOnly { get; set; } = true;
         public static bool NormalizeHistogramToFile { get; set; } = false;
         public static List<OxyColor> DataVisualizationColorOrder { get; set; }

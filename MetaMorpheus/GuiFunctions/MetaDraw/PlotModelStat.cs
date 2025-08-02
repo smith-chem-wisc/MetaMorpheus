@@ -2,7 +2,6 @@
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
-using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System;
@@ -12,7 +11,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Globalization;
 using Readers;
-using ThermoFisher.CommonCore.Data.Business;
 
 namespace GuiFunctions
 {

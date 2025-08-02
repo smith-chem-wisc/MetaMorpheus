@@ -1,20 +1,12 @@
 ﻿using EngineLayer;
 using Omics.Fragmentation;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
-using Nett;
-using System.Windows.Input;
-using MassSpectrometry;
 using GuiFunctions.MetaDraw;
 using Readers;
-using System.Globalization;
-using System.Windows;
 
 namespace GuiFunctions
 {
@@ -75,15 +67,7 @@ namespace GuiFunctions
             }
         }
 
-        public ObservableCollection<ColorForTreeViewModel> DataVisualizationColors
-        {
-            get { return _DataVisualizationColors; }
-            set
-            {
-                _DataVisualizationColors = value;
-                OnPropertyChanged(nameof(DataVisualizationColors));
-            }
-        }
+        public ObservableCollection<ColorForTreeViewModel> DataVisualizationColors => _DataVisualizationColors;
 
         public ObservableCollection<SpectrumDescriptorViewModel> SpectrumDescriptors { get; }
         public ObservableCollection<string> ExportTypes { get; } = [.. MetaDrawSettings.ExportTypes];

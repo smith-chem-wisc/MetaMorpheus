@@ -139,7 +139,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
                 if (groupVm.ChimericPsms.Count > 0)
                     toReturn.Add(groupVm);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log or handle the exception as needed (e.g., for debugging)
                 // For now, just skip this group and continue processing others.
