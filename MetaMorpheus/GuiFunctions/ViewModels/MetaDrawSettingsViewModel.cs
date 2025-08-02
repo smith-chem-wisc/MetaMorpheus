@@ -36,6 +36,7 @@ namespace GuiFunctions
         private ObservableCollection<ModTypeForTreeViewModel> _Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private ObservableCollection<IonTypeForTreeViewModel> _IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
         private ObservableCollection<CoverageTypeForTreeViewModel> _CoverageColors = new ObservableCollection<CoverageTypeForTreeViewModel>();
+        private ObservableCollection<ColorForTreeViewModel> _DataVisualizationColors = new ObservableCollection<ColorForTreeViewModel>();
         private bool _LoadedIons { get { return (_IonGroups.Count > 0); } }
         private bool _LoadedPTMs { get { return (_Modifications.Count > 0); } }
         private bool _LoadedSequenceCoverage { get { return (_CoverageColors.Count > 0); } }
@@ -71,6 +72,16 @@ namespace GuiFunctions
             {
                 _CoverageColors = value;
                 OnPropertyChanged(nameof(CoverageColors));
+            }
+        }
+
+        public ObservableCollection<ColorForTreeViewModel> DataVisualizationColors
+        {
+            get { return _DataVisualizationColors; }
+            set
+            {
+                _DataVisualizationColors = value;
+                OnPropertyChanged(nameof(DataVisualizationColors));
             }
         }
 
@@ -276,6 +287,7 @@ namespace GuiFunctions
                 LoadPTMs();
                 LoadIonTypes();
                 LoadSequenceCoverage();
+                LoadDataVisualizationColors();
                 Initialization = Task.CompletedTask;
             }
 
@@ -297,6 +309,7 @@ namespace GuiFunctions
             LoadPTMs();
             LoadIonTypes();
             LoadSequenceCoverage();
+            LoadDataVisualizationColors();
             await Task.Delay(100);
         }
 
@@ -317,9 +330,9 @@ namespace GuiFunctions
                 {
                     if (ion.HasChanged)
                     {
-                        if (ion.IonName.Equals("Unannotated Peak"))
+                        if (ion.Name.Equals("Unannotated Peak"))
                             MetaDrawSettings.UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
-                        else if (ion.IonName.Equals("Internal Ion"))
+                        else if (ion.Name.Equals("Internal Ion"))
                             MetaDrawSettings.InternalIonColor = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
                         else if (ion.IsBeta)
                             MetaDrawSettings.BetaProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
@@ -346,6 +359,13 @@ namespace GuiFunctions
                 {
                     MetaDrawSettings.CoverageTypeToColor[color.Name] = DrawnSequence.ParseOxyColorFromName(color.SelectedColor.Replace(" ", ""));
                 }
+            }
+
+            for (int i = 0; i < DataVisualizationColors.Count; i++)
+            {
+                var color = DataVisualizationColors[i];
+                if (color.HasChanged)
+                    MetaDrawSettings.DataVisualizationColorOrder[i] = DrawnSequence.ParseOxyColorFromName(color.SelectedColor.Replace(" ", ""));
             }
         }
 
@@ -402,6 +422,7 @@ namespace GuiFunctions
                     theModType.Children.Add(new ModForTreeViewModel(mod.ToString(), false, mod.IdWithMotif, false, theModType));
                 }
             }
+            OnPropertyChanged(nameof(Modifications));
         }
 
         public void LoadSequenceCoverage()
@@ -409,6 +430,14 @@ namespace GuiFunctions
             _CoverageColors.Add(new CoverageTypeForTreeViewModel("N-Terminal Color"));
             _CoverageColors.Add(new CoverageTypeForTreeViewModel("C-Terminal Color"));
             _CoverageColors.Add(new CoverageTypeForTreeViewModel("Internal Color"));
+        }
+
+        public void LoadDataVisualizationColors()
+        {
+            for (int i = 0; i < MetaDrawSettings.DataVisualizationColorOrder.Count; i++)
+            {
+                _DataVisualizationColors.Add(new ColorForTreeViewModel((i + 1).ToString(), MetaDrawSettings.DataVisualizationColorOrder[i]));   
+            }
         }
 
         #endregion

@@ -39,13 +39,6 @@ namespace GuiFunctions
             "Histogram of Ids by Retention Time"
         };
 
-        private static List<OxyColor> columnColors = new List<OxyColor>
-        {
-            OxyColors.Blue, OxyColors.Red, OxyColors.Green, OxyColors.DarkGoldenrod, OxyColors.DarkViolet,
-            OxyColors.DeepPink, OxyColors.SkyBlue, OxyColors.LawnGreen, OxyColors.Sienna, OxyColors.DarkBlue,
-            OxyColors.PeachPuff, OxyColors.DarkSlateGray, OxyColors.SpringGreen, OxyColors.Peru, OxyColors.OrangeRed
-        };
-
         public PlotModel Model
         {
             get => privateModel;
@@ -75,7 +68,7 @@ namespace GuiFunctions
             allSpectralMatches = sms;
             this.psmsBySourceFile = smsBySourceFile;
             createPlot(plotName);
-            privateModel.DefaultColors = columnColors;
+            privateModel.DefaultColors = MetaDrawSettings.DataVisualizationColorOrder;
         }
 
         private void createPlot(string plotType)

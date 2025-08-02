@@ -499,7 +499,7 @@
                                 </DockPanel>
                             </DockPanel>
 
-                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left" x:Name="PlotFilterCheckBoxes" >
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left" x:Name="PlotFilterCheckBoxes" Margin="3" >
                                 <CheckBox Content="Filtered Only?" 
                                           IsChecked="{Binding Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Path=DisplayFilteredOnly}" 
                                           Checked="DataVisualizationFilters_OnChecked"
@@ -543,7 +543,7 @@
                         <Grid Grid.Column="2">
                             <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" SizeChanged="PlotViewStat_SizeChanged" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" />
 
-                            <local:SettingsButtonControl Height="52" x:Name="DataVisualizationSettingsButton"
+                            <local:SettingsButtonControl Height="52" x:Name="DataVisualizationSettingsButton" 
                                                          HorizontalAlignment="Left" VerticalAlignment="Top"
                                                          Panel.ZIndex="1" SelectedTabIndex="3" />
                         </Grid>

@@ -54,7 +54,8 @@ namespace Test.MetaDraw
             Assert.That(snapshot.ChimeraLegendMaxWidth, Is.EqualTo(MetaDrawSettings.ChimeraLegendMaxWidth));
             Assert.That(snapshot.NormalizeHistogramToFile, Is.EqualTo(MetaDrawSettings.NormalizeHistogramToFile));
             Assert.That(snapshot.DisplayFilteredOnly, Is.EqualTo(MetaDrawSettings.DisplayFilteredOnly));
-
+            Assert.That(MetaDrawSettings.DataVisualizationColorOrder, Is.Not.Null);
+            Assert.That(MetaDrawSettings.DataVisualizationColorOrder.Count, Is.GreaterThan(0));
 
             MetaDrawSettings.ShowContaminants = true;
             MetaDrawSettings.AnnotateMzValues = false;
@@ -79,12 +80,16 @@ namespace Test.MetaDraw
             var spectrumDescriptionValues = MetaDrawSettings.SpectrumDescription
                 .Select(p => $"{p.Key},{p.Value}").ToList();
 
-
             Assert.That(!snapshot.ProductTypeToColorValues.Except(colorValues).Any());
             Assert.That(!snapshot.BetaProductTypeToColorValues.Except(betaColorValues).Any());
             Assert.That(!snapshot.ModificationTypeToColorValues.Except(modificationColorValues).Any());
             Assert.That(!snapshot.CoverageTypeToColorValues.Except(coverageColorValues).Any());
             Assert.That(!snapshot.SpectrumDescriptionValues.Except(spectrumDescriptionValues).Any());
+
+            var expectedDataVisColors = MetaDrawSettings.DataVisualizationColorOrder.Select(c => c.GetColorName()).ToList();
+            Assert.That(snapshot.DataVisualizationColorOrder, Is.Not.Null);
+            Assert.That(snapshot.DataVisualizationColorOrder.Count, Is.EqualTo(expectedDataVisColors.Count));
+            CollectionAssert.AreEqual(expectedDataVisColors, snapshot.DataVisualizationColorOrder);
 
             snapshot.QValueFilter = 0.5;
             snapshot.AnnotateCharges = true;
@@ -104,6 +109,8 @@ namespace Test.MetaDraw
             snapshot.ChimeraLegendMaxWidth = 323;
             snapshot.NormalizeHistogramToFile = !snapshot.NormalizeHistogramToFile;
             snapshot.DisplayFilteredOnly = !snapshot.DisplayFilteredOnly;
+            var reversedColors = MetaDrawSettings.DataVisualizationColorOrder.Reverse<OxyColor>().ToList();
+            snapshot.DataVisualizationColorOrder = [..reversedColors.Select(c => c.GetColorName())];
 
             MetaDrawSettings.LoadSettings(snapshot, out bool flaggedError);
             Assert.That(!flaggedError);
@@ -126,6 +133,8 @@ namespace Test.MetaDraw
             Assert.That(snapshot.ChimeraLegendMaxWidth, Is.EqualTo(MetaDrawSettings.ChimeraLegendMaxWidth));
             Assert.That(snapshot.NormalizeHistogramToFile, Is.EqualTo(MetaDrawSettings.NormalizeHistogramToFile));
             Assert.That(snapshot.DisplayFilteredOnly, Is.EqualTo(MetaDrawSettings.DisplayFilteredOnly));
+            Assert.That(MetaDrawSettings.DataVisualizationColorOrder.Count, Is.EqualTo(reversedColors.Count));
+            CollectionAssert.AreEqual(reversedColors.Select(c => c.GetColorName()), MetaDrawSettings.DataVisualizationColorOrder.Select(c => c.GetColorName()));
 
             colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
@@ -373,7 +382,7 @@ namespace Test.MetaDraw
             Assert.That(view.CoverageColors.First().ColorBrush.Color ==
                         DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
-            var internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion");
+            var internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.Name == "Internal Ion");
             Assert.That(!internalIonIonTypeForTreeView.HasChanged);
             internalIonIonTypeForTreeView.SelectionChanged("Blue");
             Assert.That(internalIonIonTypeForTreeView.HasChanged);
@@ -381,7 +390,7 @@ namespace Test.MetaDraw
             Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color ==
                         DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
-            internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak");
+            internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.Name == "Unannotated Peak");
             Assert.That(!internalIonIonTypeForTreeView.HasChanged);
             internalIonIonTypeForTreeView.SelectionChanged("Blue");
             Assert.That(internalIonIonTypeForTreeView.HasChanged);
@@ -435,6 +444,15 @@ namespace Test.MetaDraw
             // Test PossibleColors property
             Assert.That(viewModel.PossibleColors, Is.Not.Null);
             Assert.That(viewModel.PossibleColors, Is.InstanceOf<ObservableCollection<string>>());
+
+            Assert.That(viewModel.DataVisualizationColors, Is.Not.Null);
+            Assert.That(viewModel.DataVisualizationColors, Is.InstanceOf<ObservableCollection<ColorForTreeViewModel>>());
+
+            Assert.That(viewModel.AmbiguityFilters, Is.Not.Null);
+            Assert.That(viewModel.AmbiguityFilters, Is.InstanceOf<ObservableCollection<LocalizationLevel>>());
+
+            Assert.That(viewModel.GlycanLocalizationLevels, Is.Not.Null);
+            Assert.That(viewModel.GlycanLocalizationLevels, Is.InstanceOf<ObservableCollection<string>>());
 
             // Test HasDefaultSaved property
             Assert.That(viewModel.HasDefaultSaved, Is.TypeOf<bool>());

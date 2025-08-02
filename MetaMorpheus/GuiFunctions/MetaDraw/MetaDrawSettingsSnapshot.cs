@@ -52,6 +52,8 @@ namespace GuiFunctions
         // plot model stat settings
         public bool DisplayFilteredOnly { get; set; } = true;
         public bool NormalizeHistogramToFile { get; set; } = false;
+        public List<string> DataVisualizationColorOrder { get; set; }
+
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;

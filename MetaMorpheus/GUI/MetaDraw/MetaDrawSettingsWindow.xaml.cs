@@ -26,10 +26,6 @@ namespace MetaMorpheusGUI
             SequencenNumbersCheckBox.IsChecked = MetaDrawSettings.DrawNumbersUnderStationary;
             ShowLegendCheckBox.IsChecked = MetaDrawSettings.ShowLegend;
             SpectrumDescriptionFontSizeBox.Text = MetaDrawSettings.SpectrumDescriptionFontSize.ToString();
-
-            IonColorExpander.ItemsSource = MetaDrawSettingsViewModel.Instance.IonGroups;
-            PTMColorExpander.ItemsSource = MetaDrawSettingsViewModel.Instance.Modifications;
-            SequenceCoverageColorExpander.ItemsSource = MetaDrawSettingsViewModel.Instance.CoverageColors;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -125,7 +121,7 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void ComboBox_SelectionChanged_2(object sender, SelectionChangedEventArgs e)
         {
-            ((CoverageTypeForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+            ((ColorForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
 
         /// <summary>

@@ -68,6 +68,7 @@ namespace GuiFunctions
         // plot model stat settings
         public static bool DisplayFilteredOnly { get; set; } = true;
         public static bool NormalizeHistogramToFile { get; set; } = false;
+        public static List<OxyColor> DataVisualizationColorOrder { get; set; }
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -296,6 +297,7 @@ namespace GuiFunctions
             SetDefaultCoverageTypeColors();
             SetDefaultModificationColors();
             SetDefaultSpectrumDescriptors();
+            SetDefaultDataVisualizationColors();
 
             UnannotatedPeakColor = OxyColors.LightGray;
             InternalIonColor = OxyColors.Purple;
@@ -408,6 +410,16 @@ namespace GuiFunctions
             ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
         }
 
+        private static void SetDefaultDataVisualizationColors()
+        {
+            DataVisualizationColorOrder = new List<OxyColor>
+            {
+                OxyColors.Blue, OxyColors.Red, OxyColors.Green, OxyColors.DarkGoldenrod, OxyColors.DarkViolet,
+                OxyColors.DeepPink, OxyColors.SkyBlue, OxyColors.LawnGreen, OxyColors.Sienna, OxyColors.DarkBlue,
+                OxyColors.PeachPuff, OxyColors.DarkSlateGray, OxyColors.SpringGreen, OxyColors.Peru, OxyColors.OrangeRed
+            };
+        }
+
         /// <summary>
         /// Lines to be written on the spectrum in the upper right hand corner
         /// </summary>
@@ -483,6 +495,7 @@ namespace GuiFunctions
                 ChimeraLegendMaxWidth = ChimeraLegendMaxWidth,
                 NormalizeHistogramToFile = NormalizeHistogramToFile,
                 DisplayFilteredOnly = DisplayFilteredOnly,
+                DataVisualizationColorOrder = DataVisualizationColorOrder?.Select(c => c.GetColorName()).ToList(),
             };
         }
 
@@ -707,6 +720,27 @@ namespace GuiFunctions
             {
                 Debugger.Break();
                 SetDefaultProductTypeColors();
+                flaggedErrorOnRead = true;
+            }
+
+            // Data visualization colors
+            try
+            {
+                if (settings.DataVisualizationColorOrder is { Count: > 0 })
+                {
+                    DataVisualizationColorOrder = settings.DataVisualizationColorOrder
+                        .Select(DrawnSequence.ParseOxyColorFromName)
+                        .ToList();
+                }
+                else
+                {
+                    SetDefaultDataVisualizationColors();
+                    flaggedErrorOnRead = true;
+                }
+            }
+            catch (Exception)
+            {
+                SetDefaultDataVisualizationColors();
                 flaggedErrorOnRead = true;
             }
         }

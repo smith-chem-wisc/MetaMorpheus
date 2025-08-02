@@ -253,7 +253,7 @@
                         <GroupBox x:Name="IonColorSelection" Header="Fragment Ion Colors" Grid.Row="0"
                                       DockPanel.Dock="Left" Margin="5 5 10 5 " Grid.Column="0">
                             <ItemsControl x:Name="IonColorExpander" ItemsSource="{Binding}"
-                                                  DataContext="{x:Type guiFunctions:IonTypeForTreeViewModel}">
+                                                  DataContext="{Binding IonGroups}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Expander Header="{Binding GroupName}" Margin="10 2 0 0 ">
@@ -262,7 +262,7 @@
                                                     <DataTemplate>
                                                         <StackPanel Orientation="Horizontal">
                                                             <TextBlock
-                                                                        Text="{Binding IonName, FallbackValue='y - ion'}"
+                                                                        Text="{Binding Name, FallbackValue='y - ion'}"
                                                                         Margin="5 0 5 0" Width="120" TextAlignment="Center" />
                                                             <Ellipse Width="12" Height="12"
                                                                              Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}"
@@ -297,8 +297,8 @@
                         <!-- ptm color selection -->
                         <GroupBox Name="PTMColorSelection" Header="PTM Colors" Grid.Column="2" Grid.Row="0" Grid.RowSpan="2"
                                       DockPanel.Dock="Left" Margin="10 5 5 5" Visibility="Visible">
-                            <ItemsControl x:Name="PTMColorExpander"
-                                                  DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}">
+                            <ItemsControl x:Name="PTMColorExpander" ItemsSource="{Binding}"
+                                                  DataContext="{Binding Modifications}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Expander Header="{Binding DisplayName}" Margin="10 2 0 0">
@@ -339,7 +339,7 @@
                         <GroupBox Header="Sequence Coverage Colors" Grid.Column="0" Grid.Row="1"
                                   DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
                             <ItemsControl x:Name="SequenceCoverageColorExpander" ItemsSource="{Binding}" HorizontalContentAlignment="Left"
-                                                  DataContext="{x:Type guiFunctions:CoverageTypeForTreeViewModel}">
+                                                  DataContext="{Binding CoverageColors}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" >
@@ -579,6 +579,39 @@
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>
+
+                    <GridSplitter Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" 
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Stretch"
+                                  Background="Silver"
+                                  Width="2"/>
+                    
+                    <GroupBox Grid.Row="0" Grid.Column="2" Header="Colors">
+
+                        <ItemsControl ItemsSource="{Binding}" HorizontalContentAlignment="Left"
+                                      DataContext="{Binding DataVisualizationColors}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Name, FallbackValue='y - ion'}"
+                                                   Margin="0 0 5 0" Width="120" TextAlignment="Center" />
+                                        <Ellipse Width="12" Height="12"
+                                                 Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}"
+                                                 StrokeThickness="1"
+                                                 Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
+                                        <ComboBox Width="80" HorizontalAlignment="Right" Margin="5 0 5 0"
+                                                  HorizontalContentAlignment="Center"
+                                                  SelectedItem="{Binding SelectedColor}"
+                                                  SelectionChanged="ComboBox_SelectionChanged_2"
+                                                  ItemsSource="{Binding Path=DataContext.PossibleColors, 
+                                                      RelativeSource={RelativeSource Mode=FindAncestor, 
+                                                      AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
+                                        </ComboBox>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </GroupBox>
                 </Grid>
             </TabItem>
         </TabControl>
