@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="Graphical Settings" Width="620" SizeToContent="Height" WindowStartupLocation="CenterScreen"
         Height="500" MaxHeight="700"
-        d:DataContext="{d:DesignInstance guiFunctions:MetaDrawSettingsViewModel, IsDesignTimeCreatable=True}">
+        d:DataContext="{x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}">
 
     <Window.Resources>
         <local:SpectrumDescriptorToolTipConverter x:Key="SpectrumDescriptorToolTipConverter"/>
@@ -500,6 +500,32 @@
                                                  DataContext="{Binding DeconHostViewModel}">
                        
                     </local:HostDeconParamControl>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Data Visualization">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <GroupBox Grid.Column="0"  Grid.Row="0"  Header="Plot Filters" >
+                        <StackPanel Orientation="Vertical" HorizontalAlignment="Left" x:Name="PlotFilterCheckBoxes">
+                            <CheckBox Content="Filtered Only?" 
+                                      IsChecked="{Binding DisplayFilteredOnly}" 
+                                      Margin="5"/>
+                            <CheckBox Content="Normalize to File?" 
+                                      IsChecked="{Binding NormalizeHistogramToFile}"
+                                      Margin="5"/>
+                        </StackPanel>
+                    </GroupBox>
                 </Grid>
             </TabItem>
         </TabControl>

@@ -17,7 +17,7 @@
          where the view is what is displayed, the model or viewmodel holds the data to be displayed, and the controller instantiates and controls each of 
          the other components  -->
     <Grid>
-        <TabControl >
+        <TabControl x:Name="MainTabControl" >
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="Template">
@@ -124,13 +124,15 @@
                                             <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}" Width="70" 
                                                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
                                             <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}" Width="160" />
-                                            <DataGridTextColumn Header="Protein Name" Binding="{Binding ProteinName}" Width="100" 
+                                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="100" 
                                                                 />
                                             <DataGridTextColumn Header="Organism Name" Binding="{Binding OrganismName}" Width="100" />
                                             <DataGridTextColumn Header="Q-Value" Binding="{Binding QValue}" Width="60"
                                                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
                                             <DataGridTextColumn Header="PEP Value" Binding="{Binding PEP}" Width="70" />
                                             <DataGridTextColumn Header="MetaMorpheus Score" Binding="{Binding Score}" 
+                                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                                            <DataGridTextColumn Header="File Name" Binding="{Binding FileNameWithoutExtension}" 
                                                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
@@ -465,8 +467,9 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="29"/>
                                 <RowDefinition Height="29"/>
-                                <RowDefinition Height="50*"/>
-                                <RowDefinition Height="40*"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
                                 <RowDefinition Height="25"/>
                             </Grid.RowDefinitions>
 
@@ -496,12 +499,25 @@
                                 </DockPanel>
                             </DockPanel>
 
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left" x:Name="PlotFilterCheckBoxes" >
+                                <CheckBox Content="Filtered Only?" 
+                                          IsChecked="{Binding Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Path=DisplayFilteredOnly}" 
+                                          Checked="DataVisualizationFilters_OnChecked"
+                                          Unchecked="DataVisualizationFilters_OnChecked"
+                                          Margin="10 0"/>
+                                <CheckBox Content="Normalize to File?" 
+                                          IsChecked="{Binding Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Path=NormalizeHistogramToFile}"
+                                          Checked="DataVisualizationFilters_OnChecked"
+                                          Unchecked="DataVisualizationFilters_OnChecked"
+                                          Margin="10 0"/>
+                            </StackPanel>
+
                             <!--List of plot options-->
-                            <GroupBox Header="Plot Type" Name="plotType" Grid.Row="3">
+                            <GroupBox Header="Plot Type" Name="plotType" Grid.Row="4">
                                 <ListView x:Name="plotsListBox" ItemsSource="{Binding}" SelectionChanged ="PlotSelected" MaxHeight="400"/>
                             </GroupBox>
 
-                            <DockPanel Grid.Row="4" Margin="2">
+                            <DockPanel Grid.Row="5" Margin="2">
                                 <Button Content="Export to PDF" Width="100" Click="CreatePlotPdf_Click" />
                             </DockPanel>
                         </Grid>
@@ -524,9 +540,13 @@
                           Width="2"/>
 
                         <!--Plot-->
-                        <GroupBox Grid.Column="2" Header="Plot">
-                            <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" SizeChanged="PlotViewStat_SizeChanged" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" Grid.ColumnSpan="2"/>
-                        </GroupBox>
+                        <Grid Grid.Column="2">
+                            <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" SizeChanged="PlotViewStat_SizeChanged" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" />
+
+                            <local:SettingsButtonControl Height="52" x:Name="DataVisualizationSettingsButton"
+                                                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                         Panel.ZIndex="1" SelectedTabIndex="3" />
+                        </Grid>
                     </Grid>
                 </DockPanel>
             </TabItem>

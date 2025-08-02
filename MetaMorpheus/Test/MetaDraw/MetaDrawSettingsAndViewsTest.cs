@@ -574,6 +574,18 @@ namespace Test.MetaDraw
             viewModel.ExportType = originalExportType + "10.0";
             Assert.That(viewModel.ExportType, Is.EqualTo(originalExportType + "10.0"));
             viewModel.ExportType = originalExportType;
+
+            // Test DisplayFilteredOnly property
+            bool originalDisplayFilteredOnly = viewModel.DisplayFilteredOnly;
+            viewModel.DisplayFilteredOnly = !originalDisplayFilteredOnly;
+            Assert.That(viewModel.DisplayFilteredOnly, Is.EqualTo(!originalDisplayFilteredOnly));
+            viewModel.DisplayFilteredOnly = originalDisplayFilteredOnly;
+
+            // Test NormalizeHistogramToFile property
+            bool originalNormalizeHistogramToFile = viewModel.NormalizeHistogramToFile;
+            viewModel.NormalizeHistogramToFile = !originalNormalizeHistogramToFile;
+            Assert.That(viewModel.NormalizeHistogramToFile, Is.EqualTo(!originalNormalizeHistogramToFile));
+            viewModel.NormalizeHistogramToFile = originalNormalizeHistogramToFile;
         }
 
         [Test]

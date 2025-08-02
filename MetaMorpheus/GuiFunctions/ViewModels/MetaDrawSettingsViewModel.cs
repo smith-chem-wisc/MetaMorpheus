@@ -164,6 +164,8 @@ namespace GuiFunctions
             get => MetaDrawSettings.StrokeThicknessUnannotated;
             set { MetaDrawSettings.StrokeThicknessUnannotated = value; OnPropertyChanged(nameof(StrokeThicknessUnannotated)); }
         }
+
+        // Chimera Settings
         public bool DisplayChimeraLegend
         {
             get => MetaDrawSettings.DisplayChimeraLegend;
@@ -188,6 +190,19 @@ namespace GuiFunctions
         {
             get => MetaDrawSettings.ChimeraLegendSubTextType;
             set { MetaDrawSettings.ChimeraLegendSubTextType = value; OnPropertyChanged(nameof(ChimeraLegendSubTextType)); }
+        }
+
+        // Data Visualization Settings
+        public bool DisplayFilteredOnly
+        {
+            get => MetaDrawSettings.DisplayFilteredOnly;
+            set { MetaDrawSettings.DisplayFilteredOnly = value; OnPropertyChanged(nameof(DisplayFilteredOnly)); }
+        }
+
+        public bool NormalizeHistogramToFile
+        {
+            get => MetaDrawSettings.NormalizeHistogramToFile;
+            set { MetaDrawSettings.NormalizeHistogramToFile = value; OnPropertyChanged(nameof(NormalizeHistogramToFile)); }
         }
 
         #endregion
