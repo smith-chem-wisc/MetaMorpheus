@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="Graphical Settings" Width="620" SizeToContent="Height" WindowStartupLocation="CenterScreen"
         Height="500" MaxHeight="700"
-        d:DataContext="{d:DesignInstance guiFunctions:MetaDrawSettingsViewModel, IsDesignTimeCreatable=True}">
+        d:DataContext="{x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}">
 
     <Window.Resources>
         <local:SpectrumDescriptorToolTipConverter x:Key="SpectrumDescriptorToolTipConverter"/>
@@ -40,28 +40,38 @@
                         <GroupBox Header="Result Filtering">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="5">
-                                    <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5" />
-                                    <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
+                                    <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5"
+                                              IsChecked="{Binding ShowDecoys}"/>
+                                    <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" 
+                                              IsChecked="{Binding ShowContaminants}"/>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Margin="5">
                                     <Label Content="Filter to q-value:" Width="140"/>
-                                    <TextBox Name ="qValueBox" Width="80" Height="24" Grid.Column="1"
-                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                    <local:DoubleTextBoxControl x:Name ="qValueBox" Width="80" Height="24" 
+                                                               VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                                               Text="{Binding QValueFilter}"
+                                                               LowerBound="0" UpperBound="1"/>
                                 </StackPanel>
 
                                 <StackPanel Margin="5">
                                     <Label Content="Filter to ambiguity level: " Width="140" />
-                                    <ComboBox x:Name="AmbiguityFilteringComboBox" Width="80" ItemsSource="{Binding}"
-                              VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                    <ComboBox x:Name="AmbiguityFilteringComboBox" Width="80" 
+                                              ItemsSource="{Binding AmbiguityFilters}"
+                                              SelectedItem="{Binding AmbiguityFilter}" Height="24"
+                                              VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                 </StackPanel>
 
                                 <!-- glycan localization level -->
                                 <StackPanel >
                                     <Label Content="Glycan Localization Level:" Margin="5" HorizontalAlignment="Center"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20 0 20 0">
-                                        <ComboBox Name="CmbGlycanLocalizationLevelStart" Height="24"  />
-                                        <ComboBox Name="CmbGlycanLocalizationLevelEnd" Height="24" />
+                                        <ComboBox Name="CmbGlycanLocalizationLevelStart" Height="24"  
+                                                  ItemsSource="{Binding GlycanLocalizationLevels}"
+                                                  SelectedItem="{Binding LocalizationLevelStart}" />
+                                        <ComboBox Name="CmbGlycanLocalizationLevelEnd" Height="24" 
+                                                  ItemsSource="{Binding GlycanLocalizationLevels}"
+                                                  SelectedItem="{Binding LocalizationLevelEnd}"/>
                                     </StackPanel>
                                 </StackPanel>
                             </StackPanel>
@@ -243,7 +253,7 @@
                         <GroupBox x:Name="IonColorSelection" Header="Fragment Ion Colors" Grid.Row="0"
                                       DockPanel.Dock="Left" Margin="5 5 10 5 " Grid.Column="0">
                             <ItemsControl x:Name="IonColorExpander" ItemsSource="{Binding}"
-                                                  DataContext="{x:Type guiFunctions:IonTypeForTreeViewModel}">
+                                                  DataContext="{Binding IonGroups}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Expander Header="{Binding GroupName}" Margin="10 2 0 0 ">
@@ -252,7 +262,7 @@
                                                     <DataTemplate>
                                                         <StackPanel Orientation="Horizontal">
                                                             <TextBlock
-                                                                        Text="{Binding IonName, FallbackValue='y - ion'}"
+                                                                        Text="{Binding Name, FallbackValue='y - ion'}"
                                                                         Margin="5 0 5 0" Width="120" TextAlignment="Center" />
                                                             <Ellipse Width="12" Height="12"
                                                                              Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}"
@@ -287,8 +297,8 @@
                         <!-- ptm color selection -->
                         <GroupBox Name="PTMColorSelection" Header="PTM Colors" Grid.Column="2" Grid.Row="0" Grid.RowSpan="2"
                                       DockPanel.Dock="Left" Margin="10 5 5 5" Visibility="Visible">
-                            <ItemsControl x:Name="PTMColorExpander"
-                                                  DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}">
+                            <ItemsControl x:Name="PTMColorExpander" ItemsSource="{Binding}"
+                                                  DataContext="{Binding Modifications}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Expander Header="{Binding DisplayName}" Margin="10 2 0 0">
@@ -329,7 +339,7 @@
                         <GroupBox Header="Sequence Coverage Colors" Grid.Column="0" Grid.Row="1"
                                   DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
                             <ItemsControl x:Name="SequenceCoverageColorExpander" ItemsSource="{Binding}" HorizontalContentAlignment="Left"
-                                                  DataContext="{x:Type guiFunctions:CoverageTypeForTreeViewModel}">
+                                                  DataContext="{Binding CoverageColors}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" >
@@ -500,6 +510,108 @@
                                                  DataContext="{Binding DeconHostViewModel}">
                        
                     </local:HostDeconParamControl>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Data Visualization">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Column="0" Grid.Row="0" Margin="5 0 0 0">
+                        <GroupBox Header="Result Filtering">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <CheckBox Content="Show decoys" Margin="5"
+                                              IsChecked="{Binding ShowDecoys}" />
+                                    <CheckBox Content="Show contaminants" Margin="5"
+                                              IsChecked="{Binding ShowContaminants}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <Label Content="Filter to q-value:" Width="140" />
+                                    <local:DoubleTextBoxControl Width="80" Height="24"
+                                                                VerticalContentAlignment="Center"
+                                                                HorizontalContentAlignment="Center"
+                                                                Text="{Binding QValueFilter}"
+                                                                LowerBound="0" UpperBound="1"/>
+                                </StackPanel>
+
+                                <StackPanel Margin="5">
+                                    <Label Content="Filter to ambiguity level: " Width="140" />
+                                    <ComboBox Width="80"
+                                              ItemsSource="{Binding AmbiguityFilters}"
+                                              SelectedItem="{Binding AmbiguityFilter}" Height="24"
+                                              VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                </StackPanel>
+
+                                <!-- glycan localization level -->
+                                <StackPanel>
+                                    <Label Content="Glycan Localization Level:" Margin="5" HorizontalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                                Margin="20 0 20 0">
+                                        <ComboBox Height="24"
+                                                  ItemsSource="{Binding GlycanLocalizationLevels}"
+                                                  SelectedItem="{Binding LocalizationLevelStart}" />
+                                        <ComboBox Height="24"
+                                                  ItemsSource="{Binding GlycanLocalizationLevels}"
+                                                  SelectedItem="{Binding LocalizationLevelEnd}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Plot Filters">
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="Left" x:Name="PlotFilterCheckBoxes">
+                                <CheckBox Content="Filtered Only?"
+                                          IsChecked="{Binding DisplayFilteredOnly}"
+                                          Margin="5" />
+                                <CheckBox Content="Normalize to File?"
+                                          IsChecked="{Binding NormalizeHistogramToFile}"
+                                          Margin="5" />
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+
+                    <GridSplitter Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" 
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Stretch"
+                                  Background="Silver"
+                                  Width="2"/>
+                    
+                    <GroupBox Grid.Row="0" Grid.Column="2" Header="Colors">
+
+                        <ItemsControl ItemsSource="{Binding}" HorizontalContentAlignment="Left"
+                                      DataContext="{Binding DataVisualizationColors}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Name, FallbackValue='y - ion'}"
+                                                   Margin="0 0 5 0" Width="120" TextAlignment="Center" />
+                                        <Ellipse Width="12" Height="12"
+                                                 Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}"
+                                                 StrokeThickness="1"
+                                                 Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
+                                        <ComboBox Width="80" HorizontalAlignment="Right" Margin="5 0 5 0"
+                                                  HorizontalContentAlignment="Center"
+                                                  SelectedItem="{Binding SelectedColor}"
+                                                  SelectionChanged="ComboBox_SelectionChanged_2"
+                                                  ItemsSource="{Binding Path=DataContext.PossibleColors, 
+                                                      RelativeSource={RelativeSource Mode=FindAncestor, 
+                                                      AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
+                                        </ComboBox>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </GroupBox>
                 </Grid>
             </TabItem>
         </TabControl>
