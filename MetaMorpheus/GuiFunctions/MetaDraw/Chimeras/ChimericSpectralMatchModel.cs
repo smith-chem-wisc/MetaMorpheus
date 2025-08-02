@@ -29,7 +29,10 @@ public class ChimericSpectralMatchModel : BaseViewModel
         Color = color;
         ProteinColor = proteinColor;
 
-        var modDict = psm.AllModsKnownModificationDictionary();
+        var modDict = GlobalVariables.AnalyteType switch {
+            AnalyteType.Oligo => GlobalVariables.AllRnaModsKnownDictionary,
+            _ => GlobalVariables.AllModsKnownDictionary
+        };
 
         // If ambiguous, process all sequences and concatenate their mod strings with '|'
         var sequences = psm.FullSequence.Split('|');

@@ -449,10 +449,10 @@ namespace Test.MetaDraw
             Assert.That(viewModel.DataVisualizationColors, Is.InstanceOf<ObservableCollection<ColorForTreeViewModel>>());
 
             Assert.That(viewModel.AmbiguityFilters, Is.Not.Null);
-            Assert.That(viewModel.AmbiguityFilters, Is.InstanceOf<ObservableCollection<LocalizationLevel>>());
+            Assert.That(viewModel.AmbiguityFilters, Is.InstanceOf<ObservableCollection<string>>());
 
             Assert.That(viewModel.GlycanLocalizationLevels, Is.Not.Null);
-            Assert.That(viewModel.GlycanLocalizationLevels, Is.InstanceOf<ObservableCollection<string>>());
+            Assert.That(viewModel.GlycanLocalizationLevels, Is.InstanceOf<ObservableCollection<LocalizationLevel>>());
 
             // Test HasDefaultSaved property
             Assert.That(viewModel.HasDefaultSaved, Is.TypeOf<bool>());

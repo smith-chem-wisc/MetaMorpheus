@@ -178,7 +178,7 @@ namespace GuiFunctions
                     foreach (string key in psmsBySourceFile.Keys)
                     {
                         var psmsWithMods = psmsBySourceFile[key].Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
-                        var mods = psmsWithMods.Select(p => p.ToBioPolymerWithSetMods()).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
+                        var mods = psmsWithMods.Select(p => new PeptideWithSetModifications(p.FullSequence, GlobalVariables.AllModsKnownDictionary)).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
                         var groupedMods = mods.GroupBy(p => p.IdWithMotif).ToList();
                         dictsBySourceFile.Add(key, groupedMods.ToDictionary(p => p.Key, v => v.Count()));
                     }
