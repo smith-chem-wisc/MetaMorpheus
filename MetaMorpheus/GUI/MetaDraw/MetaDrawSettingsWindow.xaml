@@ -40,28 +40,38 @@
                         <GroupBox Header="Result Filtering">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="5">
-                                    <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5" />
-                                    <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
+                                    <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5"
+                                              IsChecked="{Binding ShowDecoys}"/>
+                                    <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" 
+                                              IsChecked="{Binding ShowContaminants}"/>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Margin="5">
                                     <Label Content="Filter to q-value:" Width="140"/>
-                                    <TextBox Name ="qValueBox" Width="80" Height="24" Grid.Column="1"
-                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                    <local:DoubleTextBoxControl x:Name ="qValueBox" Width="80" Height="24" 
+                                                               VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                                               Text="{Binding QValueFilter}"
+                                                               LowerBound="0" UpperBound="1"/>
                                 </StackPanel>
 
                                 <StackPanel Margin="5">
                                     <Label Content="Filter to ambiguity level: " Width="140" />
-                                    <ComboBox x:Name="AmbiguityFilteringComboBox" Width="80" ItemsSource="{Binding}"
-                              VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                    <ComboBox x:Name="AmbiguityFilteringComboBox" Width="80" 
+                                              ItemsSource="{Binding AmbiguityFilters}"
+                                              SelectedItem="{Binding AmbiguityFilter}" Height="24"
+                                              VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                 </StackPanel>
 
                                 <!-- glycan localization level -->
                                 <StackPanel >
                                     <Label Content="Glycan Localization Level:" Margin="5" HorizontalAlignment="Center"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20 0 20 0">
-                                        <ComboBox Name="CmbGlycanLocalizationLevelStart" Height="24"  />
-                                        <ComboBox Name="CmbGlycanLocalizationLevelEnd" Height="24" />
+                                        <ComboBox Name="CmbGlycanLocalizationLevelStart" Height="24"  
+                                                  ItemsSource="{Binding GlycanLocalizationLevels}"
+                                                  SelectedItem="{Binding LocalizationLevelStart}" />
+                                        <ComboBox Name="CmbGlycanLocalizationLevelEnd" Height="24" 
+                                                  ItemsSource="{Binding GlycanLocalizationLevels}"
+                                                  SelectedItem="{Binding LocalizationLevelEnd}"/>
                                     </StackPanel>
                                 </StackPanel>
                             </StackPanel>
@@ -516,16 +526,59 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <GroupBox Grid.Column="0"  Grid.Row="0"  Header="Plot Filters" >
-                        <StackPanel Orientation="Vertical" HorizontalAlignment="Left" x:Name="PlotFilterCheckBoxes">
-                            <CheckBox Content="Filtered Only?" 
-                                      IsChecked="{Binding DisplayFilteredOnly}" 
-                                      Margin="5"/>
-                            <CheckBox Content="Normalize to File?" 
-                                      IsChecked="{Binding NormalizeHistogramToFile}"
-                                      Margin="5"/>
-                        </StackPanel>
-                    </GroupBox>
+                    <StackPanel Grid.Column="0" Grid.Row="0" Margin="5 0 0 0">
+                        <GroupBox Header="Result Filtering">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <CheckBox Content="Show decoys" Margin="5"
+                                              IsChecked="{Binding ShowDecoys}" />
+                                    <CheckBox Content="Show contaminants" Margin="5"
+                                              IsChecked="{Binding ShowContaminants}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <Label Content="Filter to q-value:" Width="140" />
+                                    <local:DoubleTextBoxControl Width="80" Height="24"
+                                                                VerticalContentAlignment="Center"
+                                                                HorizontalContentAlignment="Center"
+                                                                Text="{Binding QValueFilter}"
+                                                                LowerBound="0" UpperBound="1"/>
+                                </StackPanel>
+
+                                <StackPanel Margin="5">
+                                    <Label Content="Filter to ambiguity level: " Width="140" />
+                                    <ComboBox Width="80"
+                                              ItemsSource="{Binding AmbiguityFilters}"
+                                              SelectedItem="{Binding AmbiguityFilter}" Height="24"
+                                              VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                </StackPanel>
+
+                                <!-- glycan localization level -->
+                                <StackPanel>
+                                    <Label Content="Glycan Localization Level:" Margin="5" HorizontalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                                Margin="20 0 20 0">
+                                        <ComboBox Height="24"
+                                                  ItemsSource="{Binding GlycanLocalizationLevels}"
+                                                  SelectedItem="{Binding LocalizationLevelStart}" />
+                                        <ComboBox Height="24"
+                                                  ItemsSource="{Binding GlycanLocalizationLevels}"
+                                                  SelectedItem="{Binding LocalizationLevelEnd}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Plot Filters">
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="Left" x:Name="PlotFilterCheckBoxes">
+                                <CheckBox Content="Filtered Only?"
+                                          IsChecked="{Binding DisplayFilteredOnly}"
+                                          Margin="5" />
+                                <CheckBox Content="Normalize to File?"
+                                          IsChecked="{Binding NormalizeHistogramToFile}"
+                                          Margin="5" />
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
                 </Grid>
             </TabItem>
         </TabControl>

@@ -586,6 +586,65 @@ namespace Test.MetaDraw
             viewModel.NormalizeHistogramToFile = !originalNormalizeHistogramToFile;
             Assert.That(viewModel.NormalizeHistogramToFile, Is.EqualTo(!originalNormalizeHistogramToFile));
             viewModel.NormalizeHistogramToFile = originalNormalizeHistogramToFile;
+
+            // Test ShowDecoys property
+            bool originalShowDecoys = viewModel.ShowDecoys;
+            viewModel.ShowDecoys = !originalShowDecoys;
+            Assert.That(viewModel.ShowDecoys, Is.EqualTo(!originalShowDecoys));
+            viewModel.ShowDecoys = originalShowDecoys;
+
+            // Test ShowContaminants property
+            bool originalShowContaminants = viewModel.ShowContaminants;
+            viewModel.ShowContaminants = !originalShowContaminants;
+            Assert.That(viewModel.ShowContaminants, Is.EqualTo(!originalShowContaminants));
+            viewModel.ShowContaminants = originalShowContaminants;
+
+            // Test QValueFilter property
+            double originalQValueFilter = viewModel.QValueFilter;
+            viewModel.QValueFilter = originalQValueFilter + 0.01;
+            Assert.That(viewModel.QValueFilter, Is.EqualTo(originalQValueFilter + 0.01));
+            viewModel.QValueFilter = originalQValueFilter;
+
+            // Test AmbiguityFilters property
+            Assert.That(viewModel.AmbiguityFilters, Is.Not.Null);
+            Assert.That(viewModel.AmbiguityFilters.Count, Is.GreaterThan(0));
+            Assert.That(viewModel.AmbiguityFilters, Is.InstanceOf<ObservableCollection<string>>());
+
+            // Test AmbiguityFilter property
+            string originalAmbiguityFilter = viewModel.AmbiguityFilter;
+            string newAmbiguityFilter = viewModel.AmbiguityFilters.FirstOrDefault(x => x != originalAmbiguityFilter);
+            if (newAmbiguityFilter != null)
+            {
+                viewModel.AmbiguityFilter = newAmbiguityFilter;
+                Assert.That(viewModel.AmbiguityFilter, Is.EqualTo(newAmbiguityFilter));
+                viewModel.AmbiguityFilter = originalAmbiguityFilter;
+            }
+
+            // Test GlycanLocalizationLevels property
+            Assert.That(viewModel.GlycanLocalizationLevels, Is.Not.Null);
+            Assert.That(viewModel.GlycanLocalizationLevels.Count, Is.GreaterThan(0));
+            Assert.That(viewModel.GlycanLocalizationLevels, Is.InstanceOf<ObservableCollection<LocalizationLevel>>());
+
+            // Test LocalizationLevelStart property
+            var originalLocalizationLevelStart = viewModel.LocalizationLevelStart;
+            var newLocalizationLevelStart = viewModel.GlycanLocalizationLevels.FirstOrDefault(x => !x.Equals(originalLocalizationLevelStart));
+            if (newLocalizationLevelStart != null)
+            {
+                viewModel.LocalizationLevelStart = newLocalizationLevelStart;
+                Assert.That(viewModel.LocalizationLevelStart, Is.EqualTo(newLocalizationLevelStart));
+                viewModel.LocalizationLevelStart = originalLocalizationLevelStart;
+            }
+
+            // Test LocalizationLevelEnd property
+            var originalLocalizationLevelEnd = viewModel.LocalizationLevelEnd;
+            var newLocalizationLevelEnd = viewModel.GlycanLocalizationLevels.FirstOrDefault(x => !x.Equals(originalLocalizationLevelEnd));
+            if (newLocalizationLevelEnd != null)
+            {
+                viewModel.LocalizationLevelEnd = newLocalizationLevelEnd;
+                Assert.That(viewModel.LocalizationLevelEnd, Is.EqualTo(newLocalizationLevelEnd));
+                viewModel.LocalizationLevelEnd = originalLocalizationLevelEnd;
+            }
+
         }
 
         [Test]

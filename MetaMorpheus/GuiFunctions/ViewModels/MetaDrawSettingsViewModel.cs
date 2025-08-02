@@ -12,6 +12,9 @@ using Nett;
 using System.Windows.Input;
 using MassSpectrometry;
 using GuiFunctions.MetaDraw;
+using Readers;
+using System.Globalization;
+using System.Windows;
 
 namespace GuiFunctions
 {
@@ -78,10 +81,53 @@ namespace GuiFunctions
 
         public ObservableCollection<string> PossibleColors { get; set; }
         public ObservableCollection<LegendDisplayProperty> ChimericLegendDisplayProperties { get; } = [..Enum.GetValues<LegendDisplayProperty>()];
+        public ObservableCollection<string> AmbiguityFilters { get; } =  [..MetaDrawSettings.AmbiguityTypes];
+        public ObservableCollection<LocalizationLevel> GlycanLocalizationLevels { get; } = [.. Enum.GetValues<LocalizationLevel>()];
+
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
         public static string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
+
+        public bool ShowDecoys
+        {
+            get => MetaDrawSettings.ShowDecoys;
+            set { MetaDrawSettings.ShowDecoys = value; OnPropertyChanged(nameof(ShowDecoys)); }
+        }
+
+        public bool ShowContaminants
+        {
+            get => MetaDrawSettings.ShowContaminants;
+            set { MetaDrawSettings.ShowContaminants = value; OnPropertyChanged(nameof(ShowContaminants)); }
+        }
+
+        public double QValueFilter
+        {
+            get => MetaDrawSettings.QValueFilter;
+            set 
+            {
+                MetaDrawSettings.QValueFilter = value;
+                OnPropertyChanged(nameof(QValueFilter));
+            }
+        }
+
+        public string AmbiguityFilter
+        {
+            get => MetaDrawSettings.AmbiguityFilter;
+            set { MetaDrawSettings.AmbiguityFilter = value; OnPropertyChanged(nameof(AmbiguityFilter)); }
+        }
+
+        public LocalizationLevel LocalizationLevelStart
+        {
+            get => MetaDrawSettings.LocalizationLevelStart;
+            set { MetaDrawSettings.LocalizationLevelStart = value; OnPropertyChanged(nameof(LocalizationLevelStart)); }
+        }
+
+        public LocalizationLevel LocalizationLevelEnd
+        {
+            get => MetaDrawSettings.LocalizationLevelEnd;
+            set { MetaDrawSettings.LocalizationLevelEnd = value; OnPropertyChanged(nameof(LocalizationLevelEnd)); }
+        }
 
         public string ExportType
         {
