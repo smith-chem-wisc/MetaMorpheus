@@ -1,17 +1,12 @@
 ﻿using EngineLayer;
 using Omics.Fragmentation;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
-using Nett;
-using System.Windows.Input;
-using MassSpectrometry;
 using GuiFunctions.MetaDraw;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -33,6 +28,7 @@ namespace GuiFunctions
         private ObservableCollection<ModTypeForTreeViewModel> _Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private ObservableCollection<IonTypeForTreeViewModel> _IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
         private ObservableCollection<CoverageTypeForTreeViewModel> _CoverageColors = new ObservableCollection<CoverageTypeForTreeViewModel>();
+        private ObservableCollection<ColorForTreeViewModel> _DataVisualizationColors = new ObservableCollection<ColorForTreeViewModel>();
         private bool _LoadedIons { get { return (_IonGroups.Count > 0); } }
         private bool _LoadedPTMs { get { return (_Modifications.Count > 0); } }
         private bool _LoadedSequenceCoverage { get { return (_CoverageColors.Count > 0); } }
@@ -71,6 +67,8 @@ namespace GuiFunctions
             }
         }
 
+        public ObservableCollection<ColorForTreeViewModel> DataVisualizationColors => _DataVisualizationColors;
+
         public ObservableCollection<SpectrumDescriptorViewModel> SpectrumDescriptors { get; }
         public ObservableCollection<string> ExportTypes { get; } = [.. MetaDrawSettings.ExportTypes];
 
@@ -78,10 +76,53 @@ namespace GuiFunctions
 
         public ObservableCollection<string> PossibleColors { get; set; }
         public ObservableCollection<LegendDisplayProperty> ChimericLegendDisplayProperties { get; } = [..Enum.GetValues<LegendDisplayProperty>()];
+        public ObservableCollection<string> AmbiguityFilters { get; } =  [..MetaDrawSettings.AmbiguityTypes];
+        public ObservableCollection<LocalizationLevel> GlycanLocalizationLevels { get; } = [.. Enum.GetValues<LocalizationLevel>()];
+
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
         public static string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
+
+        public bool ShowDecoys
+        {
+            get => MetaDrawSettings.ShowDecoys;
+            set { MetaDrawSettings.ShowDecoys = value; OnPropertyChanged(nameof(ShowDecoys)); }
+        }
+
+        public bool ShowContaminants
+        {
+            get => MetaDrawSettings.ShowContaminants;
+            set { MetaDrawSettings.ShowContaminants = value; OnPropertyChanged(nameof(ShowContaminants)); }
+        }
+
+        public double QValueFilter
+        {
+            get => MetaDrawSettings.QValueFilter;
+            set 
+            {
+                MetaDrawSettings.QValueFilter = value;
+                OnPropertyChanged(nameof(QValueFilter));
+            }
+        }
+
+        public string AmbiguityFilter
+        {
+            get => MetaDrawSettings.AmbiguityFilter;
+            set { MetaDrawSettings.AmbiguityFilter = value; OnPropertyChanged(nameof(AmbiguityFilter)); }
+        }
+
+        public LocalizationLevel LocalizationLevelStart
+        {
+            get => MetaDrawSettings.LocalizationLevelStart;
+            set { MetaDrawSettings.LocalizationLevelStart = value; OnPropertyChanged(nameof(LocalizationLevelStart)); }
+        }
+
+        public LocalizationLevel LocalizationLevelEnd
+        {
+            get => MetaDrawSettings.LocalizationLevelEnd;
+            set { MetaDrawSettings.LocalizationLevelEnd = value; OnPropertyChanged(nameof(LocalizationLevelEnd)); }
+        }
 
         public string ExportType
         {
@@ -164,6 +205,8 @@ namespace GuiFunctions
             get => MetaDrawSettings.StrokeThicknessUnannotated;
             set { MetaDrawSettings.StrokeThicknessUnannotated = value; OnPropertyChanged(nameof(StrokeThicknessUnannotated)); }
         }
+
+        // Chimera Settings
         public bool DisplayChimeraLegend
         {
             get => MetaDrawSettings.DisplayChimeraLegend;
@@ -188,6 +231,19 @@ namespace GuiFunctions
         {
             get => MetaDrawSettings.ChimeraLegendSubTextType;
             set { MetaDrawSettings.ChimeraLegendSubTextType = value; OnPropertyChanged(nameof(ChimeraLegendSubTextType)); }
+        }
+
+        // Data Visualization Settings
+        public bool DisplayFilteredOnly
+        {
+            get => MetaDrawSettings.DisplayFilteredOnly;
+            set { MetaDrawSettings.DisplayFilteredOnly = value; OnPropertyChanged(nameof(DisplayFilteredOnly)); }
+        }
+
+        public bool NormalizeHistogramToFile
+        {
+            get => MetaDrawSettings.NormalizeHistogramToFile;
+            set { MetaDrawSettings.NormalizeHistogramToFile = value; OnPropertyChanged(nameof(NormalizeHistogramToFile)); }
         }
 
         #endregion
@@ -215,6 +271,7 @@ namespace GuiFunctions
                 LoadPTMs();
                 LoadIonTypes();
                 LoadSequenceCoverage();
+                LoadDataVisualizationColors();
                 Initialization = Task.CompletedTask;
             }
 
@@ -236,6 +293,7 @@ namespace GuiFunctions
             LoadPTMs();
             LoadIonTypes();
             LoadSequenceCoverage();
+            LoadDataVisualizationColors();
             await Task.Delay(100);
         }
 
@@ -256,9 +314,9 @@ namespace GuiFunctions
                 {
                     if (ion.HasChanged)
                     {
-                        if (ion.IonName.Equals("Unannotated Peak"))
+                        if (ion.Name.Equals("Unannotated Peak"))
                             MetaDrawSettings.UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
-                        else if (ion.IonName.Equals("Internal Ion"))
+                        else if (ion.Name.Equals("Internal Ion"))
                             MetaDrawSettings.InternalIonColor = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
                         else if (ion.IsBeta)
                             MetaDrawSettings.BetaProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
@@ -285,6 +343,13 @@ namespace GuiFunctions
                 {
                     MetaDrawSettings.CoverageTypeToColor[color.Name] = DrawnSequence.ParseOxyColorFromName(color.SelectedColor.Replace(" ", ""));
                 }
+            }
+
+            for (int i = 0; i < DataVisualizationColors.Count; i++)
+            {
+                var color = DataVisualizationColors[i];
+                if (color.HasChanged)
+                    MetaDrawSettings.DataVisualizationColorOrder[i] = DrawnSequence.ParseOxyColorFromName(color.SelectedColor.Replace(" ", ""));
             }
         }
 
@@ -341,6 +406,7 @@ namespace GuiFunctions
                     theModType.Children.Add(new ModForTreeViewModel(mod.ToString(), false, mod.IdWithMotif, false, theModType));
                 }
             }
+            OnPropertyChanged(nameof(Modifications));
         }
 
         public void LoadSequenceCoverage()
@@ -348,6 +414,14 @@ namespace GuiFunctions
             _CoverageColors.Add(new CoverageTypeForTreeViewModel("N-Terminal Color"));
             _CoverageColors.Add(new CoverageTypeForTreeViewModel("C-Terminal Color"));
             _CoverageColors.Add(new CoverageTypeForTreeViewModel("Internal Color"));
+        }
+
+        public void LoadDataVisualizationColors()
+        {
+            for (int i = 0; i < MetaDrawSettings.DataVisualizationColorOrder.Count; i++)
+            {
+                _DataVisualizationColors.Add(new ColorForTreeViewModel((i + 1).ToString(), MetaDrawSettings.DataVisualizationColorOrder[i]));   
+            }
         }
 
         #endregion

@@ -52,7 +52,10 @@ namespace Test.MetaDraw
             Assert.That(snapshot.SuppressMessageBoxes, Is.EqualTo(MetaDrawSettings.SuppressMessageBoxes));
             Assert.That(snapshot.ChimeraLegendTakeFirstIfAmbiguous, Is.EqualTo(MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous));
             Assert.That(snapshot.ChimeraLegendMaxWidth, Is.EqualTo(MetaDrawSettings.ChimeraLegendMaxWidth));
-
+            Assert.That(snapshot.NormalizeHistogramToFile, Is.EqualTo(MetaDrawSettings.NormalizeHistogramToFile));
+            Assert.That(snapshot.DisplayFilteredOnly, Is.EqualTo(MetaDrawSettings.DisplayFilteredOnly));
+            Assert.That(MetaDrawSettings.DataVisualizationColorOrder, Is.Not.Null);
+            Assert.That(MetaDrawSettings.DataVisualizationColorOrder.Count, Is.GreaterThan(0));
 
             MetaDrawSettings.ShowContaminants = true;
             MetaDrawSettings.AnnotateMzValues = false;
@@ -77,12 +80,16 @@ namespace Test.MetaDraw
             var spectrumDescriptionValues = MetaDrawSettings.SpectrumDescription
                 .Select(p => $"{p.Key},{p.Value}").ToList();
 
-
             Assert.That(!snapshot.ProductTypeToColorValues.Except(colorValues).Any());
             Assert.That(!snapshot.BetaProductTypeToColorValues.Except(betaColorValues).Any());
             Assert.That(!snapshot.ModificationTypeToColorValues.Except(modificationColorValues).Any());
             Assert.That(!snapshot.CoverageTypeToColorValues.Except(coverageColorValues).Any());
             Assert.That(!snapshot.SpectrumDescriptionValues.Except(spectrumDescriptionValues).Any());
+
+            var expectedDataVisColors = MetaDrawSettings.DataVisualizationColorOrder.Select(c => c.GetColorName()).ToList();
+            Assert.That(snapshot.DataVisualizationColorOrder, Is.Not.Null);
+            Assert.That(snapshot.DataVisualizationColorOrder.Count, Is.EqualTo(expectedDataVisColors.Count));
+            CollectionAssert.AreEqual(expectedDataVisColors, snapshot.DataVisualizationColorOrder);
 
             snapshot.QValueFilter = 0.5;
             snapshot.AnnotateCharges = true;
@@ -100,6 +107,10 @@ namespace Test.MetaDraw
             snapshot.SuppressMessageBoxes = true;
             snapshot.ChimeraLegendTakeFirstIfAmbiguous = true;
             snapshot.ChimeraLegendMaxWidth = 323;
+            snapshot.NormalizeHistogramToFile = !snapshot.NormalizeHistogramToFile;
+            snapshot.DisplayFilteredOnly = !snapshot.DisplayFilteredOnly;
+            var reversedColors = MetaDrawSettings.DataVisualizationColorOrder.Reverse<OxyColor>().ToList();
+            snapshot.DataVisualizationColorOrder = [..reversedColors.Select(c => c.GetColorName())];
 
             MetaDrawSettings.LoadSettings(snapshot, out bool flaggedError);
             Assert.That(!flaggedError);
@@ -120,6 +131,11 @@ namespace Test.MetaDraw
             Assert.That(snapshot.SuppressMessageBoxes, Is.EqualTo(MetaDrawSettings.SuppressMessageBoxes));
             Assert.That(snapshot.ChimeraLegendTakeFirstIfAmbiguous, Is.EqualTo(MetaDrawSettings.ChimeraLegendTakeFirstIfAmbiguous));
             Assert.That(snapshot.ChimeraLegendMaxWidth, Is.EqualTo(MetaDrawSettings.ChimeraLegendMaxWidth));
+            Assert.That(snapshot.NormalizeHistogramToFile, Is.EqualTo(MetaDrawSettings.NormalizeHistogramToFile));
+            Assert.That(snapshot.DisplayFilteredOnly, Is.EqualTo(MetaDrawSettings.DisplayFilteredOnly));
+            Assert.That(MetaDrawSettings.DataVisualizationColorOrder.Count, Is.EqualTo(reversedColors.Count));
+            CollectionAssert.AreEqual(reversedColors.Select(c => c.GetColorName()), MetaDrawSettings.DataVisualizationColorOrder.Select(c => c.GetColorName()));
+
             colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
             betaColorValues = MetaDrawSettings.BetaProductTypeToColor
@@ -366,7 +382,7 @@ namespace Test.MetaDraw
             Assert.That(view.CoverageColors.First().ColorBrush.Color ==
                         DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
-            var internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion");
+            var internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.Name == "Internal Ion");
             Assert.That(!internalIonIonTypeForTreeView.HasChanged);
             internalIonIonTypeForTreeView.SelectionChanged("Blue");
             Assert.That(internalIonIonTypeForTreeView.HasChanged);
@@ -374,7 +390,7 @@ namespace Test.MetaDraw
             Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color ==
                         DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
-            internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak");
+            internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.Name == "Unannotated Peak");
             Assert.That(!internalIonIonTypeForTreeView.HasChanged);
             internalIonIonTypeForTreeView.SelectionChanged("Blue");
             Assert.That(internalIonIonTypeForTreeView.HasChanged);
@@ -428,6 +444,15 @@ namespace Test.MetaDraw
             // Test PossibleColors property
             Assert.That(viewModel.PossibleColors, Is.Not.Null);
             Assert.That(viewModel.PossibleColors, Is.InstanceOf<ObservableCollection<string>>());
+
+            Assert.That(viewModel.DataVisualizationColors, Is.Not.Null);
+            Assert.That(viewModel.DataVisualizationColors, Is.InstanceOf<ObservableCollection<ColorForTreeViewModel>>());
+
+            Assert.That(viewModel.AmbiguityFilters, Is.Not.Null);
+            Assert.That(viewModel.AmbiguityFilters, Is.InstanceOf<ObservableCollection<string>>());
+
+            Assert.That(viewModel.GlycanLocalizationLevels, Is.Not.Null);
+            Assert.That(viewModel.GlycanLocalizationLevels, Is.InstanceOf<ObservableCollection<LocalizationLevel>>());
 
             // Test HasDefaultSaved property
             Assert.That(viewModel.HasDefaultSaved, Is.TypeOf<bool>());
@@ -567,6 +592,77 @@ namespace Test.MetaDraw
             viewModel.ExportType = originalExportType + "10.0";
             Assert.That(viewModel.ExportType, Is.EqualTo(originalExportType + "10.0"));
             viewModel.ExportType = originalExportType;
+
+            // Test DisplayFilteredOnly property
+            bool originalDisplayFilteredOnly = viewModel.DisplayFilteredOnly;
+            viewModel.DisplayFilteredOnly = !originalDisplayFilteredOnly;
+            Assert.That(viewModel.DisplayFilteredOnly, Is.EqualTo(!originalDisplayFilteredOnly));
+            viewModel.DisplayFilteredOnly = originalDisplayFilteredOnly;
+
+            // Test NormalizeHistogramToFile property
+            bool originalNormalizeHistogramToFile = viewModel.NormalizeHistogramToFile;
+            viewModel.NormalizeHistogramToFile = !originalNormalizeHistogramToFile;
+            Assert.That(viewModel.NormalizeHistogramToFile, Is.EqualTo(!originalNormalizeHistogramToFile));
+            viewModel.NormalizeHistogramToFile = originalNormalizeHistogramToFile;
+
+            // Test ShowDecoys property
+            bool originalShowDecoys = viewModel.ShowDecoys;
+            viewModel.ShowDecoys = !originalShowDecoys;
+            Assert.That(viewModel.ShowDecoys, Is.EqualTo(!originalShowDecoys));
+            viewModel.ShowDecoys = originalShowDecoys;
+
+            // Test ShowContaminants property
+            bool originalShowContaminants = viewModel.ShowContaminants;
+            viewModel.ShowContaminants = !originalShowContaminants;
+            Assert.That(viewModel.ShowContaminants, Is.EqualTo(!originalShowContaminants));
+            viewModel.ShowContaminants = originalShowContaminants;
+
+            // Test QValueFilter property
+            double originalQValueFilter = viewModel.QValueFilter;
+            viewModel.QValueFilter = originalQValueFilter + 0.01;
+            Assert.That(viewModel.QValueFilter, Is.EqualTo(originalQValueFilter + 0.01));
+            viewModel.QValueFilter = originalQValueFilter;
+
+            // Test AmbiguityFilters property
+            Assert.That(viewModel.AmbiguityFilters, Is.Not.Null);
+            Assert.That(viewModel.AmbiguityFilters.Count, Is.GreaterThan(0));
+            Assert.That(viewModel.AmbiguityFilters, Is.InstanceOf<ObservableCollection<string>>());
+
+            // Test AmbiguityFilter property
+            string originalAmbiguityFilter = viewModel.AmbiguityFilter;
+            string newAmbiguityFilter = viewModel.AmbiguityFilters.FirstOrDefault(x => x != originalAmbiguityFilter);
+            if (newAmbiguityFilter != null)
+            {
+                viewModel.AmbiguityFilter = newAmbiguityFilter;
+                Assert.That(viewModel.AmbiguityFilter, Is.EqualTo(newAmbiguityFilter));
+                viewModel.AmbiguityFilter = originalAmbiguityFilter;
+            }
+
+            // Test GlycanLocalizationLevels property
+            Assert.That(viewModel.GlycanLocalizationLevels, Is.Not.Null);
+            Assert.That(viewModel.GlycanLocalizationLevels.Count, Is.GreaterThan(0));
+            Assert.That(viewModel.GlycanLocalizationLevels, Is.InstanceOf<ObservableCollection<LocalizationLevel>>());
+
+            // Test LocalizationLevelStart property
+            var originalLocalizationLevelStart = viewModel.LocalizationLevelStart;
+            var newLocalizationLevelStart = viewModel.GlycanLocalizationLevels.FirstOrDefault(x => !x.Equals(originalLocalizationLevelStart));
+            if (newLocalizationLevelStart != null)
+            {
+                viewModel.LocalizationLevelStart = newLocalizationLevelStart;
+                Assert.That(viewModel.LocalizationLevelStart, Is.EqualTo(newLocalizationLevelStart));
+                viewModel.LocalizationLevelStart = originalLocalizationLevelStart;
+            }
+
+            // Test LocalizationLevelEnd property
+            var originalLocalizationLevelEnd = viewModel.LocalizationLevelEnd;
+            var newLocalizationLevelEnd = viewModel.GlycanLocalizationLevels.FirstOrDefault(x => !x.Equals(originalLocalizationLevelEnd));
+            if (newLocalizationLevelEnd != null)
+            {
+                viewModel.LocalizationLevelEnd = newLocalizationLevelEnd;
+                Assert.That(viewModel.LocalizationLevelEnd, Is.EqualTo(newLocalizationLevelEnd));
+                viewModel.LocalizationLevelEnd = originalLocalizationLevelEnd;
+            }
+
         }
 
         [Test]

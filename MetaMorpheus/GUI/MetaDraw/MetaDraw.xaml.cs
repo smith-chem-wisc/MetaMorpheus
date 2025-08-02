@@ -2,7 +2,6 @@ using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
-using MassSpectrometry;
 using Omics.Fragmentation;
 using OxyPlot;
 using Readers;
@@ -11,7 +10,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -22,6 +20,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 
 namespace MetaMorpheusGUI
 {
@@ -81,7 +80,7 @@ namespace MetaMorpheusGUI
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
-            string[] files = ((string[])e.Data.GetData(DataFormats.FileDrop)).OrderBy(p => p).ToArray();
+            string[] files = ((string[])e.Data.GetData(DataFormats.FileDrop))?.OrderBy(p => p).ToArray();
 
             if (files != null)
             {
@@ -453,7 +452,7 @@ namespace MetaMorpheusGUI
 
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
-            var selectedChimeraGroup = ChimeraAnalysisTabViewModel.SelectedChimeraGroup;
+            var selectedChimeraGroup = ChimeraAnalysisTabViewModel?.SelectedChimeraGroup;
 
             // filter based on new settings
             if (e.FilterChanged)
@@ -468,6 +467,11 @@ namespace MetaMorpheusGUI
                 {
                     ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Add(chimeraGroup);
                 }
+            }
+
+            if (e.DataVisualizationChanged && (string)((TabItem)MainTabControl.SelectedItem).Header == "Data Visualization")
+            {
+                PlotSelected(plotsListBox, null);
             }
 
             // Reselect items and refresh plots
@@ -720,8 +724,16 @@ namespace MetaMorpheusGUI
             }
         }
 
+        #region Data Visualization Tab
+
         private void SetUpPlots()
         {
+            Style itemContainerStyle = new Style(typeof(ListBoxItem));
+            itemContainerStyle.Setters.Add(new Setter(AllowDropProperty, true));
+            itemContainerStyle.Setters.Add(new EventSetter(PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler(selectSourceFileListBox_PreviewMouseLeftButtonDown)));
+            itemContainerStyle.Setters.Add(new EventSetter(DropEvent, new DragEventHandler(selectSourceFileListBox_Drop)));
+            selectSourceFileListBox.ItemContainerStyle = itemContainerStyle;
+
             foreach (var plot in PlotModelStat.PlotNames)
             {
                 plotTypes.Add(plot);
@@ -843,13 +855,32 @@ namespace MetaMorpheusGUI
             Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> psmsBSF = new();
             foreach (string fileName in selectSourceFileListBox.SelectedItems)
             {
-                psmsBSF.Add(fileName, MetaDrawLogic.SpectralMatchesGroupedByFile[fileName]);
+                psmsBSF.Add(fileName, new ObservableCollection<SpectrumMatchFromTsv>());
                 foreach (SpectrumMatchFromTsv psm in MetaDrawLogic.SpectralMatchesGroupedByFile[fileName])
                 {
-                    psms.Add(psm);
+                    if (!MetaDrawSettings.DisplayFilteredOnly)
+                    {
+                        psms.Add(psm);
+                        psmsBSF[fileName].Add(psm);
+                    }
+                    else if (MetaDrawSettings.FilterAcceptsPsm(psm))
+                    {
+                        psms.Add(psm);
+                        psmsBSF[fileName].Add(psm);
+                    }
                 }
             }
-            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF));
+
+            PlotModelStat plot = null;
+            try
+            {
+                plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while generating the plot '{plotName}':\n{ex.Message}", "Plot Generation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
             plotViewStat.DataContext = plot;
             PlotViewStat_SizeChanged(plotViewStat, null);
         }
@@ -857,7 +888,7 @@ namespace MetaMorpheusGUI
         private void selectSourceFileListBox_SelectionChanged(object sender, EventArgs e)
         {
             // refreshes the plot using the new source file
-            if (plotsListBox.SelectedIndex > -1 && selectSourceFileListBox.SelectedItems.Count != 0)
+            if (plotsListBox?.SelectedIndex > -1 && selectSourceFileListBox?.SelectedItems.Count != 0)
             {
                 PlotSelected(plotsListBox, null);
             }
@@ -896,6 +927,49 @@ namespace MetaMorpheusGUI
                 }
             }
         }
+
+        void selectSourceFileListBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not ListBoxItem) return;
+            ListBoxItem draggedItem = sender as ListBoxItem;
+            DragDrop.DoDragDrop(draggedItem, draggedItem.DataContext, DragDropEffects.Move);
+            draggedItem.IsSelected = true;
+        }
+
+        /// <summary>
+        /// Enables rearrangement of the source file list box on the data visualization tab
+        /// </summary>
+        void selectSourceFileListBox_Drop(object sender, DragEventArgs e)
+        {
+            var droppedData = e.Data.GetData(typeof(string)) as string;
+            string target = ((ListBoxItem)(sender)).DataContext as string;
+
+            int removedIdx = selectSourceFileListBox.Items.IndexOf(droppedData);
+            int targetIdx = selectSourceFileListBox.Items.IndexOf(target);
+
+            if (removedIdx < targetIdx)
+            {
+                PsmStatPlotFiles.Insert(targetIdx + 1, droppedData);
+                PsmStatPlotFiles.RemoveAt(removedIdx);
+            }
+            else
+            {
+                int remIdx = removedIdx + 1;
+                if (PsmStatPlotFiles.Count + 1 <= remIdx) return;
+                PsmStatPlotFiles.Insert(targetIdx, droppedData);
+                PsmStatPlotFiles.RemoveAt(remIdx);
+            }
+        }
+
+        private void DataVisualizationFilters_OnChecked(object sender, RoutedEventArgs e)
+        {
+            if (plotsListBox?.SelectedIndex > -1 && selectSourceFileListBox?.SelectedItems.Count != 0)
+            {
+                PlotSelected(plotsListBox, null);
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Redraws the Stationary Sequence whenever the scrolling sequence is scrolled
