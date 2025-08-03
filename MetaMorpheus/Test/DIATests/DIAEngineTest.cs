@@ -97,6 +97,23 @@ namespace Test.DIATests
         }
 
         [Test]
+        public static void TestXicSplineForAllXics()
+        {
+            //Test Xic spline with fake scans
+            double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
+            var fakeScans1 = GetSimpleFakeScans("PEPTIDE", intensityMultipliers, 1e6, 1.0, 1, out IsotopicDistribution preDist1);
+            var xicLinearSpline = new XicLinearSpline(0.05);
+            var mzPeakXicConstructor = new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3, xicLinearSpline);
+            var mzXics = mzPeakXicConstructor.GetAllXicsAndXicSpline(fakeScans1);
+            //GetAllXicsAndXicSpline should return all Xics in a given set of scans and set XYData for each XIC if XicSplineEngine is defined in the XicConstructor
+            foreach (var xic in mzXics)
+            {
+                Assert.That(xic.XYData, Is.Not.Null);
+                Assert.That(xic.XYData.Length, Is.GreaterThan(0));
+            }
+        }
+
+        [Test]
         public static void TestPfGroupingEngine()
         {
             //Create MS1 scans with two precursors that do not have any overlap in their retention time

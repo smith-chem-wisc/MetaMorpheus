@@ -189,5 +189,11 @@ namespace Test.DIATests
                 Assert.That(matchedFragXics.Contains(pfPair.FragmentXic) || corrXics.Contains(pfPair.FragmentXic));
             }
         }
+
+        [Test]
+        public static void TestPrecursorFragmentRank()
+        {
+
+        }
     }
 }

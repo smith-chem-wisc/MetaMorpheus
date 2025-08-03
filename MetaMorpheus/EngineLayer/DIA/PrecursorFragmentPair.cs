@@ -29,7 +29,7 @@ namespace EngineLayer.DIA
             Overlap = overlap;
         }
 
-        public static void SetPrecursorRankForPfPairs(List<PrecursorFragmentPair> allPfPairs)
+        public static void SetPrecursorRankForPfPairs(IEnumerable<PrecursorFragmentPair> allPfPairs)
         {
             var fragmentPairMap = new Dictionary<ExtractedIonChromatogram, List<PrecursorFragmentPair>>();
             foreach (var pair in allPfPairs)
