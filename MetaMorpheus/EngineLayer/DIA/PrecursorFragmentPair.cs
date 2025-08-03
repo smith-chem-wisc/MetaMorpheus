@@ -42,7 +42,7 @@ namespace EngineLayer.DIA
             }
             foreach (var fragmentXic in fragmentPairMap.Keys)
             {
-                fragmentPairMap[fragmentXic].Sort((a, b) => a.Correlation.Value.CompareTo(b.Correlation.Value));
+                fragmentPairMap[fragmentXic].Sort((a, b) => b.Correlation.Value.CompareTo(a.Correlation.Value));
                 for (int i = 0; i < fragmentPairMap[fragmentXic].Count; i++)
                 {
                     fragmentPairMap[fragmentXic][i].PrecursorRank = i + 1;
