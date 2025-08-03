@@ -1,19 +1,8 @@
 ﻿using EngineLayer.DIA;
 using MassSpectrometry;
-using MzLibUtil;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using EngineLayer;
-using TaskLayer;
-using Chemistry;
-using FlashLFQ;
-using Omics;
-using Proteomics.ProteolyticDigestion;
-using Omics.Modifications;
-using Omics.Fragmentation;
 
 namespace Test.DIATests
 {
@@ -117,7 +106,7 @@ namespace Test.DIATests
         [Test]
         public static void TestXicPfGrouping()
         {
-            //Create two fake precursor peaks with no overlap in their retention time
+            //Create a fake precursor Xic
             var ms1Peaks = new List<IIndexedPeak>();
             double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
             for (int i = 0; i < intensityMultipliers.Length; i++)
@@ -126,7 +115,7 @@ namespace Test.DIATests
             }
             var ms1Xic = new ExtractedIonChromatogram(ms1Peaks);
 
-            //Create a list of fragment XICs that align with the positive precursor XIC but have no overlap with the negative precursor XIC
+            //Create a list of fragment XICs that align with the precursor XIC
             var matchedFragXics = new List<ExtractedIonChromatogram>();
             int numberOfmatchedFragmentXics = 5;
             for (int j = 0; j < numberOfmatchedFragmentXics; j++)

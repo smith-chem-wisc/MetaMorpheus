@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using MassSpectrometry;
 using System.Collections.Concurrent;
@@ -27,6 +25,9 @@ namespace EngineLayer.DIA
             MinFragmentCountForPfGroup = minFragmentCountForGrouping;
         }
 
+        /// <summary>
+        /// Given a list of precursor XICs and all eligibile fragment XICs, loop over each precursor and group fragments with the precursor based on the grouping criteria.
+        /// <summary>
         public override List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments)
         {
             var pfGroups = new List<PrecursorFragmentsGroup>();
@@ -48,6 +49,9 @@ namespace EngineLayer.DIA
             return pfGroups;
         }
 
+        /// <summary>
+        /// Given one precursor XIC and all eligibile fragment XICs, select fragments that meet the grouping criteria and construct a precursor-fragment group for this precursor.
+        /// <summary>
         public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, List<ExtractedIonChromatogram> fragmentXics, float apexRtTolerance, double overlapThreshold, double correlationThreshold, int minFragmentCountForGrouping)
         {
             var pfPairs = new List<PrecursorFragmentPair>();

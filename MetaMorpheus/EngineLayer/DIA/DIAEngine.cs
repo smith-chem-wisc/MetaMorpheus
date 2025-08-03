@@ -66,6 +66,11 @@ namespace EngineLayer.DIA
             DataFile = dataFile;
         }
 
+        /// <summary>
+        /// Divide all MS2 scans into groups based on their isolation windows. 
+        /// </summary>
+        /// <returns> A dictionary where the key is (minumum of isolation window, maximum of isolation window), 
+        /// and the values are MS2 scans that belongs to this isolation window. </returns>
         public static Dictionary<(double min, double max), List<MsDataScan>> ConstructMs2Groups(MsDataScan[] ms2Scans)
         {
             var DIAScanWindowMap = new Dictionary<(double min, double max), List<MsDataScan>>();
