@@ -138,6 +138,7 @@ namespace EngineLayer.DIA
 
         public void SetFragmentRankForPfPairs()
         {
+            if (PFpairs.IsNullOrEmpty()) return;
             PFpairs.Sort((a, b) => b.Correlation.Value.CompareTo(a.Correlation.Value));
             for (int i = 0; i < PFpairs.Count; i++)
             {
