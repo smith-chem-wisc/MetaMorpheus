@@ -81,9 +81,9 @@ namespace Test.DIATests
                 if (fragmentPairs.IsNullOrEmpty()) continue;
                 //precursor ranking is performed across all pfGroups so any pfPair should have a valid PrecursorRank value
                 Assert.That(fragmentPairs.All(pf => pf.PrecursorRank.HasValue));
-                //The largest PrecursorRank of these pfPairs should be equal to the total number of precursor XICs associated with this fragment Xic
+                //The largest PrecursorRank of these pfPairs should equal to the total number of pfPairs associated with this fragment Xic
                 Assert.That(fragmentPairs.Max(pf => pf.PrecursorRank), Is.EqualTo(fragmentPairs.Count()));
-                //If we rank these pfPairs based on their PrecursorRank, they should be ordered with decreasing Correlation values.
+                //If we rank these pfPairs based on their PrecursorRank, they should be ordered in decreasing Correlation values.
                 fragmentPairs.Sort((a, b) => a.PrecursorRank.Value.CompareTo(b.PrecursorRank.Value));
                 for (int i = 0; i < fragmentPairs.Count - 1; i++)
                 {

@@ -19,10 +19,10 @@ namespace EngineLayer.DIA
         public float ApexRTTolerance { get; set; }
         public double OverlapThreshold { get; set; }
         public double CorrelationThreshold { get; set; }
-        public int PrecursorRankThreshold { get; set; } 
-        public int FragmentRankThreshold { get; set; }
+        public int? PrecursorRankThreshold { get; set; } 
+        public int? FragmentRankThreshold { get; set; }
 
-        public XicGroupingEngine(float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0, int precursorRankThreshold = 1000, int fragmentRankThreshold = 1000)
+        public XicGroupingEngine(float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0, int? precursorRankThreshold = null, int? fragmentRankThreshold = null)
         {
             ApexRTTolerance = apexRTTolerance;
             OverlapThreshold = overlapThreshold;
@@ -52,9 +52,10 @@ namespace EngineLayer.DIA
                     }
                 });
 
-            //Filter precursor-fragment pairs by rank
+            //Filter precursor-fragment pairs by rank if rank thresholds are set
             FilterPfPairsByRank(pfGroups, PrecursorRankThreshold, FragmentRankThreshold);
-            //Remove groups with insufficient fragment pairs
+
+            //Remove groups with insufficient fragment pairs after filtering
             pfGroups.RemoveAll(g => g.PFpairs.Count < MinFragmentCountForPfGroup);
 
             return pfGroups;
@@ -87,29 +88,6 @@ namespace EngineLayer.DIA
             return null;
         }
 
-        public static void FilterPfPairsByRank(List<PrecursorFragmentsGroup> pfGroups, int? fragmentRankThreshold, int? precursorRankThreshold)
-        {
-            //Rank precursors for all precursor-fragment pairs in all precursor-fragment groups
-            if (precursorRankThreshold.HasValue)
-            {
-                PrecursorFragmentPair.SetPrecursorRankForPfPairs(pfGroups.SelectMany(g => g.PFpairs));
-            }
-            //Rank fragments for all precursor-fragment pairs within each precursor-fragment group
-            if (fragmentRankThreshold.HasValue)
-            {
-                foreach (var pfGroup in pfGroups)
-                {
-                    pfGroup.SetFragmentRankForPfPairs();
-                    pfGroup.PFpairs.RemoveAll(pf => pf.FragmentRank.Value < fragmentRankThreshold);
-                }
-            }
-            if (precursorRankThreshold.HasValue)
-            {
-                foreach (var pfGroup in pfGroups)
-                {
-                    pfGroup.PFpairs.RemoveAll(pf => pf.PrecursorRank.Value < precursorRankThreshold);
-                }
-            }
-        }
+        
     }
 }

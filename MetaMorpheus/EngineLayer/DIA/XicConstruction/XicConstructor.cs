@@ -36,7 +36,7 @@ namespace EngineLayer.DIA
 
         public abstract List<ExtractedIonChromatogram> GetAllXics(MsDataScan[] scans, MzRange isolationRange = null);
 
-        public List<ExtractedIonChromatogram> GetAllXicsAndXicSpline(MsDataScan[] scans, MzRange isolationRange = null, int? numberOfThreads = null)
+        public List<ExtractedIonChromatogram> GetAllXicsWithXicSpline(MsDataScan[] scans, MzRange isolationRange = null, int? numberOfThreads = null)
         {
             var allXics = GetAllXics(scans, isolationRange);
             if (XicSplineEngine != null)

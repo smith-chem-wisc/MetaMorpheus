@@ -104,7 +104,7 @@ namespace Test.DIATests
             var fakeScans1 = GetSimpleFakeScans("PEPTIDE", intensityMultipliers, 1e6, 1.0, 1, out IsotopicDistribution preDist1);
             var xicLinearSpline = new XicLinearSpline(0.05);
             var mzPeakXicConstructor = new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3, xicLinearSpline);
-            var mzXics = mzPeakXicConstructor.GetAllXicsAndXicSpline(fakeScans1);
+            var mzXics = mzPeakXicConstructor.GetAllXicsWithXicSpline(fakeScans1);
             //GetAllXicsAndXicSpline should return all Xics in a given set of scans and set XYData for each XIC if XicSplineEngine is defined in the XicConstructor
             foreach (var xic in mzXics)
             {
