@@ -17,7 +17,7 @@ namespace EngineLayer.DIA
         public int MinFragmentCountForPfGroup { get; set; }
         public abstract List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, IEnumerable<ExtractedIonChromatogram> fragments);
 
-        public static void FilterPfPairsByRank(List<PrecursorFragmentsGroup> pfGroups, int? fragmentRankThreshold, int? precursorRankThreshold)
+        public static void FilterPfPairsByRank(List<PrecursorFragmentsGroup> pfGroups, int? precursorRankThreshold, int? fragmentRankThreshold)
         {
             //Rank precursors for all precursor-fragment pairs in all precursor-fragment groups
             if (precursorRankThreshold.HasValue)

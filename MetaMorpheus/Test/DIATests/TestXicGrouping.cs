@@ -191,9 +191,88 @@ namespace Test.DIATests
         }
 
         [Test]
-        public static void TestPrecursorFragmentRank()
+        public static void TestXicGroupingWithRankFilter()
         {
+            // Create two fake precursor Xics with slightly different elution profiles
+            var intensityMultipliers1 = new[] { 1, 2, 10, 2, 1 };
+            var intensityMultipliers2 = new[] { 1, 2, 5, 2, 1 };
+            var intensityMultipliers3 = new[] { 1, 2, 2, 2, 1 }; 
+            var preList1 = new List<IIndexedPeak>();
+            var preList2 = new List<IIndexedPeak>();
+            var preList3 = new List<IIndexedPeak>();
+            for (int i = 0; i < intensityMultipliers1.Length; i++)
+            {
+                preList1.Add(new IndexedMassSpectralPeak(500.0 + i, intensityMultipliers1[i] * 1e6, i, 1 + i / 10.0));
+                preList2.Add(new IndexedMassSpectralPeak(501.0 + i, intensityMultipliers2[i] * 1e6, i, 1 + i / 10.0));
+                preList3.Add(new IndexedMassSpectralPeak(502.0 + i, intensityMultipliers3[i] * 1e6, i, 1 + i / 10.0));
+            }
+            var precursorXic1 = new ExtractedIonChromatogram(preList1);
+            var precursorXic2 = new ExtractedIonChromatogram(preList2);
+            var precursorXic3 = new ExtractedIonChromatogram(preList3);
 
+            // Create two sets of fragment XICs that closely align with precursor 1 and 2 respectively
+            //fragment XICs in set 1 correlate better with precursorXic1, and those in set 2 correlate better with precursorXic2
+            int numberOfFragments = 5;
+            var fragmentXicSet1 = new List<ExtractedIonChromatogram>();
+            var fragmentXicSet2 = new List<ExtractedIonChromatogram>();
+            for (int j = 0; j < numberOfFragments; j++)
+            {
+                var fragList1 = new List<IIndexedPeak>();
+                var fragList2 = new List<IIndexedPeak>();
+                for (int i = 0; i < intensityMultipliers1.Length; i++)
+                {
+                    //- 0.05 * j is just to introduce a little variation so the correlation values are not exactly the same but still close
+                    fragList1.Add(new IndexedMassSpectralPeak(300.0 + j, (intensityMultipliers1[i] - 0.05 * j) * 1e5, i, 1 + i / 10.0));
+                    fragList2.Add(new IndexedMassSpectralPeak(400.0 + j, (intensityMultipliers2[i] - 0.05 * j) * 1e5, i, 1 + i / 10.0));
+                }
+                var fragXic1 = new ExtractedIonChromatogram(fragList1);
+                var fragXic2 = new ExtractedIonChromatogram(fragList2);
+                fragmentXicSet1.Add(fragXic1);
+                fragmentXicSet2.Add(fragXic2);
+            }
+            var allPrecursorXics = new List<ExtractedIonChromatogram> { precursorXic1, precursorXic2, precursorXic3};
+            var allFragmentXics = fragmentXicSet1.Concat(fragmentXicSet2).ToList();
+
+            //Create XicGroupingEngine and do precursor-fragment grouping for all fake Xics with a relatively loose threshold for correlation
+            //When there is no rank filter, all fragment XICs should be grouped with each precursor XIC
+            var xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, null, null);
+            var groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics);
+            //So there will be 3 pfGroups, each with 10 grouped fragments
+            Assert.That(groups.Count, Is.EqualTo(3));
+            Assert.That(groups.All(g => g.PFpairs.Count == 10));
+
+            //When we set a threshold of 4 for fragment rank but no precursor rank threshold
+            xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, null, 4);
+            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics);
+            Assert.That(groups.Count, Is.EqualTo(3));
+            //The 4 fragment Xics that correlate better with each precursor Xic should be retained
+            Assert.That(groups.All(g => g.PFpairs.Count == 4));
+            //all fragment Xics paired with precursor 1 should from fragment set 1, and all pfPairs paired with precursor 2 should from fragment set 2
+            Assert.That(groups[0].PFpairs.All(pf => fragmentXicSet1.Contains(pf.FragmentXic)));
+            Assert.That(groups[1].PFpairs.All(pf => fragmentXicSet2.Contains(pf.FragmentXic)));
+            //Since fragment xics in set 2 are closer to precursor3, the pfPairs paired with precursor 3 should be from fragment set 2
+            Assert.That(groups[2].PFpairs.All(pf => fragmentXicSet2.Contains(pf.FragmentXic)));
+
+            //When we set a threshold of 1 for precursor rank but no fragment rank threshold
+            xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, 1, null);
+            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics);
+            //Precursor 3 should not have any fragments grouped with it since each fragment Xic is limited to be paired with only one precursor
+            Assert.That(groups.Count, Is.EqualTo(2));
+            //The precursor Xic that correlate best with each fragment Xic should be retained
+            //so the 5 fragment Xics in set 1 should go with precursor 1 and the 5 in set 2 should go with precursor 2
+            Assert.That(groups.All(g => g.PFpairs.Count == 5));
+            Assert.That(groups[0].PFpairs.All(pf => fragmentXicSet1.Contains(pf.FragmentXic)));
+            Assert.That(groups[1].PFpairs.All(pf => fragmentXicSet2.Contains(pf.FragmentXic)));
+
+            //When we set a threshold of 2 for precursor rank and 6 for fragment rank
+            xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, 2, 6);
+            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics);
+            //Precursor 3 should still not have any fragments so there are two groups
+            Assert.That(groups.Count, Is.EqualTo(2));
+            //Each group should have 6 fragments
+            Assert.That(groups.All(g => g.PFpairs.Count == 6));
+            //precursor 1 should have all fragments from fragment set 1 plus one from fragment set 2
+            Assert.That(groups[0].PFpairs.Count(pf => fragmentXicSet1.Contains(pf.FragmentXic)), Is.EqualTo(5));
         }
     }
 }
