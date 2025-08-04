@@ -7,6 +7,7 @@ using System.Linq;
 using System.Collections.ObjectModel;
 using System;
 using Omics.Fragmentation.Peptide;
+using GuiFunctions;
 
 namespace MetaMorpheusGUI
 {
@@ -110,8 +111,7 @@ namespace MetaMorpheusGUI
         {
             var selectedIons = TheList.Where(p => p.IsSelected).Select(p => p.Type);
             if (isRna)
-                throw new NotImplementedException("No RNA just yet");
-                //Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
+                Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
             else
                 DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
             this.Visibility = Visibility.Hidden;
@@ -131,12 +131,30 @@ namespace MetaMorpheusGUI
                 e.Cancel = true;
             }
         }
+
+        private void SelectAll_OnClick(object sender, RoutedEventArgs e)
+        {
+            foreach (var ion in TheList)
+            {
+                ion.IsSelected = true;
+            }
+        }
     }
 
-    public class BoolStringClass
+    public class BoolStringClass : BaseViewModel
     {
         public ProductType Type { get; set; }
-        public bool IsSelected { get; set; }
+        private bool isSelected;
+
+        public bool IsSelected
+        {
+            get => isSelected;
+            set
+            {
+                isSelected = value;
+                OnPropertyChanged(nameof(IsSelected));
+            }
+        }
         public string ToolTip { get; set; }
     }
 }
