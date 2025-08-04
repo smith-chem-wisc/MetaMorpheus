@@ -289,6 +289,13 @@ namespace Test.DIATests
             Assert.That(isdVoltageMap.Values.All(v => v.All(scan => scan.OneBasedPrecursorScanNumber.HasValue)));
             //All ms1 scans should stay as ms1 scans
             Assert.That(ms1Scans.All(scan => scan.MsnOrder == 1));
+            //The isolation range of each ISD fragment scan should match with the scan window of the corresponding MS1 scan
+            foreach(var scan in isdVoltageMap.Values.SelectMany(v => v))
+            {
+                var ms1Scan = ms1Scans.Where(s => s.OneBasedScanNumber == scan.OneBasedPrecursorScanNumber.Value).FirstOrDefault();
+                Assert.That(scan.IsolationRange.Minimum, Is.EqualTo(ms1Scan.ScanWindowRange.Minimum));
+                Assert.That(scan.IsolationRange.Maximum, Is.EqualTo(ms1Scan.ScanWindowRange.Maximum));
+            }
         }
     }
 }

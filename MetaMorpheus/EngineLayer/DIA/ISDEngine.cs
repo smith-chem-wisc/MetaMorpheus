@@ -36,12 +36,19 @@ namespace EngineLayer.DIA
 
             //Precursor-fragment Grouping
             var allPfGroups = new List<PrecursorFragmentsGroup>();
-            foreach (var ms2Group in isdVoltageMap.Keys)
+            if (DIAparams.CombineFragments)
             {
-                var pfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics, allMs2Xics[ms2Group]);
-                allPfGroups.AddRange(pfGroups);
+                allPfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics, allMs2Xics.Values.SelectMany(p => p));
             }
-
+            else
+            {
+                foreach (var ms2Group in isdVoltageMap.Keys)
+                {
+                    var pfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics, allMs2Xics[ms2Group]);
+                    allPfGroups.AddRange(pfGroups);
+                }
+            }
+            
             //Convert pfGroups to pseudo MS2 scans
             PseudoMs2Scans = new List<Ms2ScanWithSpecificMass>();
             int pfGroupIndex = 1;
@@ -62,9 +69,9 @@ namespace EngineLayer.DIA
                 foreach (var scan in isdVoltageScanMap.Values.ElementAt(i))
                 {
                     scan.SetMsnOrder(2);
-                    int oneBasedPrecursorScanNumber = scan.OneBasedScanNumber - i;
+                    int oneBasedPrecursorScanNumber = scan.OneBasedScanNumber - i - 1;
                     var ms1Scan = ms1Scans.Where(s => s.OneBasedScanNumber == oneBasedPrecursorScanNumber).First();
-                    scan.SetOneBasedPrecursorScanNumber(scan.OneBasedScanNumber - i - 1);
+                    scan.SetOneBasedPrecursorScanNumber(oneBasedPrecursorScanNumber);
                     scan.SetIsolationRange(ms1Scan.ScanWindowRange.Minimum, ms1Scan.ScanWindowRange.Maximum);
                     var scanWindowWidth = ms1Scan.ScanWindowRange.Maximum - ms1Scan.ScanWindowRange.Minimum;
                     scan.SetIsolationMz(ms1Scan.ScanWindowRange.Minimum + scanWindowWidth / 2);

@@ -33,7 +33,7 @@ namespace EngineLayer.DIA
             FragmentRankThreshold = fragmentRankThreshold;
         }
 
-        public override List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments)
+        public override List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, IEnumerable<ExtractedIonChromatogram> fragments)
         {
             var pfGroups = new List<PrecursorFragmentsGroup>();
 
@@ -61,7 +61,7 @@ namespace EngineLayer.DIA
             return pfGroups;
         }
 
-        public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, List<ExtractedIonChromatogram> fragmentXics, float apexRtTolerance, double overlapThreshold, double correlationThreshold, int minFragmentCountForGrouping)
+        public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, IEnumerable<ExtractedIonChromatogram> fragmentXics, float apexRtTolerance, double overlapThreshold, double correlationThreshold, int minFragmentCountForGrouping)
         {
             var pfPairs = new List<PrecursorFragmentPair>();
             foreach (var fragmentXic in fragmentXics)

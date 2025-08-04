@@ -13,13 +13,15 @@ namespace EngineLayer.DIA
         public XicConstructor Ms2XicConstructor { get; set; } 
         public PfGroupingEngine PfGroupingEngine { get; set; }
         public PseudoMs2ConstructionType PseudoMs2ConstructionType { get; set; }
+        public bool CombineFragments { get; set; } 
 
-        public DIAparameters(XicConstructor ms1XicConstructor, XicConstructor ms2XicConstructor, PfGroupingEngine pfGroupingEngine, PseudoMs2ConstructionType pseudoMs2ConstructionType)
+        public DIAparameters(XicConstructor ms1XicConstructor, XicConstructor ms2XicConstructor, PfGroupingEngine pfGroupingEngine, PseudoMs2ConstructionType pseudoMs2ConstructionType, bool combineFragments = false)
         {
             Ms1XicConstructor = ms1XicConstructor;
             Ms2XicConstructor = ms2XicConstructor;
             PfGroupingEngine = pfGroupingEngine;
             PseudoMs2ConstructionType = pseudoMs2ConstructionType;
+            CombineFragments = combineFragments;
         }
     }
 }
