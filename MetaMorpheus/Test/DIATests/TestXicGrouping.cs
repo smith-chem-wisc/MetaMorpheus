@@ -11,7 +11,7 @@ namespace Test.DIATests
         [Test]
         public static void TestCorrelationCalculation()
         {
-            //perfectly aligned XICs
+            //Create two perfectly aligned XICs
             var peakList1 = new List<IIndexedPeak>();
             double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
             for (int i = 0; i < intensityMultipliers.Length; i++)
@@ -26,6 +26,7 @@ namespace Test.DIATests
             }
             var xic2 = new ExtractedIonChromatogram(peakList2);
             double corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic2);
+            //The Pearson's correlation should be 1
             Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
 
             //XICs with completely opposite trends
@@ -37,6 +38,7 @@ namespace Test.DIATests
             }
             var xic3 = new ExtractedIonChromatogram(peakList3);
             corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic3);
+            //The Pearson's correlation should be -1
             Assert.That(corr, Is.EqualTo(-1.0).Within(1e-6));
 
             //XICs with insufficient overlap points
@@ -49,7 +51,8 @@ namespace Test.DIATests
             corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic4);
             Assert.That(corr, Is.EqualTo(double.NaN).Within(1e-6));
 
-            //XICs with spline
+            //perfectly aligned XICs with spline. When spline is available, the correlation is calculated with the spline data
+            //It should still return 1.0 for two perfectly aligned XICs
             var cubicSpline = new XicCubicSpline();
             cubicSpline.SetXicSplineXYData(xic1, true);
             cubicSpline.SetXicSplineXYData(xic2, true);
@@ -93,6 +96,7 @@ namespace Test.DIATests
             Assert.That(overlap, Is.EqualTo(0));
 
             //XICs with partial overlap
+            //xic1 covers scan 0 to 4, xic4 covers scan 1 to 5, so the overlap should be 0.6 (3 out of 5 scans)
             var peakList4 = new List<IIndexedPeak>();
             for (int i = 0; i < intensityMultipliers.Length; i++)
             {
