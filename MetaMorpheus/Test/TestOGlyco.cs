@@ -1797,15 +1797,15 @@ namespace Test
             route_2.ReversePScore= 30;
             route_2.SetRPScoreToPair();
 
-            List<ModSitePair> localiezedPairs = new List<ModSitePair>() { new ModSitePair(1, 1, false), new ModSitePair(1, 2, false) };
-            Assert.That(localiezedPairs[0].Probability.Equals(0.0)); // The default prob is 0
-            Assert.That(localiezedPairs[1].Probability.Equals(0.0));
+            List<ModSitePair> localizedPairs = new List<ModSitePair>() { new ModSitePair(1, 1, false), new ModSitePair(1, 2, false) };
+            Assert.That(localizedPairs[0].Probability.Equals(0.0)); // The default prob is 0
+            Assert.That(localizedPairs[1].Probability.Equals(0.0));
 
             var pairsProbDict = LocalizationGraph.CalProbabilityForModSitePair(new List<Route>() { route_1, route_2 }, localiezedPairs);
 
             //Check the localizedPairs is updated with the correct probabilities
-            Assert.That(localiezedPairs[0].Probability, Is.EqualTo(0.3).Within(1e-6));
-            Assert.That(localiezedPairs[1].Probability, Is.EqualTo(0.7).Within(1e-6));
+            Assert.That(localizedPairs[0].Probability, Is.EqualTo(0.3).Within(1e-6));
+            Assert.That(localizedPairs[1].Probability, Is.EqualTo(0.7).Within(1e-6));
 
             //Check the pairsProbDict output is correct
             Assert.That(pairsProbDict.Count == 5); // There are 5 pairs in total, so the dictionary should have 5 entries.

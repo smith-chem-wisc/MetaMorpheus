@@ -441,7 +441,7 @@ namespace EngineLayer.GlycoSearch
             }
 
             // Create a dictionary with each unique ModSitePair (same modId and siteIndex) as key and its probability as value.
-            var modSitePairs_Prob =  allPairs.GroupBy(p => p)
+            var modSitePairs_Prob = allPairs.GroupBy(p => p)
                 .ToDictionary(g => g.Key, g => g.Key.Probability);
             return modSitePairs_Prob;
         }
