@@ -47,12 +47,26 @@ namespace Test
         [Test]
         public static void TestModPair_N()
         {
-            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
-
+            // set up output directory, MS data, and database
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask>
+
+            // first, we run the NPair search (O-pair for Nglyco)
+            var task_NPair = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task_NPair) }, new List<string> { raw }, new List<DbForTask>
+            {
+                db
+            }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            File.ReadAllLines("");
+
+
+            // Now run the ModPair search
+            var task_ModPair = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            task_ModPair._glycoSearchParameters.GlycoSearchType = GlycoSearchType.ModSearch;
+            task_ModPair._glycoSearchParameters.MaximumOGlycanAllowed = 1;
+            
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task_ModPair)}, new List<string> { raw }, new List<DbForTask>
             {
                 db
             }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();

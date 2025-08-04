@@ -200,7 +200,7 @@ namespace Test
         [Test]
         public static void GlycoSpectralHeader()
         {
-            string header = GlycoSpectralMatch.GetTabSepHeaderSingle().Trim();
+            string header = GlycoSpectralMatch.GetTabSepHeader_unModifiedPeptide().Trim();
             string expectedHeader = "File Name\tScan Number\tRetention Time\tPrecursor Scan Number\tPrecursor MZ\tPrecursor Charge\tPrecursor Mass\tProtein Accession\tOrganism\tProtein Name\tStart and End Residues In Protein\tBase Sequence\tFlankingResidues\tFull Sequence\tNumber of Mods\tPeptide Monoisotopic Mass\tScore\tRank\tMatched Ion Series\tMatched Ion Mass-To-Charge Ratios\tMatched Ion Mass Diff (Da)\tMatched Ion Mass Diff (Ppm)\tMatched Ion Intensities\tMatched Ion Counts\tDecoy/Contaminant/Target\tQValue\tPEP\tPEP_QValue\t";
             Assert.That(header.Equals(expectedHeader.Trim()));
         }
