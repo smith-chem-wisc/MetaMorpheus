@@ -290,6 +290,14 @@ namespace EngineLayer.GlycoSearch
             var peptideWithMod = GlycoPeptides.GetTheoreticalModPeptide(localization, peptide);
 
             var fragmentsForEachGlycoPeptide = GlycoPeptides.GetTheoreticalFragments(CommonParameters.DissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
+            
+            // N-glycan setting
+            List<Modification> nGlycans = new List<Modification>();
+            if (localization.ContainNGlycan(out nGlycans)) //typically, there is only one n-glycan in the localization
+            {
+                foreach(var nGlycan in nGlycans)
+                   fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan as Glycan));
+            }
 
             var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters);
 

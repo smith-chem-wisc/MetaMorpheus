@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media.Animation;
 using EngineLayer.GlycoSearch;
 using TaskLayer;
 
@@ -49,7 +50,7 @@ namespace Test
         {
             // set up output directory, MS data, and database
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
-            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
+                DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
 
             // first, we run the NPair search (O-pair for Nglyco)
@@ -58,10 +59,17 @@ namespace Test
             {
                 db
             }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
-            File.ReadAllLines("");
+            var peptideHearList = File
+                .ReadLines(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData", "Task", "AllPSMs.psmtsv"))
+                .First().Split('\t');
+            var peptideResult_NSearch = File.ReadLines(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData", "Task", "AllPSMs.psmtsv"))
+                .Skip(1).First().Split('\t');
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+
 
 
             // Now run the ModPair search
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             var task_ModPair = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             task_ModPair._glycoSearchParameters.GlycoSearchType = GlycoSearchType.ModSearch;
             task_ModPair._glycoSearchParameters.MaximumOGlycanAllowed = 1;
@@ -70,6 +78,23 @@ namespace Test
             {
                 db
             }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            // Read ModSearch results
+            var peptideResult_ModSearch = File.ReadLines(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData", "Task", "AllPSMs.psmtsv")).Skip(1).First().Split('\t');
+            for (int i = 0; i < peptideResult_NSearch.Length; i++)
+            {
+                if (i == 13)
+                {
+                    var fullSeq_NSearch = peptideResult_NSearch[i];
+                    var fullSeq_ModSearch = peptideResult_ModSearch[i];
+                    Assert.That(fullSeq_NSearch.Equals("DAN[N-linked glycosylation:H5N2 on AnyWhere]NTQFQFTSR"));
+                    Assert.That(fullSeq_ModSearch.Equals("DAN[N-linked glycosylation:H5N2 on Nxt]NTQFQFTSR"));
+                }
+
+                else
+                {
+                    Assert.That(peptideResult_NSearch[i], Is.EqualTo(peptideResult_ModSearch[i]), $"{peptideHearList[i]} don't match");
+                }
+            }
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
 

@@ -32,7 +32,6 @@ namespace EngineLayer.ModSearch
             //Load glycan databases and build the modBox 
             ModBox.GlobalModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => ListOfInterestedMods.Contains((b.ModificationType, b.IdWithMotif))).ToArray();
             ModBoxes = ModBox.BuildModBoxes(MaxModNumber, false).OrderBy(p => p.Mass).ToArray();
-            int iii = 0;
         }
 
 
