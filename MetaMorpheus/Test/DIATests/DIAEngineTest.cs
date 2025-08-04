@@ -12,6 +12,7 @@ using System.IO;
 using Chemistry;
 using Readers;
 using MathNet.Numerics.Interpolation;
+using System.Drawing.Imaging;
 
 namespace Test.DIATests
 {
@@ -260,6 +261,34 @@ namespace Test.DIATests
                 //The neutral mass of the fragment should match with the fragment mass
                 Assert.That(pseudoScan.ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(fragDist1.Masses.First()).Within(0.001));
             }
+        }
+
+        [Test]
+        public static void IsdVoltageScanTest()
+        {
+            string dataPath = @"E:\ISD Project\ISD_240812\08-12-24_PEPPI_FractionD_orbiMS1_ISD60-80-100_RT8.1-9.23.mzML";
+            var myFileManager = new MyFileManager(true);
+            var dataFile = myFileManager.LoadFile(dataPath, new CommonParameters());
+            var allScans = dataFile.GetAllScansList().ToArray();
+
+            //Read in all scans, relabel ISD fragment scans and construct "MS2" groups
+            //In this data file, one scan cycle contains four scans: MS1, 60, 80, 100
+            var isdVoltageMap = ISDEngine.ConstructIsdGroups(allScans, out MsDataScan[] ms1Scans);
+            ISDEngine.ReLabelIsdScans(isdVoltageMap, ms1Scans);
+
+            //There are three different ISD voltages 60, 80, and 100, so there should be three kvps in the isdVoltageMap
+            Assert.That(isdVoltageMap.Count, Is.EqualTo(3));
+            //The number of scans in each ISD voltage group should be all the same as the number of ms1 scans in this file
+            foreach(var kvp in isdVoltageMap)
+            {
+                Assert.That(kvp.Value.Count, Is.EqualTo(ms1Scans.Length));
+            }
+            //The ISD fragment scans should be relabeled as ms2 scan
+            Assert.That(isdVoltageMap.Values.All(v => v.All(scan => scan.MsnOrder == 2)));
+            //The ISD fragment scans should have a valid precursor scan number
+            Assert.That(isdVoltageMap.Values.All(v => v.All(scan => scan.OneBasedPrecursorScanNumber.HasValue)));
+            //All ms1 scans should stay as ms1 scans
+            Assert.That(ms1Scans.All(scan => scan.MsnOrder == 1));
         }
     }
 }
