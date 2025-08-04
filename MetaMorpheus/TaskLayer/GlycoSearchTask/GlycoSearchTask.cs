@@ -47,7 +47,7 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
-            List<List<GlycoSpectralMatch>> ListOfGsmsPerMS2Scan = new List<List<GlycoSpectralMatch>>();
+            List<List<SpectralMatch>> ListOfGsmsPerMS2Scan = new List<List<SpectralMatch>>();
 
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
@@ -108,7 +108,7 @@ namespace TaskLayer
 
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 
-                List<GlycoSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<GlycoSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
+                List<SpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<SpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
                 
                 myFileManager.DoneWithFile(origDataFile);
 
@@ -148,7 +148,8 @@ namespace TaskLayer
 
             //For every Ms2Scans, each have a list of candidates psms. The allPsms from GlycoSearchEngine is the list (all ms2scans) of list (each ms2scan) of psm (all candidate psm). 
             //Currently, only keep the first scan for consideration. 
-            List<GlycoSpectralMatch> GsmPerScans = ListOfGsmsPerMS2Scan.Select(p => p.First()).ToList();
+            IEnumerable<GlycoSpectralMatch> GsmPerScans = ListOfGsmsPerMS2Scan.Select(p => p.First() as GlycoSpectralMatch)
+                .Where(p => p != null);
 
             var filteredAllPsms = new List<GlycoSpectralMatch>();
 
@@ -233,9 +234,9 @@ namespace TaskLayer
 
         //The coisolation works for general search doesn't work for glyco search workflow. Similar peptide with different glycan are identified because of poor precursor mass. 
         //glycoSpectralMatches must be OrderDecendingByScore.
-        private static List<GlycoSpectralMatch> RemoveSimilarSequenceDuplicates(List<GlycoSpectralMatch> glycoSpectralMatches)
+        private static List<T> RemoveSimilarSequenceDuplicates<T>(List<T> glycoSpectralMatches) where T : SpectralMatch
         {
-            List<GlycoSpectralMatch> glycos = new List<GlycoSpectralMatch>();
+            List<T> glycos = new();
             glycos.Add(glycoSpectralMatches.First());
             foreach (var g in glycoSpectralMatches)
             {

@@ -273,12 +273,12 @@ namespace EngineLayer.GlycoSearch
         /// <param name="peptide"></param>
         /// <param name="glycanBox"></param>
         /// <returns> A modfiied peptide.</returns>
-        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(int[] theModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
+        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(int[] theModPositions, PeptideWithSetModifications peptide, ModBox glycanBox)
         {
             Modification[] modifications = new Modification[glycanBox.NumberOfMods];
             for (int i = 0; i < glycanBox.NumberOfMods; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds.ElementAt(i)]; // transfer the glycanBox information to a new list.
+                modifications[i] = ModBox.GlobalOGlycans[glycanBox.ModIds.ElementAt(i)]; // transfer the glycanBox information to a new list.
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
@@ -309,7 +309,7 @@ namespace EngineLayer.GlycoSearch
             Modification[] modifications = new Modification[theModPositions.ModSitePairs.Count];
             for (int i = 0; i < theModPositions.ModSitePairs.Count; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycans[theModPositions.ModSitePairs[i].ModId];
+                modifications[i] = ModBox.GlobalOGlycans[theModPositions.ModSitePairs[i].ModId];
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
@@ -386,7 +386,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="OGlycanBoxes"></param>
         /// <param name="FragmentBinsPerDalton"></param>
         /// <returns></returns>
-        public static int[] GetFragmentHash(List<Product> products, Tuple<int, int[]> keyValuePair, GlycanBox[] OGlycanBoxes, int FragmentBinsPerDalton)
+        public static int[] GetFragmentHash(List<Product> products, Tuple<int, int[]> keyValuePair, ModBox[] OGlycanBoxes, int FragmentBinsPerDalton)
         {
             double[] newFragments = products.OrderBy(p=>p.ProductType).ThenBy(p=>p.FragmentNumber).Select(p => p.NeutralMass).ToArray(); // store the fragment mass in the order of c1, c2, c3, y1, y2, y3, z1, z2, z3
             var len = products.Count / 3;
@@ -397,13 +397,13 @@ namespace EngineLayer.GlycoSearch
                     var j = keyValuePair.Item2[i];
                     while (j <= len + 1) // for c ions
                     {
-                        newFragments[j - 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
+                        newFragments[j - 2] += (double)ModBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
                         j++;
                     }
                     j = keyValuePair.Item2[i]; // reset the j to the position of the glycan
                     while (j >= 3)             // for z ions
                     {
-                        newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
+                        newFragments[len * 3 - j + 2] += (double)ModBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
                         j--;
                     }
                 }
@@ -488,7 +488,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="oxoniumIonsintensities"> From the Scan </param>
         /// <param name="glycanBox"> The glycanBox to be tested </param>
         /// <returns >True : The Oglycan pass the filter, False : The OGl</returns>
-        public static bool DiagonsticFilter(double[] oxoniumIonsintensities, GlycanBox glycanBox)
+        public static bool DiagonsticFilter(double[] oxoniumIonsintensities, ModBox modBox)
         {
             double HexNAc_diagnostic = oxoniumIonsintensities[4];
             double NeuAc_diagnostic1 = oxoniumIonsintensities[10];
@@ -498,7 +498,7 @@ namespace EngineLayer.GlycoSearch
             //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
             if (NeuAc_diagnostic1 / HexNAc_diagnostic > 0.02 && NeuAc_diagnostic2 / HexNAc_diagnostic > 0.02)
             {
-                if (glycanBox.Kind[2] == 0 )
+                if (modBox.Kind[2] == 0 )
                 {
                     return false;
                 }
@@ -506,7 +506,7 @@ namespace EngineLayer.GlycoSearch
 
             if(NeuAc_diagnostic1 / HexNAc_diagnostic < 0.02 && NeuAc_diagnostic2 / HexNAc_diagnostic < 0.02)
             {
-                if (glycanBox.Kind[2] != 0)
+                if (modBox.Kind[2] != 0)
                 {
                     return false;
                 }
@@ -515,7 +515,7 @@ namespace EngineLayer.GlycoSearch
             //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more. Here use the total glycan of glycanBox to calculate. 
             else if (HexNAcPlusHex_diagnostic / HexNAc_diagnostic > 0.02)
             {
-                if (glycanBox.Kind[0] < 1 && glycanBox.Kind[1] < 1)
+                if (modBox.Kind[0] < 1 && modBox.Kind[1] < 1)
                 {
                     return false;
                 }
