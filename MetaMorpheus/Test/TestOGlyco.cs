@@ -1801,7 +1801,7 @@ namespace Test
             Assert.That(localizedPairs[0].Probability.Equals(0.0)); // The default prob is 0
             Assert.That(localizedPairs[1].Probability.Equals(0.0));
 
-            var pairsProbDict = LocalizationGraph.CalProbabilityForModSitePair(new List<Route>() { route_1, route_2 }, localiezedPairs);
+            var pairsProbDict = LocalizationGraph.CalProbabilityForModSitePair(new List<Route>() { route_1, route_2 }, localizedPairs);
 
             //Check the localizedPairs is updated with the correct probabilities
             Assert.That(localizedPairs[0].Probability, Is.EqualTo(0.3).Within(1e-6));
