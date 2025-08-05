@@ -110,7 +110,7 @@ namespace Test.DIATests
             foreach (var xic in mzXics)
             {
                 Assert.That(xic.XYData, Is.Not.Null);
-                Assert.That(xic.XYData.Length, Is.GreaterThan(0));
+                Assert.That(xic.XYData.Length, Is.GreaterThan(intensityMultipliers.Length));
             }
         }
 
