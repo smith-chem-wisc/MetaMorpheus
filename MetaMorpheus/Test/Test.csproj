@@ -397,6 +397,9 @@
     <None Update="TestData\SpectralLibrarySearch\mouse-filtered-reviewed.fasta.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SpectralLibrarySearch\mspLibraryFileWithExtraLineBreaks.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralLibrarySearch\P16858.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
