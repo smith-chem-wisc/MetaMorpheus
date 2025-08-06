@@ -547,7 +547,7 @@ namespace EngineLayer.GlycoSearch
             }
 
             // iterate all modSitePair in specific site.
-            foreach (var sitep in modSitePairProbDict.Keys.GroupBy(p=>p.SiteIndex))
+            foreach (var sitep in modSitePairProbDict.Keys.GroupBy(p=>p.SiteIndex).OrderBy(p=>p.Key))
             {
                 var site_1 = sitep.Key - 1;
                 local += "{@" + site_1;
