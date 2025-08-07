@@ -1848,22 +1848,5 @@ namespace Test
             Assert.That(localizedMod.Where(p => p.SiteIndex == 5 && p.ModId == 1).All(p => p.Confident)); // The Pair with SiteIndex 5 and ModId 1 should be confident, as it appears in both routes.
             Assert.That(localizedMod.Where(p => p.SiteIndex != 5 ).All(p => !p.Confident)); // The other pairs should not be confident, as they do not appear in both routes.
         }
-
-
-        [Test]
-        public static void Testing()
-        {
-            string outputFolder = "E:\\ModPair\\CompareTesting\\8_5_2025";
-            Directory.CreateDirectory(outputFolder);
-            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(outputFolder, @"Frac1_2glycans_32DB.toml"), MetaMorpheusTask.tomlConfig);
-            DbForTask db = new(Path.Combine(outputFolder, @"entire human protein Pruned.xml"), false);
-            string spectraFile1 = Path.Combine(outputFolder, "170919_11.raw");
-            string spectraFile2 = Path.Combine(outputFolder, "170921_06.raw");
-            string spectraFile3 = Path.Combine(outputFolder, "170922_04.raw");
-            List<string> spectraFiles = new List<string> { spectraFile1, spectraFile2, spectraFile3 };
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, spectraFiles, new List<DbForTask> { db }, outputFolder).Run();
-            int i = 0;
-
-        }
     }
 }
