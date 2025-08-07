@@ -48,19 +48,17 @@ namespace EngineLayer.GlycoSearch
         /// </summary>
         public int Thero_n { get; set; }
 
-        public Dictionary<int, List<Tuple<int, double>>> SiteSpeciLocalProb { get; set; } // Data <modPos, List<glycanId, site probability>>
+        public double ScanInfo_p { get; set; }  //Scan P value, Used for Localization probability calculation. Ref PhosphoRS paper.
+
+        public int Thero_n { get; set; } //Scan n value. Used for Localization probability calculation. Ref PhosphoRS paper.
+
         /// <summary>
-        /// Scores from only matched peptide fragments.
+        /// The dictionary of all unique ModSitePair and its probability.
         /// </summary>
-        public double PeptideScore { get; set; }
-        /// <summary>
-        /// Scores from only matched M ions (peptide attached with glyco fragment)
-        /// </summary>
-        public double GlycanScore { get; set; }
-        /// <summary>
-        /// Scores from only matched D ions (DiagnosticIon)
-        /// </summary>
-        public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate unique DiagnosticIon, it is important to separate the score. 
+        public Dictionary<ModSitePair, double> ModSitePairProbDict { get; set; }
+        public double PeptideScore { get; set; } //Scores from only mathced peptide fragments.
+        public double GlycanScore { get; set; } //Scores from only matched Y ions. 
+        public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
 
         /// <summary>
         /// The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
@@ -345,17 +343,17 @@ namespace EngineLayer.GlycoSearch
                 }
                 sb.Append("\t");
 
-                sb.Append(CorrectLocalizationLevel(SiteSpeciLocalProb, LocalizationGraphs.First(), Routes.First(), LocalizedGlycan, LocalizationLevel)); sb.Append("\t");
+                sb.Append(CorrectLocalizationLevel(ModSitePairProbDict, LocalizationGraphs.First(), Routes.First(), LocalizedGlycan, LocalizationLevel)); sb.Append("\t");
 
                 string local_peptide = "";
                 string local_protein = "";
-                LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidue, ref local_peptide, ref local_protein);
+                LocalizedSiteSpeciLocalInfo(ModSitePairProbDict, LocalizedGlycan, OneBasedStartResidue, ref local_peptide, ref local_protein);
                 sb.Append(local_peptide); sb.Append("\t");
                 sb.Append(local_protein); sb.Append("\t");
 
                 sb.Append(AllLocalizationInfo(Routes)); sb.Append("\t");
 
-                sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
+                sb.Append(SiteSpeciLocalInfo(ModSitePairProbDict));
             }
             else if (GlycanScore > 0)//this gets the N-glcyo that remain
             {
@@ -392,7 +390,7 @@ namespace EngineLayer.GlycoSearch
 
                  sb.Append("\t");
 
-                sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
+                sb.Append(SiteSpeciLocalInfo(ModSitePairProbDict));
             }
             return sb.ToString();
         }
@@ -415,21 +413,21 @@ namespace EngineLayer.GlycoSearch
         public static List<ModSitePair> GetLocalizedGlycan(List<Route> allLocalizationsRoutes, out LocalizationLevel localizationLevel)
         {
             List<ModSitePair> localizedMod = new List<ModSitePair>();
-
+            int totalRoutesCount = allLocalizationsRoutes.Count;
             //This is a more efficient way to count the mod-site pair of all routes.
             var modSiteSeenCount = allLocalizationsRoutes
                 .SelectMany(p => p.ModSitePairs)
                 .GroupBy(p => p)
-                .ToDictionary(g => g.Key, g => g.Count()); 
+                .ToDictionary(g => g.Key, g => g.Count());
 
             localizationLevel = LocalizationLevel.Level3;
-            if (allLocalizationsRoutes.Count == 1) // we just have one hypothesis(route), no other possibility
+            if (totalRoutesCount == 1) // we just have one hypothesis(route), no other possibility
             {
                 localizationLevel = LocalizationLevel.Level1;
             }
-            else if (allLocalizationsRoutes.Count > 1)
+            else if (totalRoutesCount > 1)
             {
-                if (modSiteSeenCount.Values.Any(p => p == allLocalizationsRoutes.Count)) //If anyone of the glycan-site pair is localized in all the cases, then the localization level is 2.
+                if (modSiteSeenCount.Values.Any(p => p == totalRoutesCount)) //If anyone of the glycan-site pair is localized in all the cases, then the localization level is 2.
                 {
                     localizationLevel = LocalizationLevel.Level2;
                 }
@@ -439,9 +437,10 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
+            // Update the pairs and their confidence, then add the confident pairs to the localizedMod list.
             foreach (var seenMod in modSiteSeenCount)
             {
-                if (seenMod.Value == allLocalizationsRoutes.Count) // Try to fine the glycan-site pair that always localized in all the cases. 
+                if (seenMod.Value == totalRoutesCount) // Try to fine the glycan-site pair that always localized in all the cases. 
                 {
                     seenMod.Key.Confident = true; //If yes, then confident will be set as ture.
                 }
@@ -498,9 +497,10 @@ namespace EngineLayer.GlycoSearch
         /// <param name="localizedGlycan"></param>
         /// <param name="localizationLevel"></param>
         /// <returns> level 1 or level 1b</returns>
-        public static LocalizationLevel CorrectLocalizationLevel(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, LocalizationGraph localizationGraph, Route route, List<ModSitePair> localizedGlycan, LocalizationLevel localizationLevel)
+        public static LocalizationLevel CorrectLocalizationLevel(Dictionary<ModSitePair, double> siteSpeciLocalProb, LocalizationGraph localizationGraph, Route route, List<ModSitePair> localizedGlycan, LocalizationLevel localizationLevel)
         {
-            if (siteSpeciLocalProb == null || localizationLevel!=LocalizationLevel.Level1)
+            if (siteSpeciLocalProb == null 
+                || localizationLevel!=LocalizationLevel.Level1)
             {
                 return localizationLevel;
             }
@@ -510,11 +510,12 @@ namespace EngineLayer.GlycoSearch
                 return LocalizationLevel.Level1b;
             }
 
-
+            // For Level1 : All modSitePair in the localizedGlycan should have a MS2 spectrum and a probability > 0.75.
             for (int i = 0; i < localizedGlycan.Count; i++)
             {
                 var modSitePair = localizedGlycan[i];
-                if (siteSpeciLocalProb[modSitePair.SiteIndex].Where(p => p.Item1 == modSitePair.ModId).First().Item2 < 0.75)
+                
+                if (modSitePair.Probability < 0.75)
                 {
                     return LocalizationLevel.Level1b;
                 }
@@ -537,7 +538,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="OneBasedStartResidueInProtein"></param>
         /// <param name="local"></param>
         /// <param name="local_protein"></param>
-        public static void LocalizedSiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<ModSitePair> localizedGlycan, int? OneBasedStartResidueInProtein, ref string local_peptide, ref string local_protein)
+        public static void LocalizedSiteSpeciLocalInfo(Dictionary<ModSitePair, double> siteSpeciLocalProb, List<ModSitePair> localizedGlycan, int? OneBasedStartResidueInProtein, ref string local_peptide, ref string local_protein)
         {
             if (siteSpeciLocalProb == null)
             {
@@ -546,7 +547,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var glycositePair in localizedGlycan.Where(p => p.Confident)) // get the most confidient glycosite-glycan pair, loc is a pair of glycosite and glycan. Item 1 is glycosite, Item 2 is glycanId.
             {
-                var site_glycanProb = siteSpeciLocalProb[glycositePair.SiteIndex].Where(p => p.Item1 == glycositePair.ModId).First().Item2; // get the probability of the specfic glycan on the specific site.
+                var site_glycanProb = glycositePair.Probability; // get the probability of the specfic glycan on the specific site.
                 var peptide_site = glycositePair.SiteIndex - 1;
                 local_peptide += "[" + peptide_site + "," + ModBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
 
@@ -561,22 +562,23 @@ namespace EngineLayer.GlycoSearch
         /// </summary>
         /// <param name="siteSpeciLocalProb"></param>
         /// <returns> Site specific localization information. ex. {1[1,0.2][2,0.8]} means glycan 1 and 2 are located on glycosite 1 and 2 with 20% and 80% probability. </returns>
-        public static string SiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb)
+        public static string SiteSpeciLocalInfo(Dictionary<ModSitePair, double> modSitePairProbDict)
         {
             string local = "";
 
-            if (siteSpeciLocalProb == null)
+            if (modSitePairProbDict == null)
             {
                 return local;
             }
 
-            foreach (var sitep in siteSpeciLocalProb)
+            // iterate all modSitePair in specific site.
+            foreach (var sitep in modSitePairProbDict.Keys.GroupBy(p=>p.SiteIndex).OrderBy(p=>p.Key))
             {
                 var site_1 = sitep.Key - 1;
                 local += "{@" + site_1;
-                foreach (var s in sitep.Value)
+                foreach (var s in sitep)
                 {
-                    local += "[" + s.Item1 + "," + s.Item2.ToString("0.000") + "]";
+                    local += "[" + s.ModId + "," + s.Probability.ToString("0.000") + "]";
                 }
                 local += "}";
             }

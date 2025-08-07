@@ -20,7 +20,7 @@ namespace EngineLayer.GlycoSearch
         /// <summary>
         /// The all modification site pairs in this route.
         /// </summary>
-        public List<ModSitePair> ModSitePairs { get; private set; } = new List<ModSitePair>();
+        public List<ModSitePair> ModSitePairs { get; private set;  } = new List<ModSitePair>();
 
         public double Score { get; set; }
 
@@ -49,6 +49,17 @@ namespace EngineLayer.GlycoSearch
                 }
             }
             return nGlycans.Count > 0;
+        }
+
+        /// <summary>
+        /// Set the reverse p score to each ModSitePair in the route.
+        /// </summary>
+        public void SetRPScoreToPair()
+        {
+            foreach (var pair in ModSitePairs)
+            {
+                pair.RouteRPScore = ReversePScore;
+            }
         }
 
     }

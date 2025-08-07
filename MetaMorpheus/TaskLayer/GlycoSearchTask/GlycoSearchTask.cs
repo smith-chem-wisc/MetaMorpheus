@@ -213,7 +213,7 @@ namespace TaskLayer
                             {
                                 allRoutes.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
                             }
-                            glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allRoutes, glycoSpectralMatch.LocalizationGraphs.First().ModPos.Keys.ToArray());
+                            glycoSpectralMatch.ModSitePairProbDict = LocalizationGraph.CalProbabilityForModSitePair(allRoutes, glycoSpectralMatch.LocalizedGlycan);
                         }
                     }
 
