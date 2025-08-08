@@ -657,6 +657,7 @@ namespace TaskLayer
             }
             string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " +
                 psmsForPsmResults.TargetPsmsAboveThreshold;
+            string precursorResultsText = $"All {GlobalVariables.AnalyteType.GetPrecursorLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " + Parameters.NumMs2SpectraPerFile.Select(f=>f.Value[1]).Sum();
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
         }
         private void WritePeptideResults()
