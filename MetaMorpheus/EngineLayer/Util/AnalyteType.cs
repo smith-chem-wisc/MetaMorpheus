@@ -16,9 +16,9 @@ namespace EngineLayer
     {
         private static readonly Dictionary<AnalyteType, AnalyteTypeData> AnalyteTypes = new()
             {
-                { AnalyteType.Peptide, new AnalyteTypeData("PSM", "Peptide", "Protein", "psmtsv", "Protease", "Precursor", "MS1 Scan Count", "MS2 Scan Count") },
-                { AnalyteType.Proteoform, new AnalyteTypeData("PSM", "Proteoform", "Protein", "psmtsv", "Protease", "Precursor", "MS1 Scan Count", "MS2 Scan Count") },
-                { AnalyteType.Oligo, new AnalyteTypeData("OSM", "Oligo", "Transcript", "osmtsv", "RNase", "Precursor", "MS1 Scan Count", "MS2 Scan Count") },
+                { AnalyteType.Peptide, new AnalyteTypeData("PSM", "Peptide", "Protein", "psmtsv", "Protease", "Precursors", "MS2 Scans") },
+                { AnalyteType.Proteoform, new AnalyteTypeData("PSM", "Proteoform", "Protein", "psmtsv", "Protease", "Precursor", "MS2 Scans") },
+                { AnalyteType.Oligo, new AnalyteTypeData("OSM", "Oligo", "Transcript", "osmtsv", "RNase", "Precursors", "MS2 Scans") },
             };
 
         public static string GetSpectralMatchLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].SpectralMatchLabel;
@@ -27,7 +27,6 @@ namespace EngineLayer
         public static string GetBioPolymerLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].BioPolymerLabel;
         public static string GetDigestionAgentLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].DigestionAgentLabel;
         public static string GetPrecursorLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].PrecursorLabel;
-        public static string GetMs1ScanCountLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].Ms1ScanCountLabel;
         public static string GetMs2ScanCountLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].Ms2ScanCountLabel;
     }
 
@@ -41,7 +40,6 @@ namespace EngineLayer
         string spectralMatchExtension, 
         string digestionAgentLabel, 
         string precursorLabel, 
-        string ms1ScanCountLabel, 
         string ms2ScanCountLabel)
     {
         /// <summary>
@@ -72,10 +70,6 @@ namespace EngineLayer
         /// Gets the label for precursor (e.g. Precursor)
         /// 
         internal string PrecursorLabel { get; init; } = precursorLabel;
-        /// <summary>
-        /// Gets the label for MS1 scan count (e.g. MS1 Scan Count)
-        /// 
-        internal string Ms1ScanCountLabel { get; init; } = ms1ScanCountLabel;
         /// <summary>
         /// Gets the label for MS2 scan count (e.g. MS2 Scan Count)
         /// 

@@ -599,7 +599,7 @@ namespace Test
                 },
 
                 // Use pepQvalue filtering with fewer than 100 psms
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD, 
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
                     pepQValueThreshold: 0.02, qValueThreshold: 1.0)
             };
 
@@ -612,13 +612,67 @@ namespace Test
             // run the task
             var pepTaskFolder = Path.Combine(folderPath, @"pepTest");
             Directory.CreateDirectory(pepTaskFolder);
-            searchTask.RunTask(pepTaskFolder, new List<DbForTask> { db }, 
+            searchTask.RunTask(pepTaskFolder, new List<DbForTask> { db },
                 new List<string> { myFile }, "");
 
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
             Assert.That(results[6], Is.EqualTo("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value."));
             Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 84"));
+
+            // clean up
+            Directory.Delete(folderPath, true);
+        }
+        [Test]
+        public static void TestSearchTaskResultsTextContents()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoLabelFreeQuantification = false // quant disabled just to save some time
+                },
+
+                // Use pepQvalue filtering with fewer than 100 psms
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
+        pepQValueThreshold: 0.02, qValueThreshold: 1.0)
+            };
+
+            string myFileOne = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.mzML");
+            string myFileTwo = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseTwo.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.xml");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPepResultsOutput");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            // run the task
+            var pepTaskFolder = Path.Combine(folderPath, @"pepTest");
+            Directory.CreateDirectory(pepTaskFolder);
+            searchTask.RunTask(pepTaskFolder, new List<DbForTask> { db },
+                new List<string> { myFileOne, myFileTwo }, "");
+
+            string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
+            string[] results = File.ReadAllLines(resultsFile);
+
+            Assert.That(results[0], Is.EqualTo("MetaMorpheus: version Not a release version. DEBUG."));
+
+            Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 46"));
+            Assert.That(results[8], Is.EqualTo("All target peptides with q-value <= 1: 14"));
+            Assert.That(results[9], Is.EqualTo("All target protein groups with q-value <= 0.01 (1% FDR): 14"));
+            Assert.That(results[10], Is.EqualTo("All Precursors: 123"));
+            Assert.That(results[11], Is.EqualTo("All MS2 Scans: 42"));
+
+            Assert.That(results[13], Is.EqualTo("mouseOne - Target PSMs with q-value <= 1: 22"));
+            Assert.That(results[14], Is.EqualTo("mouseOne - Target peptides with q-value <= 1: 14"));
+            Assert.That(results[15], Is.EqualTo("mouseOne - Target protein groups within 1 % FDR: 14"));
+            Assert.That(results[16], Is.EqualTo("mouseOne - Precursors: 57"));
+            Assert.That(results[17], Is.EqualTo("mouseOne - MS2 Scans: 20"));
+
+            Assert.That(results[19], Is.EqualTo("mouseTwo - Target PSMs with q-value <= 1: 24"));
+            Assert.That(results[20], Is.EqualTo("mouseTwo - Target peptides with q-value <= 1: 14"));
+            Assert.That(results[21], Is.EqualTo("mouseTwo - Target protein groups within 1 % FDR: 14"));
+            Assert.That(results[22], Is.EqualTo("mouseTwo - Precursors: 66"));
+            Assert.That(results[23], Is.EqualTo("mouseTwo - MS2 Scans: 22"));
 
             // clean up
             Directory.Delete(folderPath, true);
