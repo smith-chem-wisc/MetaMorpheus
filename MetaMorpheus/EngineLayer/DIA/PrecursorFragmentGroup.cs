@@ -68,8 +68,7 @@ namespace EngineLayer.DIA
                     y2[i] = 0;
                 }
             }
-            double corr = PearsonCorrelation(y1, y2);
-            return corr;
+            return PearsonCorrelation(y1, y2);
         }
 
         public static double CalculateCorrelationXYData<T> ((T, T)[] xy1, (T, T)[] xy2) where T : INumber<T>
