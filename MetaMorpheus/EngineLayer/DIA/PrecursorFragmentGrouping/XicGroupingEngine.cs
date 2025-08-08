@@ -62,7 +62,7 @@ namespace EngineLayer.DIA
                     double overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(precursorXic, fragmentXic);
                     if (overlap >= overlapThreshold)
                     {
-                        double correlation = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(precursorXic, fragmentXic);
+                        double correlation = PrecursorFragmentsGroup.CalculateXicCorrelation(precursorXic, fragmentXic);
                         if (correlation >= correlationThreshold)
                         {
                             var pfPair = new PrecursorFragmentPair(precursorXic, fragmentXic, correlation, overlap);

@@ -24,19 +24,50 @@ namespace EngineLayer.DIA
             PFpairs = pfPairs;
         }
 
-        public static double CalculateXicCorrelationXYData(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
+        public static double CalculateXicCorrelation(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
         {
             if (xic1.XYData == null || xic2.XYData == null)
             {
-                var xy1 = xic1.Peaks.Select(p => ((float)p.ZeroBasedScanIndex, p.Intensity)).ToArray();
-                var xy2 = xic2.Peaks.Select(p => ((float)p.ZeroBasedScanIndex, p.Intensity)).ToArray();
-                return CalculateCorrelation(xy1, xy2);
+                return CalculateXicCorrelationRawPeaks(xic1, xic2);
             }
-            double corr = CalculateCorrelation(xic1.XYData, xic2.XYData);
+            double corr = CalculateCorrelationXYData(xic1.XYData, xic2.XYData);
             return corr;
         }
 
-        public static double CalculateCorrelation<T> ((T, T)[] xy1, (T, T)[] xy2) where T : INumber<T>
+        public static double CalculateXicCorrelationRawPeaks(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
+        {
+            var start = Math.Max(xic1.StartScanIndex, xic2.StartScanIndex);
+            var end = Math.Min(xic1.EndScanIndex, xic2.EndScanIndex);
+            var y1 = new float[end - start + 1];
+            var y2 = new float[end - start + 1];
+            var peakScanIndices1 = xic1.Peaks.Select(p => p.ZeroBasedScanIndex).ToArray();
+            var peakScanIndices2 = xic2.Peaks.Select(p => p.ZeroBasedScanIndex).ToArray();
+            for (int i = start; i < y1.Length; i++)
+            {
+                int index1 = Array.BinarySearch(peakScanIndices1, i);
+                int index2 = Array.BinarySearch(peakScanIndices2, i);
+                if (index1 >= 0)
+                {
+                    y1[i - start] = xic1.Peaks[index1].Intensity;
+                }
+                else
+                {
+                    y1[i - start] = 0;
+                }
+                if (index2 >= 0)
+                {
+                    y2[i - start] = xic2.Peaks[index2].Intensity;
+                }
+                else
+                {
+                    y2[i - start] = 0;
+                }
+            }
+            double corr = PearsonCorrelation(y1, y2);
+            return corr;
+        }
+
+        public static double CalculateCorrelationXYData<T> ((T, T)[] xy1, (T, T)[] xy2) where T : INumber<T>
         {
             if (xy1 == null || xy2 == null)
             {

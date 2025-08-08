@@ -25,7 +25,7 @@ namespace Test.DIATests
                 peakList2.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 501.0));
             }
             var xic2 = new ExtractedIonChromatogram(peakList2);
-            double corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic2);
+            double corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
             //The Pearson's correlation should be 1
             Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
 
@@ -37,7 +37,7 @@ namespace Test.DIATests
                 peakList3.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers2[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 501.0));
             }
             var xic3 = new ExtractedIonChromatogram(peakList3);
-            corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic3);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic3);
             //The Pearson's correlation should be -1
             Assert.That(corr, Is.EqualTo(-1.0).Within(1e-6));
 
@@ -48,7 +48,7 @@ namespace Test.DIATests
                 peakList4.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i + 4, mz: 502.0));
             }
             var xic4 = new ExtractedIonChromatogram(peakList4);
-            corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic4);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic4);
             Assert.That(corr, Is.EqualTo(double.NaN).Within(1e-6));
 
             //perfectly aligned XICs with spline. When spline is available, the correlation is calculated with the spline data
@@ -56,12 +56,12 @@ namespace Test.DIATests
             var cubicSpline = new XicCubicSpline();
             cubicSpline.SetXicSplineXYData(xic1, true);
             cubicSpline.SetXicSplineXYData(xic2, true);
-            corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic2);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
             Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
             var linearSpline = new XicLinearSpline();
             linearSpline.SetXicSplineXYData(xic1, true);
             linearSpline.SetXicSplineXYData(xic2, true);
-            corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic2);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
             Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
         }
 
