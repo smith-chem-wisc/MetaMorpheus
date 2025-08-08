@@ -16,9 +16,9 @@ namespace EngineLayer
     {
         private static readonly Dictionary<AnalyteType, AnalyteTypeData> AnalyteTypes = new()
             {
-                { AnalyteType.Peptide, new AnalyteTypeData("PSM", "Peptide", "Protein", "psmtsv", "Protease", "Precursor") },
-                { AnalyteType.Proteoform, new AnalyteTypeData("PSM", "Proteoform", "Protein", "psmtsv", "Protease", "Precursor") },
-                { AnalyteType.Oligo, new AnalyteTypeData("OSM", "Oligo", "Transcript", "osmtsv", "RNase", "Precursor") },
+                { AnalyteType.Peptide, new AnalyteTypeData("PSM", "Peptide", "Protein", "psmtsv", "Protease", "Precursor", "MS1 Scan Count", "MS2 Scan Count") },
+                { AnalyteType.Proteoform, new AnalyteTypeData("PSM", "Proteoform", "Protein", "psmtsv", "Protease", "Precursor", "MS1 Scan Count", "MS2 Scan Count") },
+                { AnalyteType.Oligo, new AnalyteTypeData("OSM", "Oligo", "Transcript", "osmtsv", "RNase", "Precursor", "MS1 Scan Count", "MS2 Scan Count") },
             };
 
         public static string GetSpectralMatchLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].SpectralMatchLabel;
@@ -27,12 +27,22 @@ namespace EngineLayer
         public static string GetBioPolymerLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].BioPolymerLabel;
         public static string GetDigestionAgentLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].DigestionAgentLabel;
         public static string GetPrecursorLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].PrecursorLabel;
+        public static string GetMs1ScanCountLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].Ms1ScanCountLabel;
+        public static string GetMs2ScanCountLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].Ms2ScanCountLabel;
     }
 
     /// <summary>
     /// Represents an analyte type and is used to determine the output format of the analyte type.
     /// </summary>
-    internal class AnalyteTypeData(string spectralMatchLabel, string uniqueFormLabel, string bioPolymerLabel, string spectralMatchExtension, string digestionAgentLabel, string precursorLabel)
+    internal class AnalyteTypeData(
+        string spectralMatchLabel, 
+        string uniqueFormLabel, 
+        string bioPolymerLabel, 
+        string spectralMatchExtension, 
+        string digestionAgentLabel, 
+        string precursorLabel, 
+        string ms1ScanCountLabel, 
+        string ms2ScanCountLabel)
     {
         /// <summary>
         /// Gets or sets the label for spectral matches (e.g. PSM).
@@ -62,6 +72,14 @@ namespace EngineLayer
         /// Gets the label for precursor (e.g. Precursor)
         /// 
         internal string PrecursorLabel { get; init; } = precursorLabel;
+        /// <summary>
+        /// Gets the label for MS1 scan count (e.g. MS1 Scan Count)
+        /// 
+        internal string Ms1ScanCountLabel { get; init; } = ms1ScanCountLabel;
+        /// <summary>
+        /// Gets the label for MS2 scan count (e.g. MS2 Scan Count)
+        /// 
+        internal string Ms2ScanCountLabel { get; init; } = ms2ScanCountLabel;
     }
 }
 
