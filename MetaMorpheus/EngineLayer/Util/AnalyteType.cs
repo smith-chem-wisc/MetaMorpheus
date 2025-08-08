@@ -17,7 +17,7 @@ namespace EngineLayer
         private static readonly Dictionary<AnalyteType, AnalyteTypeData> AnalyteTypes = new()
             {
                 { AnalyteType.Peptide, new AnalyteTypeData("PSM", "Peptide", "Protein", "psmtsv", "Protease", "Precursors", "MS2 Scans") },
-                { AnalyteType.Proteoform, new AnalyteTypeData("PSM", "Proteoform", "Protein", "psmtsv", "Protease", "Precursor", "MS2 Scans") },
+                { AnalyteType.Proteoform, new AnalyteTypeData("PSM", "Proteoform", "Protein", "psmtsv", "Protease", "Precursors", "MS2 Scans") },
                 { AnalyteType.Oligo, new AnalyteTypeData("OSM", "Oligo", "Transcript", "osmtsv", "RNase", "Precursors", "MS2 Scans") },
             };
 
