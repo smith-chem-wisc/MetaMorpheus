@@ -68,11 +68,11 @@ namespace EngineLayer
         internal string DigestionAgentLabel { get; init; } = digestionAgentLabel;
         /// <summary>
         /// Gets the label for precursor (e.g. Precursor)
-        /// 
+        /// </summary>
         internal string PrecursorLabel { get; init; } = precursorLabel;
         /// <summary>
         /// Gets the label for MS2 scan count (e.g. MS2 Scan Count)
-        /// 
+        /// </summary>
         internal string Ms2ScanCountLabel { get; init; } = ms2ScanCountLabel;
     }
 }
