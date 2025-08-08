@@ -118,7 +118,7 @@ namespace Test.DIATests
             var ms2Xics = mzPeakXicConstructor.GetAllXics(fakeMs2Scans);
 
             //create a XicGroupingEngine to find all precursor-fragment groups in the MS1 and MS2 scans
-            var xicGroupingEngine = new XicGroupingEngine(0.1f, 0.5, 0.5);
+            var xicGroupingEngine = new XicGroupingEngine(0.1f, 0.5, 0.5, maxThreadsForGrouping: 1);
             var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
             //There should be two pfGroups, one for each precursor in FakeMs1Scans
             Assert.That(allGroups.Count, Is.EqualTo(2));

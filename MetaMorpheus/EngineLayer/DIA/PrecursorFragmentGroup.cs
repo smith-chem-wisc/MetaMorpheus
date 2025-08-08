@@ -38,29 +38,34 @@ namespace EngineLayer.DIA
         {
             var start = Math.Max(xic1.StartScanIndex, xic2.StartScanIndex);
             var end = Math.Min(xic1.EndScanIndex, xic2.EndScanIndex);
+
+            if (end - start + 1 < 3) // Ideally we need at least 3 points to calculate correlation
+            {
+                return double.NaN;
+            }
             var y1 = new float[end - start + 1];
             var y2 = new float[end - start + 1];
             var peakScanIndices1 = xic1.Peaks.Select(p => p.ZeroBasedScanIndex).ToArray();
             var peakScanIndices2 = xic2.Peaks.Select(p => p.ZeroBasedScanIndex).ToArray();
-            for (int i = start; i < y1.Length; i++)
+            for (int i = 0; i < y1.Length; i++)
             {
-                int index1 = Array.BinarySearch(peakScanIndices1, i);
-                int index2 = Array.BinarySearch(peakScanIndices2, i);
+                int index1 = Array.BinarySearch(peakScanIndices1, i + start);
+                int index2 = Array.BinarySearch(peakScanIndices2, i + start);
                 if (index1 >= 0)
                 {
-                    y1[i - start] = xic1.Peaks[index1].Intensity;
+                    y1[i] = xic1.Peaks[index1].Intensity;
                 }
                 else
                 {
-                    y1[i - start] = 0;
+                    y1[i] = 0;
                 }
                 if (index2 >= 0)
                 {
-                    y2[i - start] = xic2.Peaks[index2].Intensity;
+                    y2[i] = xic2.Peaks[index2].Intensity;
                 }
                 else
                 {
-                    y2[i - start] = 0;
+                    y2[i] = 0;
                 }
             }
             double corr = PearsonCorrelation(y1, y2);
