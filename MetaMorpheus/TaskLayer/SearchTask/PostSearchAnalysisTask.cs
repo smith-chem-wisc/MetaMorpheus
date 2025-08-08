@@ -658,7 +658,7 @@ namespace TaskLayer
             string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " +
                 psmsForPsmResults.TargetPsmsAboveThreshold;
             string precursorResultsText = $"All {GlobalVariables.AnalyteType.GetPrecursorLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " + Parameters.NumMs2SpectraPerFile.Select(f=>f.Value[1]).Sum();
-            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
+            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}s")] = precursorResultsText;
         }
         private void WritePeptideResults()
         {
@@ -723,6 +723,8 @@ namespace TaskLayer
                 string psmResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsToWrite.GetFilterTypeString() + " <= " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " +
                                         psmsToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
+                string precursorResultsText = strippedFileName + $" - {GlobalVariables.AnalyteType.GetPrecursorLabel()}s with " + psmsToWrite.GetFilterTypeString() + " <= " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1];
+                ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}s")] = precursorResultsText;
             }
         }
         private void WriteIndividualPeptideResults()
