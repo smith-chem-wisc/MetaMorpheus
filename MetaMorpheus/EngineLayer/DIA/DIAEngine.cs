@@ -71,22 +71,75 @@ namespace EngineLayer.DIA
         /// </summary>
         /// <returns> A dictionary where the key is (minumum of isolation window, maximum of isolation window), 
         /// and the values are MS2 scans that belongs to this isolation window. </returns>
-        public static Dictionary<(double min, double max), List<MsDataScan>> ConstructMs2Groups(MsDataScan[] ms2Scans)
+        public static Dictionary<(double min, double max), List<MsDataScan>> ConstructMs2Groups(MsDataScan[] ms2Scans, int binSize = 100, double tolerance = 5)
         {
-            var DIAScanWindowMap = new Dictionary<(double min, double max), List<MsDataScan>>();
+            var absoluteTolerance = new AbsoluteTolerance(tolerance);
+            var diaWindowIDMap = new Dictionary<(double min, double max), int>();
+            var diaIDScanMap = new SortedList<int, List<MsDataScan>> { { 0, new List<MsDataScan>() } };
             foreach (var ms2 in ms2Scans)
             {
+                int roundedCenterMz = (int)(ms2.IsolationRange.Maximum + ms2.IsolationRange.Minimum) * binSize / 2; // Use the center of the isolation window as the identifier
                 (double min, double max) range = new(Math.Round(ms2.IsolationRange.Minimum, 2), Math.Round(ms2.IsolationRange.Maximum, 2));
-                if (!DIAScanWindowMap.ContainsKey(range))
+                int closestWindowIndex = GetClosestWindowIndex(roundedCenterMz, diaIDScanMap, absoluteTolerance);
+                if (closestWindowIndex >= 0)
                 {
-                    DIAScanWindowMap[range] = new List<MsDataScan> { ms2 };
+                    int key = diaIDScanMap.Keys[closestWindowIndex];
+                    diaIDScanMap[key].Add(ms2);
                 }
                 else
                 {
-                    DIAScanWindowMap[range].Add(ms2);
+                    diaIDScanMap[roundedCenterMz] = new List<MsDataScan> { ms2 };
+                    diaWindowIDMap[range] = roundedCenterMz;
                 }
             }
-            return DIAScanWindowMap;
+            var joinedMap = diaWindowIDMap.ToDictionary(kvp => kvp.Key, kvp => diaIDScanMap[kvp.Value]);
+            return joinedMap;
+        }
+
+        private static int GetClosestWindowIndex(int mz, SortedList<int, List<MsDataScan>> map, Tolerance tolerance)
+        {
+            int closestIndex = -1;
+            if (map.Count == 0) return closestIndex;
+
+            //Find the closest windowID using binary search
+            int index = Array.BinarySearch(map.Keys.ToArray(), mz);
+            if (index >= 0)
+            {
+                closestIndex = index;
+            }
+            else
+            {
+                index = ~index; // Get the index of the next larger element
+                if (index == 0)
+                {
+                    closestIndex = 0;
+                }
+                else if (index >= map.Count - 1)
+                {
+                    closestIndex = map.Count - 1;
+                }
+                else
+                {
+                    if (Math.Abs(map.Keys[index] - mz) < Math.Abs(map.Keys[index - 1] - mz))
+                    {
+                        closestIndex = index;
+                    }
+                    else
+                    {
+                        closestIndex = index - 1;
+                    }
+                }
+            }
+
+            //check if the closest windowID is within tolerance
+            if (tolerance.Within(mz, map.Keys[closestIndex]))
+            {
+                return closestIndex;
+            }
+            else
+            {
+                return -1;
+            }
         }
     }
 }
