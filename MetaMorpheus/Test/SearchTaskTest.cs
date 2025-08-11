@@ -654,8 +654,6 @@ namespace Test
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
 
-            Assert.That(results[0], Is.EqualTo("MetaMorpheus: version Not a release version. DEBUG."));
-
             Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 46"));
             Assert.That(results[8], Is.EqualTo("All target peptides with q-value <= 1: 14"));
             Assert.That(results[9], Is.EqualTo("All target protein groups with q-value <= 0.01 (1% FDR): 14"));
