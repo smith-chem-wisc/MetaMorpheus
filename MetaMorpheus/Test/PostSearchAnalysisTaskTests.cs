@@ -35,7 +35,7 @@ namespace Test
             // The new PEP calculation method improves things, so all these numbers are increasing as of (7/17/24)
             // There is a discrepancy between the number of All target peptides and individual file target peptides, 
             // presumably due to the way protein inference is performed.
-            Assert.That(allResults[0], Is.EqualTo("MetaMorpheus: version Not a release version. DEBUG."));
+            Assert.That(allResults[0], Is.EqualTo("MetaMorpheus: version Not a release version."));
             Assert.That(allResults[10], Is.EqualTo("All target PSMs with q-value <= 0.01: 428"));
             Assert.That(allResults[11], Is.EqualTo("All target peptides with q-value <= 0.01: 174"));
             Assert.That(allResults[12], Is.EqualTo("All target protein groups with q-value <= 0.01 (1% FDR): 165"));
@@ -55,7 +55,7 @@ namespace Test
             string resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
             string[] results = File.ReadAllLines(resultsFile);
 
-            Assert.That(results[0], Is.EqualTo("MetaMorpheus: version Not a release version. DEBUG."));
+            Assert.That(results[0], Is.EqualTo("MetaMorpheus: version Not a release version."));
 
             Assert.That(results[5], Is.EqualTo("All target PSMs with q-value <= 0.01: 428"));
             Assert.That(results[6], Is.EqualTo("All target peptides with q-value <= 0.01: 174"));
@@ -104,7 +104,7 @@ namespace Test
             string outputFolder = testCase.OutputDirectory;
             var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             var allResults = File.ReadAllLines(allResultsFile);
-            Assert.That(allResults[0], Is.EqualTo("MetaMorpheus: version Not a release version. DEBUG."));
+            Assert.That(allResults[0], Is.EqualTo("MetaMorpheus: version Not a release version."));
 
             Assert.That(allResults[10], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 382"));
             Assert.That(allResults[11], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
