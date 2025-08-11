@@ -9,7 +9,7 @@ namespace EngineLayer.DIA
     /// <summary>
     /// XicGroupingEngine is a specific implementation of PfGroupingEngine that groups precursor and fragment XICs into PrecursorFragmentsGroup objects 
     /// based on specified criteria including apex RT tolerance, overlap threshold, and correlation threshold.
-    /// <summary>
+    /// </summary>
     public class XicGroupingEngine : PfGroupingEngine
     {
         public float ApexRTTolerance { get; set; }
