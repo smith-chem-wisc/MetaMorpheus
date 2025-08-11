@@ -18,7 +18,7 @@ namespace EngineLayer.DIA
     /// <summary>
     /// DIAEgine defines a workflow of generating DDA-like pseudo MS2 scans for DIA data analysis. It includes the processes of extracting precursor and 
     /// fragment XICs, grouping them into PrecursorFragmentsGroup objects, and constructing pseudo MS2 scans.
-    /// <summary>
+    /// </summary>
     public class DIAEngine : MetaMorpheusEngine
     {
         private readonly MsDataFile DataFile;
