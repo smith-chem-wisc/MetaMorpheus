@@ -49,7 +49,7 @@ namespace Test.DIATests
             }
             var xic4 = new ExtractedIonChromatogram(peakList4);
             corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic4);
-            Assert.That(corr, Is.EqualTo(double.NaN).Within(1e-6));
+            Assert.That(corr, Is.NaN);
 
             //perfectly aligned XICs with spline. When spline is available, the correlation is calculated with the spline data
             //It should still return 1.0 for two perfectly aligned XICs
