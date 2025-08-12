@@ -51,6 +51,18 @@ namespace Test.DIATests
             corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic4);
             Assert.That(corr, Is.EqualTo(double.NaN).Within(1e-6));
 
+            //Test with missing points in XICs
+            var peakList5 = new List<IIndexedPeak>();
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                if (i != 1) //missing the peak at scan index 1
+                    peakList5.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 503.0));
+            }
+            var xic5 = new ExtractedIonChromatogram(peakList5);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic5);
+            Assert.That(corr, Is.LessThan(1.0));
+            Assert.That(corr, Is.GreaterThan(0.0)); //Correlation should still be positive but less than 1 due to missing point
+
             //perfectly aligned XICs with spline. When spline is available, the correlation is calculated with the spline data
             //It should still return 1.0 for two perfectly aligned XICs
             var cubicSpline = new XicCubicSpline();

@@ -109,7 +109,7 @@ namespace EngineLayer.DIA
             }
             else
             {
-                index = ~index; // Get the index of the next larger element
+                index = ~index; 
                 if (index == 0)
                 {
                     closestIndex = 0;
