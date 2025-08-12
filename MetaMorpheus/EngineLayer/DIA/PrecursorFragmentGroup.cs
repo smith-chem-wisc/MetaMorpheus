@@ -127,7 +127,7 @@ namespace EngineLayer.DIA
 
         public static double CalculateXicOverlapRatio(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
         {
-            if (xic1.EndScanIndex < xic2.StartScanIndex || xic2.EndScanIndex < xic1.StartScanIndex)
+            if (xic1.EndScanIndex <= xic2.StartScanIndex || xic2.EndScanIndex <= xic1.StartScanIndex)
             {
                 return 0;
             }
