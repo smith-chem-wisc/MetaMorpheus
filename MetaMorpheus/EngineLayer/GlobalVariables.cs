@@ -541,7 +541,6 @@ namespace EngineLayer
         {
             string glycoFile = Path.Combine(DataDir, @"Mods", "glyco.txt");
             var glycoMods = PtmListLoader.ReadModsFromFile(glycoFile, out var errorMods);
-            List<Modification> glycoModList = new List<Modification>();
             foreach (var glycoMod in glycoMods)
             {
                 var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);

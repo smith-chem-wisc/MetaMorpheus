@@ -12,7 +12,7 @@ namespace EngineLayer.ModSearch
         // For general modification settings
         private readonly int TopN; // DDA top Peak number
         private readonly int MaxModNumber;
-        List<(string, string)> ListOfInterestedMods; // List of interested modifications
+        List<(string, string)> _listOfInterestedMods; // List of interested modifications
 
 
         public ModSearchEngine(List<SpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans,
@@ -27,10 +27,10 @@ namespace EngineLayer.ModSearch
         {
             this.TopN = modSearchTopNum;
             this.MaxModNumber = maxModNum;
-            this.ListOfInterestedMods = ListOfInterestedMods;
+            this._listOfInterestedMods = ListOfInterestedMods;
 
             //Load glycan databases and build the modBox 
-            ModBox.GlobalModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => ListOfInterestedMods.Contains((b.ModificationType, b.IdWithMotif))).ToArray();
+            ModBox.GlobalModifications = GlobalVariables.AllModsKnownDictionary.Values.Where(b => ListOfInterestedMods.Contains((b.ModificationType, b.IdWithMotif))).ToArray();
             ModBoxes = ModBox.BuildModBoxes(MaxModNumber, false).OrderBy(p => p.Mass).ToArray();
         }
 

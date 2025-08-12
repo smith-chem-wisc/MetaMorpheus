@@ -14,10 +14,9 @@ namespace EngineLayer.GlycoSearch
     public class GlycoPeptides
     {
         #region Theoretical Peptide generation methods for Modified peptides
-        // Theoretical Peptide generation methods for Modified peptides
         /// <summary>
-        /// Generate the theroertical glycan modified peptide by Route.
-        /// Because the route contains the glycanBox and modPos information.
+        /// Generate the theoretical modifiedPeptide by Route.
+        /// Because the route contains the ModBox and modPos information.
         /// </summary>
         /// <param name="theModPositions"></param>
         /// <param name="peptide"></param>
@@ -83,7 +82,7 @@ namespace EngineLayer.GlycoSearch
         //TO THINK: filter reasonable fragments here. The final solution is to change mzLib.Proteomics.PeptideWithSetModifications.Fragment
         #region Theoretical Fragmentation methods for Modified peptides
         /// <summary>
-        /// Get the theoretical fragments of the peptide with the glycan modification. With different dissociation type, the fragment ions are different.
+        /// Get the theoretical fragments of the peptide with the modification. With different dissociation type, the fragment ions are different.
         /// </summary>
         /// <param name="dissociationType"></param>
         /// <param name="customIons"></param>
@@ -154,7 +153,7 @@ namespace EngineLayer.GlycoSearch
 
         #region Fragmentation methods for Modified peptides
         /// <summary>
-        /// Generate the fragment list with the specific childBox located on specific modPos. At here, the ModInd is the index for modPos. Not used in the current version.
+        /// Generate the fragment (c and z ion) list with the specific childBox located on specific modPos. At here, the ModInd is the index for modPos. Not used in the current version.
         /// </summary>
         /// <param name="products"></param>
         /// <param name="modPoses"> ModPos list </param>

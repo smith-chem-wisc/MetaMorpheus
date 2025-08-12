@@ -48,10 +48,6 @@ namespace EngineLayer.GlycoSearch
         /// </summary>
         public int Thero_n { get; set; }
 
-        public double ScanInfo_p { get; set; }  //Scan P value, Used for Localization probability calculation. Ref PhosphoRS paper.
-
-        public int Thero_n { get; set; } //Scan n value. Used for Localization probability calculation. Ref PhosphoRS paper.
-
         /// <summary>
         /// The dictionary of all unique ModSitePair and its probability.
         /// </summary>
