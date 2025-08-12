@@ -5,17 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI.Views"
         mc:Ignorable="d"
-        Title="SelectedPrecursorWindow" Height="450" Width="600">
-    <Window.Resources>
-        <ResourceDictionary>
-            <!--Styling for the grid that defines each page-->
-            <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
-                <Setter Property="Background" Value="{StaticResource DataGridHeaderColor}"/>
-                <Setter Property="TextBox.IsReadOnly" Value="True"/>
-            </Style>
-        </ResourceDictionary>
-    </Window.Resources>
-
+        Title="SelectedPrecursorWindow" Height="450" Width="500">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
@@ -24,12 +14,12 @@
 
         <!--Data grid-->
         <DataGrid x:Name="PrecursorDataGrid" ItemsSource="{Binding PrecursorsFromDataGrid}" Grid.Row="0" VerticalAlignment="Stretch" CanUserDeleteRows="True" 
-                  CanUserAddRows="True" CanUserReorderColumns="False" AutoGenerateColumns="True" SelectionUnit="Cell">
+                  CanUserAddRows="True" CanUserReorderColumns="False" AutoGenerateColumns="False" SelectionUnit="Cell">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="m/z" Binding="{Binding FileNameWithExtension, Mode=OneWay}" Width="200" CellStyle="{StaticResource DataGridCellStyle}" />
-                <DataGridTextColumn Header="Charge" Binding="{Binding Condition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" />
-                <DataGridTextColumn Header="RT Start (min)" Binding="{Binding Biorep, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" />
-                <DataGridTextColumn Header="RT End (min)" Binding="{Binding Fraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" />
+                <DataGridTextColumn Header="m/z" Binding="{Binding Mz, Mode=TwoWay}" Width="200"/>
+                <DataGridTextColumn Header="Charge" Binding="{Binding Charge, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" />
+                <DataGridTextColumn Header="RT Start (min)" Binding="{Binding RtStartInMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" />
+                <DataGridTextColumn Header="RT End (min)" Binding="{Binding RtEndInMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" />
             </DataGrid.Columns>
             <DataGrid.CommandBindings>
                 <CommandBinding Command="{x:Static ApplicationCommands.Paste}" Executed="Paste"/>
@@ -38,6 +28,7 @@
 
         <!--Save/cancel buttons-->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2" VerticalAlignment="Bottom">
+            <Button x:Name="AddPrecursor" Content="Add Precursor" Click="AddRow_Click"/>
             <Button x:Name="SavePrecursors" Content="Save Precursor List" Click="SavePrecursors_Click"/>
             <Button x:Name="CancelPrecursors" Content="Cancel" Click="CancelPrecursors_Click"/>
         </StackPanel>

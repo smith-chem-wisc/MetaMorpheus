@@ -16,10 +16,19 @@ namespace MetaMorpheusGUI.ForDisplayingInDataGrids
             RtStartInMinutes = rtStartInMinutes;
             RtEndInMinutes = rtEndInMinutes;
         }
-        public double Mz { get; private set; }
-        public int Charge { get; private set; }
-        public double RtStartInMinutes { get; private set; }
-        public double RtEndInMinutes { get; private set; }
+
+        public SelectedPrecursorForDataGrid()
+        {
+            Mz = 500;
+            Charge = 1;
+            RtStartInMinutes = 0;
+            RtEndInMinutes = 120;
+        }
+
+        public double Mz { get; set; }
+        public int Charge { get; set; }
+        public double RtStartInMinutes { get; set; }
+        public double RtEndInMinutes { get; set; }
         public override string ToString()
         {
             return $"{Mz}\t{Charge}\t{RtStartInMinutes}\t{RtEndInMinutes}";

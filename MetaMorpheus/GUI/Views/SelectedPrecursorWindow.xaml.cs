@@ -14,6 +14,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
+using System.Windows.Controls;
 
 namespace MetaMorpheusGUI.Views
 {
@@ -22,17 +23,42 @@ namespace MetaMorpheusGUI.Views
     /// </summary>
     public partial class SelectedPrecursorWindow : Window
     {
-        private string outputPath = null; // path to the experimental design file
+        private string outputFolder = null; // path to the experimental design file
         private string dataFileName = null;
+        private string precursorFilePath = null; // path to the precursor file
+        private const string precursorFileName = "_selected_precursors.tsv";
         private BindingList<SelectedPrecursorForDataGrid> PrecursorsFromDataGrid;
+
 
         public SelectedPrecursorWindow(string dataFilePath)
         {
             InitializeComponent();
-            outputPath = Path.GetDirectoryName(dataFilePath);
+            outputFolder = Path.GetDirectoryName(dataFilePath);
             dataFileName = Path.GetFileNameWithoutExtension(dataFilePath);
-            PrecursorsFromDataGrid = new();
+            precursorFilePath = Path.Combine(outputFolder, dataFileName + precursorFileName);
+            if (File.Exists(Path.Combine(precursorFilePath)))
+            {
+                // read the existing precursor file and populate the data grid
+                List<string> errors;
+                var precursors = SelectedPrecursors.ReadSelectedPrecursors(precursorFilePath, out errors);
+                if (errors.Count > 0)
+                {
+                    MessageBox.Show("Errors reading the selected precursors file:\n" + string.Join("\n", errors));
+                }
+                PrecursorsFromDataGrid = new BindingList<SelectedPrecursorForDataGrid>(precursors.Select(p => new SelectedPrecursorForDataGrid(p.Mz, p.Charge, p.RtStartInMinutes, p.RtEndInMinutes)).ToList());
+            }
+            else
+            {
+                PrecursorsFromDataGrid = new();// create a new empty list
+            }
+           
             PrecursorDataGrid.ItemsSource = PrecursorsFromDataGrid;
+        }
+
+        private void AddRow_Click(object sender, RoutedEventArgs e)
+        {
+            // add a new row to the data grid
+            PrecursorsFromDataGrid.Add(new SelectedPrecursorForDataGrid());
         }
 
         private void Paste(object sender, ExecutedRoutedEventArgs e)
@@ -78,7 +104,7 @@ namespace MetaMorpheusGUI.Views
 
         private void SavePrecursors_Click(object sender, RoutedEventArgs e)
         {
-            if (outputPath == null)
+            if (outputFolder == null)
             {
                 // no spectra files
                 DialogResult = true;
@@ -88,7 +114,7 @@ namespace MetaMorpheusGUI.Views
             try
             {
                 var precursors = PrecursorsFromDataGrid.Select(p => new SelectedPrecursors.PrecursorInfo(p.Mz, p.Charge, p.RtStartInMinutes, p.RtEndInMinutes)).ToList();
-                SelectedPrecursors.WriteSelectedPrecursorsToFile(precursors, outputPath, dataFileName + "_selected_precursors.tsv");
+                SelectedPrecursors.WriteSelectedPrecursorsToFile(precursors, outputFolder, dataFileName + precursorFileName);
             }
             catch (Exception ex)
             {
