@@ -7,6 +7,17 @@ using MzLibUtil;
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Test")]
 namespace EngineLayer
 {
+    /// <summary>
+    /// Each precursor refers to one isotopic envelope observed in a single MS1 scan. 
+    /// It is meant to hold experimentally observed data for a peptide/proteoform precursor.
+    /// </summary>
+    /// <param name="MonoisotopicPeakMz"></param>
+    /// <param name="Charge"></param>
+    /// <param name="Mass"></param>
+    /// <param name="Intensity">Either the most abundant isotope intensity, or the summed intensity from all isotopes. For MM decon, this is determined by CommonParameters </param>
+    /// <param name="EnvelopePeakCount"> The number of peaks observed in the Isotopic Envelope. 
+    /// The minimum intensity for a peak to be considered is specified by the user in decon parameters, or in arguments passed to external software</param>
+    /// <param name="FractionalIntensity"> The fraction of the intensity in the MS1 scan that is accounted for by this precursor</param>
     public record Precursor(double MonoisotopicPeakMz, int Charge, double Mass, double Intensity, int EnvelopePeakCount, double? FractionalIntensity = null);
 
     /// <summary>
