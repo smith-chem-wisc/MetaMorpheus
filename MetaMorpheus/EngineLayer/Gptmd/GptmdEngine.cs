@@ -134,7 +134,7 @@ namespace EngineLayer.Gptmd
                                 var matchedIons = MatchFragmentIons(ms2ScanWithSpecificMass, peptideTheorProducts, CommonParameters, matchAllCharges: false);
                                 double score = CalculatePeptideScore(scan, matchedIons);
 
-                                int modSiteInProteinIndex = pepWithSetMods.OneBasedStartResidue + pepSeqIndex + 1;
+                                int modSiteInProteinIndex = pepWithSetMods.OneBasedStartResidue + pepSeqIndex;
                                 int modSiteInPeptideIndex = pepSeqIndex + 2; // plus 2 is to translate from zero based string array index to OneBasedModification index
                                 if (!Filters.All(f => f.Passes(newPep, psm, score, originalScore, matchedIons, modSiteInPeptideIndex, pepWithSetMods.Length, mod)))
                                     continue;
