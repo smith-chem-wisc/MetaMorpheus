@@ -6,14 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaskLayer;
 using Transcriptomics.Digestion;
-using UsefulProteomicsDatabases.Transcriptomics;
 using UsefulProteomicsDatabases;
 using Readers;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
 namespace Test.Transcriptomics;
 
