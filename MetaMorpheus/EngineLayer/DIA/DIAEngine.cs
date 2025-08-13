@@ -78,7 +78,7 @@ namespace EngineLayer.DIA
             var diaIDScanMap = new SortedList<int, List<MsDataScan>> { { 0, new List<MsDataScan>() } };
             foreach (var ms2 in ms2Scans)
             {
-                int roundedCenterMz = (int)(ms2.IsolationRange.Maximum + ms2.IsolationRange.Minimum) * binSize / 2; // Use the center of the isolation window as the identifier
+                int roundedCenterMz = (int)Math.Round((ms2.IsolationRange.Maximum + ms2.IsolationRange.Minimum) * binSize / 2, 0); // Use the center of the isolation window as the identifier
                 (double min, double max) range = new (Math.Round(ms2.IsolationRange.Minimum, 2), Math.Round(ms2.IsolationRange.Maximum, 2));
                 int closestWindowIndex = GetClosestWindowIndex(roundedCenterMz, diaIDScanMap, absoluteTolerance);
                 if (closestWindowIndex >= 0)
