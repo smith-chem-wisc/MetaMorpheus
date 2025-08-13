@@ -75,7 +75,7 @@ namespace EngineLayer.DIA
         {
             var absoluteTolerance = new AbsoluteTolerance(tolerance);
             var diaWindowIDMap = new Dictionary<(double min, double max), int>();
-            var diaIDScanMap = new SortedList<int, List<MsDataScan>> { { 0, new List<MsDataScan>() } };
+            var diaIDScanMap = new SortedList<int, List<MsDataScan>> ();
             foreach (var ms2 in ms2Scans)
             {
                 int roundedCenterMz = (int)Math.Round((ms2.IsolationRange.Maximum + ms2.IsolationRange.Minimum) * binSize / 2, 0); // Use the center of the isolation window as the identifier
@@ -114,7 +114,7 @@ namespace EngineLayer.DIA
                 {
                     closestIndex = 0;
                 }
-                else if (index >= map.Count - 1)
+                else if (index >= map.Count)
                 {
                     closestIndex = map.Count - 1;
                 }

@@ -58,7 +58,7 @@ namespace Test.DIATests
             var isoMz = new double[] { 500, 600, 700, 800, 900, 1000 };
             double isoWidth = 50;
             //This mannually sets the isolation windows to be slightly different for each cycle to simulate the fluctuation of iso window selection or instability of doubles
-            var isoMzOffset = new double[] { 0.0, 0.01, 0.02, 0.03, 0.04};
+            var isoMzOffset = new double[] { 0.0, 0.01, 0.02, 0.03, -0.01};
             var ms2Scans = new MsDataScan[numberOfScansPerCycle * numberOfCycles];
             for (int i = 0; i < numberOfCycles; i++)
             {
