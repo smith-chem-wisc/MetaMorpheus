@@ -10,6 +10,7 @@ using TaskLayer;
 using System.IO;
 using Chemistry;
 using Readers;
+using MathNet.Numerics.Interpolation;
 
 namespace Test.DIATests
 {
@@ -46,6 +47,33 @@ namespace Test.DIATests
             {
                 //each window has 3 MS2 scans
                 Assert.That(group.Value.Count, Is.EqualTo(3));
+            }
+        }
+
+        [Test]
+        public static void DIAScanWindowMapTestForInaccurateIsoWindow()
+        {
+            int numberOfScansPerCycle = 6;
+            int numberOfCycles = 5;
+            var isoMz = new double[] { 500, 600, 700, 800, 900, 1000 };
+            double isoWidth = 50;
+            //This mannually sets the isolation windows to be slightly different for each cycle to simulate the fluctuation of iso window selection or instability of doubles
+            var isoMzOffset = new double[] { 0.0, 0.01, 0.02, 0.03, 0.04};
+            var ms2Scans = new MsDataScan[numberOfScansPerCycle * numberOfCycles];
+            for (int i = 0; i < numberOfCycles; i++)
+            {
+                for (int j = 0; j < numberOfScansPerCycle; j++)
+                {
+                    ms2Scans[i * numberOfScansPerCycle + j] = new MsDataScan(new MzSpectrum(new double[] { }, new double[] { }, false), i*j + j, 2, true, Polarity.Positive, 1.0 + (i * j + j)/10, new MzRange(400, 1600), "f", MZAnalyzerType.Orbitrap, 0, 1.0, null, null, isolationWidth: isoWidth, isolationMZ: isoMz[j] + isoMzOffset[i]);
+                }
+            }
+            var diaScanWindowMap = DIAEngine.ConstructMs2Groups(ms2Scans);
+
+            Assert.That(diaScanWindowMap.Count, Is.EqualTo(6));
+            foreach (var group in diaScanWindowMap)
+            {
+                //each window has 5 MS2 scans
+                Assert.That(group.Value.Count, Is.EqualTo(5));
             }
         }
 
@@ -173,6 +201,11 @@ namespace Test.DIATests
             Assert.That(pseudoScan.TheScan.MassSpectrum.XArray.Length, Is.EqualTo(1));
             Assert.That(pseudoScan.ExperimentalFragments.Count(), Is.EqualTo(1));
             Assert.That(pseudoScan.ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(fragDist.Masses.First()).Within(0.001));
+
+            //Test exception handling
+            var invalidType = (PseudoMs2ConstructionType)999;
+            var ex = Assert.Throws<MetaMorpheusException>(() => PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], invalidType, new CommonParameters(), "test"));
+            Assert.That(ex.Message, Is.EqualTo("Invalid pseudo MS2 construction type specified."));
         }
 
         [Test]

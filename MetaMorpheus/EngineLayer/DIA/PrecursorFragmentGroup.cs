@@ -73,11 +73,6 @@ namespace EngineLayer.DIA
 
         public static double CalculateCorrelationXYData<T> ((T, T)[] xy1, (T, T)[] xy2) where T : INumber<T>
         {
-            if (xy1 == null || xy2 == null)
-            {
-                return double.NaN;
-            }
-
             T start = T.Max(xy1[0].Item1, xy2[0].Item1);
             T end = T.Min(xy1[xy1.Length - 1].Item1, xy2[xy2.Length - 1].Item1);
 
@@ -98,7 +93,6 @@ namespace EngineLayer.DIA
 
         public static double PearsonCorrelation<T>(T[] x, T[] y) where T : INumber<T>
         {
-            if (x == null || y == null) throw new ArgumentNullException();
             if (x.Length != y.Length) throw new ArgumentException("Arrays must have the same length.");
 
             int n = x.Length;
@@ -164,7 +158,7 @@ namespace EngineLayer.DIA
                             new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.AveragedM, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
                     break;
                 default:
-                    throw new ArgumentException("Invalid pseudo MS2 construction type specified.");
+                    throw new MetaMorpheusException("Invalid pseudo MS2 construction type specified.");
             }
             // add precursor information
             var charge = pfGroup.PrecursorXic.Peaks.Cast<IndexedMass>().First().Charge;
