@@ -91,14 +91,24 @@ namespace EngineLayer
                     }
                     else // Load the N-glycan with one motif : N
                     {
-                        var nGlycan = new Glycan(kind, "N", GlycanType.N_glycan); // Use the kind[] to create a glycan object.
-                        nGlycan.GlyId = id;
+                        var nGlycan_Nxs = new Glycan(kind, "Nxs", GlycanType.N_glycan); // Use the kind[] to create a glycan object.
+                        nGlycan_Nxs.GlyId = id;
                         id++;
                         if (ToGenerateIons)
                         {
-                            nGlycan.Ions = OGlycanCompositionCombinationChildIons(kind);
+                            nGlycan_Nxs.Ions = OGlycanCompositionCombinationChildIons(kind);
                         }
-                        yield return nGlycan;
+                        yield return nGlycan_Nxs;
+
+
+                        var nGlycan_Nxt = new Glycan(kind, "Nxt", GlycanType.N_glycan); // Use the kind[] to create a glycan object.
+                        nGlycan_Nxt.GlyId = id;
+                        id++;
+                        if (ToGenerateIons)
+                        {
+                            nGlycan_Nxt.Ions = OGlycanCompositionCombinationChildIons(kind);
+                        }
+                        yield return nGlycan_Nxt;
                     }
                 }
             }
@@ -138,20 +148,14 @@ namespace EngineLayer
                 {
                     string line = glycans.ReadLine();   // Read the line from the database file. Ex. (N(H(A))(A))
 
-                    // For each O-glycan, two versions will be generated: one modified on serine (S), and the other on threonine (T).
-                    if (IsOGlycan)
+                    // For each glycan, two versions will be generated:
+                    // For O-glycan, one modified on serine (S), and the other on threonine (T).
+                    // For N-glycan, one modified on N-acetylglucosamine (Nxs), and the other on N-acetylgalactosamine (Nxt).
+                    foreach (var glycan in Glycan.Struct2Glycan(line, id, IsOGlycan)) // Modify the line to handle multiple Glycan objects returned by Struct2Glycan.  
                     {
-                        foreach (var glycan in Glycan.Struct2Glycan(line, id, IsOGlycan)) // Modify the line to handle multiple Glycan objects returned by Struct2Glycan.  
-                        {
-                            yield return glycan;
-                        }
-                        id = id +2; // Each line will generate two glycan objects
+                        yield return glycan;
                     }
-                    //For N-glycan, we only generate one kind of N-glycan.
-                    else
-                    {
-                        yield return Glycan.Struct2Glycan(line, id++, IsOGlycan).FirstOrDefault(); // For N-Glycan, we only return the first Glycan object.
-                    }
+                    id = id + 2; // Each line will generate two glycan objects
                 }
             }
         }
