@@ -1941,5 +1941,12 @@ namespace Test.MetaDraw
             // Clean up
             Directory.Delete(tempDir, true);
         }
+
+        [Test] // Ensures no plot names accidently get deleted. 
+        public static void PlotNamesDoNotChange()
+        {
+            var plotNames = PlotModelStat.PlotNames;
+            Assert.That(plotNames.Count, Is.EqualTo(14));
+        }
     }
 }

@@ -398,6 +398,14 @@ namespace Test.MetaDraw
             Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color ==
                         DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
+            var dataVisColorVm = view.DataVisualizationColors.First();
+            Assert.That(!dataVisColorVm.HasChanged);
+            dataVisColorVm.SelectionChanged("Red");
+            Assert.That(dataVisColorVm.HasChanged);
+            Assert.That(dataVisColorVm.SelectedColor == "Red");
+            Assert.That(dataVisColorVm.ColorBrush.Color ==
+                        DrawnSequence.ParseColorBrushFromName("Red").Color);
+
             view.Save();
             Assert.That(MetaDrawSettings.ProductTypeToColor[view.IonGroups.First().Ions.First().IonType] ==
                         OxyColors.Blue);
@@ -406,6 +414,7 @@ namespace Test.MetaDraw
             Assert.That(MetaDrawSettings.CoverageTypeToColor[view.CoverageColors.First().Name] == OxyColors.Blue);
             Assert.That(MetaDrawSettings.InternalIonColor == OxyColors.Blue);
             Assert.That(MetaDrawSettings.UnannotatedPeakColor == OxyColors.Blue);
+            Assert.That(MetaDrawSettings.DataVisualizationColorOrder.First() == OxyColors.Red);
         }
 
         [Test]
