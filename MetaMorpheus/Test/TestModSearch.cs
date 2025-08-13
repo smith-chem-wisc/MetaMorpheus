@@ -56,7 +56,6 @@ namespace Test
                     isSame = false;
                 }
             }
-            int iiii = 0;
         }
 
         [Test]

@@ -92,14 +92,14 @@ namespace EngineLayer
                     }
                     else // Load the N-glycan with one motif : N
                     {
-                        var nGlycan_nxs = new Glycan(kind, "Nxs", GlycanType.N_glycan); // Use the kind[] to create a glycan object.
-                        nGlycan_nxs.GlyId = id;
+                        var nGlycan = new Glycan(kind, "N", GlycanType.N_glycan); // Use the kind[] to create a glycan object.
+                        nGlycan.GlyId = id;
                         id++;
                         if (ToGenerateIons)
                         {
-                            nGlycan_nxs.Ions = OGlycanCompositionCombinationChildIons(kind);
+                            nGlycan.Ions = OGlycanCompositionCombinationChildIons(kind);
                         }
-                        yield return nGlycan_nxs;
+                        yield return nGlycan;
                     }
                 }
             }
