@@ -206,7 +206,7 @@ namespace TaskLayer
             Status("Searching files...", new List<string> { taskId } );
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
-            Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
+            Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>(); // key is filename, value is an int array of length 2, where the first element is the number of MS2 spectra in the file, and the second element is the number of different deconvoluted precursors assigned to those scans
             bool collectedDigestionInformation = false;
             IDictionary<(string Accession, string BaseSequence), int> digestionCountDictionary = null;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
