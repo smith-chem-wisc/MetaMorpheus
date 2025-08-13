@@ -150,7 +150,7 @@ namespace EngineLayer
 
                     // For each glycan, two versions will be generated:
                     // For O-glycan, one modified on serine (S), and the other on threonine (T).
-                    // For N-glycan, one modified on N-acetylglucosamine (Nxs), and the other on N-acetylgalactosamine (Nxt).
+                    // For N-glycan, one modified on N-glycosylation on motif Asn-X-Ser(Nxs), and the other on Asn-X-Thr(Nxt).
                     foreach (var glycan in Glycan.Struct2Glycan(line, id, IsOGlycan)) // Modify the line to handle multiple Glycan objects returned by Struct2Glycan.  
                     {
                         yield return glycan;
