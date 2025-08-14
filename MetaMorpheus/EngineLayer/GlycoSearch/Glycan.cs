@@ -313,9 +313,13 @@ namespace EngineLayer
             else 
             {
                 GlycanType glycanType = GlycanType.N_glycan;
-                Glycan N_glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false, "N", glycanType);
-                N_glycan.GlyId = id;
-                glycans.Add(N_glycan);
+                Glycan N_glycan_Nxs = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false, "Nxs", glycanType);
+                N_glycan_Nxs.GlyId = id;
+                Glycan N_glycan_Nxt = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false, "Nxt", glycanType);
+                N_glycan_Nxt.GlyId = id+1;
+
+                glycans.Add(N_glycan_Nxs);
+                glycans.Add(N_glycan_Nxt);
                 return glycans;
             }
 
