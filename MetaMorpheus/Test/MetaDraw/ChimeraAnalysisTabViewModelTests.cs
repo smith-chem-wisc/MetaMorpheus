@@ -733,10 +733,11 @@ public class ChimeraAnalysisTabViewModelTests
     }
 
     [Test]
+    [NonParallelizable]
     public void ConstructChimericPsms_DoesNotCrash_WhenDeconDoesNotMatchPsms()
     {
         // Arrange: Copy a valid PSM and tweak its scan number values
-        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var allPsms = ChimeraGroupViewModelTests.AllMatchesMutable;
         var ms1ScanNumField = allPsms.First().GetType().GetProperty("PrecursorScanNum");
         foreach (var psm in allPsms)
         {
@@ -756,10 +757,11 @@ public class ChimeraAnalysisTabViewModelTests
     }
 
     [Test]
+    [NonParallelizable]
     public void ConstructChimericPsms_SkipsGroup_WhenMs1OrMs2ScanIsMissing()
     {
         // Arrange: Copy a valid PSM and set its scan numbers to non-existent values
-        var allPsms = ChimeraGroupViewModelTests.AllMatches;
+        var allPsms = ChimeraGroupViewModelTests.AllMatchesMutable;
         var ms1ScanNumField = allPsms.First().GetType().GetProperty("PrecursorScanNum");
         foreach (var psm in allPsms)
         {
