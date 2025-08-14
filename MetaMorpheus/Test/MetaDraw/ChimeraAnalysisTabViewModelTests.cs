@@ -17,6 +17,7 @@ using GuiFunctions.MetaDraw;
 using System.Windows;
 using Point = System.Windows.Point;
 using Size = System.Windows.Size;
+using Readers;
 
 namespace Test.MetaDraw;
 
@@ -729,5 +730,54 @@ public class ChimeraAnalysisTabViewModelTests
 
         // Assert
         Assert.That(ancestor, Is.Null);
+    }
+
+    [Test]
+    [NonParallelizable]
+    public void ConstructChimericPsms_DoesNotCrash_WhenDeconDoesNotMatchPsms()
+    {
+        // Arrange: Copy a valid PSM and tweak its scan number values
+        var allPsms = ChimeraGroupViewModelTests.AllMatchesMutable;
+        var ms1ScanNumField = allPsms.First().GetType().GetProperty("PrecursorScanNum");
+        foreach (var psm in allPsms)
+        {
+            // Use reflection to increment the public get, protected set PrecursorScanNum property by one
+            var currentValue = (int)ms1ScanNumField.GetValue(psm);
+            ms1ScanNumField.SetValue(psm, currentValue + 1, null);
+        }
+
+        var dataFiles = new Dictionary<string, MsDataFile>
+        {
+            { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile }
+        };
+
+        // Act: Should not throw even through many of the scans being wrong will throw exceptions
+        List<ChimeraGroupViewModel> result = null;
+        Assert.DoesNotThrow(() => result = ChimeraAnalysisTabViewModel.ConstructChimericPsms(allPsms, dataFiles));
+    }
+
+    [Test]
+    [NonParallelizable]
+    public void ConstructChimericPsms_SkipsGroup_WhenMs1OrMs2ScanIsMissing()
+    {
+        // Arrange: Copy a valid PSM and set its scan numbers to non-existent values
+        var allPsms = ChimeraGroupViewModelTests.AllMatchesMutable;
+        var ms1ScanNumField = allPsms.First().GetType().GetProperty("PrecursorScanNum");
+        foreach (var psm in allPsms)
+        {
+            // Use reflection to increment the public get, protected set PrecursorScanNum property by one
+            var currentValue = (int)ms1ScanNumField.GetValue(psm);
+            ms1ScanNumField.SetValue(psm, currentValue + 184273, null);
+        }
+
+        var dataFiles = new Dictionary<string, MsDataFile>
+        {
+            { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile }
+        };
+
+        // Act: Should not throw even through many of the scans being wrong will throw exceptions
+        List<ChimeraGroupViewModel> result = null;
+        Assert.DoesNotThrow(() => result = ChimeraAnalysisTabViewModel.ConstructChimericPsms(allPsms, dataFiles));
+        Assert.That(result, Is.Empty);
     }
 }

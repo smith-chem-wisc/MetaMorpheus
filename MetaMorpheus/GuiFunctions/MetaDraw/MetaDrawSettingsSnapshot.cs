@@ -1,11 +1,4 @@
-﻿using EngineLayer.GlycoSearch;
-using OxyPlot;
-using Omics.Fragmentation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Readers;
 using GuiFunctions.MetaDraw;
 
@@ -42,10 +35,18 @@ namespace GuiFunctions
         public double SpectrumDescriptionFontSize { get; set; } = 10;
         public bool DisplayChimeraLegend { get; set; } = true;
         public bool SuppressMessageBoxes { get; set; } = true;
+
+        // Chimera Settings
         public bool ChimeraLegendTakeFirstIfAmbiguous { get; set; }
         public double ChimeraLegendMaxWidth { get; set; } = 420;
         public LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
         public LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
+
+        // Data Visualization Settings
+        public bool DisplayFilteredOnly { get; set; } = true;
+        public bool NormalizeHistogramToFile { get; set; } = false;
+        public List<string> DataVisualizationColorOrder { get; set; }
+
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;
