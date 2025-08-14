@@ -82,7 +82,6 @@ namespace MetaMorpheusGUI
             if (filesToLoad is not null)
             {
                 filesToLoad.ForEach(AddFile);
-                loadFilesButton_Click(null, null);
             }
         }
 
