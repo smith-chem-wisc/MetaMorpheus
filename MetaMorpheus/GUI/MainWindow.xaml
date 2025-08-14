@@ -145,6 +145,7 @@
             <!--Defines the context menu when a spectra file is right-clicked-->
             <ContextMenu x:Key="SpectraFileContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Set file-specific parameters" Click="SetFileSpecificParameters_Click"/>
+                <MenuItem Header="Set selected precursors" Click="SetSelectedPrecursors_Click"/>
                 <MenuItem Header="Open file" Click="OpenFile_Click"/>
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
                 <MenuItem Header="Delete" Click="Delete_Click" />
