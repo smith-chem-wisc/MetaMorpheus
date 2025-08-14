@@ -655,9 +655,12 @@ namespace TaskLayer
                     $"PEP could not be calculated due to an insufficient number of {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s. Results were filtered by q-value." +
                     Environment.NewLine);
             }
-            string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " +
-                psmsForPsmResults.TargetPsmsAboveThreshold;
+            string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " + psmsForPsmResults.TargetPsmsAboveThreshold;
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
+            string precursorResultsText = $"All {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f=>f.Value[1]).Sum();
+            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
+            string ms2ScanCountResultsText = $"All {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f => f.Value[0]).Sum();
+            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}")] = ms2ScanCountResultsText;
         }
         private void WritePeptideResults()
         {
@@ -719,9 +722,12 @@ namespace TaskLayer
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                 // write summary text
-                string psmResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsToWrite.GetFilterTypeString() + " <= " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " +
-                                        psmsToWrite.TargetPsmsAboveThreshold;
+                string psmResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsToWrite.GetFilterTypeString() + " <= " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " + psmsToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
+                string precursorResultsText = strippedFileName + $" - {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile[strippedFileName][1];
+                ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
+                string ms2ScanCountResultsText = strippedFileName + $" - {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + Parameters.NumMs2SpectraPerFile[strippedFileName][0];
+                ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}")] = ms2ScanCountResultsText;
             }
         }
         private void WriteIndividualPeptideResults()
