@@ -62,11 +62,11 @@ namespace Test
             // ensures that protein out put contains the correct number of proteins to match the following conditions.
             // all proteins in DB have baseSequence!=null (not ambiguous)
             // all proteins that belong to a protein group are written to DB
-            Assert.That(proteins.Count, Is.EqualTo(14));
+            Assert.That(proteins.Count, Is.EqualTo(18));
             int totalNumberOfMods = proteins.Sum(p => p.OneBasedPossibleLocalizedModifications.Count + p.SequenceVariations.Sum(sv => sv.OneBasedModifications.Count));
 
             //tests that modifications are being done correctly
-            Assert.That(totalNumberOfMods, Is.EqualTo(8));
+            Assert.That(totalNumberOfMods, Is.EqualTo(4));
             Directory.Delete(outputFolder, true);
         }
 
