@@ -494,20 +494,29 @@ namespace EngineLayer.GlycoSearch
 
         private void FindNGlycan(Ms2ScanWithSpecificMass theScan, int scanIndex, int scoreCutOff, PeptideWithSetModifications theScanBestPeptide, int ind, double possibleGlycanMassLow, double[] oxoniumIonIntensities, ref List<SpectralMatch> possibleMatches)
         {
-            List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new HashSet<string> { "Nxt", "Nxs" }).Select(p => p.Key).ToList();
-            if (modPos.Count < 1)
+            List<int> modPos_Nxs = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "Nxs" }).Select(p => p.Key).ToList();
+            List<int> modPos_Nxt = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "Nxt" }).Select(p => p.Key).ToList();
+            if (modPos_Nxs.Count < 1 && modPos_Nxt.Count < 1) // if there is no possible glycosylation site, we can skip this peptide.
             {
                 return;
             }
 
-            int iDLow = BinarySearchGetIndex(NGlycans.Select(p => (double)p.Mass / 1E5).ToArray(), possibleGlycanMassLow);
-
-            while (iDLow < NGlycans.Length && PrecursorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)NGlycans[iDLow].Mass / 1E5))
+            int iDLow = GlycoPeptides.BinarySearchGetIndex(NGlycans.Select(p => (double)p.Mass / 1E5).ToArray(), possibleGlycanMassLow);
+            while (iDLow < NGlycans.Length && PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)NGlycans[iDLow].Mass / 1E5))
             {
                 double bestLocalizedScore = scoreCutOff;
                 int bestSite = 0;
                 List<MatchedFragmentIon> bestMatchedIons = new List<MatchedFragmentIon>();
                 PeptideWithSetModifications[] peptideWithSetModifications = new PeptideWithSetModifications[1];
+
+                // Get the correct modification position based on the glycan target type
+                List<int> modPos = NGlycans[iDLow].Target.ToString() == "Nxs" ? modPos_Nxs : modPos_Nxt;
+                if (modPos.Count < 1)
+                {
+                    iDLow++;
+                    continue; // if there is no possible glycosylation site, we can skip this glycan.
+                }
+
                 foreach (int possibleSite in modPos)
                 {
                     var testPeptide = GlycoPeptides.GenerateGlycopeptide(possibleSite, theScanBestPeptide, NGlycans[iDLow]);
