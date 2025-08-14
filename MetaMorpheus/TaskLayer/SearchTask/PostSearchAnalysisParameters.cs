@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
+using Readers.SpectralLibrary;
 
 namespace TaskLayer
 {

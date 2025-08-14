@@ -17,6 +17,7 @@ using UsefulProteomicsDatabases;
 using System.Threading;
 using Readers;
 using Omics.Digestion;
+using Readers.SpectralLibrary;
 
 namespace Test
 {
