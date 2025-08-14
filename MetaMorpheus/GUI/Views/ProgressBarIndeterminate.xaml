@@ -6,7 +6,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Progress" Height="115" Width="300">
+        Title="Progress" Height="115" Width="300"
+        Topmost="True">
     <StackPanel Margin="3">
         <Grid Height="20">
             <ProgressBar Minimum="0" Maximum="100" Name="pbStatus" IsIndeterminate="True"/>
