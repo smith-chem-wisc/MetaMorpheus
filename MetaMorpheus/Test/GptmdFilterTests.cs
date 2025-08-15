@@ -51,6 +51,7 @@ public class GptmdFilterTests
             DummyMod());
 
         Assert.That(result, Is.True);
+        Assert.That(IGptmdFilter.GetFilterTypeName(filter), Is.EqualTo("ImprovedScoreFilter"));
     }
 
     [Test]
@@ -84,6 +85,7 @@ public class GptmdFilterTests
             DummyMod());
 
         Assert.That(result, Is.False);
+        Assert.That(IGptmdFilter.GetFilterTypeName(filter), Is.EqualTo("DualDirectionalIonCoverageFilter"));
     }
 
     [Test]
@@ -143,6 +145,7 @@ public class GptmdFilterTests
             DummyMod());
 
         Assert.That(result, Is.False);
+        Assert.That(IGptmdFilter.GetFilterTypeName(filter), Is.EqualTo("FlankingIonCoverageFilter"));
     }
 
     [Test]
@@ -240,6 +243,7 @@ public class GptmdFilterTests
             DummyMod());
 
         Assert.That(result, Is.False);
+        Assert.That(IGptmdFilter.GetFilterTypeName(filter), Is.EqualTo("DualDirectionalIonCoverageFilter"));
     }
 
     [Test]
@@ -300,6 +304,7 @@ public class GptmdFilterTests
             DummyMod());
 
         Assert.That(result, Is.False);
+        Assert.That(IGptmdFilter.GetFilterTypeName(filter), Is.EqualTo("FlankingIonCoverageFilter"));
     }
 
     [Test]
@@ -489,5 +494,17 @@ public class GptmdFilterTests
         Assert.That(result, Is.True);
     }
 
+    [Test]
+    public static void TestEquality()
+    {
+        var scoreImproved = new ImprovedScoreFilter();
+        var dualIonCoverage = new DualDirectionalIonCoverageFilter();
+
+        Assert.That(scoreImproved.Equals(new ImprovedScoreFilter()));
+        Assert.That(dualIonCoverage.Equals(new DualDirectionalIonCoverageFilter()));
+
+        Assert.That(scoreImproved.Equals(dualIonCoverage), Is.False);
+        Assert.That(scoreImproved.Equals(null), Is.False);
+    }
 }
 
