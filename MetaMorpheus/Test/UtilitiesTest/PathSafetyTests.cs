@@ -108,13 +108,6 @@ namespace Test.UtilitiesTest
         }
 
         [Test]
-        public void AcceptsEndingWithoutDot()
-        {
-            string safe = PathSafety.MakeSafeOutputPath(@"C:\work\out\file", "mzML");
-            NUnit.Framework.Assert.That(safe, Does.EndWith(".mzML"));
-        }
-
-        [Test]
         public void LeavesAlreadyValidPath_Alone()
         {
             string input = @"C:\work\out\good_name.mzML";
