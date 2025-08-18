@@ -493,18 +493,5 @@ public class GptmdFilterTests
 
         Assert.That(result, Is.True);
     }
-
-    [Test]
-    public static void TestEquality()
-    {
-        var scoreImproved = new ImprovedScoreFilter();
-        var dualIonCoverage = new DualDirectionalIonCoverageFilter();
-
-        Assert.That(scoreImproved.Equals(new ImprovedScoreFilter()));
-        Assert.That(dualIonCoverage.Equals(new DualDirectionalIonCoverageFilter()));
-
-        Assert.That(scoreImproved.Equals(dualIonCoverage), Is.False);
-        Assert.That(scoreImproved.Equals(null), Is.False);
-    }
 }
 

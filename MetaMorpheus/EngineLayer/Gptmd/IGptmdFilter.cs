@@ -8,7 +8,7 @@ using Omics.Modifications;
 
 namespace EngineLayer;
 
-public interface IGptmdFilter : IEquatable<IGptmdFilter>
+public interface IGptmdFilter
 {
     public static string GetFilterTypeName(IGptmdFilter filter) => filter.GetType().Name;
 
@@ -21,11 +21,6 @@ public interface IGptmdFilter : IEquatable<IGptmdFilter>
         int peptideOneBasedModSite,
         int peptideLength, 
         Modification modAttemptingToAdd);
-
-    bool IEquatable<IGptmdFilter>.Equals(IGptmdFilter? other)
-    {
-        return other != null && GetType() == other.GetType();
-    }
 }
 
 /// <summary>
