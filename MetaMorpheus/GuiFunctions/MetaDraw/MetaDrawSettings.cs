@@ -733,8 +733,7 @@ namespace GuiFunctions
                 }
                 else
                 {
-                    SetDefaultDataVisualizationColors();
-                    flaggedErrorOnRead = true;
+                    throw new Exception();
                 }
             }
             catch (Exception)

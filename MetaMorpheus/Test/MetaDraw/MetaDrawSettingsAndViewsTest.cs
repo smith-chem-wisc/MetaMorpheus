@@ -357,6 +357,20 @@ namespace Test.MetaDraw
             Assert.That(flaggedError);
         }
 
+        [Test] 
+        public static void TestMetaDrawSettingsLoadSettingsCases_v112()
+        {
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", @"112MetaDrawSettingsSavedForTestCoverage_Failures.xml");
+            var snapShot = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(path);
+            MetaDrawSettings.LoadSettings(snapShot, out bool flaggedError);
+            Assert.That(flaggedError);
+
+            path = Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", @"112MetaDrawSettingsSavedForTestCoverage_Success.xml");
+            snapShot = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(path);
+            MetaDrawSettings.LoadSettings(snapShot, out flaggedError);
+            Assert.That(!flaggedError);
+        }
+
         [Test]
         public static void TestSettingsViewSaveAndChildSelectionChanged()
         {
