@@ -34,7 +34,7 @@ namespace GuiFunctions
         public double StrokeThicknessAnnotated { get; set; } = 1.0;
         public double SpectrumDescriptionFontSize { get; set; } = 10;
         public bool DisplayChimeraLegend { get; set; } = true;
-        public bool SuppressMessageBoxes { get; set; } = true;
+        public bool SuppressMessageBoxes { get; set; } = false;
 
         // Chimera Settings
         public bool ChimeraLegendTakeFirstIfAmbiguous { get; set; }
