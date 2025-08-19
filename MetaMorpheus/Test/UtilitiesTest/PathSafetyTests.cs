@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using EngineLayer.Util;
+using System.Reflection;
 
 namespace Test.UtilitiesTest
 {
@@ -235,6 +236,46 @@ namespace Test.UtilitiesTest
             Assert.That(
                 () => PathSafety.MakeSafeOutputPath(input, ending, maxPath: maxPath, maxFileName: 255),
                 Throws.TypeOf<PathTooLongException>());
+        }
+
+        [Test]
+        public void EnsureDirWithSeparator_ReturnsEmptyString_WhenDirectoryIsNull()
+        {
+            var method = typeof(PathSafety).GetMethod("EnsureDirWithSeparator", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(method, Is.Not.Null);
+
+            var result = (string)method.Invoke(null, new object[] { null });
+            Assert.That(result, Is.EqualTo(string.Empty));
+        }
+
+        [Test]
+        public void EnsureDirWithSeparator_ReturnsEmptyString_WhenDirectoryIsEmpty()
+        {
+            var method = typeof(PathSafety).GetMethod("EnsureDirWithSeparator", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(method, Is.Not.Null);
+
+            var result = (string)method.Invoke(null, new object[] { string.Empty });
+            Assert.That(result, Is.EqualTo(string.Empty));
+        }
+
+        [Test]
+        public void CombineDirectoryAndFile_ReturnsFileName_WhenDirectoryIsNull()
+        {
+            var method = typeof(PathSafety).GetMethod("CombineDirectoryAndFile", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(method, Is.Not.Null);
+
+            var result = (string)method.Invoke(null, new object[] { null, "file.txt" });
+            Assert.That(result, Is.EqualTo("file.txt"));
+        }
+
+        [Test]
+        public void CombineDirectoryAndFile_ReturnsFileName_WhenDirectoryIsEmpty()
+        {
+            var method = typeof(PathSafety).GetMethod("CombineDirectoryAndFile", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(method, Is.Not.Null);
+
+            var result = (string)method.Invoke(null, new object[] { string.Empty, "file.txt" });
+            Assert.That(result, Is.EqualTo("file.txt"));
         }
     }
 }
