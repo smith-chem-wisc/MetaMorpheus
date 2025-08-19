@@ -34,6 +34,7 @@ namespace EngineLayer.GlycoSearch
         /// </summary>
         public static ModBox[] ModBoxes;
 
+        protected virtual double MassDiffThreshold => 100;
         protected readonly Tolerance PrecursorSearchMode;
         protected readonly MassDiffAcceptor ProductSearchMode;
         private readonly List<int>[] SecondFragmentIndex;
@@ -646,7 +647,7 @@ namespace EngineLayer.GlycoSearch
                 {
                     MatchUnmodifiedPeptide(theScan, scanIndex, scoreCutOff, thePeptideCandidate, ind, ref possibleMatches);
                 }
-                else if (theScan.PrecursorMass - thePeptideCandidate.MonoisotopicMass >= 100) //If not, we need to consider the glycan mass difference.
+                else if (theScan.PrecursorMass - thePeptideCandidate.MonoisotopicMass >= MassDiffThreshold) //If not, we need to consider the glycan mass difference.
                 {
                     //Filter by glycanBoxes mass difference.
                     var massDiffLow = PrecursorSearchMode.GetMinimumValue(theScan.PrecursorMass) - thePeptideCandidate.MonoisotopicMass;

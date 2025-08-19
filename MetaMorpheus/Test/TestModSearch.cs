@@ -19,7 +19,12 @@ using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Animation;
+using MathNet.Numerics;
+using Omics;
+using Omics.Digestion;
 using TaskLayer;
+using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -198,19 +203,126 @@ namespace Test
         }
 
         [Test]
-        public static void TestModPair_RegularMod()
+        public static void TestModPair_GlobalMod()
         {
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
-            Directory.CreateDirectory(outputFolder);
+            //This test will compare the search performance on GPTMD and ModPair while using the global mod list.
+            string outputFolder = "E:\\ModPair\\RegularCompare\\ModPair_EtHCD";
 
-            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+            //Create Search Task
+            string fasta = "E:\\ModPair\\RegularCompare\\uniprotkb_AND_reviewed_true_AND_model_o_2025_08_18.fasta";
+            DbForTask db = new DbForTask(fasta, false);
+            List<(string, string)> interestMods = new List<(string, string)>()
+            {
+                ("Common Biological","Phosphorylation on S"), ("Common Biological","Phosphorylation on T")
+            };
 
-            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
-            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            ////Create the spectra file
+            //string xml = "E:\\ModPair\\RegularCompare\\uniprotkb_AND_reviewed_true_AND_model_o_2025_08_18.xml";
+            //var proteins = ProteinDbLoader.LoadProteinXML(xml, true, DecoyType.None, GlobalVariables.AllModsKnown, false, null,
+            //    out _);
+
+            //var peptides = proteins
+            //    .SelectMany(p => p.Digest((IDigestionParams) new DigestionParams(), new List<Modification>(), new List<Modification>()))
+            //    .ToList();
+            //var modPeptideList = peptides.Where(p => p.AllModsOneIsNterminus.Count >= 1)
+            //    .ToList();
+            //string[] validModNames = ["Phospho"];
+            //var filteredModifiedPeptideList = modPeptideList.Where(p =>
+            //    p.AllModsOneIsNterminus.All(mod =>
+            //        validModNames.Any(validName => mod.Value.IdWithMotif.Contains(validName, StringComparison.InvariantCultureIgnoreCase)))).Take(1000).ToList();
+
+            //string rawFile = "fakeRaw_EtHCD.mzML";
+            //MsDataFile fakeRawFile = new TestDataFile(filteredModifiedPeptideList);
+            //Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(fakeRawFile, rawFile, false);
+            //string peptidePath = "E:\\ModPair\\RegularCompare\\peptidelist";
+            //File.WriteAllLines(peptidePath, filteredModifiedPeptideList.Select(p=>p.FullSequence).ToList());
+
+
+            // First, we run the GPTMD search
+            //var engine = new EverythingRunnerEngine(
+            //    new List<(string, MetaMorpheusTask)> { ("task1", task1) },
+            //    new List<string>() { rawFile },
+            //    new List<DbForTask> { new DbForTask(proteinDB, false) },
+            //    Environment.CurrentDirectory);
+
+
+            // Second, we run the ModPair search
+
+
+            //Load the toml file and modify the parameters
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigModPairTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+
+            glycoSearchTask._glycoSearchParameters.GlycoSearchType = GlycoSearchType.ModSearch;
+            glycoSearchTask._glycoSearchParameters.MaximumOGlycanAllowed = 2;
+            glycoSearchTask._glycoSearchParameters.ListOfInterestedMods = interestMods;
+            glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = false;
+            string spectraFile = "E:\\ModPair\\RegularCompare\\fakeRaw_EtHCD.mzML";
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
-
-            Directory.Delete(outputFolder, true);
+            int iii = 0;
         }
+
+        [Test]
+        public static void ComparePsm()
+        {
+            string anserPsm = "E:\\ModPair\\RegularCompare\\peptidelist.txt";
+            string metaPsm = "E:\\ModPair\\RegularCompare\\MetaSearch_EtHCD\\Task1-Search\\AllPSMs.psmtsv";
+            string modPairPsm = "E:\\ModPair\\RegularCompare\\ModPair_EtHCD\\Task\\AllPSMs.psmtsv";
+            string GptmdPsm = "E:\\ModPair\\RegularCompare\\GPTMD_EtHCD\\Task2-Search\\AllPSMs.psmtsv";
+
+            HashSet<string> answerSet = new HashSet<string>();
+            foreach (var line in File.ReadLines(anserPsm))
+            {
+                answerSet.Add(line);
+            }
+            HashSet<string> metaSet = new HashSet<string>();
+            foreach (var line in File.ReadLines(metaPsm).Skip(0))
+            {
+                string full = line.Split('\t')[14];
+                metaSet.Add(line);
+            }
+            HashSet<string> modPairSet = new HashSet<string>();
+            foreach (var line in File.ReadLines(modPairPsm).Skip(0))
+            {
+                string full = line.Split('\t')[13];
+                modPairSet.Add(line);
+            }
+            HashSet<string> gptmdSet = new HashSet<string>();
+            foreach (var line in File.ReadLines(GptmdPsm).Skip(0))
+            {
+                string full = line.Split('\t')[14];
+                gptmdSet.Add(line);
+            }
+
+            int iiii = 0;
+        }
+
+        [Test]
+        public static void TestSub()
+        {
+            string outputFolder = "E:\\ModPair\\zh\\test1";
+
+            string raw = "E:\\ModPair\\zh\\test1\\01-14-25_bu-DDA_Yeast_SP3_sv95.mzML";
+            string fasta = "E:\\ModPair\\zh\\test1\\modifiedYeastFasta100_noAmb_noMiss_new_100only.fasta";
+            DbForTask db = new DbForTask(fasta, false);
+            string GPTMDToml = "E:\\ModPair\\zh\\test1\\Task1-GPTMDTaskconfig.toml";
+            string search = "E:\\ModPair\\zh\\test1\\Task2-SearchTaskconfig.toml";
+            string modPair = "E:\\ModPair\\zh\\test1\\GlycoSearchTaskconfigModPairTest_Run.toml";
+
+            var task1 = Toml.ReadFile<GptmdTask>(GPTMDToml, MetaMorpheusTask.tomlConfig);
+
+            List<(string, string)> interestMods = task1.GptmdParameters.ListOfModsGptmd;
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(modPair, MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.GlycoSearchType = GlycoSearchType.ModSearch;
+            glycoSearchTask._glycoSearchParameters.MaximumOGlycanAllowed = 1;
+            glycoSearchTask._glycoSearchParameters.ListOfInterestedMods = interestMods;
+            glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = false;
+
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { raw }, new List<DbForTask> { db }, outputFolder).Run();
+            int iii = 0;
+
+        }
+
+
 
     }
 }

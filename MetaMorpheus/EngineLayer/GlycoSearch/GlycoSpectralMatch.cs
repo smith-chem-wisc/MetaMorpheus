@@ -3,6 +3,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using EngineLayer.ModSearch;
 using Omics.Modifications;
@@ -304,21 +305,26 @@ namespace EngineLayer.GlycoSearch
 
             if (Routes != null)//this gets the o-glyco
             {
+                if (Routes.Count > 2)
+                {
+                    int iiiii = 0;
+                }
+
                 sb.Append(LocalizationGraphs.First().TotalScore + "\t");
 
                 sb.Append(GlycanScore + "\t");
 
                 sb.Append(DiagnosticIonScore + "\t");
 
-                var glycanBox = GlycoSearchEngine.ModBoxes[Routes.First().ModBoxId];
+                var modBox = GlycoSearchEngine.ModBoxes[Routes.First().ModBoxId];
 
-                sb.Append(glycanBox.NumberOfMods + "\t");
+                sb.Append(modBox.NumberOfMods + "\t");
 
                 sb.Append(LocalizationGraphs.First().ModPos.Count + "\t");
 
-                sb.Append(glycanBox.Mass + "\t");
+                sb.Append(modBox.Mass + "\t");
 
-                sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
+                sb.Append(Glycan.GetKindString(modBox.Kind)); sb.Append("\t");
 
                 var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
 
@@ -327,15 +333,17 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(R138vs144.ToString()); sb.Append("\t");
 
                 //Get glycans
-                var glycans = new Glycan[glycanBox.NumberOfMods];
-                for (int i = 0; i < glycanBox.NumberOfMods; i++)
+                var mods = new Modification[modBox.NumberOfMods];
+                for (int i = 0; i < modBox.NumberOfMods; i++)
                 {
-                    glycans[i] = ModBox.GlobalOGlycans[glycanBox.ModIds[i]];
+                    mods[i] = ModBox.GlobalModifications[modBox.ModIds[i]];
                 } //Convert the glycanBox index into the real glycan object. ex. [H1N1, H2N2A1, H2N2A1F1]
 
-                if (glycans.First().Struc != null)
+                // Replace the problematic code block with the following:
+
+                if (mods.Any(p=> p is Glycan glycan && glycan.Struc != null))
                 {
-                    sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); //ex. (N(H)),(N(H(A))(N(H))),(N(H)(N(H(A))(F))
+                    sb.Append(string.Join(",", mods.Where(p=> p is Glycan).Cast<Glycan>().Select(p => p.Struc.ToString()).ToArray())); //ex. (N(H)),(N(H(A))(N(H))),(N(H)(N(H(A))(F))
                 }
                 sb.Append("\t");
 
@@ -545,10 +553,22 @@ namespace EngineLayer.GlycoSearch
             {
                 var site_glycanProb = glycositePair.Probability; // get the probability of the specfic glycan on the specific site.
                 var peptide_site = glycositePair.SiteIndex - 1;
-                local_peptide += "[" + peptide_site + "," + ModBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
+                
+                string modInfo;
+                if (ModBox.GlobalModifications[glycositePair.ModId] is Glycan glycan)
+                {
+                    modInfo = glycan.Composition;
+                }
+                else
+                {
+                    modInfo = ModBox.GlobalModifications[glycositePair.ModId].OriginalId;
+                }
+
+
+                local_peptide += "[" + peptide_site + "," + modInfo + "," + site_glycanProb.ToString("0.000") + "]";
 
                 var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + glycositePair.SiteIndex - 2 : -1;
-                local_protein += "[" + protein_site + "," + ModBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
+                local_protein += "[" + protein_site + "," + modInfo + "," + site_glycanProb.ToString("0.000") + "]";
             }
 
         }

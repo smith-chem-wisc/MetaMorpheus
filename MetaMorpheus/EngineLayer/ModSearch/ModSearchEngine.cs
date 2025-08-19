@@ -13,6 +13,10 @@ namespace EngineLayer.ModSearch
         private readonly int TopN; // DDA top Peak number
         private readonly int MaxModNumber;
         List<(string, string)> _listOfInterestedMods; // List of interested modifications
+        /// <summary>
+        /// The mass difference threshold for considering modifications,we use the mass of the minimum modbox as the default threshold
+        /// </summary>
+        protected override double MassDiffThreshold => ModBoxes.Length == 0 ? 0 : ModBoxes.Min(box => box.Mass)-5.0; 
 
 
         public ModSearchEngine(List<SpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans,
@@ -20,9 +24,7 @@ namespace EngineLayer.ModSearch
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition,
             CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
-            string oglycanDatabase, string nglycanDatabase, List<(string, string)> ListOfInterestedMods, int modSearchTopNum,
-
-        int maxModNum, bool oxoniumIonFilter, List<string> nestedIds)
+            string oglycanDatabase, string nglycanDatabase, List<(string, string)> ListOfInterestedMods, int modSearchTopNum, int maxModNum, bool oxoniumIonFilter, List<string> nestedIds)
             : base(globalCsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, commonParameters, fileSpecificParameters, oglycanDatabase, nglycanDatabase, GlycoSearchType.ModSearch, modSearchTopNum, maxModNum, oxoniumIonFilter, nestedIds)
         {
             this.TopN = modSearchTopNum;
@@ -32,6 +34,7 @@ namespace EngineLayer.ModSearch
             //Load glycan databases and build the modBox 
             ModBox.GlobalModifications = GlobalVariables.AllModsKnownDictionary.Values.Where(b => ListOfInterestedMods.Contains((b.ModificationType, b.IdWithMotif))).ToArray();
             ModBoxes = ModBox.BuildModBoxes(MaxModNumber, false).OrderBy(p => p.Mass).ToArray();
+            int iiii = 0;
         }
 
 
