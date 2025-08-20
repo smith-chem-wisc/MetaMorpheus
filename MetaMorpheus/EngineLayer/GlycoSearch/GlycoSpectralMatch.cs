@@ -3,6 +3,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using EngineLayer.ModSearch;
 using Omics.Modifications;
@@ -15,23 +16,38 @@ namespace EngineLayer.GlycoSearch
     {
         public GlycoSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
             : base(theBestPeptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
-        {
+        { }
 
-        }
-
+        /// <summary>
+        /// The rank of the PSMs by their score of the modern search engine.
+        /// </summary>
         public int Rank { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
+
         //Glyco properties
-        public List<Glycan> NGlycan { get; set; }  //Identified NGlycan
+        /// <summary>
+        /// Identified NGlycan
+        /// </summary>
+        public List<Glycan> NGlycan { get; set; }
         public List<int> NGlycanLocalizations { get; set; }
 
+        /// <summary>
+        /// Graph-based Localization information.
+        /// </summary>
+        public List<LocalizationGraph> LocalizationGraphs { get; set; }
+        /// <summary>
+        /// A hypothesis of modPeptide, including the Localized modification sites and modfication ID
+        /// </summary>
+        public List<Route> Routes { get; set; }
+        /// <summary>
+        /// Scan P value, Used for Localization probability calculation. Ref PhosphoRS paper.
+        /// </summary>
+        public double ScanInfo_p { get; set; }
 
-        public List<LocalizationGraph> LocalizationGraphs { get; set; }  //Graph-based Localization information.
-        public List<Route> Routes { get; set; } //Localized modification sites and modfication ID.
-
-        public double ScanInfo_p { get; set; }  //Scan P value, Used for Localization probability calculation. Ref PhosphoRS paper.
-
-        public int Thero_n { get; set; } //Scan n value. Used for Localization probability calculation. Ref PhosphoRS paper.
+        /// <summary>
+        /// Scan n value. Used for Localization probability calculation. Ref PhosphoRS paper.
+        /// </summary>
+        public int Thero_n { get; set; }
 
         /// <summary>
         /// The dictionary of all unique ModSitePair and its probability.
@@ -41,8 +57,15 @@ namespace EngineLayer.GlycoSearch
         public double GlycanScore { get; set; } //Scores from only matched Y ions. 
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
 
-        public double R138vs144 { get; set; } // The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
-        public List<ModSitePair> LocalizedGlycan { get; set; } // The ModSite with confidence defined.
+        /// <summary>
+        /// The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
+        /// High for n-glycan, low for o-glycan.
+        /// </summary>
+        public double R138vs144 { get; set; }
+        /// <summary>
+        /// The ModSite with confidence defined.
+        /// </summary>
+        public List<ModSitePair> LocalizedGlycan { get; set; }
         public LocalizationLevel LocalizationLevel { get; set; }
 
         /// <summary>
@@ -52,10 +75,9 @@ namespace EngineLayer.GlycoSearch
         /// <param name="peptide"> full peptide sequence ex. "PTLFKNVSLYK" </param>
         /// <param name="motifs"> modificatino AA ex. "S","T"</param>
         /// <returns> int[], the Modpositon index list ex.[9,3] </returns>
-        public static SortedDictionary<int, string> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
+        public static SortedDictionary<int, string> GetPossibleModSites(PeptideWithSetModifications peptide, HashSet<string> motifs)
         {
             SortedDictionary<int, string> modMotif = new SortedDictionary<int, string>();
-
             List<Modification> modifications = new List<Modification>();
 
             foreach (var mtf in motifs)
@@ -118,10 +140,10 @@ namespace EngineLayer.GlycoSearch
         }
 
         /// <summary>
-        /// Generate the peptide header, ex File name, Precursor m/z, Score…
+        /// Generate the unmodifiedPeptide header, ex File name, Precursor m/z, Score…
         /// </summary>
         /// <returns></returns>
-        public static string GetTabSepHeaderSingle() //Most complicate part in this class
+        public static string GetTabSepHeader_unModifiedPeptide() //Most complicate part in this class
         {
             var sb = new StringBuilder();
             sb.Append("File Name" + '\t');
@@ -160,10 +182,10 @@ namespace EngineLayer.GlycoSearch
         }
 
         /// <summary>
-        /// Generate the glyco header ex Localization Score, Yion Score…
+        /// Generate the modified information header ex Localization Score, Yion Score…
         /// </summary>
         /// <returns></returns>
-        public static string GetTabSeperatedHeaderGlyco()
+        public static string GetTabSeparatedHeaderGlyco_ModifiedPeptide()
         {
             var sb = new StringBuilder();
             sb.Append("\t");//provides the separation needed from GetTabSepHeaderSingle()
@@ -190,7 +212,7 @@ namespace EngineLayer.GlycoSearch
         /// Put the psm data into the corresponding columns.
         /// </summary>
         /// <returns></returns>
-        public string SingleToString()
+        public string UnModifiedPepToString()
         {
             var sb = new StringBuilder();
             sb.Append(FullFilePath + "\t");
@@ -277,27 +299,32 @@ namespace EngineLayer.GlycoSearch
         /// Put the glycan data into the corresponding columns.
         /// </summary>
         /// <returns></returns>
-        public string GlycoToString()
+        public string ModToString()
         {
             var sb = new StringBuilder();
 
             if (Routes != null)//this gets the o-glyco
             {
+                if (Routes.Count > 2)
+                {
+                    int iiiii = 0;
+                }
+
                 sb.Append(LocalizationGraphs.First().TotalScore + "\t");
 
                 sb.Append(GlycanScore + "\t");
 
                 sb.Append(DiagnosticIonScore + "\t");
 
-                var glycanBox = GlycanBox.OGlycanBoxes[Routes.First().ModBoxId];
+                var modBox = GlycoSearchEngine.ModBoxes[Routes.First().ModBoxId];
 
-                sb.Append(glycanBox.NumberOfMods + "\t");
+                sb.Append(modBox.NumberOfMods + "\t");
 
                 sb.Append(LocalizationGraphs.First().ModPos.Count + "\t");
 
-                sb.Append(glycanBox.Mass + "\t");
+                sb.Append(modBox.Mass + "\t");
 
-                sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
+                sb.Append(Glycan.GetKindString(modBox.Kind)); sb.Append("\t");
 
                 var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
 
@@ -306,15 +333,17 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(R138vs144.ToString()); sb.Append("\t");
 
                 //Get glycans
-                var glycans = new Glycan[glycanBox.NumberOfMods];
-                for (int i = 0; i < glycanBox.NumberOfMods; i++)
+                var mods = new Modification[modBox.NumberOfMods];
+                for (int i = 0; i < modBox.NumberOfMods; i++)
                 {
-                    glycans[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]];
+                    mods[i] = ModBox.GlobalModifications[modBox.ModIds[i]];
                 } //Convert the glycanBox index into the real glycan object. ex. [H1N1, H2N2A1, H2N2A1F1]
 
-                if (glycans.First().Struc != null)
+                // Replace the problematic code block with the following:
+
+                if (mods.Any(p=> p is Glycan glycan && glycan.Struc != null))
                 {
-                    sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); //ex. (N(H)),(N(H(A))(N(H))),(N(H)(N(H(A))(F))
+                    sb.Append(string.Join(",", mods.Where(p=> p is Glycan).Cast<Glycan>().Select(p => p.Struc.ToString()).ToArray())); //ex. (N(H)),(N(H(A))(N(H))),(N(H)(N(H(A))(F))
                 }
                 sb.Append("\t");
 
@@ -524,10 +553,22 @@ namespace EngineLayer.GlycoSearch
             {
                 var site_glycanProb = glycositePair.Probability; // get the probability of the specfic glycan on the specific site.
                 var peptide_site = glycositePair.SiteIndex - 1;
-                local_peptide += "[" + peptide_site + "," + GlycanBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
+                
+                string modInfo;
+                if (ModBox.GlobalModifications[glycositePair.ModId] is Glycan glycan)
+                {
+                    modInfo = glycan.Composition;
+                }
+                else
+                {
+                    modInfo = ModBox.GlobalModifications[glycositePair.ModId].OriginalId;
+                }
+
+
+                local_peptide += "[" + peptide_site + "," + modInfo + "," + site_glycanProb.ToString("0.000") + "]";
 
                 var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + glycositePair.SiteIndex - 2 : -1;
-                local_protein += "[" + protein_site + "," + GlycanBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
+                local_protein += "[" + protein_site + "," + modInfo + "," + site_glycanProb.ToString("0.000") + "]";
             }
 
         }

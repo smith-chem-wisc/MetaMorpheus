@@ -4,6 +4,7 @@ using System.Text;
 using System.IO;
 using System.Linq;
 using EngineLayer.GlycoSearch;
+using Omics.Modifications;
 
 namespace EngineLayer
 {
@@ -126,8 +127,15 @@ namespace EngineLayer
             int i = 0;
             while (i < x.Length - 1)
             {
-                kind[Glycan.NameCharDic[x[i]].Item2] = byte.Parse(x[i + 1]);
-                i = i + 2;
+                if (Glycan.NameCharDic.TryGetValue(x[i], out var value))
+                {
+                    kind[value.Item2] = byte.Parse(x[i + 1]);
+                    i = i + 2;
+                }
+                else
+                {
+                    i++;
+                }
             }
 
             return kind;

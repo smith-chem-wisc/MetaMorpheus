@@ -77,7 +77,7 @@ namespace EngineLayer.GlycoSearch
                 for (int y = 0; y < localizationGraph.ChildModBoxes.Length; y++)
                 {
                     //Check if the node is valid, if not, skip it.
-                    if (NodeCheck(localizationGraph.ModBox as GlycanBox, modPos_motif, x, y)) // Check the mod number in this node is valid
+                    if (NodeCheck(localizationGraph.ModBox, modPos_motif, x, y)) // Check the mod number in this node is valid
                     {
                         AdjNode adjNode = new AdjNode(x, y, modPos_index[x]
                             
@@ -86,12 +86,12 @@ namespace EngineLayer.GlycoSearch
                         double cost = 0;
                         if (x != modPos.Count - 1) // check the node is not the last one.
                         {              
-                            var fragments = GlycoPeptides.GetLocalFragment(products, modPos_index, x, localizationGraph.ModBox, localizationGraph.ChildModBoxes[y]);
+                            var fragments = GlycoPeptides.GetModifiedFragment(products, modPos_index, x, localizationGraph.ModBox, localizationGraph.ChildModBoxes[y]);
                             cost = CalculateCost(theScan, productTolerance, fragments);
                         }
 
                         adjNode.CurrentCost = cost;
-                        //The first line of the graph didnot have Sources.
+                        //The first line of the graph did not have Sources.
                         if (x == 0)
                         {
                             //Get cost                             
@@ -105,7 +105,7 @@ namespace EngineLayer.GlycoSearch
                                 //Check if a previous AdjNode exist and the current AdjNode could link to previous AdjNode. 
                                 var motifInThisPos = modPos_motif[x];
                                 // valid the connection between the previous node and the current node.
-                                if (validChart[y][preY] && localizationGraph.array[x - 1][preY] != null && MotifCheck(localizationGraph.ModBox as GlycanBox, preY, y, motifInThisPos))
+                                if (validChart[y][preY] && localizationGraph.array[x - 1][preY] != null && MotifCheck(localizationGraph.ModBox, preY, y, motifInThisPos))
                                 {
                                     adjNode.AllSources.Add(preY);
 
@@ -125,9 +125,7 @@ namespace EngineLayer.GlycoSearch
 
                                 }
                             }
-
                              adjNode.maxCost = maxCost;
-
                         }
 
                         localizationGraph.array[x][y] = adjNode;
@@ -136,7 +134,7 @@ namespace EngineLayer.GlycoSearch
 
             }
 
-            var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, modPos_index, localizationGraph.ModBox);
+            var unlocalFragments = GlycoPeptides.GetUnmodifiedFragment(products, modPos_index, localizationGraph.ModBox);
             var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
             localizationGraph.NoLocalCost = noLocalScore;
             localizationGraph.TotalScore = localizationGraph.array[modPos.Count - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;
@@ -205,7 +203,7 @@ namespace EngineLayer.GlycoSearch
                 bool[] idBoxes = new bool[childBoxes.Length];
                 for (int j = 0; j <= i; j++)
                 {
-                    if (childBoxes[i].NumberOfMods <= childBoxes[j].NumberOfMods + 1 && (childBoxes[j].NumberOfMods ==0 || TryGetLeft(childBoxes[i].ModIds, childBoxes[j].ModIds)))
+                    if (childBoxes[i].NumberOfMods <= childBoxes[j].NumberOfMods + 1 && (childBoxes[j].NumberOfMods == 0 || TryGetLeft(childBoxes[i].ModIds, childBoxes[j].ModIds)))
                     { //Check the next node could be the same or one more mod than the previous node. Besdies, the next node should contain all mods that the previous node has.
                         idBoxes[j] = true;
                     }
@@ -452,7 +450,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="childBox"></param>
         /// <param name="x"></param>
         /// <returns></returns>
-        public static bool NodeCheck(GlycanBox ModBox, string[] modPos_motif, int x, int y)
+        public static bool NodeCheck(ModBox ModBox, string[] modPos_motif, int x, int y)
         {
             //Step 1: Check the number of modifications 
 
@@ -462,7 +460,7 @@ namespace EngineLayer.GlycoSearch
             //MinModNum: the least mods we can have up to current mod pos. In order to get min number, the min = number of glycan in the box - number of node from the last.
             //Ex. 3 glycan in the box, end position is 7, then for position 5, the min = 3 - (7-5) = 1.
             int minModNum = ModBox.ModIds.Length - (modPos_motif.Length - 1 - x);
-            var childBox = ModBox.ChildGlycanBoxes[y]; // Get the childBox from the ModBox, which is the glycanBox in the localization graph.
+            var childBox = ModBox.ChildBoxes[y]; // Get the childBox from the ModBox, which is the glycanBox in the localization graph.
             if (childBox.NumberOfMods < minModNum || childBox.NumberOfMods > maxModNum)
             {
                 return false; // The number of modifications is not within the valid range
@@ -473,7 +471,7 @@ namespace EngineLayer.GlycoSearch
             var motifInBox = new Dictionary<string, int>();
             foreach (var modId in childBox.ModIds)
             {
-                var motif = GlycanBox.GlobalOGlycans[modId].Target.ToString();
+                var motif = ModBox.GlobalModifications[modId].Target.ToString();
 
                 if (!motifInBox.ContainsKey(motif))
                 {
@@ -511,10 +509,10 @@ namespace EngineLayer.GlycoSearch
         /// <param name="currentY"></param>
         /// <param name="modPos"></param>
         /// <returns></returns>
-        public static bool MotifCheck(GlycanBox modBox, int preY, int currentY, string motif)
+        public static bool MotifCheck(ModBox modBox, int preY, int currentY, string motif)
         {
-            var preModBoxId = modBox.ChildGlycanBoxes[preY].ModIds;
-            var currentModBoxId = modBox.ChildGlycanBoxes[currentY].ModIds;
+            var preModBoxId = modBox.ChildBoxes[preY].ModIds;
+            var currentModBoxId = modBox.ChildBoxes[currentY].ModIds;
 
             var modDiff = GetDiff(preModBoxId, currentModBoxId);
 
@@ -523,7 +521,7 @@ namespace EngineLayer.GlycoSearch
                 return true; // If there is no difference, there is no need for motif checking
             }
             
-            Modification modForthisNode = GlycanBox.GlobalOGlycans[modDiff[0]];
+            Modification modForthisNode = ModBox.GlobalModifications[modDiff[0]];
             return modForthisNode.Target.ToString() == motif;
         }
 

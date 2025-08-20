@@ -153,7 +153,7 @@ namespace Test
                 List<double> intensities2 = new List<double>();
 
                 var frags = new List<Product>();
-                pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
+                pepWithSetMods.Fragment(DissociationType.EThcD, FragmentationTerminus.Both, frags);
                 foreach (var aok in frags)
                 {
                     mz2.Add(aok.NeutralMass.ToMz(1));

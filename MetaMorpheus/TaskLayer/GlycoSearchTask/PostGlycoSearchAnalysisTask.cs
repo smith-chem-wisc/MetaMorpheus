@@ -58,8 +58,6 @@ namespace TaskLayer
                     Directory.CreateDirectory(individualFileResults);
                 }
 
-                
-
                 foreach (var fileSpecificPSMs in filteredPsms.GroupBy(p => p.FullFilePath)) //group by file path, and the path will be the key for the dictionary
                 {
                     string individualFileFolder = Path.GetFileNameWithoutExtension(fileSpecificPSMs.Key); //folder name.
@@ -71,7 +69,7 @@ namespace TaskLayer
                     var fspList = fileSpecificPSMs.ToList();
                     if (Parameters.GlycoSearchParameters.DoParsimony)
                     {
-                        GlycoProteinAnalysis(fspList, individualFileFolderPath, individualFileFolder); //Creat the proteinGroups file 
+                        GlycoProteinAnalysis(fspList, individualFileFolderPath, individualFileFolder); //Create the proteinGroups file 
                     }
                     
                     foreach (GlycoSpectralMatch gsm in fspList) //maybe this needs to be the filterd list???
@@ -103,8 +101,6 @@ namespace TaskLayer
                         WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_oglyco_localization_file);
                         // Writing the oglyco results to a file and summary text
                         WriteGlycoFile.WritePsmGlycoToTsv(OglyInAllPsms, writtenFileOGlyco, true); //we write this last so localization can be attempted 
-                        
-
                     }
                     break;
                 case GlycoSearchType.NGlycanSearch:
@@ -141,6 +137,21 @@ namespace TaskLayer
                         WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_no_glyco_localization_file);
                         WriteGlycoFile.WritePsmGlycoToTsv(allPsmsgly, writtenFileNOGlyco, true); //we write this last so localization can be attempted
                     
+                    }
+                    break;
+                case GlycoSearchType.ModSearch:
+                    var modAllPsm = filteredPsms.Where(p=> p.Routes == null).ToList();
+                    if (modAllPsm.Any())
+                    {
+                        SingleFDRAnalysis(modAllPsm, commonParameters, new List<string> {taskId} );
+                        var writtenFileMod = Path.Combine(OutputFolder + "\\mod" + ".psmtsv");
+                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(modAllPsm.Where(p => p.Accession != null && p.OneBasedStartResidue.HasValue).ToList());
+                        var seen_mod_localization_file = Path.Combine(OutputFolder + "\\seen_mod_localization" + ".tsv");
+                        WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_mod_localization_file);
+
+                        var protein_mod_localization_file = Path.Combine(OutputFolder + "\\protein_mod_localization" + ".tsv");
+                        WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_mod_localization_file);
+                        WriteGlycoFile.WritePsmGlycoToTsv(modAllPsm, writtenFileMod, true); //we write this last so localization can be attempted
                     }
                     break;
             }
@@ -213,6 +224,12 @@ namespace TaskLayer
                     MyTaskResults.AddTaskSummaryText("All target Glyco PSMs within 1% FDR: " + (gsms?.
                             Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
                     MyTaskResults.AddTaskSummaryText("All target Level 1 Glyco PSMs within 1% FDR: " + (Level1gsms
+                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
+                    break;
+                case GlycoSearchType.ModSearch:
+                    MyTaskResults.AddTaskSummaryText("All target Mod PSMs within 1% FDR: " + (gsms?.
+                        Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
+                    MyTaskResults.AddTaskSummaryText("All target Level 1 Mod PSMs within 1% FDR: " + (Level1gsms
                         ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
                     break;
             }

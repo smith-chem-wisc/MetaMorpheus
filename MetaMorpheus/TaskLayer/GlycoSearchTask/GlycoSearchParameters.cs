@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using EngineLayer;
 using System.Linq;
 using UsefulProteomicsDatabases;
@@ -33,6 +34,14 @@ namespace TaskLayer
             WriteContaminants = true;
             WriteSpectrumLibrary = false;
             DisposeOfFileWhenDone = true;
+
+            // ModSearch options
+            ListOfInterestedMods = GlobalVariables.AllModsKnown
+                .Where(b => b.ModificationType.Equals("N-linked glycosylation") ||
+                            b.ModificationType.Equals("Other glycosylation") ||
+                            b.ModificationType.Equals("O-linked glycosylation"))
+                .Select(b => (b.ModificationType, b.IdWithMotif))
+                .ToList();
         }
         public string OGlycanDatabasefile { get; set; }
         public string NGlycanDatabasefile { get; set; }
@@ -45,7 +54,7 @@ namespace TaskLayer
         public bool DoParsimony { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool ModPeptidesAreDifferent { get; set; }
-        
+
         //quantification options
         public bool DoQuantification { get; set; }
         public bool DoMbrAnalysis { get; set; }
@@ -58,5 +67,8 @@ namespace TaskLayer
         public bool WriteContaminants { get; set; }
         public bool WriteSpectrumLibrary { get; set; }
         public bool DisposeOfFileWhenDone { get; set; }
+
+        // ModSearch options
+        public List<(string, string)> ListOfInterestedMods { get; set; }
     }
 }

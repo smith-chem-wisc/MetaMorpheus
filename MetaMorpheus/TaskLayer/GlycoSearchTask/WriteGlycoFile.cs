@@ -16,10 +16,10 @@ namespace TaskLayer
                 return;
             }
 
-            string header = GlycoSpectralMatch.GetTabSepHeaderSingle();
+            string header = GlycoSpectralMatch.GetTabSepHeader_unModifiedPeptide();
             if (writeGlycoPsms)
             {
-                header += (GlycoSpectralMatch.GetTabSeperatedHeaderGlyco());
+                header += (GlycoSpectralMatch.GetTabSeparatedHeaderGlyco_ModifiedPeptide());
             }
 
             using (StreamWriter output = new StreamWriter(filePath))
@@ -29,14 +29,14 @@ namespace TaskLayer
                 {
                     foreach (var gsm in gsms)
                     {
-                        output.WriteLine(gsm.SingleToString() + "\t" + gsm.GlycoToString());
+                        output.WriteLine(gsm.UnModifiedPepToString() + "\t" + gsm.ModToString());
                     }
                 }
                 else
                 {
                     foreach (var gsm in gsms)
                     {
-                        output.WriteLine(gsm.SingleToString());
+                        output.WriteLine(gsm.UnModifiedPepToString());
                     }
                 }
 
@@ -44,7 +44,7 @@ namespace TaskLayer
         }
 
         //The function is to summarize localized glycan by protein site.
-        public static void WriteSeenProteinGlycoLocalization(Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
+        public static void WriteSeenProteinGlycoLocalization(Dictionary<(string proteinAccession, string proteinPosition, int modId), GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
         {
             if (glycoProteinParsimony.Keys.Count == 0)
             { return; }
@@ -60,7 +60,7 @@ namespace TaskLayer
                                 protein.Key.proteinAccession + "\t" +
                                 protein.Key.proteinPosition + "\t" +
                                 protein.Value.AminoAcid + "\t" +
-                                GlycanBox.GlobalOGlycans[protein.Key.glycanId].Composition + "\t" +
+                                ModBox.GlobalOGlycans[protein.Key.modId].Composition + "\t" +
                                 protein.Value.IsLocalized + "\t" +
                                 protein.Value.MinQValue.ToString("0.000") + "\t" +
                                 protein.Value.BestLocalizeLevel + "\t" +
@@ -76,24 +76,24 @@ namespace TaskLayer
         /// </summary>
         /// <param name="glycoProteinParsimony"></param>
         /// <param name="outputPath"></param>
-        public static void WriteProteinGlycoLocalization(Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
+        public static void WriteProteinGlycoLocalization(Dictionary<(string proteinAccession, string proteinPosition, int modId), GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
         {
             if (glycoProteinParsimony.Count == 0)
             { return; }
 
-            Dictionary<string, HashSet<string>> localizedglycans = new Dictionary<string, HashSet<string>>();
+            Dictionary<string, HashSet<string>> localizedMods = new Dictionary<string, HashSet<string>>();
             foreach (var item in glycoProteinParsimony.Where(p => p.Value.IsLocalized && p.Value.MinQValue <= 0.01))
             {
 
                 var key = item.Key.proteinAccession + "#" + item.Key.proteinPosition;
-                if (localizedglycans.ContainsKey(key))
+                if (localizedMods.ContainsKey(key))
                 {
-                    localizedglycans[key].Add(item.Key.glycanId.ToString());
+                    localizedMods[key].Add(item.Key.modId.ToString());
                 }
                 else
                 {
-                    localizedglycans[key] = new HashSet<string>();
-                    localizedglycans[key].Add(item.Key.glycanId.ToString());
+                    localizedMods[key] = new HashSet<string>();
+                    localizedMods[key].Add(item.Key.modId.ToString());
                 }
 
             }
@@ -102,15 +102,14 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("Protein Accession\tModification Site\tLocalized Glycan Number\tLocalized Glycans");
-                foreach (var local in localizedglycans.OrderBy(p => p.Key))
+                foreach (var local in localizedMods.OrderBy(p => p.Key))
                 {
                     var x = local.Key.Split('#');
                     output.WriteLine(
                         x[0] + "\t" +
                         x[1] + "\t" +
                         local.Value.Count() + "\t" +
-                        String.Join(",", local.Value.Select(p => GlycanBox.GlobalOGlycans[int.Parse(p)].Composition))
-                        );
+                        String.Join(",", local.Value.Select(p => ModBox.GlobalOGlycans[int.Parse(p)].Composition)));
                 }
             }
         }
