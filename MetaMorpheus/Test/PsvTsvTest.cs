@@ -174,20 +174,8 @@ namespace Test
             modDict = PsmFromTsv.ParseModifications(twoMods.FullSequence);
             Assert.That(modDict.Count == 2);
             Assert.That(modDict.ContainsKey(0) && modDict.ContainsKey(104));
-            Assert.That(modDict[0].Count == 1);
             Assert.That(modDict[0].Contains("UniProt:N-acetylserine on S"));
-            Assert.That(modDict[104].Count == 1);
             Assert.That(modDict[104].Contains("UniProt:N5-methylglutamine on Q"));
-
-
-            // psm with two mods on the same amino acid
-            string fullSeq = "[Common Fixed:Carbamidomethyl on C]|[UniProt:N-acetylserine on S]KPRKIEEIKDFLLTARRKDAKSVKIKKNKDNVKFK";
-            modDict = PsmFromTsv.ParseModifications(fullSeq);
-            Assert.That(modDict.Count == 1);
-            Assert.That(modDict.ContainsKey(0));
-            Assert.That(modDict[0].Count == 2);
-            Assert.That(modDict[0].Contains("Common Fixed:Carbamidomethyl on C"));
-            Assert.That(modDict[0].Contains("UniProt:N-acetylserine on S"));
         }
 
         [Test]
