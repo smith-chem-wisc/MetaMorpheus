@@ -3,9 +3,12 @@ using EngineLayer;
 using EngineLayer.GlycoSearch;
 using FlashLFQ;
 using MassSpectrometry;
+using MathNet.Numerics;
 using Nett;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
+using Omics;
+using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
@@ -18,10 +21,8 @@ using System.Reflection.Metadata;
 using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 using System.Windows.Media.Animation;
-using MathNet.Numerics;
-using Omics;
-using Omics.Digestion;
 using TaskLayer;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
@@ -255,7 +256,6 @@ namespace Test
             glycoSearchTask._glycoSearchParameters.GlycoSearchType = GlycoSearchType.ModSearch;
             glycoSearchTask._glycoSearchParameters.MaximumOGlycanAllowed = 2;
             glycoSearchTask._glycoSearchParameters.ListOfInterestedMods = interestMods;
-            glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = false;
             string spectraFile = "E:\\ModPair\\RegularCompare\\fakeRaw_EtHCD.mzML";
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
             int iii = 0;
@@ -272,26 +272,80 @@ namespace Test
             HashSet<string> answerSet = new HashSet<string>();
             foreach (var line in File.ReadLines(anserPsm))
             {
-                answerSet.Add(line);
+                string newline = line;
+                if (newline.Contains("[UniProt:Phosphoserine on S]"))
+                {
+                    newline = newline.Replace("[UniProt:Phosphoserine on S]", "[Common Biological:Phosphorylation on S]");
+                }
+                if (newline.Contains("[UniProt:Phosphothreonine on T]"))
+                {
+                    newline = newline.Replace("[UniProt:Phosphothreonine on T]", "[Common Biological:Phosphorylation on T]");
+                }
+                answerSet.Add(newline);
             }
             HashSet<string> metaSet = new HashSet<string>();
             foreach (var line in File.ReadLines(metaPsm).Skip(0))
             {
-                string full = line.Split('\t')[14];
-                metaSet.Add(line);
+                var lines = line.Split('\t');
+                if (lines[13] == lines[14])
+                {
+                    continue; 
+                }
+                if (line.Split('\t')[33].Contains('Y') || line.Split('\t')[32].Contains('Y'))
+                {
+                    continue;
+                }
+
+                string newline = line.Split('\t')[14];
+                if (newline.Contains("[UniProt:Phosphoserine on S]"))
+                {
+                    newline = newline.Replace("[UniProt:Phosphoserine on S]", "[Common Biological:Phosphorylation on S]");
+                }
+                if (newline.Contains("[UniProt:Phosphothreonine on T]"))
+                {
+                    newline = newline.Replace("[UniProt:Phosphothreonine on T]", "[Common Biological:Phosphorylation on T]");
+                }
+                metaSet.Add(newline);
             }
+
             HashSet<string> modPairSet = new HashSet<string>();
-            foreach (var line in File.ReadLines(modPairPsm).Skip(0))
+            foreach (var line in File.ReadLines(modPairPsm))
             {
+                var lines = line.Split('\t');
+                if (lines[11] == lines[13])
+                {
+                    continue;
+                }
+                if (lines[24] == "D")
+                {
+                    continue;
+                }
+
                 string full = line.Split('\t')[13];
-                modPairSet.Add(line);
+                modPairSet.Add(full);
             }
             HashSet<string> gptmdSet = new HashSet<string>();
             foreach (var line in File.ReadLines(GptmdPsm).Skip(0))
             {
+                var lines = line.Split('\t');
+                if (lines[13] == lines[14])
+                {
+                    continue;
+                }
+                if (lines[33].Contains('Y') || lines[32].Contains('Y'))
+                {
+                    continue;
+                }
                 string full = line.Split('\t')[14];
-                gptmdSet.Add(line);
+                gptmdSet.Add(full);
             }
+
+            // Find strings in answerSet but not in metaSet
+            var notInMeta = answerSet.Except(metaSet).ToList();
+            // Find strings in answerSet but not in modPairSet
+            var notInModPair = answerSet.Except(modPairSet).ToList();
+            // Find strings in answerSet but not in gptmdSet
+            var notInGptmd = answerSet.Except(gptmdSet).ToList();
 
             int iiii = 0;
         }

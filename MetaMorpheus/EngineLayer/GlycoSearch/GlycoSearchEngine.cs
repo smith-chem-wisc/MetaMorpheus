@@ -642,10 +642,22 @@ namespace EngineLayer.GlycoSearch
             for (int ind = 0; ind < idsOfPeptidesPossiblyObserved.Count; ind++)
             {
                 var thePeptideCandidate = PeptideIndex[idsOfPeptidesPossiblyObserved[ind]]; // Get the peptide from the candidate list.
+                if (thePeptideCandidate.BaseSequence == "SSSVLSLEGSEKGLARHGSATDSLSCQLSPEVDISVGVATEDSPSVNGMEPPSPGCPVEPDR")
+                {
+                    int iiii = 0;
+                }
 
                 if (PrecursorSearchMode.Within(theScan.PrecursorMass, thePeptideCandidate.MonoisotopicMass)) // If the peptide mass is indentical to the precursor mass (or within the tolerance), we can directly search the glycopeptide.
                 {
+                    if (thePeptideCandidate.BaseSequence == "SSSVLSLEGSEKGLARHGSATDSLSCQLSPEVDISVGVATEDSPSVNGMEPPSPGCPVEPDR")
+                    {
+                        int iiii = 0;
+                    }
                     MatchUnmodifiedPeptide(theScan, scanIndex, scoreCutOff, thePeptideCandidate, ind, ref possibleMatches);
+                }
+                if (thePeptideCandidate.BaseSequence == "SSSVLSLEGSEKGLARHGSATDSLSCQLSPEVDISVGVATEDSPSVNGMEPPSPGCPVEPDR")
+                {
+                    int iiii = 0;
                 }
                 else if (theScan.PrecursorMass - thePeptideCandidate.MonoisotopicMass >= MassDiffThreshold) //If not, we need to consider the glycan mass difference.
                 {
@@ -653,6 +665,10 @@ namespace EngineLayer.GlycoSearch
                     var massDiffLow = PrecursorSearchMode.GetMinimumValue(theScan.PrecursorMass) - thePeptideCandidate.MonoisotopicMass;
 
                     var massDiffHigh = PrecursorSearchMode.GetMaximumValue(theScan.PrecursorMass) - thePeptideCandidate.MonoisotopicMass;
+                    if (thePeptideCandidate.BaseSequence == "SSSVLSLEGSEKGLARHGSATDSLSCQLSPEVDISVGVATEDSPSVNGMEPPSPGCPVEPDR")
+                    {
+                        int iiii = 0;
+                    }
 
                     if (massDiffHigh < ModBoxes.First().Mass || massDiffLow > ModBoxes.Last().Mass)
                     {
@@ -667,7 +683,10 @@ namespace EngineLayer.GlycoSearch
                     {
                         continue;
                     }
-
+                    if (thePeptideCandidate.BaseSequence == "SSSVLSLEGSEKGLARHGSATDSLSCQLSPEVDISVGVATEDSPSVNGMEPPSPGCPVEPDR")
+                    {
+                        int iiii = 0;
+                    }
                     //Find O-Glycan or other Mods
                     MatchModifiedPeptide(theScan, scanIndex, scoreCutOff, thePeptideCandidate, ind, massDiffLow, oxoniumIonIntensities, ref possibleMatches);
                 }
