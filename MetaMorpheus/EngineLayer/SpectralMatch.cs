@@ -531,8 +531,8 @@ namespace EngineLayer
         {
             if (matchedFragments != null && matchedFragments.Count != 0)
             {
-                var nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime).Select(f => f.NeutralTheoreticalProduct.ResiduePosition);
-                var cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime).Select(f => peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.ResiduePosition);
+                var nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime).Select(f => f.NeutralTheoreticalProduct.FragmentNumber);
+                var cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime).Select(f => peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.FragmentNumber);
 
                 return nIons.Intersect(cIons).Count();
             }
