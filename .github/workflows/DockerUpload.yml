@@ -14,7 +14,7 @@ jobs:
     needs: [build-test]
     timeout-minutes: 20
     env:
-      DOCKER_USER: ${{ vars.DOCKER_USERNAME }}
+      DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     steps:
     - name: Checkout
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      DOCKER_USER: ${{ vars.DOCKER_USERNAME }}
+      DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     steps:
     - name: Checkout
