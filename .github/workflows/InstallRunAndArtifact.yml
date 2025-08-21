@@ -14,7 +14,10 @@ jobs:
   install:
     name: Create Installer Artifact
     runs-on: windows-latest
-
+    env:
+      KEY_SECRET: ${{ secrets.KEY_SECRET }}
+      KEY_CERT: ${{ secrets.KEY_CERT }}
+      SIGN_CERT: ${{ secrets.SIGN_CERT }}
     steps:
       - uses: actions/checkout@v4
 
