@@ -1,0 +1,71 @@
+name: Docker Uploads
+
+on:
+  push:
+    branches: [ master ]         # dev tag on merges to master
+  release:
+    types: [released, edited]    # latest + version tag on new releases
+  
+  # Docker (Linux) push on branch merges (not PRs)
+jobs:
+  docker-dev:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    needs: [build-test]
+    timeout-minutes: 20
+    env:
+      DOCKER_USER: ${{ vars.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore ./MetaMorpheus.sln
+    - name: Build (CMD)
+      run: dotnet publish /p:Configuration=Release ./CMD/CMD.csproj  -f net8.0
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ env.DOCKER_USER }}
+        password: ${{ env.DOCKER_TOKEN }}
+    - name: Build and push :dev
+      uses: docker/build-push-action@v6
+      with:
+        context: "/home/runner/work/MetaMorpheus/MetaMorpheus"
+        push: true
+        tags: smithchemwisc/metamorpheus:dev
+
+# Push to "latest" and specific release tags on new release
+  push-release:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DOCKER_USER: ${{ vars.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore ./MetaMorpheus.sln
+    - name: Build (CMD)
+      run: dotnet publish /p:Configuration=Release ./CMD/CMD.csproj  -f net8.0
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ env.DOCKER_USER }}
+        password: ${{ env.DOCKER_TOKEN }}
+    - name: Build and push :latest
+      uses: docker/build-push-action@v6
+      with:
+        context: "/home/runner/work/MetaMorpheus/MetaMorpheus"
+        push: true
+        tags: smithchemwisc/metamorpheus:${{ github.event.release.tag_name }}, smithchemwisc/flashlfq:latest
