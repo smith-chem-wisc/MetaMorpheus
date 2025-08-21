@@ -75,10 +75,11 @@ jobs:
             Write-Host "⚠️ Certificate secrets not available. Skipping signing."
             exit 0
           }
-
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "$env:KEY_CERT", "DefaultKeySet")
-          Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert
-
+          
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+          $cert.Import($env:SIGN_CERT,$env:KEY_CERT,'DefaultKeySet')
+          Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert 
+          
       - name: Zip command-line version
         run: |
           7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\* "-x!*.xml"
