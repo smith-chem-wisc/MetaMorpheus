@@ -57,7 +57,7 @@ public class DeconHostViewModel : BaseViewModel
                         {
                             AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 12, 4, 3),
                             AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 60, 4, 3),
-                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-20, -1, 4, 3),
+                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-20, -1, 4, 3, Polarity.Negative, new OxyriboAveragine()),
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
@@ -72,7 +72,7 @@ public class DeconHostViewModel : BaseViewModel
                         {
                             AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 10, 4, 3),
                             AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 10, 4, 3),
-                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-10, -1, 4, 3),
+                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-10, -1, 4, 3, Polarity.Negative, new OxyriboAveragine()),
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());
@@ -181,6 +181,7 @@ public class DeconHostViewModel : BaseViewModel
     /// This enables the user to set parameters, switch to another, and switch back without losing their settings
     /// </summary>
     public ObservableCollection<DeconParamsViewModel> PrecursorDeconvolutionParametersList { get; protected set; }
+    public ObservableCollection<Polarity> Polarities { get; } = [.. Enum.GetValues<Polarity>().Skip(1).Take(2)];
     private DeconParamsViewModel? _precursorDeconvolutionParameters;
 
     /// <summary>

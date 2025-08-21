@@ -162,7 +162,7 @@ namespace EngineLayer
             }
         }
 
-        internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm)
+        internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm, bool includeOneOverK0Column = false)
         {
             s[SpectrumMatchFromTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
             s[SpectrumMatchFromTsvHeader.Ms2ScanNumber] = psm == null ? " " : psm.ScanNumber.ToString(CultureInfo.InvariantCulture);
@@ -174,6 +174,8 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.PrecursorIntensity] = psm == null ? " " : psm.PrecursorScanIntensity.ToString("F5", CultureInfo.InvariantCulture);
             s[SpectrumMatchFromTsvHeader.PrecursorMz] = psm == null ? " " : psm.ScanPrecursorMonoisotopicPeakMz.ToString("F5", CultureInfo.InvariantCulture);
             s[SpectrumMatchFromTsvHeader.PrecursorMass] = psm == null ? " " : psm.ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture);
+            if ( includeOneOverK0Column) // This information is only written if one or more spectra have a K0 value, otherwise it is not included in the output
+                s[SpectrumMatchFromTsvHeader.OneOverK0] = psm == null ? " " : psm.ScanOneOverK0.HasValue ? psm.ScanOneOverK0.Value.ToString("F5", CultureInfo.InvariantCulture) : "N/A";
             s[SpectrumMatchFromTsvHeader.Score] = psm == null ? " " : psm.Score.ToString("F3", CultureInfo.InvariantCulture);
             s[SpectrumMatchFromTsvHeader.DeltaScore] = psm == null ? " " : psm.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
             s[SpectrumMatchFromTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch)).ResolvedString;
@@ -205,7 +207,7 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.GeneName] = geneString;
             s[SpectrumMatchFromTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.Organism)).ResolvedString;
 
-            if (sm is PeptideSpectralMatch psm || sm is null)
+            if (sm is PeptideSpectralMatch psm || sm is null && GlobalVariables.AnalyteType != AnalyteType.Oligo)
             {
                 s[SpectrumMatchFromTsvHeader.IdentifiedSequenceVariations] = pepWithModsIsNull ? " " :
                Resolve(pepsWithMods.Select(p => p as PeptideWithSetModifications)

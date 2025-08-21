@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Media;
 using Readers;
+using GuiFunctions.MetaDraw;
 
 namespace GuiFunctions
 {
@@ -24,11 +25,13 @@ namespace GuiFunctions
         public static readonly char[] SuperScriptNumbers = {
             '\u2070', '\u00b9', '\u00b2', '\u00b3', '\u2074',
             '\u2075', '\u2076', '\u2077', '\u2078', '\u2079'
-        }; 
-        
+        };
+
         #endregion
 
         #region Customizable Settings
+
+        public static bool SuppressMessageBoxes { get; set; } = false;
 
         // graphic settings
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
@@ -54,6 +57,12 @@ namespace GuiFunctions
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double SpectrumDescriptionFontSize { get; set; } = 10;
+
+        public static bool DisplayChimeraLegend { get; set; } = true;
+        public static double ChimeraLegendMaxWidth { get; set; } = 420;
+        public static bool ChimeraLegendTakeFirstIfAmbiguous { get; set; } = false;
+        public static LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
+        public static LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -90,7 +99,7 @@ namespace GuiFunctions
             OxyColors.Thistle, OxyColors.Tomato, OxyColors.Transparent, OxyColors.Turquoise, OxyColors.Violet, OxyColors.Wheat, OxyColors.White, OxyColors.WhiteSmoke, OxyColors.Yellow
         };
         public static string[] SpectrumDescriptors { get; set; } =
-        {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ",
+        {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ", "Retention Time: ", "1/K\u2080: ",
         "Decoy/Contaminant/Target: ", "Sequence Length: ", "Ambiguity Level: ", "Spectral Angle: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
@@ -443,6 +452,9 @@ namespace GuiFunctions
                 DrawStationarySequence = DrawStationarySequence,
                 DrawNumbersUnderStationary = DrawNumbersUnderStationary,
                 ShowLegend = ShowLegend,
+                DisplayChimeraLegend = DisplayChimeraLegend,
+                ChimeraLegendMainTextType = ChimeraLegendMainTextType,
+                ChimeraLegendSubTextType = ChimeraLegendSubTextType,
                 LocalizationLevelStart = LocalizationLevelStart,
                 LocalizationLevelEnd = LocalizationLevelEnd,
                 ExportType = ExportType,
@@ -459,6 +471,9 @@ namespace GuiFunctions
                 StrokeThicknessUnannotated = StrokeThicknessUnannotated,
                 StrokeThicknessAnnotated = StrokeThicknessAnnotated,
                 SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
+                SuppressMessageBoxes = SuppressMessageBoxes,
+                ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous,
+                ChimeraLegendMaxWidth = ChimeraLegendMaxWidth   
             };
         }
 
@@ -482,6 +497,9 @@ namespace GuiFunctions
             DrawStationarySequence = settings.DrawStationarySequence;
             DrawNumbersUnderStationary = settings.DrawNumbersUnderStationary;
             ShowLegend = settings.ShowLegend;
+            DisplayChimeraLegend = settings.DisplayChimeraLegend;
+            ChimeraLegendMainTextType = settings.ChimeraLegendMainTextType;
+            ChimeraLegendSubTextType = settings.ChimeraLegendSubTextType;
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
             ExportType = settings.ExportType;
@@ -493,6 +511,9 @@ namespace GuiFunctions
             SpectrumDescriptionFontSize = settings.SpectrumDescriptionFontSize;
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
+            SuppressMessageBoxes = settings.SuppressMessageBoxes;
+            ChimeraLegendTakeFirstIfAmbiguous = settings.ChimeraLegendTakeFirstIfAmbiguous;
+            ChimeraLegendMaxWidth = settings.ChimeraLegendMaxWidth;
 
             try // Product Type Colors
             {

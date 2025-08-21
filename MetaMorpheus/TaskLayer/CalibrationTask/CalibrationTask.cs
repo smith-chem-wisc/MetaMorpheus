@@ -89,7 +89,19 @@ namespace TaskLayer
 
                 // get filename stuff
                 string originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
+                var fileExtension = Path.GetExtension(originalUncalibratedFilePath);
                 string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
+                bool calibrated = false;
+                if (fileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase))
+                {
+                    unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
+                    // provide a message indicating why we couldn't calibrate
+                    Warn("Calibration for " + fileExtension + " files is not supported.");
+                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
+                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
+                    continue;
+                }
+
                 string calibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
                 string uncalibratedNewFullFilePath = Path.Combine(OutputFolder, Path.GetFileName(originalUncalibratedFilePath));
 
@@ -256,7 +268,7 @@ namespace TaskLayer
                 new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
 
             Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
-            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });

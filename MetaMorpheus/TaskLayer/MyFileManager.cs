@@ -13,7 +13,7 @@ namespace TaskLayer
     public class MyFileManager
     {
         private readonly bool DisposeOfFileWhenDone;
-        private readonly ConcurrentDictionary<string, MsDataFile> MyMsDataFiles = new ConcurrentDictionary<string, MsDataFile>();
+        private readonly ConcurrentDictionary<string, MsDataFile> MyMsDataFiles = new ConcurrentDictionary<string, MsDataFile>(); // Dictionary to hold loaded MsDataFiles, with the file path as the key.
 
         public MyFileManager(bool disposeOfFileWhenDone)
         {

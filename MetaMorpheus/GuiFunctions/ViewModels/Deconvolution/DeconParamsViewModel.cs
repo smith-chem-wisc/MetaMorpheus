@@ -73,7 +73,6 @@ public abstract class DeconParamsViewModel : BaseViewModel
         }
     }
 
-    // TODO: When RNA is added to MetaMorpheus, add the polarity to the GUI
     public Polarity Polarity
     {
         get => Parameters.Polarity;

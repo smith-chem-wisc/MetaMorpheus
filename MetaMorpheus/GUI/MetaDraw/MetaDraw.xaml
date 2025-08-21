@@ -9,6 +9,7 @@
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
         Title="MetaDraw" 
+        Closing="MetaDraw_OnClosing"
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1200">
     <!-- To make changes here more amendable in the future, an MVC architecture approach should be taken. In this approach, many of the variables and data 
          are store in C# classes that are bound to the xaml files. The xaml files reference their bound data instead of it being assinged in the code 
@@ -17,6 +18,36 @@
          the other components  -->
     <Grid>
         <TabControl >
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border Name="Border"
+                                        BorderThickness="1,1,1,0"
+                                        BorderBrush="Gainsboro"
+                                        CornerRadius="4,4,0,0"
+                                        Margin="2,0"
+                                        Height="{TemplateBinding Height}">
+                                    <ContentPresenter x:Name="ContentSite"
+                                                      VerticalAlignment="Center"
+                                                      HorizontalAlignment="Center"
+                                                      ContentSource="Header"
+                                                      Margin="10,2"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Border" Property="Background" Value="LightSkyBlue" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource BackgroundColor}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
             <TabItem Header="PSM Annotation" Background="DarkGray">
                 <DockPanel>
                     <Grid>
@@ -108,7 +139,7 @@
                             <!--Select spectra file-->
                             <DockPanel Grid.Row="5" LastChildFill="True" Grid.ColumnSpan="3"  >
                                 <Label Content="Export As: " Width="75"  DockPanel.Dock="Left"/>
-                                <Button Name="exportPdfs" Content="{Binding}" DockPanel.Dock="Left" IsEnabled="False" Width="40" Click="PDFButton_Click" Margin="5 0 5 0"/>
+                                <Button Name="exportPdfs" Content="{Binding ExportType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}" DockPanel.Dock="Left" IsEnabled="False" Width="40" Click="PDFButton_Click" Margin="5 0 5 0"/>
                                 <Button Name="exportSpectrumLibrary" Content="Spectrum Library" DockPanel.Dock="Right" IsEnabled="False" Click="ExportSpectrumLibraryButton_Click" 
                                         Width="100" Margin="5 0 5 0" />
                             </DockPanel>
@@ -152,15 +183,7 @@
 
                                 <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
                                 <!--Settings menu-->
-                                <Button x:Name="Settings" Grid.Row="0" Grid.Column="1" Click="settings_Click" Background="White" 
-                                        BorderThickness="0" IsEnabled="{Binding SettingsView.CanOpen}">
-                                    <StackPanel Name="SettingsButton" Orientation="Horizontal">
-                                        <Image Source="Icons\icons8-settings-480.png" Margin="0,3,0,0" ></Image>
-                                        <ToolTipService.ToolTip>
-                                            <ToolTip Content="Settings" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
-                                        </ToolTipService.ToolTip>
-                                    </StackPanel>
-                                </Button>
+                                <local:SettingsButtonControl x:Name="SettingsButton" Grid.Row="0" Grid.Column="1"/>
 
                                 <!-- Scrolling Sequence and Ambiguous Textbox-->
                                 <Grid Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" >
@@ -217,7 +240,15 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height = "0.75*" />
                                             </Grid.RowDefinitions>
-                                            <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0"/>
+                                            <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0">
+                                                <oxy:PlotView.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="Copy m/z Spectrum (All)" Click="CopyMzSpectrum_Click"/>
+                                                        <MenuItem Header="Copy m/z Spectrum (Annotated)" Click="CopyAnnotatedMzSpectrum_Click"/>
+                                                        <MenuItem Header="Copy Matched Ions" Click="CopyMatchedIons_Click"/>
+                                                    </ContextMenu>
+                                                </oxy:PlotView.ContextMenu>
+                                            </oxy:PlotView>
                                         </Grid>
 
                                         <!--Canvas for drawing stationary sequence annotation-->
@@ -393,28 +424,6 @@
                                         </Expander>
                                     </Grid>
                                 </TabItem>
-
-                                <!-- ChimeraPlot -->
-                                <TabItem x:Name="ChimeraScanPlot" >
-                                    <TabItem.Header>
-                                        <Label Content="Chimeric Scan View" x:Name="ChimeraScanPlotTabItem" />
-                                    </TabItem.Header>
-                                    <Grid Name="chimeraPlotGrid">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition />
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-
-                                        <!-- spectrum annotation -->
-                                        <Grid Grid.Row="0" >
-                                            <oxy:PlotView x:Name="chimeraPlot" FontSize="16" FontStretch="Expanded"
-                                                          Margin="0 0 0 0"  VerticalAlignment="Stretch"/>
-                                        </Grid>
-
-                                        <!-- Chimera Legend -->
-                                        <local:ChimeraLegendControl Grid.Row="1" x:Name="ChimeraLegendControl" DataContext="{Binding}" Height="Auto"/>
-                                    </Grid>
-                                </TabItem>
                             </TabControl>
 
                             <!--Detailed PSM properties-->
@@ -436,6 +445,11 @@
                 </DockPanel>
             </TabItem>
 
+            <!-- Chimera Analysis tab -->
+            <TabItem Header="Chimera Annotation" Background="DarkGray" x:Name="ChimeraTab">
+                <local:ChimeraAnalysisTabView x:Name="ChimeraAnalysisTabView" />
+            </TabItem>
+            
             <!--Stats tab-->
             <TabItem Header="Data Visualization" Background="DarkGray">
                 <DockPanel>

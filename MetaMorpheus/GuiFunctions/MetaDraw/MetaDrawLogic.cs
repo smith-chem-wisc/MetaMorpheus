@@ -22,7 +22,10 @@ using Readers;
 using System.Threading;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Test")]
 namespace GuiFunctions
 {
     public class MetaDrawLogic
@@ -31,18 +34,16 @@ namespace GuiFunctions
         public ObservableCollection<string> SpectraFilePaths { get; private set; }
         public ObservableCollection<string> SpectralLibraryPaths { get; private set; }
         public ObservableCollection<SpectrumMatchFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, etc.
-        public ObservableCollection<SpectrumMatchFromTsv> ChimericSpectralMatches { get; private set; }
         public Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> SpectralMatchesGroupedByFile { get; private set; }
         public DrawnSequence StationarySequence { get; set; }
         public DrawnSequence ScrollableSequence { get; set; }
         public DrawnSequence SequenceAnnotation { get; set; }
-        public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
         public SpectrumMatchPlot SpectrumAnnotation { get; set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
 
         private List<SpectrumMatchFromTsv> AllSpectralMatches; // all loaded PSMs
-        private Dictionary<string, MsDataFile> MsDataFiles; // key is file name without extension
+        public Dictionary<string, MsDataFile> MsDataFiles { get; } // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
         private SpectralLibrary SpectralLibrary;
@@ -59,7 +60,6 @@ namespace GuiFunctions
             PeptideSpectralMatchesView = CollectionViewSource.GetDefaultView(FilteredListOfPsms);
             ThreadLocker = new object();
             CurrentlyDisplayedPlots = new List<SpectrumMatchPlot>();
-            ChimericSpectralMatches = new();
         }
 
         public List<string> LoadFiles(bool loadSpectra, bool loadPsms)
@@ -93,25 +93,6 @@ namespace GuiFunctions
             errors.AddRange(errors3);
 
             return errors;
-        }
-
-        public void DisplayChimeraSpectra(PlotView plotView, List<SpectrumMatchFromTsv> sms, out List<string> errors)
-        {
-            CleanUpCurrentlyDisplayedPlots();
-            errors = null;
-
-            // get the scan
-            if (!MsDataFiles.TryGetValue(sms.First().FileNameWithoutExtension, out MsDataFile spectraFile))
-            {
-                errors = new List<string>();
-                errors.Add("The spectra file could not be found for this PSM: " + sms.First().FileNameWithoutExtension);
-                return;
-            }
-            MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(sms.First().Ms2ScanNumber);
-            
-            ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(plotView, scan, sms);
-            ChimeraSpectrumMatchPlot.RefreshChart();
-            CurrentlyDisplayedPlots.Add(ChimeraSpectrumMatchPlot);
         }
 
         public void DisplaySpectrumMatch(PlotView plotView, SpectrumMatchFromTsv sm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors)
@@ -500,7 +481,7 @@ namespace GuiFunctions
 
         public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<SpectrumMatchFromTsv> spectrumMatches,
             ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors,
-            Canvas legendCanvas = null, Vector ptmLegendLocationVector = new())
+            Canvas legendCanvas = null, Vector ptmLegendLocationVector = new(), FragmentationReanalysisViewModel? reFragment = null)
         {
             errors = new List<string>();
 
@@ -518,16 +499,20 @@ namespace GuiFunctions
                     return;
                 }
 
+                // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
+                List<MatchedFragmentIon> oldMatchedIons = null;
+                if (reFragment is not null)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    var scan = GetMs2ScanFromPsm(psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    psm.MatchedIons = newIons;
+                }
+
                 if (plotView.Name == "plotView")
                 {
                     DisplaySequences(stationaryCanvas, null, null, psm);
                     DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
-                }
-                else if (plotView.Name == "chimeraPlot")
-                {
-                    List<SpectrumMatchFromTsv> chimericSms = FilteredListOfPsms
-                        .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
-                    DisplayChimeraSpectra(plotView, chimericSms, out errors);
                 }
                 
 
@@ -569,33 +554,37 @@ namespace GuiFunctions
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                             break;
 
-                        case "ChimeraSpectrumMatchPlot":
-                            ((ChimeraSpectrumMatchPlot)plot).ExportPlot(filePath, legendCanvas, plotView.ActualWidth,
-                                plotView.ActualHeight);
-                            break;
-
                         case "CrosslinkSpectrumMatchPlot":
                             ((CrosslinkSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                             break;
                     }
                 }
+                // put the original ions back in place if they were altered
+                if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                    psm.MatchedIons = oldMatchedIons;
             }
 
             if (plotView.Name == "plotView")
             {
-                DisplaySequences(stationaryCanvas, null, null, spectrumMatches.First());
-                DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out errors);
-            }
-            else if (plotView.Name == "chimeraPlot")
-            {
-                List<SpectrumMatchFromTsv> chimericPsms = FilteredListOfPsms
-                    .Where(p => p.Ms2ScanNumber == spectrumMatches.First().Ms2ScanNumber &&
-                                p.FileNameWithoutExtension == spectrumMatches.First().FileNameWithoutExtension)
-                    .ToList();
-                DisplayChimeraSpectra(plotView, chimericPsms, out errors);
-            }
+                var psm = spectrumMatches.First();
 
+                // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
+                List<MatchedFragmentIon> oldMatchedIons = null;
+                if (reFragment is not null && reFragment.Persist)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    var scan = GetMs2ScanFromPsm(psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    psm.MatchedIons = newIons;
+                }
+                DisplaySequences(stationaryCanvas, null, null, psm);
+                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+
+                // put the original ions back in place if they were altered
+                if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                    psm.MatchedIons = oldMatchedIons;
+            }
         }
 
         public MsDataScan GetMs2ScanFromPsm(SpectrumMatchFromTsv spectralMatch)
@@ -777,22 +766,6 @@ namespace GuiFunctions
             }
         }
 
-        public void FilterPsmsToChimerasOnly()
-        {
-            lock (ThreadLocker)
-            {
-                FilteredListOfPsms.Clear();
-
-                var filteredChimericPsms = ChimericSpectralMatches.Where(MetaDrawSettings.FilterAcceptsPsm);
-                foreach (var psm in filteredChimericPsms)
-                {
-                    if (filteredChimericPsms.Count(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
-                        FilteredListOfPsms.Add(psm);
-                }
-            }
-
-        }
-
         public void CleanUpResources()
         {
             lock (ThreadLocker)
@@ -938,7 +911,7 @@ namespace GuiFunctions
         /// </summary>
         /// <param name="bitmap">image to be exported</param>
         /// <param name="path">where it should be exported to</param>
-        private void ExportBitmap(System.Drawing.Bitmap bitmap, string path)
+        internal static void ExportBitmap(System.Drawing.Bitmap bitmap, string path)
         {
             switch (MetaDrawSettings.ExportType)
             {
@@ -1015,17 +988,6 @@ namespace GuiFunctions
                         }
                     }
                 }
-
-                foreach (var group in AllSpectralMatches
-                             .GroupBy(p => (p.Ms2ScanNumber, p.FileNameWithoutExtension))
-                             .Where(group => group.Count() > 1))
-                {
-                    foreach (var psm in group)
-                    {
-                        ChimericSpectralMatches.Add(psm);
-                    }
-                }
-
             }
             catch (Exception e)
             {
@@ -1051,11 +1013,17 @@ namespace GuiFunctions
             {
                 lock (ThreadLocker)
                 {
-                    var fileNameWithoutExtension = filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty);
-                    fileNameWithoutExtension = System.IO.Path.GetFileName(fileNameWithoutExtension);
-
+                    var fileNameWithoutExtension = System.IO.Path.GetFileName(filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty));
                     var spectraFile = MsDataFileReader.GetDataFile(filepath);
-                    spectraFile.InitiateDynamicConnection();
+                    if (spectraFile is TimsTofFileReader timsTofDataFile)
+                    {
+                        timsTofDataFile.LoadAllStaticData(maxThreads: Environment.ProcessorCount - 1); // timsTof files need to load all static data before they can be used, as dynamic access is not available for them
+                    }
+                    else
+                    {
+                        spectraFile.InitiateDynamicConnection();
+                    }
+
                     if (!MsDataFiles.TryAdd(fileNameWithoutExtension, spectraFile))
                     {
                         spectraFile.CloseDynamicConnection();

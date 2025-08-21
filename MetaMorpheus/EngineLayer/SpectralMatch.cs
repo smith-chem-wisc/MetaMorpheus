@@ -39,6 +39,15 @@ namespace EngineLayer
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = -1;
 
+            if(scan.TheScan is TimsDataScan timsScan)
+            {
+                ScanOneOverK0 = timsScan.OneOverK0;
+            }
+            else
+            {
+                ScanOneOverK0 = null; // this is only used for ion mobility data, so it can be null
+            }
+
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons);
         }
 
@@ -69,6 +78,7 @@ namespace EngineLayer
         public int PrecursorScanEnvelopePeakCount { get; }
         public double PrecursorFractionalIntensity { get; }
         public double ScanPrecursorMass { get; }
+        public double? ScanOneOverK0 { get; set; } // this is only used for ion mobility data, so it can be null
         public string FullFilePath { get; private set; }
         /// <summary>
         /// Refers to the index of the Ms2ScanWithSpecificMass in an array of Ms2ScansWithSpecificMass that is sorted by precursor mass
@@ -265,9 +275,9 @@ namespace EngineLayer
 
         #region IO
 
-        public static string GetTabSeparatedHeader()
+        public static string GetTabSeparatedHeader(bool includeOneOverK0Column = false)
         {
-            return string.Join("\t", DataDictionary(null, null).Keys);
+            return string.Join("\t", DataDictionary(null, null, includeOneOverK0Column: includeOneOverK0Column).Keys);
         }
 
         public override string ToString()
@@ -275,15 +285,15 @@ namespace EngineLayer
             return ToString(new Dictionary<string, int>());
         }
 
-        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false)
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr).Values);
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column).Values);
         }
 
-        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false)
+        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
-            PsmTsvWriter.AddBasicMatchData(s, psm);
+            PsmTsvWriter.AddBasicMatchData(s, psm, includeOneOverK0Column);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm, writePeptideLevelFdr);
@@ -297,7 +307,7 @@ namespace EngineLayer
         /// <summary>
         /// This method is used by protein parsimony to remove PeptideWithSetModifications objects that have non-parsimonious protein associations
         /// </summary>
-        public void TrimProteinMatches(HashSet<Protein> parsimoniousProteins)
+        public void TrimProteinMatches(HashSet<IBioPolymer> parsimoniousProteins)
         {
             if (IsDecoy)
             {
@@ -429,11 +439,11 @@ namespace EngineLayer
                 !this.MatchedFragmentIons.Any()) return;
             //Pull C terminal and N terminal Fragments and amino acid numbers
             var nTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
-                    p.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
+                    p.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime)
                 .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
 
             var cTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
-                    p.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
+                    p.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime)
                 .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
 
             //Create a hashset to store the covered amino acid positions
@@ -521,8 +531,8 @@ namespace EngineLayer
         {
             if (matchedFragments != null && matchedFragments.Count != 0)
             {
-                List<int> nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.FragmentNumber).ToList();
-                List<int> cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).Select(f => (peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.FragmentNumber)).ToList();
+                List<int> nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime).Select(f => f.NeutralTheoreticalProduct.FragmentNumber).ToList();
+                List<int> cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime).Select(f => (peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.FragmentNumber)).ToList();
                 if (nIons.Any() && cIons.Any())
                 {
                     return nIons.Intersect(cIons).Count();

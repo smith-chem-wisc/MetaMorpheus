@@ -24,7 +24,7 @@
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
-    <PackageReference Include="mzLib" Version="1.0.562" />
+    <PackageReference Include="mzLib" Version="1.0.566" />
     <PackageReference Include="NUnit" Version="4.1.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
@@ -138,6 +138,9 @@
     </None>
     <None Update="GlycoTestData\leukosialin.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\NGlycan_struct.gdb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\nglyco_f5.psmtsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -376,6 +379,12 @@
     <None Update="TestData\smalldb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\snippet.d\analysis.tdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\snippet.d\analysis.tdf_bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralLibrarySearch\1-81.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -505,6 +514,9 @@
     <None Update="TestData\TestExperimentalDesign\WrongNumberOfCells\small.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\timsTofSnippet.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\tinySemi.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -619,6 +631,9 @@
     <None Update="TMT_test\VA084TQ_6.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TopDownTestData\JurkatTopDownRep2Fract1_ms2.msalign">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TopDownTestData\simple.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -631,8 +646,20 @@
     <None Update="TopDownTestData\TDGPTMDSearchSingleSpectra.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TopDownTestData\ThreeHumanHistone.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TopDownTestData\TopDownSearchToml.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\16mer2.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\22mer-Am.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\6mer.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Transcriptomics\TestData\20mer1.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -646,8 +673,14 @@
     <None Update="Transcriptomics\TestData\20mer1.xml.gz">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Transcriptomics\TestData\22merMethyl_Snip.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Transcriptomics\TestData\GUACUG_NegativeMode_Sliced.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\RnaStandard_Subset.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Transcriptomics\TestData\TruncationAndVariantMods.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

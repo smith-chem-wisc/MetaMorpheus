@@ -25,7 +25,7 @@
         </Style>
     </UserControl.Resources>
 
-    <GroupBox Header="MS1 Deconvolution" > 
+    <GroupBox Header="{Binding GroupBoxHeader, RelativeSource={RelativeSource AncestorType=UserControl}}">
         <Grid d:DataContext="{x:Static guiFunctions:DeconHostModel.Instance}">
 
             <Grid.RowDefinitions>
@@ -46,6 +46,9 @@
 
                     <!-- Checkboxes -->
                     <ColumnDefinition Width="*" />
+
+                    <!-- Polarity ComboBox -->
+                    <ColumnDefinition Width="Auto" />
 
                     <!-- Decon Type ComboBox -->
                     <ColumnDefinition Width="Auto" />
@@ -79,8 +82,23 @@
                     </StackPanel>
                 </StackPanel>
 
+                <!-- Precursor Polarity ComboBox -->
+                <ComboBox Grid.Column="1" x:Name="PolarityComboBox" Width="100" Height="30" Margin="5 0"
+                          VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                          ItemsSource="{Binding Polarities}"
+                          SelectedItem="{Binding ElementName=PrecursorSpecificParams, Path=Content.DataContext.Polarity, 
+                            Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          Visibility="{Binding DisplayDeconSelectionComboBox, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                    <ComboBox.ToolTip>
+                        <TextBlock>
+                            Scan Polarity.
+                        </TextBlock>
+                    </ComboBox.ToolTip>
+                </ComboBox>
+
                 <!-- Precursor Decon Type ComboBox -->
-                <ComboBox Grid.Column="1" x:Name="DeconvolutionTypeComboBox" Width="100" Height="35"
+                <ComboBox Grid.Column="2" x:Name="PrecursorDeconvolutionTypeComboBox" Width="100" Height="30"
                           VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
                           ItemsSource="{Binding PrecursorDeconvolutionParametersList}"
                           SelectedItem="{Binding PrecursorDeconvolutionParameters}"
@@ -95,30 +113,56 @@
             </Grid>
 
             <!-- Specific Precursor Parameters -->
-            <ContentControl Grid.Row="1" Margin="5" Content="{
+            <ContentControl Grid.Row="1" Margin="5" x:Name="PrecursorSpecificParams" Content="{
                         Binding PrecursorDeconvolutionParameters,
                         Converter={StaticResource DeconTypeToControlConverter }}" />
 
             <!-- Specific Product Parameters -->
-            <Expander Grid.Row="2" Header="MS2 Deconvolution" >
+            <Expander Grid.Row="2" Header="MS2 Deconvolution" 
+                      Visibility="{Binding ShowMs2Section, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="10">
                     <StackPanel>
-                        <ComboBox  x:Name="ProductDeconvolutionTypeComboBox" Width="100" Height="35" Margin="5 5 5 -5"
-                                   VerticalContentAlignment="Center" HorizontalContentAlignment="Center" HorizontalAlignment="Right"
-                                   ItemsSource="{Binding ProductDeconvolutionParametersList}"
-                                   SelectedItem="{Binding ProductDeconvolutionParameters}"
-                                   Visibility="{Binding DisplayDeconSelectionComboBox, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" >
-                            <ComboBox.ToolTip>
-                                <TextBlock>
-                                    The type of deconvolution to perform.
-                                </TextBlock>
-                            </ComboBox.ToolTip>
-                        </ComboBox>
+                        <Grid HorizontalAlignment="Right">
+                            <Grid.ColumnDefinitions>
+                                <!-- Polarity ComboBox -->
+                                <ColumnDefinition Width="Auto" />
 
-                        <ContentControl Margin="5"  Content="{
-                        Binding ProductDeconvolutionParameters,
-                        Converter={StaticResource DeconTypeToControlConverter }}" />
+                                <!-- Decon Type ComboBox -->
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <ComboBox Grid.Column="0" x:Name="ProductPolarityComboBox" Width="100" Height="30"
+                                      Margin="5"
+                                      VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                      ItemsSource="{Binding Polarities}"
+                                      SelectedItem="{Binding ElementName=ProductSpecificParams, Path=Content.DataContext.Polarity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      Visibility="{Binding DisplayDeconSelectionComboBox, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                      ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <ComboBox.ToolTip>
+                                    <TextBlock>
+                                        Scan Polarity.
+                                    </TextBlock>
+                                </ComboBox.ToolTip>
+                            </ComboBox>
+
+                            <ComboBox Grid.Column="1" x:Name="ProductDeconvolutionTypeComboBox" Width="100" Height="30"
+                                      Margin="5"
+                                      VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                      HorizontalAlignment="Right"
+                                      ItemsSource="{Binding ProductDeconvolutionParametersList}"
+                                      SelectedItem="{Binding ProductDeconvolutionParameters}"
+                                      Visibility="{Binding DisplayDeconSelectionComboBox, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                      ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <ComboBox.ToolTip>
+                                    <TextBlock>
+                                        The type of deconvolution to perform.
+                                    </TextBlock>
+                                </ComboBox.ToolTip>
+                            </ComboBox>
+                        </Grid>
+
+                        <ContentControl Margin="5"   x:Name="ProductSpecificParams"
+                                        Content="{Binding ProductDeconvolutionParameters, Converter={StaticResource DeconTypeToControlConverter }}" />
                     </StackPanel>
 
                 </Border>
