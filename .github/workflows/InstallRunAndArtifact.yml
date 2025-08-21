@@ -67,17 +67,33 @@ jobs:
           nuget install secure-file -ExcludeVersion
           secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret "$env:KEY_SECRET"
 
-      # This currently has issues and leads to Microsoft waringing the user that MetaMorpheus is untrusted.
-      - name: Sign installer
+      - name: Sign MSI (signtool)
         shell: pwsh
         run: |
-          if (-not $env:KEY_SECRET -or -not $env:KEY_CERT) {
-            Write-Host "⚠️ Certificate secrets not available. Skipping signing."
-            exit 0
+          $pfxPath = Join-Path $PWD 'MetaMorpheus\smith_MM_certificate.pfx'
+      
+          # Find signtool (usually already on PATH, but fall back to SDK directories)
+          $signtool = (Get-Command signtool.exe -ErrorAction SilentlyContinue).Path
+          if (-not $signtool) {
+            $sdkRoots = @(
+              "${env:ProgramFiles(x86)}\Windows Kits\10\bin",
+              "${env:ProgramFiles(x86)}\Microsoft SDKs\ClickOnce\SignTool"
+            )
+            $signtool = Get-ChildItem -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue $sdkRoots `
+              | Sort-Object FullName -Descending `
+              | Select-Object -First 1 -ExpandProperty FullName
           }
-          
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($env:SIGN_CERT,$env:KEY_CERT,'DefaultKeySet')
-          Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert 
+      
+          if (-not $signtool) { Write-Error "signtool.exe not found"; exit 1 }
+      
+          & $signtool sign `
+            /f $pfxPath `
+            /p '${{ secrets.KEY_CERT }}' `
+            /fd SHA256 `
+            /tr http://timestamp.sectigo.com `
+            /td SHA256 `
+            MetaMorpheusInstaller.msi
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           
       - name: Zip command-line version
         run: |
