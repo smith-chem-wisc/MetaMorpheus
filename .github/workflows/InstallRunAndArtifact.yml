@@ -56,21 +56,21 @@ jobs:
             exit 1
           }
 
-      - name: Decrypt security certificate
+      - name: Decrypt signing certificate
         shell: pwsh
         run: |
           if (-not $env:KEY_SECRET) {
             Write-Host "⚠️ KEY_SECRET is not set. Skipping certificate decryption."
             exit 0
           }
-
           nuget install secure-file -ExcludeVersion
-          secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret "$env:KEY_SECRET"
+          .\secure-file\tools\secure-file -decrypt .\MetaMorpheus\smith_MM_certificate.pfx.enc -secret $env:KEY_SECRET
+          if (!(Test-Path .\MetaMorpheus\smith_MM_certificate.pfx)) { Write-Host "PFX decrypt failed" -BackgroundColor Red; exit 1 }
 
       - name: Sign MSI (signtool)
         shell: pwsh
         run: |
-          $pfxPath = Join-Path $PWD 'MetaMorpheus\smith_MM_certificate.pfx'
+          $pfxPath = ".\MetaMorpheus\smith_MM_certificate.pfx"
       
           # Find signtool (usually already on PATH, but fall back to SDK directories)
           $signtool = (Get-Command signtool.exe -ErrorAction SilentlyContinue).Path
