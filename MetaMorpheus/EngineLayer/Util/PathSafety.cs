@@ -69,7 +69,7 @@ namespace EngineLayer.Util
 
             // Reassemble filename, appending ending only if it wasn't already present.
             string endingPart = requiredEnding;
-            string combinedFileName = basePart + (hasEnding ? fileName[^requiredEnding.Length..] : endingPart);
+            string combinedFileName = basePart + endingPart;
 
             // Avoid reserved device names (Windows) by checking the name without extension
             combinedFileName = AvoidReservedDeviceNames(combinedFileName);
