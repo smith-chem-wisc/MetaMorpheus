@@ -287,7 +287,7 @@ namespace GuiFunctions
                         double total = 1.0;
                         if (MetaDrawSettings.NormalizeHistogramToFile)
                         {
-                            total = dictsBySourceFile.Values.Sum(p => p.Values.Sum(m => m));
+                            total = dictsBySourceFile[key].Values.Sum();
                         }
                         column.Items.Add(new HistItem(d.Value / total, id, d.Key, totalCounts[id]));
 
