@@ -1,10 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using MzLibUtil;
-using Omics.Fragmentation;
-using OxyPlot;
+﻿using MzLibUtil;
 using OxyPlot.Wpf;
-using LineSeries = OxyPlot.Series.LineSeries;
 
 namespace GuiFunctions.MetaDraw;
 
@@ -21,29 +16,11 @@ public class Ms1ChimeraPlot : SpectrumMatchPlot
 
         ZoomAxes();
         AnnotateChimericPeaks(chimeraGroupVm);
-        AnnotateIsolationWindow();
+        AnnotateIsolationWindow(Range);
         RefreshChart();
     }
 
-    private void AnnotateIsolationWindow()
-    {
-        var isolationWindow = ChimeraGroup.Ms2Scan.IsolationRange;
-        var yMax = Model.Axes[1].AbsoluteMaximum;
-        var points = new DataPoint[]
-        {
-            new(isolationWindow.Minimum, yMax),
-            new(isolationWindow.Minimum, 0),
-            new(isolationWindow.Maximum, 0),
-            new(isolationWindow.Maximum, yMax),
-        };
-        var lineSeries = new LineSeries
-        {
-            LineStyle = LineStyle.Dash,
-            Color = OxyColors.Red
-        };
-        lineSeries.Points.AddRange(points);
-        Model.Series.Add(lineSeries);
-    }
+
 
     private void AnnotateChimericPeaks(ChimeraGroupViewModel chimeraGroupVm)
     {

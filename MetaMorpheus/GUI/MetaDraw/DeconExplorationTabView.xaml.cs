@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using GuiFunctions;
+using System.Windows.Controls;
 
 namespace MetaMorpheusGUI
 {
@@ -10,6 +11,12 @@ namespace MetaMorpheusGUI
         public DeconExplorationTabView()
         {
             InitializeComponent();
+        }
+
+        private void DataGrid_OnSelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        {
+            var dc = DataContext as DeconExplorationViewModel;
+            dc!.RunDeconvolutionCommand.Execute(DeconPlot);
         }
     }
 }

@@ -4,15 +4,22 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:MetaMorpheusGUI"
-             xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+             xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions" 
+             xmlns:oxy="http://oxyplot.org/wpf"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance guiFunctions:DeconExplorationViewModel, IsDesignTimeCreatable=True}"  
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <local:FilePathToNameConverter x:Key="FilePathToNameConverter"/>
+    </UserControl.Resources>
+    
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="6"/>
-            <ColumnDefinition Width="5*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="2"/>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="2"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
@@ -21,39 +28,84 @@
         </Grid.RowDefinitions>
 
         <!-- Left: File and scan selection -->
-        <StackPanel Grid.Column="0" Grid.Row="0"  Margin="8">
-            <TextBlock Text="Select Data File:" FontWeight="Bold"/>
-            <ComboBox ItemsSource="{Binding MsDataFiles}" 
-                   SelectedItem="{Binding SelectedMsDataFile}" 
-                   DisplayMemberPath="FilePath" Margin="0,4,0,12"/>
-            <TextBlock Text="Scans:" FontWeight="Bold"/>
-            <DataGrid ItemsSource="{Binding Scans}" 
-                   SelectedItem="{Binding SelectedMsDataScan}" 
-                   AutoGenerateColumns="False" Height="200" Margin="0,4,0,12">
+        <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Margin="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Select Data File:" FontWeight="Bold"/>
+            <ComboBox Grid.Row="1" ItemsSource="{Binding MsDataFiles}" 
+              SelectedItem="{Binding SelectedMsDataFile}" 
+              DisplayMemberPath="FilePath" Margin="0,4,0,12"/>
+
+            <TextBlock Grid.Row="2" Text="Deconvolution Mode:" FontWeight="Bold"/>
+            <ComboBox Grid.Row="3" SelectedValue="{Binding Mode}" ItemsSource="{Binding DeconvolutionModes}"  Margin="0,4,0,12" />
+            
+            <TextBlock Grid.Row="4" Text="Scans:" FontWeight="Bold"/>
+            <DataGrid Grid.Row="5" ItemsSource="{Binding Scans}" 
+              SelectedItem="{Binding SelectedMsDataScan}" 
+              SelectionMode="Single"
+              SelectedCellsChanged="DataGrid_OnSelectedCellsChanged"
+              AutoGenerateColumns="False"
+              Margin="0,4,0,12"
+              IsReadOnly="True"
+              VerticalAlignment="Stretch">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Scan #" Binding="{Binding OneBasedScanNumber}" Width="60"/>
-                    <DataGridTextColumn Header="RT" Binding="{Binding RetentionTime}" Width="60"/>
-                    <DataGridTextColumn Header="MS Order" Binding="{Binding MsnOrder}" Width="60"/>
-                    <DataGridTextColumn Header="Isolation" Binding="{Binding IsolationMz}" Width="60"/>
+                    <DataGridTextColumn Header="Scan #" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                Binding="{Binding OneBasedScanNumber}" Width="50"/>
+                    <DataGridTextColumn Header="RT" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                Binding="{Binding RetentionTime, StringFormat={}{0:F2}}" Width="40"/>
+                    <DataGridTextColumn Header="MS Order" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                Binding="{Binding MsnOrder}" Width="60"/>
+                    <DataGridTextColumn Header="Isolation" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                Binding="{Binding IsolationMz, StringFormat={}{0:F2}}" Width="60"/>
                 </DataGrid.Columns>
             </DataGrid>
-            <TextBlock Text="Deconvolution Mode:" FontWeight="Bold"/>
-            <ComboBox SelectedValue="{Binding Mode}" ItemsSource="{Binding DeconvolutionModes}"  Margin="0,4,0,12" />
+            <Button Grid.Row="6" Content="Run Deconvolution"
+            Command="{Binding RunDeconvolutionCommand}"
+            CommandParameter="{Binding ElementName=DeconPlot}"
+            Margin="0,8,0,0"/>
+        </Grid>
 
-            <Button Content="Run Deconvolution" Command="{Binding RunDeconvolutionCommand}" Margin="0,8,0,0"/>
-        </StackPanel>
-        
         <!-- Grid Splitter -->
-        <GridSplitter Grid.Column="1" Grid.Row="0" Width="6" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <GridSplitter Grid.Column="1" Grid.Row="0" Width="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
 
+        <!-- Plot -->
+        <oxy:PlotView Grid.Column="2" Grid.Row="0" x:Name="DeconPlot" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0">
+
+        </oxy:PlotView>
+        <!-- Grid Splitter -->
+        <GridSplitter Grid.Column="3" Grid.Row="0" Width="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        
         <!-- Right: Deconvoluted species -->
-        <DataGrid Grid.Column="2" Grid.Row="0"  ItemsSource="{Binding DeconvolutedSpecies}" AutoGenerateColumns="False" Margin="8">
+        <DataGrid Grid.Column="4" Grid.Row="0"  ItemsSource="{Binding DeconvolutedSpecies}" AutoGenerateColumns="False" Margin="8" IsReadOnly="True">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Mono Mass" Binding="{Binding MonoisotopicMass}" Width="100"/>
-                <DataGridTextColumn Header="Mz" Binding="{Binding MostAbundantMz}" Width="100"/>
-                <DataGridTextColumn Header="Charge" Binding="{Binding Charge}" Width="60"/>
-                <DataGridTextColumn Header="Intensity" Binding="{Binding Intensity}" Width="80"/>
-                <DataGridTextColumn Header="Peak Count" Binding="{Binding PeakCount}" Width="80"/>
+                <DataGridTemplateColumn Width="20">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Rectangle Stroke="{Binding Color, Converter={local:OxyColorToColorBrushConverter}}"
+                                       Fill="{Binding Color, Converter={local:OxyColorToColorBrushConverter}}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Mono Mass" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding MonoisotopicMass, StringFormat={}{0:F2}}" Width="80"/>
+                <DataGridTextColumn Header="Mz" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding MostAbundantMz, StringFormat={}{0:F2}}" Width="60"/>
+                <DataGridTextColumn Header="Z" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding Charge}" Width="30"/>
+                <DataGridTextColumn Header="Intensity" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding Intensity, StringFormat={}{0:F2}}" Width="70"/>
+                <DataGridTextColumn Header="Peaks" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding PeakCount}" Width="40"/>
+                <DataGridTextColumn Header="Peak Mzs" 
+                                    Binding="{Binding PeakMzs}" Width="40"/>
             </DataGrid.Columns>
         </DataGrid>
 
