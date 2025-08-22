@@ -38,18 +38,25 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-
-            <TextBlock Grid.Row="0" Text="Select Data File:" FontWeight="Bold" />
-            <ComboBox Grid.Row="1" ItemsSource="{Binding MsDataFiles}"
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            
+            <TextBlock Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2"  Text="Select Data File:" FontWeight="Bold" />
+            <ComboBox Grid.Column="0"  Grid.Row="1"  Grid.ColumnSpan="2" ItemsSource="{Binding MsDataFiles}"
                       SelectedItem="{Binding SelectedMsDataFile}"
                       DisplayMemberPath="FilePath" Margin="0,4,0,12" />
 
-            <TextBlock Grid.Row="2" Text="Deconvolution Mode:" FontWeight="Bold" />
-            <ComboBox Grid.Row="3" SelectedValue="{Binding Mode}" ItemsSource="{Binding DeconvolutionModes}"
-                      Margin="0,4,0,12" />
 
-            <TextBlock Grid.Row="4" Text="Scans:" FontWeight="Bold" />
-            <DataGrid Grid.Row="5" ItemsSource="{Binding Scans}"
+            <TextBlock Grid.Column="0"  Grid.Row="2" Text="Deconvolution Mode:" FontWeight="Bold" />
+            <ComboBox Grid.Column="0"  Grid.Row="3" SelectedValue="{Binding Mode}" ItemsSource="{Binding DeconvolutionModes}" Margin="0,4,0,12" />
+            <CheckBox Grid.Column="1"  Grid.Row="3" Content="Display Annotations" FontWeight="DemiBold" HorizontalAlignment="Right"
+                      VerticalAlignment="Center" Margin="10,4,10,12"
+                      IsChecked="{Binding DisplayIonAnnotations, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"/>
+
+            <TextBlock Grid.Column="0"  Grid.Row="4"  Grid.ColumnSpan="2" Text="Scans:" FontWeight="Bold" />
+            <DataGrid Grid.Column="0"  Grid.Row="5"  Grid.ColumnSpan="2" ItemsSource="{Binding Scans}"
                       SelectedItem="{Binding SelectedMsDataScan}"
                       SelectionMode="Single"
                       SelectedCellsChanged="DataGrid_OnSelectedCellsChanged"
@@ -70,7 +77,7 @@
                                         Binding="{Binding OneBasedPrecursorScanNumber}" Width="88" />
                 </DataGrid.Columns>
             </DataGrid>
-            <Button Grid.Row="6" Content="Run Deconvolution" Style="{StaticResource MetaDrawButtonStyle}"
+            <Button Grid.Column="0"  Grid.Row="6"  Grid.ColumnSpan="2" Content="Run Deconvolution" Style="{StaticResource MetaDrawButtonStyle}"
                     Command="{Binding RunDeconvolutionCommand}"
                     CommandParameter="{Binding ElementName=DeconPlot}"
                     Margin="0,8,0,0" />
@@ -80,9 +87,12 @@
         <GridSplitter Grid.Column="1" Grid.Row="0" Width="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
 
         <!-- Plot -->
-        <oxy:PlotView Grid.Column="2" Grid.Row="0" x:Name="DeconPlot" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0">
-
-        </oxy:PlotView>
+        <Grid Grid.Column="2" Grid.Row="0" >
+            <oxy:PlotView x:Name="DeconPlot" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0"/>
+            <local:SettingsButtonControl Height="52" x:Name="SettingsButton"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                                         Panel.ZIndex="1" SelectedTabIndex="0" />
+        </Grid>
         <!-- Grid Splitter -->
         <GridSplitter Grid.Column="3" Grid.Row="0" Width="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         

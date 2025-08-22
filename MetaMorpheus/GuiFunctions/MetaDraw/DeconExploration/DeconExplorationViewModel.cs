@@ -162,5 +162,5 @@ public class DeconvolutedSpeciesViewModel(IsotopicEnvelope envelope) : BaseViewM
     public double Intensity => _totalIntensity ??= Envelope.Peaks.Sum(p => p.intensity);
     public string Annotation => _annotation ??= $"M={MonoisotopicMass.Round(2)}\nz={Charge}";
     public double MostAbundantMz => _mostAbundantMz ?? Envelope.Peaks.MaxBy(p => p.intensity).mz;
-    public string PeakMzs => _peakMzs ?? string.Join(',', Envelope.Peaks.Select(p => p.mz.Round(2)).OrderBy(p => p));
+    public string PeakMzs => _peakMzs ?? string.Join(", ", Envelope.Peaks.Select(p => p.mz.Round(2)).OrderBy(p => p));
 }
