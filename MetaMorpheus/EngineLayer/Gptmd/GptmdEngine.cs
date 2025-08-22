@@ -136,7 +136,7 @@ namespace EngineLayer.Gptmd
 
                                 int modSiteInProteinIndex = pepWithSetMods.OneBasedStartResidue + pepSeqIndex;
                                 int modSiteInPeptideIndex = pepSeqIndex + 2; // plus 2 is to translate from zero based string array index to OneBasedModification index
-                                if (!Filters.All(f => f.Passes(newPep, psm, score, originalScore, matchedIons, modSiteInPeptideIndex, pepWithSetMods.Length, mod)))
+                                if (Filters.Any(f => !f.Passes(newPep, psm, score, originalScore, matchedIons, modSiteInPeptideIndex, pepWithSetMods.Length, mod)))
                                     continue;
 
                                 if (score < bestScore - ScoreTolerance)
