@@ -8,7 +8,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="60" d:DesignWidth="600">
 
-    <Grid d:DataContext="{x:Static guiFunctions:DeconParamsModel.Instance}" >
+    <Grid d:DataContext="{x:Static guiFunctions:ClassicDeconParamsModel.Instance}" >
 
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
@@ -17,8 +17,13 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Label Content="Max Assumed Charge State:" Grid.Column="0" />
-        <local:IntegerTexBoxControl Grid.Column="1" x:Name="DeconvolutionMaxAssumedChargeStateTextBox"  Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Label Content="Max Assumed Charge State:" Grid.Column="0" Grid.Row="0" />
+        <local:IntegerTexBoxControl Grid.Column="1" Grid.Row="0" x:Name="DeconvolutionMaxAssumedChargeStateTextBox"  Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                                     Text="{Binding MaxAssumedChargeState}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" AllowNegative="True">
             <TextBox.ToolTip>
                 <TextBlock>
@@ -27,8 +32,8 @@
             </TextBox.ToolTip>
         </local:IntegerTexBoxControl>
 
-        <Label Content="Min Assumed Charge State:" Grid.Column="2" />
-        <local:IntegerTexBoxControl Grid.Column="3"   Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" HorizontalAlignment="Left"
+        <Label Content="Min Assumed Charge State:" Grid.Column="2" Grid.Row="0"/>
+        <local:IntegerTexBoxControl Grid.Column="3" Grid.Row="0" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" HorizontalAlignment="Left"
                                     Text="{Binding MinAssumedChargeState}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" AllowNegative="True">
             <TextBox.ToolTip>
                 <TextBlock>
@@ -36,5 +41,25 @@
                 </TextBlock>
             </TextBox.ToolTip>
         </local:IntegerTexBoxControl>
+
+        <Label Content="Deconvolution Tolerance (ppm):" Grid.Column="0" Grid.Row="1" />
+        <local:DoubleTextBoxControl Grid.Column="1" Grid.Row="1" x:Name="DeconvolutionTolerancePpmStateTextBox"  Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" 
+                                    Text="{Binding DeconvolutionTolerancePpm}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" >
+            <TextBox.ToolTip>
+                <TextBlock>
+
+                </TextBlock>
+            </TextBox.ToolTip>
+        </local:DoubleTextBoxControl>
+
+        <Label Content="Intensity Ratio Limit:" Grid.Column="2" Grid.Row="1"/>
+        <local:DoubleTextBoxControl Grid.Column="3" Grid.Row="1" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" HorizontalAlignment="Left"
+                                    Text="{Binding IntensityRatioLimit}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+            <TextBox.ToolTip>
+                <TextBlock>
+                    
+                </TextBlock>
+            </TextBox.ToolTip>
+        </local:DoubleTextBoxControl>
     </Grid>
 </UserControl>

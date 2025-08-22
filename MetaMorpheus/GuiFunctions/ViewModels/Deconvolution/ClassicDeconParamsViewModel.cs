@@ -1,8 +1,9 @@
-﻿using MassSpectrometry;
+﻿using System.Diagnostics.CodeAnalysis;
+using MassSpectrometry;
 
 namespace GuiFunctions;
 
-public sealed class ClassicDeconParamsViewModel : DeconParamsViewModel
+public class ClassicDeconParamsViewModel : DeconParamsViewModel
 {
     private ClassicDeconvolutionParameters _parameters;
     public override DeconvolutionParameters Parameters
@@ -41,4 +42,11 @@ public sealed class ClassicDeconParamsViewModel : DeconParamsViewModel
     }
 
     public override string ToString() => "Classic";
+}
+
+[ExcludeFromCodeCoverage] // Model used only for visualizing the view in visual studio
+public class ClassicDeconParamsModel()
+    : ClassicDeconParamsViewModel(new ClassicDeconvolutionParameters(1, 20, 5, 3, Polarity.Negative))
+{
+    public static ClassicDeconParamsModel Instance => new ClassicDeconParamsModel();
 }
