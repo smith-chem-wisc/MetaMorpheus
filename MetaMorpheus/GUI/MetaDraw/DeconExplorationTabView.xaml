@@ -30,47 +30,48 @@
         <!-- Left: File and scan selection -->
         <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Margin="8">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Text="Select Data File:" FontWeight="Bold"/>
-            <ComboBox Grid.Row="1" ItemsSource="{Binding MsDataFiles}" 
-              SelectedItem="{Binding SelectedMsDataFile}" 
-              DisplayMemberPath="FilePath" Margin="0,4,0,12"/>
+            <TextBlock Grid.Row="0" Text="Select Data File:" FontWeight="Bold" />
+            <ComboBox Grid.Row="1" ItemsSource="{Binding MsDataFiles}"
+                      SelectedItem="{Binding SelectedMsDataFile}"
+                      DisplayMemberPath="FilePath" Margin="0,4,0,12" />
 
-            <TextBlock Grid.Row="2" Text="Deconvolution Mode:" FontWeight="Bold"/>
-            <ComboBox Grid.Row="3" SelectedValue="{Binding Mode}" ItemsSource="{Binding DeconvolutionModes}"  Margin="0,4,0,12" />
-            
-            <TextBlock Grid.Row="4" Text="Scans:" FontWeight="Bold"/>
-            <DataGrid Grid.Row="5" ItemsSource="{Binding Scans}" 
-              SelectedItem="{Binding SelectedMsDataScan}" 
-              SelectionMode="Single"
-              SelectedCellsChanged="DataGrid_OnSelectedCellsChanged"
-              AutoGenerateColumns="False"
-              Margin="0,4,0,12"
-              IsReadOnly="True"
-              VerticalAlignment="Stretch">
+            <TextBlock Grid.Row="2" Text="Deconvolution Mode:" FontWeight="Bold" />
+            <ComboBox Grid.Row="3" SelectedValue="{Binding Mode}" ItemsSource="{Binding DeconvolutionModes}"
+                      Margin="0,4,0,12" />
+
+            <TextBlock Grid.Row="4" Text="Scans:" FontWeight="Bold" />
+            <DataGrid Grid.Row="5" ItemsSource="{Binding Scans}"
+                      SelectedItem="{Binding SelectedMsDataScan}"
+                      SelectionMode="Single"
+                      SelectedCellsChanged="DataGrid_OnSelectedCellsChanged"
+                      AutoGenerateColumns="False"
+                      Margin="0,4,0,12"
+                      IsReadOnly="True"
+                      VerticalAlignment="Stretch">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Scan #" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
-                                Binding="{Binding OneBasedScanNumber}" Width="50"/>
+                                        Binding="{Binding OneBasedScanNumber}" Width="50" />
                     <DataGridTextColumn Header="RT" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
-                                Binding="{Binding RetentionTime, StringFormat={}{0:F2}}" Width="40"/>
+                                        Binding="{Binding RetentionTime, StringFormat={}{0:F2}}" Width="40" />
                     <DataGridTextColumn Header="MS Order" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
-                                Binding="{Binding MsnOrder}" Width="60"/>
+                                        Binding="{Binding MsnOrder}" Width="60" />
                     <DataGridTextColumn Header="Isolation" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
-                                Binding="{Binding IsolationMz, StringFormat={}{0:F2}}" Width="60"/>
+                                        Binding="{Binding IsolationMz, StringFormat={}{0:F2}}" Width="60" />
                 </DataGrid.Columns>
             </DataGrid>
             <Button Grid.Row="6" Content="Run Deconvolution"
-            Command="{Binding RunDeconvolutionCommand}"
-            CommandParameter="{Binding ElementName=DeconPlot}"
-            Margin="0,8,0,0"/>
+                    Command="{Binding RunDeconvolutionCommand}"
+                    CommandParameter="{Binding ElementName=DeconPlot}"
+                    Margin="0,8,0,0" />
         </Grid>
 
         <!-- Grid Splitter -->
@@ -105,11 +106,11 @@
                 <DataGridTextColumn Header="Peaks" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
                                     Binding="{Binding PeakCount}" Width="40"/>
                 <DataGridTextColumn Header="Peak Mzs" 
-                                    Binding="{Binding PeakMzs}" Width="40"/>
+                                    Binding="{Binding PeakMzs}" Width="Auto"/>
             </DataGrid.Columns>
         </DataGrid>
 
-        <Expander Grid.Column="2" Grid.Row="1" Header="Deconvolution Parameters">
+        <Expander Grid.Column="2" Grid.Row="1" Header="Deconvolution Parameters" IsExpanded="True">
             <local:HostDeconParamControl Margin="8" 
                                          DataContext="{Binding DeconHostViewModel}" />
         </Expander>

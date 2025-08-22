@@ -20,8 +20,6 @@ public class Ms1ChimeraPlot : SpectrumMatchPlot
         RefreshChart();
     }
 
-
-
     private void AnnotateChimericPeaks(ChimeraGroupViewModel chimeraGroupVm)
     {
         foreach (var ionGroup in chimeraGroupVm.PrecursorIonsByColor)

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using GuiFunctions.Util;
 using MassSpectrometry;
 using MzLibUtil;
 using OxyPlot;
@@ -15,6 +16,18 @@ namespace GuiFunctions
 {
     public class DeconvolutionPlot : MassSpectrumPlot
     {
+        public static readonly CyclicalQueue<OxyColor> ColorQueue = new CyclicalQueue<OxyColor>(new[]
+        {
+            OxyColors.Red, OxyColors.Blue, OxyColors.Green, OxyColors.Orange, OxyColors.Purple,
+            OxyColors.Teal, OxyColors.Brown, OxyColors.Pink, OxyColors.Yellow, OxyColors.Gray,
+            OxyColors.Cyan, OxyColors.Magenta, OxyColors.LimeGreen, OxyColors.DarkBlue, OxyColors.DarkRed,
+            OxyColors.DarkGreen, OxyColors.Gold, OxyColors.Indigo, OxyColors.Olive, OxyColors.Maroon,
+            OxyColors.Navy, OxyColors.Turquoise, OxyColors.Violet, OxyColors.Sienna, OxyColors.Salmon,
+            OxyColors.Coral, OxyColors.Khaki, OxyColors.Plum, OxyColors.Peru, OxyColors.SteelBlue,
+            OxyColors.MediumPurple, OxyColors.MediumSeaGreen, OxyColors.MediumSlateBlue, OxyColors.MediumVioletRed,
+            OxyColors.MediumOrchid, OxyColors.MediumTurquoise, OxyColors.MediumSpringGreen, OxyColors.MediumAquamarine
+        });
+
         public DeconvolutionPlot(PlotView plotView, MsDataScan scan, List<DeconvolutedSpeciesViewModel> deconResults, MzRange? isolationRange = null) : base(plotView, scan)
         {
             AnnotatePlot(deconResults);
@@ -35,7 +48,7 @@ namespace GuiFunctions
             for (var index = 0; index < deconResults.Count; index++)
             {
                 var species = deconResults[index];
-                species.Color = MetaDrawSettings.AllColors[index % MetaDrawSettings.AllColors.Count];
+                species.Color = ColorQueue.Dequeue();
                 TextAnnotation annotation = null;
                 foreach (var peak in species.Envelope.Peaks)
                 {
