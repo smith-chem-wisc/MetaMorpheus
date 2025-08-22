@@ -102,7 +102,7 @@ namespace EngineLayer.Util
                     throw new PathTooLongException("Cannot construct a valid filename within the path length limit.");
 
                 // Trim base accordingly
-                string trimmedBase = combinedFileName.Substring(0, Math.Max(0, combinedFileName.Length - endingPart.Length));
+                string trimmedBase = combinedFileName.Substring(0, Math.Max(1, allowedBase));
                 if (trimmedBase.Length > allowedBase)
                     trimmedBase = trimmedBase.Substring(0, allowedBase);
 
