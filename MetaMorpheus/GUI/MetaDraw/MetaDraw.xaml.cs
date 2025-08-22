@@ -42,6 +42,7 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
         public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
+        public DeconExplorationViewModel DeconExplorationViewModel { get; set; } = new();
 
         public MetaDraw(string[]? filesToLoad = null)
         {
@@ -55,6 +56,7 @@ namespace MetaMorpheusGUI
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchesGroupedByFile, MetaDrawLogic.ThreadLocker);
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
+            DeconExplorationTabView.DataContext = DeconExplorationViewModel;
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
             AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
             AdditionalFragmentIonControl.LinkMetaDraw(this);
@@ -523,6 +525,12 @@ namespace MetaMorpheusGUI
                 DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles, directoryPath);
             ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
+            DeconExplorationViewModel.MsDataFiles.Clear();
+            foreach (var dataFile in MetaDrawLogic.MsDataFiles)
+            {
+                DeconExplorationViewModel.MsDataFiles.Add(dataFile.Value);
+            }
+
             var errors = slowProcess.Result;
 
             if (errors.Any())
