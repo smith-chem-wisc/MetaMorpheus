@@ -67,8 +67,8 @@ jobs:
       - name: Set version in AssemblyInfo.cs files
         uses: secondbounce/assemblyinfo-update@v2
         with:
-          version: $env:PACKAGE_VERSION
-          directory: '.\MetaMorpheus\GUI\Properties/'
+          version: ${{ env.PACKAGE_VERSION }}
+          directory: './MetaMorpheus/GUI/Properties/'
 
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
@@ -89,7 +89,7 @@ jobs:
           
       - name: Zip command-line version
         run: |
-          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\* "-x!*.xml"
+          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\net8.0\* "-x!*.xml"
 
       # check that installer is greater than 1 kb to avoid pushing an empty artifact
       - name: Validate command-line zip artifact
