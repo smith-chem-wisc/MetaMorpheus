@@ -64,11 +64,13 @@
                                         Binding="{Binding RetentionTime, StringFormat={}{0:F2}}" Width="40" />
                     <DataGridTextColumn Header="MS Order" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
                                         Binding="{Binding MsnOrder}" Width="60" />
-                    <DataGridTextColumn Header="Isolation" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
-                                        Binding="{Binding IsolationMz, StringFormat={}{0:F2}}" Width="60" />
+                    <DataGridTextColumn Header="Isolation Mz" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                        Binding="{Binding IsolationMz, StringFormat={}{0:F2}}" Width="78" />
+                    <DataGridTextColumn Header="Precursor Scan #" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                        Binding="{Binding OneBasedPrecursorScanNumber}" Width="88" />
                 </DataGrid.Columns>
             </DataGrid>
-            <Button Grid.Row="6" Content="Run Deconvolution"
+            <Button Grid.Row="6" Content="Run Deconvolution" Style="{StaticResource MetaDrawButtonStyle}"
                     Command="{Binding RunDeconvolutionCommand}"
                     CommandParameter="{Binding ElementName=DeconPlot}"
                     Margin="0,8,0,0" />
@@ -85,12 +87,15 @@
         <GridSplitter Grid.Column="3" Grid.Row="0" Width="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         
         <!-- Right: Deconvoluted species -->
-        <DataGrid Grid.Column="4" Grid.Row="0"  ItemsSource="{Binding DeconvolutedSpecies}" AutoGenerateColumns="False" Margin="8" IsReadOnly="True">
+        <DataGrid Grid.Column="4" Grid.Row="0" Grid.RowSpan="2"  ItemsSource="{Binding DeconvolutedSpecies}" AutoGenerateColumns="False" Margin="8" IsReadOnly="True">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Width="20">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Rectangle Stroke="{Binding Color, Converter={local:OxyColorToColorBrushConverter}}"
+                            <Rectangle StrokeThickness="0"
+                                       Margin="0"
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Stretch"
                                        Fill="{Binding Color, Converter={local:OxyColorToColorBrushConverter}}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

@@ -52,8 +52,6 @@ public class MassSpectrumPlot : Plot
             Maximum = Scan.ScanWindowRange.Maximum,
             AbsoluteMinimum = Math.Max(0, Scan.ScanWindowRange.Minimum - 100),
             AbsoluteMaximum = Scan.ScanWindowRange.Maximum + 100,
-            MajorStep = 200,
-            MinorStep = 200,
             MajorTickSize = 2,
             TitleFontWeight = FontWeights.Bold,
             TitleFontSize = MetaDrawSettings.AxisTitleTextSize,
@@ -68,8 +66,6 @@ public class MassSpectrumPlot : Plot
             Maximum = yMax,
             AbsoluteMinimum = 0,
             AbsoluteMaximum = yMax * 2,
-            MajorStep = yMax / 10,
-            MinorStep = yMax / 50,
             StringFormat = "0e-0",
             MajorTickSize = 2,
             TitleFontWeight = FontWeights.Bold,
@@ -122,7 +118,7 @@ public class MassSpectrumPlot : Plot
         line.Points.Add(new DataPoint(mz, intensity));
 
         // Miso is a tag used in chimeric ms1 plotting to indicate that we should not annotate this peak with a label. 
-        if (annotation != null && !annotation.Text.Contains("Miso"))
+        if (annotation != null && !annotation.Text.Contains("Miso") && MetaDrawSettings.DisplayIonAnnotations)
         {
             var x = annotation.TextPosition.X;
             var y = annotation.TextPosition.Y + 20;

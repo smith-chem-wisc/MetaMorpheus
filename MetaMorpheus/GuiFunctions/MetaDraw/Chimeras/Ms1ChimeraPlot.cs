@@ -35,9 +35,6 @@ public class Ms1ChimeraPlot : SpectrumMatchPlot
 
     public void ZoomAxes()
     {
-        Model.Axes[0].MajorStep = 1;
-        Model.Axes[0].MinorStep = 0.2;
-
         var extracted = ChimeraGroup.Ms1Scan.MassSpectrum.Extract(Range);
         double maxIntensity = 0;
         foreach (var p in extracted)

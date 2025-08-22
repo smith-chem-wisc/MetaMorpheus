@@ -35,7 +35,9 @@ namespace GuiFunctions
             if (isolationRange is not null)
                 AnnotateIsolationWindow(isolationRange);
 
-            double maxAnnotated = deconResults.Max(p => p.Envelope.Peaks.Max(m => m.mz));
+            double maxAnnotated = deconResults.Any() 
+                ? deconResults.Max(p => p.Envelope.Peaks.Max(m => m.mz))
+                : isolationRange?.Maximum + 1 ?? scan.MassSpectrum.Range.Maximum;
             ZoomAxes(scan, maxAnnotated, isolationRange);
             RefreshChart();
         }
@@ -90,8 +92,7 @@ namespace GuiFunctions
             // Isolation Region
             else
             {
-                Model.Axes[0].MajorStep = 1;
-                Model.Axes[0].MinorStep = 0.2;
+
                 var extracted = scan.MassSpectrum.Extract(isolationRange);
                 double maxIntensity = 0;
                 foreach (var p in extracted)

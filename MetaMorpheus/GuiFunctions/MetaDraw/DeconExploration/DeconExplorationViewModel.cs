@@ -95,7 +95,7 @@ public class DeconExplorationViewModel : BaseViewModel
             results = DeconvoluteIsolationRegion(SelectedMsDataScan, precursorScan);
         }
 
-        foreach (var species in results)
+        foreach (var species in results.OrderByDescending(p => p.MonoisotopicMass.Round(2)).ThenByDescending(p => p.Charge))
             DeconvolutedSpecies.Add(species);
 
         Plot = new DeconvolutionPlot(plotView, scan, DeconvolutedSpecies.ToList(), range);
@@ -123,6 +123,9 @@ public class DeconExplorationViewModel : BaseViewModel
     private void PopulateScansCollection()
     {
         Scans.Clear();
+
+        if (SelectedMsDataFile == null)
+            return;
 
         switch (Mode)
         {
@@ -159,5 +162,5 @@ public class DeconvolutedSpeciesViewModel(IsotopicEnvelope envelope) : BaseViewM
     public double Intensity => _totalIntensity ??= Envelope.Peaks.Sum(p => p.intensity);
     public string Annotation => _annotation ??= $"M={MonoisotopicMass.Round(2)}\nz={Charge}";
     public double MostAbundantMz => _mostAbundantMz ?? Envelope.Peaks.MaxBy(p => p.intensity).mz;
-    public string PeakMzs => _peakMzs ?? string.Join(',', Envelope.Peaks.Select(p => p.mz.Round(2)));
+    public string PeakMzs => _peakMzs ?? string.Join(',', Envelope.Peaks.Select(p => p.mz.Round(2)).OrderBy(p => p));
 }
