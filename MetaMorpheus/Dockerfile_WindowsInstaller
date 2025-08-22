@@ -1,4 +1,8 @@
-## Base image is the Alpine Linux distro with .NET Core runtime
+## This is an experimental script. 
+## The docker container built from this script runs a stripped down version of windows
+## The docker container built by this script has never been deployed to docker hub
+
+## Base image is a windows nanoserver with .NET Core runtime
 FROM mcr.microsoft.com/dotnet/runtime:8.0-nanoserver-1809
 
 ## Copies contents of the installer folder into the Docker image
