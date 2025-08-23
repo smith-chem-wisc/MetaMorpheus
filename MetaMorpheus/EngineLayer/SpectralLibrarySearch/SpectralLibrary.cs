@@ -189,6 +189,10 @@ namespace EngineLayer
             while (reader.Peek() > 0)
             {
                 string line = reader.ReadLine();
+                if (!line.IsNotNullOrEmpty())
+                {
+                    continue;
+                }
                 string[] split;
 
                 if (line.StartsWith("Name", StringComparison.InvariantCultureIgnoreCase))
@@ -213,10 +217,7 @@ namespace EngineLayer
                 }
                 else if (line.StartsWith("MW", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    split = line.Split(mwSplit);
-
-                    // get precursor m/z
-                    precursorMz = double.Parse(split[1].Trim(), CultureInfo.InvariantCulture);
+                    continue;
                 }
                 else if (line.StartsWith("Comment", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -424,7 +425,6 @@ namespace EngineLayer
                     var experIntensity = double.Parse(split[1], CultureInfo.InvariantCulture);
 
                     // read fragment type, number      
-
                     string fragmentType = split[2].ToCharArray()[0].ToString();
                     int fragmentNumber = int.Parse(new string(split[2].Split(new char[] { '^' })[0].Where(Char.IsDigit).ToArray()));
                     int fragmentCharge = 1;
