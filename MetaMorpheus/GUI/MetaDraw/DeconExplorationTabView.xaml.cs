@@ -15,7 +15,7 @@ namespace MetaMorpheusGUI
 
         private void DataGrid_OnSelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
-            var dc = DataContext as DeconExplorationViewModel;
+            var dc = DataContext as DeconExplorationTabViewModel;
             dc!.RunDeconvolutionCommand.Execute(DeconPlot);
         }
     }

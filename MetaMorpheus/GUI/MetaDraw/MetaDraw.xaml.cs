@@ -42,7 +42,7 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
         public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
-        public DeconExplorationViewModel DeconExplorationViewModel { get; set; } = new();
+        public DeconExplorationTabViewModel DeconExplorationViewModel { get; set; } = new();
 
         public MetaDraw(string[]? filesToLoad = null)
         {
