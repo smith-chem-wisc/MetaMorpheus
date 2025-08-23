@@ -26,8 +26,8 @@ public class DeconExplorationViewModel : BaseViewModel
 
     public DeconExplorationViewModel()
     {
-        Mode = DeconvolutionMode.FullSpectrum;
-        RunDeconvolutionCommand = new DelegateCommand((pv) => RunDeconvolution((PlotView)pv));
+        Mode = DeconvolutionMode.IsolationRegion;
+        RunDeconvolutionCommand = new DelegateCommand(pv => RunDeconvolution(pv as PlotView));
     }
 
     private MsDataFile _selectedMsDataFile;
