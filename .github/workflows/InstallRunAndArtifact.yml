@@ -19,25 +19,11 @@ jobs:
       Tag: 9.9.9.9
       
     steps:
-      - name: Debug secrets (PowerShell)
-        shell: pwsh
-        run: |
-          if (-not $env:KEY_SECRET) {
-            Write-Host "KEY_SECRET is not set!"
-          } else {
-            Write-Host "KEY_SECRET is set."
-          }
-          
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-          
       - name: Patch <Version> in EngineLayer.csproj
         shell: pwsh
         run: |
-          $env:CSProjPath = Join-Path -Path ${{ github.workspace }} -ChildPath $env:CSProjPath
-          if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; exit 1 }
+          $env:CSProjPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj
+          if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; ls; exit 1 }
       
           [xml]$xml = Get-Content $env:CSProjPath
       
@@ -46,7 +32,12 @@ jobs:
           $versionNode.InnerText = $env:Tag
           $xml.Save($csproj)
           Write-Host "Set <Version> to $env:Tag in $env:CSProjPath"
-
+          
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          
       - name: Set version in AssemblyInfo.cs files
         uses: secondbounce/assemblyinfo-update@v2
         with:
