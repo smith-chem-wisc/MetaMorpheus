@@ -1,9 +1,7 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics.AminoAcidPolymer;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,6 +38,9 @@ namespace EngineLayer.Calibration
             MinMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
         }
 
+        private readonly object _ms1Lock = new();
+        private readonly object _ms2Lock = new();
+
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("Extracting data points:");
@@ -51,9 +52,6 @@ namespace EngineLayer.Calibration
             int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
             List<LabeledDataPoint> Ms1List = new List<LabeledDataPoint>();
             List<LabeledDataPoint> Ms2List = new List<LabeledDataPoint>();
-
-            object lockObj = new object();
-            object lockObj2 = new object();
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
@@ -71,27 +69,20 @@ namespace EngineLayer.Calibration
                     int ms2scanNumber = identification.ScanNumber;
                     int peptideCharge = identification.ScanPrecursorCharge;
                     //skip if ambiguous
-                    if (identification.FullSequence == null || identification.BestMatchingBioPolymersWithSetMods.Any(p => p.Peptide.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
+                    if (identification.FullSequence == null || identification.BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
                         continue;
 
-                    var representativeSinglePeptide = identification.BestMatchingBioPolymersWithSetMods.First().Peptide;
-
-                    // Get the peptide, don't forget to add the modifications!!!!
-                    var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
-                    if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.AllModsOneIsNterminus.Any(b => b.Value.NeutralLosses != null))
-                        continue;
-
-                    Peptide coolPeptide = new Peptide(SequenceWithChemicalFormulas);
+                    var representativeSinglePeptide = identification.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
                     List<LabeledDataPoint> ms2tuple = SearchMS2Spectrum(GoodScans[matchIndex], identification, ProductMassTolerance);
 
-                    lock (lockObj2)
+                    lock (_ms2Lock)
                     {
                         Ms2List.AddRange(ms2tuple);
                     }
 
                     // Calculate theoretical isotopic distribution of the full peptide
-                    var dist = IsotopicDistribution.GetDistribution(coolPeptide.GetChemicalFormula(), FineResolutionForIsotopeDistCalculation, 0.001);
+                    var dist = IsotopicDistribution.GetDistribution(representativeSinglePeptide.ThisChemicalFormula, FineResolutionForIsotopeDistCalculation, 0.001);
 
                     double[] theoreticalMasses = dist.Masses.ToArray();
                     double[] theoreticalIntensities = dist.Intensities.ToArray();
@@ -102,7 +93,7 @@ namespace EngineLayer.Calibration
 
                     var ms1tupleForward = SearchMS1Spectra(theoreticalMasses, theoreticalIntensities, ms2scanNumber, 1, peptideCharge, identification);
 
-                    lock (lockObj)
+                    lock (_ms1Lock)
                     {
                         Ms1List.AddRange(ms1tupleBack.Item1);
                         numMs1MassChargeCombinationsConsidered += ms1tupleBack.Item2;
@@ -137,6 +128,7 @@ namespace EngineLayer.Calibration
             theIndex = direction == 1 ? ms2spectrumIndex + 1 : identification.PrecursorScanNumber ?? ms2spectrumIndex;
 
             bool addedAscan = true;
+            bool positiveMode = identification.ScanPrecursorCharge > 0;
 
             int highestKnownChargeForThisPeptide = peptideCharge;
             while (theIndex >= 1 && theIndex <= MyMsDataFile.NumSpectra && addedAscan) //as long as we're finding the peptide in ms1 scans
@@ -157,16 +149,26 @@ namespace EngineLayer.Calibration
                     break;
 
                 bool startingToAddCharges = false;
-                int chargeToLookAt = 1;
+                int chargeToLookAt = positiveMode ? 1 : -1; 
+                int chargeLimit = positiveMode ? highestKnownChargeForThisPeptide + 1 : highestKnownChargeForThisPeptide - 1;
+
                 do
                 {
-                    if (theoreticalMasses[0].ToMz(chargeToLookAt) > scanWindowRange.Maximum)
+                    double mz = theoreticalMasses[0].ToMz(chargeToLookAt);
+
+                    // If m/z is above the scan window, try next charge
+                    if (mz > scanWindowRange.Maximum)
                     {
-                        chargeToLookAt++;
+                        chargeToLookAt += positiveMode ? 1 : -1;
                         continue;
                     }
-                    if (theoreticalMasses[0].ToMz(chargeToLookAt) < scanWindowRange.Minimum)
+
+                    // If m/z is below the scan window, break early, more charge will only make the mz smaller. 
+                    if (mz < scanWindowRange.Minimum)
+                    {
                         break;
+                    }
+
                     var trainingPointsToAverage = new List<LabeledDataPoint>();
                     foreach (double a in theoreticalMasses)
                     {
@@ -187,7 +189,9 @@ namespace EngineLayer.Calibration
                         var closestPeakIndex = fullMS1spectrum.GetClosestPeakIndex(theMZ);
                         var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex];
 
-                        highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
+                        highestKnownChargeForThisPeptide = positiveMode
+                            ? Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt)
+                            : Math.Min(highestKnownChargeForThisPeptide, chargeToLookAt);
                         trainingPointsToAverage.Add(new LabeledDataPoint(closestPeakMZ, -1, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex]), theMZ, null));
                     }
                     // If started adding and suddenly stopped, go to next one, no need to look at higher charges
@@ -195,7 +199,7 @@ namespace EngineLayer.Calibration
                     {
                         break;
                     }
-                    if ((trainingPointsToAverage.Count == 0 || (trainingPointsToAverage.Count == 1 && theoreticalIntensities[0] < 0.65)) && (peptideCharge <= chargeToLookAt))
+                    if ((trainingPointsToAverage.Count == 0 || (trainingPointsToAverage.Count == 1 && theoreticalIntensities[0] < 0.65)) && (positiveMode ? peptideCharge <= chargeToLookAt : peptideCharge >= chargeToLookAt))
                     {
                         break;
                     }
@@ -213,8 +217,8 @@ namespace EngineLayer.Calibration
                                                              trainingPointsToAverage.Select(b => b.TheoreticalMz).Average(),
                                                              identification));
                     }
-                    chargeToLookAt++;
-                } while (chargeToLookAt <= highestKnownChargeForThisPeptide + 1);
+                    chargeToLookAt += positiveMode ? 1 : -1;
+                } while (positiveMode ? chargeToLookAt <= chargeLimit : chargeToLookAt >= chargeLimit);
                 theIndex += direction;
             }
             return (result, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
@@ -240,16 +244,17 @@ namespace EngineLayer.Calibration
                 if(envelopesThatMatch.Count == 0)
                     continue;
                 //only allow one envelope per charge state
-                bool[] chargeStateFound = new bool[envelopesThatMatch.Max(x => x.Charge) + 1];
+                bool[] chargeStateFound = new bool[envelopesThatMatch.Max(x => Math.Abs(x.Charge)) + 1];
 
                 foreach (var envelopeThatMatched in envelopesThatMatch)
                 {
+                    int charge = Math.Abs(envelopeThatMatched.Charge);
                     //if we haven't seen this charge state already
-                    if (!chargeStateFound[envelopeThatMatched.Charge])
+                    if (!chargeStateFound[charge])
                     {
-                        chargeStateFound[envelopeThatMatched.Charge] = true;
+                        chargeStateFound[charge] = true;
 
-                        double exptPeakMz = envelopeThatMatched.MonoisotopicMass.ToMz(envelopeThatMatched.Charge);
+                        double exptPeakMz = envelopeThatMatched.MonoisotopicMass.ToMz(charge);
                         double exptPeakIntensity = envelopeThatMatched.TotalIntensity;
                         double injTime = ms2DataScan.TheScan.InjectionTime ?? double.NaN;
 
@@ -259,8 +264,8 @@ namespace EngineLayer.Calibration
                                 ms2DataScan.OneBasedScanNumber,
                                 Math.Log(ms2DataScan.TotalIonCurrent),
                                 Math.Log(injTime),
-                                Math.Log(exptPeakIntensity),
-                                matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(envelopeThatMatched.Charge),
+                        Math.Log(exptPeakIntensity),
+                                matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(charge),
                                 identification));
                     }
                 }

@@ -18,7 +18,8 @@ namespace Test
         BottomUpQValueSingle,
         BottomUpPepQValue,
         TopDownQValue,
-        TopDownQValueSingle
+        TopDownQValueSingle,
+        timsTOFRawFileMixed
     }
 
     /// <summary>
@@ -137,19 +138,34 @@ namespace Test
                 @"TestData\TaGe_SA_A549_3_snip.mzML");
             string myFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestData\TaGe_SA_A549_3_snip_2.mzML");
+            string myFile3 = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                @"TestData\snippet.d");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestData\TaGe_SA_A549_3_snip.fasta");
+            searchTaskLoaded.CommonParameters.QValueCutoffForPepCalculation = 0.01;
+
+            // Bottom-up Q-value Test Case
             _cases.Add(EverythingRunnerEngineTestCases.BottomUpQValue,
                 new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottomUpQValue,
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
                     new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) },
                     false));
+
+            // Bottom-up Q-value Single File Test Case
             _cases.Add(EverythingRunnerEngineTestCases.BottomUpQValueSingle,
                 new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottomUpQValueSingle,
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
                     new List<string> { myFile2 },
                     new List<DbForTask> { new DbForTask(myDatabase, false) }, false));
 
+            // Bottom-up Q-Value with timsTOF file
+            var timsDb = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\timsTofSnippet.fasta");
+            _cases.Add(EverythingRunnerEngineTestCases.timsTOFRawFileMixed,
+                new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.timsTOFRawFileMixed,
+                    new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
+                    new List<string> { myFile1, myFile3 }, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(timsDb, false) }, false));
+
+            // Bottom-up Q-value No Individual Files Write MzId Test Case
             searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             searchTaskLoaded.SearchParameters.WriteIndividualFiles = false;
             searchTaskLoaded.SearchParameters.WriteMzId = true;
@@ -160,6 +176,7 @@ namespace Test
                     new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) },
                     false));
 
+            // Bottom-up Q-value No Individual Files Write PepXml Test Case
             searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             searchTaskLoaded.SearchParameters.WriteIndividualFiles = false;
             searchTaskLoaded.SearchParameters.WriteMzId = false;
@@ -170,6 +187,7 @@ namespace Test
                     new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) },
                     false));
 
+            // Bottom-up Pep Q-value Test Case
             myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestData\Task2-SearchTaskconfig.toml");
             searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
@@ -180,6 +198,7 @@ namespace Test
                     new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) },
                     false));
 
+            // Top-down Q-value Test Case
             myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TopDownTestData\TopDownSearchToml.toml");
             searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
@@ -191,10 +210,14 @@ namespace Test
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
                     new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) },
                     true));
+
+            // Top-down Q-value Single File Test Case
             _cases.Add(EverythingRunnerEngineTestCases.TopDownQValueSingle,
                 new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.TopDownQValueSingle,
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
                     new List<string> { myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) }, true));
+
+
         }
 
         #endregion

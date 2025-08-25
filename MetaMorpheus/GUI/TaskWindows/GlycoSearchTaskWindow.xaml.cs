@@ -29,6 +29,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private DeconHostViewModel DeconHostViewModel;
 
         public GlycoSearchTaskWindow() : this(null)
         {
@@ -40,6 +41,7 @@ namespace MetaMorpheusGUI
             PopulateChoices();
             TheTask = task ?? new GlycoSearchTask();
             UpdateFieldsFromTask(TheTask);
+            DeisotopingControl.DataContext = DeconHostViewModel;
 
             if (task == null)
             {
@@ -70,8 +72,8 @@ namespace MetaMorpheusGUI
             cbbPrecusorMsTl.Items.Add("Da");
             cbbPrecusorMsTl.Items.Add("ppm");
 
-            CmbOGlycanDatabase.ItemsSource = GlobalVariables.OGlycanLocations.Select(p=> Path.GetFileName(p));
-            CmbNGlycanDatabase.ItemsSource = GlobalVariables.NGlycanLocations.Select(p => Path.GetFileName(p));
+            CmbOGlycanDatabase.ItemsSource = GlobalVariables.OGlycanDatabasePaths.Select(p=> Path.GetFileName(p));
+            CmbNGlycanDatabase.ItemsSource = GlobalVariables.NGlycanDatabasePaths.Select(p => Path.GetFileName(p));
 
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
@@ -112,6 +114,7 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GlycoSearchTask task)
         {
+            MetaMorpheusEngine.DetermineAnalyteType(TheTask.CommonParameters);
             RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.OGlycanSearch;
             RbtNGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
@@ -159,15 +162,19 @@ namespace MetaMorpheusGUI
             CheckBoxDecoy.IsChecked = task._glycoSearchParameters.DecoyType != DecoyType.None;
             RadioButtonReverseDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Reverse;
             RadioButtonSlideDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Slide;
-            deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
-            useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
+            DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
+                TheTask.CommonParameters.ProductDeconvolutionParameters,
+                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
+            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinLength.ToString(CultureInfo.InvariantCulture);
+            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxLength.ToString(CultureInfo.InvariantCulture);
+            if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
+            {
+                proteaseComboBox.SelectedItem = digestionParams.Protease;
+                initiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
+            }
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            TxtBoxMaxModPerPep.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
+            TxtBoxMaxModPerPep.Text = task.CommonParameters.DigestionParams.MaxMods.ToString(CultureInfo.InvariantCulture);
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
@@ -243,7 +250,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                fieldNotUsed, fieldNotUsed, fieldNotUsed, TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, TxtBoxMaxModPerPep.Text, 
+                fieldNotUsed, fieldNotUsed, fieldNotUsed, DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, TxtBoxMaxModPerPep.Text, 
                 fieldNotUsed, null, null, null))
             {
                 return;
@@ -369,12 +376,17 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
+            DeconvolutionParameters precursorDeconvolutionParameters = DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters;
+            DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
+            bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
+            bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
+            
             CommonParameters commonParamsToSave = new CommonParameters(
                 precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GlycoSearchTask",
                 productMassTolerance: ProductMassTolerance,
-                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
-                useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
+                doPrecursorDeconvolution: doPrecursorDeconvolution,
+                useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                 digestionParams: digestionParamsToSave,
                 trimMs1Peaks: trimMs1.IsChecked.Value,
                 trimMsMsPeaks: trimMsMs.IsChecked.Value,
@@ -387,7 +399,9 @@ namespace MetaMorpheusGUI
                 maxThreadsToUsePerFile: int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
                 listOfModsFixed: listOfModsFixed,
-                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                precursorDeconParams: precursorDeconvolutionParameters,
+                productDeconParams: productDeconvolutionParameters);
 
             TheTask.CommonParameters = commonParamsToSave;
 

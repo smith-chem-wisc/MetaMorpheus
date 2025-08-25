@@ -29,6 +29,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private DeconHostViewModel DeconHostViewModel;
 
         public XLSearchTaskWindow(XLSearchTask task)
         {
@@ -36,6 +37,7 @@ namespace MetaMorpheusGUI
             PopulateChoices();
             TheTask = task ?? new XLSearchTask();
             UpdateFieldsFromTask(TheTask);
+            DeisotopingControl.DataContext = DeconHostViewModel;
 
             if (task == null)
             {
@@ -119,6 +121,7 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
+            MetaMorpheusEngine.DetermineAnalyteType(TheTask.CommonParameters);
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbAddCompIon.IsChecked = task.CommonParameters.AddCompIons;
@@ -149,15 +152,20 @@ namespace MetaMorpheusGUI
                 MS3ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS3ChildScanDissociationType.ToString();
             }
 
+            if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
+            {
+                proteaseComboBox.SelectedItem = digestionParams.Protease;
+                initiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
+            }
+
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
-            deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
-            useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
+            DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
+                TheTask.CommonParameters.ProductDeconvolutionParameters,
+                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
+            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinLength.ToString(CultureInfo.InvariantCulture);
+            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxLength.ToString(CultureInfo.InvariantCulture);
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
@@ -235,7 +243,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(XLPrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                fieldNotUsed, fieldNotUsed, fieldNotUsed, TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, 
+                fieldNotUsed, fieldNotUsed, fieldNotUsed, DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, 
                 fieldNotUsed, fieldNotUsed, null, null, null))
             {
                 return;
@@ -317,12 +325,17 @@ namespace MetaMorpheusGUI
             }
 
             bool _addCompIons = ckbAddCompIon.IsChecked.Value;
+            DeconvolutionParameters precursorDeconvolutionParameters = DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters;
+            DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
+            bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
+            bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
+
             CommonParameters commonParamsToSave = new CommonParameters(
                 precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "XLSearchTask",
                 productMassTolerance: ProductMassTolerance,
-                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
-                useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
+                doPrecursorDeconvolution: doPrecursorDeconvolution,
+                useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                 digestionParams: digestionParamsToSave,
                 trimMs1Peaks: trimMs1.IsChecked.Value,
                 trimMsMsPeaks: trimMsMs.IsChecked.Value,
@@ -338,7 +351,9 @@ namespace MetaMorpheusGUI
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
                 listOfModsFixed: listOfModsFixed,
-                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                precursorDeconParams: precursorDeconvolutionParameters,
+                productDeconParams: productDeconvolutionParameters);
 
             TheTask.CommonParameters = commonParamsToSave;
 

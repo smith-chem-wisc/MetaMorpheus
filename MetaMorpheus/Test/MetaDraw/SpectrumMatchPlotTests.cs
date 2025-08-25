@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
-using EngineLayer;
 using GuiFunctions;
 using NUnit.Framework;
 using OxyPlot;
@@ -12,6 +10,7 @@ using OxyPlot.Annotations;
 using Omics.Fragmentation;
 using Readers;
 using TaskLayer;
+using Chemistry;
 
 namespace Test.MetaDraw
 {
@@ -51,7 +50,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
 
             Assert.That(!errors.Any());
@@ -60,6 +59,14 @@ namespace Test.MetaDraw
             plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             parentChildView = new ParentChildScanPlotsView();
             psm = metadrawLogic.FilteredListOfPsms.First(p => p.FullSequence == "QIVHDSGR");
+
+            // create a fake neutral loss fragment ion for testing purposes. 
+            var ionToCopy = psm.MatchedIons.First();
+            var productToCopy = ionToCopy.NeutralTheoreticalProduct;
+            var neutralTheorecticalProduct = new Product(productToCopy.ProductType, productToCopy.Terminus, productToCopy.NeutralMass - 18.01056468, productToCopy.FragmentNumber, productToCopy.ResiduePosition, 18.01056468, productToCopy.SecondaryProductType, productToCopy.SecondaryFragmentNumber);
+            var neutralLossIon = new MatchedFragmentIon(neutralTheorecticalProduct, neutralTheorecticalProduct.MonoisotopicMass.ToMz(ionToCopy.Charge), ionToCopy.Intensity, ionToCopy.Charge);
+            psm.MatchedIons.Add(neutralLossIon);
+
         }
 
         [OneTimeTearDown]
@@ -71,7 +78,7 @@ namespace Test.MetaDraw
         private string outputFolder;
         private MetaDrawLogic metadrawLogic;
         private OxyPlot.Wpf.PlotView plotView;
-        private PsmFromTsv psm;
+        private SpectrumMatchFromTsv psm;
         private ParentChildScanPlotsView parentChildView;
         public record PeakAnnotationTestCase(bool AnnotatePeaks, bool AnnotateCharges,
             bool AnnotateMass, bool SubAndSuper, string ExpectedAnnotation, OxyColor ExpectedColor, int FragmentIndex);
@@ -136,6 +143,24 @@ namespace Test.MetaDraw
             yield return new PeakAnnotationTestCase(true, true, false, true, "yIb₄₋₇¹⁺", internalColor, 12);
             yield return new PeakAnnotationTestCase(true, false, true, true, "yIb₄₋₇ (397.145)", internalColor, 12);
             yield return new PeakAnnotationTestCase(true, true, true, true, "yIb₄₋₇¹⁺ (397.145)", internalColor, 12);
+
+            // all parameter combinations for neutral loss ions
+            yield return new PeakAnnotationTestCase(false, false, false, false, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, true, false, false, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, false, true, false, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, false, false, true, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, true, true, false, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, true, false, true, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, false, true, true, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, true, true, true, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(true, false, false, false, "b1-18.01", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, true, false, false, "b1-18.01+1", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, false, true, false, "b1-18.01 (111.055)", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, false, false, true, "b₁\u208b\u2081\u2088.\u2080\u2081", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, true, true, false, "b1-18.01+1 (111.055)", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, true, false, true, "b₁\u208b\u2081\u2088.\u2080\u2081¹⁺", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, false, true, true, "b₁\u208b\u2081\u2088.\u2080\u2081 (111.055)", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, true, true, true, "b₁\u208b\u2081\u2088.\u2080\u2081¹⁺ (111.055)", bColor, 13);
         }
 
 
@@ -187,7 +212,7 @@ namespace Test.MetaDraw
             // load in files
             MetaDrawLogic metaDrawLogic = new MetaDrawLogic();
             metaDrawLogic.SpectraFilePaths.Add(dataFilePath);
-            metaDrawLogic.PsmResultFilePaths.Add(psmFilePath);
+            metaDrawLogic.SpectralMatchResultFilePaths.Add(psmFilePath);
 
             var errors = metaDrawLogic.LoadFiles(true, true);
 
@@ -201,11 +226,11 @@ namespace Test.MetaDraw
             var stationaryCanvas = new Canvas();
             var sequenceAnnotationCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
-            var psm = metaDrawLogic.FilteredListOfPsms.First(p => p.FullSequence == "GVTVDKMTELR(6)");
+            var psm = metaDrawLogic.FilteredListOfPsms.First(p => p.FullSequence == "GVTVDKMTELR(6)") as PsmFromTsv;
              
             // perform black magic to set the scan number of the MS2 to match the mzML file number
             var oldScanNum = psm.Ms2ScanNumber;
-            var field = typeof(PsmFromTsv).GetField("<Ms2ScanNumber>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var field = typeof(SpectrumMatchFromTsv).GetField("<Ms2ScanNumber>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             field?.SetValue(psm, 28819);
 
             // display psm and check display has correct number of annotations
@@ -232,7 +257,7 @@ namespace Test.MetaDraw
             foreach (var exportType in MetaDrawSettings.ExportTypes)
             {
                 MetaDrawSettings.ExportType = exportType;
-                metaDrawLogic.ExportPlot(plotView, canvas, new List<PsmFromTsv>() { psm }, parentChildView,
+                metaDrawLogic.ExportPlot(plotView, canvas, new List<SpectrumMatchFromTsv>() { psm }, parentChildView,
                     outputFolderPath, out errors);
 
                 Assert.That(File.Exists(Path.Combine(outputFolderPath, @$"{psm.Ms2ScanNumber}_{psm.FullSequence}{psm.BetaPeptideBaseSequence}.{exportType}")));
@@ -244,7 +269,7 @@ namespace Test.MetaDraw
 
             metaDrawLogic.CleanUpPSMFiles();
             Assert.That(!metaDrawLogic.FilteredListOfPsms.Any());
-            Assert.That(!metaDrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metaDrawLogic.SpectralMatchResultFilePaths.Any());
 
             // delete output
             Directory.Delete(outputFolderPath, true);

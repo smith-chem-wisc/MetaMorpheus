@@ -12,6 +12,8 @@ using System.IO;
 using Omics.Digestion;
 using Omics.Modifications;
 using UsefulProteomicsDatabases;
+using System.Text.RegularExpressions;
+using Omics;
 
 namespace Test
 {
@@ -23,40 +25,40 @@ namespace Test
         {
             Protein prot1 = new Protein("MEDEEK", "prot1");
             List<Protein> proteinList1 = new List<Protein> { prot1 };
-            ProteinGroup proteinGroup1 = new ProteinGroup(new HashSet<Protein>(proteinList1),
-                new HashSet<PeptideWithSetModifications>(), new HashSet<PeptideWithSetModifications>());
+            ProteinGroup proteinGroup1 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList1),
+                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
 
             List<Protein> proteinList2 = new List<Protein> { prot1 };
-            ProteinGroup proteinGroup2 = new ProteinGroup(new HashSet<Protein>(proteinList2),
-                new HashSet<PeptideWithSetModifications>(), new HashSet<PeptideWithSetModifications>());
+            ProteinGroup proteinGroup2 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList2),
+                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
 
             //two protein groups with the same protein should be equal
             Assert.That(proteinGroup1.Equals(proteinGroup2));
 
             Protein prot3 = new Protein("EDEEK", "prot3");
             List<Protein> proteinList3 = new List<Protein> { prot3 };
-            ProteinGroup proteinGroup3 = new ProteinGroup(new HashSet<Protein>(proteinList3),
-                new HashSet<PeptideWithSetModifications>(), new HashSet<PeptideWithSetModifications>());
+            ProteinGroup proteinGroup3 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList3),
+                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
 
             //two protein groups with different proteins should not be equal
             Assert.That(!proteinGroup1.Equals(proteinGroup3));
 
             List<Protein> proteinList4 = new List<Protein> { prot1, prot3 };
             List<Protein> proteinList5 = new List<Protein> { prot3, prot1 };
-            ProteinGroup proteinGroup4 = new ProteinGroup(new HashSet<Protein>(proteinList4),
-                               new HashSet<PeptideWithSetModifications>(), new HashSet<PeptideWithSetModifications>());
-            ProteinGroup proteinGroup5 = new ProteinGroup(new HashSet<Protein>(proteinList5),
-                new HashSet<PeptideWithSetModifications>(), new HashSet<PeptideWithSetModifications>());
+            ProteinGroup proteinGroup4 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList4),
+                               new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
+            ProteinGroup proteinGroup5 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList5),
+                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
 
             //protein groups with the same proteins but in different order should be equal
             Assert.That(proteinGroup4.Equals(proteinGroup5));
 
             PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1,new DigestionParams(),1,3,CleavageSpecificity.Full,"",0,new Dictionary<int, Modification>(),0);
             PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(prot1, new DigestionParams(), 4, 6, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
-            ProteinGroup proteinGroup6 = new ProteinGroup(new HashSet<Protein>(proteinList1), new HashSet<PeptideWithSetModifications>(){pwsm1},
-                new HashSet<PeptideWithSetModifications>(){pwsm1});
-            ProteinGroup proteinGroup7 = new ProteinGroup(new HashSet<Protein>(proteinList1), new HashSet<PeptideWithSetModifications>() { pwsm2 },
-                new HashSet<PeptideWithSetModifications>() { pwsm2 });
+            ProteinGroup proteinGroup6 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList1), new HashSet<IBioPolymerWithSetMods>(){pwsm1},
+                new HashSet<IBioPolymerWithSetMods>(){pwsm1});
+            ProteinGroup proteinGroup7 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList1), new HashSet<IBioPolymerWithSetMods>() { pwsm2 },
+                new HashSet<IBioPolymerWithSetMods>() { pwsm2 });
 
             //protein groups with the same proteins but different peptides should be equal
             Assert.That(proteinGroup6.Equals(proteinGroup7));
@@ -77,21 +79,43 @@ namespace Test
 
             List<Protein> proteinList1 = new List<Protein> { prot1, prot2 };
 
-            ProteinGroup proteinGroup1 = new ProteinGroup(new HashSet<Protein>(proteinList1),
-                new HashSet<PeptideWithSetModifications>() { pwsm1, pwsm2 }, new HashSet<PeptideWithSetModifications>() { pwsm1, pwsm2 });
+            ProteinGroup proteinGroup1 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList1),
+                new HashSet<IBioPolymerWithSetMods>() { pwsm1, pwsm2 }, new HashSet<IBioPolymerWithSetMods>() { pwsm1, pwsm2 });
 
             //string exectedProteinGroupToString = proteinGroup1.ToString();
-            string exectedProteinGroupToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t";
+            string exectedProteinGroupToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupToString));
 
 
             Protein prot3 = new Protein("MAAADAAAAAAAAAAAAAAA", "prot3", isDecoy: true);
             List<Protein> proteinList3 = new List<Protein> { prot3 };
-            ProteinGroup proteinGroup3 = new ProteinGroup(new HashSet<Protein>(proteinList3),
-                               new HashSet<PeptideWithSetModifications>(), new HashSet<PeptideWithSetModifications>());
-            string exectedProteinGroupWithDecoyToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t";
+            ProteinGroup proteinGroup3 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList3),
+                               new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
+            string exectedProteinGroupWithDecoyToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupWithDecoyToString));
         }
+
+        [Test]
+        public static void TestProteinGroupStringAndHeaderHaveSameNumberOfTabs()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            Protein prot2 = new Protein("MENEEK", "prot2");
+
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(prot2, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            List<Protein> proteinList1 = new List<Protein> { prot1, prot2 };
+
+            ProteinGroup proteinGroup1 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList1),
+                new HashSet<IBioPolymerWithSetMods>() { pwsm1, pwsm2 }, new HashSet<IBioPolymerWithSetMods>() { pwsm1, pwsm2 });
+
+            string pgHeader = proteinGroup1.GetTabSeparatedHeader();
+            string pgRow = proteinGroup1.ToString();
+            string[] headerFields = pgHeader.Split('\t');
+            string[] rowEntries = pgRow.Split("\t");
+            Assert.That(headerFields.Length, Is.EqualTo(rowEntries.Length));
+            Assert.That(Regex.Matches(pgHeader, @"\t").Count, Is.EqualTo(Regex.Matches(pgRow, @"\t").Count));
+        }   
 
         [Test]
         public static void ProteinGroupMergeTest()
@@ -109,10 +133,10 @@ namespace Test
             List<Protein> proteinList1 = new List<Protein> { prot1, prot2 };
             List<Protein> proteinList2 = new List<Protein> { prot3, prot4 };
 
-            ProteinGroup proteinGroup1 = new ProteinGroup(new HashSet<Protein>(proteinList1),
-                               new HashSet<PeptideWithSetModifications>(){pwsm1,pwsm2}, new HashSet<PeptideWithSetModifications>() { pwsm1,pwsm2 });
-            ProteinGroup proteinGroup2 = new ProteinGroup(new HashSet<Protein>(proteinList2),
-                               new HashSet<PeptideWithSetModifications>() { pwsm3,pwsm4 }, new HashSet<PeptideWithSetModifications>() { pwsm3,pwsm4 });
+            ProteinGroup proteinGroup1 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList1),
+                               new HashSet<IBioPolymerWithSetMods>(){pwsm1,pwsm2}, new HashSet<IBioPolymerWithSetMods>() { pwsm1,pwsm2 });
+            ProteinGroup proteinGroup2 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList2),
+                               new HashSet<IBioPolymerWithSetMods>() { pwsm3,pwsm4 }, new HashSet<IBioPolymerWithSetMods>() { pwsm3,pwsm4 });
 
             proteinGroup1.MergeProteinGroupWith(proteinGroup2);
 
@@ -160,8 +184,8 @@ namespace Test
 
             List<Protein> proteinList1 = new List<Protein> { protein1 };
 
-            EngineLayer.ProteinGroup proteinGroup1 = new EngineLayer.ProteinGroup(new HashSet<Protein>(proteinList1),
-                new HashSet<PeptideWithSetModifications>() { pwsm1, pwsm2 }, new HashSet<PeptideWithSetModifications>() { pwsm1, pwsm2 });
+            EngineLayer.ProteinGroup proteinGroup1 = new EngineLayer.ProteinGroup(new HashSet<IBioPolymer>(proteinList1),
+                new HashSet<IBioPolymerWithSetMods>() { pwsm1, pwsm2 }, new HashSet<IBioPolymerWithSetMods>() { pwsm1, pwsm2 });
 
             proteinGroup1.DisplayModsOnPeptides = true;
 
@@ -216,12 +240,12 @@ namespace Test
             int totalNumberOfMods = proteins.Sum(p => p.OneBasedPossibleLocalizedModifications.Count + p.SequenceVariations.Sum(sv => sv.OneBasedModifications.Count));
 
             //tests that modifications are being done correctly
-            Assert.That(totalNumberOfMods, Is.EqualTo(0));
+            Assert.That(totalNumberOfMods, Is.EqualTo(8));
 
             List<string> proteinGroupsOutput = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllQuantifiedProteinGroups.tsv")).ToList();
             string firstDataLine = proteinGroupsOutput[2];
             string modInfoListProteinTwo = firstDataLine.Split('\t')[14];
-            Assert.That(modInfoListProteinTwo, Is.EqualTo("#aa66[Hydroxylation on K,info:occupancy=0.33(1/3)];#aa71[Oxidation on S,info:occupancy=0.67(2/3)]"));
+            Assert.That(modInfoListProteinTwo, Is.EqualTo("#aa71[Oxidation on S,info:occupancy=0.33(1/3)];#aa72[Didehydro on Y,info:occupancy=0.33(1/3)]"));
 
             Directory.Delete(outputFolder, true);
         }

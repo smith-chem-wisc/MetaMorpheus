@@ -12,6 +12,7 @@ using MzLibUtil;
 using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -198,14 +199,12 @@ namespace GuiFunctions
             PossibleProducts.ForEach(product => product.Use = dissociationTypeProducts.Contains(product.ProductType));
         }
 
-        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, PsmFromTsv psmToRematch)
+        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv smToRematch)
         {
-            if (psmToRematch.FullSequence.Contains('|'))
-                return psmToRematch.MatchedIons;
+            if (smToRematch.FullSequence.Contains('|'))
+                return smToRematch.MatchedIons;
 
-            IBioPolymerWithSetMods bioPolymer = /*_isProtein ? */
-                new PeptideWithSetModifications(psmToRematch.FullSequence, GlobalVariables.AllModsKnownDictionary);
-            /*: new OligoWithSetMods(psmToRematch.FullSequence, GlobalVariables.AllRNAModsKnownDictionary);*/
+            IBioPolymerWithSetMods bioPolymer = smToRematch.ToBioPolymerWithSetMods();
 
             List<Product> terminalProducts = new List<Product>();
             Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList(); 
@@ -224,12 +223,51 @@ namespace GuiFunctions
             if (Math.Abs(commonParams.ProductMassTolerance.Value - ProductIonMassTolerance) > 0.00001)
                 commonParams.ProductMassTolerance = new PpmTolerance(ProductIonMassTolerance);
 
-            var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, psmToRematch.PrecursorMz,
-                psmToRematch.PrecursorCharge, psmToRematch.FileNameWithoutExtension, commonParams);
+            var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, smToRematch.PrecursorMz,
+                smToRematch.PrecursorCharge, smToRematch.FileNameWithoutExtension, commonParams);
 
-            return MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false)
-                .Union(psmToRematch.MatchedIons.Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType)))
+
+            var newMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false);
+            var existingMatches = smToRematch.MatchedIons.Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType));
+            var uniqueMatches = newMatches.Concat(existingMatches)
+                .Distinct(MatchedFragmentIonComparer)
                 .ToList();
+            return uniqueMatches;
+        }
+
+        public static readonly IEqualityComparer<MatchedFragmentIon> MatchedFragmentIonComparer = new MatchedFragmentIonEqualityComparer();
+
+        private class MatchedFragmentIonEqualityComparer : IEqualityComparer<MatchedFragmentIon>
+        {
+            public bool Equals(MatchedFragmentIon x, MatchedFragmentIon y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null || y is null) return false;
+
+                return Math.Round(x.Mz, 1).Equals(Math.Round(y.Mz, 1))
+                       && x.Charge == y.Charge
+                       && Math.Round(x.Intensity).Equals(Math.Round(y.Intensity))
+                       && x.NeutralTheoreticalProduct.FragmentNumber == y.NeutralTheoreticalProduct.FragmentNumber
+                       && x.NeutralTheoreticalProduct.ProductType == y.NeutralTheoreticalProduct.ProductType
+                       && x.NeutralTheoreticalProduct.SecondaryProductType == y.NeutralTheoreticalProduct.SecondaryProductType
+                       && x.NeutralTheoreticalProduct.SecondaryFragmentNumber == y.NeutralTheoreticalProduct.SecondaryFragmentNumber;
+            }
+
+            public int GetHashCode(MatchedFragmentIon obj)
+            {
+                if (obj is null) return 0;
+                int hash = 17;
+                hash = hash * 23 + Math.Round(obj.Mz, 1).GetHashCode();
+                hash = hash * 23 + obj.Charge.GetHashCode();
+                hash = hash * 23 + Math.Round(obj.Intensity).GetHashCode();
+                hash = hash * 23 + obj.NeutralTheoreticalProduct.FragmentNumber.GetHashCode();
+                hash = hash * 23 + obj.NeutralTheoreticalProduct.ProductType.GetHashCode();
+                hash = hash * 23 + (obj.NeutralTheoreticalProduct.SecondaryProductType?.GetHashCode() ?? 0);
+                if (obj.NeutralTheoreticalProduct.SecondaryFragmentNumber != null)
+                    hash = hash * 23 + obj.NeutralTheoreticalProduct.SecondaryFragmentNumber.GetHashCode();
+
+                return hash;
+            }
         }
     }
 }

@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics;
 using Omics.Digestion;
 using Omics.Modifications;
 using Readers;
@@ -23,20 +24,28 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using static Nett.TomlObjectFactory;
 using EngineLayer.FdrAnalysis;
+using Omics.BioPolymer;
 
 namespace Test
 {
     [TestFixture]
     public static class SearchEngineTests
     {
+        public static Protease _customProtease;
+
+        [OneTimeSetUp]
+        public static void OneTimeSetUp()
+        {
+            _customProtease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
+            ProteaseDictionary.Dictionary.Add(_customProtease.Name, _customProtease);
+        }
+
         [Test]
         public static void TestClassicSearchEngine()
         {
-            Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
-            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
                 (digestionParams: new DigestionParams(
-                    protease: protease.Name,
+                    protease: _customProtease.Name,
                     minPeptideLength: 1),
                 scoreCutoff: 1);
 
@@ -51,6 +60,41 @@ namespace Test
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, CommonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
+
+            // Single search mode
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
+
+            // One scan
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
+
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
+
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQ"));
+        }
+
+        [Test]
+        public static void TestClassicSearchEngine_IsoDec()
+        {
+            CommonParameters commonParameters = new CommonParameters
+            (digestionParams: new DigestionParams(
+                    protease: _customProtease.Name,
+                    minPeptideLength: 1),
+                scoreCutoff: 1, 
+                precursorDeconParams: new IsoDecDeconvolutionParameters());
+            commonParameters.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 12;
+
+            var myMsDataFile = new TestDataFile();
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            bool writeSpectralLibrary = false;
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchModes, commonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
 
             // Single search mode
             Assert.That(allPsmsArray.Length, Is.EqualTo(1));
@@ -85,7 +129,7 @@ namespace Test
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
             PsmFromTsv psm = parsedPsms.First();
             Assert.That(psm.BaseSeq, Is.EqualTo("FTQTSGETTDADKEPAGEDK"));
             Assert.That(psm.DecoyContamTarget, Is.EqualTo("T"));
@@ -118,7 +162,7 @@ namespace Test
             Assert.That(0.004739, Is.EqualTo(psm.QValueNotch).Within(1E-04));
             Assert.That(psm.RetentionTime, Is.EqualTo(45.59512));
             Assert.That(psm.Score, Is.EqualTo(662.486));
-            Assert.That(psm.StartAndEndResiduesInProtein, Is.EqualTo("[2742 to 2761]"));
+            Assert.That(psm.StartAndEndResiduesInParentSequence, Is.EqualTo("[2742 to 2761]"));
             Assert.That(psm.TotalIonCurrent, Is.EqualTo(159644.25225));
             Assert.That(psm.VariantCrossingIons.Count, Is.EqualTo(0));
             property.SetValue(null, false);
@@ -129,7 +173,7 @@ namespace Test
         public static void TestXCorrWithNoPeaks()
         {
             MsDataScan datascan = new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive, 0, new MzLibUtil.MzRange(0, 2000), "", MZAnalyzerType.FTICR, 1, null, null, "");
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(datascan, 0, 0, "", new CommonParameters(), new IsotopicEnvelope[] { new IsotopicEnvelope(new List<(double mz, double intensity)> { (1, 1) }, 32, 2, 23, 1, 1) });
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(datascan, 0, 0, "", new CommonParameters(), new IsotopicEnvelope[] { new IsotopicEnvelope(new List<(double mz, double intensity)> { (1, 1) }, 32, 2, 23, 1) });
             scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1, 32);
             MetaMorpheusEngine.MatchFragmentIons(scan, new List<Product> { (new Product(ProductType.y, FragmentationTerminus.C, 0, 1, 1, 0)) }, new CommonParameters(dissociationType: DissociationType.LowCID));
         }
@@ -148,7 +192,7 @@ namespace Test
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
 
             Assert.That(parsedPsms.Count, Is.EqualTo(385)); //total psm count
             Assert.That(parsedPsms.Count(p => p.QValue < 0.01), Is.EqualTo(218)); //psms with q-value < 0.01 as read from psmtsv, including decoys
@@ -979,6 +1023,29 @@ namespace Test
             Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQGGGG"));
         }
 
+        [Test]
+        public static void TestNonSpecificEnzymeSearchEngine()
+        {
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchToml.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchTest");
+            Directory.CreateDirectory(outputFolder);
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\bosTaurusEnamPruned.xml");
+
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engineToml.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
+
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+
+            Assert.That(parsedPsms.Count, Is.EqualTo(38)); //total psm count
+
+            Directory.Delete(outputFolder, true);
+
+        }
+
 
         [Test]
         public static void TestNonSpecificEnzymeSearchEngineSingleNLowCID()
@@ -1484,7 +1551,7 @@ namespace Test
                 scoreCutoff: 2,
                 addCompIons: true);
 
-            HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
+            var digestParams = new HashSet<IDigestionParams> { CommonParameters.DigestionParams };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse,
                 CommonParameters, null, 100000, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -1546,7 +1613,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMKNNNQQQGGGGKGG", null, null, null, null, new List<ProteolysisProduct> { new ProteolysisProduct(null, null, "test") }) };
+            var proteinList = new List<Protein> { new Protein("GGGGGMKNNNQQQGGGGKGG", null, null, null, null, new List<TruncationProduct> { new TruncationProduct(null, null, "test") }) };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
@@ -1559,7 +1626,7 @@ namespace Test
                 dissociationType: DissociationType.HCD,
                 addCompIons: true);
 
-            HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
+            var digestParams = new HashSet<IDigestionParams> { CommonParameters.DigestionParams };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse,
                 CommonParameters, null, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -1664,7 +1731,7 @@ namespace Test
                 digestionParams: new DigestionParams(protease: protease2.Name, maxMissedCleavages: 5)
             );
 
-            HashSet<DigestionParams> digestParams2 = new HashSet<DigestionParams> { CommonParameters2.DigestionParams };
+            var digestParams2 = new HashSet<IDigestionParams> { CommonParameters2.DigestionParams };
 
             Tolerance DeconvolutionMassTolerance2 = new PpmTolerance(5);
 
@@ -1713,7 +1780,7 @@ namespace Test
                 modsDictionary.Add(mod, (ushort)ii);
                 ii++;
             }
-            List<ProteolysisProduct> protprod = new List<ProteolysisProduct> { new ProteolysisProduct(9, 21, "chain") };
+            List<TruncationProduct> protprod = new List<TruncationProduct> { new TruncationProduct(9, 21, "chain") };
             var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, null, protprod) };
 
             List<DigestionMotif> motifs1 = new List<DigestionMotif>
@@ -1814,7 +1881,7 @@ namespace Test
             CommonParameters commonParams = new CommonParameters(digestionParams: new DigestionParams(protease: "Arg-C", searchModeType: CleavageSpecificity.None));
             FileSpecificParameters fileSpecificParams = new FileSpecificParameters();
             CommonParameters updatedCommonParams = MetaMorpheusTask.SetAllFileSpecificCommonParams(commonParams, fileSpecificParams);
-            Assert.That(updatedCommonParams.DigestionParams.SpecificProtease, Is.EqualTo(commonParams.DigestionParams.SpecificProtease));
+            Assert.That(((DigestionParams)updatedCommonParams.DigestionParams).SpecificProtease, Is.EqualTo(((DigestionParams)commonParams.DigestionParams).SpecificProtease));
         }
 
         [Test]
@@ -1823,7 +1890,7 @@ namespace Test
             //peptide and ms file prep
             PeptideWithSetModifications nTermModifiedPwsm = new PeptideWithSetModifications("[Uniprot:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", GlobalVariables.AllModsKnownDictionary);
             PeptideWithSetModifications cTermModifiedPwsm = new PeptideWithSetModifications("AGIAAKLAKDREAAEGLGSHA[Uniprot:Alanine amide on A]", GlobalVariables.AllModsKnownDictionary);
-            TestDataFile msFile = new TestDataFile(new List<PeptideWithSetModifications> { nTermModifiedPwsm, cTermModifiedPwsm });
+            TestDataFile msFile = new TestDataFile(new List<IBioPolymerWithSetMods> { nTermModifiedPwsm, cTermModifiedPwsm });
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //params for singleN and singleC
@@ -1858,7 +1925,7 @@ namespace Test
                 List<CommonParameters> paramsToTest = new List<CommonParameters> { cCommonParameters, nCommonParameters, cCleaveParams, nCleaveParams };
                 foreach (CommonParameters commonParams in paramsToTest)
                 {
-                    HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { commonParams.DigestionParams };
+                    var digestParams = new HashSet<IDigestionParams> { commonParams.DigestionParams };
                     var indexEngine = new IndexingEngine(termParams.proteinList, termParams.variableMods, empty, null, null, null, 1, DecoyType.None,
                         commonParams, null, 100000, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
                     var indexResults = (IndexingResults)indexEngine.Run();
@@ -1920,7 +1987,7 @@ namespace Test
             PeptideWithSetModifications peptide6 = new PeptideWithSetModifications("LNGEEPEPKSMTHERPEPSK", new Dictionary<string, Modification>());
             PeptideWithSetModifications peptide7 = new PeptideWithSetModifications("LNGEEPEPKASWELASKTHEPEPSK", new Dictionary<string, Modification>());
 
-            MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { peptide, peptide2, peptide3, peptide4, peptide5, peptide6, peptide7 });
+            MsDataFile myMsDataFile1 = new TestDataFile(new List<IBioPolymerWithSetMods> { peptide, peptide2, peptide3, peptide4, peptide5, peptide6, peptide7 });
             string mzmlName = @"test.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 

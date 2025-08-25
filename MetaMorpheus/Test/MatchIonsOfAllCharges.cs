@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
-using IO.MzML;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
@@ -18,6 +17,9 @@ using NUnit.Framework.Legacy;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
+using Readers;
+using Mzml = IO.MzML.Mzml;
+using Readers.SpectralLibrary;
 
 namespace Test
 {
@@ -29,7 +31,7 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters();
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -76,7 +78,7 @@ namespace Test
             var peptideTheorProducts = new List<Product>();
             Assert.That(psm_oneCharge[1].MatchedFragmentIons.Count == 12);
             var differences = psm[1].MatchedFragmentIons.Except(psm_oneCharge[1].MatchedFragmentIons);
-            psm[1].BestMatchingBioPolymersWithSetMods.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+            psm[1].BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
             foreach (var ion in differences)
             {
                 foreach (var product in peptideTheorProducts)
@@ -129,10 +131,10 @@ namespace Test
                scoreCutoff: 1,
                assumeOrphanPeaksAreZ1Fragments: false);
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             // test output file name (should be proteoform and not peptide)
-            Assert.That(GlobalVariables.AnalyteType == "Proteoform");
+            Assert.That(GlobalVariables.AnalyteType.ToString() == "Proteoform");
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -174,7 +176,7 @@ namespace Test
             //compare 2 results and evaluate the different matched ions
             var peptideTheorProducts = new List<Product>();
             var differences = psm.MatchedFragmentIons.Except(psm_oneCharge.MatchedFragmentIons);
-            psm.BestMatchingBioPolymersWithSetMods.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+            psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
             foreach (var ion in differences)
             {
                 foreach (var product in peptideTheorProducts)
@@ -193,7 +195,7 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters();
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -245,7 +247,7 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters();
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -268,8 +270,6 @@ namespace Test
             var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\myPrositLib.msp");
 
             var testLibrary = new SpectralLibrary(new List<string> { path });
-
-
 
             //test when doing spectral library search without generating library
             SpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
@@ -348,7 +348,9 @@ namespace Test
         public static void TestLibraryGeneration()
         {
             string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput");
-            _ = Directory.CreateDirectory(thisTaskOutputFolder);
+            if(Directory.Exists(thisTaskOutputFolder))
+                Directory.Delete(thisTaskOutputFolder, true);
+            Directory.CreateDirectory(thisTaskOutputFolder);
 
             SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
             task.SearchParameters.WriteMzId = true;
@@ -368,10 +370,12 @@ namespace Test
             var lib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
             var libPath = Path.Combine(thisTaskOutputFolder, matchingvalue);
            
-            string testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGenaration");
+            string testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGeneration");
             string outputDir = Path.Combine(testDir, @"SpectralLibraryTest");
 
-            _ = Directory.CreateDirectory(outputDir);
+            if(Directory.Exists(outputDir))
+                Directory.Delete(outputDir, true);
+            Directory.CreateDirectory(outputDir);
 
             SearchTask searchTask = new();
 
@@ -449,27 +453,6 @@ namespace Test
         }
 
         [Test]
-        public static void TestDecoyLibrarySpectraGenerationFunction()
-        {
-            Product a = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
-            Product b = new Product(ProductType.b, FragmentationTerminus.N, 2, 2, 1, 0);
-            Product c = new Product(ProductType.b, FragmentationTerminus.N, 3, 3, 1, 0);
-            Product d = new Product(ProductType.b, FragmentationTerminus.N, 4, 4, 1, 0);
-            var decoyPeptideTheorProducts = new List<Product> { a, b, c, d };
-            MatchedFragmentIon aa = new MatchedFragmentIon(a, 1, 1, 1);
-            MatchedFragmentIon bb = new MatchedFragmentIon(b, 2, 2, 1);
-            MatchedFragmentIon cc = new MatchedFragmentIon(c, 3, 3, 1);
-            MatchedFragmentIon dd = new MatchedFragmentIon(d, 4, 4, 1);
-            var peaks = new List<MatchedFragmentIon> { aa, bb, cc, dd };
-            var librarySpectrum = new LibrarySpectrum("library", 0, 0, peaks, 0);
-            var decoySpectum = SpectralLibrarySearchFunction.GetDecoyLibrarySpectrumFromTargetByReverse(librarySpectrum, decoyPeptideTheorProducts);
-            Assert.That(decoySpectum[0].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[0].NeutralTheoreticalProduct.FragmentNumber == 1 && decoySpectum[0].Intensity == 1);
-            Assert.That(decoySpectum[1].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[1].NeutralTheoreticalProduct.FragmentNumber == 2 && decoySpectum[1].Intensity == 2);
-            Assert.That(decoySpectum[2].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[2].NeutralTheoreticalProduct.FragmentNumber == 3 && decoySpectum[2].Intensity == 3);
-            Assert.That(decoySpectum[3].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[3].NeutralTheoreticalProduct.FragmentNumber == 4 && decoySpectum[3].Intensity == 4);
-        }
-
-        [Test]
 
         public static void TestLibraryExistAfterGPTMDsearch()
         {
@@ -499,7 +482,7 @@ namespace Test
 
 
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SLSNVIAHEISHSWTGNLVTNK.psmtsv");
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings).Where(p => p.AmbiguityLevel == "1").ToList();
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmsPath, out List<string> warnings).Where(p => p.AmbiguityLevel == "1").ToList();
 
             CollectionAssert.AreEqual(psms[0].MatchedIons.Select(p => (p.NeutralTheoreticalProduct.ProductType, p.NeutralTheoreticalProduct.FragmentNumber))
                     .OrderBy(p => p.Item1).ThenBy(p => p.Item2),

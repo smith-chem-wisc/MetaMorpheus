@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -17,9 +18,9 @@ namespace GuiFunctions
     /// </summary>
     public class PeptideSpectrumMatchPlot : SpectrumMatchPlot
     {
-        public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv psm, MsDataScan scan,
+        public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, SpectrumMatchFromTsv sm, MsDataScan scan,
             List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null, bool stationarySequence = false)
-            : base(plotView, psm, scan, matchedFragmentIons)
+            : base(plotView, sm, scan, matchedFragmentIons)
         {
             if (annotateProperties)
             {
@@ -47,9 +48,10 @@ namespace GuiFunctions
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
-            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType);
-            string tempStationarySequencePngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "annotation.png");
-            string tempPtmLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "legend.png");
+            // Use unique temp file names to ensure thread safety
+            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), Path.GetRandomFileName() + "." + MetaDrawSettings.ExportType);
+            string tempStationarySequencePngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), Path.GetRandomFileName() + "_annotation.png");
+            string tempPtmLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), Path.GetRandomFileName() + "_legend.png");
             List<System.Drawing.Bitmap> bitmaps = new();
             List<Point> points = new();
 
@@ -117,7 +119,7 @@ namespace GuiFunctions
             File.Delete(tempModelPath);
             File.Delete(tempStationarySequencePngPath);
             File.Delete(tempPtmLegendPngPath);
-            base.ExportPlot(path, combinedBitmaps, width, height);
+            ExportPlot(path, combinedBitmaps, width, height);
         }
     }
 

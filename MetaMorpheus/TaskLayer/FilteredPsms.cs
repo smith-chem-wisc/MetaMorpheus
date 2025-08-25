@@ -162,18 +162,23 @@ namespace TaskLayer
                 {
                     yield return psm;
                 }
-                else if (filterType == FilterType.PepQValue)
+                else if (psm.GetFdrInfo(filterAtPeptideLevel) != null)
                 {
-                    if (psm.GetFdrInfo(filterAtPeptideLevel).PEP_QValue <= qValueThreshold)
+                    switch(filterType)
                     {
-                        yield return psm;
-                    }
-                }
-                else
-                {
-                    if (psm.GetFdrInfo(filterAtPeptideLevel).QValue <= qValueThreshold && psm.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= qValueThreshold)
-                    {
-                        yield return psm;
+                        case FilterType.PepQValue:
+                            if (psm.GetFdrInfo(filterAtPeptideLevel).PEP_QValue <= qValueThreshold)
+                            {
+                                yield return psm;
+                            }
+                            break;
+                        case FilterType.QValue:
+                        default:
+                            if (psm.GetFdrInfo(filterAtPeptideLevel).QValue <= qValueThreshold && psm.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= qValueThreshold)
+                            {
+                                yield return psm;
+                            }
+                            break;
                     }
                 }
             }

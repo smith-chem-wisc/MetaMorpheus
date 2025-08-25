@@ -12,7 +12,7 @@ namespace TaskLayer.MbrAnalysis
 {
     public class SpectralRecoveryResults
     {
-        public readonly ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> BestMbrMatches;
+        public readonly ConcurrentDictionary<MbrChromatographicPeak, SpectralRecoveryPSM> BestMbrMatches;
         public readonly FlashLfqResults FlashLfqResults;
         private Dictionary<string, List<string>> PeptideScoreDict;
 
@@ -24,7 +24,7 @@ namespace TaskLayer.MbrAnalysis
         {
             get
             {
-                string[] peakHeaderSplit = ChromatographicPeak.TabSeparatedHeader.Split('\t');
+                string[] peakHeaderSplit = MbrChromatographicPeak.TabSeparatedHeader.Split('\t');
                 StringBuilder sb = new();
                 sb.Append(string.Join('\t', peakHeaderSplit[0..16]));
                 sb.Append('\t');
@@ -61,7 +61,7 @@ namespace TaskLayer.MbrAnalysis
             }
         }
 
-        public SpectralRecoveryResults(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, FlashLfqResults flashLfqResults)
+        public SpectralRecoveryResults(ConcurrentDictionary<MbrChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, FlashLfqResults flashLfqResults)
         {
             BestMbrMatches = bestMbrMatches;
             FlashLfqResults = flashLfqResults;
@@ -82,9 +82,10 @@ namespace TaskLayer.MbrAnalysis
             foreach (SpectraFileInfo spectraFile in FlashLfqResults.SpectraFiles)
             {
                 PeptideScoreDict["fileName"].Add(spectraFile.FilenameWithoutExtension);
-                var peaksForFile = BestMbrMatches.Select(kvp => kvp.Key).
-                    Where(p => p.SpectraFileInfo == spectraFile && p.Identifications.Any()).
-                    ToDictionary(p => p.Identifications.First().ModifiedSequence, p => p);
+                var peaksForFile = BestMbrMatches
+                    .Select(kvp => kvp.Key)
+                    .Where(p => p.SpectraFileInfo == spectraFile && p.Identifications.Any())
+                    .ToDictionary(p => p.Identifications.First().ModifiedSequence, p => p);
                 IEnumerable<string> peptidesNotInFile = flashLfqPeptides.Except(peaksForFile.Keys);
 
                 foreach (var peptide in peaksForFile.Keys)
@@ -131,7 +132,7 @@ namespace TaskLayer.MbrAnalysis
                     foreach (var peak in orderedPeaks)
                     {
                         string spectralContrastAngle = "Spectrum Not Found";
-                        if (BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch))
+                        if (peak is MbrChromatographicPeak mbrPeak && BestMbrMatches.TryGetValue(mbrPeak, out var mbrSpectralMatch))
                         {
                             spectralContrastAngle = mbrSpectralMatch.spectralLibraryMatch != null && mbrSpectralMatch.spectralLibraryMatch.SpectralAngle > -1
                                 ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()

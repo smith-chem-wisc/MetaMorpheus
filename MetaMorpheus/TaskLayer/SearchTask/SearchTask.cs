@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
+using Readers;
 
 namespace TaskLayer
 {
@@ -84,20 +85,22 @@ namespace TaskLayer
             }
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, 
+            FileSpecificParameters[] fileSettingsList)
         {
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
             // start loading first spectra file in the background
-            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(currentRawFileList[0], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+            string fileToLoad = currentRawFileList[0];
+            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
             nextFileLoadingTask.Start();
-            
 
             if (SearchParameters.DoLabelFreeQuantification)
             {
-                // disable quantification if a .mgf is being used
-                if (currentRawFileList.Any(x => Path.GetExtension(x).Equals(".mgf", StringComparison.OrdinalIgnoreCase)))
+                // disable quantification if a .mgf or .d files are  being used
+                if (currentRawFileList.Select(filepath => Path.GetExtension(filepath))
+                    .Any(ext => ext.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || ext.Equals(".d", StringComparison.OrdinalIgnoreCase) || ext.Equals(".msalign", StringComparison.OrdinalIgnoreCase)))
                 {
                     SearchParameters.DoLabelFreeQuantification = false;
                 }
@@ -149,13 +152,13 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
-            List<Protein> proteinList = null;
-            Task<List<Protein>> proteinLoadingTask = new(() =>
+            List<IBioPolymer> bioPolymerList = null;
+            Task<List<IBioPolymer>> proteinLoadingTask = new(() =>
             {
-                var proteins = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType,
+                var proteins = LoadBioPolymers(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType,
                     localizeableModificationTypes,
                     CommonParameters);
-                SanitizeProteinDatabase(proteins, SearchParameters.TCAmbiguity);
+                SanitizeBioPolymerDatabase(proteins, SearchParameters.TCAmbiguity);
                 return proteins;
             });
             proteinLoadingTask.Start();
@@ -165,21 +168,22 @@ namespace TaskLayer
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
-            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
-            ProseCreatedWhileRunning.Append("search for truncated proteins and proteolysis products = " + CommonParameters.AddTruncations + "; ");
+            ProseCreatedWhileRunning.Append($"{GlobalVariables.AnalyteType.GetDigestionAgentLabel()} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
+            ProseCreatedWhileRunning.Append($"search for truncated {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} and proteolysis products = " + CommonParameters.AddTruncations + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
-                "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+            ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinLength + "; ");
+            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxLength == int.MaxValue ?
+                $"maximum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = unspecified; " :
+                $"maximum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MaxLength + "; ");
+            if (CommonParameters.DigestionParams is DigestionParams digestionParams)
+                ProseCreatedWhileRunning.Append("initiator methionine behavior = " + digestionParams.InitiatorMethionineBehavior + "; \n");
             ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.IdWithMotif)) + "; ");
             ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.IdWithMotif)) + "; ");
-            ProseCreatedWhileRunning.Append("max mods per peptide = " + CommonParameters.DigestionParams.MaxModsForPeptide + "; ");
+            ProseCreatedWhileRunning.Append($"max mods per {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} = " + CommonParameters.DigestionParams.MaxMods + "; ");
             ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
             ProseCreatedWhileRunning.Append("precursor mass tolerance = " + CommonParameters.PrecursorMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
-            ProseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
+            ProseCreatedWhileRunning.Append($"report {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
 
             // start the search task
             MyTaskResults = new MyTaskResults(this);
@@ -202,7 +206,9 @@ namespace TaskLayer
             Status("Searching files...", new List<string> { taskId } );
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
-            Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
+            Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>(); // key is filename, value is an int array of length 2, where the first element is the number of MS2 spectra in the file, and the second element is the number of different deconvoluted precursors assigned to those scans
+            bool collectedDigestionInformation = false;
+            IDictionary<(string Accession, string BaseSequence), int> digestionCountDictionary = null;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 if (GlobalVariables.StopLoops) { break; }
@@ -224,6 +230,14 @@ namespace TaskLayer
                 nextFileLoadingTask.Wait();
                 var myMsDataFile = nextFileLoadingTask.Result;
 
+                // If the file is one which does not have precursor scans, but only precursor information, then we need to set the parameters accordingly
+                // We do this by adjusting the transient combined params so that this can be done on a file by file basis. 
+                if (myMsDataFile is Mgf or Ms2Align)
+                {
+                    combinedParams.DoPrecursorDeconvolution = false;
+                    combinedParams.UseProvidedPrecursorInfo = true;
+                }
+
                 // if another file exists, then begin loading it in while the previous is being searched
                 if (origDataFile != currentRawFileList.Last())
                 {
@@ -237,25 +251,27 @@ namespace TaskLayer
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
-                SpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                SpectralMatch[] fileSpecificPsms = new SpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
                 // ensure proteins are loaded in before proceeding with search
                 switch (proteinLoadingTask.IsCompleted)
                 {
-                    case true when proteinList is null: // has finished loading but not been set
-                        proteinList = proteinLoadingTask.Result;
+                    case true when bioPolymerList is null: // has finished loading but not been set
+                        bioPolymerList = proteinLoadingTask.Result;
                         break;
-                    case true when proteinList.Any(): // has finished loading and already been set
+                    case true when bioPolymerList.Any(): // has finished loading and already been set
                         break;
                     case false: // has not finished loading
                         proteinLoadingTask.Wait();
-                        proteinList = proteinLoadingTask.Result;
+                        bioPolymerList = proteinLoadingTask.Result;
                         break;
                 }
 
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
+                    // Assume modern search is for proteins. 
+                    var proteinList = bioPolymerList.Cast<Protein>().ToList();
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
                         List<PeptideWithSetModifications> peptideIndex = null;
@@ -286,10 +302,10 @@ namespace TaskLayer
                 // nonspecific search
                 else if (SearchParameters.SearchType == SearchType.NonSpecific)
                 {
-                    SpectralMatch[][] fileSpecificPsmsSeparatedByFdrCategory = new PeptideSpectralMatch[numFdrCategories][]; //generate an array of all possible locals
+                    SpectralMatch[][] fileSpecificPsmsSeparatedByFdrCategory = new SpectralMatch[numFdrCategories][]; //generate an array of all possible locals
                     for (int i = 0; i < numFdrCategories; i++) //only add if we're using for FDR, else ignore it as null.
                     {
-                        fileSpecificPsmsSeparatedByFdrCategory[i] = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                        fileSpecificPsmsSeparatedByFdrCategory[i] = new SpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                     }
 
                     //create params for N, C, or both if semi
@@ -328,13 +344,16 @@ namespace TaskLayer
                     //foreach terminus we're going to look at
                     foreach (CommonParameters paramToUse in paramsToUse)
                     {
+                        var proteinList = bioPolymerList.Cast<Protein>().ToList();
+
                         //foreach database partition
                         for (int currentPartition = 0; currentPartition < paramToUse.TotalPartitions; currentPartition++)
                         {
                             List<PeptideWithSetModifications> peptideIndex = null;
 
                             List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions,
-                                ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions));
+                                ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions))
+                                .ToList(); // assume that only proteins are used in non-specific search
 
                             List<int>[] fragmentIndex = null;
                             List<int>[] precursorIndex = null;
@@ -374,8 +393,15 @@ namespace TaskLayer
                 {
                     Status("Starting search...", thisId);
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary);
-                    newClassicSearchEngine.Run();
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, bioPolymerList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary, SearchParameters.WriteDigestionProductCountFile);
+                    var result = newClassicSearchEngine.Run();
+
+                    // The same proteins (all of them) get digested with each classic search engine, therefor we only need to calculate this for the first file that runs
+                    if (!collectedDigestionInformation) 
+                    {
+                        collectedDigestionInformation = true;
+                        digestionCountDictionary = (result.MyEngine as ClassicSearchEngine).DigestionCountDictionary;
+                    }
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
@@ -419,19 +445,19 @@ namespace TaskLayer
             }
 
             // Finish writing prose settings that depended on files being loaded in
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy)
-                + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
+            ProseCreatedWhileRunning.Append("The combined search database contained " + bioPolymerList.Count(p => !p.IsDecoy)
+                + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + bioPolymerList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
             PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters
             {
                 SearchTaskResults = MyTaskResults,
                 SearchTaskId = taskId,
                 SearchParameters = SearchParameters,
-                ProteinList = proteinList,
-                AllPsms = allPsms,
+                BioPolymerList = bioPolymerList,
+                AllSpectralMatches = allPsms,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
-                ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams)),
+                ListOfDigestionParams = [..fileSpecificCommonParams.Select(p => p.DigestionParams)],
                 CurrentRawFileList = currentRawFileList,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,
@@ -447,7 +473,8 @@ namespace TaskLayer
             {
                 Parameters = parameters,
                 FileSpecificParameters = this.FileSpecificParameters,
-                CommonParameters = CommonParameters
+                CommonParameters = CommonParameters,
+                DigestionCountDictionary = digestionCountDictionary
             };
             return postProcessing.Run();
         }
@@ -538,18 +565,13 @@ namespace TaskLayer
                     scanForThisPsm.TheScan.DissociationType.Value : combinedParams.DissociationType;
 
                     //Get the theoretical peptides
-                    List<IBioPolymerWithSetMods> ambiguousPeptides = new List<IBioPolymerWithSetMods>();
                     List<int> notches = new List<int>();
-                    foreach (var (Notch, Peptide) in psm.BestMatchingBioPolymersWithSetMods)
-                    {
-                        ambiguousPeptides.Add(Peptide);
-                        notches.Add(Notch);
-                    }
+                    var ambiguousPeptides = psm.BestMatchingBioPolymersWithSetMods.ToList();
 
                     //get matched ions for each peptide
                     List<List<MatchedFragmentIon>> matchedIonsForAllAmbiguousPeptides = new List<List<MatchedFragmentIon>>();
                     List<Product> internalFragments = new List<Product>();
-                    foreach (PeptideWithSetModifications peptide in ambiguousPeptides)
+                    foreach (IBioPolymerWithSetMods peptide in ambiguousPeptides.Select(p => p.SpecificBioPolymer))
                     {
                         internalFragments.Clear();
                         peptide.FragmentInternally(dissociationType, minInternalFragmentLength, internalFragments);
@@ -565,20 +587,21 @@ namespace TaskLayer
                     HashSet<IBioPolymerWithSetMods> PeptidesToMatchingInternalFragments = new HashSet<IBioPolymerWithSetMods>();
                     for (int peptideIndex = 0; peptideIndex < ambiguousPeptides.Count; peptideIndex++)
                     {
+                        var thisPeptide = ambiguousPeptides[peptideIndex];
                         //if we should remove the theoretical, remove it
                         if (matchedIonsForAllAmbiguousPeptides[peptideIndex].Count + 1 < maxNumMatchedIons)
                         {
-                            psm.RemoveThisAmbiguousPeptide(notches[peptideIndex], ambiguousPeptides[peptideIndex]);
+                            psm.RemoveThisAmbiguousPeptide(thisPeptide);
                         }
                         // otherwise add the matched internal ions to the total ions
                         else
                         {
-                            IBioPolymerWithSetMods currentPwsm = ambiguousPeptides[peptideIndex];
+                            IBioPolymerWithSetMods currentPwsm = thisPeptide.SpecificBioPolymer;
                             //check that we haven't already added the matched ions for this peptide
                             if (!PeptidesToMatchingInternalFragments.Contains(currentPwsm))
                             {
                                 PeptidesToMatchingInternalFragments.Add(currentPwsm); //record that we've seen this peptide
-                                psm.BioPolymersWithSetModsToMatchingFragments[currentPwsm].AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]); //add the matched ions
+                                thisPeptide.MatchedIons.AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]); //add the matched ions
                             }
                         }
                     }

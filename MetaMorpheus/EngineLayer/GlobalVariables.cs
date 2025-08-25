@@ -14,6 +14,8 @@ using System.Text;
 using Omics.Modifications;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
+using Easy.Common.Extensions;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer
 {
@@ -25,7 +27,9 @@ namespace EngineLayer
         public static List<string> AcceptedSpectraFormats { get; private set; }
 
         private static List<Modification> _AllModsKnown;
+        private static List<Modification> _AllRnaModsKnown;
         private static HashSet<string> _AllModTypesKnown;
+        private static HashSet<string> _AllRnaModTypesKnown;
         private static List<Crosslinker> _KnownCrosslinkers;
         public static List<Modification> ProteaseMods = new List<Modification>();
 
@@ -34,7 +38,7 @@ namespace EngineLayer
         private static char[] _InvalidAminoAcids;
 
         // this affects output labels, etc. and can be changed to "Proteoform" for top-down searches
-        public static string AnalyteType;
+        public static AnalyteType AnalyteType;
 
         public static List<string> ErrorsReadingMods;
 
@@ -49,23 +53,25 @@ namespace EngineLayer
         public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; private set; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
+        public static IEnumerable<Modification> AllRnaModsKnown { get { return _AllRnaModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
+        public static IEnumerable<string> AllRnaModTypesKnown { get { return _AllRnaModTypesKnown.AsEnumerable(); } }
         public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
+        public static Dictionary<string, Modification> AllRnaModsKnownDictionary { get; private set; }
         public static Dictionary<string, string> AvailableUniProtProteomes { get; private set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get; private set; }
         public static string ExperimentalDesignFileName { get; private set; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
-        public static List<string> OGlycanLocations { get; private set; }
-        public static List<string> NGlycanLocations { get; private set; }
+        public static List<string> OGlycanDatabasePaths { get; private set; }
+        public static List<string> NGlycanDatabasePaths { get; private set; }
 
         public static void SetUpGlobalVariables()
         {
-            Loaders.LoadElements();
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };
-            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
-            AnalyteType = "Peptide";
+            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf", ".msalign" };
+            AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
             SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };
@@ -74,6 +80,7 @@ namespace EngineLayer
             SetUpDataDirectory();
             LoadCrosslinkers();
             LoadModifications();
+            LoadRnaModifications();
             LoadGlycans();
             LoadCustomAminoAcids();
             SetUpGlobalSettings();
@@ -411,46 +418,73 @@ namespace EngineLayer
             }
             ProteaseMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
             ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
+            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
+        }
+
+        private static void LoadRnaModifications()
+        {
+            _AllRnaModsKnown = new List<Modification>();
+            _AllRnaModTypesKnown = new HashSet<string>();
+            AllRnaModsKnownDictionary = new Dictionary<string, Modification>();
+
+            // RNA Mods is an embedded resources: It gets packed into the DLL so we do not need to worry about the installer. 
+            var assembly = typeof(GlobalVariables).Assembly;
+            var resourceName = "EngineLayer.Mods.RnaMods.txt";
+
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            using (var reader = new StreamReader(stream))
+            {
+                string fileContent = reader.ReadToEnd();
+                foreach (var mod in PtmListLoader.ReadModsFromString(fileContent, out var errors))
+                {
+                    _AllRnaModsKnown.Add(mod);
+                }
+            }
+
+            // populate mod types and dictionary
+            _AllRnaModsKnown.Select(mod => mod.ModificationType)
+                .Distinct()
+                .ForEach(type => _AllRnaModTypesKnown.Add(type));
+
+            AllRnaModsKnownDictionary = _AllRnaModsKnown.Where(p => p.OriginalId != "").ToDictionary(p => $"{p.IdWithMotif}");
         }
 
         private static void LoadGlycans()
         {
-            OGlycanLocations = new List<string>();
-            NGlycanLocations = new List<string>();
+            OGlycanDatabasePaths = new List<string>();
+            NGlycanDatabasePaths = new List<string>();
 
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"OGlycan")))
             {
-                OGlycanLocations.Add(glycanFile);
+                OGlycanDatabasePaths.Add(glycanFile);
             }
 
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
             {
-                NGlycanLocations.Add(glycanFile);
+                NGlycanDatabasePaths.Add(glycanFile);
             }
 
             //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
             //The reason why not include Glycan into modification database is for users to apply their own database.
-            foreach (var path in OGlycanLocations)
+            foreach (var path in OGlycanDatabasePaths)
             {
-                var og = GlycanDatabase.LoadGlycan(path, false, false);
-                foreach (var g in og)
+                var oGlycans = GlycanDatabase.LoadGlycan(path, false, true);
+                foreach (var glycan in oGlycans)
                 {
-                    var ogmod = Glycan.OGlycanToModification(g);
-                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
                     {
-                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                        AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                     }
                 }
             }
-            foreach (var path in NGlycanLocations)
+            foreach (var path in NGlycanDatabasePaths)
             {
-                var og = GlycanDatabase.LoadGlycan(path, false, false);
-                foreach (var g in og)
+                var nGlycans = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var glycan in nGlycans)
                 {
-                    var ogmod = Glycan.NGlycanToModification(g);
-                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
                     {
-                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                        AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                     }
                 }
             }

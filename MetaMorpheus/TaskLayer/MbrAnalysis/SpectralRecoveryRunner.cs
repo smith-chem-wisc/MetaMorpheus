@@ -13,6 +13,7 @@ using System.Collections.Concurrent;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Omics;
+using Readers.SpectralLibrary;
 
 namespace TaskLayer.MbrAnalysis
 {
@@ -46,12 +47,14 @@ namespace TaskLayer.MbrAnalysis
             int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
 
-            ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches = new();
+            ConcurrentDictionary<MbrChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches = new();
 
             foreach (SpectraFileInfo spectraFile in spectraFiles)
             {
-                List<ChromatographicPeak> fileSpecificMbrPeaks =
-                    parameters.FlashLfqResults.Peaks[spectraFile].Where(p => p.IsMbrPeak).ToList();
+                List<MbrChromatographicPeak> fileSpecificMbrPeaks = parameters.FlashLfqResults.Peaks[spectraFile]
+                    .Where(p => p.DetectionType == DetectionType.MBR)
+                    .Cast<MbrChromatographicPeak>()
+                    .Where(p => !p.RandomRt && !p.DecoyPeptide).ToList();
                 if (fileSpecificMbrPeaks == null || (!fileSpecificMbrPeaks.Any())) break;
 
                 MyFileManager myFileManager = new(true);
@@ -87,14 +90,14 @@ namespace TaskLayer.MbrAnalysis
 
                     for (; i < fileSpecificMbrPeaks.Count; i += maxThreadsPerFile)
                     {
-                        ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i];
+                        MbrChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i];
                         SpectralMatch bestDonorPsm = allPeptides.Where(p =>
                             p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).FirstOrDefault();
                         if (bestDonorPsm == null)
                         {
                             break;
                         }
-                        IBioPolymerWithSetMods bestDonorPwsm = bestDonorPsm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                        IBioPolymerWithSetMods bestDonorPwsm = bestDonorPsm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
                         IEnumerable<SpectralMatch> peptideSpectralMatches =
                             mcse.SearchAroundPeak(bestDonorPwsm, mbrPeak.Apex.IndexedPeak.RetentionTime);
@@ -116,7 +119,7 @@ namespace TaskLayer.MbrAnalysis
 
             if (bestMbrMatches.Any())
             {
-                List<SpectralMatch> allPsms = parameters.AllPsms.
+                List<SpectralMatch> allPsms = parameters.AllSpectralMatches.
                     OrderByDescending(p => p).ToList();
 
                 FDRAnalysisOfMbrPsms(bestMbrMatches, allPsms, parameters, fileSpecificParameters);
@@ -135,7 +138,7 @@ namespace TaskLayer.MbrAnalysis
             CommonParameters commonParameters,
             List<(string, CommonParameters)> fileSpecificParameters)
         {
-            var peptides = parameters.AllPsms;
+            var peptides = parameters.AllSpectralMatches;
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask
             {
                 Parameters = parameters,
@@ -200,7 +203,7 @@ namespace TaskLayer.MbrAnalysis
                 }
             }
         }
-        private static void FDRAnalysisOfMbrPsms(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<SpectralMatch> allPsms,
+        private static void FDRAnalysisOfMbrPsms(ConcurrentDictionary<MbrChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<SpectralMatch> allPsms,
             PostSearchAnalysisParameters parameters, List<(string, CommonParameters)> fileSpecificParameters)
         {
             List<SpectralMatch> psms = bestMbrMatches.
@@ -213,7 +216,7 @@ namespace TaskLayer.MbrAnalysis
 
         }
 
-        private static void WriteSpectralRecoveryPsmResults(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, PostSearchAnalysisParameters parameters)
+        private static void WriteSpectralRecoveryPsmResults(ConcurrentDictionary<MbrChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, PostSearchAnalysisParameters parameters)
         {
             string mbrOutputPath = Path.Combine(Path.Join(parameters.OutputFolder, spectralRecoveryFolder), @"RecoveredSpectra.psmtsv");
             using (var output = new StreamWriter(mbrOutputPath))

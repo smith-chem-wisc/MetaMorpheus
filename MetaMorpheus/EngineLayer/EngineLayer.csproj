@@ -17,14 +17,25 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Mods\RnaMods.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Mods\RnaMods.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="1.0.552" />
+    <PackageReference Include="mzLib" Version="1.0.566" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
     <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SQLite.Interop.dll" Version="1.0.103" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
     <PackageReference Include="TopDownProteomics" Version="0.0.297" />
   </ItemGroup>
 
@@ -47,6 +58,9 @@
     <None Update="Data\ptmlist.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\rnaCombos.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\SmallCalibratible_Yeast.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -54,6 +68,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\unimod.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Digestion\rnases.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Glycan_Mods\NGlycan\NGlycan.gdb">

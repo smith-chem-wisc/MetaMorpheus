@@ -1,8 +1,11 @@
 using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
+using GuiFunctions.MetaDraw;
 using MassSpectrometry;
+using Omics.Fragmentation;
 using OxyPlot;
+using Readers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,11 +16,12 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using Omics.Fragmentation;
 
 namespace MetaMorpheusGUI
 {
@@ -32,26 +36,23 @@ namespace MetaMorpheusGUI
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
         public PtmLegendViewModel PtmLegend;
-        public ChimeraLegendViewModel ChimeraLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
-        private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
+        private static List<string> AcceptedSpectraFormats => SpectrumMatchFromTsvHeader.AcceptedSpectraFormats.Concat(new List<string> { ".msalign", ".tdf", ".tdf_bin" }).Select(format => format.ToLower()).ToList();
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
-        private MetaDrawSettingsViewModel SettingsView;
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
+        public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
 
-        public MetaDraw()
+        public MetaDraw(string[]? filesToLoad = null)
         {
-            UsefulProteomicsDatabases.Loaders.LoadElements();
-
             InitializeComponent();
 
-            InitializeColorSettingsView();
             MetaDrawLogic = new MetaDrawLogic();
-            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.PsmResultFilePaths, MetaDrawLogic.ThreadLocker);
+            SettingsButtonControl.SettingsChanged += RefreshPlotsAfterSettingsChange;
+            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchResultFilePaths, MetaDrawLogic.ThreadLocker);
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectraFilePaths, MetaDrawLogic.ThreadLocker);
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.FilteredListOfPsms, MetaDrawLogic.ThreadLocker);
-            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.PsmsGroupedByFile, MetaDrawLogic.ThreadLocker);
+            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchesGroupedByFile, MetaDrawLogic.ThreadLocker);
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
@@ -77,7 +78,11 @@ namespace MetaMorpheusGUI
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
 
-            exportPdfs.Content = MetaDrawSettings.ExportType;
+            // if files piped in from a MetaMorpheus search, load them immediately
+            if (filesToLoad is not null)
+            {
+                filesToLoad.ForEach(AddFile);
+            }
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -88,7 +93,7 @@ namespace MetaMorpheusGUI
             {
                 foreach (var draggedFilePath in files)
                 {
-                    if (File.Exists(draggedFilePath))
+                    if (File.Exists(draggedFilePath) | (Directory.Exists(draggedFilePath) && Regex.IsMatch(draggedFilePath, @".d$")) )
                     {
                         AddFile(draggedFilePath);
                     }
@@ -102,6 +107,11 @@ namespace MetaMorpheusGUI
 
             if (AcceptedSpectraFormats.Contains(theExtension))
             {
+                // If a bruker timsTof file was selected, we actually want the parent folder
+                if(theExtension == ".tdf" || theExtension == ".tdf_bin")
+                {
+                    filePath = Path.GetDirectoryName(filePath);
+                }
                 if (!MetaDrawLogic.SpectraFilePaths.Contains(filePath))
                 {
                     MetaDrawLogic.SpectraFilePaths.Add(filePath);
@@ -121,11 +131,11 @@ namespace MetaMorpheusGUI
             }
             else if (AcceptedResultsFormats.Contains(theExtension))
             {
-                if (!MetaDrawLogic.PsmResultFilePaths.Contains(filePath))
+                if (!MetaDrawLogic.SpectralMatchResultFilePaths.Contains(filePath))
                 {
-                    MetaDrawLogic.PsmResultFilePaths.Add(filePath);
+                    MetaDrawLogic.SpectralMatchResultFilePaths.Add(filePath);
 
-                    if (MetaDrawLogic.PsmResultFilePaths.Count == 1)
+                    if (MetaDrawLogic.SpectralMatchResultFilePaths.Count == 1)
                     {
                         psmFileNameLabel.Text = filePath;
                         psmFileNameLabelStat.Text = filePath;
@@ -136,10 +146,10 @@ namespace MetaMorpheusGUI
                         psmFileNameLabelStat.Text = "[Mouse over to view files]";
                     }
 
-                    psmFileNameLabel.ToolTip = string.Join("\n", MetaDrawLogic.PsmResultFilePaths);
+                    psmFileNameLabel.ToolTip = string.Join("\n", MetaDrawLogic.SpectralMatchResultFilePaths);
                     resetPsmFileButton.IsEnabled = true;
 
-                    psmFileNameLabelStat.ToolTip = string.Join("\n", MetaDrawLogic.PsmResultFilePaths);
+                    psmFileNameLabelStat.ToolTip = string.Join("\n", MetaDrawLogic.SpectralMatchResultFilePaths);
                     resetPsmFileButtonStat.IsEnabled = true;
                 }
             }
@@ -179,7 +189,7 @@ namespace MetaMorpheusGUI
             MetaDrawLogic.CleanUpCurrentlyDisplayedPlots();
             wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
             plotView.Visibility = Visibility.Visible;
-            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
 
             List<MatchedFragmentIon> oldMatchedIons = null;
             if (FragmentationReanalysisViewModel.Persist && sender is DataGrid)
@@ -188,31 +198,8 @@ namespace MetaMorpheusGUI
                 ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
             }
 
-            // Chimera plotter
-            if (MetaDrawTabControl.SelectedContent is Grid { Name: "chimeraPlotGrid" })
-            {
-                ClearPresentationArea();
-                chimeraPlot.Visibility = Visibility.Visible;
-                List<PsmFromTsv> chimericPsms = MetaDrawLogic.FilteredListOfPsms
-                    .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
-                MetaDrawLogic.DisplayChimeraSpectra(chimeraPlot, chimericPsms, out List<string> error);
-                if (error != null && error.Count > 0)
-                    Debugger.Break();
-                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
-                AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
-                AmbiguousSequenceOptionBox.Visibility = Visibility.Collapsed;
-
-                if (MetaDrawSettings.ShowLegend)
-                {
-                    ChimeraLegend = new(chimericPsms);
-                    ChimeraLegendControl.DataContext = ChimeraLegend;
-                }
-                return;
-            }
-            else
-            {
-                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
-            }
+            wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
+            
 
             SetSequenceDrawingPositionSettings(true);
             // Psm selected from ambiguous dropdown => adjust the psm to be drawn
@@ -225,7 +212,7 @@ namespace MetaMorpheusGUI
                     // set to first and break the loop if casted successfully
                     foreach (var ambiguousResult in AmbiguousSequenceOptionBox.Items)
                     {
-                        psm = ambiguousResult as PsmFromTsv;
+                        psm = ambiguousResult as SpectrumMatchFromTsv;
                         if (psm != null)
                             break;
                     }
@@ -237,7 +224,7 @@ namespace MetaMorpheusGUI
                 // selecting a different ambiguous result from the combobox in child scan view
                 else
                 {
-                    psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+                    psm = (SpectrumMatchFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
                 }
 
                 if (FragmentationReanalysisViewModel.Persist || sender is FragmentationReanalysisViewModel)
@@ -259,7 +246,7 @@ namespace MetaMorpheusGUI
                 var fullSeqs = psm.FullSequence.Split('|');
                 foreach (var fullSeq in fullSeqs)
                 {
-                    PsmFromTsv oneAmbiguousPsm = new(psm, fullSeq);
+                    SpectrumMatchFromTsv oneAmbiguousPsm = psm.ReplaceFullSequence(fullSeq);
                     AmbiguousSequenceOptionBox.Items.Add(oneAmbiguousPsm);
                 }
                 return;
@@ -297,15 +284,14 @@ namespace MetaMorpheusGUI
             // add ptm legend if desired
             if (MetaDrawSettings.ShowLegend)
             {
-                
                 int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
-                if (psm.ProteinName.IsNotNullOrEmptyOrWhiteSpace())
+                if (psm.Name.IsNotNullOrEmptyOrWhiteSpace())
                 {
-                    descriptionLineCount += (int)Math.Floor((psm.ProteinName.Length - 20) / 26.0);
+                    descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) / (double)SpectrumMatchPlot.MaxCharactersPerDescriptionLine);
                 }
-                if (psm.ProteinAccession.Length > 10)
+                if (psm.Accession.Length > 10)
                     descriptionLineCount++;
-                double verticalOffset = descriptionLineCount * 14;
+                double verticalOffset = descriptionLineCount * 1.4 * MetaDrawSettings.SpectrumDescriptionFontSize;
                 
                 PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
                 ChildScanPtmLegendControl.DataContext = PtmLegend;
@@ -349,7 +335,15 @@ namespace MetaMorpheusGUI
                 }
                 else
                 {
-                    propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
+                    // Hacky fix for some of the properties in IQuantifiableRecord that are only populated as needed by FlashLFQ
+                    try
+                    {
+                        propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
+                    }
+                    catch
+                    {
+                        // do nothing
+                    }
                 }
             }
 
@@ -455,27 +449,44 @@ namespace MetaMorpheusGUI
             MetaDrawLogic.CleanUpResources();
         }
 
-        private void settings_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Will be fired by settings button control if settings change. 
+        /// </summary>
+        private void RefreshPlotsAfterSettingsChange(object sender, MetaDrawSettingsChangedEventArgs e)
         {
+            if (MetaDrawLogic.FilteredListOfPsms.Count == 0)
+                return;
+
             // save current selected PSM
-            var selectedItem = dataGridScanNums.SelectedItem;
-            var settingsWindow = new MetaDrawSettingsWindow(SettingsView);
-            var result = settingsWindow.ShowDialog();
+            var selectedItem = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
+            var selectedChimeraGroup = ChimeraAnalysisTabViewModel.SelectedChimeraGroup;
 
-            exportPdfs.Content = MetaDrawSettings.ExportType;
-            // re-select selected PSM
-            if (result == true)
+            // filter based on new settings
+            if (e.FilterChanged)
             {
-                // refresh chart
-                dataGridScanNums_SelectedCellsChanged(null, null);
-
-                // filter based on new settings
                 MetaDrawLogic.FilterPsms();
+
+                ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Clear();
+                foreach (var chimeraGroup in ChimeraAnalysisTabViewModel.ConstructChimericPsms(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles)
+                             .OrderByDescending(p => p.Count)
+                             .ThenByDescending(p => p.UniqueFragments)
+                             .ThenByDescending(p => p.TotalFragments))
+                {
+                    ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Add(chimeraGroup);
+                }
             }
 
+            // Reselect items and refresh plots
             if (selectedItem != null)
             {
                 dataGridScanNums.SelectedItem = selectedItem;
+            }
+            if (selectedChimeraGroup != null)
+            {
+                ChimeraAnalysisTabViewModel.SelectedChimeraGroup = selectedChimeraGroup;
+                ChimeraAnalysisTabViewModel.Ms1ChimeraPlot = new Ms1ChimeraPlot(ChimeraAnalysisTabView.ms1ChimeraOverlaPlot, selectedChimeraGroup);
+                ChimeraAnalysisTabViewModel.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(ChimeraAnalysisTabView.ms2ChimeraPlot, selectedChimeraGroup);
+                ChimeraAnalysisTabViewModel.ChimeraDrawnSequence = new ChimeraDrawnSequence(ChimeraAnalysisTabView.chimeraSequenceCanvas, selectedChimeraGroup, ChimeraAnalysisTabViewModel);
             }
         }
 
@@ -489,7 +500,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            if (!MetaDrawLogic.PsmResultFilePaths.Any())
+            if (!MetaDrawLogic.SpectralMatchResultFilePaths.Any())
             {
                 MessageBox.Show("Please add a search result file.");
                 return;
@@ -507,6 +518,11 @@ namespace MetaMorpheusGUI
 
             var slowProcess = Task<List<string>>.Factory.StartNew(() => MetaDrawLogic.LoadFiles(loadSpectra: true, loadPsms: true));
             await slowProcess;
+
+            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
+                DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles, directoryPath);
+            ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
             var errors = slowProcess.Result;
 
             if (errors.Any())
@@ -516,7 +532,7 @@ namespace MetaMorpheusGUI
             }
 
             PsmStatPlotFiles.Clear();
-            foreach (var item in MetaDrawLogic.PsmsGroupedByFile)
+            foreach (var item in MetaDrawLogic.SpectralMatchesGroupedByFile)
             {
                 PsmStatPlotFiles.Add(item.Key);
             }
@@ -567,38 +583,22 @@ namespace MetaMorpheusGUI
             }
 
             SetSequenceDrawingPositionSettings();
-            List<PsmFromTsv> items = new List<PsmFromTsv>();
+            List<SpectrumMatchFromTsv> items = new();
 
             foreach (var cell in dataGridScanNums.SelectedItems)
             {
-                var psm = (PsmFromTsv)cell;
+                var psm = (SpectrumMatchFromTsv)cell;
                 items.Add(psm);
             }
 
-            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
+            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
 
             Canvas legendCanvas = null;
             Vector ptmLegendLocationVector = new();
             List<string> errors = new();
-            if (((Grid)MetaDrawTabControl.SelectedContent).Name == "chimeraPlotGrid")
-            {
-                if (MetaDrawSettings.ShowLegend)
-                {
-                    ChimeraLegendControl chimeraLegendCopy = new();
-                    chimeraLegendCopy.DataContext = ChimeraLegendControl.DataContext;
-                    legendCanvas = new();
-                    legendCanvas.Children.Add(chimeraLegendCopy);
-                    Size legendSize = new Size((int)ChimeraLegendControl.ActualWidth, (int)ChimeraLegendControl.ActualHeight);
-                    legendCanvas.Measure(legendSize);
-                    legendCanvas.Arrange(new Rect(legendSize));
-                    legendCanvas.UpdateLayout();
-                }
-                MetaDrawLogic.ExportPlot(chimeraPlot, null, items, itemsControlSampleViewModel,
-                    directoryPath, out errors, legendCanvas);
-            }
-            else if (((Grid)MetaDrawTabControl.SelectedContent).Name == "PsmAnnotationGrid")
+            if (((Grid)MetaDrawTabControl.SelectedContent).Name == "PsmAnnotationGrid")
             {
 
                 if (MetaDrawSettings.ShowLegend)
@@ -614,8 +614,16 @@ namespace MetaMorpheusGUI
                     ptmLegendLocationVector = (Vector)ChildScanPtmLegendControl.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ChildScanPtmLegendControl);
                     ptmLegendLocationVector.X = PsmAnnotationGrid.ActualWidth - ChildScanPtmLegendControl.ActualWidth;
                 }
+
+                // If psm and GUI display have different number of matched ions, send in the refragmenter for exporting. 
+                FragmentationReanalysisViewModel toPlotForExport = null;
+                if (MetaDrawLogic.SpectrumAnnotation.SpectrumMatch.MatchedIons.Count != MetaDrawLogic.SpectrumAnnotation.MatchedFragmentIons.Count)
+                {
+                    toPlotForExport = FragmentationReanalysisViewModel;
+                }
+
                 MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel,
-                    directoryPath, out errors, legendCanvas, ptmLegendLocationVector);
+                    directoryPath, out errors, legendCanvas, ptmLegendLocationVector, toPlotForExport);
             }
 
             if (errors != null && errors.Any())
@@ -624,7 +632,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
+                MessageBoxHelper.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
             }
         }
 
@@ -636,15 +644,15 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            List<PsmFromTsv> psms = new List<PsmFromTsv>();
+            List<SpectrumMatchFromTsv> psms = new();
 
             foreach (var cell in dataGridScanNums.SelectedItems)
             {
-                var psm = (PsmFromTsv)cell;
+                var psm = (SpectrumMatchFromTsv)cell;
                 psms.Add(psm);
             }
 
-            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()),
+            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()),
                 "MetaDrawExport",    
                 DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
@@ -666,8 +674,8 @@ namespace MetaMorpheusGUI
                     psm.MatchedIons = oldIons;
                 }
             }
-            
-            MessageBox.Show("Spectral Library exported to: " + libraryPath);
+
+            MessageBoxHelper.Show("Spectral Library exported to: " + libraryPath);
         }
 
         private void SequenceCoverageExportButton_Click(object sender, RoutedEventArgs e)
@@ -678,14 +686,14 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
+            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.ExportSequenceCoverage(sequenceText, map, directoryPath, psm);
             
             if (Directory.Exists(directoryPath))
             {
-                MessageBox.Show(MetaDrawSettings.ExportType + " exported to: " + directoryPath);
+                MessageBoxHelper.Show(MetaDrawSettings.ExportType + " exported to: " + directoryPath);
             }
         }    
 
@@ -697,16 +705,16 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
+            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
 
             int width = (int)SequenceAnnotationGrid.ActualWidth;
             MetaDrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, SequenceCoveragePtmLegendControl, psm, directoryPath, width);
             
             if (Directory.Exists(directoryPath))
             {
-                MessageBox.Show(MetaDrawSettings.ExportType + " exported to: " + directoryPath);
+                MessageBoxHelper.Show(MetaDrawSettings.ExportType + " exported to: " + directoryPath);
             }
         }
 
@@ -721,7 +729,7 @@ namespace MetaMorpheusGUI
         private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
         {
             // check for validity
-            if (!MetaDrawLogic.PsmResultFilePaths.Any())
+            if (!MetaDrawLogic.SpectralMatchResultFilePaths.Any())
             {
                 MessageBox.Show("Please add a search result file.");
                 return;
@@ -737,7 +745,7 @@ namespace MetaMorpheusGUI
             MetaDrawLogic.LoadFiles(loadSpectra: false, loadPsms: true);
 
             PsmStatPlotFiles.Clear();
-            foreach (var item in MetaDrawLogic.PsmsGroupedByFile)
+            foreach (var item in MetaDrawLogic.SpectralMatchesGroupedByFile)
             {
                 PsmStatPlotFiles.Add(item.Key);
             }
@@ -764,7 +772,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            if (!MetaDrawLogic.PsmResultFilePaths.Any())
+            if (!MetaDrawLogic.SpectralMatchResultFilePaths.Any())
             {
                 MessageBox.Show("No PSMs are loaded!");
                 return;
@@ -777,7 +785,7 @@ namespace MetaMorpheusGUI
             }
 
             var plotName = selectedItem as string;
-            var fileDirectory = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
+            var fileDirectory = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             var fileName = String.Concat(plotName, ".pdf");
 
@@ -800,7 +808,7 @@ namespace MetaMorpheusGUI
             }
             plotViewStat.Width = tmpW;
             plotViewStat.Height = tmpH;
-            MessageBox.Show(MetaDrawSettings.ExportType + " Created at " + Path.Combine(fileDirectory, fileName) + "!");
+            MessageBoxHelper.Show(MetaDrawSettings.ExportType + " Created at " + Path.Combine(fileDirectory, fileName) + "!");
         }
 
         private async void PlotSelected(object sender, SelectionChangedEventArgs e)
@@ -820,12 +828,12 @@ namespace MetaMorpheusGUI
             }
 
             // get psms from selected source files
-            ObservableCollection<PsmFromTsv> psms = new ObservableCollection<PsmFromTsv>();
-            Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBSF = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
+            ObservableCollection<SpectrumMatchFromTsv> psms = new();
+            Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> psmsBSF = new();
             foreach (string fileName in selectSourceFileListBox.SelectedItems)
             {
-                psmsBSF.Add(fileName, MetaDrawLogic.PsmsGroupedByFile[fileName]);
-                foreach (PsmFromTsv psm in MetaDrawLogic.PsmsGroupedByFile[fileName])
+                psmsBSF.Add(fileName, MetaDrawLogic.SpectralMatchesGroupedByFile[fileName]);
+                foreach (SpectrumMatchFromTsv psm in MetaDrawLogic.SpectralMatchesGroupedByFile[fileName])
                 {
                     psms.Add(psm);
                 }
@@ -885,10 +893,10 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void wholeSequenceCoverageHorizontalScroll_Scroll(object sender, ScrollChangedEventArgs e)
         {
-            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
             if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
             {
-                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+                psm = (SpectrumMatchFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
 
                 // Draw the matched ions for the first ambiguous sequence only
                 if (AmbiguousSequenceOptionBox.SelectedIndex == 0)
@@ -921,10 +929,10 @@ namespace MetaMorpheusGUI
             }
 
             wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
-            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
             if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
             {
-                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+                psm = (SpectrumMatchFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
                 wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
 
                 // Draw the matched ions for the first ambiguous sequence only
@@ -958,19 +966,42 @@ namespace MetaMorpheusGUI
         {
             if (dataGridScanNums.SelectedItem == null)
                 return;
-            double width = SequenceAnnotationArea.ActualWidth;
-            double offset = wholeSequenceCoverageHorizontalScroll.HorizontalOffset;
-            if (reset)
+
+            // Get the total width of the sequence annotation area
+            double totalWidth = SequenceAnnotationArea.ActualWidth;
+
+            // Get the width of the description area or take a guess
+            double descriptionWidth;
+            if (plotView.Model != null)
             {
-                offset = 0;
+                var description =
+                    plotView.ActualModel.Annotations.First(p =>
+                        p is PlotTextAnnotation anno && anno.Text.Contains("\r\n")) as PlotTextAnnotation;
+                descriptionWidth = -description!.X - 60;
             }
-            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
-            if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
+            else
             {
-                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+                descriptionWidth = 160;
             }
 
-            int lettersOnScreen = (int)Math.Round((width - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            // Define the offset (gap) you want between the sequence and the description
+            double rightOffset = 0.0; 
+
+            // Calculate the available width for the sequence
+            double availableWidth = totalWidth - descriptionWidth - rightOffset;
+            if (availableWidth < 0) 
+                availableWidth = 0;
+
+            // Use the scrolling sequence offset to determine where to start
+            double offset = wholeSequenceCoverageHorizontalScroll.HorizontalOffset;
+            if (reset)
+                offset = 0;
+
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
+            if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
+                psm = (SpectrumMatchFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+
+            int lettersOnScreen = (int)Math.Round((availableWidth) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
             int firstLetterOnScreen = (int)Math.Round((offset) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
             if ((firstLetterOnScreen + lettersOnScreen) > psm.BaseSeq.Length)
             {
@@ -978,16 +1009,6 @@ namespace MetaMorpheusGUI
             }
             MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
             MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
-        }
-
-        /// <summary>
-        /// Allows the color settings to load asynchronously, avoiding a minor delay in MetaDraw Launch
-        /// </summary>
-        private async void InitializeColorSettingsView()
-        {
-            MetaDrawSettingsViewModel view = new MetaDrawSettingsViewModel();
-            await view.Initialization;
-            SettingsView = view;
         }
 
         /// <summary>
@@ -1004,7 +1025,7 @@ namespace MetaMorpheusGUI
             }
 
             PtmLegend.DecreaseResiduesPerSegment();
-            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
         }
 
@@ -1016,7 +1037,7 @@ namespace MetaMorpheusGUI
         private void residuesPerSegmentcmdUp_Click(object sender, RoutedEventArgs e)
         {
             PtmLegend.IncreaseResiduesPerSegment();
-            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
         }
 
@@ -1034,7 +1055,7 @@ namespace MetaMorpheusGUI
             }
 
             PtmLegend.DecreaseSegmentsPerRow();
-            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
         }
 
@@ -1046,14 +1067,14 @@ namespace MetaMorpheusGUI
         private void segmentsPerRowcmdUp_Click(object sender, RoutedEventArgs e)
         {
             PtmLegend.IncreaseSegmentsPerRow();
-            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
         }
 
 
         private void MetaDrawTabControl_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            PsmFromTsv selectedPsm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SpectrumMatchFromTsv selectedPsm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
 
             if (e.OriginalSource is not TabControl) // only clicking on different MetaDrawTabs will trigger this event
                 return;
@@ -1065,21 +1086,6 @@ namespace MetaMorpheusGUI
                 ClearPresentationArea();
 
                 // reselect what was selected
-                if (selectedPsm != null && MetaDrawLogic.FilteredListOfPsms.Contains(selectedPsm))
-                {
-                    int psmIndex = MetaDrawLogic.FilteredListOfPsms.IndexOf(selectedPsm);
-                    dataGridScanNums.SelectedIndex = psmIndex;
-                    dataGridScanNums_SelectedCellsChanged(new object(), null);
-                }
-            }
-
-            // switch from other view to chimera
-            if (e.AddedItems.Count > 0 && ((TabItem)e.AddedItems[0]).Name == "ChimeraScanPlot")
-            {
-                MetaDrawLogic.FilterPsmsToChimerasOnly();
-                ClearPresentationArea();
-
-                // reselect what was selected if possible
                 if (selectedPsm != null && MetaDrawLogic.FilteredListOfPsms.Contains(selectedPsm))
                 {
                     int psmIndex = MetaDrawLogic.FilteredListOfPsms.IndexOf(selectedPsm);
@@ -1103,10 +1109,7 @@ namespace MetaMorpheusGUI
             wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
             AmbiguousSequenceOptionBox.Items.Clear();
             plotView.Visibility = Visibility.Hidden;
-            chimeraPlot.Visibility = Visibility.Hidden;
 
-            if (ChimeraLegend != null)
-                ChimeraLegend.Visibility = false;
             if (PtmLegend != null)
                 PtmLegend.Visibility = false;
         }
@@ -1137,7 +1140,7 @@ namespace MetaMorpheusGUI
         internal void SearchWithNewIons_OnClick(object sender, RoutedEventArgs e)
         {
             // find currently selected psm
-            var psm = dataGridScanNums.SelectedItem as PsmFromTsv;
+            var psm = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
             if (psm is null)
                 return;
             
@@ -1155,11 +1158,70 @@ namespace MetaMorpheusGUI
         /// Replaces matched fragment ions on a psm with new ion types after a quick search
         /// </summary>
         /// <param name="psm"></param>
-        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(PsmFromTsv psm)
+        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm)
         {
             var scan = MetaDrawLogic.GetMs2ScanFromPsm(psm);
             var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm);
             psm.MatchedIons = newIons;
         }
+
+        private void MetaDraw_OnClosing(object sender, CancelEventArgs e)
+        {
+            MetaDrawLogic.CleanUpResources();
+        }
+        
+        #region Fragment Plot Click Effects 
+
+        // Copy the entire m/z spectrum (all peaks)
+        private void CopyMzSpectrum_Click(object sender, RoutedEventArgs e)
+        {
+            var plot = MetaDrawLogic.SpectrumAnnotation;
+            if (plot?.Scan == null)
+                return;
+
+            var sb = new StringBuilder();
+            var mzs = plot.Scan.MassSpectrum.XArray;
+            var intensities = plot.Scan.MassSpectrum.YArray;
+            for (int i = 0; i < mzs.Length; i++)
+                sb.AppendLine($"{mzs[i]:F6}\t{intensities[i]:F6}");
+
+            Clipboard.SetText(sb.ToString());
+        }
+
+        // Copy only annotated peaks (matched ions)
+        private void CopyAnnotatedMzSpectrum_Click(object sender, RoutedEventArgs e)
+        {
+            var plot = MetaDrawLogic.SpectrumAnnotation;
+            if (plot?.Scan == null || plot.SpectrumMatch == null)
+                return;
+
+            var matched = plot.MatchedFragmentIons;
+
+            var sb = new StringBuilder();
+            foreach (var ion in matched)
+                sb.AppendLine($"{ion.Mz:F6}\t{ion.Intensity:F0}");
+            Clipboard.SetText(sb.ToString());
+        }
+
+        // Copy matched ions with details
+        private void CopyMatchedIons_Click(object sender, RoutedEventArgs e)
+        {
+            var plot = MetaDrawLogic.SpectrumAnnotation;
+            if (plot?.SpectrumMatch == null)
+                return;
+
+            var matched = plot.MatchedFragmentIons;
+
+            var sb = new StringBuilder();
+            sb.AppendLine("Annotation\tm/z\tIntensity\tType\tFragmentNumber");
+            foreach (var ion in matched)
+            {
+                sb.AppendLine($"{ion.Annotation}\t{ion.Mz:F6}\t{ion.Intensity:F0}\t{ion.NeutralTheoreticalProduct.ProductType}\t{ion.NeutralTheoreticalProduct.FragmentNumber}");
+            }
+
+            Clipboard.SetText(sb.ToString());
+        }
+
+        #endregion
     }
 }

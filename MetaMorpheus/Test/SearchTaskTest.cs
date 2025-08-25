@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
+using Readers;
 using TaskLayer;
 
 namespace Test
@@ -203,7 +204,7 @@ namespace Test
             string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestInternal\AllPSMs.psmtsv");
             //var output = File.ReadAllLines(outputPath);
             //read the psmtsv
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(outputPath, out var warning);
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(outputPath, out var warning);
             Assert.That(psms.Count == 1);
             //check that it's been disambiguated
             Assert.That(!(psms[0].FullSequence.Contains("|")));
@@ -233,7 +234,7 @@ namespace Test
             taskList = new List<(string, MetaMorpheusTask)> { ("TestInternal", searchTask) };
             engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
             engine.Run();
-            psms = PsmTsvReader.ReadTsv(outputPath, out warning);
+            psms = SpectrumMatchTsvReader.ReadPsmTsv(outputPath, out warning);
             Assert.That(psms.Count == 1);
             Assert.That(psms[0].MatchedIons.Count == numTotalFragments);
 
@@ -253,6 +254,9 @@ namespace Test
                 {
                     Normalize = true
                 },
+                CommonParameters = new( precursorDeconParams:new IsoDecDeconvolutionParameters())
+                {
+                }
             };
 
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
@@ -450,7 +454,7 @@ namespace Test
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ResIdOutput.mzID");
 
             MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
-                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
+                new List<Modification>(), new List<SilacLabel>(), new List<DigestionAgent>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, true);
 
             var file = File.ReadAllLines(path);
@@ -492,7 +496,7 @@ namespace Test
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ResIdOutput.mzID");
 
             MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
-                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
+                new List<Modification>(), new List<SilacLabel>(), new List<DigestionAgent>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, true);
 
             var file = File.ReadAllLines(path);
@@ -508,7 +512,7 @@ namespace Test
 
             // test again w/ NOT appending motifs onto mod names
             MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
-                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
+                new List<Modification>(), new List<SilacLabel>(), new List<DigestionAgent>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, false);
 
             file = File.ReadAllLines(path);
@@ -595,7 +599,7 @@ namespace Test
                 },
 
                 // Use pepQvalue filtering with fewer than 100 psms
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD, 
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
                     pepQValueThreshold: 0.02, qValueThreshold: 1.0)
             };
 
@@ -608,13 +612,65 @@ namespace Test
             // run the task
             var pepTaskFolder = Path.Combine(folderPath, @"pepTest");
             Directory.CreateDirectory(pepTaskFolder);
-            searchTask.RunTask(pepTaskFolder, new List<DbForTask> { db }, 
+            searchTask.RunTask(pepTaskFolder, new List<DbForTask> { db },
                 new List<string> { myFile }, "");
 
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
             Assert.That(results[6], Is.EqualTo("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value."));
             Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 84"));
+
+            // clean up
+            Directory.Delete(folderPath, true);
+        }
+        [Test]
+        public static void TestSearchTaskResultsTextContents()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoLabelFreeQuantification = false // quant disabled just to save some time
+                },
+
+                // Use pepQvalue filtering with fewer than 100 psms
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
+        pepQValueThreshold: 0.02, qValueThreshold: 1.0)
+            };
+
+            string myFileOne = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.mzML");
+            string myFileTwo = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseTwo.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.xml");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPepResultsOutput");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            // run the task
+            var pepTaskFolder = Path.Combine(folderPath, @"pepTest");
+            Directory.CreateDirectory(pepTaskFolder);
+            searchTask.RunTask(pepTaskFolder, new List<DbForTask> { db },
+                new List<string> { myFileOne, myFileTwo }, "");
+
+            string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
+            string[] results = File.ReadAllLines(resultsFile);
+
+            Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 46"));
+            Assert.That(results[8], Is.EqualTo("All target peptides with q-value <= 1: 14"));
+            Assert.That(results[9], Is.EqualTo("All target protein groups with q-value <= 0.01 (1% FDR): 14"));
+            Assert.That(results[10], Is.EqualTo("All Precursors: 123"));
+            Assert.That(results[11], Is.EqualTo("All MS2 Scans: 42"));
+
+            Assert.That(results[13], Is.EqualTo("mouseOne - Target PSMs with q-value <= 1: 22"));
+            Assert.That(results[14], Is.EqualTo("mouseOne - Target peptides with q-value <= 1: 14"));
+            Assert.That(results[15], Is.EqualTo("mouseOne - Target protein groups within 1 % FDR: 14"));
+            Assert.That(results[16], Is.EqualTo("mouseOne - Precursors: 57"));
+            Assert.That(results[17], Is.EqualTo("mouseOne - MS2 Scans: 20"));
+
+            Assert.That(results[19], Is.EqualTo("mouseTwo - Target PSMs with q-value <= 1: 24"));
+            Assert.That(results[20], Is.EqualTo("mouseTwo - Target peptides with q-value <= 1: 14"));
+            Assert.That(results[21], Is.EqualTo("mouseTwo - Target protein groups within 1 % FDR: 14"));
+            Assert.That(results[22], Is.EqualTo("mouseTwo - Precursors: 66"));
+            Assert.That(results[23], Is.EqualTo("mouseTwo - MS2 Scans: 22"));
 
             // clean up
             Directory.Delete(folderPath, true);

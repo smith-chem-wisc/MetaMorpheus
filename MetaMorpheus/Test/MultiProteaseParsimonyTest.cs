@@ -12,6 +12,7 @@ using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
+using Omics;
 
 namespace Test
 {
@@ -53,17 +54,17 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
             SpectralMatch psmPEPR_T = new PeptideSpectralMatch(pepA_1T, 0, 10, 0, scan, commonParameters_Tryp, new List<MatchedFragmentIon>());
-            psmPEPR_T.AddOrReplace(pepA_2T, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            psmPEPR_T.AddOrReplace(pepA_3T, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmPEPR_T.AddOrReplace(pepA_2T, 10, 0, true, new List<MatchedFragmentIon>());
+            psmPEPR_T.AddOrReplace(pepA_3T, 10, 0, true, new List<MatchedFragmentIon>());
             SpectralMatch psmPEPR_A = new PeptideSpectralMatch(pepA_2A, 0, 10, 0, scan, commonParameters_ArgC, new List<MatchedFragmentIon>());
-            psmPEPR_A.AddOrReplace(pepA_3A, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmPEPR_A.AddOrReplace(pepA_3A, 10, 0, true, new List<MatchedFragmentIon>());
             SpectralMatch psmABCK_T = new PeptideSpectralMatch(pepB_1T, 0, 10, 0, scan, commonParameters_Tryp, new List<MatchedFragmentIon>());
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psmPEPR_T, psmPEPR_A, psmABCK_T };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters_Tryp.DigestionParams);
             digestionParamsList.Add(commonParameters_ArgC.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -140,9 +141,9 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
             SpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters1, new List<MatchedFragmentIon>());
-            psmABC_Dp1.AddOrReplace(pepA_2Dp1, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmABC_Dp1.AddOrReplace(pepA_2Dp1, 10, 0, true, new List<MatchedFragmentIon>());
             SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_1Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            psmABC_Dp2.AddOrReplace(pepA_2Dp2, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmABC_Dp2.AddOrReplace(pepA_2Dp2, 10, 0, true, new List<MatchedFragmentIon>());
             SpectralMatch psmEFG_Dp1 = new PeptideSpectralMatch(pepB_2Dp1, 0, 10, 0, scan, commonParameters1, new List<MatchedFragmentIon>());
 
             // builds psm list to match to peptides
@@ -151,7 +152,7 @@ namespace Test
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters1.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -221,7 +222,7 @@ namespace Test
             SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepB_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
             SpectralMatch psmEFGABC_Dp1 = new PeptideSpectralMatch(pepC_2Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
             SpectralMatch psmXYZ_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            psmXYZ_Dp1.AddOrReplace(pepA_2Dp1, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmXYZ_Dp1.AddOrReplace(pepA_2Dp1, 10, 0, true, new List<MatchedFragmentIon>());
 
             // builds psm list to match to peptides
             List<SpectralMatch> psms = new List<SpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFGABC_Dp1, psmXYZ_Dp1 };
@@ -229,7 +230,7 @@ namespace Test
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -344,8 +345,8 @@ namespace Test
 
             // check first protein group
             ProteinGroup pg1 = proteinGroups.Where(v => v.ProteinGroupName == "1").First();
-            PeptideWithSetModifications pg1pep1 = pg1.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
-            PeptideWithSetModifications pg1pep2 = pg1.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
+            IBioPolymerWithSetMods pg1pep1 = pg1.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
+            IBioPolymerWithSetMods pg1pep2 = pg1.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
             Assert.That(pg1.UniquePeptides.Contains(pg1pep1));
             Assert.That(pg1pep1.DigestionParams.DigestionAgent.Name == "testA");
             Assert.That(pg1.UniquePeptides.Contains(pg1pep2));
@@ -355,8 +356,8 @@ namespace Test
 
             // check second protein group
             ProteinGroup pg2 = proteinGroups.Where(v => v.ProteinGroupName == "2").First();
-            PeptideWithSetModifications pg2pep1 = pg2.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
-            PeptideWithSetModifications pg2pep2 = pg2.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
+            IBioPolymerWithSetMods pg2pep1 = pg2.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
+            IBioPolymerWithSetMods pg2pep2 = pg2.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
             Assert.That(pg2.UniquePeptides.Contains(pg2pep1));
             Assert.That(pg2pep1.DigestionParams.DigestionAgent.Name == "testB");
             Assert.That(pg2.UniquePeptides.Contains(pg2pep2));
@@ -479,7 +480,7 @@ namespace Test
 
             SpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
             SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            psmABC_Dp2.AddOrReplace(pepA_3Dp2, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmABC_Dp2.AddOrReplace(pepA_3Dp2, 10, 0, true, new List<MatchedFragmentIon>());
 
             // builds psm list to match to peptides
             List<SpectralMatch> psms = new List<SpectralMatch>() { psmABC_Dp1, psmABC_Dp2 };
@@ -541,7 +542,7 @@ namespace Test
             var protease2 = new Protease("test4", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
 
-            var peptideList = new List<PeptideWithSetModifications>();
+            var peptideList = new List<IBioPolymerWithSetMods>();
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
@@ -613,7 +614,7 @@ namespace Test
             ProteaseDictionary.Dictionary.Add(protease1.Name, protease1);
             var protease2 = new Protease("testD", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
-            var peptideList = new List<PeptideWithSetModifications>();
+            var peptideList = new List<IBioPolymerWithSetMods>();
 
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
@@ -814,15 +815,15 @@ namespace Test
 
             SpectralMatch psmABC_Alpha = new PeptideSpectralMatch(pepABC_1Alpha, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
             SpectralMatch psmABC_Beta = new PeptideSpectralMatch(pepABC_2Beta, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            psmABC_Beta.AddOrReplace(pepABC_4Beta, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmABC_Beta.AddOrReplace(pepABC_4Beta, 10, 0, true, new List<MatchedFragmentIon>());
             SpectralMatch psmEFG_Beta = new PeptideSpectralMatch(pepEFG_3Beta, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            psmEFG_Beta.AddOrReplace(pepEFG_4Beta, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmEFG_Beta.AddOrReplace(pepEFG_4Beta, 10, 0, true, new List<MatchedFragmentIon>());
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psmABC_Alpha, psmABC_Beta, psmEFG_Beta };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -883,19 +884,19 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
             SpectralMatch psmABCK_T = new PeptideSpectralMatch(pepABCK_1T, 0, 10, 0, scan, commonParameters_tryp, new List<MatchedFragmentIon>());
-            psmABCK_T.AddOrReplace(pepABCK_2T, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmABCK_T.AddOrReplace(pepABCK_2T, 10, 0, true, new List<MatchedFragmentIon>());
             SpectralMatch psmABCK_L = new PeptideSpectralMatch(pepABCK_1L, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
-            psmABCK_L.AddOrReplace(pepABCK_2L, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmABCK_L.AddOrReplace(pepABCK_2L, 10, 0, true, new List<MatchedFragmentIon>());
             SpectralMatch psmXYZK_T = new PeptideSpectralMatch(pepXYZK_1T, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
-            psmXYZK_T.AddOrReplace(pepXYZK_2T, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmXYZK_T.AddOrReplace(pepXYZK_2T, 10, 0, true, new List<MatchedFragmentIon>());
             SpectralMatch psmXYZK_L = new PeptideSpectralMatch(pepXYZK_1L, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
-            psmXYZK_L.AddOrReplace(pepXYZK_2L, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmXYZK_L.AddOrReplace(pepXYZK_2L, 10, 0, true, new List<MatchedFragmentIon>());
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psmABCK_T, psmABCK_L, psmXYZK_T, psmXYZK_L };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters_tryp.DigestionParams);
             digestionParamsList.Add(commonParameters_LysC.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -957,15 +958,15 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
             SpectralMatch psmABC_Dash = new PeptideSpectralMatch(pepABC_1Dash, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            psmABC_Dash.AddOrReplace(pepABC_2Dash, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmABC_Dash.AddOrReplace(pepABC_2Dash, 10, 0, true, new List<MatchedFragmentIon>());
             SpectralMatch psmABC_G = new PeptideSpectralMatch(pepABC_2G, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            psmABC_G.AddOrReplace(pepABC_3G, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            psmABC_G.AddOrReplace(pepABC_3G, 10, 0, true, new List<MatchedFragmentIon>());
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psmABC_Dash, psmABC_G };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);

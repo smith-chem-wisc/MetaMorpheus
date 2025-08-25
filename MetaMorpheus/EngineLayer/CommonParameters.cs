@@ -6,7 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Nett;
+using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer
 {
@@ -47,7 +49,7 @@ namespace EngineLayer
             Tolerance precursorMassTolerance = null, 
             Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, 
-            DigestionParams digestionParams = null, 
+            IDigestionParams digestionParams = null, 
             IEnumerable<(string, string)> listOfModsVariable = null, 
             IEnumerable<(string, string)> listOfModsFixed = null,
             bool assumeOrphanPeaksAreZ1Fragments = true, 
@@ -78,28 +80,18 @@ namespace EngineLayer
             TrimMs1Peaks = trimMs1Peaks;
             TrimMsMsPeaks = trimMsMsPeaks;
             MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1 ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1 : maxThreadsToUsePerFile;
-
             ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
             PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
-            ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
-            ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             DissociationType = dissociationType;
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;
             MS3ChildScanDissociationType = ms3childScanDissociationType;
             UseMostAbundantPrecursorIntensity = useMostAbundantPrecursorIntensity;
-
-            CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
-            // reset custom fragmentation product types to default empty list
-            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
-
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
-
             MaxHeterozygousVariants = maxHeterozygousVariants;
             MinVariantDepth = minVariantDepth;
-
             AddTruncations = addTruncations;
 
             // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
@@ -117,6 +109,24 @@ namespace EngineLayer
                 ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(-10,
                     -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
             }
+
+            if (digestionParams is RnaDigestionParams)
+            {
+                ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Digestion Termini", "Cyclic Phosphate on X") };
+                ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
+                PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+                ProductDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+            }
+            else
+            {
+                ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
+                ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
+            }
+
+            CustomIons = digestionParams.ProductsFromDissociationType()[DissociationType.Custom];
+
+            // reset custom fragmentation product types to default empty list
+            digestionParams.ProductsFromDissociationType()[DissociationType.Custom] = new List<ProductType>() { };
         }
 
         // Notes:
@@ -131,16 +141,16 @@ namespace EngineLayer
         public int MaxThreadsToUsePerFile { get; private set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
-        public bool DoPrecursorDeconvolution { get; private set; }
-        public bool UseProvidedPrecursorInfo { get; private set; }
+        public bool DoPrecursorDeconvolution { get; set; }
+        public bool UseProvidedPrecursorInfo { get; set; }
         [TomlIgnore] public double DeconvolutionIntensityRatio { get; private set; }
         public int DeconvolutionMaxAssumedChargeState
         {
             get => PrecursorDeconvolutionParameters.MaxAssumedChargeState;
             private set => PrecursorDeconvolutionParameters.MaxAssumedChargeState = value;
         }
-        [TomlIgnore] public DeconvolutionParameters PrecursorDeconvolutionParameters { get; private set; }
-        [TomlIgnore] public DeconvolutionParameters ProductDeconvolutionParameters { get; private set; }
+        public DeconvolutionParameters PrecursorDeconvolutionParameters { get; private set; }
+        public DeconvolutionParameters ProductDeconvolutionParameters { get; private set; }
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
@@ -164,7 +174,7 @@ namespace EngineLayer
         /// when training the GBDT model for PEP. 
         /// </summary>
         public double QValueCutoffForPepCalculation { get; set; }
-        public DigestionParams DigestionParams { get; private set; }
+        public IDigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
         public int? NumberOfPeaksToKeepPerWindow { get; private set; }
         public double? MinimumAllowedIntensityRatioToBasePeak { get; private set; }
@@ -245,17 +255,7 @@ namespace EngineLayer
                                 PrecursorMassTolerance,
                                 DeconvolutionMassTolerance,
                                 MaxThreadsToUsePerFile,
-                                new DigestionParams(
-                                    DigestionParams.Protease.Name,
-                                    DigestionParams.MaxMissedCleavages,
-                                    DigestionParams.MinPeptideLength,
-                                    DigestionParams.MaxPeptideLength,
-                                    DigestionParams.MaxModificationIsoforms,
-                                    DigestionParams.InitiatorMethionineBehavior,
-                                    DigestionParams.MaxModsForPeptide,
-                                    DigestionParams.SearchModeType,
-                                    terminus.Value //possibly changed
-                                ),
+                                DigestionParams.Clone(terminus),
                                 ListOfModsVariable,
                                 ListOfModsFixed,
                                 AssumeOrphanPeaksAreZ1Fragments,
@@ -268,7 +268,7 @@ namespace EngineLayer
 
         public void SetCustomProductTypes()
         {
-            DissociationTypeCollection.ProductsFromDissociationType[MassSpectrometry.DissociationType.Custom] = CustomIons;
+            DigestionParams.ProductsFromDissociationType()[MassSpectrometry.DissociationType.Custom] = CustomIons;
         }
     }
 }

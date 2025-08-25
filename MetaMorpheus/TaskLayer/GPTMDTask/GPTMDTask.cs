@@ -4,21 +4,26 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.Gptmd;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
-using Proteomics.ProteolyticDigestion;
 using System.Globalization;
 using Omics.Modifications;
+using System.Threading.Tasks;
+using Omics;
+using Proteomics.ProteolyticDigestion;
+using Proteomics;
+using Transcriptomics;
 
 namespace TaskLayer
 {
     public class GptmdTask : MetaMorpheusTask
     {
         private const double tolForComboLoading = 1e-3;
+        private const string CombosTextFileName = "combos.txt";
+        private const string RnaCombosTextFileName = "rnaCombos.txt";
 
         public GptmdTask() : base(MyTask.Gptmd)
         {
@@ -30,27 +35,44 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            bool isProtein = GlobalVariables.AnalyteType != AnalyteType.Oligo;
+            MyFileManager myFileManager = new MyFileManager(true);
+
+            // start loading first spectra file in the background
+            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(currentRawFileList[0], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+            nextFileLoadingTask.Start();
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
+            // start loading proteins in the background
+            List<IBioPolymer> proteinList = null;
+            Task<List<IBioPolymer>> proteinLoadingTask = new(() =>
+            {
+                var proteins = LoadBioPolymers(taskId, dbFilenameList, true, DecoyType.Reverse,
+                    localizeableModificationTypes,
+                    CommonParameters);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
+                return proteins;
+            });
+            proteinLoadingTask.Start();
+
             // TODO: print error messages loading GPTMD mods
-            List<Modification> gptmdModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.ModificationType, b.IdWithMotif))).ToList();
-            IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
-
-            // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
-
-            List<SpectralMatch> allPsms = new List<SpectralMatch>();
-
-            var numRawFiles = currentRawFileList.Count;
+            var gptmdModifications = isProtein
+                ? GlobalVariables.AllModsKnown.OfType<Modification>().Where(b =>
+                    GptmdParameters.ListOfModsGptmd.Contains((b.ModificationType, b.IdWithMotif))).ToList()
+                : GlobalVariables.AllRnaModsKnown.OfType<Modification>().Where(b =>
+                    GptmdParameters.ListOfModsGptmd.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            var combos = LoadCombos(gptmdModifications, isProtein).ToList();
 
             // write prose settings
-            ProseCreatedWhileRunning.Append("The following G-PTM-D settings were used: "); ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
+            ProseCreatedWhileRunning.Append("The following G-PTM-D settings were used: ");
+            ProseCreatedWhileRunning.Append($"{GlobalVariables.AnalyteType.GetDigestionAgentLabel()} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
-                "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+            ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinLength + "; ");
+            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxLength == int.MaxValue ?
+                $"maximum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = unspecified; " :
+                $"maximum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MaxLength + "; ");
+            if (CommonParameters.DigestionParams is DigestionParams digestionParams)
+                ProseCreatedWhileRunning.Append("initiator methionine behavior = " + digestionParams.InitiatorMethionineBehavior + "; ");
             ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
             ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.IdWithMotif)) + "; ");
             ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.IdWithMotif)) + "; ");
@@ -62,7 +84,6 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("precursor mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
 
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + ". ");
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             // start the G-PTM-D task
             Status("Running G-PTM-D...", new List<string> { taskId });
@@ -70,14 +91,21 @@ namespace TaskLayer
             {
                 NewDatabases = new List<DbForTask>()
             };
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
-            HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
 
-            MyFileManager myFileManager = new MyFileManager(true);
+            var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
+            for (int i = 0; i < currentRawFileList.Count; i++)
+            {
+                string filePath = currentRawFileList[i];
+                Tolerance fileTolerance = CommonParameters.PrecursorMassTolerance;
+                if (fileSettingsList[i] != null && fileSettingsList[i].PrecursorMassTolerance != null)
+                {
+                    fileTolerance = fileSettingsList[i].PrecursorMassTolerance;
+                }
+                filePathToPrecursorMassTolerance.Add(filePath, fileTolerance);
+            }
 
-            object lock1 = new object();
-            object lock2 = new object();
-
+            // Store the psms from each file in one combined list
+            List<SpectralMatch> allPsms = new();
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 // Stop if canceled
@@ -94,51 +122,66 @@ namespace TaskLayer
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
+
+                // ensure that the next file has finished loading from the async method
+                nextFileLoadingTask.Wait();
+                var myMsDataFile = nextFileLoadingTask.Result;
+                // if another file exists, then begin loading it in while the previous is being searched
+                if (origDataFile != currentRawFileList.Last())
+                {
+                    int nextFileIndex = spectraFileIndex + 1;
+                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex])));
+                    nextFileLoadingTask.Start();
+                }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
-                SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                SpectralMatch[] psmArray = new SpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
                 //spectral Library search and library generation have't applied to GPTMD yet
                 bool writeSpctralLibrary = false;
-                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, null, null, null, 
+
+                // ensure proteins are loaded in before proceeding with search
+                switch (proteinLoadingTask.IsCompleted)
+                {
+                    case true when proteinList is null: // has finished loading but not been set
+                        proteinList = proteinLoadingTask.Result;
+                        break;
+                    case true when proteinList.Any(): // has finished loading and already been set
+                        break;
+                    case false: // has not finished loading
+                        proteinLoadingTask.Wait();
+                        proteinList = proteinLoadingTask.Result;
+                        break;
+                }
+
+                new ClassicSearchEngine(psmArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, null, null, null, 
                     proteinList, searchMode, combinedParams, this.FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", origDataFile }, writeSpctralLibrary).Run();
-                allPsms.AddRange(allPsmsArray.Where(p => p != null));
+
+
+                var psmList = psmArray.Where(p => p != null).ToList();
+                foreach(var psm in psmList)
+                {
+                    psm.SetMs2Scan(arrayOfMs2ScansSortedByMass[psm.ScanIndex].TheScan);
+                }
+                allPsms.AddRange(psmList);
+
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
             }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            allPsms = allPsms.OrderByDescending(b => b.Score)
-                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
-                .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass))
-                .Select(b => b.First()).ToList();
+            // Run FDR analysis on allPsms
+            // GPTMD doesn't work as well if you do FDR on a file-by-file basis. Presumably this is because it takes multiple files to get enough PSMs for all the different notches
+            new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
+            Dictionary<string, HashSet<Tuple<int, Modification>>> allModDictionary = new();
+            new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary).Run();
 
-            new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }).Run();
-
-            var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
-            WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
-            FinishedWritingFile(writtenFile, new List<string> { taskId });
-
-            // get file-specific precursor mass tolerances for the GPTMD engine
-            var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
-            for (int i = 0; i < currentRawFileList.Count; i++)
-            {
-                string filePath = currentRawFileList[i];
-                Tolerance fileTolerance = CommonParameters.PrecursorMassTolerance;
-                if (fileSettingsList[i] != null && fileSettingsList[i].PrecursorMassTolerance != null)
-                {
-                    fileTolerance = fileSettingsList[i].PrecursorMassTolerance;
-                }
-                filePathToPrecursorMassTolerance.Add(filePath, fileTolerance);
-            }
+            //Move this text after search because proteins don't get loaded until search begins.
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             // run GPTMD engine
-            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }).Run();
-
-            // Stop if canceled
-            if (GlobalVariables.StopLoops) { return MyTaskResults; }
+            Status("Creating the GPTMD Database", new List<string> { taskId });
 
             // write GPTMD databases
             if (dbFilenameList.Any(b => !b.IsContaminant))
@@ -153,7 +196,9 @@ namespace TaskLayer
                 }
                 string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
-                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                var newModsActuallyWritten = isProtein
+                    ? ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullName)
+                    : ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullName);
 
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
@@ -179,21 +224,24 @@ namespace TaskLayer
                 }
                 string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
-                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                var newModsActuallyWritten = isProtein
+                    ? ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullNameContaminants)
+                    : ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullNameContaminants);
 
                 FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
-
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
                 MyTaskResults.AddTaskSummaryText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddTaskSummaryText("Mods types and counts:");
                 MyTaskResults.AddTaskSummaryText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
+            Status("Done", new List<string> { taskId });
             return MyTaskResults;
         }
 
-        private static IEnumerable<Tuple<double, double>> LoadCombos(List<Modification> modificationsThatCanBeCombined)
+        private static IEnumerable<Tuple<double, double>> LoadCombos(List<Modification> modificationsThatCanBeCombined, bool isProtein = false)
         {
-            using (StreamReader r = new StreamReader(Path.Combine(GlobalVariables.DataDir, "Data", @"combos.txt")))
+            string specificPath = isProtein ? CombosTextFileName : RnaCombosTextFileName;
+            using (StreamReader r = new StreamReader(Path.Combine(GlobalVariables.DataDir, "Data", specificPath)))
             {
                 while (r.Peek() >= 0)
                 {

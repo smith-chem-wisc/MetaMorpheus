@@ -67,7 +67,7 @@ namespace EngineLayer.FdrAnalysis
             if (GlobalVariables.StopLoops) { return; }
 
             // calculate FDR on a per-protease basis (targets and decoys for a specific protease)
-            var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.Protease);
+            var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.DigestionAgent);
 
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
@@ -175,10 +175,10 @@ namespace EngineLayer.FdrAnalysis
                     // e.g. if the PSM matched to 1 target and 2 decoys, it counts as 2/3 decoy
                     double decoyHits = 0;
                     double totalHits = 0;
-                    var hits = psm.BestMatchingBioPolymersWithSetMods.GroupBy(p => p.Peptide.FullSequence);
+                    var hits = psm.BestMatchingBioPolymersWithSetMods.GroupBy(p => p.FullSequence);
                     foreach (var hit in hits)
                     {
-                        if (hit.First().Peptide.Parent.IsDecoy)
+                        if (hit.First().IsDecoy)
                         {
                             decoyHits++;
                         }
@@ -298,7 +298,7 @@ namespace EngineLayer.FdrAnalysis
             // Currently, searches of mixed data (bottom-up + top-down) are not supported
             // PEP will be calculated based on the search type of the first file/PSM in the list, which isn't ideal
             // This will be addressed in a future release
-            switch(psms[0].DigestionParams.Protease.Name)
+            switch(psms[0].DigestionParams.DigestionAgent.Name)
             {
                case "top-down":
                     searchType = "top-down";

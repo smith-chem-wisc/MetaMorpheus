@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
+using Omics;
+using Transcriptomics;
 
 namespace Test
 {
@@ -98,7 +100,7 @@ namespace Test
             {
                 if (temp.TryGetValue(peptide.BaseSequence, out var psm))
                 {
-                    psm.AddOrReplace(peptide, 1, 0, true, new List<MatchedFragmentIon>(),0);
+                    psm.AddOrReplace(peptide, 1, 0, true, new List<MatchedFragmentIon>());
                 }
                 else
                 {
@@ -124,7 +126,7 @@ namespace Test
             proteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
             // select the PSMs' proteins
-            List<string> parsimonyProteinSequences = psms.SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide.Parent)).Select(v => v.BaseSequence).Distinct().ToList();
+            List<string> parsimonyProteinSequences = psms.SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer.Parent)).Select(v => v.BaseSequence).Distinct().ToList();
 
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinSequences.Contains("AB--------"));
@@ -178,28 +180,28 @@ namespace Test
 
             int idx = 0;
 
-            var pep1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep1 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep1.Single().FullSequence, Is.EqualTo("MNNNSK"));//this might be base
 
-            var pep1mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep1mod = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep1mod.Single().FullSequence, Is.EqualTo("MNNNS[HaHa:resMod on S]K"));//this might be base
 
-            var pep3 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep3 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep3.Single().FullSequence, Is.EqualTo("NNNSK"));//this might be base
 
-            var pep3mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep3mod = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep3mod.Single().FullSequence, Is.EqualTo("NNNS[HaHa:resMod on S]K"));//this might be base
 
-            var pep4 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep4 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep4.Single().FullSequence, Is.EqualTo("QQQI"));//this might be base
 
-            var pep4mod1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep4mod1 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep4mod1.Single().FullSequence, Is.EqualTo("QQQI[HaHa:iModOne on I]"));//this might be base
 
-            var pep4mod2 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep4mod2 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep4mod2.Single().FullSequence, Is.EqualTo("QQQI[HaHa:iModTwo on I]"));//this might be base
 
-            var peptideList = new HashSet<PeptideWithSetModifications>();
+            var peptideList = new HashSet<IBioPolymerWithSetMods>();
             foreach (var peptide in proteinList.SelectMany(protein => protein.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications)))
             {               
                 peptideList.Add(peptide);
@@ -258,7 +260,7 @@ namespace Test
         [Test]
         public static void TestProteinGroupsAccessionOutputOrder()
         {
-            var p = new HashSet<Protein>();
+            var p = new HashSet<IBioPolymer>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
 
             // make protein B
@@ -266,6 +268,26 @@ namespace Test
 
             // make protein A
             p.Add(new Protein("-----F----**", "A", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
+
+            // add protein B and A to the protein group
+            ProteinGroup testGroup = new ProteinGroup(p, null, null);
+
+            // test order is AB and not BA
+            Assert.That(testGroup.ProteinGroupName.Equals("A|B"));
+            Assert.That(testGroup.Proteins.First().Accession.Equals("B"));
+        }
+
+        [Test]
+        public static void TestTranscriptGroupsAccessionOutputOrder()
+        {
+            var p = new HashSet<IBioPolymer>();
+            List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
+
+            // make protein B
+            p.Add(new RNA("AAAAACAAAAU", "B", isDecoy: true));
+
+            // make protein A
+            p.Add(new RNA("AAAAACAAAAUU", "A", isDecoy: true));
 
             // add protein B and A to the protein group
             ProteinGroup testGroup = new ProteinGroup(p, null, null);
