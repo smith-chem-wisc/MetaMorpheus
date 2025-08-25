@@ -10,7 +10,7 @@ jobs:
     timeout-minutes: 60
 
     env:
-      CSProjPath: MetaMorpheus/EngineLayer/EngineLayer.csproj
+      CSProjPath: ./MetaMorpheus/EngineLayer/EngineLayer.csproj
 
     steps:
       - name: Checkout release tag
@@ -53,16 +53,16 @@ jobs:
       - name: Patch <Version> in EngineLayer.csproj
         shell: pwsh
         run: |
-          $csproj = "MetaMorpheus/EngineLayer/EngineLayer.csproj"
-          if (!(Test-Path $csproj)) { Write-Error "Missing $csproj"; exit 1 }
+          $env:CSProjPath
+          if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; exit 1 }
       
-          [xml]$xml = Get-Content $csproj
+          [xml]$xml = Get-Content $env:CSProjPath
       
           # Try to find <Version> with and without the MSBuild 2003 namespace
           $versionNode = $xml.SelectSingleNode('//Version')
           $versionNode.InnerText = $env:PACKAGE_VERSION
           $xml.Save($csproj)
-          Write-Host "Set <Version> to $env:PACKAGE_VERSION in $csproj"
+          Write-Host "Set <Version> to $env:PACKAGE_VERSION in $env:CSProjPath"
 
       - name: Set version in AssemblyInfo.cs files
         uses: secondbounce/assemblyinfo-update@v2
