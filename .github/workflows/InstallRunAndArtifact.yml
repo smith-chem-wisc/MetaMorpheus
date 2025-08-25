@@ -13,44 +13,31 @@ env:
 jobs:
   install:
     name: Create Installer Artifact
-    runs-on: windows-latest   
-    env:
-      Tag: 9.9.9.9
-      
+    runs-on: windows-latest
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Patch <Version> in EngineLayer.csproj
+
+      - name: Debug secrets (PowerShell)
         shell: pwsh
         run: |
-          $env:CSProjPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj"
-          if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; ls; exit 1 }
-      
-          [xml]$xml = Get-Content $env:CSProjPath
-      
-          # Try to find <Version> with and without the MSBuild 2003 namespace
-          $versionNode = $xml.SelectSingleNode('//Version')
-          $versionNode.InnerText = $env:Tag
-          $xml.Save($env:CSProjPath)
-          Write-Host "Set <Version> to $env:Tag in $env:CSProjPath"
+          if (-not $env:KEY_SECRET) {
+            Write-Host "KEY_SECRET is not set!"
+          } else {
+            Write-Host "KEY_SECRET is set."
+          }
           
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-          
-      - name: Set version in AssemblyInfo.cs files
-        uses: secondbounce/assemblyinfo-update@v2
-        with:
-          version: ${{ env.Tag }}
-          directory: './MetaMorpheus/GUI/Properties/'
-          
-      - name: Restore dependencies
-        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
-        
+
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-        
+
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+
       - name: Build solution
         run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
 
@@ -65,6 +52,29 @@ jobs:
             Write-Host "❌ Installer build failed: MetaMorpheusInstaller.msi not found." -ForegroundColor Red
             exit 1
           }
+
+      - name: Decrypt security certificate
+        shell: pwsh
+        run: |
+          if (-not $env:KEY_SECRET) {
+            Write-Host "⚠️ KEY_SECRET is not set. Skipping certificate decryption."
+            exit 0
+          }
+
+          nuget install secure-file -ExcludeVersion
+          secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret "$env:KEY_SECRET"
+
+      # This currently has issues and leads to Microsoft waringing the user that MetaMorpheus is untrusted.
+      - name: Sign installer
+        shell: pwsh
+        run: |
+          if (-not $env:KEY_SECRET -or -not $env:KEY_CERT) {
+            Write-Host "⚠️ Certificate secrets not available. Skipping signing."
+            exit 0
+          }
+
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "$env:KEY_CERT", "DefaultKeySet")
+          Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert
 
       - name: Zip command-line version
         run: |

@@ -9,9 +9,6 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 60
 
-    env:
-      CSProjPath: ./MetaMorpheus/EngineLayer/EngineLayer.csproj
-
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v4
@@ -53,23 +50,23 @@ jobs:
       - name: Patch <Version> in EngineLayer.csproj
         shell: pwsh
         run: |
-          $env:CSProjPath
-          if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; exit 1 }
+          $env:CSProjPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj"
+          if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; ls; exit 1 }
       
           [xml]$xml = Get-Content $env:CSProjPath
       
           # Try to find <Version> with and without the MSBuild 2003 namespace
           $versionNode = $xml.SelectSingleNode('//Version')
-          $versionNode.InnerText = $env:PACKAGE_VERSION
-          $xml.Save($csproj)
-          Write-Host "Set <Version> to $env:PACKAGE_VERSION in $env:CSProjPath"
-
+          $versionNode.InnerText = $env:packageVersion
+          $xml.Save($env:CSProjPath)
+          Write-Host "Set <Version> to $env:Tag in $env:CSProjPath"
+          
       - name: Set version in AssemblyInfo.cs files
         uses: secondbounce/assemblyinfo-update@v2
         with:
-          version: ${{ env.PACKAGE_VERSION }}
+          version: ${{ env.fileVersion }}
           directory: './MetaMorpheus/GUI/Properties/'
-
+          
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
 
