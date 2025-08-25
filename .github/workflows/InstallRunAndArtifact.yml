@@ -44,9 +44,13 @@ jobs:
         with:
           version: ${{ env.Tag }}
           directory: './MetaMorpheus/GUI/Properties/'
+          
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
-
+        
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        
       - name: Build solution
         run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
 
