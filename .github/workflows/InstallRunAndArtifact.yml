@@ -15,8 +15,8 @@ jobs:
     name: Create Installer Artifact
     runs-on: windows-latest   
     env:
-      CSProjPath: ./MetaMorpheus/EngineLayer/EngineLayer.csproj
-      Tag: 9.9.9.9
+      CSProjPath: "./MetaMorpheus/EngineLayer/EngineLayer.csproj"
+      Tag: "9.9.9.9"
       
     steps:
       - name: Debug secrets (PowerShell)
