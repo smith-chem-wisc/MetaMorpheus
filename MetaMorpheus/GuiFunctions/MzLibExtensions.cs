@@ -61,7 +61,7 @@ namespace GuiFunctions
                 .Replace('[', ' ')
                 .Replace(']', ' ').Split("to");
             int startResidue = int.Parse(splitStartAndEnd[0].Trim());
-            int endResidue = int.Parse(splitStartAndEnd[1].Trim());
+            int endResidue = int.Parse(splitStartAndEnd[1].Split('|')[0].Trim());
 
             if (sm.IsPeptide())
                 return new PeptideWithSetModifications(fullSequence ?? sm.FullSequence, GlobalVariables.AllModsKnownDictionary, oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
