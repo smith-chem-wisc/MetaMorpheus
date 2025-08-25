@@ -57,14 +57,23 @@ jobs:
       
           # Try to find <Version> with and without the MSBuild 2003 namespace
           $versionNode = $xml.SelectSingleNode('//Version')
-          $versionNode.InnerText = $env:packageVersion
+          $versionNode.InnerText = $env:PACKAGE_VERSION
           $xml.Save($env:CSProjPath)
-          Write-Host "Set <Version> to $env:Tag in $env:CSProjPath"
+          $csprojPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj"
+          if (!(Test-Path $csprojPath)) { Write-Error "Missing $csprojPath"; ls; exit 1 }
+      
+          [xml]$xml = Get-Content $csprojPath
+      
+          # Try to find <Version> with and without the MSBuild 2003 namespace
+          $versionNode = $xml.SelectSingleNode('//Version')
+          $versionNode.InnerText = $env:packageVersion
+          $xml.Save($csprojPath)
+          Write-Host "Set <Version> to $env:Tag in $csprojPath"
           
       - name: Set version in AssemblyInfo.cs files
         uses: secondbounce/assemblyinfo-update@v2
         with:
-          version: ${{ env.fileVersion }}
+          version: ${{ env.FILE_VERSION }}
           directory: './MetaMorpheus/GUI/Properties/'
           
       - name: Restore dependencies
