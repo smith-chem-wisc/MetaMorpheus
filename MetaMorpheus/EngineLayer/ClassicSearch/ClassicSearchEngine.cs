@@ -11,6 +11,7 @@ using Omics.Modifications;
 using System.Collections.Concurrent;
 using EngineLayer.Util;
 using Omics;
+using Readers.SpectralLibrary;
 
 namespace EngineLayer.ClassicSearch
 {
