@@ -22,7 +22,7 @@ jobs:
       - name: Patch <Version> in EngineLayer.csproj
         shell: pwsh
         run: |
-          $env:CSProjPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj
+          $env:CSProjPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj"
           if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; ls; exit 1 }
       
           [xml]$xml = Get-Content $env:CSProjPath
