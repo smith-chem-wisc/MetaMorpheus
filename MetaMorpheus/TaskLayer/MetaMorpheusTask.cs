@@ -24,6 +24,8 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
+using Easy.Common.Extensions;
+using Readers.SpectralLibrary;
 
 namespace TaskLayer
 {
