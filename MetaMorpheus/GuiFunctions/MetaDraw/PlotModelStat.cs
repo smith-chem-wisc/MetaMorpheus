@@ -7,20 +7,19 @@ using Proteomics.RetentionTimePrediction;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
 using System.Globalization;
 using Readers;
 
 namespace GuiFunctions
 {
-    public class PlotModelStat : INotifyPropertyChanged, IPlotModel
+    public class PlotModelStat
     {
         private PlotModel privateModel;
         private readonly ObservableCollection<SpectrumMatchFromTsv> allSpectralMatches;
         private readonly Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> psmsBySourceFile;
 
-        public static List<string> PlotNames = new List<string> {
+        public readonly static List<string> PlotNames = new List<string> {
             "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
             "Histogram of Fragment PPM Errors",
             "Histogram of Precursor Charges",
@@ -37,28 +36,7 @@ namespace GuiFunctions
             "Histogram of Ids by Retention Time"
         };
 
-        public PlotModel Model
-        {
-            get => privateModel;
-            private set
-            {
-                privateModel = value;
-                NotifyPropertyChanged("Model");
-            }
-        }
-
-        public OxyColor Background => OxyColors.White;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected void NotifyPropertyChanged(string propertyName)
-        {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
+        public PlotModel Model => privateModel;
 
         public PlotModelStat(string plotName, ObservableCollection<SpectrumMatchFromTsv> sms, Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> smsBySourceFile)
         {
@@ -68,7 +46,6 @@ namespace GuiFunctions
             createPlot(plotName);
             privateModel.DefaultColors = MetaDrawSettings.DataVisualizationColorOrder;
         }
-
         private void createPlot(string plotType)
         {
             switch (plotType)
@@ -310,7 +287,7 @@ namespace GuiFunctions
                         double total = 1.0;
                         if (MetaDrawSettings.NormalizeHistogramToFile)
                         {
-                            total = dictsBySourceFile.Values.Sum(p => p.Values.Sum(m => m));
+                            total = dictsBySourceFile[key].Values.Sum();
                         }
                         column.Items.Add(new HistItem(d.Value / total, id, d.Key, totalCounts[id]));
 
@@ -354,7 +331,7 @@ namespace GuiFunctions
                         double total = 1.0;
                         if (MetaDrawSettings.NormalizeHistogramToFile)
                         {
-                            total = dictsBySourceFile.Values.Sum(p => p.Values.Sum(m => m));
+                            total = dictsBySourceFile[key].Values.Sum(m => m);
                         }
                         column.Items.Add(new HistItem(d.Value / total, bin - start, (bin * binSize).ToString(CultureInfo.InvariantCulture), totalCounts[bin - start]));
                     }
@@ -485,10 +462,5 @@ namespace GuiFunctions
                 this.bin = bin;
             }
         }
-
-        //unused interface methods
-        public void Update(bool updateData) { }
-        public void Render(IRenderContext rc, double width, double height) { }
-        public void AttachPlotView(IPlotView plotView) { }
     }
 }

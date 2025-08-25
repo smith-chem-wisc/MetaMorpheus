@@ -357,6 +357,20 @@ namespace Test.MetaDraw
             Assert.That(flaggedError);
         }
 
+        [Test] 
+        public static void TestMetaDrawSettingsLoadSettingsCases_v112()
+        {
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", @"112MetaDrawSettingsSavedForTestCoverage_Failures.xml");
+            var snapShot = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(path);
+            MetaDrawSettings.LoadSettings(snapShot, out bool flaggedError);
+            Assert.That(flaggedError);
+
+            path = Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", @"112MetaDrawSettingsSavedForTestCoverage_Success.xml");
+            snapShot = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(path);
+            MetaDrawSettings.LoadSettings(snapShot, out flaggedError);
+            Assert.That(!flaggedError);
+        }
+
         [Test]
         public static void TestSettingsViewSaveAndChildSelectionChanged()
         {
@@ -398,6 +412,14 @@ namespace Test.MetaDraw
             Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color ==
                         DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
+            var dataVisColorVm = view.DataVisualizationColors.First();
+            Assert.That(!dataVisColorVm.HasChanged);
+            dataVisColorVm.SelectionChanged("Red");
+            Assert.That(dataVisColorVm.HasChanged);
+            Assert.That(dataVisColorVm.SelectedColor == "Red");
+            Assert.That(dataVisColorVm.ColorBrush.Color ==
+                        DrawnSequence.ParseColorBrushFromName("Red").Color);
+
             view.Save();
             Assert.That(MetaDrawSettings.ProductTypeToColor[view.IonGroups.First().Ions.First().IonType] ==
                         OxyColors.Blue);
@@ -406,6 +428,7 @@ namespace Test.MetaDraw
             Assert.That(MetaDrawSettings.CoverageTypeToColor[view.CoverageColors.First().Name] == OxyColors.Blue);
             Assert.That(MetaDrawSettings.InternalIonColor == OxyColors.Blue);
             Assert.That(MetaDrawSettings.UnannotatedPeakColor == OxyColors.Blue);
+            Assert.That(MetaDrawSettings.DataVisualizationColorOrder.First() == OxyColors.Red);
         }
 
         [Test]
