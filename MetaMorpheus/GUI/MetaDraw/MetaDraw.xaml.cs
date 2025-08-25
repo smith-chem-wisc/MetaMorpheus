@@ -21,6 +21,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace MetaMorpheusGUI
 {
@@ -726,12 +727,6 @@ namespace MetaMorpheusGUI
 
         private void SetUpPlots()
         {
-            Style itemContainerStyle = new Style(typeof(ListBoxItem));
-            itemContainerStyle.Setters.Add(new Setter(AllowDropProperty, true));
-            itemContainerStyle.Setters.Add(new EventSetter(PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler(selectSourceFileListBox_PreviewMouseLeftButtonDown)));
-            itemContainerStyle.Setters.Add(new EventSetter(DropEvent, new DragEventHandler(selectSourceFileListBox_Drop)));
-            selectSourceFileListBox.ItemContainerStyle = itemContainerStyle;
-
             foreach (var plot in PlotModelStat.PlotNames)
             {
                 plotTypes.Add(plot);
@@ -917,24 +912,40 @@ namespace MetaMorpheusGUI
             }
         }
 
-        void selectSourceFileListBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+
+        private Point _dragStartPoint;
+        private object _draggedData;
+        private void selectSourceFileListBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (sender is not ListBoxItem) return;
-            ListBoxItem draggedItem = sender as ListBoxItem;
-            DragDrop.DoDragDrop(draggedItem, draggedItem.DataContext, DragDropEffects.Move);
-            draggedItem.IsSelected = true;
+            _dragStartPoint = e.GetPosition(null);
+            _draggedData = GetDataFromListBoxItemUnderMouse(e.GetPosition(selectSourceFileListBox));
         }
 
-        /// <summary>
-        /// Enables rearrangement of the source file list box on the data visualization tab
-        /// </summary>
-        void selectSourceFileListBox_Drop(object sender, DragEventArgs e)
+        private void selectSourceFileListBox_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed && _draggedData != null)
+            {
+                Point currentPosition = e.GetPosition(null);
+                if (Math.Abs(currentPosition.X - _dragStartPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                    Math.Abs(currentPosition.Y - _dragStartPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
+                {
+                    DragDrop.DoDragDrop(selectSourceFileListBox, _draggedData, DragDropEffects.Move);
+                    _draggedData = null;
+                }
+            }
+        }
+
+        private void selectSourceFileListBox_Drop(object sender, DragEventArgs e)
         {
             var droppedData = e.Data.GetData(typeof(string)) as string;
-            string target = ((ListBoxItem)(sender)).DataContext as string;
+            var targetData = GetDataFromListBoxItemUnderMouse(e.GetPosition(selectSourceFileListBox));
+            if (droppedData == null || targetData == null || droppedData == targetData)
+                return;
 
-            int removedIdx = selectSourceFileListBox.Items.IndexOf(droppedData);
-            int targetIdx = selectSourceFileListBox.Items.IndexOf(target);
+            int removedIdx = PsmStatPlotFiles.IndexOf(droppedData);
+            int targetIdx = PsmStatPlotFiles.IndexOf(targetData as string);
+            if (removedIdx < 0 || targetIdx < 0)
+                return;
 
             if (removedIdx < targetIdx)
             {
@@ -948,6 +959,16 @@ namespace MetaMorpheusGUI
                 PsmStatPlotFiles.Insert(targetIdx, droppedData);
                 PsmStatPlotFiles.RemoveAt(remIdx);
             }
+        }
+
+        // Helper to get the data object from the ListBoxItem under the mouse
+        private object GetDataFromListBoxItemUnderMouse(Point point)
+        {
+            var element = selectSourceFileListBox.InputHitTest(point) as DependencyObject;
+            while (element != null && !(element is ListBoxItem))
+                element = VisualTreeHelper.GetParent(element);
+
+            return (element as ListBoxItem)?.DataContext;
         }
 
         private void DataVisualizationFilters_OnChecked(object sender, RoutedEventArgs e)

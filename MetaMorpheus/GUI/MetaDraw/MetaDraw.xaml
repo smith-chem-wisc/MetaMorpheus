@@ -495,7 +495,15 @@
                                         <Button x:Name="selectAllSourceFiles" HorizontalAlignment="Left" Content="Select all" Click="selectAllSourceFiles_Click"/>
                                         <Button x:Name="deselectAllSourceFiles" HorizontalAlignment="Right" Content="Deselect all" Click="deselectAllSourceFiles_Click"/>
                                     </DockPanel>
-                                    <ListBox x:Name="selectSourceFileListBox" ItemsSource="{Binding}" SelectionMode="Multiple" SelectionChanged="selectSourceFileListBox_SelectionChanged" ScrollViewer.VerticalScrollBarVisibility="Visible"/>
+                                    <ListBox x:Name="selectSourceFileListBox" 
+                                             ItemsSource="{Binding}" 
+                                             SelectionMode="Multiple" 
+                                             AllowDrop="True"
+                                             SelectionChanged="selectSourceFileListBox_SelectionChanged"
+                                             PreviewMouseLeftButtonDown="selectSourceFileListBox_PreviewMouseLeftButtonDown"
+                                             PreviewMouseMove="selectSourceFileListBox_PreviewMouseMove"
+                                             Drop="selectSourceFileListBox_Drop"
+                                             DisplayMemberPath="."/>
                                 </DockPanel>
                             </DockPanel>
 

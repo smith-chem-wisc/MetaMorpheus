@@ -331,7 +331,7 @@ namespace GuiFunctions
                         double total = 1.0;
                         if (MetaDrawSettings.NormalizeHistogramToFile)
                         {
-                            total = dictsBySourceFile.Values.Sum(p => p.Values.Sum(m => m));
+                            total = dictsBySourceFile[key].Values.Sum(m => m);
                         }
                         column.Items.Add(new HistItem(d.Value / total, bin - start, (bin * binSize).ToString(CultureInfo.InvariantCulture), totalCounts[bin - start]));
                     }
