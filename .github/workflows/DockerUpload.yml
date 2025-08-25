@@ -23,7 +23,7 @@ jobs:
       with:
         dotnet-version: 8.0.x
     - name: Restore dependencies
-      run: dotnet restore ./MetaMorpheus.sln
+      run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
     - name: Build (CMD)
       run: dotnet publish /p:Configuration=Release ./CMD/CMD.csproj  -f net8.0
     - name: Login to Docker Hub
@@ -54,7 +54,7 @@ jobs:
       with:
         dotnet-version: 8.0.x
     - name: Restore dependencies
-      run: dotnet restore ./MetaMorpheus.sln
+      run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
     - name: Build (CMD)
       run: dotnet publish /p:Configuration=Release ./CMD/CMD.csproj  -f net8.0
     - name: Login to Docker Hub
