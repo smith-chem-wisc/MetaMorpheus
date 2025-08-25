@@ -36,7 +36,7 @@ jobs:
       - name: Patch <Version> in EngineLayer.csproj
         shell: pwsh
         run: |
-          $env:CSProjPath = Path-Join -Path ${{ github.workspace }} -ChildPath $env:CSProjPath
+          $env:CSProjPath = Join-Path -Path ${{ github.workspace }} -ChildPath $env:CSProjPath
           if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; exit 1 }
       
           [xml]$xml = Get-Content $env:CSProjPath
