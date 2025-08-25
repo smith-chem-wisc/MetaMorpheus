@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.Util;
 using Omics.Modifications;
 using Readers;
 using UsefulProteomicsDatabases;
@@ -103,6 +104,7 @@ namespace TaskLayer
                 }
 
                 string calibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
+                calibratedNewFullFilePath = PathSafety.MakeSafeOutputPath(calibratedNewFullFilePath, CalibSuffix + ".mzML");
                 string uncalibratedNewFullFilePath = Path.Combine(OutputFolder, Path.GetFileName(originalUncalibratedFilePath));
 
                 // mark the file as in-progress
