@@ -13,12 +13,12 @@ env:
 jobs:
   install:
     name: Create Installer Artifact
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
+    runs-on: windows-latest   
     env:
       CSProjPath: MetaMorpheus/EngineLayer/EngineLayer.csproj
       Tag: 9.9.9.9
+      
+    steps:
       - name: Debug secrets (PowerShell)
         shell: pwsh
         run: |
