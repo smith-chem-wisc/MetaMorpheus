@@ -1,6 +1,7 @@
 ﻿using Easy.Common.Extensions;
 using EngineLayer;
 using EngineLayer.GlycoSearch;
+using EngineLayer.ModSearch;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
@@ -20,6 +21,7 @@ using System.Linq;
 using TaskLayer;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
+using static Nett.TomlObjectFactory;
 
 namespace Test
 {
@@ -72,7 +74,7 @@ namespace Test
             //For N-glycan
             var kindDataBasePath_NGlycan = GlobalVariables.NGlycanDatabasePaths.Where(p => p.Contains("NGlycan.gdb")).First();
             var kindGlycans_NGlycan = GlycanDatabase.LoadGlycan(kindDataBasePath_NGlycan, true, false).ToList();
-            Assert.That(kindGlycans_NGlycan.Count() == 182); // The number of glycans in the database is 182. (182*1 by one 'N' motifs)
+            Assert.That(kindGlycans_NGlycan.Count() == 364); // The number of glycans in the database is 364. (182*2 by two motifs (Nxs, Nxt))
             // Assert that the GlyId starts from 1 to 182
             for (int i = 0; i < kindGlycans_NGlycan.Count(); i++)
             {
@@ -84,8 +86,8 @@ namespace Test
             //For N-glycan
             var structDataBasePath_NGlycan = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycan_struct.gdb");
             var structGlycans_NGlycan = GlycanDatabase.LoadGlycan(structDataBasePath_NGlycan, true, false).ToList();
-            Assert.That(structGlycans_NGlycan.Count() == 12); // The number of glycans in the database is 182. (182*1 by one 'N' motifs)
-            // Assert that the GlyId starts from 1 to 12
+            Assert.That(structGlycans_NGlycan.Count() == 24); // The number of glycans in the database is 24. (12*2 by by two motifs (Nxs, Nxt))
+            // Assert that the GlyId starts from 1 to 24
             for (int i = 0; i < structGlycans_NGlycan.Count(); i++)
             {
                 Assert.That(structGlycans_NGlycan[i].GlyId == i + 1);
@@ -112,15 +114,18 @@ namespace Test
             }
 
             List<Glycan> nGlycans = Glycan.Struct2Glycan("N(H)", 1, false);
-            Assert.That(nGlycans.Count == 1);
-            Assert.That(nGlycans.Count(p => p.Type == GlycanType.N_glycan) == 1);
-            Assert.That(nGlycans[0].Target.ToString() == "N"); // There is only one glycan generated, its motif is N.
-            Assert.That(nGlycans[0] is Modification);
-            Assert.That(nGlycans[0].Kind.SequenceEqual(new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
-            Assert.That(nGlycans[0].Mass == Glycan.GetMass(new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
-            Assert.That(nGlycans[0].Ions.Count(p => p.IonMass != 0) == 2); // There are two glycanIon :  H + cross-ring mass
-            Assert.That(nGlycans[0].Ions[1].IonKind.SequenceEqual(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })); // Cross-ring mass
-            Assert.That(nGlycans[0].Ions[2].IonKind.SequenceEqual(new byte[] { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })); // H ion
+            Assert.That(nGlycans.Count == 2);
+            Assert.That(nGlycans.Count(p => p.Type == GlycanType.N_glycan) == 2);
+            Assert.That(nGlycans[0].Target.ToString() == "Nxs"); // There are two glycan generated, its motif are Nxs and Nxt respectively.
+            Assert.That(nGlycans[1].Target.ToString() == "Nxt");
+
+            //except the motif, the two glycans are the same
+            Assert.That(nGlycans.All(p=>p is Modification));
+            Assert.That(nGlycans.All(p=>p.Kind.SequenceEqual(new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 })));
+            Assert.That(nGlycans.All(p => p.Mass == Glycan.GetMass(new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 })));
+            Assert.That(nGlycans.All(p => p.Ions.Count(q => q.IonMass != 0) == 2)); // There are two glycanIon :  H + cross-ring mass
+            Assert.That(nGlycans.All(p => p.Ions[1].IonKind.SequenceEqual(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }))); // Cross-ring mass
+            Assert.That(nGlycans.All(p => p.Ions[2].IonKind.SequenceEqual(new byte[] { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }))); // H ion
         }
 
         [Test]
@@ -494,9 +499,10 @@ namespace Test
             Assert.That(allPathWithWeights.Count == 6);
 
             //Calculate Site Specific Localization Probability
-            var y = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPathWithWeights, localizationGraph.ModPos.Select(p=>p.Key).ToArray());
-            Assert.That(y.Count == 8);
-            Assert.That(y.First().Value[0].Item2 > 0.99);
+            var siteProb = LocalizationGraph.CalProbabilityForModSitePair(allPathWithWeights);
+            Assert.That(siteProb.Count == 8); // There are 8 possible modSIte pair in the peptide.
+            var pair = siteProb.Keys.First(p => p.ModId == 3 && p.SiteIndex == 2);
+            Assert.That(pair.Probability > 0.99); // ModId 3 in the position 2 has a high probability.
 
         }
 
@@ -1764,6 +1770,86 @@ namespace Test
             Assert.That(spectrumLibrary.Contains(".msp"));
 
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestCalProbabilityForModSitePair()
+        {
+            // In this test, we create two routes with different ModSitePairs and ReversePScore values.
+            // We then call the CalProbabilityForModSitePair method and check that the probabilities are calculated correctly.
+
+            List<ModSitePair> modSitePairs_1 = new List<ModSitePair>()
+            {
+                new ModSitePair(1, 2, false),
+                new ModSitePair(3, 1, false),
+                new ModSitePair(5, 1, false)
+            };
+            var route_1 = new Route();
+            route_1.ModSitePairs.AddRange(modSitePairs_1);
+            route_1.ReversePScore = 70;
+            route_1.SetRPScoreToPair();
+
+            List<ModSitePair> modSitePairs_2 = new List<ModSitePair>()
+            {
+                new ModSitePair(1, 1, false),
+                new ModSitePair(2, 2, false),
+                new ModSitePair(5, 1, false)
+            };
+            var route_2 = new Route();
+            route_2.ModSitePairs.AddRange(modSitePairs_2);
+            route_2.ReversePScore= 30;
+            route_2.SetRPScoreToPair();
+
+            List<ModSitePair> localizedPairs = new List<ModSitePair>() { new ModSitePair(1, 1, false), new ModSitePair(1, 2, false) };
+            Assert.That(localizedPairs[0].Probability.Equals(0.0)); // The default prob is 0
+            Assert.That(localizedPairs[1].Probability.Equals(0.0));
+
+            var pairsProbDict = LocalizationGraph.CalProbabilityForModSitePair(new List<Route>() { route_1, route_2 }, localizedPairs);
+
+            //Check the localizedPairs is updated with the correct probabilities
+            Assert.That(localizedPairs[0].Probability, Is.EqualTo(0.3).Within(1e-6));
+            Assert.That(localizedPairs[1].Probability, Is.EqualTo(0.7).Within(1e-6));
+
+            //Check the pairsProbDict output is correct
+            Assert.That(pairsProbDict.Count == 5); // There are 5 pairs in total, so the dictionary should have 5 entries.
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 1 && p.ModId == 1).Probability, Is.EqualTo(0.3).Within(1e-6)); // The first pair in route_2 has a reverse p score of 30, so its probability should be 0.3
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 1 && p.ModId == 2).Probability, Is.EqualTo(0.7).Within(1e-6)); // The first pair in route_1 has a reverse p score of 70, so its probability should be 0.7
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 2 && p.ModId == 2).Probability, Is.EqualTo(0.3).Within(1e-6)); // The second pair in route_2 has a reverse p score of 30, so its probability should be 0.3
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 3 && p.ModId == 1).Probability, Is.EqualTo(0.7).Within(1e-6)); // The second pair in route_1 has a reverse p score of 70, so its probability should be 0.7
+            Assert.That(pairsProbDict.Keys.First(p => p.SiteIndex == 5 && p.ModId == 1).Probability, Is.EqualTo(1.0).Within(1e-6)); // Both of two routes have the same pair (site 5 - modId 1), so its probability should be 1.0
+        }
+
+        [Test]
+        public static void TestGetLocalized()
+        {
+            List<ModSitePair> modSitePairs_1 = new List<ModSitePair>()
+            {
+                new ModSitePair(1, 2, false),
+                new ModSitePair(3, 1, false),
+                new ModSitePair(5, 1, false)
+            };
+            var route_1 = new Route();
+            route_1.ModSitePairs.AddRange(modSitePairs_1);
+            route_1.ReversePScore = 70;
+            route_1.SetRPScoreToPair();
+
+            List<ModSitePair> modSitePairs_2 = new List<ModSitePair>()
+            {
+                new ModSitePair(1, 1, false),
+                new ModSitePair(2, 2, false),
+                new ModSitePair(5, 1, false)
+            };
+            var route_2 = new Route();
+            route_2.ModSitePairs.AddRange(modSitePairs_2);
+            route_2.ReversePScore = 30;
+            route_2.SetRPScoreToPair();
+
+            LocalizationLevel localizedLevel;
+            var localizedMod = GlycoSpectralMatch.GetLocalizedGlycan(new List<Route>() { route_1, route_2 }, out localizedLevel);
+            Assert.That(localizedLevel == LocalizationLevel.Level2);
+            Assert.That(localizedMod.Count == 5); // There are 5 pairs in total, so the dictionary should have 5 entries.
+            Assert.That(localizedMod.Where(p => p.SiteIndex == 5 && p.ModId == 1).All(p => p.Confident)); // The Pair with SiteIndex 5 and ModId 1 should be confident, as it appears in both routes.
+            Assert.That(localizedMod.Where(p => p.SiteIndex != 5 ).All(p => !p.Confident)); // The other pairs should not be confident, as they do not appear in both routes.
         }
     }
 }
