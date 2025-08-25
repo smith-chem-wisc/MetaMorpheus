@@ -19,9 +19,13 @@ jobs:
       Tag: 9.9.9.9
       
     steps:
+      - uses: actions/checkout@v4
+      
       - name: Patch <Version> in EngineLayer.csproj
         shell: pwsh
         run: |
+          ls
+          
           $env:CSProjPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj"
           if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; ls; exit 1 }
       
