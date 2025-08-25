@@ -15,7 +15,6 @@ jobs:
     name: Create Installer Artifact
     runs-on: windows-latest   
     env:
-      CSProjPath: EngineLayer/EngineLayer.csproj
       Tag: 9.9.9.9
       
     steps:
@@ -24,8 +23,6 @@ jobs:
       - name: Patch <Version> in EngineLayer.csproj
         shell: pwsh
         run: |
-          ls
-          
           $env:CSProjPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj"
           if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; ls; exit 1 }
       
@@ -34,7 +31,7 @@ jobs:
           # Try to find <Version> with and without the MSBuild 2003 namespace
           $versionNode = $xml.SelectSingleNode('//Version')
           $versionNode.InnerText = $env:Tag
-          $xml.Save($csproj)
+          $xml.Save($env:CSProjPath)
           Write-Host "Set <Version> to $env:Tag in $env:CSProjPath"
           
       - name: Setup .NET
