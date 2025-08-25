@@ -50,25 +50,16 @@ jobs:
       - name: Patch <Version> in EngineLayer.csproj
         shell: pwsh
         run: |
-          $env:CSProjPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj"
-          if (!(Test-Path $env:CSProjPath)) { Write-Error "Missing $env:CSProjPath"; ls; exit 1 }
-      
-          [xml]$xml = Get-Content $env:CSProjPath
-      
-          # Try to find <Version> with and without the MSBuild 2003 namespace
-          $versionNode = $xml.SelectSingleNode('//Version')
-          $versionNode.InnerText = $env:PACKAGE_VERSION
-          $xml.Save($env:CSProjPath)
           $csprojPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj"
-          if (!(Test-Path $csprojPath)) { Write-Error "Missing $csprojPath"; ls; exit 1 }
+          if (!(Test-Path $csprojPath)) { Write-Error "Missing $csprojPath"; exit 1 }
       
           [xml]$xml = Get-Content $csprojPath
       
           # Try to find <Version> with and without the MSBuild 2003 namespace
           $versionNode = $xml.SelectSingleNode('//Version')
-          $versionNode.InnerText = $env:packageVersion
+          $versionNode.InnerText = $env:PACKAGE_VERSION
           $xml.Save($csprojPath)
-          Write-Host "Set <Version> to $env:Tag in $csprojPath"
+          Write-Host "Set <Version> to $env:PACKAGE_VERSION in $csprojPath"
           
       - name: Set version in AssemblyInfo.cs files
         uses: secondbounce/assemblyinfo-update@v2
