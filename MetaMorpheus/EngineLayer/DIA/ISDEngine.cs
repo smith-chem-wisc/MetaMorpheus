@@ -57,6 +57,7 @@ namespace EngineLayer.DIA
                 pfGroup.PFgroupIndex = pfGroupIndex;
                 var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(pfGroup, DIAparams.PseudoMs2ConstructionType, CommonParameters, DataFile.FilePath);
                 PseudoMs2Scans.Add(pseudoScan);
+                pfGroupIndex++;
             }
 
             return new MetaMorpheusEngineResults(this);
