@@ -39,6 +39,87 @@ namespace EngineLayer.DIA
             return corr;
         }
 
+        public static double CalculateXicCorrXYData_Umpire(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2, int NoPointPerInterval)
+        {
+            double start = Math.Max(xic1.XYData[0].Item1, xic2.XYData[0].Item1);
+
+            //int num = Math.Min(curve1.SmoothedData.Count, curve2.SmoothedData.Count) / 2;
+            int num = Math.Max(xic1.XYData.Count(), xic2.XYData.Count()) / 2;
+            double timeInterval = (double)2 / NoPointPerInterval;
+
+            if (num < 6)
+            {
+                return 0f;
+            }
+            double[] arrayA = new double[num];
+            double[] arrayB = new double[num];
+
+            int i = 0;
+            double low = start;
+            double up = start + timeInterval;
+
+            for (int j = 0; j < xic1.XYData.Length; j++)
+            {
+                while (xic1.XYData[j].Item1 > up)
+                {
+                    i++;
+                    low = up;
+                    up = low + timeInterval;
+                }
+                if (i >= num)
+                {
+                    break;
+                }
+                if (xic1.XYData[j].Item1 >= low && xic1.XYData[j].Item1 < up)
+                {
+                    if (xic1.XYData[j].Item2 > arrayA[i])
+                    {
+                        arrayA[i] = xic1.XYData[j].Item2;
+                    }
+                }
+            }
+
+            i = 0;
+            low = start;
+            up = start + timeInterval;
+
+            for (int j = 0; j < xic2.XYData.Length; j++)
+            {
+                while (xic2.XYData[j].Item1 > up)
+                {
+                    i++;
+                    low = up;
+                    up = low + timeInterval;
+                }
+                if (i >= num)
+                {
+                    break;
+                }
+                if (xic2.XYData[j].Item1 >= low && xic2.XYData[j].Item1 < up)
+                {
+                    if (xic2.XYData[j].Item2 > arrayB[i])
+                    {
+                        arrayB[i] = xic2.XYData[j].Item2;
+                    }
+                }
+            }
+
+            for (int idx = 1; idx < num - 1; idx++)
+            {
+                if (arrayA[idx] == 0f)
+                {
+                    arrayA[idx] = (arrayA[idx - 1] + arrayA[idx + 1]) / 2;
+                }
+                if (arrayB[idx] == 0f)
+                {
+                    arrayB[idx] = (arrayB[idx - 1] + arrayB[idx + 1]) / 2;
+                }
+            }
+
+            double corr = Correlation.Pearson(arrayA, arrayB);
+            return corr;
+        }
+
         public static double CalculateCorrelation<T> ((T, T)[] xy1, (T, T)[] xy2) where T : INumber<T>
         {
             if (xy1 == null || xy2 == null)
@@ -105,6 +186,30 @@ namespace EngineLayer.DIA
             var overlapEnd = Math.Min(xic1.EndScanIndex, xic2.EndScanIndex);
 
             double overlap = (overlapEnd - overlapStart) / (double)(end - start);
+            return overlap;
+        }
+
+        public static double CalculateXicOverlapRatio_Umpire(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
+        {
+            double overlap = 0;
+            var ms1rtrange = xic1.EndRT - xic1.StartRT;
+            var ms2rtrange = xic2.EndRT - xic2.StartRT;
+            if (xic1.StartRT >= xic2.StartRT && xic1.StartRT <= xic2.EndRT && xic1.EndRT >= xic2.EndRT)
+            {
+                overlap = (xic2.EndRT - xic1.StartRT) / ms1rtrange;
+            }
+            else if (xic1.EndRT >= xic2.StartRT && xic1.EndRT <= xic2.EndRT && xic1.StartRT <= xic2.StartRT)
+            {
+                overlap = (xic1.EndRT - xic2.StartRT) / ms1rtrange;
+            }
+            else if (xic1.StartRT <= xic2.StartRT && xic1.EndRT >= xic2.EndRT)
+            {
+                overlap = ms2rtrange / ms1rtrange;
+            }
+            else if (xic1.StartRT >= xic2.StartRT && xic1.EndRT <= xic2.EndRT)
+            {
+                overlap = 1;
+            }
             return overlap;
         }
 

@@ -43,7 +43,7 @@ namespace EngineLayer.DIA
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
                         var precursor = precursors[i];
-                        var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragments, ApexRTTolerance, OverlapThreshold, CorrelationThreshold, MinFragmentCountForPfGroup);
+                        var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragments);
                         if (pfGroup != null)
                         {
                             lock (pfGroups)
@@ -59,6 +59,11 @@ namespace EngineLayer.DIA
             pfGroups.RemoveAll(g => g.PFpairs.Count < MinFragmentCountForPfGroup);
 
             return pfGroups;
+        }
+
+        public virtual PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, IEnumerable<ExtractedIonChromatogram> fragmentXics)
+        {
+            return GroupFragmentsForOnePrecursor(precursorXic, fragmentXics, ApexRTTolerance, OverlapThreshold, CorrelationThreshold, MinFragmentCountForPfGroup);
         }
 
         public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, IEnumerable<ExtractedIonChromatogram> fragmentXics, float apexRtTolerance, double overlapThreshold, double correlationThreshold, int minFragmentCountForGrouping)
