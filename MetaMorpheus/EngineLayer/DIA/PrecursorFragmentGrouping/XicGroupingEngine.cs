@@ -88,6 +88,30 @@ namespace EngineLayer.DIA
             return null;
         }
 
-        
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"XicGroupingEngineSettings: ");
+            sb.AppendLine($"ApexRTTolerance: {ApexRTTolerance}");
+            sb.AppendLine($"OverlapThreshold: {OverlapThreshold}");
+            sb.AppendLine($"CorrelationThreshold: {CorrelationThreshold}");
+            if (PrecursorRankThreshold.HasValue)
+            {
+                sb.AppendLine($"PrecursorRankThreshold: {PrecursorRankThreshold}");
+            }
+            else
+            {
+                sb.AppendLine($"PrecursorRankThreshold: None");
+            }
+            if (FragmentRankThreshold.HasValue)
+            {
+                sb.AppendLine($"FragmentRankThreshold: {FragmentRankThreshold}");
+            }
+            else
+            {
+                sb.AppendLine($"FragmentRankThreshold: None");
+            }
+            return sb.ToString();
+        }
     }
 }

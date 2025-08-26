@@ -53,5 +53,25 @@ namespace EngineLayer.DIA
             }
             return allXics;
         }
+
+        protected string BaseToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"XicConstructorSettings: " );
+            sb.AppendLine($"PeakFindingTolerance: {PeakFindingTolerance}");
+            sb.AppendLine($"MaxMissedScansAllowed: {MaxMissedScansAllowed}");
+            sb.AppendLine($"MaxPeakHalfWidth: {MaxPeakHalfWidth}");
+            sb.AppendLine($"MinNumberOfPeaks: {MinNumberOfPeaks}");
+            if (XicSplineEngine != null)
+            {
+                sb.AppendLine($"XicSplineEngine: ");
+                sb.Append($"{XicSplineEngine.ToString()}");
+            }
+            else
+            {
+                sb.AppendLine($"XicSplineEngine: None");
+            }
+            return sb.ToString();
+        }
     }
 }
