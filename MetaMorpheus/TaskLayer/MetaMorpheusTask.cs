@@ -26,7 +26,7 @@ using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using Easy.Common.Extensions;
-using Readers;
+using Readers.SpectralLibrary;
 
 namespace TaskLayer
 {
@@ -139,7 +139,8 @@ namespace TaskLayer
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
-        protected string OutputFolder { get; private set; }
+        [TomlIgnore]
+        public string OutputFolder { get; private set; }
 
         protected MyTaskResults MyTaskResults;
 
