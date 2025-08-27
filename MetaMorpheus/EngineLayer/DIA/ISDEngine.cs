@@ -27,11 +27,11 @@ namespace EngineLayer.DIA
             ReLabelIsdScans(isdVoltageMap, allScans);
 
             //Get all MS1 and MS2 XICs
-            var allMs1Xics = DIAparams.Ms1XicConstructor.GetAllXics(ms1Scans);
+            var allMs1Xics = DIAparams.Ms1XicConstructor.GetAllXicsWithXicSpline(ms1Scans);
             var allMs2Xics = new Dictionary<double, List<ExtractedIonChromatogram>>();
             foreach (var ms2Group in isdVoltageMap)
             {
-                allMs2Xics[ms2Group.Key] = DIAparams.Ms2XicConstructor.GetAllXics(ms2Group.Value.ToArray());
+                allMs2Xics[ms2Group.Key] = DIAparams.Ms2XicConstructor.GetAllXicsWithXicSpline(ms2Group.Value.ToArray());
             }
 
             //Precursor-fragment Grouping
