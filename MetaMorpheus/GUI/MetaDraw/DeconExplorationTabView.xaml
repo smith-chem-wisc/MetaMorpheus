@@ -9,10 +9,7 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance guiFunctions:DeconExplorationTabViewModel, IsDesignTimeCreatable=True}"  
              d:DesignHeight="450" d:DesignWidth="800">
-    <UserControl.Resources>
-        <local:FilePathToNameConverter x:Key="FilePathToNameConverter"/>
-    </UserControl.Resources>
-    
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>

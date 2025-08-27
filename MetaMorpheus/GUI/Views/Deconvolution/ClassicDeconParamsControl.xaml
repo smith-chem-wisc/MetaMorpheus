@@ -47,7 +47,7 @@
                                     Text="{Binding DeconvolutionTolerancePpm}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" >
             <TextBox.ToolTip>
                 <TextBlock>
-
+                    Tolerance in m/z space used to group isotopic peaks into an envelope.
                 </TextBlock>
             </TextBox.ToolTip>
         </local:DoubleTextBoxControl>
@@ -57,7 +57,7 @@
                                     Text="{Binding IntensityRatioLimit}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
             <TextBox.ToolTip>
                 <TextBlock>
-                    
+                    The maximum allowed ratio between each subsequent peak in an isotopic envelope. For example, if the ratio is 10, each peak in the envelope must be at least 1/10th the intensity of the previous peak.
                 </TextBlock>
             </TextBox.ToolTip>
         </local:DoubleTextBoxControl>
