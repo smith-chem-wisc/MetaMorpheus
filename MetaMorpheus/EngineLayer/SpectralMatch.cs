@@ -54,7 +54,7 @@ namespace EngineLayer
         public ChemicalFormula ModsChemicalFormula { get; private set; } // these fields will be null if they are ambiguous
         public string FullSequence { get; protected set; }
         public string EssentialSequence { get; protected set; }
-        public int? Notch { get; private set; }
+        public double? Notch { get; private set; }
         public string BaseSequence { get; protected set; }
         public int? BioPolymerWithSetModsLength { get; private set; }
         public int? OneBasedStartResidue { get; private set; }
