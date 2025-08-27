@@ -36,8 +36,8 @@ namespace EngineLayer.DIA
             var allMs2Xics = new Dictionary<(double min, double max), List<ExtractedIonChromatogram>>();
             foreach (var ms2Group in DIAScanWindowMap)
             {
-                allMs1Xics[ms2Group.Key] = DIAparams.Ms1XicConstructor.GetAllXics(ms1Scans, new MzRange(ms2Group.Key.min, ms2Group.Key.max));
-                allMs2Xics[ms2Group.Key] = DIAparams.Ms2XicConstructor.GetAllXics(ms2Group.Value.ToArray());
+                allMs1Xics[ms2Group.Key] = DIAparams.Ms1XicConstructor.GetAllXicsWithXicSpline(ms1Scans, new MzRange(ms2Group.Key.min, ms2Group.Key.max));
+                allMs2Xics[ms2Group.Key] = DIAparams.Ms2XicConstructor.GetAllXicsWithXicSpline(ms2Group.Value.ToArray());
             }
 
             //Precursor-fragment Grouping
