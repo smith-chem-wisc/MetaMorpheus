@@ -1,5 +1,6 @@
 ﻿using GuiFunctions;
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -59,6 +60,11 @@ public partial class SettingsButtonControl : UserControl
         var originalGlycoLevelMin = MetaDrawSettings.LocalizationLevelStart;
         var originalGlycoLevelMax = MetaDrawSettings.LocalizationLevelEnd;
 
+        // data visualization
+        var originalFilter = MetaDrawSettings.DisplayFilteredOnly;
+        var originalNormalize = MetaDrawSettings.NormalizeHistogramToFile;
+        var ogColorOrder = MetaDrawSettings.DataVisualizationColorOrder.ToList();
+
         var result = settingsWindow.ShowDialog();
 
         // If canceled or closed, return and don't save settings. 
@@ -77,6 +83,12 @@ public partial class SettingsButtonControl : UserControl
         {
             args.FilterChanged = true;
         }
+
+        if (originalFilter != MetaDrawSettings.DisplayFilteredOnly
+            || originalNormalize != MetaDrawSettings.NormalizeHistogramToFile
+            || !ogColorOrder.SequenceEqual(MetaDrawSettings.DataVisualizationColorOrder))
+            args.DataVisualizationChanged = true;
+
         SettingsChanged?.Invoke(this, args);
     }
 }
@@ -84,4 +96,5 @@ public partial class SettingsButtonControl : UserControl
 public class MetaDrawSettingsChangedEventArgs : EventArgs
 {
     public bool FilterChanged { get; set; } = false;
+    public bool DataVisualizationChanged { get; set; } = false;
 }

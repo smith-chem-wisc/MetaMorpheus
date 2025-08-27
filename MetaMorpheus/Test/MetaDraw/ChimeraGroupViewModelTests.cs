@@ -24,6 +24,7 @@ public class ChimeraGroupViewModelTests
     public static ChimeraTestCase OneProteinTwoProteoformChimeraGroup;
     public static ChimeraTestCase TwoProteinsTwoProteoformChimeraGroup;
     public static List<SpectrumMatchFromTsv> AllMatches;
+    public static List<SpectrumMatchFromTsv> AllMatchesMutable;
     public static MsDataFile DataFile;
     public static string TestExportDirectory => Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", "ChimeraPlottingTests");
     public record ChimeraTestCase(ChimeraGroupViewModel ChimeraGroup, Dictionary<OxyColor, List<MatchedFragmentIon>> ExpectedIonsByColor);
@@ -36,7 +37,7 @@ public class ChimeraGroupViewModelTests
         DataFile = MsDataFileReader.GetDataFile(msDataPath).LoadAllStaticData();
         DataFile.InitiateDynamicConnection();
         AllMatches = SpectrumMatchTsvReader.ReadTsv(psmPath, out var warnings).Where(p => p.Ms2ScanNumber <= DataFile.Scans.Length).ToList();
-
+        AllMatchesMutable = SpectrumMatchTsvReader.ReadTsv(psmPath, out warnings).Where(p => p.Ms2ScanNumber <= DataFile.Scans.Length).ToList();
         var testMs1Scan = DataFile.GetOneBasedScan(900);
         var testMs2Scan = DataFile.GetOneBasedScan(901);
         var testPsms = AllMatches.Where(p => p.Ms2ScanNumber == testMs2Scan.OneBasedScanNumber);
