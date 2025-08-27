@@ -60,6 +60,7 @@ namespace MetaMorpheusGUI
             AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
             AdditionalFragmentIonControl.LinkMetaDraw(this);
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
+            BioPolymerCoverageTabView.DataContext = BioPolymerTabViewModel;
 
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
@@ -165,6 +166,10 @@ namespace MetaMorpheusGUI
                     specLibraryLabel.ToolTip = string.Join("\n", MetaDrawLogic.SpectralLibraryPaths);
                     resetSpecLibraryButton.IsEnabled = true;
                 }
+            }
+            else if (GlobalVariables.AcceptedDatabaseFormats.Contains(theExtension))
+            {
+                BioPolymerTabViewModel.DatabasePath = filePath;
             }
             else
             {

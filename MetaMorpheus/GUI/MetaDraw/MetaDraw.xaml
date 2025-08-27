@@ -558,6 +558,11 @@
                     </Grid>
                 </DockPanel>
             </TabItem>
+            
+            <!-- BioPolymer Coverage tab-->
+            <TabItem Header="BioPolymer Coverage" Background="DarkGray">
+                <local:BioPolymerCoverageTabView x:Name="BioPolymerCoverageTabView" />
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>

@@ -20,29 +20,21 @@ public class BioPolymerGroupViewModel(string accession, string proteinName, stri
     public string Accession { get; } = accession;
     public string ProteinName { get; } = proteinName;
     public string Sequence { get; } = sequence;
+    public int Length => Sequence.Length;
+    public int GroupCount => CoverageResults.Count;
+    public double SequenceCoverage { get; } = 0; // TODO: Calculate this
 
     public ObservableCollection<BioPolymerCoverageResultModel> CoverageResults { get; } = new(results);
 }
 
-public class BioPolymerCoverageResultModel : BaseViewModel
+public class BioPolymerCoverageResultModel(SpectrumMatchFromTsv match, string baseSequence, int start, int end, BioPolymerCoverageType coverageType)
 {
-    private SpectrumMatchFromTsv _spectrumMatch;
-
-    public BioPolymerCoverageResultModel(SpectrumMatchFromTsv match, string baseSequence, int start, int end, BioPolymerCoverageType coverageType)
-    {
-        _spectrumMatch = match;
-        BaseSequence = baseSequence;
-        Start = start;
-        End = end;
-        CoverageType = coverageType;
-    }
-
-    public string BaseSequence { get; }
-    public int Start { get; }
-    public int End { get; }
-    public BioPolymerCoverageType CoverageType { get; }
-    public double QValue => _spectrumMatch.QValue;
-    public string Ambiguity => _spectrumMatch.AmbiguityLevel;
-    public string FileName => _spectrumMatch.FileName;
+    public string BaseSequence { get; } = baseSequence;
+    public int Start { get; } = start;
+    public int End { get; } = end;
+    public BioPolymerCoverageType CoverageType { get; } = coverageType;
+    public double QValue => match.QValue;
+    public string Ambiguity => match.AmbiguityLevel;
+    public string FileName => match.FileName;
 }
 

@@ -1,8 +1,4 @@
-﻿using EngineLayer;
-using OxyPlot;
-using Omics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Readers;
@@ -14,6 +10,8 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using System.Diagnostics;
 using Easy.Common.Extensions;
+using System.Diagnostics.CodeAnalysis;
+using System.Windows.Xps.Serialization;
 
 namespace GuiFunctions;
 
@@ -125,16 +123,38 @@ public class BioPolymerTabViewModel : BaseViewModel
 
     public void ProcessSpectralMatches(IList<SpectrumMatchFromTsv> matches)
     {
-        var allAccessions = matches.SelectMany(p => p.Accession.Split('|'))
-            .Distinct();
-        var bestMatchesBySequence = matches.GroupBy(p => p.BaseSequence)
+        AllGroups.Clear();
+
+        // Build a mapping: accession => list of best matches for that accession
+        var bestMatchesBySequence = matches
+            .GroupBy(p => p.BaseSequence)
             .Select(group => group.MinBy(sm => sm.QValue))
             .ToList();
 
-        foreach (var accessionToGroup in allAccessions) 
+        // Map: accession => List<SpectrumMatchFromTsv>
+        var accessionToMatches = new Dictionary<string, List<SpectrumMatchFromTsv>>();
+
+        foreach (var match in bestMatchesBySequence)
         {
-            var relevantMatches = bestMatchesBySequence.Where(p => p.Accession.Contains(accessionToGroup));
-            var processedResults = new List<BioPolymerCoverageResultModel>();
+            foreach (var acc in match.Accession.Split('|'))
+            {
+                if (!accessionToMatches.TryGetValue(acc, out var list))
+                {
+                    list = new List<SpectrumMatchFromTsv>();
+                    accessionToMatches[acc] = list;
+                }
+                list.Add(match);
+            }
+        }
+
+        var processedResults = new List<BioPolymerCoverageResultModel>();
+        foreach (var accessionToGroup in accessionToMatches.Keys) 
+        {
+            if (!_allBioPolymers.TryGetValue(accessionToGroup, out var bioPolymer))
+                continue;
+
+            var relevantMatches = accessionToMatches[accessionToGroup];
+            processedResults.Clear();
 
             foreach (var match in relevantMatches)
             {
@@ -142,13 +162,15 @@ public class BioPolymerTabViewModel : BaseViewModel
 
                 var accessionSplits = match.Accession.Split("|");
                 var siteSplits = match.GetStartAndEndPosition().ToArray();
+                bool singleAccession = accessionSplits.Length == 1;
+                bool singleLocalization = siteSplits.Length == 1;
 
                 // TODO: Better ambiguity handling for missed cleavages. 
                 var missedCleavageSplits = match.MissedCleavage.Split("|").Select(int.Parse).ToArray();
                 int missedCleavages = missedCleavageSplits[0];
 
                 // belongs to single biopolymer and single localization 
-                if (accessionSplits.Length == 1 && siteSplits.Length == 1)
+                if (singleAccession && singleLocalization)
                 {
                     if (missedCleavages == 0)
                         covType = BioPolymerCoverageType.Unique;
@@ -169,8 +191,18 @@ public class BioPolymerTabViewModel : BaseViewModel
 
                     processedResults.Add(new(match, match.BaseSeq, siteSplits[relevantIndex].Start, siteSplits[relevantIndex].End, covType));
                 }
+                // belongs to multiple biopolymers but shares same localization
+                else if (!singleAccession && singleLocalization)
+                {
+                    if (missedCleavages == 0)
+                        covType = BioPolymerCoverageType.Shared;
+                    else
+                        covType = BioPolymerCoverageType.SharedMissedCleavage;
+
+                    processedResults.Add(new(match, match.BaseSeq, siteSplits[0].Start, siteSplits[0].End, covType));
+                }
                 // belongs to single biopolymer with multiple localizations
-                else if (accessionToGroup.Length == 1 && siteSplits.Length > 1) 
+                else if (singleAccession) 
                 {
                     if (missedCleavages == 0)
                         covType = BioPolymerCoverageType.TandemRepeat;
@@ -182,16 +214,30 @@ public class BioPolymerTabViewModel : BaseViewModel
                         processedResults.Add(new(match, match.BaseSeq, siteSplits[i].Start, siteSplits[i].End, covType));
                     }
                 }
+                // Mismatch b/n accessions and start/end indexes. This occurs when one of the fields does not have a distinct value (e.g. peptide is in 3 protein sequences but has the same start and end in two of the sequences). 
                 else
                 {
-                    Debugger.Break();
+                    var start = bioPolymer.BaseSequence.IndexOf(match.BaseSeq, StringComparison.Ordinal) + 1;
+                    var locWithStart = siteSplits.FirstOrDefault(p => p.Start == start);
+                    if (locWithStart != default((int,int)))
+                    {
+                        if (missedCleavages == 0)
+                            covType = BioPolymerCoverageType.Shared;
+                        else
+                            covType = BioPolymerCoverageType.SharedMissedCleavage;
+
+                        processedResults.Add(new(match, match.BaseSeq, locWithStart.Start, locWithStart.End, covType));
+                    }
+                    else
+                    {
+
+                    }
                 }
             }
 
             if (processedResults.Count == 0)
                 continue;
 
-            var bioPolymer = _allBioPolymers[accessionToGroup];
             var group = new BioPolymerGroupViewModel(accessionToGroup, bioPolymer.Name, bioPolymer.BaseSequence, processedResults);
             AllGroups.Add(group);
         }
@@ -206,4 +252,11 @@ public class BioPolymerTabViewModel : BaseViewModel
     }
 
     #endregion
+}
+
+
+[ExcludeFromCodeCoverage]
+public class BioPolymerTabModel() : BioPolymerTabViewModel(new())
+{
+    public static BioPolymerTabModel Instance => new();
 }

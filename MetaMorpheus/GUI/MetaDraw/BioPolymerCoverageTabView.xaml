@@ -1,0 +1,165 @@
+﻿<UserControl x:Class="MetaMorpheusGUI.BioPolymerCoverageTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MetaMorpheusGUI"
+             xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+             mc:Ignorable="d" 
+             d:DataContext="{d:Static guiFunctions:BioPolymerTabModel.Instance}"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <DockPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="3*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Side -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2*"/>
+                    <RowDefinition Height="25"/>
+                </Grid.RowDefinitions>
+
+                <!--Select database file-->
+                <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="5 2">
+                    <Label Content="Database File: " Width="95" />
+
+                    <Button Content="Reset" HorizontalAlignment="Right" DockPanel.Dock="Right"
+                        VerticalAlignment="Center" Width="40" Height="26"
+                        IsEnabled="{Binding IsDatabaseLoaded}"
+                        Command="{Binding ResetDatabaseCommand}" />
+
+                    <Button Name="SelectDatabaseButton"  Content="Select" HorizontalAlignment="Right" DockPanel.Dock="Right"
+                        VerticalAlignment="Center" Width="40" Height="26" Margin="5 0"
+                        IsEnabled="{Binding IsDatabaseLoaded, Converter={local:BooleanInverter}}"
+                        Click="SelectDatabaseButton_OnClick" />
+
+                    <Label BorderThickness="1">
+                        <TextBlock TextTrimming="CharacterEllipsis">
+                            <TextBlock.Text>
+                                <Binding Path="DatabaseName" FallbackValue="None Selected" />
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </Label>
+                </DockPanel>
+
+                <!-- Parameters -->
+                <Grid Grid.Row="1" HorizontalAlignment="Stretch" Margin="5 2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Label Grid.Column="1" Grid.Row="0" Content="QValue Filter: " Margin="0 2"/>
+                    <local:DoubleTextBoxControl Grid.Column="2"  Grid.Row="0" Margin="0 2" x:Name="PsmFilter" 
+                                            Text="{Binding QValueFilter, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"  >
+                    </local:DoubleTextBoxControl>
+
+                    <Label Grid.Column="1" Grid.Row="1" Content="Ambiguity Filter: " />
+                    <ComboBox Grid.Column="2" Grid.Row="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                          ItemsSource="{Binding Source={x:Static guiFunctions:MetaDrawSettings.AmbiguityTypes}}"
+                          SelectedItem="{Binding AmbiguityFilter, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}" >
+                    </ComboBox>
+                </Grid>
+
+                <!-- Load Button and Search Bar TODO: Make search bar function -->
+                <Border Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="Black" 
+                    BorderThickness="0,0,0,1" Margin="5 2" >
+                    <DockPanel  LastChildFill="True" Margin="0 0 0 2">
+                        <Button Name="LoadDatabase" Content="Load Files" Width="80" Command="{Binding LoadDatabaseCommand}"/>
+                        <TextBox Width="100"  DockPanel.Dock="Right"></TextBox>
+                        <Label HorizontalAlignment="Right" Height="28">Search</Label>
+                    </DockPanel>
+                </Border>
+
+                <!-- Data Table -->
+                <GroupBox Header="BioPolymer Groups" Grid.Row="4" Margin="0 2">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*"/>
+                        </Grid.RowDefinitions>
+
+                        <DataGrid x:Name="biopolymerDataGrid" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ScrollViewer.CanContentScroll="True" IsReadOnly="True" 
+                              CanUserDeleteRows="false" CanUserAddRows="false" SelectionMode="Single"
+                              SelectionChanged="BioPolymerDataGrid_OnSelectionChanged"
+                              ItemsSource="{Binding AllGroups}" 
+                              SelectedItem="{Binding SelectedGroup}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Accession" Binding="{Binding Accession}" Width="90" 
+                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                                <DataGridTextColumn Header="Name" Binding="{Binding ProteinName}" Width="90" 
+                                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                                <DataGridTextColumn Header="Coverage" Binding="{Binding SequenceCoverage}" Width="60" 
+                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                                <DataGridTextColumn Header="PSM Count" Binding="{Binding GroupCount}" Width="70" 
+                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                                <DataGridTextColumn Header="Length" Binding="{Binding Length}" Width="52" 
+                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </GroupBox>
+
+                <!--Select spectra file-->
+                <DockPanel Grid.Row="5" LastChildFill="True" Grid.ColumnSpan="3"  >
+                    <Label Content="Export As: " Width="75"  DockPanel.Dock="Left"/>
+                    <Button Name="ExportBioPolymerCoverage" Content="{Binding ExportType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
+                        DockPanel.Dock="Left" IsEnabled="False" Width="40" Command="{Binding ExportImageCommand}"
+                        Margin="5 0 5 0"/>
+
+                </DockPanel>
+            </Grid>
+
+            <!--Moveable splitter-->
+            <GridSplitter Grid.Column="1" 
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Stretch"
+                      Background="Silver"
+                      Width="3"/>
+
+            <!-- Right side -->
+            <Grid Grid.Column="2" Name="BioPolymerAnnotationGrid" Style="{StaticResource InternalGridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="35" />
+                    <RowDefinition Height="4*" />
+                    <RowDefinition Height="Auto" MaxHeight="300" />
+                </Grid.RowDefinitions>
+
+                <!--Header label-->
+                <Label Grid.Row="0" Content="BioPolymer Coverage Map" x:Name="BioPolymerCoverageTabItem" />
+
+                <!-- BioPolymer coverage display -->
+                <ScrollViewer Grid.Row="1" Name="BioPolymerCoverageHorizontalScroll" Width="Auto" 
+                          CanContentScroll="True" VerticalScrollBarVisibility="Auto" Margin="0 10 ">
+                    <Canvas x:Name="BioPolymerMap" Background="Red" Height="2000" />
+                </ScrollViewer>
+
+                <!-- Individual Results -->
+                <Expander Grid.Row="2" Header="Individual Results">
+                    <DataGrid ScrollViewer.CanContentScroll="True" IsReadOnly="True" 
+                              CanUserDeleteRows="false" CanUserAddRows="false" SelectionMode="Single"
+                              SelectionChanged="BioPolymerDataGrid_OnSelectionChanged"
+                              ItemsSource="{Binding SelectedGroup.CoverageResults}" >
+                        
+                    </DataGrid>
+                    
+                </Expander>
+
+            </Grid>
+        </Grid>
+    </DockPanel>
+</UserControl>
