@@ -9,6 +9,8 @@ namespace MetaMorpheusGUI;
 /// </summary>
 public partial class BioPolymerCoverageMapView : UserControl
 {
+    private double _lastWidth = -1;
+    private double _lastHeight = -1;
     public BioPolymerCoverageMapView()
     {
         InitializeComponent();
@@ -19,6 +21,13 @@ public partial class BioPolymerCoverageMapView : UserControl
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        ViewModel?.UpdateLettersPerRow(CoverageImage.ActualWidth);
+        // Only update if the UserControl's size actually changed
+        if (e.WidthChanged && this.ActualWidth > 0 && this.ActualWidth != _lastWidth)
+        {
+            _lastWidth = this.ActualWidth;
+            ViewModel?.UpdateLettersPerRow(this.ActualWidth);
+        }
+        // Optionally, handle height if needed
+        _lastHeight = this.ActualHeight;
     }
 }

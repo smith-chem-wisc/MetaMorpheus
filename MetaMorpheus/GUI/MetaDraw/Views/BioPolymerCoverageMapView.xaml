@@ -9,7 +9,7 @@
     <Grid>
         <Image x:Name="CoverageImage"
                Stretch="None"
-               HorizontalAlignment="Left"
+               HorizontalAlignment="Center"
                VerticalAlignment="Top"
                Source="{Binding CoverageDrawing}" />
     </Grid>
