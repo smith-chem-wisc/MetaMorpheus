@@ -4,11 +4,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:MetaMorpheusGUI"
-             xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
              mc:Ignorable="d" 
              d:DesignHeight="60" d:DesignWidth="600">
-
-    <Grid d:DataContext="{x:Static guiFunctions:ClassicDeconParamsModel.Instance}" >
+    <Grid>
 
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
