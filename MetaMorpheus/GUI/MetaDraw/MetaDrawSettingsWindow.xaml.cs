@@ -22,27 +22,10 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (string level in System.Enum.GetNames(typeof(LocalizationLevel)))
-            {
-                CmbGlycanLocalizationLevelStart.Items.Add(level);
-                CmbGlycanLocalizationLevelEnd.Items.Add(level);
-            }
-
-            DecoysCheckBox.IsChecked = MetaDrawSettings.ShowDecoys;
-            ContaminantsCheckBox.IsChecked = MetaDrawSettings.ShowContaminants;
             StationarySequenceCheckBox.IsChecked = MetaDrawSettings.DrawStationarySequence;
             SequencenNumbersCheckBox.IsChecked = MetaDrawSettings.DrawNumbersUnderStationary;
             ShowLegendCheckBox.IsChecked = MetaDrawSettings.ShowLegend;
-            qValueBox.Text = MetaDrawSettings.QValueFilter.ToString();
-            AmbiguityFilteringComboBox.DataContext = MetaDrawSettings.AmbiguityTypes;
-            AmbiguityFilteringComboBox.SelectedItem = MetaDrawSettings.AmbiguityFilter;
-            CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
-            CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
             SpectrumDescriptionFontSizeBox.Text = MetaDrawSettings.SpectrumDescriptionFontSize.ToString();
-
-            IonColorExpander.ItemsSource = MetaDrawSettingsViewModel.Instance.IonGroups;
-            PTMColorExpander.ItemsSource = MetaDrawSettingsViewModel.Instance.Modifications;
-            SequenceCoverageColorExpander.ItemsSource = MetaDrawSettingsViewModel.Instance.CoverageColors;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -52,34 +35,12 @@ namespace MetaMorpheusGUI
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            MetaDrawSettings.ShowDecoys = DecoysCheckBox.IsChecked.Value;
-            MetaDrawSettings.ShowContaminants = ContaminantsCheckBox.IsChecked.Value;
             MetaDrawSettings.DrawStationarySequence = StationarySequenceCheckBox.IsChecked.Value;
             MetaDrawSettings.DrawNumbersUnderStationary = SequencenNumbersCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowLegend = ShowLegendCheckBox.IsChecked.Value;
-            MetaDrawSettings.LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
-            MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
-            MetaDrawSettings.AmbiguityFilter = AmbiguityFilteringComboBox.SelectedItem.ToString();
             MetaDrawSettings.SpectrumDescriptionFontSize = double.TryParse(SpectrumDescriptionFontSizeBox.Text, out double spectrumDescriptionFontSize) ? spectrumDescriptionFontSize : 10;
             if (!ShowInternalIonsCheckBox.IsChecked.Value)
                 MetaDrawSettings.InternalIonColor = OxyColors.Transparent;
-
-            if (!string.IsNullOrWhiteSpace(qValueBox.Text))
-            {
-                if (double.TryParse(qValueBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double qValueFilter) && qValueFilter >= 0 && qValueFilter <= 1)
-                {
-                    MetaDrawSettings.QValueFilter = qValueFilter;
-                }
-                else
-                {
-                    MessageBox.Show("Could not parse q-value filter; must be number between 0 and 1 inclusive");
-                    return;
-                }
-            }
-            else
-            {
-                MetaDrawSettings.QValueFilter = 1;
-            }
 
             switch (MetaDrawSettings.AnnotatedFontSize)
             {
@@ -160,7 +121,7 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void ComboBox_SelectionChanged_2(object sender, SelectionChangedEventArgs e)
         {
-            ((CoverageTypeForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+            ((ColorForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
 
         /// <summary>
