@@ -58,7 +58,7 @@ namespace GuiFunctions
                     double mz = Scan.MassSpectrum.XArray[i];
                     double intensity = Scan.MassSpectrum.YArray[i];
 
-                    if (Math.Abs(peak.mz - species.MostAbundantMz) < 1e-6)
+                    if (Math.Abs(peak.mz - species.MostAbundantMz) < 1e-6 && MetaDrawSettings.DisplayIonAnnotations)
                     {
                         annotation = new TextAnnotation
                         {

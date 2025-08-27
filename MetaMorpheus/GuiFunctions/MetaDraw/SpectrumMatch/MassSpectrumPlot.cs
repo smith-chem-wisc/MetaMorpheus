@@ -118,7 +118,7 @@ public class MassSpectrumPlot : Plot
         line.Points.Add(new DataPoint(mz, intensity));
 
         // Miso is a tag used in chimeric ms1 plotting to indicate that we should not annotate this peak with a label. 
-        if (annotation != null && !annotation.Text.Contains("Miso") && MetaDrawSettings.DisplayIonAnnotations)
+        if (annotation != null && !annotation.Text.Contains("Miso"))
         {
             var x = annotation.TextPosition.X;
             var y = annotation.TextPosition.Y + 20;
