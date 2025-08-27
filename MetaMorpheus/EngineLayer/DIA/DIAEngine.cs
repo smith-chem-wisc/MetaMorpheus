@@ -12,6 +12,7 @@ using System.Collections.Concurrent;
 using EngineLayer.Util;
 using Omics;
 using FlashLFQ;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace EngineLayer.DIA
 {
@@ -32,13 +33,13 @@ namespace EngineLayer.DIA
             var DIAScanWindowMap = ConstructMs2Groups(ms2Scans);
 
             //Get all MS1 and MS2 XICs
-            var allMs1Xics = new Dictionary<(double min, double max), List<ExtractedIonChromatogram>>();
-            var allMs2Xics = new Dictionary<(double min, double max), List<ExtractedIonChromatogram>>();
-            foreach (var ms2Group in DIAScanWindowMap)
-            {
-                allMs1Xics[ms2Group.Key] = DIAparams.Ms1XicConstructor.GetAllXics(ms1Scans, new MzRange(ms2Group.Key.min, ms2Group.Key.max));
-                allMs2Xics[ms2Group.Key] = DIAparams.Ms2XicConstructor.GetAllXics(ms2Group.Value.ToArray());
-            }
+            var allMs1Xics = new ConcurrentDictionary<(double min, double max), List<ExtractedIonChromatogram>>();
+            var allMs2Xics = new ConcurrentDictionary<(double min, double max), List<ExtractedIonChromatogram>>();
+            Parallel.ForEach(DIAScanWindowMap, new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, ms2Group =>
+                {
+                    allMs1Xics[ms2Group.Key] = DIAparams.Ms1XicConstructor.GetAllXics(ms1Scans, new MzRange(ms2Group.Key.min, ms2Group.Key.max));
+                    allMs2Xics[ms2Group.Key] = DIAparams.Ms2XicConstructor.GetAllXics(ms2Group.Value.ToArray());
+                });
 
             //Precursor-fragment Grouping
             var allPfGroups = new List<PrecursorFragmentsGroup>();
