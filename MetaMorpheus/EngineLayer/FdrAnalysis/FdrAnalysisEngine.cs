@@ -171,8 +171,10 @@ namespace EngineLayer.FdrAnalysis
                 double notch = psm.Notch ?? MassDiffAcceptorNumNotches;
 
                 // Ensure dictionary entries exist for this notch
-                cumulativeTargetPerNotch.TryAdd(notch, 0);
-                cumulativeDecoyPerNotch.TryAdd(notch, 0);
+                if (!cumulativeTargetPerNotch.ContainsKey(notch))
+                    cumulativeTargetPerNotch[notch] = 0;
+                if (!cumulativeDecoyPerNotch.ContainsKey(notch))
+                    cumulativeDecoyPerNotch[notch] = 0;
 
                 if (psm.IsDecoy)
                 {
@@ -189,9 +191,8 @@ namespace EngineLayer.FdrAnalysis
                         }
                         totalHits++;
                     }
-                    double decoyFraction = totalHits > 0 ? decoyHits / totalHits : 0;
-                    cumulativeDecoy += decoyFraction;
-                    cumulativeDecoyPerNotch[notch] += decoyFraction;
+                    cumulativeDecoy += decoyHits / totalHits;
+                    cumulativeDecoyPerNotch[notch] += decoyHits / totalHits;
                 }
                 else
                 {
@@ -240,9 +241,7 @@ namespace EngineLayer.FdrAnalysis
 
                 // Ensure dictionary entry exists for this notch
                 if (!qValueNotch.ContainsKey(notch))
-                {
                     qValueNotch[notch] = 0;
-                }
 
                 qValue = Math.Max(qValue, psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoy / Math.Max(psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeTarget, 1));
                 qValueNotch[notch] = Math.Max(qValueNotch[notch], psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoyNotch / Math.Max(psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeTargetNotch, 1));
