@@ -7,7 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="32" d:DesignWidth="32">
     <Button x:Name="SettingsButton"
-            Background="White"
+            Background="Transparent"
             BorderThickness="0"
             Click="SettingsButton_Click"
             IsEnabled="{Binding SettingsViewModel.CanOpen, RelativeSource={RelativeSource AncestorType=UserControl}}">

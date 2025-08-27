@@ -2,27 +2,24 @@
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
-using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
 using System.Globalization;
 using Readers;
-using ThermoFisher.CommonCore.Data.Business;
 
 namespace GuiFunctions
 {
-    public class PlotModelStat : INotifyPropertyChanged, IPlotModel
+    public class PlotModelStat
     {
         private PlotModel privateModel;
         private readonly ObservableCollection<SpectrumMatchFromTsv> allSpectralMatches;
         private readonly Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> psmsBySourceFile;
 
-        public static List<string> PlotNames = new List<string> {
+        public readonly static List<string> PlotNames = new List<string> {
             "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
             "Histogram of Fragment PPM Errors",
             "Histogram of Precursor Charges",
@@ -32,52 +29,14 @@ namespace GuiFunctions
             "Histogram of Hydrophobicity scores",
             "Precursor PPM Error vs. RT",
             "Histogram of PTM Spectral Counts",
-            "Predicted RT vs. Observed RT"
+            "Predicted RT vs. Observed RT",
+            "Histogram of Missed Cleavages",
+            "Histogram of Fragment Ion Types by Count",
+            "Histogram of Fragment Ion Types by Intensity",
+            "Histogram of Ids by Retention Time"
         };
 
-        private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
-        {
-            { ProductType.b, OxyColors.Blue },
-            { ProductType.y, OxyColors.Red },
-            { ProductType.c, OxyColors.Gold },
-            { ProductType.zPlusOne, OxyColors.Orange },
-            { ProductType.D, OxyColors.DodgerBlue },
-            { ProductType.M, OxyColors.Firebrick }
-        };
-
-        private static List<OxyColor> columnColors = new List<OxyColor>
-        {
-            OxyColors.Blue, OxyColors.Red, OxyColors.Green, OxyColors.DarkGoldenrod, OxyColors.DarkViolet,
-            OxyColors.DeepPink, OxyColors.SkyBlue, OxyColors.LawnGreen, OxyColors.Sienna, OxyColors.DarkBlue,
-            OxyColors.PeachPuff, OxyColors.DarkSlateGray, OxyColors.SpringGreen, OxyColors.Peru, OxyColors.OrangeRed
-
-        };
-
-        public PlotModel Model
-        {
-            get
-            {
-                return privateModel;
-            }
-            private set
-            {
-                privateModel = value;
-                NotifyPropertyChanged("Model");
-            }
-        }
-
-        public OxyColor Background => OxyColors.White;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected void NotifyPropertyChanged(string propertyName)
-        {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
+        public PlotModel Model => privateModel;
 
         public PlotModelStat(string plotName, ObservableCollection<SpectrumMatchFromTsv> sms, Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> smsBySourceFile)
         {
@@ -85,9 +44,8 @@ namespace GuiFunctions
             allSpectralMatches = sms;
             this.psmsBySourceFile = smsBySourceFile;
             createPlot(plotName);
-            privateModel.DefaultColors = columnColors;
+            privateModel.DefaultColors = MetaDrawSettings.DataVisualizationColorOrder;
         }
-
         private void createPlot(string plotType)
         {
             switch (plotType)
@@ -122,9 +80,20 @@ namespace GuiFunctions
                 case "Predicted RT vs. Observed RT":
                     linePlot(3);
                     break;
+                case "Histogram of Missed Cleavages":
+                    histogramPlot(9);
+                    break;
+                case "Histogram of Fragment Ion Types by Count":
+                    histogramPlot(10);
+                    break;
+                case "Histogram of Fragment Ion Types by Intensity":
+                    histogramPlot(11);
+                    break;
+                case "Histogram of Ids by Retention Time":
+                    histogramPlot(12);
+                    break;
             }
         }
-
         private void histogramPlot(int plotType)
         {
             privateModel.LegendTitle = "Source file(s)";
@@ -229,11 +198,61 @@ namespace GuiFunctions
                         dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
                     }
                     break;
+
+                case 9: // Histogram of Missed Cleavages
+                    xAxisTitle = "Missed Cleavages";
+                    binSize = 1;
+                    labelAngle = 0;
+                    foreach (var fileName in psmsBySourceFile.Keys)
+                    {
+                        var values = psmsBySourceFile[fileName].Where(p => !p.MissedCleavage.Contains("|")).Select(p => double.Parse(p.MissedCleavage)).ToList();
+                        numbersBySourceFile.Add(fileName, values);
+                        var results = numbersBySourceFile[fileName].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
+                        dictsBySourceFile.Add(fileName, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
+                    }
+                    break;
+                case 10: // Histogram of Fragment Ion Types by count
+                    xAxisTitle = "Fragment Types";
+                    labelAngle = 0;
+
+                    foreach (var fileName in psmsBySourceFile.Keys)
+                    {
+                        var result = psmsBySourceFile[fileName].SelectMany(p => p.MatchedIons)
+                            .GroupBy(p => p.NeutralTheoreticalProduct.ProductType)
+                            .ToDictionary(p => p.Key.ToString(), p => p.Count());
+                        dictsBySourceFile.Add(fileName, result);
+                    }
+                    break;
+                case 11: // Histogram of Fragment Ion Types by intensity
+                    xAxisTitle = "Fragment Types";
+                    labelAngle = 0;
+                    yAxisTitle = "Summed Intensity";
+                    foreach (var fileName in psmsBySourceFile.Keys)
+                    {
+                        var result = psmsBySourceFile[fileName].SelectMany(p => p.MatchedIons)
+                            .GroupBy(p => p.NeutralTheoreticalProduct.ProductType)
+                            .ToDictionary(p => p.Key.ToString(), p => (int)p.Sum(m => m.Intensity));
+                        dictsBySourceFile.Add(fileName, result);
+                    }
+                    break;
+                case 12: // Histogram of Fragment Ion Types
+                    xAxisTitle = "Retention Time";
+                    binSize = 1;
+                    labelAngle = 0;
+
+                    foreach (var fileName in psmsBySourceFile.Keys)
+                    {
+                        var result = psmsBySourceFile[fileName]
+                            .GroupBy(p => (int)Math.Round(p.RetentionTime, 0))
+                            .ToDictionary(p => p.Key.ToString(CultureInfo.InvariantCulture), p => p.Count());
+                        dictsBySourceFile.Add(fileName, result);
+                    }
+                    break;
             }
 
             String[] category;  // for labeling bottom axis
             int[] totalCounts;  // for having the tracker show total count across all files
-            if (plotType == 5)  // category histogram
+            if (plotType == 5 || plotType == 10 || plotType == 11)  // category histogram
             {
                 // assign all categories their index on the x axis
                 IEnumerable<string> allCategories = dictsBySourceFile.Values.Select(p => p.Keys).SelectMany(p => p);
@@ -265,7 +284,13 @@ namespace GuiFunctions
                     foreach (var d in dictsBySourceFile[key])
                     {
                         int id = categoryIDs[d.Key];
-                        column.Items.Add(new HistItem(d.Value, id, d.Key, totalCounts[id]));
+                        double total = 1.0;
+                        if (MetaDrawSettings.NormalizeHistogramToFile)
+                        {
+                            total = dictsBySourceFile[key].Values.Sum();
+                        }
+                        column.Items.Add(new HistItem(d.Value / total, id, d.Key, totalCounts[id]));
+
                         category[categoryIDs[d.Key]] = d.Key;
                     }
                     privateModel.Series.Add(column);
@@ -303,13 +328,20 @@ namespace GuiFunctions
                     foreach (var d in dictsBySourceFile[key])
                     {
                         int bin = int.Parse(d.Key);
-                        column.Items.Add(new HistItem(d.Value, bin - start, (bin * binSize).ToString(CultureInfo.InvariantCulture), totalCounts[bin - start]));
+                        double total = 1.0;
+                        if (MetaDrawSettings.NormalizeHistogramToFile)
+                        {
+                            total = dictsBySourceFile[key].Values.Sum(m => m);
+                        }
+                        column.Items.Add(new HistItem(d.Value / total, bin - start, (bin * binSize).ToString(CultureInfo.InvariantCulture), totalCounts[bin - start]));
                     }
                     privateModel.Series.Add(column);
                 }
             }
 
             // add axes
+            if (MetaDrawSettings.NormalizeHistogramToFile)
+                xAxisTitle = $"File Normalized {xAxisTitle}";
             privateModel.Axes.Add(new CategoryAxis
             {
                 Position = AxisPosition.Bottom,
@@ -430,10 +462,5 @@ namespace GuiFunctions
                 this.bin = bin;
             }
         }
-
-        //unused interface methods
-        public void Update(bool updateData) { }
-        public void Render(IRenderContext rc, double width, double height) { }
-        public void AttachPlotView(IPlotView plotView) { }
     }
 }
