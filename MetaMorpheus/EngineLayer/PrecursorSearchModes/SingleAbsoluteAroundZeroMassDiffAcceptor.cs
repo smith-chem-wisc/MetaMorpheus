@@ -13,7 +13,7 @@ namespace EngineLayer
             this.Value = value;
         }
 
-        public override int Accepts(double scanPrecursorMass, double peptideMass)
+        public override double Accepts(double scanPrecursorMass, double peptideMass)
         {
             return Math.Abs(scanPrecursorMass - peptideMass) < Value ? 0 : -1;
         }

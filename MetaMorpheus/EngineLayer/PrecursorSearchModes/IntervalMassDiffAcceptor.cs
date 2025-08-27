@@ -16,7 +16,7 @@ namespace EngineLayer
             Means = Intervals.Select(b => b.Mean).ToArray();
         }
 
-        public override int Accepts(double scanPrecursorMass, double peptideMass)
+        public override double Accepts(double scanPrecursorMass, double peptideMass)
         {
             double diff = scanPrecursorMass - peptideMass;
 

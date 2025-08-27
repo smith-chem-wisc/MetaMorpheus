@@ -19,7 +19,7 @@ namespace EngineLayer
         /// <param name="scanPrecursorMass"></param>
         /// <param name="peptideMass"></param>
         /// <returns></returns>
-        public abstract int Accepts(double scanPrecursorMass, double peptideMass);
+        public abstract double Accepts(double scanPrecursorMass, double peptideMass);
 
         public abstract IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromTheoreticalMass(double peptideMonoisotopicMass);
         public abstract IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double peptideMonoisotopicMass);

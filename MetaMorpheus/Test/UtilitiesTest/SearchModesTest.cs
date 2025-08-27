@@ -118,7 +118,7 @@ namespace Test.UtilitiesTest
             {
             }
 
-            public override int Accepts(double scanPrecursorMass, double peptideMass)
+            public override double Accepts(double scanPrecursorMass, double peptideMass)
             {
                 return scanPrecursorMass * peptideMass >= 1 ? 1 : -1;
             }

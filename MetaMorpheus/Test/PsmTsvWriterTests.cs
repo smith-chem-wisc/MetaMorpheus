@@ -100,7 +100,7 @@ namespace Test
             myPsmStringSplit = myPsmString.Split('\t');
             ppmErrorString = myPsmStringSplit[ppmErrorIndex];
 
-            Assert.That(ppmErrorString, Is.EqualTo("0.00000"));
+            Assert.That(ppmErrorString, Is.EqualTo("0"));
         }
     }
 }

@@ -17,7 +17,7 @@ namespace EngineLayer
             NumNotches = AcceptableSortedMassShifts.Length;
         }
 
-        public override int Accepts(double scanPrecursorMass, double peptideMass)
+        public override double Accepts(double scanPrecursorMass, double peptideMass)
         {
             // index of the first element that is larger than or equal to value
             int index = Array.BinarySearch(AcceptableSortedMassShifts, scanPrecursorMass - peptideMass);
@@ -25,10 +25,10 @@ namespace EngineLayer
                 index = ~index;
 
             if (index < AcceptableSortedMassShifts.Length && Tolerance.Within(scanPrecursorMass, AcceptableSortedMassShifts[index] + peptideMass))
-                return index;
+                return AcceptableSortedMassShifts[index];
 
             if (index > 0 && Tolerance.Within(scanPrecursorMass, AcceptableSortedMassShifts[index - 1] + peptideMass))
-                return index - 1;
+                return AcceptableSortedMassShifts[index - 1];
             return -1;
         }
 

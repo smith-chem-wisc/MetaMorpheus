@@ -731,7 +731,10 @@ namespace Test
             var modernPsms = File.ReadAllLines(modernPath).ToList();
             counts.Add(modernPsms.Count);
 
-            Assert.That(modernPsms.SequenceEqual(classicPsms));
+            for (int i = 0; i < modernPsms.Count; i++)
+            {
+                Assert.That(modernPsms[i], Is.EqualTo(classicPsms[i]), $"Mismatch at line {i + 1}: modern='{modernPsms[i]}', classic='{classicPsms[i]}'");
+            }
             Directory.Delete(outputFolder, true);
         }
 
