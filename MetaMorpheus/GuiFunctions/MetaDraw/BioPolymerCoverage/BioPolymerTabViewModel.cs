@@ -20,10 +20,12 @@ namespace GuiFunctions;
 public class BioPolymerTabViewModel : BaseViewModel
 {
     private Dictionary<string, IBioPolymer> _allBioPolymers;
+    private MetaDrawLogic _metaDrawLogic;
 
-    public BioPolymerTabViewModel()
+    public BioPolymerTabViewModel(MetaDrawLogic metaDrawLogic)
     {
         IsDatabaseLoaded = false;
+        _metaDrawLogic = metaDrawLogic;
         _allBioPolymers = new Dictionary<string, IBioPolymer>();
         AllGroups = new ObservableCollection<BioPolymerGroupViewModel>();
 
@@ -83,10 +85,13 @@ public class BioPolymerTabViewModel : BaseViewModel
             _allBioPolymers = new SearchTask().LoadBioPolymers("", new()
                 { new DbForTask(DatabasePath, false) }, true, DecoyType.None, new(), new())
                 .ToDictionary(p => p.Accession, p => p);
-            if (_allBioPolymers.Count != 0)
-            {
-                IsDatabaseLoaded = true;
-            }
+
+            if (_allBioPolymers.Count == 0) 
+                return;
+
+            IsDatabaseLoaded = true;
+            if (_metaDrawLogic.AllSpectralMatches is not null or { Count: 0 })
+                ProcessSpectralMatches(_metaDrawLogic.AllSpectralMatches);
         }
         catch (Exception e)
         {
