@@ -79,5 +79,14 @@ namespace GuiFunctions
             int within = values.Count(p => p >= range.Minimum && p <= range.Maximum);
             return within > values.Count() / 2;
         }
+
+        public static IEnumerable<(int Start, int End)> GetStartAndEndPosition(this SpectrumMatchFromTsv sm)
+        {
+            foreach (var ambigSplit in sm.StartAndEndResiduesInParentSequence.Split('|'))
+            {
+                var split = ambigSplit.Replace("[", "").Replace("]", "").Split("to");
+                yield return (int.Parse(split[0]), int.Parse(split[1]));
+            }
+        }
     }
 }
