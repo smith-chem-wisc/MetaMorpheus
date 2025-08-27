@@ -108,9 +108,9 @@ public class BioPolymerTabViewModel : BaseViewModel
     #endregion
 
     public ObservableCollection<BioPolymerGroupViewModel> AllGroups { get; set; }
+    public BioPolymerCoverageMapViewModel CoverageMapViewModel { get; } = new();
 
     private BioPolymerGroupViewModel _selectedGroup;
-
     public BioPolymerGroupViewModel SelectedGroup
     {
         get => _selectedGroup;
@@ -118,6 +118,7 @@ public class BioPolymerTabViewModel : BaseViewModel
         {
             _selectedGroup = value;
             OnPropertyChanged(nameof(SelectedGroup));
+            CoverageMapViewModel.Group = value;
         }
     }
 

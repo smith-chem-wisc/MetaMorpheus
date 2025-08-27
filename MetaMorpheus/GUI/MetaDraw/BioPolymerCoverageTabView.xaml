@@ -145,7 +145,8 @@
                 <!-- BioPolymer coverage display -->
                 <ScrollViewer Grid.Row="1" Name="BioPolymerCoverageHorizontalScroll" Width="Auto" 
                           CanContentScroll="True" VerticalScrollBarVisibility="Auto" Margin="0 10 ">
-                    <Canvas x:Name="BioPolymerMap" Background="Red" Height="2000" />
+                    <local:BioPolymerCoverageMapView Grid.Row="1"
+                                                      DataContext="{Binding CoverageMapViewModel}" />
                 </ScrollViewer>
 
                 <!-- Individual Results -->
