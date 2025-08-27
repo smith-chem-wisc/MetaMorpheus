@@ -1,8 +1,8 @@
 ﻿namespace EngineLayer.Util
 {
-    internal class ScanWithIndexAndNotchInfo(int notch, int scanIndex)
+    internal class ScanWithIndexAndNotchInfo(double notch, int scanIndex)
     {
-        public readonly int Notch = notch;
+        public readonly double Notch = notch;
         public readonly int ScanIndex = scanIndex;
     }
 
@@ -12,7 +12,7 @@
     /// <param name="scan"></param>
     /// <param name="notch"></param>
     /// <param name="scanIndex"></param>
-    internal class ExtendedScanWithIndexAndNotchInfo(Ms2ScanWithSpecificMass scan, int notch, int scanIndex) : ScanWithIndexAndNotchInfo(notch, scanIndex)
+    internal class ExtendedScanWithIndexAndNotchInfo(Ms2ScanWithSpecificMass scan, double notch, int scanIndex) : ScanWithIndexAndNotchInfo(notch, scanIndex)
     {
         public readonly Ms2ScanWithSpecificMass TheScan = scan;
     }

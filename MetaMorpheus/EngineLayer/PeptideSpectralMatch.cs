@@ -9,7 +9,7 @@ namespace EngineLayer
 {
     public class PeptideSpectralMatch : SpectralMatch
     {
-        public PeptideSpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex,
+        public PeptideSpectralMatch(IBioPolymerWithSetMods peptide, double notch, double score, int scanIndex,
             Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons) 
             : base(peptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
         {

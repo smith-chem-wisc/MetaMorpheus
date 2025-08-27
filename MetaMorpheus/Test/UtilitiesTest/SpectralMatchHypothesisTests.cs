@@ -8,7 +8,6 @@ using EngineLayer;
 using Proteomics.ProteolyticDigestion;
 using System.Diagnostics.CodeAnalysis;
 using Proteomics;
-using System.Drawing.Text;
 
 namespace Test.UtilitiesTest
 {
@@ -19,13 +18,13 @@ namespace Test.UtilitiesTest
         IBioPolymerWithSetMods testPeptide1 = new PeptideWithSetModifications("PEPTIDE", GlobalVariables.AllModsKnownDictionary, p: new Protein("PEPTIDE", "protein"));
         IBioPolymerWithSetMods testPeptide2 = new PeptideWithSetModifications("PE[UniProt:4-carboxyglutamate on E]PTIDE", GlobalVariables.AllModsKnownDictionary, p: new Protein("PEPTIDE", "protein"));
 
-        public class TestSearchAttempt(int notch, bool isDecoy, double score) : ISearchAttempt
+        public class TestSearchAttempt(double notch, bool isDecoy, double score) : ISearchAttempt
         {
             public double Score { get; } = score;
 
             public bool IsDecoy { get; } = isDecoy;
 
-            public int Notch { get; } = notch;
+            public double Notch { get; } = notch;
 
             public bool Equals(ISearchAttempt other)
             {

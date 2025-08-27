@@ -38,7 +38,7 @@ namespace EngineLayer
             }
         }
 
-        public static PeptideSpectralMatch GetLabeledPsm(PeptideSpectralMatch psm, int notch, PeptideWithSetModifications pwsm, string labeledBaseSequence)
+        public static PeptideSpectralMatch GetLabeledPsm(PeptideSpectralMatch psm, double notch, PeptideWithSetModifications pwsm, string labeledBaseSequence)
         {
             PeptideWithSetModifications labeledPwsm = new PeptideWithSetModifications(
                 pwsm.Protein,

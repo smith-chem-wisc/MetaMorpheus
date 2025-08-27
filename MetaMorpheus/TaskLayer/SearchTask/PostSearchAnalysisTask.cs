@@ -390,7 +390,7 @@ namespace TaskLayer
 
                     //get easy access to values we need for new psm generation
                     string unlabeledBaseSequence = lightPsm.BaseSequence;
-                    int notch = psm.BestMatchingBioPolymersWithSetMods.First().Notch;
+                    double notch = psm.BestMatchingBioPolymersWithSetMods.First().Notch;
                     PeptideWithSetModifications pwsm = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer as PeptideWithSetModifications;
 
                     //check if turnover or multiplex experiment
