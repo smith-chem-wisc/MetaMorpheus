@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
 using System.Windows.Media;
 using System.Windows;
@@ -10,24 +8,6 @@ namespace GuiFunctions;
 
 public class BioPolymerCoverageMapViewModel : BaseViewModel
 {
-    private BioPolymerGroupViewModel _group;
-    private int _lettersPerRow = 50;
-    private double _fontSize = 16;
-    private Dictionary<BioPolymerCoverageType, Brush> _coverageTypeBrushes;
-
-    public BioPolymerCoverageMapViewModel()
-    {
-        // Default colors, can be exposed as settings
-        _coverageTypeBrushes = new()
-        {
-            { BioPolymerCoverageType.Unique, Brushes.LightGreen },
-            { BioPolymerCoverageType.UniqueMissedCleavage, Brushes.YellowGreen },
-            { BioPolymerCoverageType.TandemRepeat, Brushes.LightBlue },
-            { BioPolymerCoverageType.TandemRepeatMissedCleavage, Brushes.SkyBlue },
-            { BioPolymerCoverageType.Shared, Brushes.Orange },
-            { BioPolymerCoverageType.SharedMissedCleavage, Brushes.OrangeRed }
-        };
-    }
 
     private DrawingImage _coverageDrawing;
     public DrawingImage CoverageDrawing
@@ -36,23 +16,20 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         private set { _coverageDrawing = value; OnPropertyChanged(nameof(CoverageDrawing)); }
     }
 
+    private BioPolymerGroupViewModel _group;
     public BioPolymerGroupViewModel Group
     {
         get => _group;
         set { _group = value; OnPropertyChanged(nameof(Group)); Redraw(); }
     }
 
+    private int _lettersPerRow = 50;
     public int LettersPerRow
     {
         get => _lettersPerRow;
         set { _lettersPerRow = value; OnPropertyChanged(nameof(LettersPerRow)); }
     }
 
-    public double FontSize
-    {
-        get => _fontSize;
-        set { _fontSize = value; OnPropertyChanged(nameof(FontSize)); }
-    }
     private double _availableWidth = 800; // Default, should be set by view on resize
     public double AvailableWidth
     {
@@ -60,13 +37,11 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         set { _availableWidth = value; OnPropertyChanged(nameof(AvailableWidth)); UpdateLettersPerRow(value); }
     }
 
-    public Dictionary<BioPolymerCoverageType, Brush> CoverageTypeBrushes => _coverageTypeBrushes;
-
     // Call this from the view when the canvas size changes
     public void UpdateLettersPerRow(double availableWidth)
     {
         _availableWidth = availableWidth;
-        int newLetters = Math.Max(10, (int)(availableWidth / (FontSize * 0.8)));
+        int newLetters = Math.Max(10, (int)(availableWidth / (MetaDrawSettings.BioPolymerCoverageFontSize * 0.8)));
         if (newLetters != LettersPerRow)
             LettersPerRow = newLetters;
         else
@@ -84,7 +59,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         var seq = Group.Sequence;
         var results = Group.CoverageResults;
         int lettersPerRow = LettersPerRow;
-        double fontSize = FontSize;
+        double fontSize = MetaDrawSettings.BioPolymerCoverageFontSize;
 
         double plotMargin = fontSize * 2; // margin on left and right
         double usableWidth = Math.Max(1, AvailableWidth - 2 * plotMargin);
@@ -133,7 +108,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             // Draw the legend
             foreach (var (type, textWidth, formattedText) in legendEntries)
             {
-                var brush = CoverageTypeBrushes[type];
+                var brush = MetaDrawSettings.BioPolymerCoverageColors[type];
                 var rect = new Rect(legendX, legendY, legendBoxSize, legendBoxSize);
                 dc.DrawRoundedRectangle(brush, null, rect, 4, 4);
 
@@ -188,7 +163,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                         roundRight = true;
 
                     // Use a slightly opaque brush for fill
-                    var baseBrush = CoverageTypeBrushes[res.CoverageType];
+                    var baseBrush = MetaDrawSettings.BioPolymerCoverageColors[res.CoverageType];
                     var color = (baseBrush as SolidColorBrush)?.Color ?? Colors.Gray;
                     var brush = new SolidColorBrush(color) { Opacity = 0.75 };
 

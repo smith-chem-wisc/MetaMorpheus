@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:MetaMorpheusGUI"
              xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
              mc:Ignorable="d" 
-             d:DataContext="{d:Static guiFunctions:BioPolymerTabModel.Instance}"
+             d:DataContext="{x:Static guiFunctions:BioPolymerTabModel.Instance}"
              d:DesignHeight="450" d:DesignWidth="800">
     <DockPanel>
         <Grid>
@@ -134,19 +134,18 @@
             <!-- Right side -->
             <Grid Grid.Column="2" Name="BioPolymerAnnotationGrid" Style="{StaticResource InternalGridStyle}">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="35" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="4*" />
                     <RowDefinition Height="Auto" MaxHeight="300" />
                 </Grid.RowDefinitions>
 
-                <!--Header label-->
-                <Label Grid.Row="0" Content="BioPolymer Coverage Map" x:Name="BioPolymerCoverageTabItem" />
-
+                <local:SettingsButtonControl Grid.Row="0" Height="52" x:Name="SettingsButton"
+                                                 HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                 Panel.ZIndex="1" SelectedTabIndex="4" />
                 <!-- BioPolymer coverage display -->
                 <ScrollViewer Grid.Row="1" Name="BioPolymerCoverageHorizontalScroll" Width="Auto" 
-                          CanContentScroll="True" VerticalScrollBarVisibility="Auto" Margin="0 10 ">
-                    <local:BioPolymerCoverageMapView Grid.Row="1"
-                                                      DataContext="{Binding CoverageMapViewModel}" />
+                              CanContentScroll="True" VerticalScrollBarVisibility="Auto" Margin="0 10 ">
+                    <local:BioPolymerCoverageMapView DataContext="{Binding CoverageMapViewModel}" />
                 </ScrollViewer>
 
                 <!-- Individual Results -->

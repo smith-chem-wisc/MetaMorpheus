@@ -10,7 +10,6 @@ namespace MetaMorpheusGUI;
 public partial class BioPolymerCoverageMapView : UserControl
 {
     private double _lastWidth = -1;
-    private double _lastHeight = -1;
     public BioPolymerCoverageMapView()
     {
         InitializeComponent();
@@ -27,7 +26,5 @@ public partial class BioPolymerCoverageMapView : UserControl
             _lastWidth = this.ActualWidth;
             ViewModel?.UpdateLettersPerRow(this.ActualWidth);
         }
-        // Optionally, handle height if needed
-        _lastHeight = this.ActualHeight;
     }
 }
