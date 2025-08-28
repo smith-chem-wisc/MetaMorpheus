@@ -57,7 +57,8 @@
                     BorderThickness="0,0,0,1" Margin="5 2" >
                     <DockPanel  LastChildFill="True" Margin="0 0 0 2">
                         <Button Name="LoadDatabase" Content="Load Files" Width="80" Command="{Binding LoadDatabaseCommand}"/>
-                        <TextBox Width="100"  DockPanel.Dock="Right"></TextBox>
+                        <TextBox Width="140"  DockPanel.Dock="Right" VerticalContentAlignment="Center"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                         <Label HorizontalAlignment="Right" Height="28">Search</Label>
                     </DockPanel>
                 </Border>
@@ -72,7 +73,7 @@
                         <DataGrid x:Name="biopolymerDataGrid" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ScrollViewer.CanContentScroll="True" IsReadOnly="True" 
                               CanUserDeleteRows="false" CanUserAddRows="false" SelectionMode="Single"
                               SelectionChanged="BioPolymerDataGrid_OnSelectionChanged"
-                              ItemsSource="{Binding AllGroups}" 
+                              ItemsSource="{Binding FilteredGroups}" 
                               SelectedItem="{Binding SelectedGroup}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Accession" Binding="{Binding Accession}" Width="90" 

@@ -107,6 +107,23 @@ public class BioPolymerTabViewModel : BaseViewModel
 
     #endregion
 
+    private string _searchText;
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (_searchText != value)
+            {
+                _searchText = value;
+                OnPropertyChanged(nameof(SearchText));
+                UpdateFilteredGroups();
+            }
+        }
+    }
+
+    public ObservableCollection<BioPolymerGroupViewModel> FilteredGroups { get; } = new();
+
     public ObservableCollection<BioPolymerGroupViewModel> AllGroups { get; set; }
     public BioPolymerCoverageMapViewModel CoverageMapViewModel { get; } = new();
 
@@ -241,7 +258,20 @@ public class BioPolymerTabViewModel : BaseViewModel
 
             var group = new BioPolymerGroupViewModel(accessionToGroup, bioPolymer.Name, bioPolymer.BaseSequence, processedResults);
             AllGroups.Add(group);
+            UpdateFilteredGroups();
         }
+    }
+
+    private void UpdateFilteredGroups()
+    {
+        FilteredGroups.Clear();
+        var query = string.IsNullOrWhiteSpace(SearchText)
+            ? AllGroups
+            : AllGroups.Where(g =>
+                (g.Accession?.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (g.ProteinName?.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0));
+        foreach (var group in query)
+            FilteredGroups.Add(group);
     }
 
     #region Image Export
