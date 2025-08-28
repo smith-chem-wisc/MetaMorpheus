@@ -36,6 +36,7 @@ namespace EngineLayer.DIA
         public override List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, IEnumerable<ExtractedIonChromatogram> fragments)
         {
             var pfGroups = new List<PrecursorFragmentsGroup>();
+            var apexSortedFragmentXics = BuildApexSortedXics(fragments);
 
             Parallel.ForEach(Partitioner.Create(0, precursors.Count), new ParallelOptions { MaxDegreeOfParallelism = MaxThreadsForGrouping },
                 (partitionRange, loopState) =>
@@ -43,7 +44,8 @@ namespace EngineLayer.DIA
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
                         var precursor = precursors[i];
-                        var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragments);
+                        var fragmentsInRange = GetXicsInRange(apexSortedFragmentXics, precursor.ApexRT, ApexRTTolerance);
+                        var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragmentsInRange);
                         if (pfGroup != null)
                         {
                             lock (pfGroups)
@@ -71,17 +73,14 @@ namespace EngineLayer.DIA
             var pfPairs = new List<PrecursorFragmentPair>();
             foreach (var fragmentXic in fragmentXics)
             {
-                if (Math.Abs(fragmentXic.ApexRT - precursorXic.ApexRT) <= apexRtTolerance)
+                double overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(precursorXic, fragmentXic);
+                if (overlap >= overlapThreshold)
                 {
-                    double overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(precursorXic, fragmentXic);
-                    if (overlap >= overlapThreshold)
+                    double correlation = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(precursorXic, fragmentXic);
+                    if (correlation >= correlationThreshold)
                     {
-                        double correlation = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(precursorXic, fragmentXic);
-                        if (correlation >= correlationThreshold)
-                        {
-                            var pfPair = new PrecursorFragmentPair(precursorXic, fragmentXic, correlation, overlap);
-                            pfPairs.Add(pfPair);
-                        }
+                        var pfPair = new PrecursorFragmentPair(precursorXic, fragmentXic, correlation, overlap);
+                        pfPairs.Add(pfPair);
                     }
                 }
             }
@@ -91,6 +90,28 @@ namespace EngineLayer.DIA
                 return pfGroup;
             }
             return null;
+        }
+
+        protected static SortedDictionary<double, List<ExtractedIonChromatogram>> BuildApexSortedXics(IEnumerable<ExtractedIonChromatogram> xics)
+        {
+            var tree = new SortedDictionary<double, List<ExtractedIonChromatogram>>();
+            foreach (var xic in xics)
+            {
+                double roundedApexRt = Math.Round(xic.ApexRT, 2);
+                if (!tree.ContainsKey(roundedApexRt))
+                    tree[roundedApexRt] = new List<ExtractedIonChromatogram>();
+                tree[roundedApexRt].Add(xic);
+            }
+            return tree;
+        }
+
+        protected static List<ExtractedIonChromatogram> GetXicsInRange(SortedDictionary<double, List<ExtractedIonChromatogram>> apexSortedFragmentXics, double targetApexRt, double rtTolerance)
+        {
+            double minRt = Math.Round(targetApexRt - rtTolerance, 2);
+            double maxRt = Math.Round(targetApexRt + rtTolerance, 2);
+
+            var subset = apexSortedFragmentXics.Where(kvp => kvp.Key >= minRt && kvp.Key <= maxRt).SelectMany(kvp => kvp.Value).ToList();
+            return subset;
         }
 
         public override string ToString()

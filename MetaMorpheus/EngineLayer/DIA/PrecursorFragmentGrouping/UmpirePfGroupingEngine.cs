@@ -23,17 +23,14 @@ namespace EngineLayer.DIA
             var pfPairs = new List<PrecursorFragmentPair>();
             foreach (var fragmentXic in fragmentXics)
             {
-                if (Math.Abs(fragmentXic.ApexRT - precursorXic.ApexRT) <= ApexRTTolerance)
+                double overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio_Umpire(precursorXic, fragmentXic);
+                if (overlap >= OverlapThreshold)
                 {
-                    double overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio_Umpire(precursorXic, fragmentXic);
-                    if (overlap >= OverlapThreshold)
+                    double correlation = PrecursorFragmentsGroup.CalculateXicCorrXYData_Umpire(precursorXic, fragmentXic, NoPointPerInterval);
+                    if (correlation >= CorrelationThreshold)
                     {
-                        double correlation = PrecursorFragmentsGroup.CalculateXicCorrXYData_Umpire(precursorXic, fragmentXic, NoPointPerInterval);
-                        if (correlation >= CorrelationThreshold)
-                        {
-                            var pfPair = new PrecursorFragmentPair(precursorXic, fragmentXic, correlation, overlap);
-                            pfPairs.Add(pfPair);
-                        }
+                        var pfPair = new PrecursorFragmentPair(precursorXic, fragmentXic, correlation, overlap);
+                        pfPairs.Add(pfPair);
                     }
                 }
             }
