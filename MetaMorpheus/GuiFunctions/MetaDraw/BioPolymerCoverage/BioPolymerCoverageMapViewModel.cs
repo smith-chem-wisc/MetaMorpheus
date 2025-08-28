@@ -344,7 +344,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                     new Typeface("Segoe UI"),
                     labelFontSize,
                     Brushes.DimGray,
-                    VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip);
+                    dpi);
 
                 var rightLabel = new FormattedText(
                     rightLabelText,
@@ -353,7 +353,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                     new Typeface("Segoe UI"),
                     labelFontSize,
                     Brushes.DimGray,
-                    VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip);
+                    dpi);
 
                 // Use the first letter in the row for vertical alignment
                 int firstIdx = rowStartIdx;
@@ -364,7 +364,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                     new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
                     fontSize,
                     Brushes.Black,
-                    VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip);
+                    dpi);
 
                 // Align baselines: offset so that the baseline of the label matches the baseline of the letter
                 double baselineOffset = y + letterText.Baseline - leftLabel.Baseline;
@@ -390,7 +390,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                         new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
                         fontSize,
                         Brushes.Black,
-                        VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip);
+                        dpi);
 
                     double centeredX = x + (letterWidth - formattedText.Width) / 2;
                     dc.DrawText(formattedText, new Point(centeredX, y));

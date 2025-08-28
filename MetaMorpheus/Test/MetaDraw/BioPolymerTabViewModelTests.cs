@@ -1,0 +1,167 @@
+using System.Collections.Generic;
+using GuiFunctions;
+using NUnit.Framework;
+using Omics;
+using Proteomics;
+
+namespace Test.MetaDraw
+{
+    public class DummyMetaDrawLogic : MetaDrawLogic
+    {
+        public DummyMetaDrawLogic()
+        {
+            AllSpectralMatches = new List<Readers.SpectrumMatchFromTsv>();
+        }
+    }
+
+    [TestFixture]
+    public class BioPolymerTabViewModelTests
+    {
+        private class DummyBioPolymer(string accession, string name, string baseSeq)
+            : Protein(baseSeq, accession, name: name);
+
+        [Test]
+        public void Constructor_InitializesProperties()
+        {
+            var logic = new DummyMetaDrawLogic();
+            var vm = new BioPolymerTabViewModel(logic, "C:\\Export");
+            Assert.That(vm.AllGroups, Is.Not.Null);
+            Assert.That(vm.FilteredGroups, Is.Not.Null);
+            Assert.That(vm.CoverageMapViewModel, Is.Not.Null);
+            Assert.That(vm.ExportDirectory, Is.EqualTo("C:\\Export"));
+            Assert.That(vm.LoadDatabaseCommand, Is.Not.Null);
+            Assert.That(vm.ResetDatabaseCommand, Is.Not.Null);
+            Assert.That(vm.ExportImageCommand, Is.Not.Null);
+        }
+
+        [Test]
+        public void IsDatabaseLoaded_PropertyChanged()
+        {
+            var vm = new BioPolymerTabViewModel(new DummyMetaDrawLogic());
+            bool called = false;
+            vm.PropertyChanged += (s, e) => { if (e.PropertyName == "IsDatabaseLoaded") called = true; };
+            vm.IsDatabaseLoaded = true;
+            Assert.That(vm.IsDatabaseLoaded, Is.True);
+            Assert.That(called, Is.True);
+        }
+
+        [Test]
+        public void DatabasePath_And_DatabaseName_PropertyChanged()
+        {
+            var vm = new BioPolymerTabViewModel(new DummyMetaDrawLogic());
+            bool pathChanged = false, nameChanged = false;
+            vm.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == "DatabasePath") pathChanged = true;
+                if (e.PropertyName == "DatabaseName") nameChanged = true;
+            };
+            vm.DatabasePath = "C:\\db.fasta";
+            Assert.That(vm.DatabasePath, Is.EqualTo("C:\\db.fasta"));
+            Assert.That(vm.DatabaseName, Is.Not.Null.And.Not.Empty);
+            Assert.That(pathChanged, Is.True);
+            Assert.That(nameChanged, Is.True);
+        }
+
+        [Test]
+        public void SearchText_PropertyChanged_And_FilteredGroups()
+        {
+            var logic = new DummyMetaDrawLogic();
+            var vm = new BioPolymerTabViewModel(logic);
+            var group1 = new BioPolymerGroupViewModel("A1", "Alpha", "ABC", new BioPolymerCoverageResultModel[0]);
+            var group2 = new BioPolymerGroupViewModel("B2", "Beta", "DEF", new BioPolymerCoverageResultModel[0]);
+            vm.AllGroups.Add(group1);
+            vm.AllGroups.Add(group2);
+
+            bool changed = false;
+            vm.PropertyChanged += (s, e) => { if (e.PropertyName == "SearchText") changed = true; };
+
+            vm.SearchText = "Alpha";
+            Assert.That(changed, Is.True);
+            Assert.That(vm.FilteredGroups.Count, Is.EqualTo(1));
+            Assert.That(vm.FilteredGroups[0], Is.EqualTo(group1));
+
+            vm.SearchText = "B2";
+            Assert.That(vm.FilteredGroups.Count, Is.EqualTo(1));
+            Assert.That(vm.FilteredGroups[0], Is.EqualTo(group2));
+
+            vm.SearchText = "";
+            Assert.That(vm.FilteredGroups.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void SelectedGroup_PropertyChanged_And_CoverageMapViewModel()
+        {
+            var logic = new DummyMetaDrawLogic();
+            var vm = new BioPolymerTabViewModel(logic);
+            var group = new BioPolymerGroupViewModel("A1", "Alpha", "ABC", new BioPolymerCoverageResultModel[0]);
+            bool changed = false;
+            vm.PropertyChanged += (s, e) => { if (e.PropertyName == "SelectedGroup") changed = true; };
+            vm.SelectedGroup = group;
+            Assert.That(vm.SelectedGroup, Is.EqualTo(group));
+            Assert.That(vm.CoverageMapViewModel.Group, Is.EqualTo(group));
+            Assert.That(changed, Is.True);
+        }
+
+        [Test]
+        public void ResetDatabase_ClearsState()
+        {
+            var logic = new DummyMetaDrawLogic();
+            var vm = new BioPolymerTabViewModel(logic);
+            vm.DatabasePath = "C:\\db.fasta";
+            vm.DatabaseName = "db";
+            vm.AllGroups.Add(new BioPolymerGroupViewModel("A1", "Alpha", "ABC", new BioPolymerCoverageResultModel[0]));
+            vm.FilteredGroups.Add(new BioPolymerGroupViewModel("B2", "Beta", "DEF", new BioPolymerCoverageResultModel[0]));
+
+            vm.GetType().GetMethod("ResetDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Invoke(vm, null);
+
+            Assert.That(vm.DatabasePath, Is.Empty);
+            Assert.That(vm.DatabaseName, Is.Empty);
+            Assert.That(vm.AllGroups.Count, Is.EqualTo(0));
+            Assert.That(vm.FilteredGroups.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ExportDirectory_CreatesDirectoryIfNotExists()
+        {
+            var logic = new DummyMetaDrawLogic();
+            var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "BioPolymerTabViewModelTestDir");
+            if (System.IO.Directory.Exists(tempDir))
+                System.IO.Directory.Delete(tempDir, true);
+
+            var vm = new BioPolymerTabViewModel(logic, tempDir);
+            bool changed = false;
+            vm.PropertyChanged += (s, e) => { if (e.PropertyName == "ExportDirectory") changed = true; };
+            var dir = vm.ExportDirectory;
+            Assert.That(System.IO.Directory.Exists(dir), Is.True);
+            Assert.That(changed, Is.False); // Only fires on set, not get
+
+            vm.ExportDirectory = tempDir + "2";
+            Assert.That(vm.ExportDirectory, Is.EqualTo(tempDir + "2"));
+            Assert.That(changed, Is.True);
+
+            System.IO.Directory.Delete(tempDir, true);
+            if (System.IO.Directory.Exists(tempDir + "2"))
+                System.IO.Directory.Delete(tempDir + "2", true);
+        }
+
+        [Test]
+        public void ProcessSpectralMatches_AddsGroups()
+        {
+            var logic = new DummyMetaDrawLogic();
+            var vm = new BioPolymerTabViewModel(logic);
+
+            // Setup _allBioPolymers with a dummy
+            var dummyBioPolymer = new DummyBioPolymer("ACC", "Protein", "ABC");
+            var allBioPolymersField = typeof(BioPolymerTabViewModel).GetField("_allBioPolymers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            allBioPolymersField.SetValue(vm, new Dictionary<string, IBioPolymer> { { "ACC", dummyBioPolymer } });
+
+            var match = new DummySpectralmatch();
+            var matches = new List<Readers.SpectrumMatchFromTsv> { match };
+            vm.ProcessSpectralMatches(matches);
+
+            Assert.That(vm.AllGroups.Count, Is.EqualTo(1));
+            Assert.That(vm.AllGroups[0].Accession, Is.EqualTo("ACC"));
+        }
+    }
+}
