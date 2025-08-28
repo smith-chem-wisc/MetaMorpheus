@@ -16,7 +16,6 @@ using System.Threading.Tasks;
 using SpectralAveraging;
 using Omics;
 using Omics.Digestion;
-using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using UsefulProteomicsDatabases;
@@ -134,6 +133,24 @@ namespace TaskLayer
             .ConfigureType<OxyriboAveragine>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.GetType().Name)))
+            .ConfigureType<List<IGptmdFilter>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(filters => string.Join("\t", filters.Select(f => f.GetType().Name)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(typeName =>
+                            // Find the type in the current AppDomain by name
+                            AppDomain.CurrentDomain.GetAssemblies()
+                                .SelectMany(a => a.GetTypes())
+                                .FirstOrDefault(t => t.Name == typeName && typeof(IGptmdFilter).IsAssignableFrom(t))
+                        )
+                        .Where(t => t != null)
+                        .Select(t => Activator.CreateInstance(t) as IGptmdFilter)
+                        .Where(f => f != null)
+                        .ToList()
+                    )
+                )
+            )
         );
        
 
