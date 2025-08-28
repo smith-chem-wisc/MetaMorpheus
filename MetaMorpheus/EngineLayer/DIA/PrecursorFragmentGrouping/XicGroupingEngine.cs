@@ -15,14 +15,16 @@ namespace EngineLayer.DIA
         public float ApexRTTolerance { get; set; }
         public double OverlapThreshold { get; set; }
         public double CorrelationThreshold { get; set; }
+        public SortedDictionary<double, List<ExtractedIonChromatogram>> ApexSortedFragmentXics { get; set; }
 
-        public XicGroupingEngine(float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0)
+        public XicGroupingEngine(List<ExtractedIonChromatogram> fragmentXics, float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0)
         {
             ApexRTTolerance = apexRTTolerance;
             OverlapThreshold = overlapThreshold;
             CorrelationThreshold = correlationThreshold;
             MaxThreadsForGrouping = maxThreadsForGrouping;
             MinFragmentCountForPfGroup = minFragmentCountForGrouping;
+            ApexSortedFragmentXics = BuildApexSortedXics(fragmentXics);
         }
 
         /// <summary>
@@ -77,6 +79,19 @@ namespace EngineLayer.DIA
                 return pfGroup;
             }
             return null;
+        }
+
+        protected static SortedDictionary<double, List<ExtractedIonChromatogram>> BuildApexSortedXics(List<ExtractedIonChromatogram> xics)
+        {
+            var tree = new SortedDictionary<double, List<ExtractedIonChromatogram>>();
+            foreach (var xic in xics)
+            {
+                double roundedApexRt = Math.Round(xic.ApexRT, 2); 
+                if (!tree.ContainsKey(roundedApexRt))
+                    tree[roundedApexRt] = new List<ExtractedIonChromatogram>();
+                tree[roundedApexRt].Add(xic);
+            }
+            return tree;
         }
     }
 }
