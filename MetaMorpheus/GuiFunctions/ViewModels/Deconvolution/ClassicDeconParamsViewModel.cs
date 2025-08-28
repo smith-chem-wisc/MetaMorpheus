@@ -2,7 +2,7 @@
 
 namespace GuiFunctions;
 
-public sealed class ClassicDeconParamsViewModel : DeconParamsViewModel
+public class ClassicDeconParamsViewModel : DeconParamsViewModel
 {
     private ClassicDeconvolutionParameters _parameters;
     public override DeconvolutionParameters Parameters
