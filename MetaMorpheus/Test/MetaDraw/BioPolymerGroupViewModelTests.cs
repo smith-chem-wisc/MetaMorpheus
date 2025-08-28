@@ -1,4 +1,5 @@
 using GuiFunctions;
+using GuiFunctions.MetaDraw;
 using NUnit.Framework;
 
 namespace Test.MetaDraw;

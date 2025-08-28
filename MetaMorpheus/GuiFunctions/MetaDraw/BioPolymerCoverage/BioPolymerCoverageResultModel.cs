@@ -1,6 +1,6 @@
 ﻿using Readers;
 
-namespace GuiFunctions;
+namespace GuiFunctions.MetaDraw;
 
 public class BioPolymerCoverageResultModel(SpectrumMatchFromTsv match, string baseSequence, int start, int end, BioPolymerCoverageType coverageType)
 {

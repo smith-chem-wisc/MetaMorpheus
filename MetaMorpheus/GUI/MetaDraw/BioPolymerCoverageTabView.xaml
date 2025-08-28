@@ -5,8 +5,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:MetaMorpheusGUI"
              xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+             xmlns:bioPolymerCoverage="clr-namespace:GuiFunctions.MetaDraw.BioPolymerCoverage;assembly=GuiFunctions"
              mc:Ignorable="d" 
-             d:DataContext="{x:Static guiFunctions:BioPolymerTabModel.Instance}"
+             d:DataContext="{x:Static bioPolymerCoverage:BioPolymerTabModel.Instance}"
              d:DesignHeight="450" d:DesignWidth="800">
     <DockPanel>
         <Grid>

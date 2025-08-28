@@ -1,21 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Readers;
-using Omics;
-using MzLibUtil;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using Easy.Common.Extensions;
+using MzLibUtil;
+using Omics;
+using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Easy.Common.Extensions;
-using System.Diagnostics.CodeAnalysis;
-using System.Windows.Media.Imaging;
-using System.Windows.Media;
-using System.Windows;
-using System.IO;
 
-namespace GuiFunctions;
+namespace GuiFunctions.MetaDraw;
 
 public class BioPolymerTabViewModel : BaseViewModel
 {

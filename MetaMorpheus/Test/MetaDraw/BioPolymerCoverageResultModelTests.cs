@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using GuiFunctions;
+using GuiFunctions.MetaDraw;
 using Readers;
 
 namespace Test.MetaDraw;

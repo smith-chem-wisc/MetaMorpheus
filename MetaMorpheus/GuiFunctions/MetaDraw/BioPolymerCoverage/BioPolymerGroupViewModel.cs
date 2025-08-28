@@ -3,18 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace GuiFunctions;
-
-public enum BioPolymerCoverageType
-{
-    Unique,
-    UniqueMissedCleavage, 
-    TandemRepeat,               // Shared within the same biopolymer
-    TandemRepeatMissedCleavage,
-    Shared,                     // Shared between different biopolymers
-    SharedMissedCleavage,
-}
-
+namespace GuiFunctions.MetaDraw;
 
 public class BioPolymerGroupViewModel : BaseViewModel
 {
