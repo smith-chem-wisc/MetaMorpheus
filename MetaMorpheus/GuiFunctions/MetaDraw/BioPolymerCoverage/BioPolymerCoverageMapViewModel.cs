@@ -40,8 +40,18 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
     // Call this from the view when the canvas size changes
     public void UpdateLettersPerRow(double availableWidth)
     {
+        int size;
+        try
+        {
+            size = MetaDrawSettings.BioPolymerCoverageFontSize;
+        }
+        catch
+        {
+            size = 16; // default
+        }
+
         _availableWidth = availableWidth;
-        int newLetters = Math.Max(10, (int)(availableWidth / (MetaDrawSettings.BioPolymerCoverageFontSize * 0.8)));
+        int newLetters = Math.Max(10, (int)(availableWidth / (size * 0.8)));
         if (newLetters != LettersPerRow)
             LettersPerRow = newLetters;
         else
@@ -122,7 +132,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             double plotYOffset = legendBoxSize + legendSpacing * 2;
 
             // --- Draw rectangles for each peptide, with jitter for overlaps ---
-            foreach (var res in results)
+            foreach (var res in results.Where(p => MetaDrawSettings.FilterAcceptsPsm(p.Match)))
             {
                 int startIdx = res.Start - 1;
                 int endIdx = res.End - 1;

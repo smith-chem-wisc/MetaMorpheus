@@ -61,6 +61,7 @@ namespace MetaMorpheusGUI
             AdditionalFragmentIonControl.LinkMetaDraw(this);
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
             BioPolymerCoverageTabView.DataContext = BioPolymerTabViewModel;
+            
 
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
@@ -480,6 +481,11 @@ namespace MetaMorpheusGUI
                              .ThenByDescending(p => p.TotalFragments))
                 {
                     ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Add(chimeraGroup);
+                }
+
+                foreach (var group in BioPolymerTabViewModel.AllGroups)
+                {
+                    group.UpdatePropertiesAfterFilter();
                 }
             }
 
