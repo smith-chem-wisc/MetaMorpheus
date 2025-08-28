@@ -670,6 +670,20 @@
                                 </StackPanel>
                             </StackPanel>
                         </GroupBox>
+                        
+                        <!-- Export Options -->
+                        <GroupBox Header="ExportOptions">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Label Content="Export File Type:" Margin="0" HorizontalAlignment="Center" VerticalContentAlignment="Center"/>
+                                <ComboBox Height="24" HorizontalAlignment="Center" 
+                                          HorizontalContentAlignment="Center" Margin="0 0 10 0" 
+                                          ItemsSource="{Binding ExportTypes}" SelectedItem="{Binding ExportType}"/>
+                                <Label Content="Dpi:" Margin="0" HorizontalAlignment="Center" VerticalContentAlignment="Center"/>
+                                <local:DoubleTextBoxControl  Width="30" Height="24"
+                                                             Text="{Binding Dpi}" VerticalContentAlignment="Center"
+                                                             HorizontalContentAlignment="Center"/>
+                            </StackPanel>
+                        </GroupBox>
                     </StackPanel>
 
                     <GridSplitter Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"

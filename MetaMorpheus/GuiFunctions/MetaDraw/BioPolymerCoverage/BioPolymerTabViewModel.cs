@@ -8,10 +8,12 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using System.Diagnostics;
 using Easy.Common.Extensions;
 using System.Diagnostics.CodeAnalysis;
-using System.Windows.Xps.Serialization;
+using System.Windows.Media.Imaging;
+using System.Windows.Media;
+using System.Windows;
+using System.IO;
 
 namespace GuiFunctions;
 
@@ -20,12 +22,13 @@ public class BioPolymerTabViewModel : BaseViewModel
     private Dictionary<string, IBioPolymer> _allBioPolymers;
     private MetaDrawLogic _metaDrawLogic;
 
-    public BioPolymerTabViewModel(MetaDrawLogic metaDrawLogic)
+    public BioPolymerTabViewModel(MetaDrawLogic metaDrawLogic, string exportDirectory = null)
     {
         IsDatabaseLoaded = false;
         _metaDrawLogic = metaDrawLogic;
         _allBioPolymers = new Dictionary<string, IBioPolymer>();
         AllGroups = new ObservableCollection<BioPolymerGroupViewModel>();
+        ExportDirectory = exportDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
         LoadDatabaseCommand = new RelayCommand(LoadDatabase);
         ResetDatabaseCommand = new RelayCommand(ResetDatabase);
@@ -276,10 +279,73 @@ public class BioPolymerTabViewModel : BaseViewModel
 
     #region Image Export
 
+    private string _exportDirectory;
+    public string ExportDirectory
+    {
+        get
+        {
+            if (!Directory.Exists(_exportDirectory))
+                Directory.CreateDirectory(_exportDirectory);
+            return _exportDirectory;
+        }
+        set
+        {
+            _exportDirectory = value;
+            OnPropertyChanged(nameof(ExportDirectory));
+        }
+    }
     public ICommand ExportImageCommand { get; set; }
 
     private void ExportImage()
     {
+        // Get the DrawingImage from the CoverageMapViewModel
+        var drawingImage = CoverageMapViewModel.CoverageDrawing;
+        if (drawingImage == null)
+            return;
+
+        // Use the DrawingImage's dimensions for export
+        double width = 800;
+        double height = 480;
+        if (drawingImage.Drawing != null)
+        {
+            Rect bounds = drawingImage.Drawing.Bounds;
+            if (!bounds.IsEmpty && bounds.Width > 0 && bounds.Height > 0)
+            {
+                width = bounds.Width;
+                height = bounds.Height;
+            }
+        }
+
+        var drawingVisual = new DrawingVisual();
+        using (var dc = drawingVisual.RenderOpen())
+        {
+            dc.DrawImage(drawingImage, new Rect(0, 0, width, height));
+        }
+
+        // Use MetaDrawSettings.CanvasPdfExportDpi for DPI
+        double dpi = MetaDrawSettings.CanvasPdfExportDpi;
+        var rtb = new RenderTargetBitmap(
+            (int)Math.Ceiling(width * dpi / 96.0),
+            (int)Math.Ceiling(height * dpi / 96.0),
+            dpi, dpi, PixelFormats.Pbgra32);
+        rtb.Render(drawingVisual);
+
+        string path = Path.Combine(ExportDirectory, $"{SelectedGroup.Accession}_SequenceCoverage.{MetaDrawSettings.ExportType}");
+
+        // Convert RenderTargetBitmap to System.Drawing.Bitmap
+        using (var ms = new MemoryStream())
+        {
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(rtb));
+            encoder.Save(ms);
+            ms.Seek(0, SeekOrigin.Begin);
+            using (var bmp = new System.Drawing.Bitmap(ms))
+            {
+                MetaDrawLogic.ExportBitmap(bmp, path);
+            }
+        }
+
+        MessageBoxHelper.Show($"Exported Coverage Plot to {path}");
     }
 
     #endregion

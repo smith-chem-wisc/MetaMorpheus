@@ -56,7 +56,8 @@
                 <Border Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="Black" 
                     BorderThickness="0,0,0,1" Margin="5 2" >
                     <DockPanel  LastChildFill="True" Margin="0 0 0 2">
-                        <Button Name="LoadDatabase" Content="Load Files" Width="80" Command="{Binding LoadDatabaseCommand}"/>
+                        <Button Name="LoadDatabase" Content="Load Files" Width="80" 
+                                Command="{Binding LoadDatabaseCommand}"/>
                         <TextBox Width="140"  DockPanel.Dock="Right" VerticalContentAlignment="Center"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                         <Label HorizontalAlignment="Right" Height="28">Search</Label>
@@ -94,11 +95,12 @@
                 </GroupBox>
 
                 <!-- Export -->
-                <DockPanel Grid.Row="5" LastChildFill="True" Grid.ColumnSpan="3"  >
-                    <Label Content="Export As: " Width="75"  DockPanel.Dock="Left"/>
-                    <Button Name="ExportBioPolymerCoverage" Content="{Binding ExportType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
-                        DockPanel.Dock="Left" IsEnabled="False" Width="40" Command="{Binding ExportImageCommand}"
-                        Margin="5 0 5 0"/>
+                <DockPanel Grid.Row="5" LastChildFill="True"  HorizontalAlignment="Center">
+                    <Label Content="Export As: "  DockPanel.Dock="Left"/>
+                    <Button Name="ExportBioPolymerCoverage" Width="40" HorizontalAlignment="Left"
+                            Style="{StaticResource MetaDrawButtonStyle}"
+                            Content="{Binding ExportType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
+                            Command="{Binding ExportImageCommand}"/>
 
                 </DockPanel>
             </Grid>
@@ -133,11 +135,9 @@
                               CanUserDeleteRows="false" CanUserAddRows="false" SelectionMode="Single"
                               SelectionChanged="BioPolymerDataGrid_OnSelectionChanged"
                               ItemsSource="{Binding SelectedGroup.CoverageResults}" >
-                        
-                    </DataGrid>
-                    
-                </Expander>
 
+                    </DataGrid>
+                </Expander>
             </Grid>
         </Grid>
     </DockPanel>

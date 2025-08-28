@@ -542,6 +542,7 @@ namespace MetaMorpheusGUI
             ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles, directoryPath);
             ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
 
+            BioPolymerTabViewModel.ExportDirectory = directoryPath;
             if (BioPolymerTabViewModel.IsDatabaseLoaded)
                 BioPolymerTabViewModel.ProcessSpectralMatches(MetaDrawLogic.AllSpectralMatches);
 
