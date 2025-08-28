@@ -215,7 +215,7 @@ namespace EngineLayer.DIA
 
         public static Ms2ScanWithSpecificMass GetPseudoMs2ScanFromPfGroup(PrecursorFragmentsGroup pfGroup, PseudoMs2ConstructionType pseudoMs2ConstructionType, CommonParameters commonParameters, string dataFilePath)
         {
-            pfGroup.PFpairs.Sort((a, b) => a.FragmentXic.AveragedM.CompareTo(b.FragmentXic.AveragedM));
+            pfGroup.PFpairs.Sort((a, b) => a.FragmentXic.AveragedMassOrMz.CompareTo(b.FragmentXic.AveragedMassOrMz));
             var mzs = pfGroup.PFpairs.Select(pf => (double)pf.FragmentXic.Peaks.First().M).ToArray();
             var intensities = pfGroup.PFpairs.Select(pf => (double)pf.FragmentXic.Peaks.First().Intensity).ToArray();
             var newMs2Scan = new MsDataScan(new MzSpectrum(mzs, intensities, false), pfGroup.PFgroupIndex, 2, true, Polarity.Positive, pfGroup.PrecursorXic.ApexRT, new MzRange(mzs.Min(), mzs.Max()), null, MZAnalyzerType.Unknown, intensities.Sum(), null, null, null, oneBasedPrecursorScanNumber: pfGroup.PFgroupIndex);
@@ -228,7 +228,7 @@ namespace EngineLayer.DIA
                     break;
                 case PseudoMs2ConstructionType.Mass:
                     neutralExperimentalFragments = pfGroup.PFpairs.Select(pf => new IsotopicEnvelope(1,
-                            new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.AveragedM, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
+                            new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.AveragedMassOrMz, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
                     break;
                 default:
                     throw new ArgumentException("Invalid pseudo MS2 construction type specified.");
