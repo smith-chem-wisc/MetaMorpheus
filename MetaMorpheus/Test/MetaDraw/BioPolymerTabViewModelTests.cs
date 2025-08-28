@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
-using GuiFunctions.MetaDraw.BioPolymerCoverage;
 using NUnit.Framework;
 using Omics;
 using Proteomics;

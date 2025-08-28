@@ -40,18 +40,8 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
     // Call this from the view when the canvas size changes
     public void UpdateLettersPerRow(double availableWidth)
     {
-        int size;
-        try
-        {
-            size = MetaDrawSettings.BioPolymerCoverageFontSize;
-        }
-        catch
-        {
-            size = 16; // default
-        }
-
         _availableWidth = availableWidth;
-        int newLetters = Math.Max(10, (int)(availableWidth / (size * 0.70)));
+        int newLetters = Math.Max(10, (int)(availableWidth / (MetaDrawSettings.BioPolymerCoverageFontSize * 0.70)));
         if (newLetters != LettersPerRow)
             LettersPerRow = newLetters;
         else
@@ -82,8 +72,6 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
 
         int nRows = (seq.Length + lettersPerRow - 1) / lettersPerRow;
         var rowRectangles = new Dictionary<int, List<(int startCol, int endCol)>>();
-
-        var typesInUse = results.Select(r => r.CoverageType).Distinct().ToList();
 
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())
@@ -135,14 +123,14 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                                               .ToDictionary(g => g.Key, g => g.Count());
 
             // 2) Oligos/Peptides/Matches label
-            string unitLabel = GuessUnitLabel(filteredResults.FirstOrDefault()?.Match);
+            string unitLabel = filteredResults.FirstOrDefault()?.Match.GetDigestionProductLabel();
 
             // 3) Build ordered legend items that actually exist
             var legendItems = new List<(BioPolymerCoverageType Type, FormattedText Text)>();
             foreach (var t in LegendOrder)
             {
                 if (!countsByType.TryGetValue(t, out int count) || count == 0) continue;
-                string label = $"{HumanizeCoverageType(t)} {unitLabel}: {count}";
+                string label = $"{BaseViewModel.AddSpaces(t.ToString())} {unitLabel}: {count}";
                 var ft = new FormattedText(
                     label,
                     System.Globalization.CultureInfo.CurrentCulture,
@@ -411,25 +399,4 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         BioPolymerCoverageType.Shared,
         BioPolymerCoverageType.SharedMissedCleavage
     };
-
-    private static string HumanizeCoverageType(BioPolymerCoverageType t) => t switch
-    {
-        BioPolymerCoverageType.Unique => "Unique",
-        BioPolymerCoverageType.UniqueMissedCleavage => "Unique Missed Cleavages",
-        BioPolymerCoverageType.TandemRepeat => "Tandem Repeat",
-        BioPolymerCoverageType.TandemRepeatMissedCleavage => "Tandem Repeat Missed Cleavages",
-        BioPolymerCoverageType.Shared => "Shared",
-        BioPolymerCoverageType.SharedMissedCleavage => "Shared Missed Cleavages",
-        _ => t.ToString()
-    };
-
-    // Safer than hard-referencing OsmFromTsv / PsmFromTsv types:
-    private static string GuessUnitLabel(object match)
-    {
-        if (match is null) return "Matches";
-        var n = match.GetType().Name;
-        if (n.IndexOf("Osm", StringComparison.OrdinalIgnoreCase) >= 0) return "Oligos";
-        if (n.IndexOf("Psm", StringComparison.OrdinalIgnoreCase) >= 0) return "Peptides";
-        return "Matches";
-    }
 }

@@ -47,9 +47,17 @@ namespace GuiFunctions
 
         public static bool IsPeptide(this SpectrumMatchFromTsv sm)
         {
-            //if (sm is OsmFromTsv)
-            //    return false;
+            if (sm is OsmFromTsv)
+                return false;
             return true;
+        }
+
+        public static string GetDigestionProductLabel(this SpectrumMatchFromTsv sm)
+        {
+            if (sm.IsPeptide())
+                return "Pepide";
+            else
+                return "Oligo";
         }
 
         public static IBioPolymerWithSetMods ToBioPolymerWithSetMods(this SpectrumMatchFromTsv sm, string fullSequence = null)

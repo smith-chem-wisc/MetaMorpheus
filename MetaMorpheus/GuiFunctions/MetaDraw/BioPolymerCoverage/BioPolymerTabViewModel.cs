@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -252,7 +253,8 @@ public class BioPolymerTabViewModel : BaseViewModel
                     }
                     else
                     {
-
+                        // If you hit this, congratulations, you found a new unique case that has yet to be handled
+                        Debugger.Break(); 
                     }
                 }
             }
