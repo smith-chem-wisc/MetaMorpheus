@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using MassSpectrometry;
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace EngineLayer.DIA
 {
@@ -15,16 +16,14 @@ namespace EngineLayer.DIA
         public float ApexRTTolerance { get; set; }
         public double OverlapThreshold { get; set; }
         public double CorrelationThreshold { get; set; }
-        public SortedDictionary<double, List<ExtractedIonChromatogram>> ApexSortedFragmentXics { get; set; }
 
-        public XicGroupingEngine(List<ExtractedIonChromatogram> fragmentXics, float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0)
+        public XicGroupingEngine(float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0)
         {
             ApexRTTolerance = apexRTTolerance;
             OverlapThreshold = overlapThreshold;
             CorrelationThreshold = correlationThreshold;
             MaxThreadsForGrouping = maxThreadsForGrouping;
             MinFragmentCountForPfGroup = minFragmentCountForGrouping;
-            ApexSortedFragmentXics = BuildApexSortedXics(fragmentXics);
         }
 
         /// <summary>
@@ -33,6 +32,7 @@ namespace EngineLayer.DIA
         public override List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments)
         {
             var pfGroups = new List<PrecursorFragmentsGroup>();
+            var apexSortedFragmentXics = BuildApexSortedXics(fragments);
 
             Parallel.ForEach(Partitioner.Create(0, precursors.Count), new ParallelOptions { MaxDegreeOfParallelism = MaxThreadsForGrouping },
                 (partitionRange, loopState) =>
@@ -40,7 +40,8 @@ namespace EngineLayer.DIA
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
                         var precursor = precursors[i];
-                        var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragments, ApexRTTolerance, OverlapThreshold, CorrelationThreshold, MinFragmentCountForPfGroup);
+                        var fragmentsInRange = GetXicsInRange(apexSortedFragmentXics, precursor.ApexRT, ApexRTTolerance);
+                        var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragmentsInRange, ApexRTTolerance, OverlapThreshold, CorrelationThreshold, MinFragmentCountForPfGroup);
                         if (pfGroup != null)
                         {
                             lock (pfGroups)
@@ -59,17 +60,14 @@ namespace EngineLayer.DIA
             var pfPairs = new List<PrecursorFragmentPair>();
             foreach (var fragmentXic in fragmentXics)
             {
-                if (Math.Abs(fragmentXic.ApexRT - precursorXic.ApexRT) <= apexRtTolerance)
+                double overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(precursorXic, fragmentXic);
+                if (overlap >= overlapThreshold)
                 {
-                    double overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(precursorXic, fragmentXic);
-                    if (overlap >= overlapThreshold)
+                    double correlation = PrecursorFragmentsGroup.CalculateXicCorrelation(precursorXic, fragmentXic);
+                    if (correlation >= correlationThreshold)
                     {
-                        double correlation = PrecursorFragmentsGroup.CalculateXicCorrelation(precursorXic, fragmentXic);
-                        if (correlation >= correlationThreshold)
-                        {
-                            var pfPair = new PrecursorFragmentPair(precursorXic, fragmentXic, correlation, overlap);
-                            pfPairs.Add(pfPair);
-                        }
+                        var pfPair = new PrecursorFragmentPair(precursorXic, fragmentXic, correlation, overlap);
+                        pfPairs.Add(pfPair);
                     }
                 }
             }
@@ -92,6 +90,15 @@ namespace EngineLayer.DIA
                 tree[roundedApexRt].Add(xic);
             }
             return tree;
+        }
+
+        protected static List<ExtractedIonChromatogram> GetXicsInRange(SortedDictionary<double, List<ExtractedIonChromatogram>> apexSortedFragmentXics, double targetApexRt, double rtTolerance)
+        {
+            double minRt = Math.Round(targetApexRt - rtTolerance, 2);
+            double maxRt = Math.Round(targetApexRt + rtTolerance, 2);
+
+            var subset = apexSortedFragmentXics.Where(kvp => kvp.Key >= minRt && kvp.Key <= maxRt).SelectMany(kvp => kvp.Value).ToList();
+            return subset;
         }
     }
 }
