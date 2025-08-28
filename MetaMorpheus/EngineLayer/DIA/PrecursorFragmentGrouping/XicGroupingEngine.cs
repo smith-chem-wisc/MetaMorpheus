@@ -35,7 +35,7 @@ namespace EngineLayer.DIA
 
         public override List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, IEnumerable<ExtractedIonChromatogram> fragments)
         {
-            var pfGroups = new List<PrecursorFragmentsGroup>();
+            var pfGroups = new ConcurrentBag<PrecursorFragmentsGroup>();
             var apexSortedFragmentXics = BuildApexSortedXics(fragments);
 
             Parallel.ForEach(Partitioner.Create(0, precursors.Count), new ParallelOptions { MaxDegreeOfParallelism = MaxThreadsForGrouping },
@@ -48,19 +48,20 @@ namespace EngineLayer.DIA
                         var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragmentsInRange);
                         if (pfGroup != null)
                         {
-                            lock (pfGroups)
-                                pfGroups.Add(pfGroup);
+                            pfGroups.Add(pfGroup);
                         }
                     }
                 });
 
+            var pfGroupsList = pfGroups.ToList();
+
             //Filter precursor-fragment pairs by rank if rank thresholds are set
-            FilterPfPairsByRank(pfGroups, PrecursorRankThreshold, FragmentRankThreshold);
+            FilterPfPairsByRank(pfGroupsList, PrecursorRankThreshold, FragmentRankThreshold);
 
             //Remove groups with insufficient fragment pairs after filtering
-            pfGroups.RemoveAll(g => g.PFpairs.Count < MinFragmentCountForPfGroup);
+            pfGroupsList.RemoveAll(g => g.PFpairs.Count < MinFragmentCountForPfGroup);
 
-            return pfGroups;
+            return pfGroupsList;
         }
 
         public virtual PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, IEnumerable<ExtractedIonChromatogram> fragmentXics)
