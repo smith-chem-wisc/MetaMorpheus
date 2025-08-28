@@ -106,6 +106,7 @@ public class BioPolymerTabViewModel : BaseViewModel
         DatabaseName = string.Empty;
         _allBioPolymers.Clear();
         AllGroups.Clear();
+        FilteredGroups.Clear();
     }
 
     #endregion
@@ -261,8 +262,9 @@ public class BioPolymerTabViewModel : BaseViewModel
 
             var group = new BioPolymerGroupViewModel(accessionToGroup, bioPolymer.Name, bioPolymer.BaseSequence, processedResults);
             AllGroups.Add(group);
-            UpdateFilteredGroups();
         }
+
+        UpdateFilteredGroups();
     }
 
     private void UpdateFilteredGroups()
@@ -273,7 +275,7 @@ public class BioPolymerTabViewModel : BaseViewModel
             : AllGroups.Where(g =>
                 (g.Accession?.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
                 (g.ProteinName?.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0));
-        foreach (var group in query)
+        foreach (var group in query.OrderByDescending(p => p.UniqueSequenceCoverage).ThenByDescending(p => p.MaximumSequenceCoverage))
             FilteredGroups.Add(group);
     }
 

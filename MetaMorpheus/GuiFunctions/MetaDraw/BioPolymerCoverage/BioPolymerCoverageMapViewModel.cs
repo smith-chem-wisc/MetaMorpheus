@@ -51,7 +51,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         }
 
         _availableWidth = availableWidth;
-        int newLetters = Math.Max(10, (int)(availableWidth / (size * 0.8)));
+        int newLetters = Math.Max(10, (int)(availableWidth / (size * 0.70)));
         if (newLetters != LettersPerRow)
             LettersPerRow = newLetters;
         else
@@ -68,6 +68,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
 
         var seq = Group.Sequence;
         var results = Group.CoverageResults;
+        var filteredResults = results.Where(p => MetaDrawSettings.FilterAcceptsPsm(p.Match)).ToList();
         int lettersPerRow = LettersPerRow;
         double fontSize = MetaDrawSettings.BioPolymerCoverageFontSize;
 
@@ -87,52 +88,127 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())
         {
-            // --- Legend at the top, centered horizontally ---
+            // --- Header metrics + legend (centered) ---
             double legendBoxSize = fontSize * 0.8;
             double legendSpacing = fontSize * 0.5;
-            double legendY = legendSpacing;
+            double dpi = MetaDrawSettings.CanvasPdfExportDpi;
+            double headerTop = legendSpacing;
 
-            // Calculate legend total width
-            double legendTotalWidth = 0;
-            var legendEntries = new List<(BioPolymerCoverageType type, double textWidth, FormattedText text)>();
-            foreach (var type in typesInUse)
+            // === Metrics: Unique Coverage / Maximum Coverage (counts only) ===
+            int seqLen = seq.Length;
+            var anyCovered = new bool[seqLen];
+            var uniqueCovered = new bool[seqLen];
+
+            foreach (var r in filteredResults)
             {
-                var text = AddSpaces(type.ToString());
-                var formattedText = new FormattedText(
-                    text,
+                bool isUnique = r.CoverageType == BioPolymerCoverageType.Unique
+                             || r.CoverageType == BioPolymerCoverageType.UniqueMissedCleavage;
+
+                int s = Math.Max(1, r.Start) - 1;
+                int e = Math.Min(seqLen, r.End) - 1;
+                for (int i = s; i <= e; i++)
+                {
+                    anyCovered[i] = true;
+                    if (isUnique) uniqueCovered[i] = true;
+                }
+            }
+            int uniqueCoveredCount = uniqueCovered.Count(b => b);
+            int maxCoveredCount = anyCovered.Count(b => b);
+
+            var metricsText = $"Unique Coverage: {uniqueCoveredCount}/{seqLen} ({Math.Round(100 * uniqueCoveredCount / (double)seqLen, 2)}%)   |   Maximum Coverage: {maxCoveredCount}/{seqLen} ({Math.Round(100 * maxCoveredCount / (double)seqLen ,2)}%)";
+            var metricsFt = new FormattedText(
+                metricsText,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Segoe UI"),
+                fontSize * 0.9,
+                Brushes.Black,
+                dpi);
+
+            double metricsX = plotMargin + (usableWidth - metricsFt.Width) / 2;
+            double metricsY = headerTop;
+            dc.DrawText(metricsFt, new Point(metricsX, metricsY));
+
+            // === Legend ===
+            // 1) counts by type from the filtered (visible) set
+            var countsByType = filteredResults.GroupBy(r => r.CoverageType)
+                                              .ToDictionary(g => g.Key, g => g.Count());
+
+            // 2) Oligos/Peptides/Matches label
+            string unitLabel = GuessUnitLabel(filteredResults.FirstOrDefault()?.Match);
+
+            // 3) Build ordered legend items that actually exist
+            var legendItems = new List<(BioPolymerCoverageType Type, FormattedText Text)>();
+            foreach (var t in LegendOrder)
+            {
+                if (!countsByType.TryGetValue(t, out int count) || count == 0) continue;
+                string label = $"{HumanizeCoverageType(t)} {unitLabel}: {count}";
+                var ft = new FormattedText(
+                    label,
                     System.Globalization.CultureInfo.CurrentCulture,
                     FlowDirection.LeftToRight,
                     new Typeface("Segoe UI"),
                     fontSize * 0.8,
                     Brushes.Black,
-                    VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip);
-
-                legendEntries.Add((type, formattedText.Width, formattedText));
-                legendTotalWidth += legendBoxSize + 6 + formattedText.Width + 24;
+                    dpi);
+                legendItems.Add((t, ft));
             }
-            if (legendTotalWidth > 0)
-                legendTotalWidth -= 24; // Remove last extra spacing
 
+            double legendLineHeight = legendItems.Count == 0
+                ? 0
+                : Math.Max(legendBoxSize, legendItems.Max(li => li.Text.Height));
+
+            // Separator " | "
+            var sepFt = new FormattedText(
+                "\t",
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Segoe UI"),
+                fontSize * 0.8,
+                Brushes.DimGray,
+                dpi);
+
+            // Total legend width
+            double legendTotalWidth = 0;
+            for (int i = 0; i < legendItems.Count; i++)
+            {
+                legendTotalWidth += legendBoxSize + 6 + legendItems[i].Text.Width;
+                if (i < legendItems.Count - 1) legendTotalWidth += sepFt.Width;
+            }
+
+            double legendY = metricsY + metricsFt.Height + legendSpacing;
             double legendX = plotMargin + (usableWidth - legendTotalWidth) / 2;
 
-            // Draw the legend
-            foreach (var (type, textWidth, formattedText) in legendEntries)
+            // Draw legend
+            for (int i = 0; i < legendItems.Count; i++)
             {
+                var (type, text) = legendItems[i];
                 var brush = MetaDrawSettings.BioPolymerCoverageColors[type];
-                var rect = new Rect(legendX, legendY, legendBoxSize, legendBoxSize);
-                dc.DrawRoundedRectangle(brush, null, rect, 4, 4);
 
-                // Vertically center the text with respect to the color box
-                double textY = legendY + (legendBoxSize - formattedText.Height) / 2;
-                dc.DrawText(formattedText, new Point(legendX + legendBoxSize + 6, textY));
-                legendX += legendBoxSize + 6 + textWidth + 24;
+                // color square
+                var rect = new Rect(legendX, legendY + (legendLineHeight - legendBoxSize) / 2, legendBoxSize, legendBoxSize);
+                dc.DrawRoundedRectangle(brush, null, rect, 4, 4);
+                legendX += legendBoxSize + 6;
+
+                // label
+                double textY = legendY + (legendLineHeight - text.Height) / 2;
+                dc.DrawText(text, new Point(legendX, textY));
+                legendX += text.Width;
+
+                if (i < legendItems.Count - 1)
+                {
+                    double sepY = legendY + (legendLineHeight - sepFt.Height) / 2;
+                    dc.DrawText(sepFt, new Point(legendX, sepY));
+                    legendX += sepFt.Width;
+                }
             }
 
-            // --- Offset plot below the legend ---
-            double plotYOffset = legendBoxSize + legendSpacing * 2;
+            // --- Offset plot below header block (metrics + optional legend) ---
+            double headerBlockHeight = metricsFt.Height + (legendItems.Count > 0 ? (legendSpacing + legendLineHeight) : 0);
+            double plotYOffset = headerTop + headerBlockHeight + legendSpacing;
 
             // --- Draw rectangles for each peptide, with jitter for overlaps ---
-            foreach (var res in results.Where(p => MetaDrawSettings.FilterAcceptsPsm(p.Match)))
+            foreach (var res in filteredResults)
             {
                 int startIdx = res.Start - 1;
                 int endIdx = res.End - 1;
@@ -248,15 +324,41 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             }
 
             // --- Draw letters, bold and evenly spaced, with margin ---
-            for (int i = 0; i < seq.Length; i++)
+            // Add row index labels on both sides
+            // Draw the letters for this row and determine the vertical alignment
+            for (int row = 0; row < nRows; row++)
             {
-                int row = i / lettersPerRow;
-                int col = i % lettersPerRow;
-                double x = plotMargin + col * letterWidth;
+                int rowStartIdx = row * lettersPerRow;
+                int rowEndIdx = Math.Min(seq.Length, (row + 1) * lettersPerRow) - 1;
                 double y = plotYOffset + row * (letterHeight + yPad + rectHeight * 2);
 
-                var formattedText = new FormattedText(
-                    seq[i].ToString(),
+                // Prepare left/right labels
+                var leftLabelText = (rowStartIdx + 1).ToString();
+                var rightLabelText = (rowEndIdx + 1).ToString();
+                var labelFontSize = Math.Max(6, fontSize - 4);
+
+                var leftLabel = new FormattedText(
+                    leftLabelText,
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    new Typeface("Segoe UI"),
+                    labelFontSize,
+                    Brushes.DimGray,
+                    VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip);
+
+                var rightLabel = new FormattedText(
+                    rightLabelText,
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    new Typeface("Segoe UI"),
+                    labelFontSize,
+                    Brushes.DimGray,
+                    VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip);
+
+                // Use the first letter in the row for vertical alignment
+                int firstIdx = rowStartIdx;
+                var letterText = new FormattedText(
+                    seq[firstIdx].ToString(),
                     System.Globalization.CultureInfo.CurrentCulture,
                     FlowDirection.LeftToRight,
                     new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
@@ -264,11 +366,70 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                     Brushes.Black,
                     VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip);
 
-                double centeredX = x + (letterWidth - formattedText.Width) / 2;
-                dc.DrawText(formattedText, new Point(centeredX, y));
+                // Align baselines: offset so that the baseline of the label matches the baseline of the letter
+                double baselineOffset = y + letterText.Baseline - leftLabel.Baseline;
+
+                double leftLabelX = plotMargin - leftLabel.Width - 6;
+                double rightLabelX = plotMargin + usableWidth + 6;
+
+                dc.DrawText(leftLabel, new Point(leftLabelX, baselineOffset));
+                dc.DrawText(rightLabel, new Point(rightLabelX, baselineOffset));
+
+                // Draw the letters for this row
+                for (int col = 0; col < lettersPerRow; col++)
+                {
+                    int i = rowStartIdx + col;
+                    if (i >= seq.Length)
+                        break;
+
+                    double x = plotMargin + col * letterWidth;
+                    var formattedText = new FormattedText(
+                        seq[i].ToString(),
+                        System.Globalization.CultureInfo.CurrentCulture,
+                        FlowDirection.LeftToRight,
+                        new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
+                        fontSize,
+                        Brushes.Black,
+                        VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip);
+
+                    double centeredX = x + (letterWidth - formattedText.Width) / 2;
+                    dc.DrawText(formattedText, new Point(centeredX, y));
+                }
             }
         }
 
         CoverageDrawing = new DrawingImage(dv.Drawing);
+    }
+
+    // Preferred legend order
+    private static readonly BioPolymerCoverageType[] LegendOrder =
+    {
+        BioPolymerCoverageType.Unique,
+        BioPolymerCoverageType.UniqueMissedCleavage,
+        BioPolymerCoverageType.TandemRepeat,
+        BioPolymerCoverageType.TandemRepeatMissedCleavage,
+        BioPolymerCoverageType.Shared,
+        BioPolymerCoverageType.SharedMissedCleavage
+    };
+
+    private static string HumanizeCoverageType(BioPolymerCoverageType t) => t switch
+    {
+        BioPolymerCoverageType.Unique => "Unique",
+        BioPolymerCoverageType.UniqueMissedCleavage => "Unique Missed Cleavages",
+        BioPolymerCoverageType.TandemRepeat => "Tandem Repeat",
+        BioPolymerCoverageType.TandemRepeatMissedCleavage => "Tandem Repeat Missed Cleavages",
+        BioPolymerCoverageType.Shared => "Shared",
+        BioPolymerCoverageType.SharedMissedCleavage => "Shared Missed Cleavages",
+        _ => t.ToString()
+    };
+
+    // Safer than hard-referencing OsmFromTsv / PsmFromTsv types:
+    private static string GuessUnitLabel(object match)
+    {
+        if (match is null) return "Matches";
+        var n = match.GetType().Name;
+        if (n.IndexOf("Osm", StringComparison.OrdinalIgnoreCase) >= 0) return "Oligos";
+        if (n.IndexOf("Psm", StringComparison.OrdinalIgnoreCase) >= 0) return "Peptides";
+        return "Matches";
     }
 }

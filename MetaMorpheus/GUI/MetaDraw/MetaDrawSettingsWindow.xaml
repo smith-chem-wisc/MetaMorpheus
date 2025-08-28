@@ -626,6 +626,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Column="0" Grid.Row="0" Margin="5 0 0 0">
@@ -692,31 +693,42 @@
                                   Background="Silver"
                                   Width="2" />
 
-                    <GroupBox Grid.Row="0" Grid.Column="2" Header="Colors">
-                        <ItemsControl ItemsSource="{Binding}" HorizontalContentAlignment="Stretch"
-                                      DataContext="{Binding BioPolymerCoverageColors}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Name, FallbackValue='y - ion'}"
-                                                   Margin="0 0 15 0" Width="190" TextAlignment="Center" />
-                                        <Ellipse Width="12" Height="12"
-                                                 Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}"
-                                                 StrokeThickness="1"
-                                                 Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
-                                        <ComboBox Width="100" HorizontalAlignment="Right" Margin="5 0 5 0"
-                                                  HorizontalContentAlignment="Center"
-                                                  SelectedItem="{Binding SelectedColor}"
-                                                  SelectionChanged="ComboBox_SelectionChanged_2"
-                                                  ItemsSource="{Binding Path=DataContext.PossibleColors, 
-                                      RelativeSource={RelativeSource Mode=FindAncestor, 
-                                      AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
-                                        </ComboBox>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </GroupBox>
+                    <StackPanel Grid.Row="0" Grid.Column="2">
+                        <GroupBox Header="Colors">
+                            <ItemsControl ItemsSource="{Binding}" HorizontalContentAlignment="Stretch"
+                                          DataContext="{Binding BioPolymerCoverageColors}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Name, FallbackValue='y - ion'}"
+                                                       Margin="0 0 15 0" Width="190" TextAlignment="Center" />
+                                            <Ellipse Width="12" Height="12"
+                                                     Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}"
+                                                     StrokeThickness="1"
+                                                     Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
+                                            <ComboBox Width="100" HorizontalAlignment="Right" Margin="5 0 5 0"
+                                                      HorizontalContentAlignment="Center"
+                                                      SelectedItem="{Binding SelectedColor}"
+                                                      SelectionChanged="ComboBox_SelectionChanged_2"
+                                                      ItemsSource="{Binding Path=DataContext.PossibleColors, 
+                                                        RelativeSource={RelativeSource Mode=FindAncestor, 
+                                                        AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </GroupBox>
+                        <GroupBox  Header="Settings">
+                            <StackPanel Margin="5" Orientation="Horizontal">
+                                <Label Content="Text Size: " Width="80" />
+                                <local:IntegerTexBoxControl Width="80" Height="24"
+                                                            VerticalContentAlignment="Center"
+                                                            HorizontalContentAlignment="Center"
+                                                            Text="{Binding BioPolymerCoverageFontSize}"/>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
                 </Grid>
             </TabItem>
         </TabControl>
