@@ -12,7 +12,7 @@ namespace EngineLayer;
 [ExcludeFromCodeCoverage]
 public class OligoSpectralMatch : SpectralMatch
 {
-    public OligoSpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex,
+    public OligoSpectralMatch(IBioPolymerWithSetMods peptide, double notch, double score, int scanIndex,
         Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons) 
         : base(peptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
     {

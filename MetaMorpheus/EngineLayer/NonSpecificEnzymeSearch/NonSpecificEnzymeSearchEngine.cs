@@ -125,8 +125,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 {
                                     PeptideWithSetModifications peptide = PeptideIndex[id];
                                     peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
-                                    Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor, semiSpecificSearch);
-                                    int notch = notchAndUpdatedPeptide.Item1;
+                                    Tuple<double, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor, semiSpecificSearch);
+                                    double notch = notchAndUpdatedPeptide.Item1;
                                     if (notch >= 0)
                                     {
                                         peptide = notchAndUpdatedPeptide.Item2;
@@ -316,7 +316,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
         }
 
-        private Tuple<int, PeptideWithSetModifications> Accepts(List<Product> fragments, double scanPrecursorMass, PeptideWithSetModifications peptide, FragmentationTerminus fragmentationTerminus, MassDiffAcceptor searchMode, bool semiSpecificSearch)
+        private Tuple<double, PeptideWithSetModifications> Accepts(List<Product> fragments, double scanPrecursorMass, PeptideWithSetModifications peptide, FragmentationTerminus fragmentationTerminus, MassDiffAcceptor searchMode, bool semiSpecificSearch)
         {
             int localminPeptideLength = CommonParameters.DigestionParams.MinLength;
 
@@ -327,7 +327,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             {
                 Product fragment = fragments[i];
                 double theoMass = fragment.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragment.ProductType) + WaterMonoisotopicMass;
-                int notch = searchMode.Accepts(scanPrecursorMass, theoMass);
+                double notch = searchMode.Accepts(scanPrecursorMass, theoMass);
 
                 //check for terminal mods that might reach the observed mass
                 Modification terminalMod = null;
@@ -383,7 +383,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
                         updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, startResidue, peptide.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }
-                    return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
+                    return new Tuple<double, PeptideWithSetModifications>(notch, updatedPwsm);
                 }
                 else if (theoMass > scanPrecursorMass)
                 {
@@ -395,12 +395,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             if (peptide.BaseSequence.Length >= localminPeptideLength)
             {
                 double totalMass = peptide.MonoisotopicMass;// + Constants.ProtonMass;
-                int notch = searchMode.Accepts(scanPrecursorMass, totalMass);
+                double notch = searchMode.Accepts(scanPrecursorMass, totalMass);
                 if (notch >= 0)
                 {
                     //need to update so that the cleavage specificity is recorded
                     PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue, peptide.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 0, peptide.AllModsOneIsNterminus, peptide.NumFixedMods);
-                    return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
+                    return new Tuple<double, PeptideWithSetModifications>(notch, updatedPwsm);
                 }
                 else //try a terminal mod (if it exists)
                 {
@@ -429,13 +429,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 }
 
                                 PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue, peptide.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, peptide.NumFixedMods);
-                                return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
+                                return new Tuple<double, PeptideWithSetModifications>(notch, updatedPwsm);
                             }
                         }
                     }
                 }
             }
-            return new Tuple<int, PeptideWithSetModifications>(-1, null);
+            return new Tuple<double, PeptideWithSetModifications>(-1, null);
         }
 
         public static List<SpectralMatch> ResolveFdrCategorySpecificPsms(List<SpectralMatch>[] AllPsms, int numNotches, string taskId, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)

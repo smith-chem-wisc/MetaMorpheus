@@ -157,18 +157,25 @@ namespace EngineLayer.FdrAnalysis
             double cumulativeTarget = 0;
             double cumulativeDecoy = 0;
 
-            //set up arrays for local FDRs
-            double[] cumulativeTargetPerNotch = new double[MassDiffAcceptorNumNotches + 1];
-            double[] cumulativeDecoyPerNotch = new double[MassDiffAcceptorNumNotches + 1];
+            // set up dictionaries for local FDRs, using double as key for notch
+            Dictionary<double, double> cumulativeTargetPerNotch = new(MassDiffAcceptorNumNotches + 1);
+            Dictionary<double, double> cumulativeDecoyPerNotch = new(MassDiffAcceptorNumNotches + 1);
 
-            //Assign FDR values to PSMs
+            // Assign FDR values to PSMs
             foreach (var psm in psms)
             {
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
                 // we have to keep track of q-values separately for each notch
-                int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
+                double notch = psm.Notch ?? MassDiffAcceptorNumNotches;
+
+                // Ensure dictionary entries exist for this notch
+                if (!cumulativeTargetPerNotch.ContainsKey(notch))
+                    cumulativeTargetPerNotch[notch] = 0;
+                if (!cumulativeDecoyPerNotch.ContainsKey(notch))
+                    cumulativeDecoyPerNotch[notch] = 0;
+
                 if (psm.IsDecoy)
                 {
                     // in that case, count it as the fraction of decoy hits
@@ -193,28 +200,27 @@ namespace EngineLayer.FdrAnalysis
                     cumulativeTargetPerNotch[notch]++;
                 }
 
-                psm.GetFdrInfo(peptideLevelCalculation).CumulativeDecoy = cumulativeDecoy;
-                psm.GetFdrInfo(peptideLevelCalculation).CumulativeTarget = cumulativeTarget;
-                psm.GetFdrInfo(peptideLevelCalculation).CumulativeDecoyNotch = cumulativeDecoyPerNotch[notch];
-                psm.GetFdrInfo(peptideLevelCalculation).CumulativeTargetNotch = cumulativeTargetPerNotch[notch];
-
+                var fdrInfo = psm.GetFdrInfo(peptideLevelCalculation);
+                fdrInfo.CumulativeDecoy = cumulativeDecoy;
+                fdrInfo.CumulativeTarget = cumulativeTarget;
+                fdrInfo.CumulativeDecoyNotch = cumulativeDecoyPerNotch[notch];
+                fdrInfo.CumulativeTargetNotch = cumulativeTargetPerNotch[notch];
             }
 
             if (pepCalculation)
             {
-                PepQValueInverted(psms, peptideLevelAnalysis: peptideLevelCalculation);
+                PepQValueInverted(psms, peptideLevelCalculation);
             }
             else
             {
-                //the QValueThreshodOverride condition here can be problematic in unit tests. 
+                // the QValueThreshodOverride condition here can be problematic in unit tests. 
                 if (psms.Count < PsmCountThresholdForInvertedQvalue && !QvalueThresholdOverride)
                 {
-
-                   QValueTraditional(psms, peptideLevelAnalysis: peptideLevelCalculation);
+                    QValueTraditional(psms, peptideLevelCalculation);
                 }
                 else
                 {
-                    QValueInverted(psms, peptideLevelAnalysis: peptideLevelCalculation);
+                    QValueInverted(psms, peptideLevelCalculation);
                 }
             }
         }
@@ -225,13 +231,18 @@ namespace EngineLayer.FdrAnalysis
         private void QValueTraditional(List<SpectralMatch> psms, bool peptideLevelAnalysis)
         {
             double qValue = 0;
-            double[] qValueNotch = new double[MassDiffAcceptorNumNotches + 1];
+            Dictionary<double, double> qValueNotch = new(MassDiffAcceptorNumNotches + 1);
 
             for (int i = 0; i < psms.Count; i++)
             {
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
-                int notch = psms[i].Notch ?? MassDiffAcceptorNumNotches;
+                double notch = psms[i].Notch ?? MassDiffAcceptorNumNotches;
+
+                // Ensure dictionary entry exists for this notch
+                if (!qValueNotch.ContainsKey(notch))
+                    qValueNotch[notch] = 0;
+
                 qValue = Math.Max(qValue, psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoy / Math.Max(psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeTarget, 1));
                 qValueNotch[notch] = Math.Max(qValueNotch[notch], psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoyNotch / Math.Max(psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeTargetNotch, 1));
 
@@ -242,34 +253,42 @@ namespace EngineLayer.FdrAnalysis
 
         private void QValueInverted(List<SpectralMatch> psms, bool peptideLevelAnalysis)
         {
-            double[] qValueNotch = new double[MassDiffAcceptorNumNotches + 1];
-            bool[] qValueNotchCalculated = new bool[MassDiffAcceptorNumNotches + 1];
+            var qValueNotch = new Dictionary<double, double>(MassDiffAcceptorNumNotches + 1);
+            var qValueNotchCalculated = new HashSet<double>();
             psms.Reverse();
-            //this calculation is performed from bottom up. So, we begin the loop by computing qValue
-            //and qValueNotch for the last/lowest scoring psm in the bunch
-            double qValue = (psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoy + 1) / psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeTarget;
+            // this calculation is performed from bottom up. So, we begin the loop by computing qValue
+            // and qValueNotch for the last/lowest scoring psm in the bunch
+            double qValue = (psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoy + 1) / Math.Max(psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeTarget, 1);
 
-            //Assign FDR values to PSMs
             for (int i = 0; i < psms.Count; i++)
             {
-                // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
-                int notch = psms[i].Notch ?? MassDiffAcceptorNumNotches;
+                double notch = psms[i].Notch ?? MassDiffAcceptorNumNotches;
 
-                // populate the highest q-Value for each notch 
-                if (!qValueNotchCalculated[notch])
+                // Ensure dictionary entry exists for this notch
+                if (!qValueNotch.ContainsKey(notch))
                 {
-                    qValueNotch[notch] = (psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoyNotch + 1) / psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeTargetNotch;
-                    qValueNotchCalculated[notch] = true;
+                    // Use the first PSM's cumulative values for initialization
+                    double initialQValueNotch = (psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoyNotch + 1) / Math.Max(psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeTargetNotch, 1);
+                    qValueNotch[notch] = initialQValueNotch;
                 }
 
-                qValue = Math.Min(qValue, (psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoy + 1) / Math.Max(psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeTarget, 1));
-                qValueNotch[notch] = Math.Min(qValueNotch[notch], (psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoyNotch + 1) / Math.Max(psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeTargetNotch, 1));
+                // Only initialize once per notch
+                if (!qValueNotchCalculated.Contains(notch))
+                {
+                    qValueNotchCalculated.Add(notch);
+                }
+
+                double currentQValue = (psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoy + 1) / Math.Max(psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeTarget, 1);
+                qValue = Math.Min(qValue, currentQValue);
+
+                double currentQValueNotch = (psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoyNotch + 1) / Math.Max(psms[i].GetFdrInfo(peptideLevelAnalysis).CumulativeTargetNotch, 1);
+                qValueNotch[notch] = Math.Min(qValueNotch[notch], currentQValueNotch);
 
                 psms[i].GetFdrInfo(peptideLevelAnalysis).QValue = Math.Min(qValue, 1);
                 psms[i].GetFdrInfo(peptideLevelAnalysis).QValueNotch = Math.Min(qValueNotch[notch], 1);
             }
-            psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
+            psms.Reverse(); // Restore original order
         }
 
         public static void PepQValueInverted(List<SpectralMatch> psms, bool peptideLevelAnalysis)

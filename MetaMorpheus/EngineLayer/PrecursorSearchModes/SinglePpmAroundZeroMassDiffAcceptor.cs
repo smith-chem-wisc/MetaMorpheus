@@ -13,7 +13,7 @@ namespace EngineLayer
             this.PpmTolerance = ppmTolerance;
         }
 
-        public override int Accepts(double scanPrecursorMass, double peptideMass)
+        public override double Accepts(double scanPrecursorMass, double peptideMass)
         {
             return Math.Abs(((scanPrecursorMass - peptideMass) / (peptideMass)) * 1e6) < PpmTolerance ? 0 : -1;
         }

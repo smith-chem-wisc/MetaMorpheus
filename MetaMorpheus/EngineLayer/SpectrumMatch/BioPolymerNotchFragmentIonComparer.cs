@@ -10,7 +10,7 @@ namespace EngineLayer.SpectrumMatch;
 /// Compares the information of two tentative spectral matches to determine which is better
 /// If used in an order by operation, the best matches will be last. OrderByDescending for best -> worst 
 /// </summary>
-public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions)>,
+public class BioPolymerNotchFragmentIonComparer : Comparer<(double notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions)>,
     IComparer<SpectralMatchHypothesis>
 {
     /// <summary>
@@ -18,7 +18,7 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
     /// Better is defined as having a lower notch, more fragment ions, and finally fewer modifications in that order.
     /// If the aforementioned criteria are equal, then the two are compared based on the alphebetical ordering of the full sequence, then protein accession, then one based start residue. 
     /// </summary>
-    public override int Compare((int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions) x, (int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions) y)
+    public override int Compare((double notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions) x, (double notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions) y)
     {
         if (x.notch != y.notch)
             return -1 * x.notch.CompareTo(y.notch); // Lower notch is better

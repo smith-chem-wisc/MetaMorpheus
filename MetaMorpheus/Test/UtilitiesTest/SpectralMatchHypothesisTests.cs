@@ -8,7 +8,6 @@ using EngineLayer;
 using Proteomics.ProteolyticDigestion;
 using System.Diagnostics.CodeAnalysis;
 using Proteomics;
-using System.Drawing.Text;
 
 namespace Test.UtilitiesTest
 {
@@ -19,13 +18,13 @@ namespace Test.UtilitiesTest
         IBioPolymerWithSetMods testPeptide1 = new PeptideWithSetModifications("PEPTIDE", GlobalVariables.AllModsKnownDictionary, p: new Protein("PEPTIDE", "protein"));
         IBioPolymerWithSetMods testPeptide2 = new PeptideWithSetModifications("PE[UniProt:4-carboxyglutamate on E]PTIDE", GlobalVariables.AllModsKnownDictionary, p: new Protein("PEPTIDE", "protein"));
 
-        public class TestSearchAttempt(int notch, bool isDecoy, double score) : ISearchAttempt
+        public class TestSearchAttempt(double notch, bool isDecoy, double score) : ISearchAttempt
         {
             public double Score { get; } = score;
 
             public bool IsDecoy { get; } = isDecoy;
 
-            public int Notch { get; } = notch;
+            public double Notch { get; } = notch;
 
             public bool Equals(ISearchAttempt other)
             {
@@ -91,7 +90,7 @@ namespace Test.UtilitiesTest
             var matchedIons = new List<MatchedFragmentIon>();
             var tsm = new SpectralMatchHypothesis(1, testPeptide1, matchedIons, 0);
 
-            Assert.That(tsm.GetHashCode(), Is.EqualTo(HashCode.Combine(testPeptide1, matchedIons, 0, 1)));
+            Assert.That(tsm.GetHashCode(), Is.EqualTo(HashCode.Combine(testPeptide1, matchedIons, 0, 1.0)));
         }
 
         [Test]
