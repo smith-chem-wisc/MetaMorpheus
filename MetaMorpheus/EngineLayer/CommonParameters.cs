@@ -83,9 +83,7 @@ namespace EngineLayer
             ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
             PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
-            DigestionParams = digestionParams ?? (GlobalVariables.AnalyteType == AnalyteType.Oligo
-                ? new RnaDigestionParams()
-                : new DigestionParams());
+            DigestionParams = digestionParams ?? new DigestionParams();
             DissociationType = dissociationType;
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;

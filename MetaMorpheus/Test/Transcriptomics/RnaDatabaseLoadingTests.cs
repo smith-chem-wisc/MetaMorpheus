@@ -32,7 +32,7 @@ public class RnaDatabaseLoadingTests
         GlobalVariables.AnalyteType = AnalyteType.Oligo;
         var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", databaseFileName);
         var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
-        var commonParameters = new CommonParameters();
+        var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
         var bioPolymers = new SearchTask().LoadBioPolymers(
             "TestTaskId",
             dbForTask,
@@ -55,7 +55,7 @@ public class RnaDatabaseLoadingTests
     {
         GlobalVariables.AnalyteType = AnalyteType.Oligo;
         var task = new SearchTask();
-        var commonParameters = new CommonParameters();
+        var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
         string baseSequence = "GUACUGCCUCUAGUGAAGCA";
 
         // Create two instances of the same database, one as a contaminant, one as a target. 
