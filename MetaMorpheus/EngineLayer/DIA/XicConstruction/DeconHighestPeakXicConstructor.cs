@@ -20,23 +20,28 @@ namespace EngineLayer.DIA.XicConstruction
 
         public override List<ExtractedIonChromatogram> GetAllXics(MsDataScan[] scans, MzRange isolationRange = null)
         {
-            var xics = new List<ExtractedIonChromatogram>();
             var mzPeakIndexingEngine = PeakIndexingEngine.InitializeIndexingEngine(scans);
             var allMzXics = mzPeakIndexingEngine.GetAllXics(PeakFindingTolerance, MaxMissedScansAllowed, MaxPeakHalfWidth, MinNumberOfPeaks, out var matchedPeaks);
+            var foundedXics = new HashSet<ExtractedIonChromatogram>();
             for (int i = 0; i < scans.Length; i++)
             {
                 var envelopes = Deconvoluter.Deconvolute(scans[i], DeconParameters, isolationRange);
-                foreach(var envelope in envelopes)
+                foreach (var envelope in envelopes)
                 {
                     var highestPeak = envelope.Peaks.MaxBy(p => p.intensity);
                     var indexedPeak = mzPeakIndexingEngine.GetIndexedPeak(highestPeak.mz, i, PeakFindingTolerance);
                     if (indexedPeak != null && matchedPeaks.ContainsKey(indexedPeak))
                     {
-                        xics.Add(matchedPeaks[indexedPeak]);
+                        var foundXic = matchedPeaks[indexedPeak];
+                        if (foundXic != null)
+                        {
+                            foundXic.AveragedMassOrMz = envelope.MonoisotopicMass;
+                            foundedXics.Add(foundXic);
+                        }
                     }
                 }
             }
-            return xics;
+            return foundedXics.ToList();
         }
 
         public override string ToString()
