@@ -30,30 +30,17 @@ public class RnaDatabaseLoadingTests
     public static void TestDbReadingDifferentExtensions(string databaseFileName)
     {
         GlobalVariables.AnalyteType = AnalyteType.Oligo;
-        List<IBioPolymer> bioPolymers = new List<IBioPolymer>();
         var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", databaseFileName);
-
-        // Use reflection to access the protected LoadBioPolymers method
-        var loadBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("LoadBioPolymers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (loadBioPolymersMethod == null)
-        {
-            Assert.Fail("Failed to find the LoadBioPolymers method via reflection.");
-        }
-
-        var task = new SearchTask();
         var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
         var commonParameters = new CommonParameters();
-
-        // Invoke the method
-        bioPolymers = (List<IBioPolymer>)loadBioPolymersMethod.Invoke(task, new object[]
-        {
+        var bioPolymers = new SearchTask().LoadBioPolymers(
             "TestTaskId",
             dbForTask,
-            true, // searchTarget
+            true, 
             DecoyType.None,
-            new List<string>(), // localizeableModificationTypes
+            [], 
             commonParameters
-        });
+        );
 
         Assert.That(bioPolymers![0], Is.TypeOf<RNA>());
         Assert.That(bioPolymers.Count, Is.EqualTo(1));
@@ -74,18 +61,14 @@ public class RnaDatabaseLoadingTests
         // Create two instances of the same database, one as a contaminant, one as a target. 
         var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "20mer1.fasta");
         var dbsForTask = new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(dbPath, true) };
-
-        // Use reflection to access the protected LoadBioPolymers method
-        var loadBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("LoadBioPolymers", BindingFlags.NonPublic | BindingFlags.Instance);
-        var bioPolymers = (List<IBioPolymer>)loadBioPolymersMethod.Invoke(task, new object[]
-        {
+        var bioPolymers = new SearchTask().LoadBioPolymers(
             "TestTaskId",
             dbsForTask,
-            true, // searchTarget
+            true,
             DecoyType.None,
-            new List<string>(), // localizeableModificationTypes
+            [],
             commonParameters
-        });
+        );
 
         // Use reflection to access protected SanitizeBiopolymers method
         var sanitizeBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("SanitizeBioPolymerDatabase",
@@ -152,17 +135,14 @@ public class RnaDatabaseLoadingTests
         loadModificationsMethod.Invoke(task, modArgs);
         var localizableModificationTypes = (List<string>)modArgs[3];
 
-        // Use reflection to access the protected LoadBioPolymers method
-        var loadBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("LoadBioPolymers", BindingFlags.NonPublic | BindingFlags.Instance);
-        var rna = (List<IBioPolymer>)loadBioPolymersMethod.Invoke(task, new object[]
-        {
+        var rna = new SearchTask().LoadBioPolymers(
             "TestTaskId",
             dbsForTask,
             true, // searchTarget
             DecoyType.Reverse,
             localizableModificationTypes, // pass the loaded localizable mods
             commonParameters
-        });
+        );
 
         Assert.That(rna.All(p => p.SequenceVariations.Count == 1));
         Assert.That(rna.All(p => p.OriginalNonVariantModifications.Count == 2));
