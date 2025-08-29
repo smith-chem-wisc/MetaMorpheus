@@ -8,11 +8,11 @@ using FlashLFQ;
 
 namespace EngineLayer.DIA.XicConstruction
 {
-    public class DeconHighestPeakXicConstructor : XicConstructor
+    public class HighestIsotopePeakXicConstructor : XicConstructor
     {
         public DeconvolutionParameters DeconParameters { get; set; }
 
-        public DeconHighestPeakXicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, DeconvolutionParameters deconParameters, XicSpline? xicSpline = null)
+        public HighestIsotopePeakXicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, DeconvolutionParameters deconParameters, XicSpline? xicSpline = null)
             : base(peakFindingTolerance, maxMissedScansAllowed, maxPeakHalfWidth, minNumberOfPeaks, xicSpline)
         {
             DeconParameters = deconParameters;
