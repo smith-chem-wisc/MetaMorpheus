@@ -26,7 +26,7 @@ namespace EngineLayer.DIA
             var neutralMassIndexingEngine = new MassIndexingEngine();
             if (neutralMassIndexingEngine.IndexPeaks(scans, DeconParameters, isolationRange, MinMass, MinCharge))
             {
-                return neutralMassIndexingEngine.GetAllXics(PeakFindingTolerance, MaxMissedScansAllowed, MaxPeakHalfWidth, MinNumberOfPeaks);
+                return neutralMassIndexingEngine.GetAllXics(PeakFindingTolerance, MaxMissedScansAllowed, MaxPeakHalfWidth, MinNumberOfPeaks, out var matchedPeaks);
             }
             else
             {

@@ -326,5 +326,11 @@ namespace Test.DIATests
             var corr2 = PrecursorFragmentsGroup.CalculateXicCorrXYData_Umpire(xic1, xic3, 150);
             var corr3 = PrecursorFragmentsGroup.CalculateXicCorrXYData_Umpire(xic1, xic4, 150);
         }
+
+        [Test]
+        public static void TestDeconHighestPeakXicConstructor()
+        {
+
+        }
     }
 }

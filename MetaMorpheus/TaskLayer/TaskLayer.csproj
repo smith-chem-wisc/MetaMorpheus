@@ -21,7 +21,7 @@
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="6.66.671" />
+    <PackageReference Include="mzLib" Version="6.66.674" />
     <PackageReference Include="NetSerializer" Version="4.1.2" />
     <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="SQLite.Interop.dll" Version="1.0.103" />
