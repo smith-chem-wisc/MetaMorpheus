@@ -558,6 +558,11 @@
                     </Grid>
                 </DockPanel>
             </TabItem>
+
+            <!--Deconvolution Exploration tab-->
+            <TabItem Header="Deconvolution Exploration" Background="DarkGray">
+                <local:DeconExplorationTabView x:Name="DeconExplorationTabView"/>
+            </TabItem>
             
             <!-- BioPolymer Coverage tab-->
             <TabItem Header="BioPolymer Coverage" Background="DarkGray">
