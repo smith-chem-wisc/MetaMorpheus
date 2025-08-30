@@ -11,6 +11,7 @@ namespace EngineLayer.DIA.XicConstruction
     public class HighestIsotopePeakXicConstructor : XicConstructor
     {
         public DeconvolutionParameters DeconParameters { get; set; }
+        public Dictionary<IIndexedPeak, ExtractedIonChromatogram> PeakXicDictionary { get; set; } 
 
         public HighestIsotopePeakXicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, DeconvolutionParameters deconParameters, XicSpline? xicSpline = null)
             : base(peakFindingTolerance, maxMissedScansAllowed, maxPeakHalfWidth, minNumberOfPeaks, xicSpline)
@@ -21,7 +22,11 @@ namespace EngineLayer.DIA.XicConstruction
         public override List<ExtractedIonChromatogram> GetAllXics(MsDataScan[] scans, MzRange isolationRange = null)
         {
             var mzPeakIndexingEngine = PeakIndexingEngine.InitializeIndexingEngine(scans);
-            var allMzXics = mzPeakIndexingEngine.GetAllXics(PeakFindingTolerance, MaxMissedScansAllowed, MaxPeakHalfWidth, MinNumberOfPeaks, out var matchedPeaks);
+            if (PeakXicDictionary == null)
+            {
+                var allMzXics = mzPeakIndexingEngine.GetAllXics(PeakFindingTolerance, MaxMissedScansAllowed, MaxPeakHalfWidth, MinNumberOfPeaks, out var matchedPeaks);
+                PeakXicDictionary = matchedPeaks;
+            }
             var foundedXics = new HashSet<ExtractedIonChromatogram>();
             for (int i = 0; i < scans.Length; i++)
             {
@@ -30,9 +35,9 @@ namespace EngineLayer.DIA.XicConstruction
                 {
                     var highestPeak = envelope.Peaks.MaxBy(p => p.intensity);
                     var indexedPeak = mzPeakIndexingEngine.GetIndexedPeak(highestPeak.mz, i, PeakFindingTolerance);
-                    if (indexedPeak != null && matchedPeaks.ContainsKey(indexedPeak))
+                    if (indexedPeak != null && PeakXicDictionary.ContainsKey(indexedPeak))
                     {
-                        var foundXic = matchedPeaks[indexedPeak];
+                        var foundXic = PeakXicDictionary[indexedPeak];
                         if (foundXic != null)
                         {
                             foundXic.AveragedMassOrMz = envelope.MonoisotopicMass;
