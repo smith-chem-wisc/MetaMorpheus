@@ -51,14 +51,22 @@
                     </Label>
                 </DockPanel>
 
+                <DockPanel Grid.Row ="1" Margin =" 5 2">
+                    <Label Content="Color By:" DockPanel.Dock="Left" />
+                    <ComboBox Width="120" Margin="5 0" DockPanel.Dock="Left" HorizontalAlignment="Left"
+                              SelectedValue="{Binding CoverageMapViewModel.ColorBy}" 
+                              ItemsSource="{Binding CoverageMapViewModel.AllColorByTypes}" />
+                </DockPanel>
+                
 
 
-                <!-- Load Button and Search Bar TODO: Make search bar function -->
+                <!-- Load Button and Search Bar -->
                 <Border Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="Black" 
                     BorderThickness="0,0,0,1" Margin="5 2" >
                     <DockPanel  LastChildFill="True" Margin="0 0 0 2">
                         <Button Name="LoadDatabase" Content="Load Files" Width="80" 
                                 Command="{Binding LoadDatabaseCommand}"/>
+                        
                         <TextBox Width="140"  DockPanel.Dock="Right" VerticalContentAlignment="Center"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                         <Label HorizontalAlignment="Right" Height="28">Search</Label>
@@ -102,7 +110,6 @@
                             Style="{StaticResource MetaDrawButtonStyle}"
                             Content="{Binding ExportType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
                             Command="{Binding ExportImageCommand}"/>
-
                 </DockPanel>
             </Grid>
 
