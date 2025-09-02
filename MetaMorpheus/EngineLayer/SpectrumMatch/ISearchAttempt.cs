@@ -9,6 +9,6 @@ namespace EngineLayer.SpectrumMatch
     {
         double Score { get; }
         bool IsDecoy { get; }
-        int Notch { get; }
+        double Notch { get; }
     }
 }

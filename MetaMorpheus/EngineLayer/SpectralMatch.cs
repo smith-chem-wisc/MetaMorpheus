@@ -18,7 +18,7 @@ namespace EngineLayer
     {
         public const double ToleranceForScoreDifferentiation = 1e-9;
 
-        protected SpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
+        protected SpectralMatch(IBioPolymerWithSetMods peptide, double notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
         {
             _BestMatchingBioPolymersWithSetMods = new List<SpectralMatchHypothesis>();
             ScanIndex = scanIndex;
@@ -54,7 +54,7 @@ namespace EngineLayer
         public ChemicalFormula ModsChemicalFormula { get; private set; } // these fields will be null if they are ambiguous
         public string FullSequence { get; protected set; }
         public string EssentialSequence { get; protected set; }
-        public int? Notch { get; private set; }
+        public double? Notch { get; private set; }
         public string BaseSequence { get; protected set; }
         public int? BioPolymerWithSetModsLength { get; private set; }
         public int? OneBasedStartResidue { get; private set; }
@@ -118,7 +118,7 @@ namespace EngineLayer
         {
             get
             {
-                return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round(this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass, 5))
+                return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round(this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass - p.Notch, 5))
                     .ToList();
             }
         }
@@ -127,7 +127,7 @@ namespace EngineLayer
         {
             get
             {
-                return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round((this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass) / p.SpecificBioPolymer.MonoisotopicMass * 1e6, 2)).ToList();
+                return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round((this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass - p.Notch) / p.SpecificBioPolymer.MonoisotopicMass * 1e6, 2)).ToList();
             }
         }
 
@@ -169,7 +169,7 @@ namespace EngineLayer
             }
         }
 
-        public void AddOrReplace(IBioPolymerWithSetMods pwsm, double newScore, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons)
+        public void AddOrReplace(IBioPolymerWithSetMods pwsm, double newScore, double notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons)
         {
             if (newScore - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
             {

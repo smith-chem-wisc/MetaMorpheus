@@ -161,7 +161,7 @@ namespace EngineLayer
 
                                     // this gets the digestion info for all of the peptide-protein associations that should exist
                                     var proteinToPeptideInfo = new Dictionary<IBioPolymer,
-                                        (IDigestionParams DigestParams, int OneBasedStart, int OneBasedEnd, int MissedCleavages, int Notch,
+                                        (IDigestionParams DigestParams, int OneBasedStart, int OneBasedEnd, int MissedCleavages, double Notch,
                                         Omics.Digestion.CleavageSpecificity CleavageSpecificity)>();
 
                                     foreach (SpectralMatch psm in baseSequence.Value)

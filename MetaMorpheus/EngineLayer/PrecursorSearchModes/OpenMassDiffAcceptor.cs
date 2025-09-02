@@ -10,7 +10,7 @@ namespace EngineLayer
         {
         }
 
-        public override int Accepts(double scanPrecursorMass, double peptideMass)
+        public override double Accepts(double scanPrecursorMass, double peptideMass)
         {
             return 0;
         }

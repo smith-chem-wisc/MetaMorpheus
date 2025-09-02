@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -100,7 +101,14 @@ namespace EngineLayer
             var list = enumerable.ToList();
             if (list.Max() - list.Min() < ToleranceForDoubleResolutionF5)
             {
-                return (list.Average().ToString("F5", CultureInfo.InvariantCulture), list.Average());
+                double avg = list.Average();
+                // Check if all values are within tolerance of an integer
+                if (list.All(x => Math.Abs(x - Math.Round(x)) < ToleranceForDoubleResolutionF5))
+                {
+                    int intVal = (int)Math.Round(avg);
+                    return (intVal.ToString(CultureInfo.InvariantCulture), intVal);
+                }
+                return (avg.ToString("F5", CultureInfo.InvariantCulture), avg);
             }
             else
             {

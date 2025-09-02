@@ -472,7 +472,7 @@ namespace EngineLayer
             float intensity = 0;
             float chargeDifference = 0;
             float deltaScore = 0;
-            int notch = 0;
+            float notch = 0;
             float ambiguity = 0;
             float modCount = 0;
             float absoluteFragmentMassError = 0;
@@ -512,7 +512,7 @@ namespace EngineLayer
                 intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * Math.Pow(multiplier, 2), 0));
                 chargeDifference = -Math.Abs(ChargeStateMode - psm.ScanPrecursorCharge);
                 deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * multiplier, 0);
-                notch = tentativeSpectralMatch.Notch;
+                notch = (float)tentativeSpectralMatch.Notch;
                 modCount = Math.Min((float)tentativeSpectralMatch.SpecificBioPolymer.AllModsOneIsNterminus.Keys.Count(), 10);
                 if (tentativeSpectralMatch.MatchedIons?.Count() > 0)
                 {

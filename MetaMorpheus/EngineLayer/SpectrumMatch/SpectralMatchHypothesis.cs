@@ -12,11 +12,11 @@ namespace EngineLayer.SpectrumMatch;
 /// <param name="notch"></param>
 /// <param name="pwsm"></param>
 /// <param name="matchedIons"></param>
-public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> matchedIons, double score) 
+public class SpectralMatchHypothesis(double notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> matchedIons, double score) 
     : IEquatable<SpectralMatchHypothesis>, ISearchAttempt
 {
     public double Score { get; } = score;
-    public int Notch { get; } = notch;
+    public double Notch { get; } = notch;
     public readonly IBioPolymerWithSetMods SpecificBioPolymer = pwsm;
     public readonly List<MatchedFragmentIon> MatchedIons = matchedIons;
 
@@ -28,7 +28,7 @@ public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, Lis
         if (other is SpectralMatchHypothesis hypothesis) return Equals(hypothesis);
         if (other is null) return false;
         return IsDecoy == other.IsDecoy
-               && Notch == other.Notch
+               && Math.Abs(Notch - other.Notch) < SpectralMatch.ToleranceForScoreDifferentiation
                && Math.Abs(Score - other.Score) < SpectralMatch.ToleranceForScoreDifferentiation;
     }
 
@@ -36,11 +36,11 @@ public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, Lis
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return Notch == other.Notch
-            && IsDecoy == other.IsDecoy
-            && Equals(MatchedIons.Count, other.MatchedIons.Count)
-            && Math.Abs(Score - other.Score) < SpectralMatch.ToleranceForScoreDifferentiation
-            && SpecificBioPolymer.Equals(other.SpecificBioPolymer);
+        return Math.Abs(Notch - other.Notch) < SpectralMatch.ToleranceForScoreDifferentiation
+               && IsDecoy == other.IsDecoy
+               && Equals(MatchedIons.Count, other.MatchedIons.Count)
+               && Math.Abs(Score - other.Score) < SpectralMatch.ToleranceForScoreDifferentiation
+               && SpecificBioPolymer.Equals(other.SpecificBioPolymer);
     }
 
     public override bool Equals(object? obj)
