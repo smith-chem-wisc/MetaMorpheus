@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using EngineLayer.GlycoSearch;
 using OxyPlot;
 using Omics.Fragmentation;
 using System;
@@ -8,6 +7,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using Readers;
+using GuiFunctions.MetaDraw;
 
 namespace GuiFunctions
 {
@@ -23,11 +24,13 @@ namespace GuiFunctions
         public static readonly char[] SuperScriptNumbers = {
             '\u2070', '\u00b9', '\u00b2', '\u00b3', '\u2074',
             '\u2075', '\u2076', '\u2077', '\u2078', '\u2079'
-        }; 
-        
+        };
+
         #endregion
 
         #region Customizable Settings
+
+        public static bool SuppressMessageBoxes { get; set; } = false;
 
         // graphic settings
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
@@ -52,6 +55,19 @@ namespace GuiFunctions
         public static int AxisLabelTextSize { get; set; } = 12;
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
+        public static double SpectrumDescriptionFontSize { get; set; } = 10;
+
+        // Chimera Settings
+        public static bool DisplayChimeraLegend { get; set; } = true;
+        public static double ChimeraLegendMaxWidth { get; set; } = 420;
+        public static bool ChimeraLegendTakeFirstIfAmbiguous { get; set; } = false;
+        public static LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
+        public static LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
+
+        // Data Visualization Settings
+        public static bool DisplayFilteredOnly { get; set; } = true;
+        public static bool NormalizeHistogramToFile { get; set; } = false;
+        public static List<OxyColor> DataVisualizationColorOrder { get; set; }
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -88,7 +104,7 @@ namespace GuiFunctions
             OxyColors.Thistle, OxyColors.Tomato, OxyColors.Transparent, OxyColors.Turquoise, OxyColors.Violet, OxyColors.Wheat, OxyColors.White, OxyColors.WhiteSmoke, OxyColors.Yellow
         };
         public static string[] SpectrumDescriptors { get; set; } =
-        {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ",
+        {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ", "Retention Time: ", "1/K\u2080: ",
         "Decoy/Contaminant/Target: ", "Sequence Length: ", "Ambiguity Level: ", "Spectral Angle: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
@@ -115,15 +131,15 @@ namespace GuiFunctions
             InitializeDictionaries();
         }
 
-        public static bool FilterAcceptsPsm(PsmFromTsv psm)
+        public static bool FilterAcceptsPsm(SpectrumMatchFromTsv sm)
         {
-            if (psm.QValue <= QValueFilter
-                 && (psm.QValueNotch == null || psm.QValueNotch <= QValueFilter)
-                 && (psm.DecoyContamTarget == "T" || (psm.DecoyContamTarget == "D" && ShowDecoys) || (psm.DecoyContamTarget == "C" && ShowContaminants))
-                 && (psm.GlycanLocalizationLevel == null || psm.GlycanLocalizationLevel >= LocalizationLevelStart && psm.GlycanLocalizationLevel <= LocalizationLevelEnd))
+            if (sm.QValue <= QValueFilter
+                 && (sm.QValueNotch == null || sm.QValueNotch <= QValueFilter)
+                 && (sm.DecoyContamTarget == "T" || (sm.DecoyContamTarget == "D" && ShowDecoys) || (sm.DecoyContamTarget == "C" && ShowContaminants))
+                 && (!sm.IsCrossLinkedPeptide() || (sm is PsmFromTsv { BetaPeptideBaseSequence: not null } psm && (!psm.GlycanLocalizationLevel.HasValue || psm.GlycanLocalizationLevel.Value >= LocalizationLevelStart && psm.GlycanLocalizationLevel.Value <= LocalizationLevelEnd))))
             {
                 // Ambiguity filtering conditionals, should only be hit if Ambiguity Filtering is selected
-                if (AmbiguityFilter == "No Filter" || psm.AmbiguityLevel == AmbiguityFilter)
+                if (AmbiguityFilter == "No Filter" || sm.AmbiguityLevel == AmbiguityFilter)
                 {
                     return true;
                 }
@@ -245,6 +261,8 @@ namespace GuiFunctions
             SubAndSuperScriptIons = true;
             DrawStationarySequence = true;
             DrawNumbersUnderStationary = true;
+            NormalizeHistogramToFile = false;
+            DisplayFilteredOnly = true;
             ShowLegend = true;
             ShowDecoys = false;
             ShowContaminants = true;
@@ -278,6 +296,7 @@ namespace GuiFunctions
             SetDefaultCoverageTypeColors();
             SetDefaultModificationColors();
             SetDefaultSpectrumDescriptors();
+            SetDefaultDataVisualizationColors();
 
             UnannotatedPeakColor = OxyColors.LightGray;
             InternalIonColor = OxyColors.Purple;
@@ -319,6 +338,15 @@ namespace GuiFunctions
             ProductTypeToColor[ProductType.zDot] = OxyColors.Orange;
             ProductTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
             ProductTypeToColor[ProductType.M] = OxyColors.Firebrick;
+
+            // default color of each fragment to annotate
+            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+            BetaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
+            BetaProductTypeToColor[ProductType.y] = OxyColors.OrangeRed;
+            BetaProductTypeToColor[ProductType.zDot] = OxyColors.LightGoldenrodYellow;
+            BetaProductTypeToColor[ProductType.c] = OxyColors.Orange;
+            BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
+            BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
         }
 
         /// <summary>
@@ -381,6 +409,16 @@ namespace GuiFunctions
             ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
         }
 
+        private static void SetDefaultDataVisualizationColors()
+        {
+            DataVisualizationColorOrder = new List<OxyColor>
+            {
+                OxyColors.Blue, OxyColors.Red, OxyColors.Green, OxyColors.DarkGoldenrod, OxyColors.DarkViolet,
+                OxyColors.DeepPink, OxyColors.SkyBlue, OxyColors.LawnGreen, OxyColors.Sienna, OxyColors.DarkBlue,
+                OxyColors.PeachPuff, OxyColors.DarkSlateGray, OxyColors.SpringGreen, OxyColors.Peru, OxyColors.OrangeRed
+            };
+        }
+
         /// <summary>
         /// Lines to be written on the spectrum in the upper right hand corner
         /// </summary>
@@ -432,6 +470,9 @@ namespace GuiFunctions
                 DrawStationarySequence = DrawStationarySequence,
                 DrawNumbersUnderStationary = DrawNumbersUnderStationary,
                 ShowLegend = ShowLegend,
+                DisplayChimeraLegend = DisplayChimeraLegend,
+                ChimeraLegendMainTextType = ChimeraLegendMainTextType,
+                ChimeraLegendSubTextType = ChimeraLegendSubTextType,
                 LocalizationLevelStart = LocalizationLevelStart,
                 LocalizationLevelEnd = LocalizationLevelEnd,
                 ExportType = ExportType,
@@ -446,7 +487,14 @@ namespace GuiFunctions
                 AxisTitleTextSize = AxisTitleTextSize,
                 AxisLabelTextSize = AxisLabelTextSize,
                 StrokeThicknessUnannotated = StrokeThicknessUnannotated,
-                StrokeThicknessAnnotated = StrokeThicknessAnnotated
+                StrokeThicknessAnnotated = StrokeThicknessAnnotated,
+                SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
+                SuppressMessageBoxes = SuppressMessageBoxes,
+                ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous,
+                ChimeraLegendMaxWidth = ChimeraLegendMaxWidth,
+                NormalizeHistogramToFile = NormalizeHistogramToFile,
+                DisplayFilteredOnly = DisplayFilteredOnly,
+                DataVisualizationColorOrder = DataVisualizationColorOrder?.Select(c => c.GetColorName()).ToList(),
             };
         }
 
@@ -470,6 +518,9 @@ namespace GuiFunctions
             DrawStationarySequence = settings.DrawStationarySequence;
             DrawNumbersUnderStationary = settings.DrawNumbersUnderStationary;
             ShowLegend = settings.ShowLegend;
+            DisplayChimeraLegend = settings.DisplayChimeraLegend;
+            ChimeraLegendMainTextType = settings.ChimeraLegendMainTextType;
+            ChimeraLegendSubTextType = settings.ChimeraLegendSubTextType;
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
             ExportType = settings.ExportType;
@@ -478,8 +529,14 @@ namespace GuiFunctions
             AxisLabelTextSize = settings.AxisLabelTextSize == 0 ? 12 : settings.AxisLabelTextSize;
             StrokeThicknessUnannotated = settings.StrokeThicknessUnannotated == 0 ? 0.7 : settings.StrokeThicknessUnannotated;
             StrokeThicknessAnnotated = settings.StrokeThicknessAnnotated == 0 ? 1 : settings.StrokeThicknessAnnotated;
+            SpectrumDescriptionFontSize = settings.SpectrumDescriptionFontSize;
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
+            SuppressMessageBoxes = settings.SuppressMessageBoxes;
+            ChimeraLegendTakeFirstIfAmbiguous = settings.ChimeraLegendTakeFirstIfAmbiguous;
+            ChimeraLegendMaxWidth = settings.ChimeraLegendMaxWidth;
+            NormalizeHistogramToFile = settings.NormalizeHistogramToFile;
+            DisplayFilteredOnly = settings.DisplayFilteredOnly;
 
             try // Product Type Colors
             {
@@ -662,6 +719,26 @@ namespace GuiFunctions
             {
                 Debugger.Break();
                 SetDefaultProductTypeColors();
+                flaggedErrorOnRead = true;
+            }
+
+            // Data visualization colors
+            try
+            {
+                if (settings.DataVisualizationColorOrder is { Count: > 0 })
+                {
+                    DataVisualizationColorOrder = settings.DataVisualizationColorOrder
+                        .Select(DrawnSequence.ParseOxyColorFromName)
+                        .ToList();
+                }
+                else
+                {
+                    throw new Exception();
+                }
+            }
+            catch (Exception)
+            {
+                SetDefaultDataVisualizationColors();
                 flaggedErrorOnRead = true;
             }
         }

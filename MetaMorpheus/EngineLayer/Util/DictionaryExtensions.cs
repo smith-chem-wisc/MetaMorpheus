@@ -1,7 +1,8 @@
-﻿using Nett;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
+using Easy.Common.Extensions;
 
 namespace EngineLayer;
 
@@ -154,16 +155,23 @@ public static class DictionaryExtensions
     }
 
     /// <summary>
-    /// Determines whether the dictionary is null or has no elements.
+    /// Method to add a value to a list in a dictionary if the key is present, and craete a new list if the key is not present
     /// </summary>
-    /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
-    /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
-    /// <param name="dictionary">The dictionary to check.</param>
-    /// <returns>
-    /// <c>true</c> if the dictionary is null or has no elements; otherwise, <c>false</c>.
-    /// </returns>
-    public static bool IsNullOrEmpty<TKey, TValue>(this IDictionary<TKey, TValue> dictionary)
+    public static void AddOrReplace<TKey, TValue, TValue2>(this Dictionary<TKey, List<(TValue, TValue2)>> dictionary, TKey key,
+        TValue value, TValue2 value2)
     {
-        return dictionary == null || dictionary.Count == 0;
+        if (dictionary.ContainsKey(key))
+        {
+            var previousVersion = dictionary[key].FirstOrDefault(p => p.Item1.Equals(value));
+            if (!previousVersion.GetType().IsDefault())
+            {
+                dictionary[key].Remove(previousVersion);
+            }
+            dictionary[key].Add((value, value2));
+
+        }
+        else
+            dictionary.Add(key, [(value, value2)]);
+
     }
 }

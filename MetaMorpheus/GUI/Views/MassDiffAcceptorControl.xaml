@@ -1,0 +1,235 @@
+﻿<UserControl x:Class="MetaMorpheusGUI.MassDifferenceAcceptorControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MetaMorpheusGUI"
+             xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+             mc:Ignorable="d" 
+             d:DesignHeight="180" d:DesignWidth="800">
+    <UserControl.Resources>
+        <local:MassDifferenceAcceptorTypeToCustomTextBoxVisibilityConverter x:Key="CustomBoxConverter" />
+        <local:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
+        <!-- Style GroupBoxes -->
+        <Style TargetType="GroupBox">
+            <Setter Property="BorderThickness" Value="3 1 1 1"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="BorderBrush" Value="DarkSlateGray"/>
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Foreground="Black" FontWeight="Bold"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+
+    <GroupBox Header="Precursor Mass Difference Acceptor Criterion" x:Name="MassDiffAcceptorGroupBox"
+                  d:DataContext="{x:Static guiFunctions:MassDifferenceAcceptorSelectionModel.Instance}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <!-- Everything Else -->
+                <RowDefinition Height="*" />
+                <!-- Custom Mdac Box -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Left: Selection Radio Buttons -->
+            <StackPanel Grid.Column="0" Grid.Row="0"  Margin="0">
+                <ListBox ItemsSource="{Binding MassDiffAcceptorTypes}"
+                             SelectedItem="{Binding SelectedType, Mode=TwoWay}"
+                             BorderThickness="0"
+                             SelectionMode="Single">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Left" />
+                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                            <Setter Property="Focusable" Value="False" />
+                            <!-- Remove selection highlight -->
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter />
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <RadioButton
+                                    Content="{Binding Label}"
+                                    ToolTip="{Binding ToolTip}"
+                                    GroupName="MassDiffAcceptor"
+                                    Margin="2,1,2,1"
+                                    IsChecked="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListBoxItem}, Path=IsSelected, Mode=TwoWay}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+
+
+            <!-- Right: Custom GUI (only visible when Custom is selected) -->
+            <Grid Grid.Column="1" Margin="10,0,0,0" Grid.Row="0" 
+                      Visibility="{Binding SelectedType.Type, Converter={StaticResource CustomBoxConverter}}">
+                <Grid.RowDefinitions>
+                    <!-- Type and Name -->
+                    <RowDefinition Height="Auto" />
+                    <!-- Custom Control -->
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Custom Mode Selection -->
+                <StackPanel Grid.Row="0"  Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
+                    <TextBlock Text="Custom Mode:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ComboBox ItemsSource="{Binding CustomMdacModes}"
+                                        SelectedItem="{Binding CustomMode, Mode=TwoWay}"
+                                        Width="100" />
+                    <TextBlock Text="Name:" VerticalAlignment="Center" Margin="10 0 5 0" />
+                    <TextBox Text="{Binding CustomName, Mode=TwoWay}"
+                                        VerticalAlignment="Center" Width="80" Height="22" />
+                </StackPanel>
+                
+                <!-- Custom GUI controls (all modes) -->
+                <Grid Grid.Row="1">
+                    <!-- Notche Mode -->
+                    <StackPanel>
+                        <StackPanel.Visibility>
+                            <MultiBinding Converter="{StaticResource EnumToVisibilityConverter}">
+                                <Binding Path="CustomMode" />
+                                <Binding>
+                                    <Binding.Source>
+                                        <x:Static Member="guiFunctions:CustomMdacMode.Notch" />
+                                    </Binding.Source>
+                                </Binding>
+                            </MultiBinding>
+                        </StackPanel.Visibility>
+
+                        <Grid Margin="0,0,0,4">
+                            <Grid.RowDefinitions>
+                                <!-- Tolerance -->
+                                <RowDefinition Height="Auto" />
+                                <!-- Predefined Notches -->
+                                <RowDefinition Height="Auto" />
+                                <!-- User custom mass shifts -->
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Tolerance controls -->
+                            <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
+                                <TextBlock Text="Tolerance:" VerticalAlignment="Center" />
+                                <local:DoubleTextBoxControl Text="{Binding ToleranceValue, Mode=TwoWay}"
+                                                                    Width="40" Margin="4,0,0,0" />
+                                <ComboBox ItemsSource="{Binding ToleranceTypes}"
+                                                  SelectedItem="{Binding SelectedToleranceType, Mode=TwoWay}"
+                                                  Width="60"
+                                                  Margin="8,0,0,0" />
+                            </StackPanel>
+
+                            <!-- User custom mass shifts -->
+                            <StackPanel Orientation="Horizontal" Grid.Row="1">
+                                <TextBlock Text="Custom Notches (comma-separated):" VerticalAlignment="Center" />
+                                <TextBox Text="{Binding DotMassShifts, Mode=TwoWay}"
+                                         Height="22"
+                                         Margin="4,0,0,0"
+                                         HorizontalAlignment="Stretch"
+                                         VerticalAlignment="Center"
+                                         MinWidth="60" KeyDown="TextBox_KeyDown"/>
+                            </StackPanel>
+
+                            <!-- Predefined Notches -->
+                            <GroupBox Header="Predefined Notches" Grid.Row="2" Margin="0,0,0,8">
+                                <ItemsControl ItemsSource="{Binding PredefinedNotches}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                <CheckBox IsChecked="{Binding IsSelected}"
+                                                                  VerticalAlignment="Center"
+                                                                  Content="{Binding Name}"
+                                                                  Margin="0,0,4,0"
+                                                                  Width="100" />
+                                                <TextBlock Text="Positive:" VerticalAlignment="Center" />
+                                                <local:IntegerTexBoxControl
+                                                            Text="{Binding MaxPositiveFrequency, UpdateSourceTrigger=PropertyChanged}"
+                                                            VerticalAlignment="Center"
+                                                            Style="{StaticResource TextBoxStyle}"
+                                                            Width="30" Margin="4,0,4,0" />
+                                                <TextBlock Text="Negative:" VerticalAlignment="Center" />
+                                                <local:IntegerTexBoxControl
+                                                            Text="{Binding MaxNegativeFrequency, UpdateSourceTrigger=PropertyChanged}"
+                                                            VerticalAlignment="Center"
+                                                            Style="{StaticResource TextBoxStyle}"
+                                                            Width="30" Margin="4,0,4,0" />
+                                                <TextBlock Text="Mass:" VerticalAlignment="Center"
+                                                           Width="30" Margin="4,0,4,0" />
+                                                <TextBlock Text="{Binding MonoisotopicMass}"
+                                                                   VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </GroupBox>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Interval Mode -->
+                    <StackPanel>
+                        <StackPanel.Visibility>
+                            <MultiBinding Converter="{StaticResource EnumToVisibilityConverter}">
+                                <Binding Path="CustomMode" />
+                                <Binding>
+                                    <Binding.Source>
+                                        <x:Static Member="guiFunctions:CustomMdacMode.Interval" />
+                                    </Binding.Source>
+                                </Binding>
+                            </MultiBinding>
+                        </StackPanel.Visibility>
+                        <TextBlock Text="Ranges (e.g. [0,200];[300,400]):" />
+                        <TextBox Text="{Binding IntervalRanges, Mode=TwoWay}" Margin="0,0,0,4" />
+                    </StackPanel>
+
+                    <!-- AroundZero Mode -->
+                    <StackPanel>
+                        <StackPanel.Visibility>
+                            <MultiBinding Converter="{StaticResource EnumToVisibilityConverter}">
+                                <Binding Path="CustomMode" />
+                                <Binding>
+                                    <Binding.Source>
+                                        <x:Static Member="guiFunctions:CustomMdacMode.AroundZero" />
+                                    </Binding.Source>
+                                </Binding>
+                            </MultiBinding>
+                        </StackPanel.Visibility>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Value:" VerticalAlignment="Center" />
+                            <local:DoubleTextBoxControl Text="{Binding ToleranceValue, Mode=TwoWay}"
+                                                                Width="40" Margin="4,0,0,0" />
+                            <ComboBox ItemsSource="{Binding ToleranceTypes}"
+                                              SelectedItem="{Binding SelectedToleranceType, Mode=TwoWay}" Width="60"
+                                              Margin="4,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+            </Grid>
+
+
+            <!-- Custom Mdac text box (always at the bottom) -->
+            <StackPanel Grid.Column="0"  Grid.Row="1" Grid.ColumnSpan="2"  Margin="0,8,0,0"
+                        Visibility="{Binding SelectedType.Type, Converter={StaticResource CustomBoxConverter}}">
+                <TextBlock Text="Custom String:" />
+                <TextBox Text="{Binding CustomMdac}" 
+                         ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass differences in pre-specified dalton intervals, use a custom name, followed by &quot;interval&quot;, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]" />
+            </StackPanel>
+        </Grid>
+    </GroupBox>
+</UserControl>

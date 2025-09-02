@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using GuiFunctions;
 using UsefulProteomicsDatabases;
+using System.Linq;
 
 namespace Test.GuiTests
 {
@@ -107,6 +109,30 @@ namespace Test.GuiTests
             }
 
             NUnit.Framework.Assert.That(reader.Count == listCount);
+        }
+
+        [Test]
+        public static void TestFileLoadingWithDuplicateFiles()
+        {
+            var metaDrawLogic = new MetaDrawLogic();
+            metaDrawLogic.SpectraFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.mzML"));
+            metaDrawLogic.SpectraFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.mzML"));
+
+            var warnings = metaDrawLogic.LoadFiles(true, false);
+            Assert.That(warnings.Count, Is.EqualTo(0));
+            Assert.That(metaDrawLogic.MsDataFiles.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public static void TestFileLoadingTimsTof()
+        {
+            var metaDrawLogic = new MetaDrawLogic();
+            metaDrawLogic.SpectraFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\snippet.d"));
+
+            var warnings = metaDrawLogic.LoadFiles(true, false);
+            Assert.That(warnings.Count, Is.EqualTo(0));
+            Assert.That(metaDrawLogic.MsDataFiles.Count, Is.EqualTo(1));
+            Assert.That(metaDrawLogic.MsDataFiles.First().Value.Scans.Length, Is.GreaterThan(0)); // Check that scans have already been read in
         }
     }
 }

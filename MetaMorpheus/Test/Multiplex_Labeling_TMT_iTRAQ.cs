@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using EngineLayer;
-using IO.MzML;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
@@ -15,6 +14,8 @@ using ClassExtensions = Chemistry.ClassExtensions;
 using Nett;
 using TaskLayer;
 using Omics.Modifications;
+using Readers;
+using Mzml = IO.MzML.Mzml;
 
 namespace Test
 {
@@ -193,6 +194,8 @@ namespace Test
             string mzmlName = @"TMT_test\VA084TQ_6.mzML";
             string fastaName =  @"TMT_test\mouseTMT.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtOutput");
+            if(Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
 
@@ -443,7 +446,7 @@ namespace Test
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
             PsmFromTsv psm = parsedPsms.First();
 
             Assert.That(psm.MatchedIons.Count, Is.EqualTo(38)); //matched ions include b, y and D (diagnostic ions in TMT search)

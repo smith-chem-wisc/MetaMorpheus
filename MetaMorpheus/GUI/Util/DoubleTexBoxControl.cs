@@ -15,6 +15,32 @@ namespace MetaMorpheusGUI
             VerticalContentAlignment = VerticalAlignment.Center;
         }
 
+        public static readonly DependencyProperty LowerBoundProperty =
+            DependencyProperty.Register(
+                nameof(LowerBound),
+                typeof(double),
+                typeof(DoubleTextBoxControl),
+                new PropertyMetadata(double.MinValue));
+
+        public static readonly DependencyProperty UpperBoundProperty =
+            DependencyProperty.Register(
+                nameof(UpperBound),
+                typeof(double),
+                typeof(DoubleTextBoxControl),
+                new PropertyMetadata(double.MaxValue));
+
+        public double LowerBound
+        {
+            get => (double)GetValue(LowerBoundProperty);
+            set => SetValue(LowerBoundProperty, value);
+        }
+
+        public double UpperBound
+        {
+            get => (double)GetValue(UpperBoundProperty);
+            set => SetValue(UpperBoundProperty, value);
+        }
+
         protected override void OnPreviewTextInput(TextCompositionEventArgs e)
         {
             foreach (var character in e.Text)
@@ -32,6 +58,19 @@ namespace MetaMorpheusGUI
                 }
             }
             e.Handled = false;
+        }
+
+        protected override void OnTextChanged(TextChangedEventArgs e)
+        {
+            base.OnTextChanged(e);
+
+            if (double.TryParse(Text, out double value))
+            {
+                if (value < LowerBound)
+                    Text = LowerBound.ToString();
+                else if (value > UpperBound)
+                    Text = UpperBound.ToString();
+            }
         }
 
         /// <summary>

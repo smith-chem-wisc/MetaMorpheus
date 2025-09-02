@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using GuiFunctions;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;
 
@@ -43,5 +45,23 @@ public class MzLibExtensionsTests
 
         // Act & Assert
         Assert.That(() => unsupportedParams.ToViewModel(), Throws.TypeOf<NotImplementedException>());
+    }
+
+    [Test]
+    public void MajorityWithin_ReturnsTrue_WhenMajorityWithinRange()
+    {
+        var range = new MzRange(10, 20);
+        var values = new List<double> { 12, 15, 18, 25, 30 };
+        // 3 out of 5 are within [10, 20]
+        Assert.That(range.MajorityWithin(values), Is.True);
+    }
+
+    [Test]
+    public void MajorityWithin_ReturnsFalse_WhenMajorityNotWithinRange()
+    {
+        var range = new MzRange(10, 20);
+        var values = new List<double> { 5, 8, 12, 25, 30 };
+        // Only 1 out of 5 is within [10, 20]
+        Assert.That(range.MajorityWithin(values), Is.False);
     }
 }

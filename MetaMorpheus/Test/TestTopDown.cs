@@ -27,7 +27,7 @@ namespace Test
                 scoreCutoff: 1,
                 assumeOrphanPeaksAreZ1Fragments: false);
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             // test output file name (should be proteoform and not peptide)
             Assert.That(GlobalVariables.AnalyteType == AnalyteType.Proteoform);

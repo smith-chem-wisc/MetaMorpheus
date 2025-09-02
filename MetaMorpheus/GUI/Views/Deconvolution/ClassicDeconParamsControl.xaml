@@ -19,7 +19,7 @@
 
         <Label Content="Max Assumed Charge State:" Grid.Column="0" />
         <local:IntegerTexBoxControl Grid.Column="1" x:Name="DeconvolutionMaxAssumedChargeStateTextBox"  Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
-                                    Text="{Binding MaxAssumedChargeState}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                                    Text="{Binding MaxAssumedChargeState}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" AllowNegative="True">
             <TextBox.ToolTip>
                 <TextBlock>
                     The maximum charge state that deconvolution should allow. Minimum is 1 for positive mode and -1 for negative mode. 
@@ -29,7 +29,7 @@
 
         <Label Content="Min Assumed Charge State:" Grid.Column="2" />
         <local:IntegerTexBoxControl Grid.Column="3"   Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" HorizontalAlignment="Left"
-                                    Text="{Binding MinAssumedChargeState}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                                    Text="{Binding MinAssumedChargeState}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" AllowNegative="True">
             <TextBox.ToolTip>
                 <TextBlock>
                     The minimum charge state that deconvolution should allow.

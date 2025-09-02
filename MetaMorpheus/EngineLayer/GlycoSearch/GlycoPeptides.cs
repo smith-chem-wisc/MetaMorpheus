@@ -155,10 +155,7 @@ namespace EngineLayer.GlycoSearch
 
         public static PeptideWithSetModifications GenerateGlycopeptide(int position, PeptideWithSetModifications peptide, Glycan glycan)
         {
-            Modification modification = Glycan.NGlycanToModification(glycan);
-
-
-            Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position, modification } };
+            Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position, glycan } };
 
             if (!peptide.AllModsOneIsNterminus.Keys.Contains(position))
             {
@@ -281,7 +278,7 @@ namespace EngineLayer.GlycoSearch
             Modification[] modifications = new Modification[glycanBox.NumberOfMods];
             for (int i = 0; i < glycanBox.NumberOfMods; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycanModifications[glycanBox.ModIds.ElementAt(i)]; // transfer the glycanBox information to a new list.
+                modifications[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds.ElementAt(i)]; // transfer the glycanBox information to a new list.
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
@@ -309,10 +306,10 @@ namespace EngineLayer.GlycoSearch
         /// <returns> A modfiied peptide </returns>
         public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(Route theModPositions, PeptideWithSetModifications peptide)
         {
-            Modification[] modifications = new Modification[theModPositions.Mods.Count];
-            for (int i = 0; i < theModPositions.Mods.Count; i++)
+            Modification[] modifications = new Modification[theModPositions.ModSitePairs.Count];
+            for (int i = 0; i < theModPositions.ModSitePairs.Count; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycanModifications[theModPositions.Mods[i].Item2];
+                modifications[i] = GlycanBox.GlobalOGlycans[theModPositions.ModSitePairs[i].ModId];
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
@@ -321,9 +318,9 @@ namespace EngineLayer.GlycoSearch
                 testMods.Add(mod.Key, mod.Value);
             }
 
-            for (int i = 0; i < theModPositions.Mods.Count; i++)
+            for (int i = 0; i < theModPositions.ModSitePairs.Count; i++)
             {
-                testMods.Add(theModPositions.Mods[i].Item1, modifications[i]);
+                testMods.Add(theModPositions.ModSitePairs[i].SiteIndex, modifications[i]);
             }
 
             var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue,

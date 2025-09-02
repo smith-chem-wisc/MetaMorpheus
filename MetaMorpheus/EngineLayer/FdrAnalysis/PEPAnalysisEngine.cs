@@ -195,6 +195,10 @@ namespace EngineLayer
                 FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeHydrophobicityValues(trainingData,  true);
                 FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = ComputeMobilityValues(trainingData);
             }
+            if (trainingVariables.Contains("ChimeraCount"))
+            {
+                chimeraCountDictionary = trainingData.GroupBy(p => p.ChimeraIdString).ToDictionary(g => g.Key, g => g.Count());
+            }
         }
 
         public static List<int>[] GetPeptideGroupIndices(List<SpectralMatchGroup> peptides, int numGroups)
@@ -532,7 +536,7 @@ namespace EngineLayer
                     hasSpectralAngle = 1;
                 }
 
-                if (psm.DigestionParams.Protease.Name != "top-down")
+                if (psm.DigestionParams.DigestionAgent.Name != "top-down")
                 {
                     missedCleavages = tentativeSpectralMatch.SpecificBioPolymer.MissedCleavages;
                     bool fileIsCzeSeparationType = FileSpecificParametersDictionary.ContainsKey(Path.GetFileName(psm.FullFilePath)) && FileSpecificParametersDictionary[Path.GetFileName(psm.FullFilePath)].SeparationType == "CZE";

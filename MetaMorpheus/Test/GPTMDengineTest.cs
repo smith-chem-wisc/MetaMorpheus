@@ -20,6 +20,8 @@ using System.IO;
 using System.Globalization;
 using NUnit.Framework.Internal;
 using Easy.Common;
+using Omics.BioPolymer;
+using Omics;
 
 namespace Test
 {
@@ -47,7 +49,7 @@ namespace Test
             Assert.That(res.Mods.Count, Is.EqualTo(0));
 
             var parentProtein = new Protein(proteinSequence, accession, sequenceVariations: new List<SequenceVariation> { new SequenceVariation(1, "N", "A", sequenceVariantDescription) });
-            var variantProteins = parentProtein.GetVariantProteins();
+            var variantProteins = parentProtein.GetVariantBioPolymers();
             CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
 
             List<Modification> variableModifications = new List<Modification>();
@@ -56,7 +58,7 @@ namespace Test
             //PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null), (new Proteomics.AminoAcidPolymer.Peptide(modPep.BaseSequence).MonoisotopicMass + 21.981943).ToMz(1), 1, "filepath", new CommonParameters());
 
-            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
+            var peptidesWithSetModifications = new List<IBioPolymerWithSetMods> { modPep };
             SpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
@@ -148,7 +150,7 @@ namespace Test
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
             var parentProtein = new Protein(proteinSequence, accession, sequenceVariations: new List<SequenceVariation> { new SequenceVariation(1, "N", variantAA, sequenceVariantDescription) });
-            var variantProteins = parentProtein.GetVariantProteins();
+            var variantProteins = parentProtein.GetVariantBioPolymers();
 
             CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
             List<Modification> variableModifications = new List<Modification>();
@@ -157,7 +159,7 @@ namespace Test
             MsDataScan dfd = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, (new Proteomics.AminoAcidPolymer.Peptide(modPep.BaseSequence).MonoisotopicMass + 21.981943 + 15.994915).ToMz(1), 1, "filepath", new CommonParameters());
 
-            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
+            var peptidesWithSetModifications = new List<IBioPolymerWithSetMods> { modPep };
             SpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
@@ -189,7 +191,7 @@ namespace Test
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
             var parentProtein = new Protein("NNNPPP", "protein", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(6, 6, "P", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
-            var variantProteins = parentProtein.GetVariantProteins();
+            var variantProteins = parentProtein.GetVariantBioPolymers();
 
             CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
             List<Modification> variableModifications = new List<Modification>();
@@ -198,7 +200,7 @@ namespace Test
             MsDataScan dfd = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, (new Proteomics.AminoAcidPolymer.Peptide(modPep.BaseSequence).MonoisotopicMass + 21.981943 + 15.994915).ToMz(1), 1, "filepath", new CommonParameters());
 
-            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
+            var peptidesWithSetModifications = new List<IBioPolymerWithSetMods> { modPep };
             SpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
@@ -274,15 +276,15 @@ namespace Test
             var thisOk = unknownModifications;//for debugging
             var commonParamsAtThisPoint = task1.CommonParameters.DigestionParams; //for debugging
 
-            var digestedList = variantProteins[0].GetVariantProteins()[0].Digest(task1.CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
+            var digestedList = variantProteins[0].GetVariantBioPolymers()[0].Digest(task1.CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
             Assert.That(digestedList.Count, Is.EqualTo(4));
 
             //Set Peptide with 1 mod at position 3
-            PeptideWithSetModifications pepWithSetMods1 = digestedList[1];
+            var pepWithSetMods1 = digestedList[1];
 
             //Finally Write MZML file
             Assert.That(pepWithSetMods1.FullSequence, Is.EqualTo("PEK[type:acetyl on K]TID"));//this might be base sequence
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 

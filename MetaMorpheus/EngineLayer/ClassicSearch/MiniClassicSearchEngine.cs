@@ -7,6 +7,7 @@ using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Readers.SpectralLibrary;
 
 namespace EngineLayer.ClassicSearch
 {

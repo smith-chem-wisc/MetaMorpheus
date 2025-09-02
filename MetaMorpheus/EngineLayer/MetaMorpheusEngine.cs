@@ -1,10 +1,12 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using Omics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer
 {
@@ -180,7 +182,9 @@ namespace EngineLayer
                 var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
 
                 // is the mass error acceptable?
-                if (closestExperimentalMass != null && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
+                if (closestExperimentalMass != null
+                    && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass)
+                    && Math.Abs(closestExperimentalMass.Charge) <= Math.Abs(scan.PrecursorCharge))//TODO apply this filter before picking the envelope
                 {
                     matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
                         closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
@@ -253,7 +257,10 @@ namespace EngineLayer
                     foreach (var x in closestExperimentalMassList)
                     {
                         String ion = $"{product.ProductType.ToString()}{ product.FragmentNumber}^{x.Charge}-{product.NeutralLoss}";
-                        if (x != null && !ions.Contains(ion) && commonParameters.ProductMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) && x.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
+                        if (x != null 
+                            && !ions.Contains(ion) 
+                            && commonParameters.ProductMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) 
+                            && Math.Abs(x.Charge) <= Math.Abs(scan.PrecursorCharge))//TODO apply this filter before picking the envelope
                         {
                             Product temProduct = product;
                             matchedFragmentIons.Add(new MatchedFragmentIon(temProduct, x.MonoisotopicMass.ToMz(x.Charge),
@@ -270,6 +277,7 @@ namespace EngineLayer
 
         public MetaMorpheusEngineResults Run()
         {
+            DetermineAnalyteType(CommonParameters);
             StartingSingleEngine();
             var stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -279,6 +287,30 @@ namespace EngineLayer
             myResults.Time = stopWatch.Elapsed;
             FinishedSingleEngine(myResults);
             return myResults;
+        }
+
+        /// <summary>
+        /// Changes the name of the analytes from "peptide" to "proteoform" or "oligo" if the protease is set to top-down
+        /// </summary>
+        /// <param name="commonParameters"></param>
+        public static void DetermineAnalyteType(CommonParameters commonParameters)
+        {
+            // Comment made while DetemineAnalyteType happened at the task layer
+            // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
+            // that bottom-up and top-down data is not being searched in the same task. 
+
+            // Update: Now that it is in the engine layer, analyte type specific operations will be okay at the engine layer, meaning seaching top-down and bottom-up with file specific params will execute the proper control flow. However, a problem still exists in PostSearchAnalysis where that analyte type will be set to whatever the main parameters are. 
+
+            if (commonParameters == null || commonParameters.DigestionParams == null)
+                return;
+
+            GlobalVariables.AnalyteType = commonParameters.DigestionParams switch
+            {
+                RnaDigestionParams => AnalyteType.Oligo,
+                DigestionParams { Protease: not null } when commonParameters.DigestionParams.DigestionAgent.Name == "top-down"
+                    => AnalyteType.Proteoform,
+                _ => AnalyteType.Peptide
+            };
         }
 
         public string GetId()

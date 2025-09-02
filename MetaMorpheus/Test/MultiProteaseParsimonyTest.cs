@@ -12,6 +12,7 @@ using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
+using Omics;
 
 namespace Test
 {
@@ -63,7 +64,7 @@ namespace Test
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters_Tryp.DigestionParams);
             digestionParamsList.Add(commonParameters_ArgC.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -151,7 +152,7 @@ namespace Test
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters1.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -229,7 +230,7 @@ namespace Test
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -344,8 +345,8 @@ namespace Test
 
             // check first protein group
             ProteinGroup pg1 = proteinGroups.Where(v => v.ProteinGroupName == "1").First();
-            PeptideWithSetModifications pg1pep1 = pg1.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
-            PeptideWithSetModifications pg1pep2 = pg1.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
+            IBioPolymerWithSetMods pg1pep1 = pg1.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
+            IBioPolymerWithSetMods pg1pep2 = pg1.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
             Assert.That(pg1.UniquePeptides.Contains(pg1pep1));
             Assert.That(pg1pep1.DigestionParams.DigestionAgent.Name == "testA");
             Assert.That(pg1.UniquePeptides.Contains(pg1pep2));
@@ -355,8 +356,8 @@ namespace Test
 
             // check second protein group
             ProteinGroup pg2 = proteinGroups.Where(v => v.ProteinGroupName == "2").First();
-            PeptideWithSetModifications pg2pep1 = pg2.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
-            PeptideWithSetModifications pg2pep2 = pg2.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
+            IBioPolymerWithSetMods pg2pep1 = pg2.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
+            IBioPolymerWithSetMods pg2pep2 = pg2.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
             Assert.That(pg2.UniquePeptides.Contains(pg2pep1));
             Assert.That(pg2pep1.DigestionParams.DigestionAgent.Name == "testB");
             Assert.That(pg2.UniquePeptides.Contains(pg2pep2));
@@ -541,7 +542,7 @@ namespace Test
             var protease2 = new Protease("test4", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
 
-            var peptideList = new List<PeptideWithSetModifications>();
+            var peptideList = new List<IBioPolymerWithSetMods>();
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
@@ -613,7 +614,7 @@ namespace Test
             ProteaseDictionary.Dictionary.Add(protease1.Name, protease1);
             var protease2 = new Protease("testD", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
-            var peptideList = new List<PeptideWithSetModifications>();
+            var peptideList = new List<IBioPolymerWithSetMods>();
 
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
@@ -822,7 +823,7 @@ namespace Test
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -895,7 +896,7 @@ namespace Test
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters_tryp.DigestionParams);
             digestionParamsList.Add(commonParameters_LysC.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -965,7 +966,7 @@ namespace Test
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);

@@ -1,0 +1,189 @@
+﻿<UserControl x:Class="MetaMorpheusGUI.ChimeraAnalysisTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MetaMorpheusGUI"
+             xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:chimeras="clr-namespace:GuiFunctions.MetaDraw;assembly=GuiFunctions"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             d:DataContext="{d:DesignInstance chimeras:ChimeraAnalysisTabViewModel, IsDesignTimeCreatable=True}">
+
+    <Grid x:Name="MainGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />    <!-- MS1 plot -->
+            <RowDefinition Height="5" />    <!-- Splitter -->
+            <RowDefinition Height="*" />    <!-- MS2 plot -->
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Data Grid -->
+        <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="7" x:Name="SelectionDataGrid">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            
+            <DataGrid x:Name="chermicDataGrid" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" 
+              ItemsSource="{Binding  ChimeraGroupViewModels}" SelectedItem="{Binding SelectedChimeraGroup}"
+                      SelectionMode="Single" SelectionUnit="FullRow" HorizontalScrollBarVisibility="Disabled"
+                      SelectedCellsChanged="ChermicDataGrid_OnSelectedCellsChanged"
+                      ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" 
+                      CanUserDeleteRows="false" CanUserAddRows="false" >
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="MS2 " Binding="{Binding Ms2ScanNumber}" Width="50" 
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                    <DataGridTextColumn Header="MS1 " Binding="{Binding OneBasedPrecursorScanNumber}" Width="50"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                    <DataGridTextColumn Header="IDs" Binding="{Binding Count}" Width="30" 
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                    <DataGridTextColumn Header="Total Fragments" Binding="{Binding TotalFragments}" Width="60"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                    <DataGridTextColumn Header="Unique Fragments" Binding="{Binding UniqueFragments}" Width="80"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                    <DataGridTextColumn Header="Proteins" Binding="{Binding ProteinCount}" Width="50"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                    <DataGridTextColumn Header="Primary Sequences" Binding="{Binding PrimarySequenceCount}" Width="74"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                    <DataGridTextColumn Header="DataFile" Binding="{Binding FileNameWithoutExtension}" Width="140"
+                                        ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Bottom Panel: Quick Settings and Export -->
+            <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="4">
+                    <ComboBox ItemsSource="{Binding ExportTypes, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
+                              SelectedItem="{Binding ExportType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
+                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10 0"/>
+                    <StackPanel>
+                        <CheckBox Content="Use Letter" IsChecked="{Binding UseLetterOnly}" VerticalContentAlignment="Center" />
+                        <CheckBox Content="Show Legend" IsChecked="{Binding DisplayChimeraLegend, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}" VerticalContentAlignment="Center" />
+                    </StackPanel>
+
+                </StackPanel>
+                <UniformGrid Grid.Row="1" Columns="2" HorizontalAlignment="Center" Margin="0,10,0,0">
+                    <Button Content="Export MS1"  Width="100" Height="32"
+                            Command="{Binding ExportMs1Command}"
+                            Style="{StaticResource MetaDrawButtonStyle}" />
+                    <Button Content="Export MS2" Width="100" Height="32"
+                            Command="{Binding ExportMs2Command}" 
+                            Style="{StaticResource MetaDrawButtonStyle}" />
+                    <Button Content="Export Sequence Annotation" Width="100" Height="32" FontSize="12"
+                            Command="{Binding ExportSequenceCoverageCommand}" 
+                            Style="{StaticResource MetaDrawButtonStyle}"/>
+                    <Button Content="Export Legend" Width="100" Height="32" FontSize="12"
+                            Command="{Binding ExportLegendCommand}" 
+                            CommandParameter="{Binding ElementName=ChimeraLegend}" 
+                            Style="{StaticResource MetaDrawButtonStyle}" />
+                    <Button Content="Export All" Width="100" Height="32" FontSize="12" 
+                            Command="{Binding ExportAllCommand}" 
+                            CommandParameter="{Binding ElementName=ChimeraLegend}" 
+                            Style="{StaticResource MetaDrawButtonStyle}" />
+                </UniformGrid>
+            </Grid>
+
+        </Grid>
+
+        <!--Moveable splitter-->
+        <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="4"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Stretch"
+                      Background="Silver"
+                      Width="2"/>
+
+        <!-- MS1 Plot-->
+        <Grid Grid.Row="0" Grid.Column="2">
+            <oxy:PlotView x:Name="ms1ChimeraOverlaPlot" 
+                          FontSize="16" FontStretch="Expanded"
+                          Margin="0 0 0 0" VerticalAlignment="Stretch" />
+            <local:SettingsButtonControl Height="52" x:Name="SettingsButton"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                                         Panel.ZIndex="1" SelectedTabIndex="2" />
+        </Grid>
+
+        <!-- Splitter between MS1 and MS2 plots -->
+        <GridSplitter Grid.Row="1" Grid.Column="2"
+                      Height="1"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Center"
+                      Background="Gray"
+                      ShowsPreview="True" />
+        
+        <!-- MS2 Plot -->
+        <oxy:PlotView x:Name="ms2ChimeraPlot" Grid.Row="2" Grid.Column="2" 
+                  FontSize="16" FontStretch="Expanded" VerticalAlignment="Stretch" />
+
+        <!-- Sequence Coverage -->
+        <Expander Grid.Row="3" Grid.Column="2" IsExpanded="False" ExpandDirection="Up">
+            <Expander.Header>
+                <Label Content="Sequence Annotation" Margin="0 0 10 0" />
+            </Expander.Header>
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" CanContentScroll="True"
+                      VerticalScrollBarVisibility="Disabled"
+                      HorizontalAlignment="Left">
+                <Canvas x:Name="chimeraSequenceCanvas"  />
+            </ScrollViewer>
+        </Expander>
+
+
+        <Canvas x:Name="ChimeraLegend"
+                Grid.Column="2" Grid.Row="0" Grid.RowSpan="5" >
+        </Canvas>
+
+        <DataGrid x:Name="chimericResultDataGrid" Grid.Column="2" Grid.Row="5" Grid.RowSpan="2" Height="Auto"
+          ItemsSource="{Binding SelectedChimeraGroup.ChimericPsms}"
+          CanUserAddRows="False" CanUserDeleteRows="False" ScrollViewer.CanContentScroll="False" IsReadOnly="True" AutoGenerateColumns="False"
+          HorizontalScrollBarVisibility="Disabled" CanUserResizeColumns="True">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Proteoform" >
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Rectangle  Stroke="{Binding Color, Converter={local:OxyColorToColorBrushConverter}}"
+                                Fill="{Binding Color, Converter={local:OxyColorToColorBrushConverter}}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="ID" Binding="{Binding Letter}" Width="Auto"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                <DataGridTextColumn Header="Name" Binding="{Binding Psm.Name}" Width="Auto" CanUserResize="True" 
+                                    MaxWidth="400"/>
+                <DataGridTextColumn Header="Theoretical Mass" Binding="{Binding Psm.PrecursorMass}" Width="Auto"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="Precursor Mz" Binding="{Binding Psm.PrecursorMz}" Width="Auto"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="Mods" Binding="{Binding ModString}" Width="Auto" CanUserResize="True"
+                                    MaxWidth="400"/>
+                <DataGridTextColumn Header="PEP Q-Value" Binding="{Binding Psm.PEP_QValue, StringFormat=F3}" Width="Auto"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="Score" Binding="{Binding Psm.Score}"  Width="70"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                <DataGridTextColumn Header="Ambiguity" Binding="{Binding Psm.AmbiguityLevel}"  Width="70"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                <DataGridTemplateColumn Header="Protein">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Rectangle Stroke="{Binding ProteinColor, Converter={local:OxyColorToColorBrushConverter}}"
+                                       Fill="{Binding ProteinColor, Converter={local:OxyColorToColorBrushConverter}}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

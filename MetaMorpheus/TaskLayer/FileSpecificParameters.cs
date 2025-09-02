@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using EngineLayer;
 using MzLibUtil;
 using Nett;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using Omics.Digestion;
 using Omics.Fragmentation;
+using Transcriptomics.Digestion;
 
 namespace TaskLayer
 {
@@ -23,8 +24,33 @@ namespace TaskLayer
                         PrecursorMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
                     case nameof(ProductMassTolerance):
                         ProductMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
-                    case nameof(Protease):
-                        Protease = keyValuePair.Value.Get<Protease>(); break;
+                    case nameof(DigestionAgent): // Support new tomls that labeled by Digestion Agent Type instead of specific type
+                        string valueString = keyValuePair.Value.Get<string>();
+
+                        // If type is top-down we only have the analyte type to go off of. 
+                        // This should be updated if there is ever an Rnase and Protease that share a same name. 
+                        if (valueString.Contains("top-down"))
+                        {
+                            if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+                                DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                            else
+                                DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        }
+
+                        // If type is not top-down we can check the digestion agent dictionaries. 
+                        if (ProteaseDictionary.Dictionary.ContainsKey(valueString))
+                            DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        else if (RnaseDictionary.Dictionary.ContainsKey(valueString))
+                            DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                        else
+                            throw new MetaMorpheusException("Unrecognized digestion agent type \"" + valueString + "\" in file-specific parameters toml");
+                        break;
+                    case "Rnase": // Support old tomls that labeled by Digestion Agent Type instead of DigestionAgent
+                        DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                        break;
+                    case "Protease": // Support old tomls that labeled by Digestion Agent Type instead of DigestionAgent
+                        DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        break;
                     case nameof(MinPeptideLength):
                         MinPeptideLength = keyValuePair.Value.Get<int>(); break;
                     case nameof(MaxPeptideLength):
@@ -56,7 +82,7 @@ namespace TaskLayer
 
         public Tolerance PrecursorMassTolerance { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
-        public Protease Protease { get; set; }
+        public DigestionAgent DigestionAgent { get; set; }
         public int? MinPeptideLength { get; set; }
         public int? MaxPeptideLength { get; set; }
         public int? MaxMissedCleavages { get; set; }

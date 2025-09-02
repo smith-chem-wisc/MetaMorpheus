@@ -12,7 +12,9 @@ using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Nett;
+using Omics.BioPolymer;
 using Omics.Modifications;
+using Omics;
 
 namespace Test
 {
@@ -80,13 +82,13 @@ namespace Test
                 new Protein("MPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "PPP", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", new Dictionary<int, List<Modification>> {{ 5, new[] { mp }.ToList() } }) }),
                 new Protein("MPEPTIDEPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "PTIDEPEPTIDE", "PPP", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
             };
-            PeptideWithSetModifications pep = proteins[proteinIdx].GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).ToList()[peptideIdx];
+            IBioPolymerWithSetMods pep = proteins[proteinIdx].GetVariantBioPolymers().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).ToList()[peptideIdx];
 
             string xmlName = $"andguiaheov{proteinIdx.ToString()}.xml";
             ProteinDbWriter.WriteXmlDatabase(null, new List<Protein> { proteins[proteinIdx] }, xmlName);
 
             string mzmlName = $"ajgdiv{proteinIdx.ToString()}.mzML";
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep });
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pep });
 
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{proteinIdx.ToString()}");
@@ -113,10 +115,10 @@ namespace Test
             string xmlName = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", filename);
             var proteins = ProteinDbLoader.LoadProteinXML(xmlName, decoyType == DecoyType.None, decoyType, null, false, null, out var un);
             var peps = proteins[1].Digest(CommonParameters.DigestionParams, null, null).ToList();
-            PeptideWithSetModifications pep = peps[peps.Count - 2];
+            var pep = peps[peps.Count - 2];
 
             string mzmlName = $"ajgdiv{filename}{decoyType.ToString()}.mzML";
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep });
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pep });
 
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{filename}{decoyType.ToString()}");

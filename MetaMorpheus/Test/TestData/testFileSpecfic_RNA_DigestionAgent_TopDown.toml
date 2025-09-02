@@ -1,0 +1,3 @@
+DigestionAgent = "top-down"
+DissociationType = "ETD"
+CustomIons = ["b", "c", "zDot"]
