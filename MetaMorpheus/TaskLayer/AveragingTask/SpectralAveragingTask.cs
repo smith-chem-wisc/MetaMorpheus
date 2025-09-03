@@ -12,6 +12,7 @@ using SpectralAveraging;
 using Nett;
 using UsefulProteomicsDatabases;
 using Readers;
+using EngineLayer.Util;
 
 namespace TaskLayer
 {
@@ -59,6 +60,7 @@ namespace TaskLayer
                 var originalUnaveragedFilepath = currentRawFileList[spectraFileIndex];
                 var originalUnaveragedFilepathWithoutExtenstion = Path.GetFileNameWithoutExtension(originalUnaveragedFilepath);
                 var averagedFilepath = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".mzML");
+                averagedFilepath = PathSafety.MakeSafeOutputPath(averagedFilepath, AveragingSuffix + ".mzML");
                 var originalFileExtension = GlobalVariables.GetFileExtension(originalUnaveragedFilepath);
                 if (originalFileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase))
                 {
