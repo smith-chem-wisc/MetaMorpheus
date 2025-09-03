@@ -44,7 +44,7 @@ public class GptmdTests
         // run the engine where nothing will be found
         var engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } },
-            new CommonParameters(), fsp, new List<string>(), null);
+            new CommonParameters(), fsp, new List<string>());
         var gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(0));
 
@@ -69,7 +69,7 @@ public class GptmdTests
 
         engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(),
-            null, new List<string>(), null);
+            null, new List<string>());
         gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(1));
 
@@ -102,7 +102,7 @@ public class GptmdTests
         // run the engine where nothing will be found
         var engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } },
-            new CommonParameters(), fsp, new List<string>(), null);
+            new CommonParameters(), fsp, new List<string>());
         var gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(0));
 
@@ -127,7 +127,7 @@ public class GptmdTests
 
         engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(),
-            null, new List<string>(), null);
+            null, new List<string>());
         gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(1));
 
@@ -160,7 +160,7 @@ public class GptmdTests
         // run the engine where nothing will be found
         var engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } },
-            new CommonParameters(), fsp, new List<string>(), null);
+            new CommonParameters(), fsp, new List<string>());
         var gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(0));
 
@@ -185,7 +185,7 @@ public class GptmdTests
 
         engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(),
-            null, new List<string>(), null);
+            null, new List<string>());
         gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(1));
 

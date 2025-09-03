@@ -30,15 +30,13 @@ namespace EngineLayer.Gptmd
             Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, 
             CommonParameters commonParameters, 
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, 
-            List<string> nestedIds,
-            Dictionary<string, HashSet<Tuple<int, Modification>>> modDictionary) 
+            List<string> nestedIds) 
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllIdentifications = allIdentifications;
             GptmdModifications = gptmdModifications;
             Combos = combos;
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
-            ModDictionary = modDictionary ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
         }
 
         public static bool ModFits(Modification attemptToLocalize, IBioPolymer protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)

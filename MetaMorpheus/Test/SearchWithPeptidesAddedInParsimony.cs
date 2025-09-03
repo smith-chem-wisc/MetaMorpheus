@@ -69,7 +69,7 @@ namespace Test
 
             var pepMG = protein2.Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).First();
 
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { protein1, protein2 }, xmlName);
 
             string mzmlName = @"ajgdiu.mzML";
 

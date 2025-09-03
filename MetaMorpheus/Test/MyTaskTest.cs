@@ -110,7 +110,7 @@ namespace Test
             File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, mzmlName), Path.Join(inputFolder, mzmlName));
 
             string xmlName = "okk.xml";
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
             File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, mzmlName), Path.Join(inputFolder, xmlName));
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestEverythingRunnerOutput");
@@ -272,7 +272,7 @@ namespace Test
             Protein proteinWithChain2 = new("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<TruncationProduct> { new TruncationProduct(4, 8, "chain") }, "name2", "fullname2", false, false, new List<DatabaseReference>(), new List<SequenceVariation>(), null);
 
             string xmlName = "okk.xml";
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain1, proteinWithChain2 }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { ParentProtein, proteinWithChain1, proteinWithChain2 }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMultipleFilesRunner");
             // RUN!
@@ -308,7 +308,7 @@ namespace Test
 
             {
                 Protein theProtein = new("MG", "accession1");
-                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+                ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein }, xmlName);
             }
 
             string mzmlName = @"MakeSureFdrDoesntSkip.mzML";
@@ -397,7 +397,7 @@ namespace Test
 
             {
                 Protein theProtein = new Protein("MPEPTIDEKANTHE", "accession1");
-                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+                ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein }, xmlName);
             }
 
             string mzmlName = @"ok.mzML";
@@ -460,7 +460,7 @@ namespace Test
 
             {
                 Protein theProtein = new Protein("MPEPTIDEKANTHE", "accession1", isContaminant: true);
-                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+                ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein }, xmlName);
             }
 
             string mzmlName = @"ok.mzML";
@@ -548,7 +548,7 @@ namespace Test
                 new Tuple<int, Modification>(3, modToAdd)
             };
             modList.Add("test", Hash);
-            ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProtein }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { TestProtein }, xmlName);
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);

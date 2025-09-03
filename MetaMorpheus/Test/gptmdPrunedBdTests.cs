@@ -123,13 +123,12 @@ namespace Test
             string xmlName = "okkk.xml";
 
             //Add Mod to list and write XML input database
-            Dictionary<string, HashSet<Tuple<int, Modification>>> modList = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
             var Hash = new HashSet<Tuple<int, Modification>>
             {
                 new Tuple<int, Modification>(3, modToAdd)
             };
-            modList.Add("test", Hash);
-            ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProteinWithMod }, xmlName);
+
+            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { TestProteinWithMod }, xmlName);
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true,
@@ -275,11 +274,11 @@ namespace Test
             };
 
             modList.Add("test", Hash);
-            ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProteinWithModForDB }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { TestProteinWithModForDB }, xmlName);
 
             //Add Observed Only
             modList.Add("test2", Hash);
-            ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProteinWithModObsevred }, xmlName2);
+            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { TestProteinWithModObsevred }, xmlName2);
 
             //now create MZML data
             var protein = ProteinDbLoader.LoadProteinXML(xmlName2, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
@@ -342,7 +341,7 @@ namespace Test
 
             string path = @"temp";
 
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, path);
+            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { protein1, protein2 }, path);
 
             Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest"));
 
@@ -354,7 +353,7 @@ namespace Test
 
             };
 
-            var db = ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { protein1, protein2 }, Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"));
+            var db = ProteinDbWriter.WriteXmlDatabase(new List<Protein> { protein1, protein2 }, Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"));
 
             var peptideObserved = protein1.Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>())
             .Where(p => p.BaseSequence == "PEPT" && p.AllModsOneIsNterminus.Count > 0).First();
@@ -447,11 +446,10 @@ namespace Test
             proteinList.AddRange(protein1Variants);
           
 
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList, path);
+            ProteinDbWriter.WriteXmlDatabase(proteinList, path);
 
             Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTestVariant"));
 
-            Dictionary<string, HashSet<Tuple<int, Modification>>> modList = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
             var Hash = new HashSet<Tuple<int, Modification>>
             {
                 new Tuple<int, Modification>(1, modToWrite),
@@ -459,7 +457,7 @@ namespace Test
 
             };
 
-            var db = ProteinDbWriter.WriteXmlDatabase(modList,  proteinList , Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTestVariant/fakeDb.xml"));
+            var db = ProteinDbWriter.WriteXmlDatabase(proteinList , Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTestVariant/fakeDb.xml"));
 
             var peptideObserved = protein1Variants.First().Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>())
             .Where(p => p.BaseSequence == "PEPT").First();
@@ -491,8 +489,6 @@ namespace Test
             { peptideObserved});
             string mzmlName = @"newMzml.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-
-            modList.Add("test", Hash);
 
             testPostTaskParameters.CurrentRawFileList = new List<string>() { mzmlName };
 
