@@ -44,7 +44,7 @@ namespace Test
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", new CommonParameters()));
 
-            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), fsp, new List<string>());
+            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), fsp, new List<string>(), null);
             var res = (GptmdResults)engine.Run();
             Assert.That(res.Mods.Count, Is.EqualTo(0));
 
@@ -65,7 +65,7 @@ namespace Test
             newPsm.SetMs2Scan(scan.TheScan);
             allResultingIdentifications.Add(newPsm);
 
-            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>());
+            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>(), null);
             res = (GptmdResults)engine.Run();
             Assert.That(res.Mods.Count, Is.EqualTo(1));
             Assert.That(res.Mods["accession"].Count, Is.EqualTo(numModifiedResidues));
@@ -116,7 +116,7 @@ namespace Test
                 }
             }
             
-            var engine = new GptmdEngine(nonNullPsms, reducedMods, new List<Tuple<double, double>>(), new Dictionary<string, Tolerance> { { @"TestData\SmallCalibratible_Yeast.mzML", precursorMassTolerance } }, commonParameters, fsp, new List<string>());
+            var engine = new GptmdEngine(nonNullPsms, reducedMods, new List<Tuple<double, double>>(), new Dictionary<string, Tolerance> { { @"TestData\SmallCalibratible_Yeast.mzML", precursorMassTolerance } }, commonParameters, fsp, new List<string>(), null);
             var res = (GptmdResults)engine.Run();
             Assert.That(8, Is.EqualTo(res.Mods.Count));
         }
@@ -168,7 +168,7 @@ namespace Test
             match.SetMs2Scan(scan.TheScan);
             allIdentifications = new List<SpectralMatch> { match };
 
-            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>());
+            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>(), null);
             var res = (GptmdResults)engine.Run();
             Assert.That(res.Mods.Count, Is.EqualTo(numModHashes));
             Assert.That(res.Mods["accession"].Count, Is.EqualTo(numModifiedResidues));
@@ -209,7 +209,7 @@ namespace Test
             match.SetMs2Scan(scan.TheScan);
             allIdentifications = new List<SpectralMatch> { match };
 
-            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>());
+            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>(), null);
             var res = (GptmdResults)engine.Run();
         }
 

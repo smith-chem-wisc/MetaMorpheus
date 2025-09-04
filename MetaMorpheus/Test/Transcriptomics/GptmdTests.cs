@@ -44,7 +44,7 @@ public class GptmdTests
         // run the engine where nothing will be found
         var engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } },
-            new CommonParameters(), fsp, new List<string>());
+            new CommonParameters(), fsp, new List<string>(), null);
         var gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(0));
 
@@ -69,7 +69,7 @@ public class GptmdTests
 
         engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(),
-            null, new List<string>());
+            null, new List<string>(), null);
         gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(1));
 
@@ -102,7 +102,7 @@ public class GptmdTests
         // run the engine where nothing will be found
         var engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } },
-            new CommonParameters(), fsp, new List<string>());
+            new CommonParameters(), fsp, new List<string>(), null);
         var gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(0));
 
@@ -127,7 +127,7 @@ public class GptmdTests
 
         engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(),
-            null, new List<string>());
+            null, new List<string>(), null);
         gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(1));
 
@@ -136,7 +136,6 @@ public class GptmdTests
         else
             Assert.That(gptmdResults.Mods["accession"].Count, Is.EqualTo(expectedGptmdMods));
     }
-
 
     [Test]
     [TestCase("GUACUGAUGAUAUAYAU", 14.015650, 1)]
@@ -160,7 +159,7 @@ public class GptmdTests
         // run the engine where nothing will be found
         var engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } },
-            new CommonParameters(), fsp, new List<string>());
+            new CommonParameters(), fsp, new List<string>(), null);
         var gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(0));
 
@@ -185,7 +184,7 @@ public class GptmdTests
 
         engine = new GptmdEngine(allResultingIdentifications, gptmdMods, combos,
             new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(),
-            null, new List<string>());
+            null, new List<string>(), null);
         gptmdResults = (GptmdResults)engine.Run();
         Assert.That(gptmdResults.Mods.Count, Is.EqualTo(1));
 
