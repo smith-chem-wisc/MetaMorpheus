@@ -900,9 +900,8 @@ namespace Test.MetaDraw
 
             var metaDrawDynamicScanConnection = metadrawLogic.MsDataFiles;
 
-            var chimeraAnalysisTab = new ChimeraAnalysisTabViewModel(
-                metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles,
-                outputFolder);
+            var chimeraAnalysisTab = new ChimeraAnalysisTabViewModel(outputFolder);
+            chimeraAnalysisTab.ProcessChimeraData(metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles);
             // test plotting on each instance of chimeras in this dataset
             var plotView = new OxyPlot.Wpf.PlotView() { Name = "chimeraPlot" };
             foreach (var chimeraGroup in chimeraAnalysisTab.ChimeraGroupViewModels)

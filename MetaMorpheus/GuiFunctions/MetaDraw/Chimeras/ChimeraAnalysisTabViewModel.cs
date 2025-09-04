@@ -24,6 +24,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
     public Ms1ChimeraPlot Ms1ChimeraPlot { get; set; }
     public ObservableCollection<ChimeraGroupViewModel> ChimeraGroupViewModels { get; set; }
+    public Dictionary<string, MsDataFile> MsDataFiles { get; private set; }
 
     private ChimeraGroupViewModel _selectedChimeraGroup;
     public ChimeraGroupViewModel SelectedChimeraGroup
@@ -80,20 +81,28 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     }
 
     #endregion
-
-    public ChimeraAnalysisTabViewModel(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles, string exportDirectory = null)
+    public ChimeraAnalysisTabViewModel(string exportDirectory = null)
     {
-        ChimeraGroupViewModels = [..ConstructChimericPsms(allPsms, dataFiles)
-            .OrderByDescending(p => p.Count)
-            .ThenByDescending(p => p.UniqueFragments)
-            .ThenByDescending(p => p.TotalFragments)];
+        ChimeraGroupViewModels = new();
         ExportDirectory = exportDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
         ExportMs1Command = new RelayCommand(ExportMs1);
         ExportMs2Command = new RelayCommand(ExportMs2);
         ExportSequenceCoverageCommand = new RelayCommand(ExportSequenceCoverage);
         ExportLegendCommand = new DelegateCommand(ExportLegend);
         ExportAllCommand = new DelegateCommand(ExportAll);
+    }
+
+    public void ProcessChimeraData(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles)
+    {
+        MsDataFiles = dataFiles;
+        ChimeraGroupViewModels.Clear();
+        foreach (var chimeraGroup in ConstructChimericPsms(allPsms, dataFiles)
+                     .OrderByDescending(p => p.Count)
+                     .ThenByDescending(p => p.UniqueFragments)
+                     .ThenByDescending(p => p.TotalFragments))
+        {
+            ChimeraGroupViewModels.Add(chimeraGroup);
+        }
     }
 
     public static List<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles)
