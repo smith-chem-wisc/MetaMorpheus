@@ -220,13 +220,16 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             dc.DrawText(metricsFt, new Point(metricsX, metricsY));
 
             // --- Second line: legend, wrapped ---
+            var sep = new FormattedText("\t", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.8, Brushes.DimGray, dpi);
+            var sepWidth = sep.Width;
+
             double legendY = metricsY + metricsFt.Height + legendSpacing;
             var legendItems = CreateLegendItems(filteredResults, fontSize, dpi, ColorBy);
 
-            var legendLines = WrapLegendItems(legendItems, fontSize, dpi, usableWidth);
+            var legendLines = WrapLegendItems(legendItems, fontSize, dpi, usableWidth, sepWidth);
 
             double legendLineHeight = legendItems.Count == 0 ? 0 : Math.Max(fontSize * 0.8, legendItems.Max(li => li.Text.Height));
-            double sepWidth = new FormattedText("\t", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.8, Brushes.DimGray, dpi).Width;
+            
 
             foreach (var line in legendLines)
             {
@@ -246,7 +249,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                     if (i < line.Count - 1)
                     {
                         double sepY = legendY + (legendLineHeight - text.Height) / 2;
-                        dc.DrawText(new FormattedText("\t", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.8, Brushes.DimGray, dpi), new Point(legendX, sepY));
+                        dc.DrawText(sep, new Point(legendX, sepY));
                         legendX += sepWidth;
                     }
                 }
@@ -279,7 +282,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
 
                     // Cache drawn rectangles to avoid duplicates
                     var rectKey = (row, thisStartCol, thisEndCol);
-                    if (drawnRects.Contains(rectKey))
+                    if (!drawnRects.Add(rectKey))
                     {
                         // Skip duplicate rectangle
                         remaining -= drawLen;
@@ -289,7 +292,6 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                         isFirstSegment = false;
                         continue;
                     }
-                    drawnRects.Add(rectKey);
 
                     // Keep rects if you need them elsewhere (optional)
                     if (!rowRectangles.TryGetValue(row, out var rects))
@@ -338,6 +340,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                     var baseBrush = GetColorBrush(res);
                     var color = (baseBrush as SolidColorBrush)?.Color ?? Colors.Gray;
                     var brush = new SolidColorBrush(color) { Opacity = 0.75 };
+                    brush.Freeze();
 
                     // Create a fully opaque, darkened pen for the outline
                     Color outlineColor = Color.Multiply(color, 0.9f); // darken for contrast
@@ -560,11 +563,11 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         List<(SolidColorBrush Brush, FormattedText Text)> items,
         double fontSize,
         double dpi,
-        double usableWidth)
+        double usableWidth,
+        double sepWidth)
     {
         var lines = new List<List<(SolidColorBrush Brush, FormattedText Text)>>();
         var currentLine = new List<(SolidColorBrush Brush, FormattedText Text)>();
-        double sepWidth = new FormattedText("\t", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.8, Brushes.DimGray, dpi).Width;
         double currentWidth = 0;
 
         foreach (var item in items)
