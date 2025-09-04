@@ -240,21 +240,20 @@ public class BioPolymerTabViewModel : BaseViewModel
                 // Mismatch b/n accessions and start/end indexes. This occurs when one of the fields does not have a distinct value (e.g. peptide is in 3 protein sequences but has the same start and end in two of the sequences). 
                 else
                 {
-                    var start = bioPolymer.BaseSequence.IndexOf(match.BaseSeq, StringComparison.Ordinal) + 1;
-                    var locWithStart = siteSplits.FirstOrDefault(p => p.Start == start);
-                    if (locWithStart != default((int,int)))
+                    var startIndicesInBioPolymer = bioPolymer.BaseSequence.IndexOfAll(match.BaseSeq)
+                        .Select(p => p + 1)
+                        .ToArray();
+                    foreach (var potentialSite in siteSplits)
                     {
-                        if (missedCleavages == 0)
-                            covType = BioPolymerCoverageType.Shared;
-                        else
-                            covType = BioPolymerCoverageType.SharedMissedCleavage;
-
-                        processedResults.Add(new(match, match.BaseSeq, locWithStart.Start, locWithStart.End, covType));
-                    }
-                    else
-                    {
-                        // If you hit this, congratulations, you found a new unique case that has yet to be handled
-                        Debugger.Break(); 
+                        if (startIndicesInBioPolymer.Contains(potentialSite.Start))
+                        {
+                            // Found a match
+                            if (missedCleavages == 0)
+                                covType = BioPolymerCoverageType.Shared;
+                            else
+                                covType = BioPolymerCoverageType.SharedMissedCleavage;
+                            processedResults.Add(new(match, match.BaseSeq, potentialSite.Start, potentialSite.End, covType));
+                        }
                     }
                 }
             }

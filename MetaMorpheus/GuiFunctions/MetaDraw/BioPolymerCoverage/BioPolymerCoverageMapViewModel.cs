@@ -256,6 +256,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             // --- Offset plot below header block (metrics + legend) ---
             double headerBlockHeight = metricsFt.Height + legendSpacing + legendLines.Count * (legendLineHeight + legendSpacing * 0.2);
             double plotYOffset = headerTop + headerBlockHeight + legendSpacing;
+            var drawnRects = new HashSet<(int row, int startCol, int endCol)>();
 
             // --- Draw rectangles for each peptide, with jitter for overlaps ---
             foreach (var res in filteredResults)
@@ -275,6 +276,20 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                     int drawLen = Math.Min(remaining, lettersPerRow - col);
                     int thisStartCol = col;
                     int thisEndCol = col + drawLen - 1;
+
+                    // Cache drawn rectangles to avoid duplicates
+                    var rectKey = (row, thisStartCol, thisEndCol);
+                    if (drawnRects.Contains(rectKey))
+                    {
+                        // Skip duplicate rectangle
+                        remaining -= drawLen;
+                        idx += drawLen;
+                        row++;
+                        col = 0;
+                        isFirstSegment = false;
+                        continue;
+                    }
+                    drawnRects.Add(rectKey);
 
                     // Keep rects if you need them elsewhere (optional)
                     if (!rowRectangles.TryGetValue(row, out var rects))

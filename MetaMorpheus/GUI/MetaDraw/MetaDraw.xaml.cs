@@ -541,8 +541,8 @@ namespace MetaMorpheusGUI
 
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
                 DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles, directoryPath);
-            ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
+            //ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles, directoryPath);
+            //ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
             DeconExplorationViewModel.MsDataFiles.Clear();
             foreach (var dataFile in MetaDrawLogic.MsDataFiles)
             {
