@@ -163,6 +163,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         var results = Group.CoverageResults;
         var filteredResults = results.Where(p => MetaDrawSettings.FilterAcceptsPsm(p.Match)).ToList();
         int lettersPerRow = LettersPerRow;
+        var bioPolymerName = Group.ProteinName;
         double fontSize = MetaDrawSettings.BioPolymerCoverageFontSize;
 
         double plotMargin = fontSize * 2;
@@ -184,7 +185,21 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             double dpi = MetaDrawSettings.CanvasPdfExportDpi;
             double headerTop = legendSpacing;
 
-            // --- Top line: global coverage metrics ---
+            // --- Draw BioPolymer Name at the very top ---
+            var bioPolymerNameText = new FormattedText(
+                bioPolymerName,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Segoe UI Bold"),
+                fontSize * 1.1,
+                Brushes.Black,
+                dpi);
+
+            double nameX = plotMargin + (usableWidth - bioPolymerNameText.Width) / 2;
+            double nameY = legendSpacing; // Start at the top margin
+            dc.DrawText(bioPolymerNameText, new Point(nameX, nameY));
+
+            // --- Global coverage metrics ---
             int seqLen = seq.Length;
             var anyCovered = new bool[seqLen];
             var uniqueCovered = new bool[seqLen];
@@ -216,17 +231,17 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                 dpi);
 
             double metricsX = plotMargin + (usableWidth - metricsFt.Width) / 2;
-            double metricsY = headerTop;
+            double metricsY = nameY + bioPolymerNameText.Height + legendSpacing * 0.5;
             dc.DrawText(metricsFt, new Point(metricsX, metricsY));
 
-            // --- Second line: legend, wrapped ---
+            // --- Legend, wrapped ---
             var sep = new FormattedText("\t", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.8, Brushes.DimGray, dpi);
             var sepWidth = sep.Width;
 
             double legendY = metricsY + metricsFt.Height + legendSpacing;
             var legendItems = CreateLegendItems(filteredResults, fontSize, dpi, ColorBy);
 
-            var legendLines = WrapLegendItems(legendItems, fontSize, dpi, usableWidth, sepWidth);
+            var legendLines = WrapLegendItems(legendItems, fontSize, usableWidth, sepWidth);
 
             double legendLineHeight = legendItems.Count == 0 ? 0 : Math.Max(fontSize * 0.8, legendItems.Max(li => li.Text.Height));
             
@@ -257,7 +272,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             }
 
             // --- Offset plot below header block (metrics + legend) ---
-            double headerBlockHeight = metricsFt.Height + legendSpacing + legendLines.Count * (legendLineHeight + legendSpacing * 0.2);
+            double headerBlockHeight = bioPolymerNameText.Height + metricsFt.Height + legendSpacing + legendLines.Count * (legendLineHeight + legendSpacing * 0.2);
             double plotYOffset = headerTop + headerBlockHeight + legendSpacing;
             var drawnRects = new HashSet<(int row, int startCol, int endCol)>();
 
@@ -562,7 +577,6 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
     private List<List<(SolidColorBrush Brush, FormattedText Text)>> WrapLegendItems(
         List<(SolidColorBrush Brush, FormattedText Text)> items,
         double fontSize,
-        double dpi,
         double usableWidth,
         double sepWidth)
     {
