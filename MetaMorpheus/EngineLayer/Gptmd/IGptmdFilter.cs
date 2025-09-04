@@ -125,7 +125,6 @@ public sealed class UniDirectionalIonCoverageFilter : IGptmdFilter
 /// </summary>
 public sealed class FlankingIonCoverageFilter : IGptmdFilter
 {
-    // TODO: Consider N-terminal and C-terminal mods as special cases, where the flanking ion not possible except for the M ion. 
     public bool Passes(
         IBioPolymerWithSetMods candidatePeptide,
         SpectralMatch psm,
