@@ -61,7 +61,7 @@ namespace Test
             List<Protein> proteinList = new List<Protein> { prot1, prot2, prot3, prot4 };
 
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlFilePath, false);
-            ProteinDbWriter.WriteXmlDatabase(proteinList, proteinDbFilePath);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList, proteinDbFilePath);
 
             string output_folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestBinGeneration");
             Directory.CreateDirectory(output_folder);
@@ -126,7 +126,7 @@ namespace Test
 
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlFilePath1, false);
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlFilePath2, false);
-            ProteinDbWriter.WriteXmlDatabase(proteinList, proteinDbFilePath);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList, proteinDbFilePath);
 
             string output_folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles");
             Directory.CreateDirectory(output_folder);

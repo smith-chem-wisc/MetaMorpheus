@@ -199,8 +199,8 @@ namespace TaskLayer
                 outputXMLdbFullName = PathSafety.MakeSafeOutputPath(outputXMLdbFullName, GptmdDatabaseSuffix);
 
                 var newModsActuallyWritten = isProtein
-                    ? ProteinDbWriter.WriteXmlDatabase(proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullName)
-                    : ProteinDbWriter.WriteXmlDatabase(proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullName);
+                    ? ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullName)
+                    : ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullName);
 
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
@@ -228,8 +228,8 @@ namespace TaskLayer
                 outputXMLdbFullNameContaminants = PathSafety.MakeSafeOutputPath(outputXMLdbFullNameContaminants, GptmdDatabaseSuffix);
 
                 var newModsActuallyWritten = isProtein
-                    ? ProteinDbWriter.WriteXmlDatabase(proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullNameContaminants)
-                    : ProteinDbWriter.WriteXmlDatabase(proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullNameContaminants);
+                    ? ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullNameContaminants)
+                    : ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullNameContaminants);
 
                 FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));

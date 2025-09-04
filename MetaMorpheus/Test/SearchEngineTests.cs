@@ -1995,7 +1995,7 @@ namespace Test
             Protein theProtein = new Protein("PEPTIDEK", "accession1");
             Protein theProtein2 = new Protein("ANTHERPEPKLNGEEPEPKSMTHERPEPSK", "accession2");
             Protein theProtein3 = new Protein("ANTHERPEPKLNGEEPEPKASWELASKTHEPEPSK", "accession3");
-            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein, theProtein2, theProtein3 }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2, theProtein3 }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"testFolder");
             Directory.CreateDirectory(outputFolder);

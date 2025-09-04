@@ -37,6 +37,7 @@ namespace EngineLayer.Gptmd
             GptmdModifications = gptmdModifications;
             Combos = combos;
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
+            ModDictionary = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
         }
 
         public static bool ModFits(Modification attemptToLocalize, IBioPolymer protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)

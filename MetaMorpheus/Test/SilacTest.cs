@@ -48,7 +48,7 @@ namespace Test
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new("PEPTIDER", "accession1");
-            _ = ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein }, xmlName);
+            _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             _ = Directory.CreateDirectory(outputFolder);
@@ -122,7 +122,7 @@ namespace Test
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("MPRTEINRSEQENEWITHAKANDANRANDSMSTFF", "accession1");
-            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             _ = Directory.CreateDirectory(outputFolder);
@@ -205,7 +205,7 @@ namespace Test
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");
-            _ = ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein }, xmlName);
+            _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             _ = Directory.CreateDirectory(outputFolder);
@@ -258,7 +258,7 @@ namespace Test
 
             //make an ambiguous database
             Protein theProtein2 = new Protein("PEPTLDEKPEPTIDEK", "accession2");
-            _ = ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein, theProtein2 }, xmlName);
+            _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2 }, xmlName);
 
             _ = Directory.CreateDirectory(outputFolder);
             _ = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
@@ -277,7 +277,7 @@ namespace Test
 
             //make an ambiguous database
             theProtein2 = new Protein("PEPTIDEK", "accession2");
-            _ = ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein, theProtein2 }, xmlName);
+            _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2 }, xmlName);
 
             _ = Directory.CreateDirectory(outputFolder);
             _ = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
@@ -321,7 +321,7 @@ namespace Test
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");
-            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
@@ -372,7 +372,7 @@ namespace Test
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPEPEPTKIDEKPEPTKIDEKA", "accession1");
-            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
@@ -510,7 +510,7 @@ namespace Test
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTKIDEK", "accession1");
-            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
@@ -568,7 +568,7 @@ namespace Test
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTIDERPEPTIDEKPKEKPKTKIKDKEK", "accession1");
             Protein decoyProtein = new Protein("KEDITPEP", "accession2");
-            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein, decoyProtein }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, decoyProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
@@ -612,7 +612,7 @@ namespace Test
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");
-            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { theProtein }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);

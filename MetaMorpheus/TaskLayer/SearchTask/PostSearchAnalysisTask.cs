@@ -1293,13 +1293,13 @@ namespace TaskLayer
                 if (Parameters.DatabaseFilenameList.Any(b => !b.IsContaminant))
                 {
                     string outputXMLdbFullName = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(Parameters.BioPolymerList.Select(p => p.ConsensusVariant).Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), Parameters.BioPolymerList.Select(p => p.ConsensusVariant).Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
                     FinishedWritingFile(outputXMLdbFullName, new List<string> { Parameters.SearchTaskId });
                 }
                 if (Parameters.DatabaseFilenameList.Any(b => b.IsContaminant))
                 {
                     string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(Parameters.BioPolymerList.Select(p => p.ConsensusVariant).Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), Parameters.BioPolymerList.Select(p => p.ConsensusVariant).Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
                     FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
                 }
 
@@ -1307,13 +1307,13 @@ namespace TaskLayer
                 if (Parameters.DatabaseFilenameList.Any(b => !b.IsContaminant))
                 {
                     string outputXMLdbFullName = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
                     FinishedWritingFile(outputXMLdbFullName, new List<string> { Parameters.SearchTaskId });
                 }
                 if (Parameters.DatabaseFilenameList.Any(b => b.IsContaminant))
                 {
                     string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
                     FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
                 }
 

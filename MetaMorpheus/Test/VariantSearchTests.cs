@@ -85,7 +85,7 @@ namespace Test
             IBioPolymerWithSetMods pep = proteins[proteinIdx].GetVariantBioPolymers().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).ToList()[peptideIdx];
 
             string xmlName = $"andguiaheov{proteinIdx.ToString()}.xml";
-            ProteinDbWriter.WriteXmlDatabase(new List<Protein> { proteins[proteinIdx] }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { proteins[proteinIdx] }, xmlName);
 
             string mzmlName = $"ajgdiv{proteinIdx.ToString()}.mzML";
             MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pep });
