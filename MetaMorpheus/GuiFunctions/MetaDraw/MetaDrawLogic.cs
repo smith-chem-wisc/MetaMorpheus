@@ -43,7 +43,7 @@ namespace GuiFunctions
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
 
-        private List<SpectrumMatchFromTsv> AllSpectralMatches; // all loaded PSMs
+        public List<SpectrumMatchFromTsv> AllSpectralMatches; // all loaded PSMs
         public Dictionary<string, MsDataFile> MsDataFiles { get; } // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");

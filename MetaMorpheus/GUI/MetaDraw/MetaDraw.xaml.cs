@@ -42,6 +42,8 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
         public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
+        public DeconExplorationTabViewModel DeconExplorationViewModel { get; set; } = new();
+        public BioPolymerTabViewModel BioPolymerTabViewModel { get; set; } 
 
         public MetaDraw(string[]? filesToLoad = null)
         {
@@ -55,9 +57,13 @@ namespace MetaMorpheusGUI
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchesGroupedByFile, MetaDrawLogic.ThreadLocker);
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
+            DeconExplorationTabView.DataContext = DeconExplorationViewModel;
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
             AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
             AdditionalFragmentIonControl.LinkMetaDraw(this);
+            BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
+            BioPolymerCoverageTabView.DataContext = BioPolymerTabViewModel;
+            
 
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
@@ -163,6 +169,10 @@ namespace MetaMorpheusGUI
                     specLibraryLabel.ToolTip = string.Join("\n", MetaDrawLogic.SpectralLibraryPaths);
                     resetSpecLibraryButton.IsEnabled = true;
                 }
+            }
+            else if (GlobalVariables.AcceptedDatabaseFormats.Contains(theExtension))
+            {
+                BioPolymerTabViewModel.DatabasePath = filePath;
             }
             else
             {
@@ -474,6 +484,11 @@ namespace MetaMorpheusGUI
                 {
                     ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Add(chimeraGroup);
                 }
+
+                foreach (var group in BioPolymerTabViewModel.AllGroups)
+                {
+                    group.UpdatePropertiesAfterFilter();
+                }
             }
 
             if (e.DataVisualizationChanged && (string)((TabItem)MainTabControl.SelectedItem).Header == "Data Visualization")
@@ -528,6 +543,17 @@ namespace MetaMorpheusGUI
                 DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles, directoryPath);
             ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
+            DeconExplorationViewModel.MsDataFiles.Clear();
+            foreach (var dataFile in MetaDrawLogic.MsDataFiles)
+            {
+                DeconExplorationViewModel.MsDataFiles.Add(dataFile.Value);
+            }
+
+
+            BioPolymerTabViewModel.ExportDirectory = directoryPath;
+            if (BioPolymerTabViewModel.IsDatabaseLoaded)
+                BioPolymerTabViewModel.ProcessSpectralMatches(MetaDrawLogic.AllSpectralMatches);
+
             var errors = slowProcess.Result;
 
             if (errors.Any())
