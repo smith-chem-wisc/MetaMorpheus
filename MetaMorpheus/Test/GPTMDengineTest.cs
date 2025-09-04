@@ -255,7 +255,7 @@ namespace Test
             };
             modList.Add(testProteinWithMod.Accession, hash);
             modList.Add(variantAcc, hashVar);
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { testProteinWithMod }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { testProteinWithMod }, xmlName);
 
             //now write MZML file
             var variantProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, null, false, null, out var unknownModifications, minAlleleDepth: 0);
