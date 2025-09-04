@@ -504,7 +504,11 @@ namespace MetaMorpheusGUI
         {
             // check for validity
             propertyView.Clear();
-            if (!MetaDrawLogic.SpectraFilePaths.Any())
+
+            bool loadSpectraFiles = true;
+            if ((e.Source as Button)?.Name == "loadFilesStat")
+                loadSpectraFiles = false;
+            else if (!MetaDrawLogic.SpectraFilePaths.Any())
             {
                 MessageBox.Show("Please add a spectra file.");
                 return;
@@ -528,7 +532,7 @@ namespace MetaMorpheusGUI
 
             var dataLoader = new MetaDrawDataLoader(MetaDrawLogic);
             var errors = await dataLoader.LoadAllAsync(
-                loadSpectra: true,
+                loadSpectra: loadSpectraFiles,
                 loadPsms: true,
                 loadLibraries: true,
                 chimeraTabViewModel: ChimeraAnalysisTabViewModel,
@@ -741,37 +745,6 @@ namespace MetaMorpheusGUI
             {
                 plotTypes.Add(plot);
             }
-        }
-
-        private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
-        {
-            // check for validity
-            if (!MetaDrawLogic.SpectralMatchResultFilePaths.Any())
-            {
-                MessageBox.Show("Please add a search result file.");
-                return;
-            }
-
-            (sender as Button).IsEnabled = false;
-            selectPsmFileButtonStat.IsEnabled = false;
-            resetPsmFileButtonStat.IsEnabled = false;
-            prgsFeedStat.IsOpen = true;
-
-            // load the PSMs
-            this.prgsTextStat.Content = "Loading data...";
-            MetaDrawLogic.LoadFiles(loadSpectra: false, loadPsms: true);
-
-            PsmStatPlotFiles.Clear();
-            foreach (var item in MetaDrawLogic.SpectralMatchesGroupedByFile)
-            {
-                PsmStatPlotFiles.Add(item.Key);
-            }
-
-            // done loading - restore controls
-            this.prgsFeedStat.IsOpen = false;
-            (sender as Button).IsEnabled = true;
-            selectPsmFileButtonStat.IsEnabled = true;
-            resetPsmFileButtonStat.IsEnabled = true;
         }
 
         /// <summary>

@@ -484,7 +484,7 @@
                             </DockPanel>
 
                             <DockPanel Grid.Row="1" Margin="2">
-                                <Button Name="loadFilesStat" Content="Import Files From PSMTSV" Width="160" Click="loadFilesButtonStat_Click"/>
+                                <Button Name="loadFilesStat" Content="Import Files From PSMTSV" Width="160" Click="loadFilesButton_Click"/>
                             </DockPanel>
 
                             <!--Select psms to display by source file-->
