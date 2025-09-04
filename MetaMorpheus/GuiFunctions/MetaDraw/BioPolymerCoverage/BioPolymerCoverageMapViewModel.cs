@@ -116,7 +116,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
     public DrawingImage CoverageDrawing
     {
         get => _coverageDrawing;
-        private set { _coverageDrawing = value; OnPropertyChanged(nameof(CoverageDrawing)); }
+        internal set { _coverageDrawing = value; OnPropertyChanged(nameof(CoverageDrawing)); }
     }
 
     private BioPolymerGroupViewModel _group;

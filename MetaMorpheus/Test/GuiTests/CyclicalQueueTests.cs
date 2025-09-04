@@ -64,4 +64,23 @@ public class CyclicalQueueTests
         Assert.That(queue.Dequeue(), Is.EqualTo(42));
         Assert.That(queue.Dequeue(), Is.EqualTo(42));
     }
+
+    [Test]
+    public static void Dequeue_ResetsOnCollectionBeingEmpty()
+    {
+        var queue = new CyclicalQueue<int>(new[] { 1, 2, 3 });
+        Assert.That(queue.Dequeue(), Is.EqualTo(1));
+        Assert.That(queue.Dequeue(), Is.EqualTo(2));
+        Assert.That(queue.Dequeue(), Is.EqualTo(3));
+
+        // Collection is now "empty" in the sense that we've cycled through all items
+        Assert.That(queue.Dequeue(), Is.EqualTo(1)); // Should reset and return first item
+        Assert.That(queue.Dequeue(), Is.EqualTo(2));
+        Assert.That(queue.Dequeue(), Is.EqualTo(3));
+
+
+        Assert.That(queue.Dequeue(), Is.EqualTo(1));
+        Assert.That(queue.Dequeue(), Is.EqualTo(2));
+        Assert.That(queue.Dequeue(), Is.EqualTo(3));
+    }   
 }

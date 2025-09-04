@@ -1,5 +1,8 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Windows.Documents;
 using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
@@ -98,5 +101,17 @@ public class DeconExplorationTabViewModelTests
         var modes = vm.DeconvolutionModes;
         Assert.That(modes, Does.Contain(DeconvolutionMode.FullSpectrum));
         Assert.That(modes, Does.Contain(DeconvolutionMode.IsolationRegion));
+    }
+
+    [Test, Apartment(ApartmentState.STA)]
+    public void DeconPlot_AnnotatePlot_ReturnsEarlyOnNullOrEmpty()
+    {
+        var plotView = new PlotView();
+        var scan = msDataFile.LoadAllStaticData().GetMsDataScans().First();
+        var deconResults = new List<DeconvolutedSpeciesViewModel>();
+        var plot = new DeconvolutionPlot(plotView, scan, deconResults);
+
+        Assert.DoesNotThrow(() => plot.AnnotatePlot(null!));
+        Assert.DoesNotThrow(() => plot.AnnotatePlot(new List<DeconvolutedSpeciesViewModel>()));
     }
 }
