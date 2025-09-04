@@ -7,6 +7,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+        xmlns:metaDraw="clr-namespace:GuiFunctions.MetaDraw;assembly=GuiFunctions"
         mc:Ignorable="d"
         Title="MetaDraw" 
         Closing="MetaDraw_OnClosing"
@@ -24,17 +25,43 @@
                         <Setter.Value>
                             <ControlTemplate TargetType="TabItem">
                                 <Border Name="Border"
-                                        BorderThickness="1,1,1,0"
-                                        BorderBrush="Gainsboro"
-                                        CornerRadius="4,4,0,0"
-                                        Margin="2,0"
-                                        Height="{TemplateBinding Height}">
-                                    <ContentPresenter x:Name="ContentSite"
-                                                      VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"
-                                                      ContentSource="Header"
-                                                      Margin="10,2"/>
+                                    BorderThickness="1,1,1,0"
+                                    BorderBrush="Gainsboro"
+                                    CornerRadius="4,4,0,0"
+                                    Margin="2,0"
+                                    Height="{TemplateBinding Height}">              
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,2">
+                                            <!-- Circular Spinner -->
+                                            <Grid x:Name="Spinner" Width="18" Height="18" Margin="0,0,6,0" Visibility="Collapsed">
+                                                <Ellipse Width="18" Height="18" Stroke="LightGray" StrokeThickness="3" Opacity="0.3"/>
+                                                <Path x:Name="SpinnerArc"
+                                                  Stroke="Gray"
+                                                  StrokeThickness="3"
+                                                  Data="M9,2 A7,7 0 1 1 8.99,2"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round">
+                                                    <Path.RenderTransform>
+                                                        <RotateTransform x:Name="SpinnerRotate" CenterX="9" CenterY="9"/>
+                                                    </Path.RenderTransform>
+                                                </Path>
+                                            </Grid>
+                                            <!-- Header Text -->
+                                            <ContentPresenter x:Name="ContentSite"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center"
+                                                  ContentSource="Header"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </Border>
+                                <ControlTemplate.Resources>
+                                    <Storyboard x:Key="SpinnerAnimation" RepeatBehavior="Forever">
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="SpinnerRotate"
+                                            Storyboard.TargetProperty="Angle"
+                                            From="0" To="360" Duration="0:0:1"/>
+                                    </Storyboard>
+                                </ControlTemplate.Resources>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter TargetName="Border" Property="Background" Value="LightSkyBlue" />
@@ -42,12 +69,22 @@
                                     <Trigger Property="IsSelected" Value="False">
                                         <Setter TargetName="Border" Property="Background" Value="{StaticResource BackgroundColor}" />
                                     </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="Border" Property="Background" Value="LightGray"/>
+                                        <Setter TargetName="ContentSite" Property="Opacity" Value="0.5"/>
+                                        <Setter TargetName="Spinner" Property="Visibility" Value="Visible"/>
+                                        <Trigger.EnterActions>
+                                            <BeginStoryboard Storyboard="{StaticResource SpinnerAnimation}" />
+                                        </Trigger.EnterActions>
+                                    </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
                 </Style>
             </TabControl.Resources>
+            
+            <!-- Psm Tab -->
             <TabItem Header="PSM Annotation" Background="DarkGray">
                 <DockPanel>
                     <Grid>
@@ -155,11 +192,54 @@
                           Width="3"/>
 
                         <!--Loading progress popup-->
-                        <Popup IsOpen="False" x:Name="prgsFeed" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center">
+                        <!--<Popup IsOpen="False" x:Name="prgsFeed" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center">
                             <Border Background="LightGray" CornerRadius="2" Height="78" Width="298" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <StackPanel Height="78" Background="LightGray">
                                     <Label x:Name="prgsText" FontSize="20"></Label>
                                     <ProgressBar IsIndeterminate="True" Height="20"></ProgressBar>
+                                </StackPanel>
+                            </Border>
+                        </Popup>-->
+
+                        <Popup IsOpen="{Binding IsVisible}" Placement="Center" StaysOpen="True"
+                               DataContext="{x:Static guiFunctions:LoadingProgressViewModel.Instance}" AllowsTransparency="True"
+                               PopupAnimation="Fade">
+                            <Border Background="LightGray" CornerRadius="6" Padding=" 8 16" 
+                                    MinWidth="420" MinHeight="180" BorderBrush="Gray" BorderThickness="2" SnapsToDevicePixels="True">
+                                <StackPanel>
+                                    <TextBlock Text="Loading Data..." FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <ItemsControl ItemsSource="{Binding Steps}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,4" HorizontalAlignment="Stretch">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding StepName}" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Current}" FontWeight="Normal" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                    <Grid Grid.Column="2" Width="120" Height="18" VerticalAlignment="Center">
+                                                        <ProgressBar Minimum="0"
+                                                                     Maximum="{Binding Total}"
+                                                                     Value="{Binding Current}"
+                                                                     Height="18"
+                                                                     VerticalAlignment="Stretch"
+                                                                     Background="LightGray"
+                                                                     Foreground="LimeGreen"/>
+                                                        <ProgressBar IsIndeterminate="True"
+                                                                     Height="18"
+                                                                     VerticalAlignment="Stretch"
+                                                                     Opacity="0.5"
+                                                                     Background="Transparent"
+                                                                     Foreground="Gray"/>
+                                                    </Grid>
+                                                    <TextBlock Grid.Column="3" Text="{Binding Total}" FontWeight="Normal" VerticalAlignment="Center" Margin="4,0,5,0"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
                             </Border>
                         </Popup>
@@ -288,7 +368,7 @@
                                         <Expander Grid.Row="1" VerticalAlignment="Bottom" IsExpanded="False" x:Name="AdditionalFragmentIonDisplay"
                                                    DataContext="{x:Type guiFunctions:FragmentationReanalysisViewModel}" Header="Fragment Reanalysis">
                                             <Expander.ToolTip>
-                                                Research the spectra file against the sequence with different fragment ions. 
+                                                Research the spectra file against the sequence with different fragment ions.
                                             </Expander.ToolTip>
                                             <local:FragmentReanalysisControl x:Name="AdditionalFragmentIonControl" DataContext="{Binding }" />
                                         </Expander>
@@ -447,11 +527,6 @@
                 </DockPanel>
             </TabItem>
 
-            <!-- Chimera Analysis tab -->
-            <TabItem Header="Chimera Annotation" Background="DarkGray" x:Name="ChimeraTab">
-                <local:ChimeraAnalysisTabView x:Name="ChimeraAnalysisTabView" />
-            </TabItem>
-            
             <!--Stats tab-->
             <TabItem Header="Data Visualization" Background="DarkGray">
                 <DockPanel>
@@ -559,14 +634,22 @@
                 </DockPanel>
             </TabItem>
 
-            <!--Deconvolution Exploration tab-->
-            <TabItem Header="Deconvolution Exploration" Background="DarkGray">
-                <local:DeconExplorationTabView x:Name="DeconExplorationTabView"/>
-            </TabItem>
-            
             <!-- BioPolymer Coverage tab-->
-            <TabItem Header="BioPolymer Coverage" Background="DarkGray">
+            <TabItem Header="BioPolymer Coverage" IsEnabled="{Binding IsTabEnabled}" Background="DarkGray"
+                     d:DataContext="{d:DesignInstance metaDraw:BioPolymerTabModel, IsDesignTimeCreatable=True}">
                 <local:BioPolymerCoverageTabView x:Name="BioPolymerCoverageTabView" />
+            </TabItem>
+
+            <!-- Chimera Analysis tab -->
+            <TabItem Header="Chimera Annotation" IsEnabled="{Binding IsTabEnabled}" Background="DarkGray" x:Name="ChimeraTab"
+                     d:DataContext="{d:DesignInstance metaDraw:ChimeraAnalysisTabViewModel, IsDesignTimeCreatable=True}">
+                <local:ChimeraAnalysisTabView x:Name="ChimeraAnalysisTabView" />
+            </TabItem>
+
+            <!--Deconvolution Exploration tab-->
+            <TabItem Header="Deconvolution Exploration" IsEnabled="{Binding IsTabEnabled}" Background="DarkGray"
+                     d:DataContext="{d:DesignInstance guiFunctions:DeconExplorationTabViewModel, IsDesignTimeCreatable=True}">
+                <local:DeconExplorationTabView x:Name="DeconExplorationTabView"/>
             </TabItem>
         </TabControl>
     </Grid>

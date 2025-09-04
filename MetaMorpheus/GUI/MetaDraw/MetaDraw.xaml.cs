@@ -43,7 +43,7 @@ namespace MetaMorpheusGUI
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
         public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
         public DeconExplorationTabViewModel DeconExplorationViewModel { get; set; }
-        public BioPolymerTabViewModel BioPolymerTabViewModel { get; set; } 
+        public BioPolymerTabViewModel BioPolymerTabViewModel { get; set; }
 
         public MetaDraw(string[]? filesToLoad = null)
         {
@@ -523,12 +523,12 @@ namespace MetaMorpheusGUI
             // load the spectra file
             ToggleButtonsEnabled(false);
  
-            prgsFeed.IsOpen = true;
-            prgsText.Content = "Loading data...";
+            //prgsFeed.IsOpen = true;
+            //prgsText.Content = "Loading data...";
 
-            // Add EventHandlers for popup click-in/click-out behaviour
-            Deactivated += new EventHandler(prgsFeed_Deactivator);
-            Activated += new EventHandler(prgsFeed_Reactivator);
+            //// Add EventHandlers for popup click-in/click-out behaviour
+            //Deactivated += new EventHandler(prgsFeed_Deactivator);
+            //Activated += new EventHandler(prgsFeed_Reactivator);
 
             var dataLoader = new MetaDrawDataLoader(MetaDrawLogic);
             var errors = await dataLoader.LoadAllAsync(
@@ -543,6 +543,7 @@ namespace MetaMorpheusGUI
                 DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             ChimeraAnalysisTabViewModel.ExportDirectory = directoryPath;
             BioPolymerTabViewModel.ExportDirectory = directoryPath;
+            DeconExplorationViewModel.ExportDirectory = directoryPath;
 
             if (errors.Any())
             {
@@ -556,31 +557,32 @@ namespace MetaMorpheusGUI
                 PsmStatPlotFiles.Add(item.Key);
             }
 
-            // done loading - restore controls
-            this.prgsFeed.IsOpen = false;
+            //// done loading - restore controls
+            //this.prgsFeed.IsOpen = false;
 
-            // Remove added EventHandlers
-            Deactivated -= new EventHandler(prgsFeed_Deactivator);
-            Activated -= new EventHandler(prgsFeed_Reactivator);
+            //// Remove added EventHandlers
+            //Deactivated -= new EventHandler(prgsFeed_Deactivator);
+            //Activated -= new EventHandler(prgsFeed_Reactivator);
 
             ToggleButtonsEnabled(true);
         }
 
-        /// <summary>
-        /// Deactivates the "loading data" popup if one clicks out of the main window
-        /// </summary>
-        private void prgsFeed_Deactivator(object sender, EventArgs e)
-        {
-            prgsFeed.IsOpen = false;
-        }
 
-        /// <summary>
-        /// Reactivates the "loading data" popup if one clicks into the main window
-        /// </summary>
-        private void prgsFeed_Reactivator(object sender, EventArgs e)
-        {
-            prgsFeed.IsOpen = true;
-        }
+        ///// <summary>
+        ///// Deactivates the "loading data" popup if one clicks out of the main window
+        ///// </summary>
+        //private void prgsFeed_Deactivator(object sender, EventArgs e)
+        //{
+        //    prgsFeed.IsOpen = false;
+        //}
+
+        ///// <summary>
+        ///// Reactivates the "loading data" popup if one clicks into the main window
+        ///// </summary>
+        //private void prgsFeed_Reactivator(object sender, EventArgs e)
+        //{
+        //    prgsFeed.IsOpen = true;
+        //}
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {

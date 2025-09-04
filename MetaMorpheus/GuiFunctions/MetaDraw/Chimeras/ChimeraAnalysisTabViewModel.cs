@@ -12,13 +12,47 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using Easy.Common.Extensions;
 using Point = System.Windows.Point;
+using System.Windows.Data;
 
 namespace GuiFunctions.MetaDraw;
+
+public class MetaDrawTabViewModel : BaseViewModel
+{
+    public MetaDrawTabViewModel(bool isTabEnabled = false)
+    {
+        IsTabEnabled = isTabEnabled;
+    }
+
+    protected object ThreadLocker { get; } = new();
+
+    private bool _isTabEnabled;
+    public bool IsTabEnabled
+    {
+        get => _isTabEnabled;
+        set { _isTabEnabled = value; OnPropertyChanged(nameof(IsTabEnabled)); }
+    }
+
+    private string _exportDirectory;
+    public string ExportDirectory
+    {
+        get
+        {
+            if (!Directory.Exists(_exportDirectory))
+                Directory.CreateDirectory(_exportDirectory);
+            return _exportDirectory;
+        }
+        set
+        {
+            _exportDirectory = value;
+            OnPropertyChanged(nameof(ExportDirectory));
+        }
+    }
+}
 
 /// <summary>
 /// All data and user triggered manipulations for the Chimera Analysis tab
 /// </summary>
-public class ChimeraAnalysisTabViewModel : BaseViewModel
+public class ChimeraAnalysisTabViewModel : MetaDrawTabViewModel
 {
     #region Displayed in GUI
     public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
@@ -90,6 +124,8 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         ExportSequenceCoverageCommand = new RelayCommand(ExportSequenceCoverage);
         ExportLegendCommand = new DelegateCommand(ExportLegend);
         ExportAllCommand = new DelegateCommand(ExportAll);
+
+        BindingOperations.EnableCollectionSynchronization(ChimeraGroupViewModels, ThreadLocker);
     }
 
     public void ProcessChimeraData(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles)
@@ -158,22 +194,6 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     }
 
     #region IO
-
-    private string _exportDirectory;
-    public string ExportDirectory
-    {
-        get
-        {
-            if (!Directory.Exists(_exportDirectory))
-                Directory.CreateDirectory(_exportDirectory);
-            return _exportDirectory;
-        }
-        set
-        {
-            _exportDirectory = value;
-            OnPropertyChanged(nameof(ExportDirectory));
-        }
-    }
 
     public ICommand ExportMs1Command { get; set; }
     public ICommand ExportMs2Command { get; set; }

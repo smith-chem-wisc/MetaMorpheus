@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -18,7 +19,7 @@ using UsefulProteomicsDatabases;
 
 namespace GuiFunctions.MetaDraw;
 
-public class BioPolymerTabViewModel : BaseViewModel
+public class BioPolymerTabViewModel : MetaDrawTabViewModel
 {
     private Dictionary<string, IBioPolymer> _allBioPolymers;
     private MetaDrawLogic _metaDrawLogic;
@@ -34,6 +35,9 @@ public class BioPolymerTabViewModel : BaseViewModel
         LoadDatabaseCommand = new RelayCommand(LoadDatabase);
         ResetDatabaseCommand = new RelayCommand(ResetDatabase);
         ExportImageCommand = new RelayCommand(ExportImage);
+
+        BindingOperations.EnableCollectionSynchronization(AllGroups, ThreadLocker);
+        BindingOperations.EnableCollectionSynchronization(FilteredGroups, ThreadLocker);
     }
 
     #region Database Loading Handling
@@ -282,21 +286,6 @@ public class BioPolymerTabViewModel : BaseViewModel
 
     #region Image Export
 
-    private string _exportDirectory;
-    public string ExportDirectory
-    {
-        get
-        {
-            if (!Directory.Exists(_exportDirectory))
-                Directory.CreateDirectory(_exportDirectory);
-            return _exportDirectory;
-        }
-        set
-        {
-            _exportDirectory = value;
-            OnPropertyChanged(nameof(ExportDirectory));
-        }
-    }
     public ICommand ExportImageCommand { get; set; }
 
     private void ExportImage()

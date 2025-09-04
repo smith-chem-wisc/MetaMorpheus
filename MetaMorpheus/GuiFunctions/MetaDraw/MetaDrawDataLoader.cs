@@ -6,7 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using Easy.Common.Extensions;
+using Microsoft.ML;
 
 namespace GuiFunctions.MetaDraw;
 
@@ -15,11 +19,27 @@ public class MetaDrawDataLoader
     public event Action<string, int, int> ProgressChanged; // e.g. ("Loading Data Files", 2, 4)
     public event Action<string, bool> TabReadyChanged; // e.g. ("Chimera", true)
     private readonly MetaDrawLogic _logic;
+    private CancellationTokenSource? _cancellationTokenSource;
 
     public MetaDrawDataLoader(MetaDrawLogic logic)
     {
         _logic = logic;
+        ProgressChanged += (stepName, current, total) =>
+        {
+            var step = LoadingProgressViewModel.Instance.Steps.FirstOrDefault(s => s.StepName == stepName);
+            if (step != null)
+            {
+                step.Current = current;
+                step.Total = total;
+                step.IsActive = current < total;
+                step.ErrorMessage = ""; // Set if error occurs
+            }
+
+            // Hide popup if all steps are complete
+            LoadingProgressViewModel.Instance.IsVisible = LoadingProgressViewModel.Instance.Steps.Any(s => s.Current < s.Total);
+        };
     }
+
     public async Task<List<string>> LoadAllAsync(
         bool loadSpectra,
         bool loadPsms,
@@ -28,59 +48,132 @@ public class MetaDrawDataLoader
         BioPolymerTabViewModel? bioPolymerTabViewModel = null,
         DeconExplorationTabViewModel? deconExplorationTabViewModel = null)
     {
+        // Cancel any previous loading operation
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = _cancellationTokenSource.Token;
+
         var allErrors = new List<string>();
         var progress = new Progress<(string, int, int)>(tuple => ProgressChanged?.Invoke(tuple.Item1, tuple.Item2, tuple.Item3));
 
-        // Launch each loading step as a separate task
-        var spectraTask = loadSpectra ? Task.Run(() => LoadSpectraFiles(progress)) : Task.FromResult(new List<string>());
-        var psmsTask = loadPsms ? Task.Run(() => LoadPsms(progress, haveLoadedSpectra: loadSpectra)) : Task.FromResult(new List<string>());
-        var librariesTask = loadLibraries ? Task.Run(() => LoadSpectralLibraries(progress)) : Task.FromResult(new List<string>());
+        LoadingProgressViewModel.Instance.Steps.Clear();
 
-        // Await all tasks in parallel
-        var results = await Task.WhenAll(spectraTask, psmsTask, librariesTask);
+        bool anySteps = false;
+        if (loadSpectra && _logic.SpectraFilePaths.Count > 0)
+        {
+            LoadingProgressViewModel.Instance.Steps.Add(new LoadingStepViewModel { StepName = "Loading Spectra Files", Total = _logic.SpectraFilePaths.Count });
+            anySteps = true;
+        }
+        if (loadPsms && _logic.SpectralMatchResultFilePaths.Count > 0)
+        {
+            LoadingProgressViewModel.Instance.Steps.Add(new LoadingStepViewModel { StepName = "Loading Search Results", Total = _logic.SpectralMatchResultFilePaths.Count });
+            anySteps = true;
+        }
+        if (loadLibraries && _logic.SpectralLibraryPaths.Count > 0)
+        {
+            LoadingProgressViewModel.Instance.Steps.Add(new LoadingStepViewModel { StepName = "Loading Spectral Libraries", Total = _logic.SpectralLibraryPaths.Count });
+            anySteps = true;
+        }
+        LoadingProgressViewModel.Instance.IsVisible = anySteps;
+
+        var spectraTask = loadSpectra
+            ? Task.Run(() => LoadSpectraFiles(progress, cancellationToken), cancellationToken)
+            : Task.FromResult(new List<string>());
+        var psmsTask = loadPsms
+            ? Task.Run(() => LoadPsms(progress, haveLoadedSpectra: loadSpectra, cancellationToken), cancellationToken)
+            : Task.FromResult(new List<string>());
+        var librariesTask = loadLibraries
+            ? Task.Run(() => LoadSpectralLibraries(progress, cancellationToken), cancellationToken)
+            : Task.FromResult(new List<string>());
+
+        List<string>[] results;
+        try
+        {
+            results = await Task.WhenAll(spectraTask, psmsTask, librariesTask);
+        }
+        catch (OperationCanceledException)
+        {
+            allErrors.Add("Loading was canceled.");
+            return allErrors;
+        }
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            allErrors.Add("Loading was canceled.");
+            return allErrors;
+        }
 
         _logic.FilterPsms();
-        // Aggregate errors
+
         foreach (var errorList in results)
             allErrors.AddRange(errorList);
 
-        // Post-load processing
-        if (chimeraTabViewModel != null)
+        // Load other tabs in the background. Only if there is data to load.
+        if (bioPolymerTabViewModel != null && _logic.FilteredListOfPsms.Any())
         {
-            chimeraTabViewModel.ProcessChimeraData(_logic.FilteredListOfPsms.ToList(), _logic.MsDataFiles);
-            TabReadyChanged?.Invoke("Chimera", true);
-        }
-        if (bioPolymerTabViewModel != null && bioPolymerTabViewModel.IsDatabaseLoaded) // TODO: Load database if available
-        {
-            bioPolymerTabViewModel.ProcessSpectralMatches(_logic.AllSpectralMatches);
-            TabReadyChanged?.Invoke("BioPolymer", true);
-        }
-        if (deconExplorationTabViewModel != null)
-        {
-            deconExplorationTabViewModel.MsDataFiles.Clear();
-            foreach (var dataFile in _logic.MsDataFiles)
+            bioPolymerTabViewModel.IsTabEnabled = false;
+            _ = Task.Run(() =>
             {
-                deconExplorationTabViewModel.MsDataFiles.Add(dataFile.Value);
-            }
-            TabReadyChanged?.Invoke("Deconvolution", true);
+                if (cancellationToken.IsCancellationRequested) return;
+                if (!bioPolymerTabViewModel.IsDatabaseLoaded && !bioPolymerTabViewModel.DatabasePath.IsNullOrEmpty())
+                    bioPolymerTabViewModel.LoadDatabaseCommand.Execute(null);
+
+                if (bioPolymerTabViewModel.IsDatabaseLoaded)
+                {
+                    bioPolymerTabViewModel.ProcessSpectralMatches(_logic.AllSpectralMatches);
+                    TabReadyChanged?.Invoke("BioPolymer", true);
+                }
+                bioPolymerTabViewModel.IsTabEnabled = true;
+            }, cancellationToken);
+        }
+        if (deconExplorationTabViewModel != null && _logic.MsDataFiles.Any())
+        {
+            deconExplorationTabViewModel.IsTabEnabled = false;
+            _ = Task.Run(() =>
+            {
+                if (cancellationToken.IsCancellationRequested) return;
+                deconExplorationTabViewModel.MsDataFiles.Clear();
+                foreach (var dataFile in _logic.MsDataFiles)
+                {
+                    deconExplorationTabViewModel.MsDataFiles.Add(dataFile.Value);
+                }
+
+                TabReadyChanged?.Invoke("Deconvolution", true);
+                deconExplorationTabViewModel.IsTabEnabled = true;
+            }, cancellationToken);
+        }
+        if (chimeraTabViewModel != null && _logic.FilteredListOfPsms.Any() && _logic.MsDataFiles.Any())
+        {
+            chimeraTabViewModel.IsTabEnabled = false;
+            _ = Task.Run(() =>
+            {
+                if (cancellationToken.IsCancellationRequested) return;
+                chimeraTabViewModel.ProcessChimeraData(_logic.FilteredListOfPsms.ToList(), _logic.MsDataFiles);
+                chimeraTabViewModel.IsTabEnabled = true;
+                TabReadyChanged?.Invoke("Chimera", true);
+            }, cancellationToken);
         }
 
         return allErrors;
     }
 
-    public List<string> LoadSpectraFiles(IProgress<(string, int, int)> progress = null)
+    public List<string> LoadSpectraFiles(IProgress<(string, int, int)> progress = null, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
-        int total = _logic.SpectraFilePaths.Count;
-        progress?.Report(("Loading Data Files", 0, total));
+        int total = _logic.SpectraFilePaths.Count; 
+
+        progress?.Report(("Loading Spectra Files", 0, total));
         for (int i = 0; i < total; i++)
         {
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
             var filepath = _logic.SpectraFilePaths[i];
             var fileNameWithoutExtension = System.IO.Path.GetFileName(filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty));
             var spectraFile = MsDataFileReader.GetDataFile(filepath);
             if (spectraFile is TimsTofFileReader timsTofDataFile)
             {
-                timsTofDataFile.LoadAllStaticData(maxThreads: Environment.ProcessorCount - 1); // timsTof files need to load all static data before they can be used, as dynamic access is not available for them
+                timsTofDataFile.LoadAllStaticData(maxThreads: Environment.ProcessorCount - 1);
             }
             else
             {
@@ -90,15 +183,13 @@ public class MetaDrawDataLoader
             if (!_logic.MsDataFiles.TryAdd(fileNameWithoutExtension, spectraFile))
             {
                 spectraFile.CloseDynamicConnection();
-                // print warning? but probably unnecessary. this means the data file was loaded twice. 
-                // which is an error but not an important one because the data is loaded
             }
-            progress?.Report(("Loading Data Files", i + 1, total));
+            progress?.Report(("Loading Spectra Files", i + 1, total));
         }
         return errors;
     }
 
-    public List<string> LoadPsms(IProgress<(string, int, int)> progress = null, bool haveLoadedSpectra = false)
+    public List<string> LoadPsms(IProgress<(string, int, int)> progress = null, bool haveLoadedSpectra = false, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
         int total = _logic.SpectralMatchResultFilePaths.Count;
@@ -109,6 +200,9 @@ public class MetaDrawDataLoader
         progress?.Report(("Loading Search Results", 0, total));
         for (int i = 0; i < total; i++)
         {
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
             var resultsFile = _logic.SpectralMatchResultFilePaths[i];
             var psms = SpectrumMatchTsvReader.ReadTsv(resultsFile, out List<string> warnings);
 
@@ -149,13 +243,17 @@ public class MetaDrawDataLoader
         return errors;
     }
 
-    public List<string> LoadSpectralLibraries(IProgress<(string, int, int)> progress = null)
+    public List<string> LoadSpectralLibraries(IProgress<(string, int, int)> progress = null, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
-        int total = _logic.SpectralMatchResultFilePaths.Count;
-        progress?.Report(("Loading Search Results", 0, total));
+        int total = _logic.SpectralMatchResultFilePaths.Count; 
+
+        progress?.Report(("Loading Spectral Libraries", 0, total));
         for (int i = 0; i < total; i++)
         {
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
             try
             {
                 _logic.SpectralLibrary = new SpectralLibrary(_logic.SpectralLibraryPaths.ToList());
@@ -165,7 +263,7 @@ public class MetaDrawDataLoader
                 _logic.SpectralLibrary = null;
                 errors.Add("Problem loading spectral library: " + e.Message);
             }
-            progress?.Report(("Loading Search Results", i + 1, total));
+            progress?.Report(("Loading Spectral Libraries", i + 1, total));
         }
         return errors;
     }

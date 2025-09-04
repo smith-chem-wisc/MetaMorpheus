@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using GuiFunctions.MetaDraw;
 using MassSpectrometry;
 using MathNet.Numerics;
 using MzLibUtil;
@@ -6,6 +7,7 @@ using OxyPlot.Wpf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace GuiFunctions;
@@ -16,7 +18,7 @@ public enum DeconvolutionMode
     IsolationRegion
 }
 
-public class DeconExplorationTabViewModel : BaseViewModel
+public class DeconExplorationTabViewModel : MetaDrawTabViewModel
 {
     public ObservableCollection<MsDataFile> MsDataFiles { get; set; } = new();
     public ObservableCollection<MsDataScan> Scans { get; set; } = new();
@@ -67,10 +69,12 @@ public class DeconExplorationTabViewModel : BaseViewModel
 
     public ICommand RunDeconvolutionCommand { get; }
 
-    public DeconExplorationTabViewModel()
+    public DeconExplorationTabViewModel() : base(false)
     {
         Mode = DeconvolutionMode.IsolationRegion;
         RunDeconvolutionCommand = new DelegateCommand(pv => RunDeconvolution((pv as PlotView)!));
+
+        BindingOperations.EnableCollectionSynchronization(MsDataFiles, ThreadLocker);
     }
 
     private void RunDeconvolution(PlotView plotView)
