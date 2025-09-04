@@ -63,6 +63,12 @@ namespace GuiFunctions
             PeptideSpectralMatchesView = CollectionViewSource.GetDefaultView(FilteredListOfPsms);
             ThreadLocker = new object();
             CurrentlyDisplayedPlots = new List<SpectrumMatchPlot>();
+
+            // Enable cross-thread synchronization 
+            BindingOperations.EnableCollectionSynchronization(SpectralMatchResultFilePaths, ThreadLocker);
+            BindingOperations.EnableCollectionSynchronization(SpectraFilePaths, ThreadLocker);
+            BindingOperations.EnableCollectionSynchronization(FilteredListOfPsms, ThreadLocker);
+            BindingOperations.EnableCollectionSynchronization(SpectralMatchesGroupedByFile, ThreadLocker);
         }
 
         #region Plot Generation 

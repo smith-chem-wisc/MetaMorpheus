@@ -51,10 +51,6 @@ namespace MetaMorpheusGUI
 
             MetaDrawLogic = new MetaDrawLogic();
             SettingsButtonControl.SettingsChanged += RefreshPlotsAfterSettingsChange;
-            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchResultFilePaths, MetaDrawLogic.ThreadLocker);
-            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectraFilePaths, MetaDrawLogic.ThreadLocker);
-            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.FilteredListOfPsms, MetaDrawLogic.ThreadLocker);
-            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchesGroupedByFile, MetaDrawLogic.ThreadLocker);
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;

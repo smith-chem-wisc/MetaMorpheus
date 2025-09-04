@@ -1,15 +1,12 @@
 ﻿#nullable enable
 using EngineLayer;
-using MassSpectrometry;
 using Readers.SpectralLibrary;
 using Readers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using TaskLayer;
 
 namespace GuiFunctions.MetaDraw;
 
@@ -34,18 +31,16 @@ public class MetaDrawDataLoader
         var allErrors = new List<string>();
         var progress = new Progress<(string, int, int)>(tuple => ProgressChanged?.Invoke(tuple.Item1, tuple.Item2, tuple.Item3));
 
-        var tasks = new List<Task<List<string>>>();
+        // Launch each loading step as a separate task
+        var spectraTask = loadSpectra ? Task.Run(() => LoadSpectraFiles(progress)) : Task.FromResult(new List<string>());
+        var psmsTask = loadPsms ? Task.Run(() => LoadPsms(progress, haveLoadedSpectra: loadSpectra)) : Task.FromResult(new List<string>());
+        var librariesTask = loadLibraries ? Task.Run(() => LoadSpectralLibraries(progress)) : Task.FromResult(new List<string>());
 
-        // Load Base Information
-        if (loadSpectra)
-            tasks.Add(LoadSpectraFilesAsync(progress));
-        if (loadPsms)
-            tasks.Add(LoadPsmsAsync(progress, loadSpectra));
-        if (loadLibraries)
-            tasks.Add(LoadSpectralLibrariesAsync(progress));
-        
+        // Await all tasks in parallel
+        var results = await Task.WhenAll(spectraTask, psmsTask, librariesTask);
+
+        _logic.FilterPsms();
         // Aggregate errors
-        var results = await Task.WhenAll(tasks);
         foreach (var errorList in results)
             allErrors.AddRange(errorList);
 
@@ -73,7 +68,7 @@ public class MetaDrawDataLoader
         return allErrors;
     }
 
-    public async Task<List<string>> LoadSpectraFilesAsync(IProgress<(string, int, int)> progress = null)
+    public List<string> LoadSpectraFiles(IProgress<(string, int, int)> progress = null)
     {
         var errors = new List<string>();
         int total = _logic.SpectraFilePaths.Count;
@@ -103,7 +98,7 @@ public class MetaDrawDataLoader
         return errors;
     }
 
-    public async Task<List<string>> LoadPsmsAsync(IProgress<(string, int, int)> progress = null, bool haveLoadedSpectra = false)
+    public List<string> LoadPsms(IProgress<(string, int, int)> progress = null, bool haveLoadedSpectra = false)
     {
         var errors = new List<string>();
         int total = _logic.SpectralMatchResultFilePaths.Count;
@@ -151,11 +146,10 @@ public class MetaDrawDataLoader
             foreach (var file in psmsThatDontHaveMatchingSpectraFile.GroupBy(p => p.FileNameWithoutExtension))
                 errors.Add(file.Count() + " PSMs from " + file.Key + " were not loaded because this spectra file was not found");
 
-        _logic.FilterPsms();
         return errors;
     }
 
-    public async Task<List<string>> LoadSpectralLibrariesAsync(IProgress<(string, int, int)> progress = null)
+    public List<string> LoadSpectralLibraries(IProgress<(string, int, int)> progress = null)
     {
         var errors = new List<string>();
         int total = _logic.SpectralMatchResultFilePaths.Count;
