@@ -137,7 +137,6 @@ public class GptmdTests
             Assert.That(gptmdResults.Mods["accession"].Count, Is.EqualTo(expectedGptmdMods));
     }
 
-
     [Test]
     [TestCase("GUACUGAUGAUAUAYAU", 14.015650, 1)]
     [TestCase("GUACUGAUGACUAUUAAAUA", 14.015650, 2)]

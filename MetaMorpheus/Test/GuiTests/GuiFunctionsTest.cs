@@ -48,13 +48,13 @@ namespace Test.GuiTests
         // To verify, download the database and count the number of entries.
         // The expected result will be double the number of entries, due to decoys - 9/1/23 NB
         [Test]
-        [TestCase("UP000000280", true, true, true, true, "1.fasta.gz", 50)]
-        [TestCase("UP000000280", true, true, true, false, "2.fasta", 50)]
+        [TestCase("UP000000280", true, true, true, true, "1.fasta.gz", 160)] // Reviewed, isoforms, XML, compressed don't let the name fool you, this is actually XML
+        [TestCase("UP000000280", true, true, true, false, "2.fasta", 160)] // Reviewed, isoforms, XML, uncompressed don't let the name fool you, this is actually XML
         [TestCase("UP000000280", true, true, false, true, "3.fasta.gz", 50)]
-        [TestCase("UP000000280", true, false, true, true, "4.xml.gz", 50)]
+        [TestCase("UP000000280", true, false, true, true, "4.xml.gz", 160)]
         [TestCase("UP000000280", false, true, true, true, "5.fasta.gz", 2)]
         [TestCase("UP000000280", true, true, false, false, "6.fasta", 50)]
-        [TestCase("UP000000280", true, false, true, false, "7.xml", 50)]
+        [TestCase("UP000000280", true, false, true, false, "7.xml", 160)]
         [TestCase("UP000000280", false, true, true, false, "8.fasta", 2)]
         [TestCase("UP000000280", true, false, false, false, "9.fasta", 50)]
         [TestCase("UP000000280", false, false, true, false, "10.xml", 2)]

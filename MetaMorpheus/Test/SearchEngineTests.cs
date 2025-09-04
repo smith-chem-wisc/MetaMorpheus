@@ -1889,7 +1889,7 @@ namespace Test
         {
             //peptide and ms file prep
             PeptideWithSetModifications nTermModifiedPwsm = new PeptideWithSetModifications("[Uniprot:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", GlobalVariables.AllModsKnownDictionary);
-            PeptideWithSetModifications cTermModifiedPwsm = new PeptideWithSetModifications("AGIAAKLAKDREAAEGLGSHA[Uniprot:Alanine amide on A]", GlobalVariables.AllModsKnownDictionary);
+            PeptideWithSetModifications cTermModifiedPwsm = new PeptideWithSetModifications("AGIAAKLAKDREAAEGLGSHA-[Uniprot:Alanine amide on A]", GlobalVariables.AllModsKnownDictionary);
             TestDataFile msFile = new TestDataFile(new List<IBioPolymerWithSetMods> { nTermModifiedPwsm, cTermModifiedPwsm });
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -1903,8 +1903,8 @@ namespace Test
             List<Protein> proteinWithMods = new List<Protein> {new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein",
                 oneBasedModifications: new Dictionary<int, List<Modification>>
                 {
-                    { 2, new List<Modification>{GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"] } },
-                    { 22, new List<Modification>{GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] } }
+                    { 3, new List<Modification>{GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"] } },
+                    { 23, new List<Modification>{GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] } }
                 })
             };
             List<Protein> proteinWithoutMods = new List<Protein> { new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein") };
@@ -1919,7 +1919,7 @@ namespace Test
             };
 
             //Test all params and ensure the results are the same
-            string[] psmAnswer = new string[2] { "[UniProt:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", "AGIAAKLAKDREAAEGLGSHA[UniProt:Alanine amide on A]" };
+            string[] psmAnswer = new string[2] { "[UniProt:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", "AGIAAKLAKDREAAEGLGSHA-[UniProt:Alanine amide on A]" };
             foreach (var termParams in variableParamsToTest)
             {
                 List<CommonParameters> paramsToTest = new List<CommonParameters> { cCommonParameters, nCommonParameters, cCleaveParams, nCleaveParams };
@@ -1948,7 +1948,9 @@ namespace Test
                         SpectralMatch testPsm = allPsmsArrays[2][i];
                         Assert.That(testPsm != null);
                         testPsm.ResolveAllAmbiguities();
-                        Assert.That(psmAnswer[1 - i].Equals(testPsm.FullSequence));
+                        var answer = psmAnswer[1-i];
+                        var test = testPsm.FullSequence;
+                        Assert.That(answer, Is.EqualTo(test));
                     }
                 }
             }
