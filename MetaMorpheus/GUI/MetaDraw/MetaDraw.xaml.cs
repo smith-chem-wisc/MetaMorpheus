@@ -42,7 +42,7 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
         public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
-        public DeconExplorationTabViewModel DeconExplorationViewModel { get; set; } = new();
+        public DeconExplorationTabViewModel DeconExplorationViewModel { get; set; }
         public BioPolymerTabViewModel BioPolymerTabViewModel { get; set; } 
 
         public MetaDraw(string[]? filesToLoad = null)
@@ -57,13 +57,16 @@ namespace MetaMorpheusGUI
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchesGroupedByFile, MetaDrawLogic.ThreadLocker);
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
-            DeconExplorationTabView.DataContext = DeconExplorationViewModel;
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
             AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
             AdditionalFragmentIonControl.LinkMetaDraw(this);
+
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
             BioPolymerCoverageTabView.DataContext = BioPolymerTabViewModel;
-            
+            ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel();
+            ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
+            DeconExplorationViewModel = new DeconExplorationTabViewModel();
+            DeconExplorationTabView.DataContext = DeconExplorationViewModel;
 
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
@@ -71,7 +74,6 @@ namespace MetaMorpheusGUI
             dataGridProperties.DataContext = propertyView.DefaultView;
 
             dataGridScanNums.DataContext = MetaDrawLogic.PeptideSpectralMatchesView;
-
 
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
             base.Closing += this.OnClosing;
@@ -469,21 +471,13 @@ namespace MetaMorpheusGUI
 
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
-            var selectedChimeraGroup = ChimeraAnalysisTabViewModel?.SelectedChimeraGroup;
+            var selectedChimeraGroup = ChimeraAnalysisTabViewModel.SelectedChimeraGroup;
 
             // filter based on new settings
             if (e.FilterChanged)
             {
                 MetaDrawLogic.FilterPsms();
-
-                ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Clear();
-                foreach (var chimeraGroup in ChimeraAnalysisTabViewModel.ConstructChimericPsms(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles)
-                             .OrderByDescending(p => p.Count)
-                             .ThenByDescending(p => p.UniqueFragments)
-                             .ThenByDescending(p => p.TotalFragments))
-                {
-                    ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Add(chimeraGroup);
-                }
+                ChimeraAnalysisTabViewModel.ProcessChimeraData(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles);
 
                 foreach (var group in BioPolymerTabViewModel.AllGroups)
                 {
@@ -536,25 +530,19 @@ namespace MetaMorpheusGUI
             Deactivated += new EventHandler(prgsFeed_Deactivator);
             Activated += new EventHandler(prgsFeed_Reactivator);
 
-            var slowProcess = Task<List<string>>.Factory.StartNew(() => MetaDrawLogic.LoadFiles(loadSpectra: true, loadPsms: true));
-            await slowProcess;
+            var dataLoader = new MetaDrawDataLoader(MetaDrawLogic);
+            var errors = await dataLoader.LoadAllAsync(
+                loadSpectra: true,
+                loadPsms: true,
+                loadLibraries: true,
+                chimeraTabViewModel: ChimeraAnalysisTabViewModel,
+                bioPolymerTabViewModel: BioPolymerTabViewModel,
+                deconExplorationTabViewModel: DeconExplorationViewModel);
 
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
                 DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles, directoryPath);
-            ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
-            DeconExplorationViewModel.MsDataFiles.Clear();
-            foreach (var dataFile in MetaDrawLogic.MsDataFiles)
-            {
-                DeconExplorationViewModel.MsDataFiles.Add(dataFile.Value);
-            }
-
-
+            ChimeraAnalysisTabViewModel.ExportDirectory = directoryPath;
             BioPolymerTabViewModel.ExportDirectory = directoryPath;
-            if (BioPolymerTabViewModel.IsDatabaseLoaded)
-                BioPolymerTabViewModel.ProcessSpectralMatches(MetaDrawLogic.AllSpectralMatches);
-
-            var errors = slowProcess.Result;
 
             if (errors.Any())
             {

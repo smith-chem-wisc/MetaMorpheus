@@ -26,6 +26,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Readers.SpectralLibrary;
 using System.Threading.Tasks;
+using GuiFunctions.MetaDraw;
 
 [assembly: InternalsVisibleTo("Test")]
 namespace GuiFunctions
@@ -48,7 +49,7 @@ namespace GuiFunctions
         public Dictionary<string, MsDataFile> MsDataFiles { get; } // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
-        private SpectralLibrary SpectralLibrary;
+        public SpectralLibrary SpectralLibrary { get; set; }
 
         public MetaDrawLogic()
         {
@@ -744,10 +745,9 @@ namespace GuiFunctions
         }
 
         #region Resource Management
+
         public List<string> LoadFiles(bool loadSpectra, bool loadPsms)
         {
-            List<string> errors = new List<string>();
-
             lock (ThreadLocker)
             {
                 FilteredListOfPsms.Clear();
@@ -756,142 +756,7 @@ namespace GuiFunctions
                 MsDataFiles.Clear();
             }
 
-            List<Task<List<string>>> loadList = new();
-
-            // load MS data files
-            if (loadSpectra)
-            {
-                loadList.Add(LoadSpectraFilesAsync());
-            }
-
-            // load PSMs
-            if (loadPsms)
-            {
-                loadList.Add(LoadPsmsAsync(null, loadSpectra));
-            }
-
-            // load spectral libraries
-            if (SpectralLibraryPaths.Any())
-            {
-                loadList.Add(LoadSpectralLibrariesAsync());
-            }
-
-            if (loadList.Any())
-            {
-                Task.WaitAll(loadList.ToArray());
-                foreach (var task in loadList)
-                {
-                    if (task.Result != null && task.Result.Any())
-                    {
-                        errors.AddRange(task.Result);
-                    }
-                }
-            }
-
-            return errors;
-        }
-
-        public async Task<List<string>> LoadSpectraFilesAsync(IProgress<(string, int, int)> progress = null)
-        {
-            var errors = new List<string>();
-            int total = SpectraFilePaths.Count;
-            progress?.Report(("Loading Data Files", 0, total));
-            for (int i = 0; i < total; i++)
-            {
-                var filepath = SpectraFilePaths[i];
-                var fileNameWithoutExtension = System.IO.Path.GetFileName(filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty));
-                var spectraFile = MsDataFileReader.GetDataFile(filepath);
-                if (spectraFile is TimsTofFileReader timsTofDataFile)
-                {
-                    timsTofDataFile.LoadAllStaticData(maxThreads: Environment.ProcessorCount - 1); // timsTof files need to load all static data before they can be used, as dynamic access is not available for them
-                }
-                else
-                {
-                    spectraFile.InitiateDynamicConnection();
-                }
-
-                if (!MsDataFiles.TryAdd(fileNameWithoutExtension, spectraFile))
-                {
-                    spectraFile.CloseDynamicConnection();
-                    // print warning? but probably unnecessary. this means the data file was loaded twice. 
-                    // which is an error but not an important one because the data is loaded
-                }
-                progress?.Report(("Loading Data Files", i + 1, total));
-            }
-            return errors;
-        }
-
-        public async Task<List<string>> LoadPsmsAsync(IProgress<(string, int, int)> progress = null, bool haveLoadedSpectra = false)
-        {
-            var errors = new List<string>();
-            int total = SpectralMatchResultFilePaths.Count;
-
-            HashSet<string> fileNamesWithoutExtension = new HashSet<string>(
-                SpectraFilePaths.Select(p => System.IO.Path.GetFileName(p.Replace(GlobalVariables.GetFileExtension(p), string.Empty))));
-            List<SpectrumMatchFromTsv> psmsThatDontHaveMatchingSpectraFile = new List<SpectrumMatchFromTsv>();
-            progress?.Report(("Loading Search Results", 0, total));
-            for (int i = 0; i < total; i++)
-            {
-                var resultsFile = SpectralMatchResultFilePaths[i];
-                var psms = SpectrumMatchTsvReader.ReadTsv(resultsFile, out List<string> warnings);
-
-                try
-                {
-                    foreach (SpectrumMatchFromTsv psm in psms)
-                    {
-                        if (fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension) || !haveLoadedSpectra)
-                        {
-                            AllSpectralMatches.Add(psm);
-                        }
-                        else
-                        {
-                            psmsThatDontHaveMatchingSpectraFile.Add(psm);
-                        }
-
-                        if (SpectralMatchesGroupedByFile.TryGetValue(psm.FileNameWithoutExtension, out var psmsForThisFile))
-                        {
-                            psmsForThisFile.Add(psm);
-                        }
-                        else
-                        {
-                            SpectralMatchesGroupedByFile.Add(psm.FileNameWithoutExtension, new ObservableCollection<SpectrumMatchFromTsv> { psm });
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    errors.Add("Error reading PSM file:\n" + e.Message);
-                }
-                progress?.Report(("Loading Search Results", i + 1, total));
-            }
-
-            if (psmsThatDontHaveMatchingSpectraFile.Any())
-                foreach (var file in psmsThatDontHaveMatchingSpectraFile.GroupBy(p => p.FileNameWithoutExtension))
-                    errors.Add(file.Count() + " PSMs from " + file.Key + " were not loaded because this spectra file was not found");
-
-            FilterPsms();
-            return errors;
-        }
-
-        public async Task<List<string>> LoadSpectralLibrariesAsync(IProgress<(string, int, int)> progress = null)
-        {
-            var errors = new List<string>();
-            int total = SpectralMatchResultFilePaths.Count;
-            progress?.Report(("Loading Search Results", 0, total));
-            for (int i = 0; i < total; i++)
-            {
-                try
-                {
-                    SpectralLibrary = new SpectralLibrary(SpectralLibraryPaths.ToList());
-                }
-                catch (Exception e)
-                {
-                    SpectralLibrary = null;
-                    errors.Add("Problem loading spectral library: " + e.Message);
-                }
-                progress?.Report(("Loading Search Results", i + 1, total));
-            }
-            return errors;
+            return new MetaDrawDataLoader(this).LoadAllAsync(loadSpectra, loadPsms, true).Result;
         }
 
         public void CleanUpResources()
