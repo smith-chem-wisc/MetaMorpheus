@@ -519,13 +519,6 @@ namespace MetaMorpheusGUI
 
             // load the spectra file
             ToggleButtonsEnabled(false);
- 
-            //prgsFeed.IsOpen = true;
-            //prgsText.Content = "Loading data...";
-
-            //// Add EventHandlers for popup click-in/click-out behaviour
-            //Deactivated += new EventHandler(prgsFeed_Deactivator);
-            //Activated += new EventHandler(prgsFeed_Reactivator);
 
             var dataLoader = new MetaDrawDataLoader(MetaDrawLogic);
             var errors = await dataLoader.LoadAllAsync(
@@ -553,13 +546,6 @@ namespace MetaMorpheusGUI
             {
                 PsmStatPlotFiles.Add(item.Key);
             }
-
-            //// done loading - restore controls
-            //this.prgsFeed.IsOpen = false;
-
-            //// Remove added EventHandlers
-            //Deactivated -= new EventHandler(prgsFeed_Deactivator);
-            //Activated -= new EventHandler(prgsFeed_Reactivator);
 
             ToggleButtonsEnabled(true);
         }
