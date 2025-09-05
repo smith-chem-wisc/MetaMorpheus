@@ -29,7 +29,7 @@ namespace EngineLayer.DIA
         /// <summary>
         /// Given a list of precursor XICs and all eligibile fragment XICs, loop over each precursor and group fragments with the precursor based on the grouping criteria.
         /// <summary>
-        public override List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments)
+        public override IEnumerable<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments)
         {
             var pfGroups = new List<PrecursorFragmentsGroup>();
             var apexSortedFragmentXics = BuildApexSortedXics(fragments);

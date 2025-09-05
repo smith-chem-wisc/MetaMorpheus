@@ -20,51 +20,38 @@ namespace EngineLayer.DIA
     /// DIAEngine defines a workflow of generating DDA-like pseudo MS2 scans for DIA data analysis. It includes the processes of extracting precursor and 
     /// fragment XICs, grouping them into PrecursorFragmentsGroup objects, and constructing pseudo MS2 scans.
     /// </summary>
-    public class DIAEngine : MetaMorpheusEngine
+    public class DIAEngine
     {
         private readonly MsDataFile DataFile;
-        public DIAparameters DIAparams { get; set; } 
-        public List<Ms2ScanWithSpecificMass> PseudoMs2Scans { get; set; } 
-        protected override MetaMorpheusEngineResults RunSpecific()
+        public CommonParameters CommonParams { get; set; }
+        public DIAparameters DIAparams => CommonParams.DIAparameters;
+        public int OneBasedScanNumber { get; set; } 
+        public IEnumerable<Ms2ScanWithSpecificMass> GetPseudoMs2Scans()
         {
             //read in scans
             var ms1Scans = DataFile.GetMS1Scans().ToArray();
             var ms2Scans = DataFile.GetAllScansList().Where(s => s.MsnOrder == 2).ToArray();
             var DIAScanWindowMap = ConstructMs2Groups(ms2Scans);
 
-            //Get all MS1 and MS2 XICs
-            var allMs1Xics = new ConcurrentDictionary<(double min, double max), List<ExtractedIonChromatogram>>();
-            var allMs2Xics = new ConcurrentDictionary<(double min, double max), List<ExtractedIonChromatogram>>();
-            Parallel.ForEach(DIAScanWindowMap, new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, ms2Group =>
+            foreach (var window in DIAScanWindowMap)
+            {
+                var ms1Xics = DIAparams.Ms1XicConstructor.GetAllXics(ms1Scans, new MzRange(window.Key.min, window.Key.max));
+                var ms2Xics = DIAparams.Ms2XicConstructor.GetAllXics(ms2Scans);
+                var pfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
+
+                foreach (var pfGroup in pfGroups)
                 {
-                    allMs1Xics[ms2Group.Key] = DIAparams.Ms1XicConstructor.GetAllXics(ms1Scans, new MzRange(ms2Group.Key.min, ms2Group.Key.max));
-                    allMs2Xics[ms2Group.Key] = DIAparams.Ms2XicConstructor.GetAllXics(ms2Group.Value.ToArray());
-                });
-
-            //Precursor-fragment Grouping
-            var allPfGroups = new List<PrecursorFragmentsGroup>();
-            foreach (var ms2Group in DIAScanWindowMap.Keys)
-            {
-                var pfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics[ms2Group], allMs2Xics[ms2Group]);
-                allPfGroups.AddRange(pfGroups);
+                    OneBasedScanNumber++;
+                    pfGroup.PFgroupIndex = OneBasedScanNumber;
+                    var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(pfGroup, DIAparams.PseudoMs2ConstructionType, CommonParams, DataFile.FilePath);
+                    yield return pseudoScan;
+                }
             }
-
-            //Convert pfGroups to pseudo MS2 scans
-            PseudoMs2Scans = new List<Ms2ScanWithSpecificMass>();
-            int pfGroupIndex = 1;
-            foreach (var pfGroup in allPfGroups)
-            {
-                pfGroup.PFgroupIndex = pfGroupIndex;
-                var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(pfGroup, DIAparams.PseudoMs2ConstructionType, CommonParameters, DataFile.FilePath);
-                PseudoMs2Scans.Add(pseudoScan);
-                pfGroupIndex++;
-            }
-            return new MetaMorpheusEngineResults(this);
         }
 
-        public DIAEngine(DIAparameters DIAparameters, MsDataFile dataFile, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds) :base(commonParameters, fileSpecificParameters, nestedIds)
+        public DIAEngine(MsDataFile dataFile, CommonParameters commonParameters)
         {
-            DIAparams = DIAparameters;
+            CommonParams = commonParameters;
             DataFile = dataFile;
         }
 

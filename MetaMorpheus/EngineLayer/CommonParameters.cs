@@ -9,6 +9,7 @@ using Nett;
 using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
 using Transcriptomics.Digestion;
+using EngineLayer.DIA;
 
 namespace EngineLayer
 {
@@ -195,6 +196,7 @@ namespace EngineLayer
         public DissociationType MS3ChildScanDissociationType { get; private set; }
 
         public bool UseMostAbundantPrecursorIntensity { get; set; }
+        public DIAparameters DIAparameters { get; set; }
         
         public CommonParameters Clone()
         {

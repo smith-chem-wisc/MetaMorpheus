@@ -11,6 +11,6 @@ namespace EngineLayer.DIA
     {
         public int MaxThreadsForGrouping { get; set; }
         public int MinFragmentCountForPfGroup { get; set; }
-        public abstract List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments);
+        public abstract IEnumerable<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments);
     }
 }
