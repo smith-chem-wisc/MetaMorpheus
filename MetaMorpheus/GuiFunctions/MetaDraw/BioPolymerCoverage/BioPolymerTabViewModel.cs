@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -23,6 +23,7 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
 {
     private Dictionary<string, IBioPolymer> _allBioPolymers;
     private MetaDrawLogic _metaDrawLogic;
+    public override string TabHeader { get; init; } = "BioPolymer Coverage";
 
     public BioPolymerTabViewModel(MetaDrawLogic metaDrawLogic, string exportDirectory = null)
     {
@@ -30,6 +31,7 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
         _metaDrawLogic = metaDrawLogic;
         _allBioPolymers = new Dictionary<string, IBioPolymer>();
         AllGroups = new ObservableCollection<BioPolymerGroupViewModel>();
+        DatabasePath = string.Empty;
         ExportDirectory = exportDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
         LoadDatabaseCommand = new RelayCommand(LoadDatabase);
@@ -148,7 +150,7 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
         }
     }
 
-    public void ProcessSpectralMatches(IList<SpectrumMatchFromTsv> matches)
+    public void ProcessSpectralMatches(IList<SpectrumMatchFromTsv> matches, CancellationToken cancellationToken = default)
     {
         AllGroups.Clear();
 
@@ -175,8 +177,11 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
         }
 
         var processedResults = new List<BioPolymerCoverageResultModel>();
-        foreach (var accessionToGroup in accessionToMatches.Keys) 
+        foreach (var accessionToGroup in accessionToMatches.Keys)
         {
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
             if (!_allBioPolymers.TryGetValue(accessionToGroup, out var bioPolymer))
                 continue;
 

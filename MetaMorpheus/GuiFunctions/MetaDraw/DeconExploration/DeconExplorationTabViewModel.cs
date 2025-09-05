@@ -20,6 +20,7 @@ public enum DeconvolutionMode
 
 public class DeconExplorationTabViewModel : MetaDrawTabViewModel
 {
+    public override string TabHeader { get; init; } = "Deconvolution Exploration";
     public ObservableCollection<MsDataFile> MsDataFiles { get; set; } = new();
     public ObservableCollection<MsDataScan> Scans { get; set; } = new();
     public ObservableCollection<DeconvolutedSpeciesViewModel> DeconvolutedSpecies { get; set; } = new();
@@ -69,7 +70,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
 
     public ICommand RunDeconvolutionCommand { get; }
 
-    public DeconExplorationTabViewModel() : base(false)
+    public DeconExplorationTabViewModel() 
     {
         Mode = DeconvolutionMode.IsolationRegion;
         RunDeconvolutionCommand = new DelegateCommand(pv => RunDeconvolution((pv as PlotView)!));

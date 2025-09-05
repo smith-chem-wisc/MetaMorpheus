@@ -13,41 +13,9 @@ using System.Windows.Media;
 using Easy.Common.Extensions;
 using Point = System.Windows.Point;
 using System.Windows.Data;
+using System.Threading;
 
 namespace GuiFunctions.MetaDraw;
-
-public class MetaDrawTabViewModel : BaseViewModel
-{
-    public MetaDrawTabViewModel(bool isTabEnabled = false)
-    {
-        IsTabEnabled = isTabEnabled;
-    }
-
-    protected object ThreadLocker { get; } = new();
-
-    private bool _isTabEnabled;
-    public bool IsTabEnabled
-    {
-        get => _isTabEnabled;
-        set { _isTabEnabled = value; OnPropertyChanged(nameof(IsTabEnabled)); }
-    }
-
-    private string _exportDirectory;
-    public string ExportDirectory
-    {
-        get
-        {
-            if (!Directory.Exists(_exportDirectory))
-                Directory.CreateDirectory(_exportDirectory);
-            return _exportDirectory;
-        }
-        set
-        {
-            _exportDirectory = value;
-            OnPropertyChanged(nameof(ExportDirectory));
-        }
-    }
-}
 
 /// <summary>
 /// All data and user triggered manipulations for the Chimera Analysis tab
@@ -55,6 +23,7 @@ public class MetaDrawTabViewModel : BaseViewModel
 public class ChimeraAnalysisTabViewModel : MetaDrawTabViewModel
 {
     #region Displayed in GUI
+    public override string TabHeader { get; init; } = "Chimera Annotation";
     public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
     public Ms1ChimeraPlot Ms1ChimeraPlot { get; set; }
     public ObservableCollection<ChimeraGroupViewModel> ChimeraGroupViewModels { get; set; }
@@ -128,11 +97,12 @@ public class ChimeraAnalysisTabViewModel : MetaDrawTabViewModel
         BindingOperations.EnableCollectionSynchronization(ChimeraGroupViewModels, ThreadLocker);
     }
 
-    public void ProcessChimeraData(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles)
+    public void ProcessChimeraData(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles, CancellationToken cancellationToken = default)
     {
         MsDataFiles = dataFiles;
         ChimeraGroupViewModels.Clear();
-        foreach (var chimeraGroup in ConstructChimericPsms(allPsms, dataFiles)
+
+        foreach (var chimeraGroup in ConstructChimericPsms(allPsms, dataFiles, cancellationToken)
                      .OrderByDescending(p => p.Count)
                      .ThenByDescending(p => p.UniqueFragments)
                      .ThenByDescending(p => p.TotalFragments))
@@ -141,7 +111,7 @@ public class ChimeraAnalysisTabViewModel : MetaDrawTabViewModel
         }
     }
 
-    public static List<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles)
+    public static List<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles, CancellationToken cancellationToken = default)
     {
         // Groups are made from psms that pass the MetaDraw quality filter and only include decoys if we are showing decoys.
         var filteredPsms = new List<SpectrumMatchFromTsv>(psms.Count);
@@ -161,6 +131,9 @@ public class ChimeraAnalysisTabViewModel : MetaDrawTabViewModel
         List<ChimeraGroupViewModel> toReturn = new(groupDict.Count);
         foreach (var group in groupDict.Values)
         {
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
             if (group.Count <= 1)
                 continue;
 
@@ -179,7 +152,7 @@ public class ChimeraAnalysisTabViewModel : MetaDrawTabViewModel
             // This prevents the program from crashing and skips problematic groups.
             try
             {
-                var orderedGroup = group.OrderByDescending(p => p.Score);
+                var orderedGroup = group.OrderByDescending(p => p.Score); 
                 var groupVm = new ChimeraGroupViewModel(orderedGroup, ms1Scan, ms2Scan);
                 if (groupVm.ChimericPsms.Count > 0)
                     toReturn.Add(groupVm);

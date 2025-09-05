@@ -9,7 +9,8 @@ public class LoadingProgressViewModel : BaseViewModel
     public static LoadingProgressViewModel Instance => _instance.Value;
 
     public ObservableCollection<LoadingStepViewModel> Steps { get; } = new();
-    private bool _isVisible = false;
+
+    private bool _isVisible;
     public bool IsVisible
     {
         get => _isVisible;
@@ -57,6 +58,4 @@ public class LoadingStepViewModel : BaseViewModel
             OnPropertyChanged(nameof(StepName));
         }
     }
-    public bool IsActive { get; set; }
-    public string ErrorMessage { get; set; }
 }

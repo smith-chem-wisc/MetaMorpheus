@@ -58,11 +58,8 @@ namespace MetaMorpheusGUI
             AdditionalFragmentIonControl.LinkMetaDraw(this);
 
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
-            BioPolymerCoverageTabView.DataContext = BioPolymerTabViewModel;
             ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel();
-            ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
             DeconExplorationViewModel = new DeconExplorationTabViewModel();
-            DeconExplorationTabView.DataContext = DeconExplorationViewModel;
 
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
