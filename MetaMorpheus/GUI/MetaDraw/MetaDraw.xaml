@@ -514,7 +514,7 @@
             </TabItem>
 
             <!--Stats tab-->
-            <TabItem Header="Data Visualization" Background="DarkGray">
+            <TabItem Header="Data Visualization" x:Name="DataVisualizationTab"  Background="DarkGray">
                 <DockPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>

@@ -529,12 +529,6 @@ namespace MetaMorpheusGUI
                 bioPolymerTabViewModel: BioPolymerTabViewModel,
                 deconExplorationTabViewModel: DeconExplorationViewModel);
 
-            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
-                DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            ChimeraAnalysisTabViewModel.ExportDirectory = directoryPath;
-            BioPolymerTabViewModel.ExportDirectory = directoryPath;
-            DeconExplorationViewModel.ExportDirectory = directoryPath;
-
             if (errors.Any())
             {
                 string errorList = string.Join("\n", errors);

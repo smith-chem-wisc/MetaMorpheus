@@ -8,12 +8,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using Easy.Common.Extensions;
 using System.Windows.Data;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Collections.Concurrent;
-using System.Windows.Threading;
+using System.IO;
 
 namespace GuiFunctions.MetaDraw;
 
@@ -60,21 +57,27 @@ public class MetaDrawDataLoader
         allErrors.AddRange(results.SelectMany(e => e));
         if (token.IsCancellationRequested) return allErrors;
 
+        string outputDirectory = null!;
+        if (_logic.SpectralMatchResultFilePaths.Count > 0)
+            outputDirectory = Path.GetDirectoryName(_logic.SpectralMatchResultFilePaths.First()) ?? string.Empty;
+        else if (_logic.SpectraFilePaths.Count > 0)
+            outputDirectory = Path.GetDirectoryName(_logic.SpectraFilePaths.First()) ?? string.Empty;
+        else
+            outputDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
         // Tabs: run in background, post minimal changes to UI
         if (bioPolymerTabViewModel is not null && _logic.AllSpectralMatches.Any())
-            Task.Run(() => ProcessBioPolymerTab(bioPolymerTabViewModel, token), token);
+            Task.Run(() => ProcessBioPolymerTab(bioPolymerTabViewModel, outputDirectory, token), token);
         if (deconExplorationTabViewModel is not null && _logic.MsDataFiles.Any())
-            Task.Run(() => ProcessDeconTab(deconExplorationTabViewModel, token), token);
+            Task.Run(() => ProcessDeconTab(deconExplorationTabViewModel, outputDirectory, token), token);
         if (chimeraTabViewModel is not null && _logic.FilteredListOfPsms.Any() && _logic.MsDataFiles.Any())
-            Task.Run(() => ProcessChimeraTab(chimeraTabViewModel, token), token);
-
+            Task.Run(() => ProcessChimeraTab(chimeraTabViewModel, outputDirectory, token), token);
 
         return allErrors;
     }
 
-    // --------------------------
-    // Core loaders (non-blocking)
-    // --------------------------
+
+    #region Core loaders (non-blocking)
 
     private async Task<List<string>> LoadSpectraAsync(CancellationToken token)
     {
@@ -248,9 +251,11 @@ public class MetaDrawDataLoader
         return errors;
     }
 
+    #endregion
+
     #region Tab Processing 
 
-    private void ProcessBioPolymerTab(BioPolymerTabViewModel tab, CancellationToken token)
+    private void ProcessBioPolymerTab(BioPolymerTabViewModel tab, string outDir, CancellationToken token)
     {
         if (token.IsCancellationRequested) return;
 
@@ -261,10 +266,11 @@ public class MetaDrawDataLoader
         if (tab.IsDatabaseLoaded)
             tab.ProcessSpectralMatches(_logic.AllSpectralMatches, token);
 
+        tab.ExportDirectory = outDir;
         tab.IsTabEnabled = true;
     }
 
-    private void ProcessDeconTab(DeconExplorationTabViewModel tab, CancellationToken token)
+    private void ProcessDeconTab(DeconExplorationTabViewModel tab, string outDir, CancellationToken token)
     {
         if (token.IsCancellationRequested) 
             return;
@@ -273,16 +279,18 @@ public class MetaDrawDataLoader
         foreach (var file in _logic.MsDataFiles.Values)
             tab.MsDataFiles.Add(file);
 
+        tab.ExportDirectory = outDir;
         tab.IsTabEnabled = true;
     }
 
-    private void ProcessChimeraTab(ChimeraAnalysisTabViewModel tab, CancellationToken token)
+    private void ProcessChimeraTab(ChimeraAnalysisTabViewModel tab, string outDir, CancellationToken token)
     {
         if (token.IsCancellationRequested) 
             return;
 
         tab.ProcessChimeraData(_logic.FilteredListOfPsms.ToList(), _logic.MsDataFiles, token);
 
+        tab.ExportDirectory = outDir;
         tab.IsTabEnabled = true;
     }
 
