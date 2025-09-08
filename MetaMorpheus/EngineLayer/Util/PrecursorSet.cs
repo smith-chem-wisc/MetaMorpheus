@@ -2,30 +2,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Markup;
 using MzLibUtil;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Test")]
-namespace EngineLayer
+namespace EngineLayer.Util
 {
-    /// <summary>
-    /// Each precursor refers to one isotopic envelope observed in a single MS1 scan. 
-    /// It is meant to hold experimentally observed data for a peptide/proteoform precursor.
-    /// </summary>
-    /// <param name="MonoisotopicPeakMz"></param>
-    /// <param name="Charge"></param>
-    /// <param name="Mass"></param>
-    /// <param name="Intensity">Either the most abundant isotope intensity, or the summed intensity from all isotopes. For MM decon, this is determined by CommonParameters </param>
-    /// <param name="EnvelopePeakCount"> The number of peaks observed in the Isotopic Envelope. 
-    /// The minimum intensity for a peak to be considered is specified by the user in decon parameters, or in arguments passed to external software</param>
-    /// <param name="FractionalIntensity"> The fraction of the intensity in the MS1 scan that is accounted for by this precursor</param>
-    public record Precursor(double MonoisotopicPeakMz, int Charge, double Mass, double Intensity, int EnvelopePeakCount, double? FractionalIntensity = null);
-
     /// <summary>
     /// Stores a set of unique <see cref="Precursor"/> instances, where uniqueness
     /// is defined by m/z within a specified tolerance.
     /// </summary>
     public class PrecursorSet : IEnumerable<Precursor>
     {
+        private static ListPool<Precursor> _listPool = new(10);
         public readonly Tolerance Tolerance;
         /// <summary>
         /// This dictionary contains precursors indexed by their integer representation.
@@ -46,6 +35,8 @@ namespace EngineLayer
             PrecursorDictionary = new Dictionary<int, List<Precursor>>();
         }
 
+        public bool IsDirty { get; private set; } = false;
+
         /// <summary>
         /// Gets the number of precursors in the set.
         /// </summary>
@@ -61,15 +52,9 @@ namespace EngineLayer
         public bool Add(Precursor precursor)
         {
             if (precursor == null)
-            {
                 return false;
-            }
 
-            if (ContainsEquivalent(precursor, out int integerKey))
-            {
-                return false;
-            }
-
+            var integerKey = (int)Math.Round(precursor.MonoisotopicPeakMz * 100.0);
             if (!PrecursorDictionary.TryGetValue(integerKey, out var precursorsInBucket))
             {
                 precursorsInBucket = new List<Precursor>();
@@ -77,8 +62,8 @@ namespace EngineLayer
             }
             // Add the precursor to the appropriate bucket
             precursorsInBucket.Add(precursor);
-            
 
+            IsDirty = true;
             return true;
         }
 
@@ -101,13 +86,9 @@ namespace EngineLayer
             {
                 if(PrecursorDictionary.TryGetValue(i, out var precursorsInBucket))
                 {
-                    foreach (var existingPrecursor in precursorsInBucket)
+                    if (precursorsInBucket.Any(existingPrecursor => existingPrecursor.Equals(precursor, Tolerance)))
                     {
-                        if (existingPrecursor.Charge == precursor.Charge
-                            && Tolerance.Within(existingPrecursor.MonoisotopicPeakMz, precursor.MonoisotopicPeakMz))
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                 }
             }
@@ -115,10 +96,86 @@ namespace EngineLayer
             return false;
         }
 
+        public void Sanitize()
+        {
+            if (!IsDirty)
+                return;
+
+            // Aggregate all precursors into a single list
+            var allPrecursors = PrecursorDictionary.Values.SelectMany(list => list).ToList();
+
+            MergeSplitEnvelopes(allPrecursors);
+            FilterHarmonics(allPrecursors);
+            RemoveDuplicates(allPrecursors); // Call this one last as it cleans and repopulates the dictionary
+
+            IsDirty = false;
+        }
+
+        /// <summary>
+        /// Classic decon sometimes splits a top-down peak across isotopic envelopes, this function merges them back together
+        /// </summary>
+        /// <param name="allPrecursors"></param>
+        private void MergeSplitEnvelopes(List<Precursor> allPrecursors)
+        {
+            // Placeholder. 
+        }
+
+        private void FilterHarmonics(List<Precursor> allPrecursors)
+        {
+            // Placeholder. 
+        }
+
+        /// <summary>
+        /// Currently only takes the first, future work would be to merge them
+        /// </summary>
+        private void RemoveDuplicates(List<Precursor> allPrecursors)
+        {
+            // Remove duplicates across all bins
+            var uniquePrecursors = _listPool.Get();
+            foreach (var precursor in allPrecursors)
+            {
+                bool isDuplicate = uniquePrecursors.Any(existing => precursor.Equals(existing, Tolerance));
+                if (!isDuplicate)
+                {
+                    uniquePrecursors.Add(precursor);
+                }
+            }
+
+            // Re-bin the unique precursors
+            PrecursorDictionary.Clear();
+            foreach (var precursor in uniquePrecursors)
+            {
+                var integerKey = (int)Math.Round(precursor.MonoisotopicPeakMz * 100.0);
+                if (!PrecursorDictionary.TryGetValue(integerKey, out var bin))
+                {
+                    bin = new List<Precursor>();
+                    PrecursorDictionary[integerKey] = bin;
+                }
+                bin.Add(precursor);
+            }
+
+            _listPool.Return(uniquePrecursors);
+        }
+
+        public void Clear()
+        {
+            foreach (var kvp in PrecursorDictionary)
+            {
+                kvp.Value.Clear();
+            }
+            PrecursorDictionary.Clear();
+            IsDirty = false;
+        }
+
         /// <summary>
         /// Returns an enumerator that iterates through the precursors in the set.
         /// </summary>
-        public IEnumerator<Precursor> GetEnumerator() => PrecursorDictionary.SelectMany(kvp => kvp.Value).GetEnumerator();
+        public IEnumerator<Precursor> GetEnumerator()
+        {
+            if (IsDirty)
+                Sanitize();
+            return PrecursorDictionary.SelectMany(kvp => kvp.Value).GetEnumerator();
+        }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
