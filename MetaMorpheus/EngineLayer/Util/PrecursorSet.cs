@@ -5,7 +5,7 @@ using System.Linq;
 using MzLibUtil;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Test")]
-namespace EngineLayer
+namespace EngineLayer.Util
 {
     /// <summary>
     /// Each precursor refers to one isotopic envelope observed in a single MS1 scan. 
@@ -61,14 +61,10 @@ namespace EngineLayer
         public bool Add(Precursor precursor)
         {
             if (precursor == null)
-            {
                 return false;
-            }
 
             if (ContainsEquivalent(precursor, out int integerKey))
-            {
                 return false;
-            }
 
             if (!PrecursorDictionary.TryGetValue(integerKey, out var precursorsInBucket))
             {
