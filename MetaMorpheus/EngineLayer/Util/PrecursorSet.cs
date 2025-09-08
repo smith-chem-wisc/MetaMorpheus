@@ -14,6 +14,7 @@ namespace EngineLayer.Util
     /// </summary>
     public class PrecursorSet : IEnumerable<Precursor>
     {
+        private static HashSetPool<Precursor> _hashSetPool = new(10);
         public readonly Tolerance Tolerance;
         /// <summary>
         /// This dictionary contains precursors indexed by their integer representation.
@@ -85,13 +86,9 @@ namespace EngineLayer.Util
             {
                 if(PrecursorDictionary.TryGetValue(i, out var precursorsInBucket))
                 {
-                    foreach (var existingPrecursor in precursorsInBucket)
+                    if (precursorsInBucket.Any(existingPrecursor => existingPrecursor.Equals(precursor, Tolerance)))
                     {
-                        if (existingPrecursor.Charge == precursor.Charge
-                            && Tolerance.Within(existingPrecursor.MonoisotopicPeakMz, precursor.MonoisotopicPeakMz))
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                 }
             }
@@ -110,8 +107,25 @@ namespace EngineLayer.Util
                 if (precursorSet.Value.Count == 1)
                     continue;
 
-                // TODO: Do something better than just picking the first. 
-                precursorSet.Value.RemoveRange(1, precursorSet.Value.Count - 1);
+                // Remove duplicates in-place without constructing a new list as this will be called a lot. 
+                var seen = _hashSetPool.Get();
+                int writeIndex = 0;
+                for (int readIndex = 0; readIndex < precursorSet.Value.Count; readIndex++)
+                {
+                    var precursor = precursorSet.Value[readIndex];
+                    // Use Equals(Precursor, Tolerance) for duplicate detection
+                    bool isDuplicate = seen.Any(existing => precursor.Equals(existing, Tolerance));
+                    if (!isDuplicate)
+                    {
+                        seen.Add(precursor);
+                        precursorSet.Value[writeIndex++] = precursor;
+                    }
+                }
+                if (writeIndex < precursorSet.Value.Count)
+                {
+                    precursorSet.Value.RemoveRange(writeIndex, precursorSet.Value.Count - writeIndex);
+                }
+                _hashSetPool.Return(seen);
             }
 
             // Merge precursor who had their envelope split

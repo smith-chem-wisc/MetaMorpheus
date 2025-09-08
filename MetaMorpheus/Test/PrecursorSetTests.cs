@@ -58,7 +58,7 @@ namespace Test
         }
 
         [Test]
-        public void Add_DuplicatePrecursor_ReturnsFalse()
+        public void Add_DuplicatePrecursor_AddsAndSanitizesSuccessfully()
         {
             // Arrange
             var precursor1 = new Precursor(500.5, 2, 999.0, 1000.0, 3);
@@ -70,12 +70,18 @@ namespace Test
 
             // Assert
             Assert.That(result1, Is.True);
-            Assert.That(result2, Is.False);
+            Assert.That(result2, Is.True);
+            Assert.That(_precursorSet.Count, Is.EqualTo(2));
+
+            // After sanitization, only one should remain
+            Assert.That(_precursorSet.IsDirty);
+            _precursorSet.Sanitize();
+            Assert.That(!_precursorSet.IsDirty);
             Assert.That(_precursorSet.Count, Is.EqualTo(1));
         }
 
         [Test]
-        public void Add_EquivalentPrecursorWithinTolerance_ReturnsFalse()
+        public void Add_EquivalentPrecursorWithinTolerance_AddsAndSanitizesSuccessfully()
         {
             // Arrange
             var precursor1 = new Precursor(500.5, 2, 999.0, 1000.0, 3);
@@ -87,7 +93,13 @@ namespace Test
 
             // Assert
             Assert.That(result1, Is.True);
-            Assert.That(result2, Is.False);
+            Assert.That(result2, Is.True);
+            Assert.That(_precursorSet.Count, Is.EqualTo(2));
+
+            // After sanitization, only one should remain
+            Assert.That(_precursorSet.IsDirty);
+            _precursorSet.Sanitize();
+            Assert.That(!_precursorSet.IsDirty);
             Assert.That(_precursorSet.Count, Is.EqualTo(1));
         }
 
@@ -274,7 +286,10 @@ namespace Test
             
             // Try adding a duplicate
             _precursorSet.Add(precursor1);
-            Assert.That(_precursorSet.Count, Is.EqualTo(3), "Count should not change when adding duplicate");
+            Assert.That(_precursorSet.Count, Is.EqualTo(4), "Count should change when adding duplicate");
+
+            _precursorSet.Sanitize();
+            Assert.That(_precursorSet.Count, Is.EqualTo(3), "Count should reflect unique precursors after sanitization");
         }
     }
 }

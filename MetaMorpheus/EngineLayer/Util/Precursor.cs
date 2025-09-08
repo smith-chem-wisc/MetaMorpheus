@@ -2,6 +2,7 @@
 using System.Linq;
 using Chemistry;
 using MassSpectrometry;
+using MzLibUtil;
 
 namespace EngineLayer.Util;
 
@@ -76,4 +77,15 @@ public record Precursor
         EnvelopePeakCount = this.EnvelopePeakCount;
         FractionalIntensity = this.FractionalIntensity;
     }
+
+    public bool Equals(Precursor other, Tolerance mzTolerance)
+    {
+        if (other == null) return false;
+        if (this.Charge != other.Charge) return false;
+        if (!mzTolerance.Within(this.MonoisotopicPeakMz, other.MonoisotopicPeakMz)) return false;
+
+        return true;
+    }
+
+    public override int GetHashCode() => HashCode.Combine(MonoisotopicPeakMz.GetHashCode(), Charge.GetHashCode());
 }
