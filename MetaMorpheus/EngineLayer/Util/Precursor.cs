@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq;
 using Chemistry;
 using MassSpectrometry;
@@ -26,6 +27,26 @@ public record Precursor
     public Precursor(double MonoisotopicPeakMz, int Charge, double Mass, double Intensity, int EnvelopePeakCount, double? FractionalIntensity = null)
     {
         this.MonoisotopicPeakMz = MonoisotopicPeakMz;
+        this.Charge = Charge;
+        this.Mass = Mass;
+        this.Intensity = Intensity;
+        this.EnvelopePeakCount = EnvelopePeakCount;
+        this.FractionalIntensity = FractionalIntensity;
+    }
+
+    public Precursor(double MonoisotopicPeakMz, int Charge, double Intensity, int EnvelopePeakCount, double? FractionalIntensity = null)
+    {
+        this.MonoisotopicPeakMz = MonoisotopicPeakMz;
+        this.Charge = Charge;
+        Mass = MonoisotopicPeakMz.ToMass(Charge);
+        this.Intensity = Intensity;
+        this.EnvelopePeakCount = EnvelopePeakCount;
+        this.FractionalIntensity = FractionalIntensity;
+    }
+
+    public Precursor(int Charge, double Mass, double Intensity, int EnvelopePeakCount, double? FractionalIntensity = null)
+    {
+        MonoisotopicPeakMz = Mass.ToMz(Charge);
         this.Charge = Charge;
         this.Mass = Mass;
         this.Intensity = Intensity;
@@ -68,17 +89,7 @@ public record Precursor
     /// </summary>
     public double? FractionalIntensity { get; init; }
 
-    public void Deconstruct(out double MonoisotopicPeakMz, out int Charge, out double Mass, out double Intensity, out int EnvelopePeakCount, out double? FractionalIntensity)
-    {
-        MonoisotopicPeakMz = this.MonoisotopicPeakMz;
-        Charge = this.Charge;
-        Mass = this.Mass;
-        Intensity = this.Intensity;
-        EnvelopePeakCount = this.EnvelopePeakCount;
-        FractionalIntensity = this.FractionalIntensity;
-    }
-
-    public bool Equals(Precursor other, Tolerance mzTolerance)
+    public bool Equals(Precursor? other, Tolerance mzTolerance)
     {
         if (other == null) return false;
         if (this.Charge != other.Charge) return false;

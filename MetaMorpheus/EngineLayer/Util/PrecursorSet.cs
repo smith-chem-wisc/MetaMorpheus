@@ -117,18 +117,12 @@ namespace EngineLayer.Util
         /// <param name="allPrecursors"></param>
         private void MergeSplitEnvelopes(List<Precursor> allPrecursors)
         {
-            foreach (var chargeGroup in allPrecursors
-                .Where(p => p.Envelope != null)
-                .GroupBy(p => p.Charge))
-            {
-                
-            }
-
+            // Placeholder. 
         }
 
         private void FilterHarmonics(List<Precursor> allPrecursors)
         {
-
+            // Placeholder. 
         }
 
         /// <summary>
