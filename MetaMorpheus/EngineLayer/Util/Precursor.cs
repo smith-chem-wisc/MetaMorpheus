@@ -33,13 +33,13 @@ public record Precursor
         this.FractionalIntensity = FractionalIntensity;
     }
 
-    public Precursor(IsotopicEnvelope envelope, double? fractionalIntensity = null)
+    public Precursor(IsotopicEnvelope envelope, double? intensity = null, double? fractionalIntensity = null)
     {
         this.Envelope = envelope ?? throw new ArgumentNullException(nameof(envelope));
         this.MonoisotopicPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
         this.Charge = envelope.Charge;
         this.Mass = envelope.MonoisotopicMass;
-        this.Intensity = envelope.Peaks.Sum(p => p.intensity);
+        this.Intensity = intensity ?? envelope.Peaks.Sum(p => p.intensity);
         this.EnvelopePeakCount = envelope.Peaks.Count;
         this.FractionalIntensity = fractionalIntensity;
     }

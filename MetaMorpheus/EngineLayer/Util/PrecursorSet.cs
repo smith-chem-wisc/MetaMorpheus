@@ -14,7 +14,7 @@ namespace EngineLayer.Util
     /// </summary>
     public class PrecursorSet : IEnumerable<Precursor>
     {
-        private static HashSetPool<Precursor> _hashSetPool = new(10);
+        private static ListPool<Precursor> _listPool = new(10);
         public readonly Tolerance Tolerance;
         /// <summary>
         /// This dictionary contains precursors indexed by their integer representation.
@@ -101,45 +101,87 @@ namespace EngineLayer.Util
             if (!IsDirty)
                 return;
 
-            // Remove duplicates within each bucket by merging or picking the best. 
-            foreach (var precursorSet in PrecursorDictionary)
-            {
-                if (precursorSet.Value.Count == 1)
-                    continue;
+            // Aggregate all precursors into a single list
+            var allPrecursors = PrecursorDictionary.Values.SelectMany(list => list).ToList();
 
-                // Remove duplicates in-place without constructing a new list as this will be called a lot. 
-                var seen = _hashSetPool.Get();
-                int writeIndex = 0;
-                for (int readIndex = 0; readIndex < precursorSet.Value.Count; readIndex++)
-                {
-                    var precursor = precursorSet.Value[readIndex];
-                    // Use Equals(Precursor, Tolerance) for duplicate detection
-                    bool isDuplicate = seen.Any(existing => precursor.Equals(existing, Tolerance));
-                    if (!isDuplicate)
-                    {
-                        seen.Add(precursor);
-                        precursorSet.Value[writeIndex++] = precursor;
-                    }
-                }
-                if (writeIndex < precursorSet.Value.Count)
-                {
-                    precursorSet.Value.RemoveRange(writeIndex, precursorSet.Value.Count - writeIndex);
-                }
-                _hashSetPool.Return(seen);
+            MergeSplitEnvelopes(allPrecursors);
+            FilterHarmonics(allPrecursors);
+            RemoveDuplicates(allPrecursors); // Call this one last as it cleans and repopulates the dictionary
+
+            IsDirty = false;
+        }
+
+        /// <summary>
+        /// Classic decon sometimes splits a top-down peak across isotopic envelopes, this function merges them back together
+        /// </summary>
+        /// <param name="allPrecursors"></param>
+        private void MergeSplitEnvelopes(List<Precursor> allPrecursors)
+        {
+            foreach (var chargeGroup in allPrecursors
+                .Where(p => p.Envelope != null)
+                .GroupBy(p => p.Charge))
+            {
+                
             }
 
-            // Merge precursor who had their envelope split
+        }
 
-            // Filter out harmonics. 
+        private void FilterHarmonics(List<Precursor> allPrecursors)
+        {
 
+        }
 
+        /// <summary>
+        /// Currently only takes the first, future work would be to merge them
+        /// </summary>
+        private void RemoveDuplicates(List<Precursor> allPrecursors)
+        {
+            // Remove duplicates across all bins
+            var uniquePrecursors = _listPool.Get();
+            foreach (var precursor in allPrecursors)
+            {
+                bool isDuplicate = uniquePrecursors.Any(existing => precursor.Equals(existing, Tolerance));
+                if (!isDuplicate)
+                {
+                    uniquePrecursors.Add(precursor);
+                }
+            }
+
+            // Re-bin the unique precursors
+            PrecursorDictionary.Clear();
+            foreach (var precursor in uniquePrecursors)
+            {
+                var integerKey = (int)Math.Round(precursor.MonoisotopicPeakMz * 100.0);
+                if (!PrecursorDictionary.TryGetValue(integerKey, out var bin))
+                {
+                    bin = new List<Precursor>();
+                    PrecursorDictionary[integerKey] = bin;
+                }
+                bin.Add(precursor);
+            }
+
+            _listPool.Return(uniquePrecursors);
+        }
+
+        public void Clear()
+        {
+            foreach (var kvp in PrecursorDictionary)
+            {
+                kvp.Value.Clear();
+            }
+            PrecursorDictionary.Clear();
             IsDirty = false;
         }
 
         /// <summary>
         /// Returns an enumerator that iterates through the precursors in the set.
         /// </summary>
-        public IEnumerator<Precursor> GetEnumerator() => PrecursorDictionary.SelectMany(kvp => kvp.Value).GetEnumerator();
+        public IEnumerator<Precursor> GetEnumerator()
+        {
+            if (IsDirty)
+                Sanitize();
+            return PrecursorDictionary.SelectMany(kvp => kvp.Value).GetEnumerator();
+        }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
