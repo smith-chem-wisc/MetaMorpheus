@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Markup;
 using MzLibUtil;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Test")]
@@ -52,10 +53,7 @@ namespace EngineLayer.Util
             if (precursor == null)
                 return false;
 
-            // TODO: remove this and filter at the end
-            if (ContainsEquivalent(precursor, out int integerKey))
-                return false;
-
+            var integerKey = (int)Math.Round(precursor.MonoisotopicPeakMz * 100.0);
             if (!PrecursorDictionary.TryGetValue(integerKey, out var precursorsInBucket))
             {
                 precursorsInBucket = new List<Precursor>();
@@ -107,6 +105,14 @@ namespace EngineLayer.Util
                 return;
 
             // Remove duplicates within each bucket by merging or picking the best. 
+            foreach (var precursorSet in PrecursorDictionary)
+            {
+                if (precursorSet.Value.Count == 1)
+                    continue;
+
+                // TODO: Do something better than just picking the first. 
+                precursorSet.Value.RemoveRange(1, precursorSet.Value.Count - 1);
+            }
 
             // Merge precursor who had their envelope split
 
