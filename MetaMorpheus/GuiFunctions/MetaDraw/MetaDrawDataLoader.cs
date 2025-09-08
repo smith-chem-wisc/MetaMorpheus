@@ -51,7 +51,10 @@ public class MetaDrawDataLoader
         var librariesTask = loadLibraries ? LoadLibrariesAsync(token) : Task.FromResult(new List<string>());
 
         List<string>[] results;
-        try { results = await Task.WhenAll(spectraTask, psmsTask, librariesTask).ConfigureAwait(false); }
+        try 
+        { 
+            results = await Task.WhenAll(spectraTask, psmsTask, librariesTask).ConfigureAwait(false); 
+        }
         catch (OperationCanceledException) { return new() { "Loading was canceled." }; }
 
         allErrors.AddRange(results.SelectMany(e => e));
@@ -79,7 +82,7 @@ public class MetaDrawDataLoader
 
     #region Core loaders (non-blocking)
 
-    private async Task<List<string>> LoadSpectraAsync(CancellationToken token)
+    public async Task<List<string>> LoadSpectraAsync(CancellationToken token)
     {
         var errors = new ConcurrentBag<string>();
         var files = _logic.SpectraFilePaths;
@@ -132,7 +135,7 @@ public class MetaDrawDataLoader
         return errors.ToList();
     }
 
-    private async Task<List<string>> LoadPsmsAsync(bool requireMatchingSpectra, CancellationToken token)
+    public async Task<List<string>> LoadPsmsAsync(bool requireMatchingSpectra, CancellationToken token)
     {
         var errors = new ConcurrentBag<string>();
         var tsvs = _logic.SpectralMatchResultFilePaths;
@@ -222,7 +225,7 @@ public class MetaDrawDataLoader
         return errors.ToList();
     }
 
-    private async Task<List<string>> LoadLibrariesAsync(CancellationToken token)
+    public async Task<List<string>> LoadLibrariesAsync(CancellationToken token)
     {
         var errors = new List<string>();
         var total = Math.Max(1, _logic.SpectralLibraryPaths.Count);

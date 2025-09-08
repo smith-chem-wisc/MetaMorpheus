@@ -544,23 +544,6 @@ namespace MetaMorpheusGUI
             ToggleButtonsEnabled(true);
         }
 
-
-        ///// <summary>
-        ///// Deactivates the "loading data" popup if one clicks out of the main window
-        ///// </summary>
-        //private void prgsFeed_Deactivator(object sender, EventArgs e)
-        //{
-        //    prgsFeed.IsOpen = false;
-        //}
-
-        ///// <summary>
-        ///// Reactivates the "loading data" popup if one clicks into the main window
-        ///// </summary>
-        //private void prgsFeed_Reactivator(object sender, EventArgs e)
-        //{
-        //    prgsFeed.IsOpen = true;
-        //}
-
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string txt = (sender as TextBox).Text;
