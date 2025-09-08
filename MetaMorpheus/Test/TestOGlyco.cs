@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using TaskLayer;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
@@ -1850,6 +1851,63 @@ namespace Test
             Assert.That(localizedMod.Count == 5); // There are 5 pairs in total, so the dictionary should have 5 entries.
             Assert.That(localizedMod.Where(p => p.SiteIndex == 5 && p.ModId == 1).All(p => p.Confident)); // The Pair with SiteIndex 5 and ModId 1 should be confident, as it appears in both routes.
             Assert.That(localizedMod.Where(p => p.SiteIndex != 5 ).All(p => !p.Confident)); // The other pairs should not be confident, as they do not appear in both routes.
+        }
+
+        [Test]
+        public static void TestingFor()
+        {
+            string path = "E:\\HGI\\search\\MT_Opair_twoMods\\Task1-GlycoSearchTask\\oglyco.psmtsv";
+            Dictionary<string, int> modCount = new Dictionary<string, int>();
+            foreach (var line in File.ReadAllLines(path).Skip(1))
+            {
+                var lines = line.Split('\t').ToList();
+                var full = lines[13];
+                var mods = ExtractWordsInBrackets(full);
+                if (mods.Count > 1)
+                {
+                    int ii = 0;
+                }
+
+                foreach (var mod in mods)
+                {
+                    if (modCount.ContainsKey(mod))
+                    {
+                        modCount[mod]++;
+                    }
+                    else
+                    {
+                        modCount.Add(mod, 1);
+                    }
+                }
+            }
+
+            modCount = modCount.OrderByDescending(p => p.Value).ToDictionary(p=>p.Key, p=>p.Value);
+            string outpath = "E:\\HGI\\search\\ModCount_twoMod.txt";
+            File.WriteAllLines(outpath, modCount.Select(p=>p.Key + " : " +  p.Value));
+            int iiii = 0;
+        }
+
+        public static List<string> ExtractWordsInBrackets(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return new List<string>();
+            var matches = Regex.Matches(input, @"\[(.*?)\]");
+            var results = new List<string>();
+            foreach (Match match in matches)
+            {
+                if (match.Groups.Count > 1)
+                    results.Add(match.Groups[1].Value);
+            }
+
+            List<string> newResults = new List<string>();
+            foreach (var mod in results)
+            {
+                var newMod = mod.Split(":")[1];
+                newMod = newMod.Split(' ')[0];
+                newResults.Add(newMod);
+            }
+
+            return newResults;
         }
     }
 }

@@ -157,6 +157,11 @@ namespace TaskLayer
             QuantificationAnalysis();
             WriteQuantificationResults();
 
+            if (Parameters.GlycoSearchParameters.WritePrunedDataBase)
+            {
+                WritePrunedDatabase(Parameters.AllPsms.Cast<SpectralMatch>().ToList(), Parameters.BioPolymerList.Cast<IBioPolymer>().ToList(), Parameters.GlycoSearchParameters.ModsToWriteSelection, Parameters.DatabaseFilenameList, Parameters.OutputFolder, Parameters.SearchTaskId);
+            }
+
             var writtenFileSingle = Path.Combine(OutputFolder, "AllPSMs.psmtsv");
             WriteGlycoFile.WritePsmGlycoToTsv(filteredPsms, writtenFileSingle, true);
             
