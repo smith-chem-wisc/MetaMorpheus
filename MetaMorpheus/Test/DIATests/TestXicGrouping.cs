@@ -192,13 +192,14 @@ namespace Test.DIATests
             }
 
             //perform XicGrouping on the ms1 XIC and all fragment XICs with apexTolerance 0.2f, overlap threshold 0.5, correlation threshold 0.5, and minimum number of fragment XICs 2
+            var xicGroupingEngine = new XicGroupingEngine(0.2f, 0.5, 0.5, 1, 2);
             var allFragXics = matchedFragXics.Concat(apexXics).Concat(corrXics).ToList();
-            var pfGroup = XicGroupingEngine.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0.5, 2);
+            var pfGroups = xicGroupingEngine.PrecursorFragmentGrouping(new List<ExtractedIonChromatogram> { ms1Xic }, allFragXics).ToArray();
             //all and only the Xics in matchedFragXics should be grouped with the ms1 XIC, and there are 5 of them
-            Assert.That(pfGroup, Is.Not.Null);
-            Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(5));
+            Assert.That(pfGroups.Count(), Is.EqualTo(1));
+            Assert.That(pfGroups[0].PFpairs.Count, Is.EqualTo(5));
             //check that all fragment XICs grouped are from matchedFragXics, and they all should have perfect correlation and overlap with the precursor XIC
-            foreach (var pfPair in pfGroup.PFpairs)
+            foreach (var pfPair in pfGroups[0].PFpairs)
             {
                 Assert.That(matchedFragXics.Contains(pfPair.FragmentXic));
                 Assert.That(pfPair.Correlation, Is.EqualTo(1.0).Within(1e-6));
@@ -206,15 +207,17 @@ namespace Test.DIATests
             }
 
             //perform XicGrouping with apexTolerance 0.2f, overlap threshold 0.5, correlation threshold 0.5, and minimum number of fragment XICs 10; now there should be no groups returned because only 5 fragment XICs are in the group
-            pfGroup = XicGroupingEngine.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0.5, 10);
-            Assert.That(pfGroup, Is.Null);
+            xicGroupingEngine = new XicGroupingEngine(0.2f, 0.5, 0.5, 1, 10);
+            pfGroups = xicGroupingEngine.PrecursorFragmentGrouping(new List<ExtractedIonChromatogram> { ms1Xic }, allFragXics).ToArray();
+            Assert.That(pfGroups.Count(), Is.EqualTo(0));
 
             //perform XicGrouping with apexTolerance 0.2f, overlap threshold 0.5, correlation threshold 0, and minimum number of fragment XICs 2; now the tolerance on correlation is looser and all fragment XICs in corrXics should be grouped
-            pfGroup = XicGroupingEngine.GroupFragmentsForOnePrecursor(ms1Xic, allFragXics, 0.2f, 0.5, 0, 2);
-            Assert.That(pfGroup, Is.Not.Null);
-            Assert.That(pfGroup.PFpairs.Count, Is.EqualTo(5 + 3)); //5 from matchedFragXics and 3 from corrXics
+            xicGroupingEngine = new XicGroupingEngine(0.2f, 0.5, 0, 1, 2);
+            pfGroups = xicGroupingEngine.PrecursorFragmentGrouping(new List<ExtractedIonChromatogram> { ms1Xic }, allFragXics).ToArray();
+            Assert.That(pfGroups.Count(), Is.EqualTo(1));
+            Assert.That(pfGroups[0].PFpairs.Count, Is.EqualTo(5 + 3)); //5 from matchedFragXics and 3 from corrXics
             //check that all fragment XICs grouped are from matchedFragXics and corrXics
-            foreach (var pfPair in pfGroup.PFpairs)
+            foreach (var pfPair in pfGroups[0].PFpairs)
             {
                 Assert.That(matchedFragXics.Contains(pfPair.FragmentXic) || corrXics.Contains(pfPair.FragmentXic));
             }

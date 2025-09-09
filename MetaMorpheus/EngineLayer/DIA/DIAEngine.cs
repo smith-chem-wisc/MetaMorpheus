@@ -33,10 +33,10 @@ namespace EngineLayer.DIA
             var ms2Scans = DataFile.GetAllScansList().Where(s => s.MsnOrder == 2).ToArray();
             var DIAScanWindowMap = ConstructMs2Groups(ms2Scans);
 
-            foreach (var window in DIAScanWindowMap)
+            foreach (var kvp in DIAScanWindowMap)
             {
-                var ms1Xics = DIAparams.Ms1XicConstructor.GetAllXics(ms1Scans, new MzRange(window.Key.min, window.Key.max));
-                var ms2Xics = DIAparams.Ms2XicConstructor.GetAllXics(ms2Scans);
+                var ms1Xics = DIAparams.Ms1XicConstructor.GetAllXics(ms1Scans, new MzRange(kvp.Key.min, kvp.Key.max));
+                var ms2Xics = DIAparams.Ms2XicConstructor.GetAllXics(kvp.Value.ToArray());
                 var pfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
 
                 foreach (var pfGroup in pfGroups)

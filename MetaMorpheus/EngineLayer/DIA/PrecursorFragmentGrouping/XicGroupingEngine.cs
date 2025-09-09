@@ -41,7 +41,7 @@ namespace EngineLayer.DIA
                     {
                         var precursor = precursors[i];
                         var fragmentsInRange = GetXicsInRange(apexSortedFragmentXics, precursor.ApexRT, ApexRTTolerance);
-                        var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragmentsInRange, ApexRTTolerance, OverlapThreshold, CorrelationThreshold, MinFragmentCountForPfGroup);
+                        var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragmentsInRange, OverlapThreshold, CorrelationThreshold, MinFragmentCountForPfGroup);
                         if (pfGroup != null)
                         {
                             lock (pfGroups)
@@ -55,7 +55,7 @@ namespace EngineLayer.DIA
         /// <summary>
         /// Given one precursor XIC and all eligibile fragment XICs, select fragments that meet the grouping criteria and construct a precursor-fragment group for this precursor.
         /// <summary>
-        public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, List<ExtractedIonChromatogram> fragmentXics, float apexRtTolerance, double overlapThreshold, double correlationThreshold, int minFragmentCountForGrouping)
+        public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, List<ExtractedIonChromatogram> fragmentXics, double overlapThreshold, double correlationThreshold, int minFragmentCountForGrouping)
         {
             var pfPairs = new List<PrecursorFragmentPair>();
             foreach (var fragmentXic in fragmentXics)

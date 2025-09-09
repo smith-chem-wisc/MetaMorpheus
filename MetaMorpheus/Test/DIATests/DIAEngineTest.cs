@@ -175,7 +175,7 @@ namespace Test.DIATests
             var ms2XicConstructor = new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3);
             var ms2Xics = ms2XicConstructor.GetAllXics(fakeaMs2Scans);
             var xicGroupingEngine = new XicGroupingEngine(0.1f, 0.5, 0.5);
-            var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
+            var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics).ToArray();
             var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.MzPeak, new CommonParameters(), "test");
 
             //The precursor information should match with PrecursorDist
@@ -190,7 +190,7 @@ namespace Test.DIATests
 
             //Test with PseudoMs2ConstructionType.Mass when we use mass indexing on Ms2 scans
             ms2Xics = ms1XicConstructor.GetAllXics(fakeaMs2Scans);
-            allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics);
+            allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics).ToArray();
             pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.Mass, new CommonParameters(), "test");
 
             //The precursor information should still match
@@ -212,6 +212,7 @@ namespace Test.DIATests
         public static void TestDIAEngine()
         {
             //Create fake MS1 scans where there are two precursors with same mass but different charge states
+            //The two precursors have same elution profiles but are fragmented in different DIA MS2 isolation windows
             int numberOfScansPerCycle = 3;
             string precursorSequence = "PEPTIDEPEPTIDE";
             double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
@@ -227,7 +228,7 @@ namespace Test.DIATests
 
             //Create two sets of fake MS2 scans, each having a different isolation window that contains one of the precursors in MS1 scans
             string fragSequence = "PEPTIDE";
-            var ms2ScanGroup1 = GetSimpleFakeScans(fragSequence, intensityMultipliers, 1e5, 1.01, 2, out IsotopicDistribution fragDist1, 2); 
+            var ms2ScanGroup1 = GetSimpleFakeScans(fragSequence, intensityMultipliers, 1e5, 1.01, 2, out IsotopicDistribution fragDist1, 2);
             var ms2ScanGroup2 = GetSimpleFakeScans(fragSequence, intensityMultipliers, 1e5, 1.02, 2, out IsotopicDistribution fragDist2, 1);
 
             //Put all scans together
@@ -255,13 +256,14 @@ namespace Test.DIATests
             }
             var testMsDataFile = new GenericMsDataFile(allScans, new SourceFile("no nativeID format", "mzML format", null, null, null));
 
-            var DIAparams = new DIAparameters(new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, new ClassicDeconvolutionParameters(1, 20, 4, 3)), new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3), new XicGroupingEngine(0.1f, 0.5, 0.5), PseudoMs2ConstructionType.MzPeak);
-            var diaEngine = new DIAEngine(DIAparams, testMsDataFile, new CommonParameters(), new List<(string FileName, CommonParameters Parameters)>(), new List<string> { "test" });
-            diaEngine.Run();
+            var DIAparams = new DIAparameters(DIAanalysisType.DIA, new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, new ClassicDeconvolutionParameters(1, 20, 4, 3)), new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3), new XicGroupingEngine(0.15f, 0.5, 0.5, 1), PseudoMs2ConstructionType.MzPeak);
+            var commonParams = new CommonParameters { DIAparameters = DIAparams };
+            var diaEngine = new DIAEngine(testMsDataFile, commonParams);
+            var pseudoScans = diaEngine.GetPseudoMs2Scans().ToArray();
 
             //There should be two precursor-fragment groups, resulting in two pseudo scans
-            Assert.That(diaEngine.PseudoMs2Scans.Count, Is.EqualTo(2));
-            foreach(var pseudoScan in diaEngine.PseudoMs2Scans)
+            Assert.That(pseudoScans.Length, Is.EqualTo(2));
+            foreach(var pseudoScan in pseudoScans)
             {
                 //The precursor charge should match with the charge of the precursor in MS1 scans
                 Assert.That(pseudoScan.PrecursorCharge, Is.EqualTo(2).Or.EqualTo(3));
