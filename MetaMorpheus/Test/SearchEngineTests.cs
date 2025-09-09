@@ -1903,8 +1903,8 @@ namespace Test
             List<Protein> proteinWithMods = new List<Protein> {new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein",
                 oneBasedModifications: new Dictionary<int, List<Modification>>
                 {
-                    { 3, new List<Modification>{GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"] } },
-                    { 23, new List<Modification>{GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] } }
+                    { 2, new List<Modification>{GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"] } },
+                    { 22, new List<Modification>{GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] } }
                 })
             };
             List<Protein> proteinWithoutMods = new List<Protein> { new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein") };
