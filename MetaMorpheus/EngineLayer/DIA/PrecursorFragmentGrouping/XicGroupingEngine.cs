@@ -27,7 +27,7 @@ namespace EngineLayer.DIA
         }
 
         /// <summary>
-        /// Given a list of precursor XICs and all eligibile fragment XICs, loop over each precursor and group fragments with the precursor based on the grouping criteria.
+        /// Given a list of precursor XICs and all eligible fragment XICs, loop over each precursor and group fragments with the precursor based on the grouping criteria.
         /// <summary>
         public override IEnumerable<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments)
         {

@@ -116,7 +116,7 @@ namespace Test.DIATests
                 Assert.That(mzXics.Any(xic => xic.Peaks.First().M == (float)mz));
             }
 
-            //Test excetion handling in XicConstructor when the input scans are empty
+            //Test exception handling in XicConstructor when the input scans are empty
             var emptyScans = new MsDataScan[0];
             var ex = Assert.Throws<MetaMorpheusException>(() => massXicConstructor.GetAllXics(emptyScans));
             Assert.That(ex.Message, Is.EqualTo("XIC construction failed."));
