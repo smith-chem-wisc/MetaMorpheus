@@ -1861,9 +1861,11 @@ namespace Test
         [Test]
         public static void TestPrunedDatabase()
         {
+            // In this unit test, we run a glyco search task and try to write a pruned database with only the modifications that were observed in the search.
+            // The psm is TTGS[O-linked glycosylation:H1N1 on S]LEPS[O-linked glycosylation:H2N2A1 on S]S[O-linked glycosylation:H2N2A1F1 on S]GASGPQVSSVK
+
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
-
             var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
             glycoSearchTask._glycoSearchParameters.WritePrunedDataBase = true;
             //only write o-glycan in pruned database
@@ -1873,10 +1875,21 @@ namespace Test
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
 
+
+            var psmFromGlycoSearch = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder,"Task", "AllPSMs.psmtsv"), out var warnings);
+            Assert.That(psmFromGlycoSearch.Count == 1);
             string xml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData", "Task","P16150proteinPruned.xml");
             List<Protein> proteinFromNewDb = ProteinDbLoader.LoadProteinXML(xml, true,
                 DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
+            // The observed Mods should be [O-linked glycosylation:H1N1 on S], [O-linked glycosylation:H2N2A1 on S], [O-linked glycosylation:H2N2A1F1 on S]
+            var modsAdded = proteinFromNewDb.First().ConsensusVariant.OneBasedPossibleLocalizedModifications
+                .SelectMany(p => p.Value).ToList();
+            Assert.That(modsAdded.Count == 3);
+            Assert.That(modsAdded.All(p => p.ModificationType == "O-linked glycosylation"));
+            Assert.That(modsAdded[0].IdWithMotif == "H1N1 on S");
+            Assert.That(modsAdded[1].IdWithMotif == "H2N2A1 on S");
+            Assert.That(modsAdded[2].IdWithMotif == "H2N2A1F1 on S");
 
             string outputFolder_new = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTSearchData");
             DbForTask db_new = new(xml, false);
@@ -1884,8 +1897,13 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory,
                     @"GlycoTestData\TaskForOglycoPruneDb.toml"), MetaMorpheusTask.tomlConfig);
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", searchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db_new }, outputFolder_new).Run();
-            int iiii = 0;
 
+            // Compare the psm from glyco search and new search with pruned database, they should be identical
+            var psmFromNewSearch = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder_new, "Task", "AllPSMs.psmtsv"), out var warning_news);
+            Assert.That(psmFromNewSearch.Count == 1);
+            Assert.That(psmFromGlycoSearch.First().BaseSequence == psmFromNewSearch.First().BaseSequence);
+            Assert.That(psmFromGlycoSearch.First().ProteinName == psmFromNewSearch.First().ProteinName);
+            Assert.That(psmFromGlycoSearch.First().FullSequence == psmFromNewSearch.First().FullSequence);
             Directory.Delete(outputFolder, true);
             Directory.Delete(outputFolder_new, true);
 

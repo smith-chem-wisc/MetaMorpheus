@@ -403,6 +403,11 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
+                if (modFile.Contains("glyco.txt"))
+                {
+                    // Glycan modifications are handled separately in LoadGlycans()
+                    continue;
+                }
                 AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
@@ -476,6 +481,7 @@ namespace EngineLayer
                     {
                         AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                     }
+                    _AllModsKnown.Add(glycan);
                 }
             }
             foreach (var path in NGlycanDatabasePaths)
@@ -487,6 +493,7 @@ namespace EngineLayer
                     {
                         AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                     }
+                    _AllModsKnown.Add(glycan);
                 }
             }
             LoadTxtGlycan();
