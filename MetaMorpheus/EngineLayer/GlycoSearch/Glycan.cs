@@ -218,6 +218,7 @@ namespace EngineLayer
             {"NeuAc", new Tuple<char, int>('A', 2) },
             {"NeuGc", new Tuple<char, int>('G', 3) },
             {"Fuc",  new Tuple<char, int>('F', 4)},
+            {"dHex", new Tuple<char, int>('F', 4)}, // Treat dHex as Fuc
             {"Phospho", new Tuple<char, int>('P', 5)},
             {"Sulfo", new Tuple<char, int>('S', 6) },
             {"Na", new Tuple<char, int>('Y', 7) },
