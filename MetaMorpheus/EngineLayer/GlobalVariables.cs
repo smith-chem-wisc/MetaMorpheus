@@ -1,6 +1,9 @@
 ﻿using Chemistry;
+using Easy.Common.Extensions;
+using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using Nett;
+using Omics.Modifications;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
@@ -11,11 +14,9 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using Omics.Modifications;
 using TopDownProteomics;
-using UsefulProteomicsDatabases;
-using Easy.Common.Extensions;
 using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
 
 namespace EngineLayer
 {
@@ -488,6 +489,7 @@ namespace EngineLayer
                     }
                 }
             }
+            LoadTxtGlycan();
         }
 
         private static void LoadDissociationTypes()
@@ -523,6 +525,43 @@ namespace EngineLayer
             if (File.Exists(settingsPath))
             {
                 GlobalSettings = Toml.ReadFile<GlobalSettings>(settingsPath);
+            }
+        }
+
+        /// <summary>
+        /// Convert glyco.txt into Glycan objects and add them to AllModsKnown.
+        /// </summary>
+        private static void LoadTxtGlycan()
+        {
+            string glycoFile = Path.Combine(DataDir, @"Mods", "glyco.txt");
+            var glycoMods = PtmListLoader.ReadModsFromFile(glycoFile, out var errorMods);
+            foreach (var glycoMod in glycoMods)
+            {
+                var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+
+                // If we cannot parse the glycan string, we add the glycoMod as a normal modification.
+                if (kind.Sum(p => p) == 0)
+                {
+                    _AllModsKnown.Add(glycoMod);
+                    continue;
+                }
+
+                Glycan glycan;
+                if (glycoMod.ModificationType == "N-linked glycosylation")
+                {
+                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.N_glycan);
+                    glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
+                }
+                else if (glycoMod.ModificationType == "O-linked glycosylation")
+                {
+                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.O_glycan);
+                    glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
+                }
+                else
+                {
+                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.other_glycan); // Still don't know how to deal with that
+                }
+                _AllModsKnown.Add(glycan);
             }
         }
     }
