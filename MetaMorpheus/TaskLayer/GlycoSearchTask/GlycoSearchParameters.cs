@@ -34,6 +34,7 @@ namespace TaskLayer
             WriteContaminants = true;
             WriteSpectrumLibrary = false;
             DisposeOfFileWhenDone = true;
+            WritePrunedDataBase = false;
 
             ModsToWriteSelection = new Dictionary<string, int>
             {

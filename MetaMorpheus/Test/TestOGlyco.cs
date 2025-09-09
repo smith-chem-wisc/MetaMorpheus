@@ -8,6 +8,7 @@ using MzLibUtil;
 using Nett;
 using NUnit.Framework; 
 using NUnit.Framework.Legacy;
+using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
@@ -18,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Printing.IndexedProperties;
 using System.Text.RegularExpressions;
 using TaskLayer;
 using TopDownProteomics;
@@ -1139,7 +1141,8 @@ namespace Test
                     MaximumOGlycanAllowed = 4,
                     DoParsimony = true,
                     WriteContaminants = writeContaminants,
-                    WriteDecoys = writeDecoys
+                    WriteDecoys = writeDecoys,
+                    WritePrunedDataBase = false,
                 }
             };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, isContaminant) }, rawFilePaths, "");
@@ -1196,7 +1199,8 @@ namespace Test
                     DoParsimony = true,
                     WriteContaminants = true,
                     WriteDecoys = true,
-                    WriteIndividualFiles = true
+                    WriteIndividualFiles = true,
+                    WritePrunedDataBase = false,
                 }
             };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");
@@ -1332,7 +1336,8 @@ namespace Test
                     WriteContaminants = true,
                     WriteDecoys = true,
                     WriteIndividualFiles = true,
-                    DoQuantification = true
+                    DoQuantification = true,
+                    WritePrunedDataBase = false,
                 }
             };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");
@@ -1852,62 +1857,38 @@ namespace Test
             Assert.That(localizedMod.Where(p => p.SiteIndex == 5 && p.ModId == 1).All(p => p.Confident)); // The Pair with SiteIndex 5 and ModId 1 should be confident, as it appears in both routes.
             Assert.That(localizedMod.Where(p => p.SiteIndex != 5 ).All(p => !p.Confident)); // The other pairs should not be confident, as they do not appear in both routes.
         }
-
+        //test if prunedDatabase matches expected output
         [Test]
-        public static void TestingFor()
+        public static void TestPrunedDatabase()
         {
-            string path = "E:\\HGI\\search\\MT_Opair_twoMods\\Task1-GlycoSearchTask\\oglyco.psmtsv";
-            Dictionary<string, int> modCount = new Dictionary<string, int>();
-            foreach (var line in File.ReadAllLines(path).Skip(1))
-            {
-                var lines = line.Split('\t').ToList();
-                var full = lines[13];
-                var mods = ExtractWordsInBrackets(full);
-                if (mods.Count > 1)
-                {
-                    int ii = 0;
-                }
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
 
-                foreach (var mod in mods)
-                {
-                    if (modCount.ContainsKey(mod))
-                    {
-                        modCount[mod]++;
-                    }
-                    else
-                    {
-                        modCount.Add(mod, 1);
-                    }
-                }
-            }
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.WritePrunedDataBase = true;
+            //only write o-glycan in pruned database
+            glycoSearchTask._glycoSearchParameters.ModsToWriteSelection = new Dictionary<string, int> { {"O-linked glycosylation", 3}, }; 
 
-            modCount = modCount.OrderByDescending(p => p.Value).ToDictionary(p=>p.Key, p=>p.Value);
-            string outpath = "E:\\HGI\\search\\ModCount_twoMod.txt";
-            File.WriteAllLines(outpath, modCount.Select(p=>p.Key + " : " +  p.Value));
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
+
+            string xml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData", "Task","P16150proteinPruned.xml");
+            List<Protein> proteinFromNewDb = ProteinDbLoader.LoadProteinXML(xml, true,
+                DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+
+
+            string outputFolder_new = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTSearchData");
+            DbForTask db_new = new(xml, false);
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory,
+                    @"GlycoTestData\TaskForOglycoPruneDb.toml"), MetaMorpheusTask.tomlConfig);
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", searchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db_new }, outputFolder_new).Run();
             int iiii = 0;
-        }
 
-        public static List<string> ExtractWordsInBrackets(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return new List<string>();
-            var matches = Regex.Matches(input, @"\[(.*?)\]");
-            var results = new List<string>();
-            foreach (Match match in matches)
-            {
-                if (match.Groups.Count > 1)
-                    results.Add(match.Groups[1].Value);
-            }
+            Directory.Delete(outputFolder, true);
+            Directory.Delete(outputFolder_new, true);
 
-            List<string> newResults = new List<string>();
-            foreach (var mod in results)
-            {
-                var newMod = mod.Split(":")[1];
-                newMod = newMod.Split(' ')[0];
-                newResults.Add(newMod);
-            }
-
-            return newResults;
         }
     }
 }

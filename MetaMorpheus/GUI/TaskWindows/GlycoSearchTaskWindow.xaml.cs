@@ -413,6 +413,7 @@ namespace MetaMorpheusGUI
                 precursorDeconParams: precursorDeconvolutionParameters,
                 productDeconParams: productDeconvolutionParameters);
 
+            TheTask._glycoSearchParameters.WritePrunedDataBase = WritePrunedDBCheckBox.IsChecked.Value;
             SetModSelectionForPrunedDB();
             TheTask.CommonParameters = commonParamsToSave;
 
