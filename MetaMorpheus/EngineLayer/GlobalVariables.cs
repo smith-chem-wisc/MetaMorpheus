@@ -4,7 +4,6 @@ using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using Nett;
 using Omics.Modifications;
-using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
 using System;

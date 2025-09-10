@@ -8,7 +8,6 @@ using MzLibUtil;
 using Nett;
 using NUnit.Framework; 
 using NUnit.Framework.Legacy;
-using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
@@ -19,12 +18,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Printing.IndexedProperties;
-using System.Text.RegularExpressions;
 using TaskLayer;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
-using static Nett.TomlObjectFactory;
 
 namespace Test
 {
