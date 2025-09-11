@@ -28,6 +28,7 @@ using Transcriptomics.Digestion;
 using Easy.Common.Extensions;
 using EngineLayer.Util;
 using Readers;
+using Readers.SpectralLibrary;
 
 namespace TaskLayer
 {
