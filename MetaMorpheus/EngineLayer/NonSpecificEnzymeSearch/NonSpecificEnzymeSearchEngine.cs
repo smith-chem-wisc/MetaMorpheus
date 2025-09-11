@@ -421,7 +421,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 //add the terminal mod
                                 if (fragmentationTerminus == FragmentationTerminus.N)
                                 {
-                                    updatedMods[peptide.OneBasedEndResidue] = terminalMod;
+                                    updatedMods[peptide.OneBasedEndResidue + 1] = terminalMod;
                                 }
                                 else
                                 {
