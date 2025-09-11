@@ -1961,7 +1961,7 @@ namespace Test
                         var testMods = testPsm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.AllModsOneIsNterminus;
                         Assert.That(answerSeq, Is.EqualTo(testSeq));
                         Assert.That(answerMods, Is.EqualTo(testMods));
-                        Assert.That(modIndexAnswer[1 - i], Is.EqualTo(testMods.Keys.First());
+                        Assert.That(modIndexAnswer[1 - i], Is.EqualTo(testMods.Keys.First()));
                     }
                 }
             }
