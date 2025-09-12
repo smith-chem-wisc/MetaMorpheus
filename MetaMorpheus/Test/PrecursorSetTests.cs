@@ -376,28 +376,28 @@ namespace Test
             // Check all properties
             Assert.That(p1.MonoisotopicPeakMz, Is.EqualTo(p2.MonoisotopicPeakMz));
             Assert.That(p1.Charge, Is.EqualTo(p2.Charge));
-            Assert.That(p1.Mass, Is.EqualTo(p2.Mass).Within(1e-6));
+            Assert.That(p1.MonoIsotopicMass, Is.EqualTo(p2.MonoIsotopicMass).Within(1e-6));
             Assert.That(p1.Intensity, Is.EqualTo(p2.Intensity).Within(1e-6));
             Assert.That(p1.EnvelopePeakCount, Is.EqualTo(p2.EnvelopePeakCount));
             Assert.That(p1.FractionalIntensity, Is.EqualTo(p2.FractionalIntensity));
 
             Assert.That(p1.MonoisotopicPeakMz, Is.EqualTo(p3.MonoisotopicPeakMz));
             Assert.That(p1.Charge, Is.EqualTo(p3.Charge));
-            Assert.That(p1.Mass, Is.EqualTo(p3.Mass).Within(1e-6));
+            Assert.That(p1.MonoIsotopicMass, Is.EqualTo(p3.MonoIsotopicMass).Within(1e-6));
             Assert.That(p1.Intensity, Is.EqualTo(p3.Intensity).Within(1e-6));
             Assert.That(p1.EnvelopePeakCount, Is.EqualTo(p3.EnvelopePeakCount));
             Assert.That(p1.FractionalIntensity, Is.EqualTo(p3.FractionalIntensity));
 
             Assert.That(p1.MonoisotopicPeakMz, Is.EqualTo(p4.MonoisotopicPeakMz));
             Assert.That(p1.Charge, Is.EqualTo(p4.Charge));
-            Assert.That(p1.Mass, Is.EqualTo(p4.Mass).Within(1e-6));
+            Assert.That(p1.MonoIsotopicMass, Is.EqualTo(p4.MonoIsotopicMass).Within(1e-6));
             Assert.That(p1.Intensity, Is.EqualTo(p4.Intensity).Within(1e-6));
             Assert.That(p1.EnvelopePeakCount, Is.EqualTo(p4.EnvelopePeakCount));
             Assert.That(p1.FractionalIntensity, Is.EqualTo(p4.FractionalIntensity));
 
             Assert.That(p1.MonoisotopicPeakMz, Is.EqualTo(p5.MonoisotopicPeakMz));
             Assert.That(p1.Charge, Is.EqualTo(p5.Charge));
-            Assert.That(p1.Mass, Is.EqualTo(p5.Mass).Within(1e-6));
+            Assert.That(p1.MonoIsotopicMass, Is.EqualTo(p5.MonoIsotopicMass).Within(1e-6));
             Assert.That(p1.Intensity, Is.EqualTo(p5.Intensity).Within(1e-6));
             Assert.That(p1.EnvelopePeakCount, Is.EqualTo(p5.EnvelopePeakCount));
             Assert.That(p1.FractionalIntensity, Is.EqualTo(p5.FractionalIntensity));
