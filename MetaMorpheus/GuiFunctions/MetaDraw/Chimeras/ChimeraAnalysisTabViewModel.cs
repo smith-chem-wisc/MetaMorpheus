@@ -12,18 +12,22 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using Easy.Common.Extensions;
 using Point = System.Windows.Point;
+using System.Windows.Data;
+using System.Threading;
 
 namespace GuiFunctions.MetaDraw;
 
 /// <summary>
 /// All data and user triggered manipulations for the Chimera Analysis tab
 /// </summary>
-public class ChimeraAnalysisTabViewModel : BaseViewModel
+public class ChimeraAnalysisTabViewModel : MetaDrawTabViewModel
 {
     #region Displayed in GUI
+    public override string TabHeader { get; init; } = "Chimera Annotation";
     public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
     public Ms1ChimeraPlot Ms1ChimeraPlot { get; set; }
     public ObservableCollection<ChimeraGroupViewModel> ChimeraGroupViewModels { get; set; }
+    public Dictionary<string, MsDataFile> MsDataFiles { get; private set; }
 
     private ChimeraGroupViewModel _selectedChimeraGroup;
     public ChimeraGroupViewModel SelectedChimeraGroup
@@ -80,23 +84,34 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     }
 
     #endregion
-
-    public ChimeraAnalysisTabViewModel(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles, string exportDirectory = null)
+    public ChimeraAnalysisTabViewModel(string exportDirectory = null)
     {
-        ChimeraGroupViewModels = [..ConstructChimericPsms(allPsms, dataFiles)
-            .OrderByDescending(p => p.Count)
-            .ThenByDescending(p => p.UniqueFragments)
-            .ThenByDescending(p => p.TotalFragments)];
+        ChimeraGroupViewModels = new();
         ExportDirectory = exportDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
         ExportMs1Command = new RelayCommand(ExportMs1);
         ExportMs2Command = new RelayCommand(ExportMs2);
         ExportSequenceCoverageCommand = new RelayCommand(ExportSequenceCoverage);
         ExportLegendCommand = new DelegateCommand(ExportLegend);
         ExportAllCommand = new DelegateCommand(ExportAll);
+
+        BindingOperations.EnableCollectionSynchronization(ChimeraGroupViewModels, ThreadLocker);
     }
 
-    public static List<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles)
+    public void ProcessChimeraData(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles, CancellationToken cancellationToken = default)
+    {
+        MsDataFiles = dataFiles;
+        ChimeraGroupViewModels.Clear();
+
+        foreach (var chimeraGroup in ConstructChimericPsms(allPsms, dataFiles, cancellationToken)
+                     .OrderByDescending(p => p.Count)
+                     .ThenByDescending(p => p.UniqueFragments)
+                     .ThenByDescending(p => p.TotalFragments))
+        {
+            ChimeraGroupViewModels.Add(chimeraGroup);
+        }
+    }
+
+    public static List<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles, CancellationToken cancellationToken = default)
     {
         // Groups are made from psms that pass the MetaDraw quality filter and only include decoys if we are showing decoys.
         var filteredPsms = new List<SpectrumMatchFromTsv>(psms.Count);
@@ -116,6 +131,9 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         List<ChimeraGroupViewModel> toReturn = new(groupDict.Count);
         foreach (var group in groupDict.Values)
         {
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
             if (group.Count <= 1)
                 continue;
 
@@ -134,7 +152,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             // This prevents the program from crashing and skips problematic groups.
             try
             {
-                var orderedGroup = group.OrderByDescending(p => p.Score);
+                var orderedGroup = group.OrderByDescending(p => p.Score); 
                 var groupVm = new ChimeraGroupViewModel(orderedGroup, ms1Scan, ms2Scan);
                 if (groupVm.ChimericPsms.Count > 0)
                     toReturn.Add(groupVm);
@@ -149,22 +167,6 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     }
 
     #region IO
-
-    private string _exportDirectory;
-    public string ExportDirectory
-    {
-        get
-        {
-            if (!Directory.Exists(_exportDirectory))
-                Directory.CreateDirectory(_exportDirectory);
-            return _exportDirectory;
-        }
-        set
-        {
-            _exportDirectory = value;
-            OnPropertyChanged(nameof(ExportDirectory));
-        }
-    }
 
     public ICommand ExportMs1Command { get; set; }
     public ICommand ExportMs2Command { get; set; }

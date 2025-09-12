@@ -293,7 +293,8 @@ public class ChimeraGroupViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         var group = vm.ChimeraGroupViewModels[0];
 
         // Act
@@ -321,7 +322,8 @@ public class ChimeraGroupViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         var group = vm.ChimeraGroupViewModels[0];
 
         // Act
@@ -350,11 +352,13 @@ public class ChimeraGroupViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles)
+
+        var vm = new ChimeraAnalysisTabViewModel()
         {
             UseLetterOnly = true
         };
-        vm.UseLetterOnly = true;
+        vm.ProcessChimeraData(allPsms, dataFiles);
+
         var group = vm.ChimeraGroupViewModels[0];
 
         // Act
