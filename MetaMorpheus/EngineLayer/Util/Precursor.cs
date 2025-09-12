@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 using Chemistry;
-using MassSpectrometry;
+using MonoIsotopicMassSpectrometry;
 using MzLibUtil;
 
 namespace EngineLayer.Util;
@@ -19,16 +19,16 @@ public record Precursor
     /// </summary>
     /// <param name="MonoisotopicPeakMz"></param>
     /// <param name="Charge"></param>
-    /// <param name="Mass"></param>
+    /// <param name="MonoIsotopicMass"></param>
     /// <param name="Intensity">Either the most abundant isotope intensity, or the summed intensity from all isotopes. For MM decon, this is determined by CommonParameters </param>
-    /// <param name="EnvelopePeakCount"> The number of peaks observed in the Isotopic Envelope. 
+    /// <param name="EnvelopePeakCount"> The number of peaks observed in the Isotopic Envelope as determined by the deconvolution. 
     /// The minimum intensity for a peak to be considered is specified by the user in decon parameters, or in arguments passed to external software</param>
     /// <param name="FractionalIntensity"> The fraction of the intensity in the MS1 scan that is accounted for by this precursor</param>
-    public Precursor(double MonoisotopicPeakMz, int Charge, double Mass, double Intensity, int EnvelopePeakCount, double? FractionalIntensity = null)
+    public Precursor(double MonoisotopicPeakMz, int Charge, double MonoIsotopicMass, double Intensity, int EnvelopePeakCount, double? FractionalIntensity = null)
     {
         this.MonoisotopicPeakMz = MonoisotopicPeakMz;
         this.Charge = Charge;
-        this.Mass = Mass;
+        this.MonoIsotopicMass = MonoIsotopicMass;
         this.Intensity = Intensity;
         this.EnvelopePeakCount = EnvelopePeakCount;
         this.FractionalIntensity = FractionalIntensity;
@@ -38,17 +38,17 @@ public record Precursor
     {
         this.MonoisotopicPeakMz = MonoisotopicPeakMz;
         this.Charge = Charge;
-        Mass = MonoisotopicPeakMz.ToMass(Charge);
+        MonoIsotopicMass = MonoisotopicPeakMz.ToMonoIsotopicMass(Charge);
         this.Intensity = Intensity;
         this.EnvelopePeakCount = EnvelopePeakCount;
         this.FractionalIntensity = FractionalIntensity;
     }
 
-    public Precursor(int Charge, double Mass, double Intensity, int EnvelopePeakCount, double? FractionalIntensity = null)
+    public Precursor(int Charge, double MonoIsotopicMass, double Intensity, int EnvelopePeakCount, double? FractionalIntensity = null)
     {
-        MonoisotopicPeakMz = Mass.ToMz(Charge);
+        MonoisotopicPeakMz = MonoIsotopicMass.ToMz(Charge);
         this.Charge = Charge;
-        this.Mass = Mass;
+        this.MonoIsotopicMass = MonoIsotopicMass;
         this.Intensity = Intensity;
         this.EnvelopePeakCount = EnvelopePeakCount;
         this.FractionalIntensity = FractionalIntensity;
@@ -57,21 +57,33 @@ public record Precursor
     public Precursor(IsotopicEnvelope envelope, double? intensity = null, double? fractionalIntensity = null)
     {
         this.Envelope = envelope ?? throw new ArgumentNullException(nameof(envelope));
-        this.MonoisotopicPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
+        this.MonoisotopicPeakMz = envelope.MonoisotopicMonoIsotopicMass.ToMz(envelope.Charge);
         this.Charge = envelope.Charge;
-        this.Mass = envelope.MonoisotopicMass;
+        this.MonoIsotopicMass = envelope.MonoisotopicMonoIsotopicMass;
         this.Intensity = intensity ?? envelope.Peaks.Sum(p => p.intensity);
         this.EnvelopePeakCount = envelope.Peaks.Count;
         this.FractionalIntensity = fractionalIntensity;
     }
 
+    /// <summary>
+    /// The isotopic envelope associated with this precursor, if available.
+    /// </summary>
+    /// <remarks>
+    /// This may be null if the precursor was created without an envelope, such as coming from the scan header or an external source.
+    /// </remarks>
     public IsotopicEnvelope? Envelope { get; init; }
 
+    /// <summary>
+    /// The m/z of the monoisotopic peak in the isotopic envelope.
+    /// </summary>
     public double MonoisotopicPeakMz { get; init; }
 
     public int Charge { get; init; }
 
-    public double Mass { get; init; }
+    /// <summary>
+    /// The neutral monoisotopic mass of the precursor.
+    /// </summary>
+    public double MonoIsotopicMass { get; init; }
 
     /// <summary>
     /// Either the most abundant isotope intensity, or the summed intensity from all isotopes. For MM decon, this is determined by CommonParameters 

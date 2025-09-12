@@ -12,9 +12,15 @@ namespace EngineLayer.Util
     /// Stores a set of unique <see cref="Precursor"/> instances, where uniqueness
     /// is defined by m/z within a specified tolerance.
     /// </summary>
+    /// <remarks>
+    /// This class serves as an intermediate storage for precursors before they are finalized.
+    /// It allows for efficient addition and checking of precursors, and includes a sanitization
+    /// step to ensure that only valid precursors are stored.
+    /// </remarks>
     public class PrecursorSet : IEnumerable<Precursor>
     {
-        private static ListPool<Precursor> _listPool = new(10);
+        private static ListPool<Precursor> _listPool = new(8);
+        public const double MzScaleFactor = 100.0; // Used to convert m/z to an integer key by multiplying and rounding
         public readonly Tolerance Tolerance;
         /// <summary>
         /// This dictionary contains precursors indexed by their integer representation.
@@ -35,6 +41,9 @@ namespace EngineLayer.Util
             PrecursorDictionary = new Dictionary<int, List<Precursor>>();
         }
 
+        /// <summary>
+        /// Indicates whether the set has been modified since the last sanitization.
+        /// </summary>
         public bool IsDirty { get; private set; } = false;
 
         /// <summary>
@@ -54,7 +63,7 @@ namespace EngineLayer.Util
             if (precursor == null)
                 return false;
 
-            var integerKey = (int)Math.Round(precursor.MonoisotopicPeakMz * 100.0);
+            var integerKey = (int)Math.Round(precursor.MonoisotopicPeakMz * MzScaleFactor);
             if (!PrecursorDictionary.TryGetValue(integerKey, out var precursorsInBucket))
             {
                 precursorsInBucket = new List<Precursor>();
@@ -80,7 +89,7 @@ namespace EngineLayer.Util
                 return false;
             }
 
-            integerKey = (int)Math.Round(precursor.MonoisotopicPeakMz * 100.0);
+            integerKey = (int)Math.Round(precursor.MonoisotopicPeakMz * MzScaleFactor);
 
             for (int i = integerKey - 1; i <= integerKey + 1; i++)
             {
@@ -96,19 +105,27 @@ namespace EngineLayer.Util
             return false;
         }
 
+        /// <summary>
+        /// Sanitizes the set by removing duplicates and invalid precursors.
+        /// </summary>
+        /// <remarks>
+        /// This method should be called before accessing the precursors to ensure data integrity and is done implicitely before enumeration.
+        /// </remarks>
         public void Sanitize()
         {
             if (!IsDirty)
                 return;
 
             // Aggregate all precursors into a single list
-            var allPrecursors = PrecursorDictionary.Values.SelectMany(list => list).ToList();
+            var allPrecursors = listPool.Get();
+            allPrecursors.AddRange(PrecursorDictionary.Values.SelectMany(list => list));
 
             MergeSplitEnvelopes(allPrecursors);
             FilterHarmonics(allPrecursors);
             RemoveDuplicates(allPrecursors); // Call this one last as it cleans and repopulates the dictionary
 
             IsDirty = false;
+            _listPool.Return(allPrecursors);
         }
 
         /// <summary>
@@ -145,7 +162,7 @@ namespace EngineLayer.Util
             PrecursorDictionary.Clear();
             foreach (var precursor in uniquePrecursors)
             {
-                var integerKey = (int)Math.Round(precursor.MonoisotopicPeakMz * 100.0);
+                var integerKey = (int)Math.Round(precursor.MonoisotopicPeakMz * MzScaleFactor);
                 if (!PrecursorDictionary.TryGetValue(integerKey, out var bin))
                 {
                     bin = new List<Precursor>();
@@ -157,6 +174,9 @@ namespace EngineLayer.Util
             _listPool.Return(uniquePrecursors);
         }
 
+        /// <summary>
+        /// Clears all precursors from the set.
+        /// </summary>
         public void Clear()
         {
             foreach (var kvp in PrecursorDictionary)
@@ -168,7 +188,7 @@ namespace EngineLayer.Util
         }
 
         /// <summary>
-        /// Returns an enumerator that iterates through the precursors in the set.
+        /// Returns an enumerator that iterates through the precursors in the set, sanitizing if necessary.
         /// </summary>
         public IEnumerator<Precursor> GetEnumerator()
         {
