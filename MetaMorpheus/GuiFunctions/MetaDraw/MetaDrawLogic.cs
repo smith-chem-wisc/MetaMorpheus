@@ -1,5 +1,4 @@
 ﻿global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
-using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
@@ -22,10 +21,8 @@ using Readers;
 using System.Threading;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using Readers.SpectralLibrary;
-using System.Threading.Tasks;
 using GuiFunctions.MetaDraw;
 
 [assembly: InternalsVisibleTo("Test")]
@@ -503,7 +500,6 @@ namespace GuiFunctions
                     DisplaySequences(stationaryCanvas, null, null, psm);
                     DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
                 }
-
 
                 if (errors != null)
                 {

@@ -37,7 +37,6 @@ namespace MetaMorpheusGUI
         private ObservableCollection<string> PsmStatPlotFiles;
         public PtmLegendViewModel PtmLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
-        private static List<string> AcceptedSpectraFormats => SpectrumMatchFromTsvHeader.AcceptedSpectraFormats.Concat(new List<string> { ".msalign", ".tdf", ".tdf_bin" }).Select(format => format.ToLower()).ToList();
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
@@ -106,7 +105,7 @@ namespace MetaMorpheusGUI
         {
             var theExtension = GlobalVariables.GetFileExtension(filePath).ToLowerInvariant();
 
-            if (AcceptedSpectraFormats.Contains(theExtension))
+            if (GlobalVariables.AcceptedSpectraFormats.Contains(theExtension))
             {
                 // If a bruker timsTof file was selected, we actually want the parent folder
                 if(theExtension == ".tdf" || theExtension == ".tdf_bin")
@@ -359,7 +358,7 @@ namespace MetaMorpheusGUI
 
         private void selectSpectraFileButton_Click(object sender, RoutedEventArgs e)
         {
-            string filterString = string.Join(";", AcceptedSpectraFormats.Select(p => "*" + p));
+            string filterString = string.Join(";", GlobalVariables.AcceptedSpectraFormats.Select(p => "*" + p));
 
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {

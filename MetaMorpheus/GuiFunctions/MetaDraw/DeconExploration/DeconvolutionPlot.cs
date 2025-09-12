@@ -30,15 +30,15 @@ public class DeconvolutionPlot : MassSpectrumPlot
 
     public DeconvolutionPlot(PlotView plotView, MsDataScan scan, List<DeconvolutedSpeciesViewModel> deconResults, MzRange? isolationRange = null) : base(plotView, scan)
     {
+        double maxAnnotated = deconResults.Any()
+            ? deconResults.Max(p => p.Envelope.Peaks.Max(m => m.mz))
+            : isolationRange?.Maximum + 1 ?? scan.MassSpectrum.Range.Maximum;
+        ZoomAxes(scan, maxAnnotated, isolationRange);
+
         AnnotatePlot(deconResults);
 
         if (isolationRange is not null)
             AnnotateIsolationWindow(isolationRange);
-
-        double maxAnnotated = deconResults.Any() 
-            ? deconResults.Max(p => p.Envelope.Peaks.Max(m => m.mz))
-            : isolationRange?.Maximum + 1 ?? scan.MassSpectrum.Range.Maximum;
-        ZoomAxes(scan, maxAnnotated, isolationRange);
         RefreshChart();
     }
 
@@ -77,17 +77,14 @@ public class DeconvolutionPlot : MassSpectrumPlot
         }
     }
 
+    private const double YRangeMultiplier = 1.3;
     public void ZoomAxes(MsDataScan scan, double maxAnnotatedMz, MzRange? isolationRange = null)
     {
         // Full Scan
         if (isolationRange is null)
         {
-            double xMax = scan.MassSpectrum.Range.Maximum;
-            if (xMax - maxAnnotatedMz >= 1000)
-                xMax = maxAnnotatedMz + 500;
-
-            Model.Axes[0].Zoom(scan.MassSpectrum.Range.Minimum, xMax);
-            Model.Axes[1].Zoom(0, scan.MassSpectrum.YofPeakWithHighestY!.Value);
+            Model.Axes[0].Zoom(scan.MassSpectrum.Range.Minimum, maxAnnotatedMz + 50);
+            Model.Axes[1].Zoom(0, scan.MassSpectrum.YofPeakWithHighestY!.Value * YRangeMultiplier);
         }
         // Isolation Region
         else
@@ -100,7 +97,7 @@ public class DeconvolutionPlot : MassSpectrumPlot
                 if (p.Intensity > maxIntensity)
                     maxIntensity = p.Intensity;
             }
-            maxIntensity *= 1.4;
+            maxIntensity *= YRangeMultiplier;
 
             Model.Axes[0].Zoom(isolationRange.Minimum - 1, isolationRange.Maximum + 1);
             Model.Axes[1].Zoom(0, maxIntensity);
