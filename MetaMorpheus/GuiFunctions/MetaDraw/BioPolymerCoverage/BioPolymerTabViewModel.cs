@@ -327,7 +327,7 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
             dpi, dpi, PixelFormats.Pbgra32);
         rtb.Render(drawingVisual);
 
-        string path = Path.Combine(ExportDirectory, $"{SelectedGroup.Accession}_SequenceCoverage.{MetaDrawSettings.ExportType}");
+        string path = Path.Combine(ExportDirectory, $"{SelectedGroup.Accession}_SequenceCoverage.{MetaDrawSettings.ExportType.ToLower()}");
 
         // Convert RenderTargetBitmap to System.Drawing.Bitmap
         using (var ms = new MemoryStream())

@@ -199,17 +199,28 @@ public class MetaDrawDataLoader
         // Merge once; FilteredListOfPsms & grouped dict are already collection-synchronized
         lock (_logic.ThreadLocker)
         {
-            _logic.AllSpectralMatches.AddRange(acceptedAll);
+            _logic.AllSpectralMatches.AddRange(acceptedAll
+                .OrderByDescending(p => p is PsmFromTsv { BetaPeptideScore: not null } psm 
+                    ? p.Score + psm.BetaPeptideScore.Value
+                    : p.Score
+                )
+                .ThenByDescending(p => p.DeltaScore));
             foreach (var kv in acceptedByFile)
             {
+                var ordered = kv.Value
+                    .OrderByDescending(p => p is PsmFromTsv { BetaPeptideScore: not null } psm
+                        ? p.Score + psm.BetaPeptideScore.Value
+                        : p.Score
+                    )
+                    .ThenByDescending(p => p.DeltaScore);
                 if (_logic.SpectralMatchesGroupedByFile.TryGetValue(kv.Key, out var existing))
                 {
-                    foreach (var p in kv.Value) 
+                    foreach (var p in ordered) 
                         existing.Add(p);
                 }
                 else
                 {
-                    _logic.SpectralMatchesGroupedByFile[kv.Key] = new ObservableCollection<SpectrumMatchFromTsv>(kv.Value);
+                    _logic.SpectralMatchesGroupedByFile[kv.Key] = new(ordered);
                 }
             }
 
