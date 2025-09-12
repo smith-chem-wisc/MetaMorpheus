@@ -77,7 +77,7 @@ public class DeconvolutionPlot : MassSpectrumPlot
         }
     }
 
-    private const double YRangeMultiplier = 1.3;
+    private const double YRangeMultiplier = 1.2;
     public void ZoomAxes(MsDataScan scan, double maxAnnotatedMz, MzRange? isolationRange = null)
     {
         // Full Scan

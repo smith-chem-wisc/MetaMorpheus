@@ -19,6 +19,7 @@ namespace GuiFunctions;
 
 public class MassSpectrumPlot : Plot
 {
+    private const int MultiLineAnnotationPixelSpacing = 18;
     public PlotView PlotView { get; protected set; }
     public MsDataScan Scan { get; private set; }
     public MassSpectrumPlot(PlotView plotView, MsDataScan scan) : base(plotView)
@@ -124,10 +125,11 @@ public class MassSpectrumPlot : Plot
             var y = annotation.TextPosition.Y + 20;
             var splits = annotation.Text.Split('\n');
 
-            // Calculate y step for annotation lines based on Y-axis range
+            // Calculate y step for annotation lines based on PlotView's actual height
             var yAxis = Model.Axes.FirstOrDefault(a => a.Position == AxisPosition.Left);
             double yRange = yAxis != null ? Math.Abs(yAxis.ActualMaximum - yAxis.ActualMinimum) : 1.0;
-            double yStep = yRange * 0.05; // 5% of the y-range per line 
+            double plotHeight = PlotView?.ActualHeight > 0 ? PlotView.ActualHeight : 370.0; // fallback to default height
+            double yStep = yRange * (MultiLineAnnotationPixelSpacing / plotHeight); // Convert pixel spacing to y-axis units
 
             for (int j = splits.Length - 1; j >= 0; j--)
             {
