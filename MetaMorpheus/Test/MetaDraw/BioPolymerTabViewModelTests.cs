@@ -247,7 +247,7 @@ namespace Test.MetaDraw
 
             var dbPath = searchTestCase.DatabaseList.First().FilePath;
             var smPath = Directory.GetFiles(searchTestCase.OutputDirectory, "*.psmtsv", SearchOption.AllDirectories).First();
-            var matches = Readers.SpectrumMatchTsvReader.ReadTsv(smPath, out _);
+            var matches = SpectrumMatchTsvReader.ReadTsv(smPath, out _);
 
             // Build View Model
             var logic = new DummyMetaDrawLogic();
@@ -352,6 +352,23 @@ namespace Test.MetaDraw
             vm.ProcessSpectralMatches(new List<SpectrumMatchFromTsv> { match });
             Assert.That(vm.AllGroups.Count, Is.EqualTo(2));
             Assert.That(vm.AllGroups.All(g => g.CoverageResults[0].CoverageType == BioPolymerCoverageType.Shared));
+        }
+
+        [Test]
+        public void ProcessSpectralMatches_HandlesMissedCleavageTandemRepeats()
+        {
+            var logic = new DummyMetaDrawLogic();
+            var vm = new BioPolymerTabViewModel(logic);
+            var allBioPolymersField = typeof(BioPolymerTabViewModel)
+                .GetField("_allBioPolymers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            allBioPolymersField.SetValue(vm, new Dictionary<string, IBioPolymer>
+            {
+                { "ACC", new DummyBioPolymer("ACC", "Protein", "ABCDABC") },
+            });
+            var match = new DummySpectralmatch(accession: "ACC", baseSeq: "ABC", missedCleavages: "1", startAndEnd: "[1 to 3]|[5 to 7]");
+            vm.ProcessSpectralMatches(new List<SpectrumMatchFromTsv> { match });
+            Assert.That(vm.AllGroups.Count, Is.EqualTo(1));
+            Assert.That(vm.AllGroups.All(g => g.CoverageResults[0].CoverageType == BioPolymerCoverageType.TandemRepeatMissedCleavage));
         }
 
         [Test]

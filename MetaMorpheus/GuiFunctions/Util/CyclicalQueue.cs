@@ -19,9 +19,6 @@ public class CyclicalQueue<T>
 
     public T Dequeue()
     {
-        if (_items.Count == 0)
-            Reset();
-
         var item = _items[_index];
         _index = (_index + 1) % _items.Count;
         return item;

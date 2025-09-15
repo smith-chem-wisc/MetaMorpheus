@@ -1,7 +1,9 @@
 using GuiFunctions.MetaDraw;
 using NUnit.Framework;
+using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using Readers;
 
 namespace Test.MetaDraw;
 
@@ -221,5 +223,39 @@ public class BioPolymerCoverageMapViewModelTests
         var legendItems = method.Invoke(vm, new object[] { filteredResults, fontSize, dpi, ColorResultsBy.None }) as System.Collections.IEnumerable;
         Assert.That(legendItems, Is.Not.Null);
         Assert.That(legendItems.Cast<object>().Any(), Is.False);
+    }
+
+    [Test]
+    public void Plotting_WithRealData()
+    {
+        // Bring in search results
+        if (!EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValue, out var searchTestCase))
+            Assert.Fail();
+
+        var dbPath = searchTestCase.DatabaseList.First().FilePath;
+        var smPath = Directory.GetFiles(searchTestCase.OutputDirectory, "*PSMs.psmtsv", SearchOption.AllDirectories).First();
+        var matches = SpectrumMatchTsvReader.ReadTsv(smPath, out _);
+
+        // Load search results into Tab
+        var logic = new DummyMetaDrawLogic();
+        logic.AllSpectralMatches = matches;
+        logic.FilterPsms();
+
+        var tabVm = new BioPolymerTabViewModel(logic);
+        tabVm.DatabasePath = dbPath;
+        var method = typeof(BioPolymerTabViewModel)
+            .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        method.Invoke(tabVm, null);
+        Assert.That(tabVm.IsDatabaseLoaded, Is.True);
+
+        // Plot every group
+        var previous = tabVm.CoverageMapViewModel.CoverageDrawing;
+        foreach (var group in tabVm.AllGroups)
+        {
+            tabVm.SelectedGroup = group;
+            var current = tabVm.CoverageMapViewModel.CoverageDrawing;
+            Assert.That(current, Is.Not.Null);
+            Assert.That(current, Is.Not.EqualTo(previous));
+        }
     }
 }
