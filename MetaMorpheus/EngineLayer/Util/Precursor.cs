@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 using Chemistry;
-using MonoIsotopicMassSpectrometry;
+using MassSpectrometry;
 using MzLibUtil;
 
 namespace EngineLayer.Util;
@@ -38,7 +38,7 @@ public record Precursor
     {
         this.MonoisotopicPeakMz = MonoisotopicPeakMz;
         this.Charge = Charge;
-        MonoIsotopicMass = MonoisotopicPeakMz.ToMonoIsotopicMass(Charge);
+        MonoIsotopicMass = MonoisotopicPeakMz.ToMass(Charge);
         this.Intensity = Intensity;
         this.EnvelopePeakCount = EnvelopePeakCount;
         this.FractionalIntensity = FractionalIntensity;
@@ -57,9 +57,9 @@ public record Precursor
     public Precursor(IsotopicEnvelope envelope, double? intensity = null, double? fractionalIntensity = null)
     {
         this.Envelope = envelope ?? throw new ArgumentNullException(nameof(envelope));
-        this.MonoisotopicPeakMz = envelope.MonoisotopicMonoIsotopicMass.ToMz(envelope.Charge);
+        this.MonoisotopicPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
         this.Charge = envelope.Charge;
-        this.MonoIsotopicMass = envelope.MonoisotopicMonoIsotopicMass;
+        this.MonoIsotopicMass = envelope.MonoisotopicMass;
         this.Intensity = intensity ?? envelope.Peaks.Sum(p => p.intensity);
         this.EnvelopePeakCount = envelope.Peaks.Count;
         this.FractionalIntensity = fractionalIntensity;

@@ -117,7 +117,7 @@ namespace EngineLayer.Util
                 return;
 
             // Aggregate all precursors into a single list
-            var allPrecursors = listPool.Get();
+            var allPrecursors = _listPool.Get();
             allPrecursors.AddRange(PrecursorDictionary.Values.SelectMany(list => list));
 
             MergeSplitEnvelopes(allPrecursors);
