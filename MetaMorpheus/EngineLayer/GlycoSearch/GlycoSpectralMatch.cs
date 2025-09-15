@@ -315,7 +315,7 @@ namespace EngineLayer.GlycoSearch
 
                 if (glycans.First().Struc != null)
                 {
-                    sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); //ex. (N(H)),(N(H(A))(N(H))),(N(H)(N(H(A))(F))
+                    sb.Append(string.Join(",", glycans.Where(p=>p.Struc!=null).Select(p => p.Struc.ToString()).ToArray())); //ex. (N(H)),(N(H(A))(N(H))),(N(H)(N(H(A))(F))
                 }
                 sb.Append("\t");
 

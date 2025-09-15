@@ -1,0 +1,5 @@
+HexNAc(1)
+HexNAc(1)Fuc(1)
+HexNAc(2)
+HexNAc(2)Fuc(1)
+HexNAc(4)Hex(5)Fuc(1)NeuAc(1)
