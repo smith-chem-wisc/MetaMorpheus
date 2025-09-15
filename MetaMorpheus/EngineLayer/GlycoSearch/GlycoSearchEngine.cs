@@ -32,6 +32,22 @@ namespace EngineLayer.GlycoSearch
 
         private readonly List<int>[] SecondFragmentIndex;
 
+        protected string[] Motifs
+        {
+            get
+            {
+                if (GlycoSearchType == GlycoSearchType.OGlycanSearch)
+                {
+                    return new string[] { "S", "T" };
+                }
+                if (GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+                {
+                    return new string[] { "S", "T", "Nxs", "Nxt" };
+                }
+                return new string[] { };
+            }
+        }
+
         // The constructor for GlycoSearchEngine, we can load the parameter for the searhcing like mode, topN, maxOGlycanNum, oxoniumIonFilter, datsbase, etc.
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
@@ -56,6 +72,7 @@ namespace EngineLayer.GlycoSearch
                 GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
                 GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray(); //generate glycan box for O-glycan search
                 GlycanBoxes = GlycanBox.OGlycanBoxes;
+                GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
             }
             else if (glycoSearchType == GlycoSearchType.NGlycanSearch) //because the there is only one glycan in N-glycanpeptide, so we don't need to build the n-glycanBox here.
             {
@@ -79,6 +96,7 @@ namespace EngineLayer.GlycoSearch
 
                 GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray();
                 GlycanBoxes = GlycanBox.NOGlycanBoxes;
+                GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
@@ -417,7 +435,7 @@ namespace EngineLayer.GlycoSearch
 
             int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow); // try to find the index that closet match to the "possibleGlycanMassLow" within the glycanBox
 
-            SortedDictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }); //list all of the possible glycoslation site/postition
+            SortedDictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, Motifs); //list all of the possible glycoslation site/postition
 
             var localizationScan = theScan;
             List<Product> products = new List<Product>(); // product list for the theoretical fragment ions
@@ -712,10 +730,7 @@ namespace EngineLayer.GlycoSearch
                         continue;
                     }
 
-                    //Find N-Glycan 
-                    FindNGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
-
-                    //Find O-Glycan
+                    //Find NO-Glycan
                     FindOGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
 
                 }
@@ -746,7 +761,7 @@ namespace EngineLayer.GlycoSearch
             var motifInBox = new Dictionary<string, int>();
             foreach (var modId in glycanBox.ModIds)
             {
-                var motif = GlycanBox.GlobalOGlycans[modId].Target.ToString();
+                var motif = modId >= 0? GlycanBox.GlobalOGlycans[modId].Target.ToString() : GlycanBox.GlobalNGlycans[modId].Target.ToString();
 
                 if (!motifInBox.ContainsKey(motif))
                 {
@@ -778,7 +793,6 @@ namespace EngineLayer.GlycoSearch
 
             return true;
         }
-
 
     }
 }

@@ -6,6 +6,7 @@ using System;
 using EngineLayer.GlycoSearch;
 using Proteomics;
 using MassSpectrometry;
+using MzLibUtil;
 using Omics.Modifications;
 
 namespace EngineLayer
@@ -120,13 +121,16 @@ namespace EngineLayer
             }
         }
 
-        public static IEnumerable<GlycanBox> BuildNOGlycanBoxes(int maxNum, bool buildDecoy)
+        public static IEnumerable<GlycanBox> BuildNOGlycanBoxes(int maxOGlycanNum, bool buildDecoy)
         {
-            int maxNGlycan = 1;
-            int maxOGlycan = maxNum - maxNGlycan;
-
             int[] oGlycansIds;
-            for (int i = 1; i <= maxOGlycan; i++)
+
+            foreach (var box in AllNGlycanOnlyBox(buildDecoy))
+            {
+                yield return box;
+            }
+
+            for (int i = 1; i <= maxOGlycanNum; i++)
             {
                 foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, GlobalOGlycans.Length), i))
                 {
@@ -147,12 +151,43 @@ namespace EngineLayer
                         for (int j = 0; j < GlobalNGlycans.Count + 1; j++) 
                         {
                             int nglycanId = -j;
-                            GlycanBox glycanBox_decoy = new GlycanBox(idCombine.ToArray(), nglycanId,false); // decoy glycanBox
+                            GlycanBox glycanBox_decoy = new GlycanBox(oGlycansIds, nglycanId,false); // decoy glycanBox
                             glycanBox_decoy.TargetDecoy = false;
                             glycanBox_decoy.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
                             yield return glycanBox_decoy;
                         }
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generate all possible glycan boxes that contain only one N-glycan.
+        /// </summary>
+        /// <param name="buildDecoy"></param>
+        /// <returns></returns>
+        private static IEnumerable<GlycanBox> AllNGlycanOnlyBox(bool buildDecoy)
+        {
+            // first consider the case when there is no N-glycan in the box.
+            for (int j = 1; j < GlobalNGlycans.Count + 1; j++)
+            {
+                // the index for N-glycan will be start from -1, -2, -3...
+                // nglycanId = 0 means no glycan on the peptide.
+                int nglycanId = -j;
+                GlycanBox glycanBox = new GlycanBox(null, nglycanId, true);
+                glycanBox.TargetDecoy = true;
+                glycanBox.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
+                yield return glycanBox;
+            }
+            if (buildDecoy)
+            {
+                for (int j = 1; j < GlobalNGlycans.Count + 1; j++)
+                {
+                    int nglycanId = -j;
+                    GlycanBox glycanBox_decoy = new GlycanBox(null, nglycanId, false); // decoy glycanBox
+                    glycanBox_decoy.TargetDecoy = false;
+                    glycanBox_decoy.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
+                    yield return glycanBox_decoy;
                 }
             }
         }
@@ -220,11 +255,15 @@ namespace EngineLayer
             OGlycanIds = oGlycanIds;
             NGlycanId = nGlycanIds;
             byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            foreach (var id in oGlycanIds) //ModIds is the same as ids.
+
+            if (!oGlycanIds.IsNullOrEmpty())
             {
-                for (int i = 0; i < kind.Length; i++)
+                foreach (var id in oGlycanIds) //ModIds is the same as ids.
                 {
-                    kind[i] += GlobalOGlycans[id].Kind[i]; //kind is the sum of all glycan Kind in the Box.
+                    for (int i = 0; i < kind.Length; i++)
+                    {
+                        kind[i] += GlobalOGlycans[id].Kind[i]; //kind is the sum of all glycan Kind in the Box.
+                    }
                 }
             }
 
@@ -236,6 +275,7 @@ namespace EngineLayer
                 }
             }
             Kind = kind;
+
             if (Istarget)
             {
                 Mass = (double)Glycan.GetMass(Kind) / 1E5;

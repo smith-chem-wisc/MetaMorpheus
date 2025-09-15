@@ -1,8 +1,11 @@
 ﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
+using iText.StyledXmlParser.Jsoup.Nodes;
 using MassSpectrometry;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
+using Omics.Modifications;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,7 +29,7 @@ namespace Test
             List<string> rawFilePaths = Directory.GetFiles(spectraFileDirctory).Where(p => p.Contains("mzML")).ToList();
 
             // run task
-            CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
+            CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD, maxThreadsToUsePerFile: 1);
 
             Directory.CreateDirectory(outputFolder);
             var glycoSearchTask = new GlycoSearchTask()
@@ -56,6 +59,43 @@ namespace Test
             Directory.Delete(outputFolder, true);
         }
 
+        [Test]
+        public static void NandO_GlycoSearch_case1()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
+           
+            // run task
+            CommonParameters commonParameters = new(dissociationType: DissociationType.EThcD, maxThreadsToUsePerFile: 1);
+
+            Directory.CreateDirectory(outputFolder);
+            var glycoSearchTask = new GlycoSearchTask()
+            {
+                CommonParameters = commonParameters,
+                _glycoSearchParameters = new GlycoSearchParameters()
+                {
+                    OGlycanDatabasefile = "OGlycan.gdb",
+                    NGlycanDatabasefile = "NGlycan_prunedForTesting.gdb",
+                    GlycoSearchType = GlycoSearchType.N_O_GlycanSearch,
+                    OxoniumIonFilt = false,
+                    DecoyType = DecoyType.Reverse,
+                    GlycoSearchTopNum = 50,
+                    MaximumOGlycanAllowed = 2,
+                    DoParsimony = true,
+                    WriteContaminants = true,
+                    WriteDecoys = true,
+                    WriteIndividualFiles = true
+                }
+            };
+            GlobalVariables.NGlycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_prunedForTesting.gdb"));
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { raw }, new List<DbForTask>
+            {
+                db
+            }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            Directory.Delete(outputFolder, true);
+        }
+
 
         [Test]
         public static void TestNOGlycanBox()
@@ -81,13 +121,30 @@ namespace Test
             Assert.That(!GlycanBox.GlobalNGlycans.Any(p=>p.Key > 0));
 
             // Building the NO_glycan boxes
-            int _maxGlycanNum = 3;
-            GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(_maxGlycanNum, false).OrderBy(p => p.Mass).ToArray();
+            int _maxOGlycanNum = 3;
+            GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray();
             
             // Check the number of glycan in each box is less than or equal to max glycan number
-            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p=>p.NumberOfMods > 3));
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p=>p.NumberOfMods > 4));
             // Check there is at most one N-glycan in each box (p is negative means Nglycan)
             Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p < 0) > 1));
+            // Check there is no duplicated box
+            var boxSet = new HashSet<string>();
+            foreach (var glycanBox in GlycanBox.NOGlycanBoxes)
+            {
+                var key = string.Join(",", glycanBox.ModIds.OrderBy(p => p));
+                Assert.That(!boxSet.Contains(key));
+                boxSet.Add(key);
+            }
+
+            // Make sure some box is Nglycan only
+            Assert.That(GlycanBox.NOGlycanBoxes.Any(p=>p.ModIds.Count(p=>p >= 0) == 0));
+            int CountForNglycanOnly_byModId = GlycanBox.NOGlycanBoxes.Count(p => p.ModIds.Count(p => p >= 0) == 0);
+            Assert.That(CountForNglycanOnly_byModId == GlycanBox.GlobalNGlycans.Count);
+            int CountForNglycanOnly_byOGlycanIds = GlycanBox.NOGlycanBoxes.Count(p => p.OGlycanIds == null);
+            Assert.That(CountForNglycanOnly_byOGlycanIds == GlycanBox.GlobalNGlycans.Count);
+
+
 
             // Check the mass of each box is equal to the sum of the mass of glycans in the box
             foreach (var glycanBox in GlycanBox.NOGlycanBoxes)
@@ -96,6 +153,32 @@ namespace Test
                 double totalNglycanMass = glycanBox.ModIds.Where(p => p < 0).Select(p => GlycanBox.GlobalNGlycans[p].Mass / 1E5).Sum();
                 Assert.That(glycanBox.Mass, Is.EqualTo(totalNglycanMass + totalOglycanMass).Within(1E-4));
             }
+        }
+
+        [Test]
+        public static void TestGetModPos()
+        {
+            PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVSCR", null);
+            string[] motifs = new string[] {"S", "T",  "Nxs", "Nxt" };
+            var sites = GlycoSpectralMatch.GetPossibleModSites(pep, motifs);
+            Assert.That(sites.Count() == 4 && sites.ContainsKey(4) && sites.ContainsKey(6) && sites.ContainsKey(12) && sites.ContainsKey(14));
+            Assert.That(sites[4] == "Nxt" && sites[6] == "T");
+            Assert.That(sites[12] == "Nxs" && sites[14] == "S");
+
+            
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motif);
+            Modification mod = new Modification(_originalId: "Test of N", _modificationType: "Common Fixed", _target: motif, _locationRestriction: "Anywhere.");
+            var testN = new PeptideWithSetModifications("ELN[Common Fixed:Test of N]PTPNVEVNVSCR", new Dictionary<string, Modification> {  { "Test of N", mod } });
+            var site_case2 = GlycoSpectralMatch.GetPossibleModSites(testN, motifs);
+            Assert.That(site_case2.Count() == 3 && site_case2.ContainsKey(6) && site_case2.ContainsKey(12) && site_case2.ContainsKey(14));
+            Assert.That(site_case2[6] == "T");
+            Assert.That(site_case2[12] == "Nxs" && site_case2[14] == "S");
+
+            var testN_2 = new PeptideWithSetModifications("ELNPTPNVEVN[Common Fixed:Test of N]VSCR", new Dictionary<string, Modification> { { "Test of N", mod } });
+            var site_case3 = GlycoSpectralMatch.GetPossibleModSites(testN_2, motifs);
+            Assert.That(site_case3.Count() == 3 && site_case3.ContainsKey(4) && site_case3.ContainsKey(6) && site_case3.ContainsKey(14));
+            Assert.That(site_case3[4] == "Nxt" && site_case3[6] == "T");
+            Assert.That(site_case3[14] == "S");
         }
     }
 }

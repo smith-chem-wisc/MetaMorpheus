@@ -473,7 +473,7 @@ namespace EngineLayer.GlycoSearch
             var motifInBox = new Dictionary<string, int>();
             foreach (var modId in childBox.ModIds)
             {
-                var motif = GlycanBox.GlobalOGlycans[modId].Target.ToString();
+                var motif = modId >= 0? GlycanBox.GlobalOGlycans[modId].Target.ToString() : GlycanBox.GlobalNGlycans[modId].Target.ToString();
 
                 if (!motifInBox.ContainsKey(motif))
                 {
@@ -523,7 +523,8 @@ namespace EngineLayer.GlycoSearch
                 return true; // If there is no difference, there is no need for motif checking
             }
             
-            Modification modForthisNode = GlycanBox.GlobalOGlycans[modDiff[0]];
+            Modification modForthisNode = modDiff[0] >= 0?  GlycanBox.GlobalOGlycans[modDiff[0]] : GlycanBox.GlobalNGlycans[modDiff[0]];
+
             return modForthisNode.Target.ToString() == motif;
         }
 

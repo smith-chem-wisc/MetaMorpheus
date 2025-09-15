@@ -1,5 +1,6 @@
 ﻿using System;
 using Easy.Common.Extensions;
+using MzLibUtil;
 
 namespace EngineLayer
 {
@@ -14,20 +15,25 @@ namespace EngineLayer
             TargetDecoy = true;
         }
 
-        public ModBox(int[] oGlycanIds, int nGlycanId)
-        {
-            if (nGlycanId != 0) // if there is an N-glycan
+        // Simplified constructor logic for combining oGlycanIds and nGlycanId
+            public ModBox(int[] oGlycanIds, int nGlycanId)
             {
-                int[] newArray = new int[oGlycanIds.Length + 1];
-                Array.Copy(oGlycanIds, newArray, oGlycanIds.Length);
-                newArray[oGlycanIds.Length] = nGlycanId;
-                ModIds = newArray;
-            }
-            else // if there is no N-glycan
-            {
-                ModIds = oGlycanIds;
-            }
-            NumberOfMods = nGlycanId == 0 ? oGlycanIds.Length : oGlycanIds.Length + 1;
+                if (nGlycanId != 0)
+                {
+                    if (oGlycanIds.IsNullOrEmpty())
+                    {
+                        ModIds = [nGlycanId];
+                    }
+                    else
+                    {
+                        ModIds = [.. oGlycanIds, nGlycanId];
+                    }
+                }
+                else
+                {
+                    ModIds = oGlycanIds;
+                }
+            NumberOfMods = ModIds.Length;
             TargetDecoy = true;
         }
 
