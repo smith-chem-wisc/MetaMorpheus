@@ -139,6 +139,9 @@
     <None Update="GlycoTestData\leukosialin.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\NGlycan_prunedForTesting.gdb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\NGlycan_struct.gdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -162,6 +165,9 @@
     </None>
     <None Update="GlycoTestData\N_O_glycoWithFileSpecific\FourMucins_NoSigPeps_FASTA.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\OGlycan.gdb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\P02649.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

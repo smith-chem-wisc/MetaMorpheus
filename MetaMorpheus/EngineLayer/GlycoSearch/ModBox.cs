@@ -1,4 +1,7 @@
-﻿namespace EngineLayer
+﻿using System;
+using Easy.Common.Extensions;
+
+namespace EngineLayer
 {
     public class ModBox //The superclass of GlycanBox
     {
@@ -8,6 +11,23 @@
         {
             ModIds = ids;
             NumberOfMods = ids.Length;
+            TargetDecoy = true;
+        }
+
+        public ModBox(int[] oGlycanIds, int nGlycanId)
+        {
+            if (nGlycanId != 0) // if there is an N-glycan
+            {
+                int[] newArray = new int[oGlycanIds.Length + 1];
+                Array.Copy(oGlycanIds, newArray, oGlycanIds.Length);
+                newArray[oGlycanIds.Length] = nGlycanId;
+                ModIds = newArray;
+            }
+            else // if there is no N-glycan
+            {
+                ModIds = oGlycanIds;
+            }
+            NumberOfMods = nGlycanId == 0 ? oGlycanIds.Length : oGlycanIds.Length + 1;
             TargetDecoy = true;
         }
 

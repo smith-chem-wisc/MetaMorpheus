@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Chemistry;
 using System;
+using EngineLayer.GlycoSearch;
 using Proteomics;
 using MassSpectrometry;
 using Omics.Modifications;
@@ -19,6 +20,10 @@ namespace EngineLayer
         /// The global list of O-glycans loaded from the glycan database file.
         /// </summary>
         public static Glycan[] GlobalOGlycans { get; set; }
+        public static Dictionary<int, Glycan> GlobalNGlycans { get; set; }
+
+        public int[] OGlycanIds { get; set; }
+        public int NGlycanId { get; set; }
 
         /// <summary>
         /// All possible child glycan box combinations derived from this glycan box.
@@ -29,6 +34,8 @@ namespace EngineLayer
         /// The global collection of all possible O-glycan boxes.
         /// </summary>
         public static GlycanBox[] OGlycanBoxes { get; set; }
+
+        public static GlycanBox[] NOGlycanBoxes { get; set; }
 
         /// <summary>
         /// The summed glycan composition for this box, where each element represents the count of a specific monosaccharide type.
@@ -113,6 +120,72 @@ namespace EngineLayer
             }
         }
 
+        public static IEnumerable<GlycanBox> BuildNOGlycanBoxes(int maxNum, bool buildDecoy)
+        {
+            int maxNGlycan = 1;
+            int maxOGlycan = maxNum - maxNGlycan;
+
+            int[] oGlycansIds;
+            for (int i = 1; i <= maxOGlycan; i++)
+            {
+                foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, GlobalOGlycans.Length), i))
+                {
+                    oGlycansIds = idCombine.ToArray();
+                    for (int j = 0; j < GlobalNGlycans.Count + 1; j++)
+                    {
+                        // the index for N-glycan will be start from -1, -2, -3...
+                        // nglycanId = 0 means no glycan on the peptide.
+                        int nglycanId = - j;
+                        GlycanBox glycanBox = new GlycanBox(oGlycansIds, nglycanId, true);
+                        glycanBox.TargetDecoy = true;
+                        glycanBox.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
+                        yield return glycanBox;
+                    }
+
+                    if (buildDecoy)
+                    {
+                        for (int j = 0; j < GlobalNGlycans.Count + 1; j++) 
+                        {
+                            int nglycanId = -j;
+                            GlycanBox glycanBox_decoy = new GlycanBox(idCombine.ToArray(), nglycanId,false); // decoy glycanBox
+                            glycanBox_decoy.TargetDecoy = false;
+                            glycanBox_decoy.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
+                            yield return glycanBox_decoy;
+                        }
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<GlycanBox> BulidChildNOBoxes(int maxNum, int[] glycanIds, bool isTarget = true)
+        {
+            yield return new GlycanBox(new int[0], isTarget);
+            HashSet<string> seen = new HashSet<string>();
+
+            for (int i = 1; i <= maxNum; i++)
+            {
+                foreach (var idCombine in Glycan.GetKCombs(Enumerable.Range(0, maxNum), i)) //get all combinations of glycans on the peptide, ex. we have three glycosite and three glycan maybe on that (A,B,C) 
+                {                                                                           //the combination of glycans on the peptide can be (A),(A+B),(A+C),(B+C),(A+B+C) totally six 
+                    List<int> ids = new List<int>();
+                    foreach (var id in idCombine)
+                    {
+                        ids.Add(glycanIds[id]);
+                    }
+
+                    if (!seen.Contains(string.Join(",", ids.Select(p => p.ToString()))))
+                    {
+                        seen.Add(string.Join(",", ids.Select(p => p.ToString())));
+                        int[] oGlycanIds = ids.Where(p => p > -1).ToArray();
+                        int nGlycanid = ids.Any(p => p < 0)? ids.Where(p => p < 0).First():0;
+                        GlycanBox glycanBox = new GlycanBox(oGlycanIds,nGlycanid, isTarget);
+
+                        yield return glycanBox;
+                    }
+
+                }
+            }
+        }
+
         /// <summary>
         /// Constructor of GlycanBox.
         /// </summary>
@@ -141,7 +214,40 @@ namespace EngineLayer
                 Mass = (double)(Glycan.GetMass(Kind) + SugarShift[shiftInd]) / 1E5;
             }
         }
-        
+
+        public GlycanBox(int[] oGlycanIds, int nGlycanIds, bool Istarget = true) : base(oGlycanIds, nGlycanIds)
+        {
+            OGlycanIds = oGlycanIds;
+            NGlycanId = nGlycanIds;
+            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            foreach (var id in oGlycanIds) //ModIds is the same as ids.
+            {
+                for (int i = 0; i < kind.Length; i++)
+                {
+                    kind[i] += GlobalOGlycans[id].Kind[i]; //kind is the sum of all glycan Kind in the Box.
+                }
+            }
+
+            if (nGlycanIds != 0)
+            {
+                for (int i = 0; i < kind.Length; i++)
+                {
+                    kind[i] += GlobalNGlycans[nGlycanIds].Kind[i];
+                }
+            }
+            Kind = kind;
+            if (Istarget)
+            {
+                Mass = (double)Glycan.GetMass(Kind) / 1E5;
+            }
+            else
+            {
+                Random random = new Random();
+                int shiftInd = random.Next(SugarShift.Length);
+                Mass = (double)(Glycan.GetMass(Kind) + SugarShift[shiftInd]) / 1E5;
+            }
+        }
+
         public string GlycanIdString // the composition of glycanBox. Example: [1,2,3] means glycan1 + glycan2 + glycan3 are on the peptide.
         {
             get
