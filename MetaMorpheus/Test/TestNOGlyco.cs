@@ -32,7 +32,7 @@ namespace Test
             List<string> rawFilePaths = Directory.GetFiles(spectraFileDirctory).Where(p => p.Contains("mzML")).ToList();
 
             // run task
-            CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD, maxThreadsToUsePerFile: 1);
+            CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD, maxThreadsToUsePerFile: 23);
 
             Directory.CreateDirectory(outputFolder);
             var glycoSearchTask = new GlycoSearchTask()
@@ -102,10 +102,10 @@ namespace Test
             var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
 
             task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.N_O_GlycanSearch;
-            task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_NOBoxesTesting.gdb";
+            task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_ForNoSearch.gdb";
             task._glycoSearchParameters.OGlycanDatabasefile = "OGlycan.gdb";
             task._glycoSearchParameters.MaximumOGlycanAllowed = 2;
-            GlobalVariables.NGlycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_NOBoxesTesting.gdb"));
+            GlobalVariables.NGlycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_ForNoSearch.gdb"));
             // run task
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask>
             {
