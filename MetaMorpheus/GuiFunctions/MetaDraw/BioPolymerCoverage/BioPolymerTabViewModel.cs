@@ -98,7 +98,7 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
                 return;
 
             IsDatabaseLoaded = true;
-            if (_metaDrawLogic.AllSpectralMatches is not null or { Count: 0 })
+            if (_metaDrawLogic.AllSpectralMatches != null && _metaDrawLogic.AllSpectralMatches.Count > 0)
                 ProcessSpectralMatches(_metaDrawLogic.AllSpectralMatches);
         }
         catch (Exception e)
