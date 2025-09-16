@@ -55,7 +55,7 @@ namespace GuiFunctions
         public static string GetDigestionProductLabel(this SpectrumMatchFromTsv sm)
         {
             if (sm.IsPeptide())
-                return "Pepide";
+                return "Peptide";
             else
                 return "Oligo";
         }
