@@ -317,6 +317,14 @@ namespace EngineLayer.GlycoSearch
 
             var fragmentsForEachGlycoPeptide = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.DissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
 
+            // if the peptide contains N-glycan, we need to add the Y ion from N-glycan.
+            if (peptideWithMod.AllModsOneIsNterminus.Any(p=>p.Value.ModificationType == "N-Glycosylation"))
+            {
+                Glycan nGlycan = peptideWithMod.AllModsOneIsNterminus.First(p =>
+                    p.Value.ModificationType == "N-Glycosylation").Value as Glycan;
+                fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan));
+            }
+
             var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters);
 
             double score = CalculatePeptideScore(theScan.TheScan, matchedIons);

@@ -119,6 +119,13 @@ namespace Test
             Assert.That(Psms.Count == 1);
             Assert.That(Psms.First().FullSequence == "DAN[N-Glycosylation:H5N2 on Nxt]NTQFQFTSR");
 
+            //For GlycoPSMs
+            string oGlycoPath = Path.Combine(outputFolder, "Task", "no_glyco.psmtsv");
+            List<PsmFromTsv> glycoPsms = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var errors).ToList(); // the filtering (Q<0.01)
+            Assert.That(errors.Count == 0);// if we cannot find the file, we will get an error message
+            Assert.That(glycoPsms.Count == 1);
+            Assert.That(glycoPsms.First().FullSequence == "DAN[N-Glycosylation:H5N2 on Nxt]NTQFQFTSR");
+
             Directory.Delete(outputFolder, true);
         }
 
@@ -148,7 +155,7 @@ namespace Test
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             Assert.That(Psms.Count == 1);
             Assert.That(Psms.First().FullSequence == "TTGS[O-Glycosylation:H1N1 on S]LEPS[O-Glycosylation:H2N2A1 on S]S[O-Glycosylation:H2N2A1F1 on S]GASGPQVSSVK");
-
+            Assert.That(Psms.First().Score, Is.EqualTo(13.0).Within(0.1));
             Directory.Delete(outputFolder, true);
         }
 
@@ -178,6 +185,7 @@ namespace Test
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             Assert.That(Psms.Count == 1);
             Assert.That(Psms.First().FullSequence == "AAT[O-Glycosylation:N1 on T]VGSLAGQPLQER");
+            Assert.That(Psms.First().Score, Is.EqualTo(23.2).Within(0.1));
             Directory.Delete(outputFolder, true);
         }
 
