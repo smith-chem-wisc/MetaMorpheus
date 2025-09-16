@@ -67,7 +67,7 @@ namespace Test
 
 
             //tests that modifications are being done correctly
-            Assert.That(totalNumberOfMods, Is.EqualTo(8));
+            Assert.That(totalNumberOfMods, Is.EqualTo(4));
             Directory.Delete(outputFolder, true);
         }
 

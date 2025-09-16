@@ -245,7 +245,7 @@ public class GptmdTests
         var rna = RnaDbLoader.LoadRnaXML(gptmdXml, true, DecoyType.None, false, GlobalVariables.AllRnaModsKnown, [], out _);
 
         // check that the expected modifications are present
-        int expectedModIndex = 8;
+        int expectedModIndex = 9;
         string expectedMod = "Methylation on A";
 
         var modifications = rna.First().OneBasedPossibleLocalizedModifications;
@@ -255,7 +255,7 @@ public class GptmdTests
         Assert.That(modList, Is.Not.Null.And.Not.Empty, "Modifications list should not be null or empty.");
         Assert.That(modList.Select(p => p.IdWithMotif), Does.Contain(expectedMod), $"Modifications should contain expected modification: {expectedMod}.");
 
-        //if (Directory.Exists(outputDir))
-        //    Directory.Delete(outputDir, true); 
+        if (Directory.Exists(outputDir))
+            Directory.Delete(outputDir, true);
     }
 }

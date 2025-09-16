@@ -441,7 +441,21 @@
                                     </TextBox.Style>
                                 </TextBox>
                             </StackPanel>
-                            <StackPanel Grid.Column="0" Grid.Row="2">
+                            <GroupBox Grid.Column="1" Grid.Row="1" Header="G-PTM-D Filter Stringency" Margin="0,-10,0,24">
+                                <ListBox x:Name="FilterOptionsListBox" ItemsSource="{Binding FilterOptions}" SelectionMode="Multiple"
+                                         Margin="0,0,0,0" Padding="0" BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,0" VerticalAlignment="Center"
+                                                        ToolTip="{Binding Summary}">
+                                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Name}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </GroupBox>
+                            <StackPanel Grid.Column="0" Grid.Row="1">
                                 <TreeView x:Name="gptmdModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400">
                                     <TreeView.Resources>
                                         <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">

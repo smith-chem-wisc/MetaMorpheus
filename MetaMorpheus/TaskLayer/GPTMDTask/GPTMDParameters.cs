@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using EngineLayer.Gptmd;
 
 namespace EngineLayer
 {
@@ -10,6 +11,7 @@ namespace EngineLayer
         /// </summary>
         public GptmdParameters()
         {
+            GptmdFilters = new();
             ListOfModsGptmd = GlobalVariables.AllModsKnown.Where(b =>
                 b.ModificationType.Equals("Common Artifact")
                 || b.ModificationType.Equals("Common Biological")
@@ -19,5 +21,6 @@ namespace EngineLayer
         }
 
         public List<(string, string)> ListOfModsGptmd { get; set; }
+        public List<IGptmdFilter> GptmdFilters { get; set; } 
     }
 }
