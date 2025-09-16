@@ -54,6 +54,6 @@ public class BioPolymerGroupViewModel : BaseViewModel
         MaximumSequenceCoverage = maxCovered.Count(b => b) / (double)Sequence.Length;
         OnPropertyChanged(nameof(GroupCount));
         OnPropertyChanged(nameof(MaximumSequenceCoverage));
-        OnPropertyChanged(nameof(MaximumSequenceCoverage));
+        OnPropertyChanged(nameof(UniqueSequenceCoverage));
     }
 }
