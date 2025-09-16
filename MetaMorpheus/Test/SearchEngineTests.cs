@@ -1890,7 +1890,8 @@ namespace Test
             //peptide and ms file prep
             PeptideWithSetModifications nTermModifiedPwsm = new PeptideWithSetModifications("[Uniprot:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", GlobalVariables.AllModsKnownDictionary);
             PeptideWithSetModifications cTermModifiedPwsm = new PeptideWithSetModifications("AGIAAKLAKDREAAEGLGSHA-[Uniprot:Alanine amide on A]", GlobalVariables.AllModsKnownDictionary);
-            TestDataFile msFile = new TestDataFile(new List<IBioPolymerWithSetMods> { nTermModifiedPwsm, cTermModifiedPwsm });
+            List<IBioPolymerWithSetMods> pwsmsAnswer = new List<IBioPolymerWithSetMods> { nTermModifiedPwsm, cTermModifiedPwsm };
+            TestDataFile msFile = new TestDataFile( pwsmsAnswer );
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //params for singleN and singleC
@@ -1902,9 +1903,14 @@ namespace Test
             //params for annotated and variable mods
             List<Protein> proteinWithMods = new List<Protein> {new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein",
                 oneBasedModifications: new Dictionary<int, List<Modification>>
+                // Mod Indices are 2 and 22 because the protein has an M at the start that is cleaved off during digestion
+                // so the A in the 2nd position of the protein is the first A in the peptide,
+                // and the A in the 22nd position of the protein is the last A in the peptide.
+                // Modifications passed to the Protein object are indexed at the protein's target amino acid position
+                // regardless of whether it is a sidechain or terminal modification on the digestion product.
                 {
-                    { 3, new List<Modification>{GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"] } },
-                    { 23, new List<Modification>{GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] } }
+                    { 2, new List<Modification>{GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"] } },
+                    { 22, new List<Modification>{GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] } }
                 })
             };
             List<Protein> proteinWithoutMods = new List<Protein> { new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein") };
@@ -1920,6 +1926,7 @@ namespace Test
 
             //Test all params and ensure the results are the same
             string[] psmAnswer = new string[2] { "[UniProt:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", "AGIAAKLAKDREAAEGLGSHA-[UniProt:Alanine amide on A]" };
+            int[] modIndexAnswer = new int[2] { 1, 23 }; // mod indices in the test peptides (OneIsNTerminus-based)
             foreach (var termParams in variableParamsToTest)
             {
                 List<CommonParameters> paramsToTest = new List<CommonParameters> { cCommonParameters, nCommonParameters, cCleaveParams, nCleaveParams };
@@ -1948,9 +1955,13 @@ namespace Test
                         SpectralMatch testPsm = allPsmsArrays[2][i];
                         Assert.That(testPsm != null);
                         testPsm.ResolveAllAmbiguities();
-                        var answer = psmAnswer[1-i];
-                        var test = testPsm.FullSequence;
-                        Assert.That(answer, Is.EqualTo(test));
+                        var answerSeq = psmAnswer[1-i];
+                        var answerMods = pwsmsAnswer[1-i].AllModsOneIsNterminus;
+                        var testSeq = testPsm.FullSequence;
+                        var testMods = testPsm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.AllModsOneIsNterminus;
+                        Assert.That(answerSeq, Is.EqualTo(testSeq));
+                        Assert.That(answerMods, Is.EqualTo(testMods));
+                        Assert.That(modIndexAnswer[1 - i], Is.EqualTo(testMods.Keys.First()));
                     }
                 }
             }
