@@ -142,7 +142,7 @@
     <None Update="GlycoTestData\NGlycan_ForNoSearch.gdb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="GlycoTestData\NGlycan_prunedForTesting.gdb">
+    <None Update="GlycoTestData\NGlycan_NOBoxesTesting.gdb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\NGlycan_struct.gdb">

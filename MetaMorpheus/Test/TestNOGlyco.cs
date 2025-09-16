@@ -2,10 +2,12 @@
 using EngineLayer.GlycoSearch;
 using iText.StyledXmlParser.Jsoup.Nodes;
 using MassSpectrometry;
+using Nett;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using Omics.Modifications;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,6 +26,7 @@ namespace Test
         public static void NandO_GlycoSearchIndividualFileFolderOutputTest()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\\FourMucins_NoSigPeps_FASTA.fasta");
             string spectraFileDirctory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific");
             List<string> rawFilePaths = Directory.GetFiles(spectraFileDirctory).Where(p => p.Contains("mzML")).ToList();
@@ -90,39 +93,91 @@ namespace Test
         }
 
         [Test]
-        public static void NandO_GlycoSearch_case1()
+        public static void NandO_GlycoSearch_onlyN()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
-           
-            // run task
-            CommonParameters commonParameters = new(dissociationType: DissociationType.EThcD, maxThreadsToUsePerFile: 1);
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
 
-            Directory.CreateDirectory(outputFolder);
-            var glycoSearchTask = new GlycoSearchTask()
-            {
-                CommonParameters = commonParameters,
-                _glycoSearchParameters = new GlycoSearchParameters()
-                {
-                    OGlycanDatabasefile = "OGlycan.gdb",
-                    NGlycanDatabasefile = "NGlycan_prunedForTesting.gdb",
-                    GlycoSearchType = GlycoSearchType.N_O_GlycanSearch,
-                    OxoniumIonFilt = false,
-                    DecoyType = DecoyType.Reverse,
-                    GlycoSearchTopNum = 50,
-                    MaximumOGlycanAllowed = 2,
-                    DoParsimony = true,
-                    WriteContaminants = true,
-                    WriteDecoys = true,
-                    WriteIndividualFiles = true
-                }
-            };
-            GlobalVariables.NGlycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_prunedForTesting.gdb"));
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { raw }, new List<DbForTask>
+            task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.N_O_GlycanSearch;
+            task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_NOBoxesTesting.gdb";
+            task._glycoSearchParameters.OGlycanDatabasefile = "OGlycan.gdb";
+            task._glycoSearchParameters.MaximumOGlycanAllowed = 2;
+            GlobalVariables.NGlycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_NOBoxesTesting.gdb"));
+            // run task
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask>
             {
                 db
             }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            
+            //For PSMs
+            var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
+            List<PsmFromTsv> Psms = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2).ToList();
+            Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
+            Assert.That(Psms.Count == 1);
+            Assert.That(Psms.First().FullSequence == "DAN[N-Glycosylation:H5N2 on Nxt]NTQFQFTSR");
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void NandO_GlycoSearch_onlyO()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+
+            task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.N_O_GlycanSearch;
+            task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_ForNoSearch.gdb";
+            task._glycoSearchParameters.OGlycanDatabasefile = "OGlycan.gdb";
+            task._glycoSearchParameters.MaximumOGlycanAllowed = 3;
+            GlobalVariables.NGlycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_ForNoSearch.gdb"));
+            // run task
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask>
+            {
+                db
+            }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+
+            //For PSMs
+            var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
+            List<PsmFromTsv> Psms = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2).ToList();
+            Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
+            Assert.That(Psms.Count == 1);
+            Assert.That(Psms.First().FullSequence == "TTGS[O-Glycosylation:H1N1 on S]LEPS[O-Glycosylation:H2N2A1 on S]S[O-Glycosylation:H2N2A1F1 on S]GASGPQVSSVK");
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void NandO_GlycoSearch_onlyO_Run2()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P02649.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\181217_Fusion_(LC2)_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz(400_1200)_21707.mgf");
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run2.toml"), MetaMorpheusTask.tomlConfig);
+
+            task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.N_O_GlycanSearch;
+            task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_ForNoSearch.gdb";
+            task._glycoSearchParameters.OGlycanDatabasefile = "OGlycan.gdb";
+            task._glycoSearchParameters.MaximumOGlycanAllowed = 3;
+            GlobalVariables.NGlycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_ForNoSearch.gdb"));
+            // run task
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask>
+            {
+                db
+            }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+
+            //For PSMs
+            var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
+            List<PsmFromTsv> Psms = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2).ToList();
+            Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
+            Assert.That(Psms.Count == 1);
+            Assert.That(Psms.First().FullSequence == "AAT[O-Glycosylation:N1 on T]VGSLAGQPLQER");
             Directory.Delete(outputFolder, true);
         }
 
@@ -132,7 +187,7 @@ namespace Test
         {
             // Loading the glycan databases
             string oglycanPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"OGlycan.gdb");
-            string nglycanPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_prunedForTesting.gdb");
+            string nglycanPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_NOBoxesTesting.gdb");
 
             // reading the O-Glycan database and storing it in GlycanBox.GlobalOGlycans
             GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(oglycanPath, true, true).ToArray();
