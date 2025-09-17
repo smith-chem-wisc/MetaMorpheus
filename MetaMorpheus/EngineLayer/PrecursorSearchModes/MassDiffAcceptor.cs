@@ -18,7 +18,7 @@ namespace EngineLayer
         /// If acceptable, returns 0 or greater, negative means does not accept
         /// </summary>
         /// <param name="scanPrecursorMass"></param>
-        /// <param name="peptideMass"></param>`
+        /// <param name="peptideMass"></param>
         /// <returns></returns>
         public abstract int Accepts(double scanPrecursorMass, double peptideMass);
 
