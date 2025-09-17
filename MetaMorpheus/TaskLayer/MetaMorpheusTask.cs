@@ -25,6 +25,8 @@ using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using Easy.Common.Extensions;
+using EngineLayer.Util;
+using Readers;
 using Readers.SpectralLibrary;
 
 namespace TaskLayer
@@ -214,13 +216,13 @@ namespace TaskLayer
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
-                    var precursors = new List<(double MonoPeakMz, int Charge, double Intensity, int PeakCount, double? FractionalIntensity)>();
+                    var precursorSet = new PrecursorSet(commonParameters.DeconvolutionMassTolerance);
 
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
                         if (GlobalVariables.StopLoops) { break; }
 
-                        precursors.Clear();
+                        precursorSet.Clear();
                         MsDataScan ms2scan = ms2Scans[i];
 
                         if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
@@ -250,61 +252,33 @@ namespace TaskLayer
                                 foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
                                     precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
-                                    double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
-                                    int peakCount = envelope.Peaks.Count();
-                                    double intensity = 1;
+                                    double? intensity = null;
                                     if (commonParameters.UseMostAbundantPrecursorIntensity) 
-                                    { 
                                         intensity = envelope.Peaks.Max(p => p.intensity); 
-                                    }
-                                    else
-                                    {
-                                        intensity = envelope.Peaks.Sum(p => p.intensity);
-                                    }
 
                                     var fractionalIntensity = envelope.TotalIntensity /
-                                          (double)precursorSpectrum.MassSpectrum.YArray
+                                          precursorSpectrum.MassSpectrum.YArray
                                           [
                                               precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Minimum)
                                               ..
                                               precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Maximum)
                                           ].Sum();
-                                    precursors.Add((monoPeakMz, envelope.Charge, intensity, peakCount,
-                                        fractionalIntensity));
+
+                                    precursorSet.Add(new(envelope, intensity, fractionalIntensity));
                                 }
                             }
                         }
 
-                        //if use precursor info from scan header and scan header has charge state
+                         // If using precursor info from scan header and scan header has charge state.
+                         // MsAlign uses this conditional to construct its precursors. 
                         PrecursorFromScanHeader:
                         if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue && ms2scan.SelectedIonChargeStateGuess != 0) 
                         {
                             int precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
+                            double precursorIntensity = ms2scan.SelectedIonMonoisotopicGuessIntensity ?? ms2scan.SelectedIonIntensity ?? 1.0;
+                            double precursorMz = ms2scan.SelectedIonMonoisotopicGuessMz ?? ms2scan.SelectedIonMZ.Value;
 
-                            // Still from scan header - MsAlign uses this conditional to construct its precursors. 
-                            if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
-                            {
-                                double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
-                                double precursorIntensity = ms2scan.SelectedIonMonoisotopicGuessIntensity ?? 1;
-
-                                if (!precursors.Any(b =>
-                                    commonParameters.DeconvolutionMassTolerance.Within(
-                                        precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                                {
-                                    precursors.Add((precursorMZ, precursorCharge, precursorIntensity, 1, null));
-                                }
-                            }
-                            else
-                            {
-                                double precursorMZ = ms2scan.SelectedIonMZ.Value;
-                                double precursorIntensity = ms2scan.SelectedIonIntensity ?? 1;
-                                if (!precursors.Any(b =>
-                                    commonParameters.DeconvolutionMassTolerance.Within(
-                                        precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                                {
-                                    precursors.Add((precursorMZ, precursorCharge, precursorIntensity, 1, null));
-                                }
-                            }
+                            precursorSet.Add(new Precursor(precursorMz, precursorCharge, precursorIntensity, 1, null));
                         }
 
                         scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
@@ -328,12 +302,12 @@ namespace TaskLayer
                                 && Math.Abs(p.IsolationMz.Value - ms2scan.IsolationMz.Value) < 0.01)).ToList();
                         }
 
-                        foreach (var precursor in precursors)
+                        foreach (var precursor in precursorSet)
                         {
                             // assign precursor for this MS2 scan
-                            var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.MonoPeakMz,
+                            var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.MonoisotopicPeakMz,
                                 precursor.Charge, fullFilePath, commonParameters, neutralExperimentalFragments,
-                                precursor.Intensity, precursor.PeakCount, precursor.FractionalIntensity);
+                                precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity);
 
                             // assign precursors for MS2 child scans
                             if (ms2ChildScans != null)
@@ -346,9 +320,9 @@ namespace TaskLayer
                                     {
                                         childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
                                     }
-                                    var theChildScan = new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.MonoPeakMz,
+                                    var theChildScan = new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.MonoisotopicPeakMz,
                                         precursor.Charge, fullFilePath, commonParameters, childNeutralExperimentalFragments,
-                                        precursor.Intensity, precursor.PeakCount, precursor.FractionalIntensity);
+                                        precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity);
                                     scan.ChildScans.Add(theChildScan);
                                 }
                             }
