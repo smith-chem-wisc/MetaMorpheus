@@ -39,7 +39,7 @@ namespace EngineLayer
             for (int j = 0; j < AcceptableSortedMassShifts.Length; j++)
             {
                 var notch = NotchIntegers[j];
-                var mass = peptideMonoisotopicMass + notch;
+                var mass = peptideMonoisotopicMass + AcceptableSortedMassShifts[j];
                 yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), notch);
             }
         }
@@ -49,7 +49,7 @@ namespace EngineLayer
             for (int j = 0; j < AcceptableSortedMassShifts.Length; j++)
             {
                 var notch = NotchIntegers[j];
-                var mass = peptideMonoisotopicMass - notch;
+                var mass = peptideMonoisotopicMass - AcceptableSortedMassShifts[j];
                 yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), notch);
             }
         }
