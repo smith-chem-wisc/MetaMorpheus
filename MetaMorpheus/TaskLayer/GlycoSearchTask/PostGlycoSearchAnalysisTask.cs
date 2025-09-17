@@ -126,7 +126,7 @@ namespace TaskLayer
                     break;
                 case GlycoSearchType.N_O_GlycanSearch:
                 default:
-                    var allPsmsgly = filteredPsms.Where(p => p.GlycanScore > 0).ToList();
+                    var allPsmsgly = filteredPsms.Where(p => p.Routes != null).ToList();
                     if (allPsmsgly.Any())
                     {
                         SingleFDRAnalysis(allPsmsgly, commonParameters, new List<string> { taskId });
