@@ -158,8 +158,8 @@ namespace EngineLayer.FdrAnalysis
             double cumulativeDecoy = 0;
 
             //set up arrays for local FDRs
-            double[] cumulativeTargetPerNotch = new double[MassDiffAcceptorNumNotches + 1];
-            double[] cumulativeDecoyPerNotch = new double[MassDiffAcceptorNumNotches + 1];
+            Dictionary<int, double> cumulativeTargetPerNotch = psms.Select(p => p.Notch).Distinct().ToDictionary(p => p!.Value, _ => 0.0);
+            Dictionary<int, double> cumulativeDecoyPerNotch = psms.Select(p => p.Notch).Distinct().ToDictionary(p => p!.Value, _ => 0.0);
 
             //Assign FDR values to PSMs
             foreach (var psm in psms)
@@ -225,7 +225,7 @@ namespace EngineLayer.FdrAnalysis
         private void QValueTraditional(List<SpectralMatch> psms, bool peptideLevelAnalysis)
         {
             double qValue = 0;
-            double[] qValueNotch = new double[MassDiffAcceptorNumNotches + 1];
+            Dictionary<int, double> qValueNotch = psms.Select(p => p.Notch).Distinct().ToDictionary(p => p!.Value, _ => 0.0);
 
             for (int i = 0; i < psms.Count; i++)
             {
@@ -242,8 +242,8 @@ namespace EngineLayer.FdrAnalysis
 
         private void QValueInverted(List<SpectralMatch> psms, bool peptideLevelAnalysis)
         {
-            double[] qValueNotch = new double[MassDiffAcceptorNumNotches + 1];
-            bool[] qValueNotchCalculated = new bool[MassDiffAcceptorNumNotches + 1];
+            Dictionary<int, double> qValueNotch = psms.Select(p => p.Notch).Distinct().ToDictionary(p => p!.Value, _ => 0.0);
+            Dictionary<int, bool> qValueNotchCalculated = psms.Select(p => p.Notch).Distinct().ToDictionary(p => p!.Value, _ => false);
             psms.Reverse();
             //this calculation is performed from bottom up. So, we begin the loop by computing qValue
             //and qValueNotch for the last/lowest scoring psm in the bunch
