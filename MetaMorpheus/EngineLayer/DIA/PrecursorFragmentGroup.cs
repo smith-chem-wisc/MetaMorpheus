@@ -137,7 +137,7 @@ namespace EngineLayer.DIA
         public static Ms2ScanWithSpecificMass GetPseudoMs2ScanFromPfGroup(PrecursorFragmentsGroup pfGroup, PseudoMs2ConstructionType pseudoMs2ConstructionType, CommonParameters commonParameters, string dataFilePath)
         {
             //sort all fragment XICs by their m/z value
-            pfGroup.PFpairs.Sort((a, b) => a.FragmentXic.AveragedM.CompareTo(b.FragmentXic.AveragedM));
+            pfGroup.PFpairs.Sort((a, b) => a.FragmentXic.AveragedMassOrMz.CompareTo(b.FragmentXic.AveragedMassOrMz));
             // This is currently taking the mz value of the first peak as the representative mz for the fragment XIC; it is only for testing purposes
             // It will be changed to the mz value of the highest peak or the averaged mz value of the XIC when there is a release for the updated mzLib.
             var mzs = pfGroup.PFpairs.Select(pf => (double)pf.FragmentXic.Peaks.First().M).ToArray();
@@ -155,7 +155,7 @@ namespace EngineLayer.DIA
                 // If the fragment XIC is mass-based, we create an isotopic envelope as the neutral mass fragment for each fragment XIC
                 case PseudoMs2ConstructionType.Mass:
                     neutralExperimentalFragments = pfGroup.PFpairs.Select(pf => new IsotopicEnvelope(1,
-                            new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.AveragedM, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
+                            new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.AveragedMassOrMz, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
                     break;
                 default:
                     throw new MetaMorpheusException("Invalid pseudo MS2 construction type specified.");
