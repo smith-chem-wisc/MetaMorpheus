@@ -210,19 +210,14 @@ namespace EngineLayer.GlycoSearch
 
                         List<GlycoSpectralMatch> gsms;
 
-                        if (GlycoSearchType == GlycoSearchType.OGlycanSearch)
+                        if (GlycoSearchType == GlycoSearchType.OGlycanSearch || GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
                         {
-                            gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff); // Use the peptide candidate and the scan to generate the gsms.
+                            gsms = MatchGlycopeptide(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff); // Use the peptide candidate and the scan to generate the gsms.
                         }
-                        else if(GlycoSearchType == GlycoSearchType.NGlycanSearch)
+                        else //GlycoSearchType == GlycoSearchType.NGlycanSearch
                         {                     
-                            gsms = FindNGlycopeptide(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
+                            gsms = MatchNGlycopeptide(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
                         }
-                        else
-                        {
-                            gsms = Find_N_O_Glycopeptide(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
-                        }
-
 
                         if (gsms.Count == 0)
                         {
@@ -598,7 +593,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         // Conduct the search and generate the gsms for N-glycan search
-        private List<GlycoSpectralMatch> FindNGlycopeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
+        private List<GlycoSpectralMatch> MatchNGlycopeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
 
@@ -658,7 +653,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="scanIndex"></param>
         /// <param name="scoreCutOff"></param>
         /// <returns> The Gsms collection.</returns>
-        private List<GlycoSpectralMatch> FindOGlycopeptideHashLocal(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
+        private List<GlycoSpectralMatch> MatchGlycopeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
 
@@ -678,55 +673,9 @@ namespace EngineLayer.GlycoSearch
 
                     var possibleGlycanMassHigh = PrecusorSearchMode.GetMaximumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
 
-                    if (possibleGlycanMassHigh < GlycanBox.OGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.OGlycanBoxes.Last().Mass)
+                    if (possibleGlycanMassHigh < GlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBoxes.Last().Mass)
                     {
                         continue; // if the glycan mass difference is out of the range of the glycan box, we can skip this peptide.
-                    }
-
-                    //Filter by OxoniumIon
-                    var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode);
-
-                    //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                    if (OxoniumIonFilter && oxoniumIonIntensities[9] == 0)
-                    {
-                        continue;
-                    }
-
-                    //Find O-Glycan
-                    FindOGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
-                }
-
-                if (possibleMatches.Count != 0)
-                {
-                    possibleMatches = possibleMatches.OrderByDescending(p => p.Score).ToList();
-                }
-            }
-
-            return possibleMatches;
-        }
-        private List<GlycoSpectralMatch> Find_N_O_Glycopeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
-        {
-            List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
-
-            for (int ind = 0; ind < idsOfPeptidesPossiblyObserved.Count; ind++)
-            {
-                var theScanBestPeptide = PeptideIndex[idsOfPeptidesPossiblyObserved[ind]];
-
-                if (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass))
-                {
-                    FindSingle(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, ref possibleMatches);
-
-                }
-                else if (theScan.PrecursorMass - theScanBestPeptide.MonoisotopicMass >= 100) //Filter out unknow non-glycan modifications.
-                {
-                    //Filter by glycanBoxes mass difference.
-                    var possibleGlycanMassLow = PrecusorSearchMode.GetMinimumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
-
-                    var possibleGlycanMassHigh = PrecusorSearchMode.GetMaximumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
-
-                    if (possibleGlycanMassHigh < GlycanBox.NOGlycanBoxes.First().Mass)
-                    {
-                        continue;
                     }
 
                     //Filter by OxoniumIon
@@ -738,9 +687,8 @@ namespace EngineLayer.GlycoSearch
                         continue;
                     }
 
-                    //Find NO-Glycan
+                    //Find O-Glycan
                     FindOGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
-
                 }
 
                 if (possibleMatches.Count != 0)
