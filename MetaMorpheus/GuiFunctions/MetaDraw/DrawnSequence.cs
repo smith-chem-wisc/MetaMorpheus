@@ -225,7 +225,7 @@ namespace GuiFunctions
                 }
                 double yLocation = yLoc + 2;
 
-                if (mod.Value.ModificationType == "O-Glycosylation")
+                if (mod.Value.ModificationType == "O-linked glycosylation")
                 {
                     if (localGlycans.Where(p => p.Item1 + 1 == mod.Key).Count() > 0)
                     {

@@ -217,7 +217,8 @@ namespace TaskLayer
                 FlashLfqResults = flashLfqResults,
                 FileSettingsList = fileSettingsList,
                 DatabaseFilenameList = dbFilenameList,
-                CurrentRawFileList = currentRawFileList
+                CurrentRawFileList = currentRawFileList,
+                BioPolymerList = proteinList,
             };
             
             PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask()
