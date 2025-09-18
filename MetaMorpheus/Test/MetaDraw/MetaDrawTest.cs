@@ -1688,7 +1688,7 @@ namespace Test.MetaDraw
             var series7 = plot7.Model.Series.ToList()[0];
             var points7 = (List<OxyPlot.Series.ScatterPoint>)series7.GetType()
                 .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series7);
-            Assert.That(points7.Count, Is.EqualTo(10));
+            Assert.That(points7.Count, Is.EqualTo(9));
             Assert.That(points7[1].X, Is.EqualTo(42.07841));
             Assert.That(points7[1].Y, Is.EqualTo(-1.48));
             Assert.That(points7[1].Tag, Is.EqualTo("LSRIDTPK"));

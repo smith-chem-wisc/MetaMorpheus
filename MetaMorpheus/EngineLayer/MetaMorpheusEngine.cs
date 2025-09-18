@@ -1,5 +1,7 @@
 ﻿using Chemistry;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
+using MzLibUtil;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -25,7 +27,7 @@ namespace EngineLayer
 
         public readonly CommonParameters CommonParameters;
         protected readonly List<(string FileName, CommonParameters Parameters)> FileSpecificParameters;
-
+        protected readonly ListPool<SpectralMatchHypothesis> HypothesisPool = new(8);
         protected readonly List<string> NestedIds;
 
         protected MetaMorpheusEngine(CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds)
@@ -274,6 +276,7 @@ namespace EngineLayer
 
             return matchedFragmentIons;
         }
+        protected abstract MetaMorpheusEngineResults RunSpecific();
 
         public MetaMorpheusEngineResults Run()
         {
@@ -313,6 +316,8 @@ namespace EngineLayer
             };
         }
 
+        #region Event Helpers
+
         public string GetId()
         {
             return string.Join(",", NestedIds);
@@ -333,8 +338,6 @@ namespace EngineLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MetaMorpheusEngineResults RunSpecific();
-
         private void StartingSingleEngine()
         {
             StartingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
@@ -344,5 +347,7 @@ namespace EngineLayer
         {
             FinishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
         }
+
+        #endregion
     }
 }
