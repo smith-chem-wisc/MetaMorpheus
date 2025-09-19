@@ -20,6 +20,7 @@ using System.Windows.Navigation;
 using Omics.Modifications;
 using TaskLayer;
 using System.Text.RegularExpressions;
+using MetaMorpheusGUI.Views;
 using Readers.InternalResults;
 using System.Diagnostics;
 
@@ -576,6 +577,35 @@ namespace MetaMorpheusGUI
             catch (KeyNotFoundException ex)
             {
                 NotificationHandler(null, new StringEventArgs("Problem parsing the file-specific toml; " + ex.Message + "; please update the proteases.tsv file and restart MetaMorpheus to use this file-specific toml.", null));
+            }
+        }
+
+        private void SetSelectedPrecursors_Click(object sender, RoutedEventArgs e)
+        {
+            if(!SelectedSpectraFiles.Any())
+            {
+                MessageBox.Show("Please select at least one spectra file.");
+                return;
+            }
+
+            try
+            {
+                var firstFile = SelectedSpectraFiles.First();
+                var dialog = new SelectedPrecursorWindow(firstFile.FilePath);
+
+                if (dialog.ShowDialog() == true)
+                {
+                    var precursorPathForFirstFile = Path.Combine(Directory.GetParent(firstFile.FilePath).ToString(), Path.GetFileNameWithoutExtension(firstFile.FileName)) + "_selected_precursors.tsv";
+
+                    foreach (var file in SelectedSpectraFiles.Skip(1))
+                    {
+                        File.Copy(precursorPathForFirstFile, Path.Combine(Directory.GetParent(file.FilePath).ToString(), Path.GetFileNameWithoutExtension(file.FileName)) + "_selected_precursors.tsv", true);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificationHandler(null, new StringEventArgs(ex.Message, null));
             }
         }
 
