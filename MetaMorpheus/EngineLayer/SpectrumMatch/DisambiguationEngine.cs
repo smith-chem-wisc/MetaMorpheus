@@ -44,8 +44,6 @@ public class DisambiguationEngine : MetaMorpheusEngine
             FdrAnalysisEngine.DoFalseDiscoveryRateAnalysis(_allSpectralMatches, false, FileSpecificParameters, null, null);
         }
 
-
-
         Status("Done.");
         return new DisambiguationEngineResults(this)
         {
