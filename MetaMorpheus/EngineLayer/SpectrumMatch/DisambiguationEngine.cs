@@ -3,13 +3,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace EngineLayer.SpectrumMatch;
 
+/// <summary>
+/// Engine designed to disambiguate spectral matches. 
+/// <remarks>
+/// This is currently done in several locations and should be consolidated to this engine. 
+/// Places in which disambiguation occurs: 
+/// SearchTask -> Internal Ions
+/// PEPAnalysisEngine -> By PEP
+/// ProteinParsimonyEngine -> remove non-parsimonious peptides. 
+/// </remarks>
+/// </summary>
 public class DisambiguationEngine : MetaMorpheusEngine
 {
-    private readonly double _pepDisambiguaitonThreshold = 0.05;
     private readonly double _qvalueNotchDisambiguationThreshold = 0.05;
     private readonly List<SpectralMatch> _allSpectralMatches;
 

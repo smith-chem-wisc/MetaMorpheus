@@ -1,7 +1,5 @@
 ﻿using Chemistry;
-using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
-using MzLibUtil;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -27,7 +25,6 @@ namespace EngineLayer
 
         public readonly CommonParameters CommonParameters;
         protected readonly List<(string FileName, CommonParameters Parameters)> FileSpecificParameters;
-        protected readonly ListPool<SpectralMatchHypothesis> HypothesisPool = new(8);
         protected readonly List<string> NestedIds;
 
         protected MetaMorpheusEngine(CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds)
