@@ -89,13 +89,20 @@ namespace Test
 
             fdr.Run();
 
+            // Notch ambiguous should not have values set until resolved. 
+            var notchAmbiguous = newPsms[2];
+            Assert.That(notchAmbiguous.FdrInfo.CumulativeTargetNotch, Is.EqualTo(0));
+            Assert.That(notchAmbiguous.FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
+            Assert.That(notchAmbiguous.FdrInfo.QValueNotch, Is.EqualTo(2));
+            notchAmbiguous.ResolveAllAmbiguities();
+
             Assert.That(searchModes.NumNotches, Is.EqualTo(2));
             Assert.That(newPsms[0].FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
             Assert.That(newPsms[0].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1));
             Assert.That(newPsms[1].FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
             Assert.That(newPsms[1].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1));
             Assert.That(newPsms[2].FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
-            Assert.That(newPsms[2].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1));
+            Assert.That(newPsms[2].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1.5));
 
             Assert.That(newPsms[0].FdrInfo.CumulativeDecoy, Is.EqualTo(0));
             Assert.That(newPsms[0].FdrInfo.CumulativeTarget, Is.EqualTo(1));
