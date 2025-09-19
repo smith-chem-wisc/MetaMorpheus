@@ -116,7 +116,7 @@ public class MzLibExtensionsTests
         var label = psm.GetDigestionProductLabel();
 
         // Assert
-        Assert.That(label, Is.EqualTo("Pepide"));
+        Assert.That(label, Is.EqualTo("Peptide"));
     }
 
     [Test]
