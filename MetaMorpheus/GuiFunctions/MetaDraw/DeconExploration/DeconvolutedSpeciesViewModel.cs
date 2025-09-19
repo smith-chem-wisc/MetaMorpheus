@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System.Linq;
+using Chemistry;
 using MassSpectrometry;
 using MathNet.Numerics;
 using OxyPlot;
@@ -19,5 +20,6 @@ public class DeconvolutedSpeciesViewModel(IsotopicEnvelope envelope) : BaseViewM
     public double Intensity => Envelope.Peaks.Sum(p => p.intensity);
     public string Annotation => $"M={MonoisotopicMass.Round(2)}\nz={Charge}";
     public double MostAbundantMz => Envelope.Peaks.MaxBy(p => p.intensity).mz;
+    public double MonoMz => Envelope.MonoisotopicMass.ToMz(Envelope.Charge);
     public string PeakMzs => string.Join(", ", Envelope.Peaks.Select(p => p.mz.Round(2)).OrderBy(p => p));
 }

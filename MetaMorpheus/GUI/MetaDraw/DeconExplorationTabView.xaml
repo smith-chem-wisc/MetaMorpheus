@@ -109,7 +109,7 @@
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Mono Mass" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
                                     Binding="{Binding MonoisotopicMass, StringFormat={}{0:F2}}" Width="80"/>
-                <DataGridTextColumn Header="Mz" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                <DataGridTextColumn Header="Mz (Most Abundant)" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
                                     Binding="{Binding MostAbundantMz, StringFormat={}{0:F2}}" Width="60"/>
                 <DataGridTextColumn Header="Z" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
                                     Binding="{Binding Charge}" Width="30"/>
@@ -117,6 +117,8 @@
                                     Binding="{Binding Intensity, StringFormat={}{0:F2}}" Width="70"/>
                 <DataGridTextColumn Header="Peaks" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
                                     Binding="{Binding PeakCount}" Width="40"/>
+                <DataGridTextColumn Header="Mz (Monoisotopic)" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding MonoMz, StringFormat={}{0:F2}}" Width="60"/>
                 <DataGridTextColumn Header="Peak Mzs" 
                                     Binding="{Binding PeakMzs}" Width="Auto"/>
             </DataGrid.Columns>

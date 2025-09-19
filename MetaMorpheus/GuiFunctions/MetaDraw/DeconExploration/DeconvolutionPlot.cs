@@ -83,12 +83,14 @@ public class DeconvolutionPlot : MassSpectrumPlot
         // Full Scan
         if (isolationRange is null)
         {
+            Model.Title = $"Scan {scan.OneBasedScanNumber} (MS{scan.MsnOrder})";
             Model.Axes[0].Zoom(scan.MassSpectrum.Range.Minimum, maxAnnotatedMz + 50);
             Model.Axes[1].Zoom(0, scan.MassSpectrum.YofPeakWithHighestY!.Value * YRangeMultiplier);
         }
         // Isolation Region
         else
         {
+            Model.Title = $"Scan {scan.OneBasedScanNumber} (MS{scan.MsnOrder}) - Isolation Window {isolationRange.Minimum}-{isolationRange.Maximum} m/z";
 
             var extracted = scan.MassSpectrum.Extract(isolationRange);
             double maxIntensity = 0;
