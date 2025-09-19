@@ -34,4 +34,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-          files: mzLib/Test*/TestResults/*/coverage.cobertura.xml
+          files: MetaMorpheus/Test*/TestResults/*/coverage.cobertura.xml
