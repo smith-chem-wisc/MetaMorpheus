@@ -37,11 +37,12 @@ namespace MetaMorpheusGUI
         private ObservableCollection<string> PsmStatPlotFiles;
         public PtmLegendViewModel PtmLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
-        private static List<string> AcceptedSpectraFormats => SpectrumMatchFromTsvHeader.AcceptedSpectraFormats.Concat(new List<string> { ".msalign", ".tdf", ".tdf_bin" }).Select(format => format.ToLower()).ToList();
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
         public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
+        public DeconExplorationTabViewModel DeconExplorationViewModel { get; set; }
+        public BioPolymerTabViewModel BioPolymerTabViewModel { get; set; }
 
         public MetaDraw(string[]? filesToLoad = null)
         {
@@ -49,15 +50,15 @@ namespace MetaMorpheusGUI
 
             MetaDrawLogic = new MetaDrawLogic();
             SettingsButtonControl.SettingsChanged += RefreshPlotsAfterSettingsChange;
-            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchResultFilePaths, MetaDrawLogic.ThreadLocker);
-            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectraFilePaths, MetaDrawLogic.ThreadLocker);
-            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.FilteredListOfPsms, MetaDrawLogic.ThreadLocker);
-            BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchesGroupedByFile, MetaDrawLogic.ThreadLocker);
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
             AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
             AdditionalFragmentIonControl.LinkMetaDraw(this);
+
+            BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
+            ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel();
+            DeconExplorationViewModel = new DeconExplorationTabViewModel();
 
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
@@ -65,7 +66,6 @@ namespace MetaMorpheusGUI
             dataGridProperties.DataContext = propertyView.DefaultView;
 
             dataGridScanNums.DataContext = MetaDrawLogic.PeptideSpectralMatchesView;
-
 
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
             base.Closing += this.OnClosing;
@@ -105,7 +105,7 @@ namespace MetaMorpheusGUI
         {
             var theExtension = GlobalVariables.GetFileExtension(filePath).ToLowerInvariant();
 
-            if (AcceptedSpectraFormats.Contains(theExtension))
+            if (GlobalVariables.AcceptedSpectraFormats.Contains(theExtension))
             {
                 // If a bruker timsTof file was selected, we actually want the parent folder
                 if(theExtension == ".tdf" || theExtension == ".tdf_bin")
@@ -163,6 +163,10 @@ namespace MetaMorpheusGUI
                     specLibraryLabel.ToolTip = string.Join("\n", MetaDrawLogic.SpectralLibraryPaths);
                     resetSpecLibraryButton.IsEnabled = true;
                 }
+            }
+            else if (GlobalVariables.AcceptedDatabaseFormats.Contains(theExtension))
+            {
+                BioPolymerTabViewModel.DatabasePath = filePath;
             }
             else
             {
@@ -354,7 +358,7 @@ namespace MetaMorpheusGUI
 
         private void selectSpectraFileButton_Click(object sender, RoutedEventArgs e)
         {
-            string filterString = string.Join(";", AcceptedSpectraFormats.Select(p => "*" + p));
+            string filterString = string.Join(";", GlobalVariables.AcceptedSpectraFormats.Select(p => "*" + p));
 
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {
@@ -459,20 +463,17 @@ namespace MetaMorpheusGUI
 
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
-            var selectedChimeraGroup = ChimeraAnalysisTabViewModel?.SelectedChimeraGroup;
+            var selectedChimeraGroup = ChimeraAnalysisTabViewModel.SelectedChimeraGroup;
 
             // filter based on new settings
             if (e.FilterChanged)
             {
                 MetaDrawLogic.FilterPsms();
+                ChimeraAnalysisTabViewModel.ProcessChimeraData(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles);
 
-                ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Clear();
-                foreach (var chimeraGroup in ChimeraAnalysisTabViewModel.ConstructChimericPsms(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles)
-                             .OrderByDescending(p => p.Count)
-                             .ThenByDescending(p => p.UniqueFragments)
-                             .ThenByDescending(p => p.TotalFragments))
+                foreach (var group in BioPolymerTabViewModel.AllGroups)
                 {
-                    ChimeraAnalysisTabViewModel.ChimeraGroupViewModels.Add(chimeraGroup);
+                    group.UpdatePropertiesAfterFilter();
                 }
             }
 
@@ -499,7 +500,11 @@ namespace MetaMorpheusGUI
         {
             // check for validity
             propertyView.Clear();
-            if (!MetaDrawLogic.SpectraFilePaths.Any())
+
+            bool loadSpectraFiles = true;
+            if ((e.Source as Button)?.Name == "loadFilesStat")
+                loadSpectraFiles = false;
+            else if (!MetaDrawLogic.SpectraFilePaths.Any())
             {
                 MessageBox.Show("Please add a spectra file.");
                 return;
@@ -513,22 +518,15 @@ namespace MetaMorpheusGUI
 
             // load the spectra file
             ToggleButtonsEnabled(false);
- 
-            prgsFeed.IsOpen = true;
-            prgsText.Content = "Loading data...";
 
-            // Add EventHandlers for popup click-in/click-out behaviour
-            Deactivated += new EventHandler(prgsFeed_Deactivator);
-            Activated += new EventHandler(prgsFeed_Reactivator);
-
-            var slowProcess = Task<List<string>>.Factory.StartNew(() => MetaDrawLogic.LoadFiles(loadSpectra: true, loadPsms: true));
-            await slowProcess;
-
-            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
-                DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles, directoryPath);
-            ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
-            var errors = slowProcess.Result;
+            var dataLoader = new MetaDrawDataLoader(MetaDrawLogic);
+            var errors = await dataLoader.LoadAllAsync(
+                loadSpectra: loadSpectraFiles,
+                loadPsms: true,
+                loadLibraries: true,
+                chimeraTabViewModel: ChimeraAnalysisTabViewModel,
+                bioPolymerTabViewModel: BioPolymerTabViewModel,
+                deconExplorationTabViewModel: DeconExplorationViewModel);
 
             if (errors.Any())
             {
@@ -542,30 +540,7 @@ namespace MetaMorpheusGUI
                 PsmStatPlotFiles.Add(item.Key);
             }
 
-            // done loading - restore controls
-            this.prgsFeed.IsOpen = false;
-
-            // Remove added EventHandlers
-            Deactivated -= new EventHandler(prgsFeed_Deactivator);
-            Activated -= new EventHandler(prgsFeed_Reactivator);
-
             ToggleButtonsEnabled(true);
-        }
-
-        /// <summary>
-        /// Deactivates the "loading data" popup if one clicks out of the main window
-        /// </summary>
-        private void prgsFeed_Deactivator(object sender, EventArgs e)
-        {
-            prgsFeed.IsOpen = false;
-        }
-
-        /// <summary>
-        /// Reactivates the "loading data" popup if one clicks into the main window
-        /// </summary>
-        private void prgsFeed_Reactivator(object sender, EventArgs e)
-        {
-            prgsFeed.IsOpen = true;
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -731,37 +706,6 @@ namespace MetaMorpheusGUI
             {
                 plotTypes.Add(plot);
             }
-        }
-
-        private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
-        {
-            // check for validity
-            if (!MetaDrawLogic.SpectralMatchResultFilePaths.Any())
-            {
-                MessageBox.Show("Please add a search result file.");
-                return;
-            }
-
-            (sender as Button).IsEnabled = false;
-            selectPsmFileButtonStat.IsEnabled = false;
-            resetPsmFileButtonStat.IsEnabled = false;
-            prgsFeedStat.IsOpen = true;
-
-            // load the PSMs
-            this.prgsTextStat.Content = "Loading data...";
-            MetaDrawLogic.LoadFiles(loadSpectra: false, loadPsms: true);
-
-            PsmStatPlotFiles.Clear();
-            foreach (var item in MetaDrawLogic.SpectralMatchesGroupedByFile)
-            {
-                PsmStatPlotFiles.Add(item.Key);
-            }
-
-            // done loading - restore controls
-            this.prgsFeedStat.IsOpen = false;
-            (sender as Button).IsEnabled = true;
-            selectPsmFileButtonStat.IsEnabled = true;
-            resetPsmFileButtonStat.IsEnabled = true;
         }
 
         /// <summary>

@@ -26,7 +26,7 @@ namespace GuiFunctions
 
         #region Helpers
 
-        protected string AddSpaces(string text)
+        protected static string AddSpaces(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return "";
@@ -41,7 +41,7 @@ namespace GuiFunctions
             return newText.ToString();
         }
 
-        protected void AddSpaces(ObservableCollection<string> strings)
+        protected static void AddSpaces(ObservableCollection<string> strings)
         {
             for (int i = 0; i < strings.Count; i++)
             {

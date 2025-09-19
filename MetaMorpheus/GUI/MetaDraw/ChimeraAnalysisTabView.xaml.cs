@@ -105,11 +105,11 @@ namespace MetaMorpheusGUI
             if (legendCanvas != null)
             {
                 ChimeraLegend.Children.Add(dataContext?.LegendCanvas);
-
+                legendCanvas.UpdateLayout();
                 double parentWidth = ChimeraLegend.ActualWidth;
                 double parentHeight = ChimeraLegend.ActualHeight;
-                double legendWidth = legendCanvas.Width;
-                double legendHeight = legendCanvas.Height;
+                double legendWidth = legendCanvas.ActualWidth;
+                double legendHeight = legendCanvas.ActualHeight;
 
                 // Check if previous position is valid and within bounds
                 bool validLeft = !double.IsNaN(lastLeft) && lastLeft >= 0 && lastLeft + legendWidth <= parentWidth;
