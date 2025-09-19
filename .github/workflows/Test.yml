@@ -21,7 +21,7 @@ jobs:
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
         
       - name: Build
-        run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration Release
+        run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln 
         
       - name: Install Coverlet for code coverage
         run: dotnet add ./MetaMorpheus/Test/Test.csproj package coverlet.collector -v 6.0.2
