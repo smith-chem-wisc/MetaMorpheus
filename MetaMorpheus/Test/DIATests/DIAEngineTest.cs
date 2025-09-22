@@ -256,10 +256,10 @@ namespace Test.DIATests
             }
             var testMsDataFile = new GenericMsDataFile(allScans, new SourceFile("no nativeID format", "mzML format", null, null, null));
 
+            //put the data into the search pipeline to see if it returns pseudo scans
             var DIAparams = new DIAparameters(DIAanalysisType.DIA, new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, new ClassicDeconvolutionParameters(1, 20, 4, 3)), new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3), new XicGroupingEngine(0.15f, 0.5, 0.5, 1), PseudoMs2ConstructionType.MzPeak);
             var commonParams = new CommonParameters { DIAparameters = DIAparams };
-            var diaEngine = new DIAEngine(testMsDataFile, commonParams);
-            var pseudoScans = diaEngine.GetPseudoMs2Scans().ToArray();
+            var pseudoScans = MetaMorpheusTask.GetMs2Scans(testMsDataFile, null, commonParams).ToArray();
 
             //There should be two precursor-fragment groups, resulting in two pseudo scans
             Assert.That(pseudoScans.Length, Is.EqualTo(2));
@@ -276,6 +276,20 @@ namespace Test.DIATests
                 //The neutral mass of the fragment should match with the fragment mass
                 Assert.That(pseudoScan.ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(fragDist1.Masses.First()).Within(0.001));
             }
+        }
+
+        [Test]
+        public static void TestExceptionHandlingForGetMs2Scans()
+        {
+            var emptyScans = new MsDataScan[0];
+            var fakeFile = new GenericMsDataFile(emptyScans, new SourceFile("no nativeID format", "mzML format", null, null, null));
+            //put the data into the search pipeline to see if it returns pseudo scans
+            var invalidType = (DIAanalysisType)999;
+            var DIAparams = new DIAparameters(invalidType, new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, new ClassicDeconvolutionParameters(1, 20, 4, 3)), new MzPeakXicConstructor(new PpmTolerance(5), 2, 1, 3), new XicGroupingEngine(0.15f, 0.5, 0.5, 1), PseudoMs2ConstructionType.MzPeak);
+            var commonParams = new CommonParameters { DIAparameters = DIAparams };
+
+            var ex = Assert.Throws<NotImplementedException>(() => MetaMorpheusTask.GetMs2Scans(fakeFile, null, commonParams));
+            Assert.That(ex.Message, Is.EqualTo("DIA analysis type not implemented."));
         }
     }
 }

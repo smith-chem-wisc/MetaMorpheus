@@ -417,7 +417,7 @@ namespace TaskLayer
                         var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
                         return diaEngine.GetPseudoMs2Scans();
                     default:
-                        throw new NotImplementedException("DIA analysis type " + commonParameters.DIAparameters.AanalysisType + " not implemented.");
+                        throw new NotImplementedException("DIA analysis type not implemented.");
                 }
             }
             var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
