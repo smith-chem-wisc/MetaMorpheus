@@ -86,7 +86,6 @@ namespace GuiFunctions
                 return;
             }
 
-            spectraFile.InitiateDynamicConnection();
             MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(sm.Ms2ScanNumber);
 
             LibrarySpectrum librarySpectrum = null;
@@ -199,7 +198,6 @@ namespace GuiFunctions
 
                     CurrentlyDisplayedPlots.Add(childPlot);
                 }
-                spectraFile.CloseDynamicConnection();
             }
         }
 

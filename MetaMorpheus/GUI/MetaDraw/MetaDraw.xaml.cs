@@ -519,6 +519,7 @@ namespace MetaMorpheusGUI
             // load the spectra file
             ToggleButtonsEnabled(false);
 
+            dataGridScanNums.IsEnabled = false; // prevent clicking a psm before spectra and psms have loaded
             var dataLoader = new MetaDrawDataLoader(MetaDrawLogic);
             var errors = await dataLoader.LoadAllAsync(
                 loadSpectra: loadSpectraFiles,
@@ -527,6 +528,7 @@ namespace MetaMorpheusGUI
                 chimeraTabViewModel: ChimeraAnalysisTabViewModel,
                 bioPolymerTabViewModel: BioPolymerTabViewModel,
                 deconExplorationTabViewModel: DeconExplorationViewModel);
+            dataGridScanNums.IsEnabled = true;
 
             if (errors.Any())
             {
