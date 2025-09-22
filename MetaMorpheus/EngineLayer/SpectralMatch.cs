@@ -90,10 +90,9 @@ namespace EngineLayer
         {
             get => PsmFdrInfo;
             set => PsmFdrInfo = value;
-
         }
-        public FdrInfo PsmFdrInfo { get;  set; }
-        public FdrInfo PeptideFdrInfo { get;  set; }
+        public FdrInfo PsmFdrInfo { get; set; }
+        public FdrInfo PeptideFdrInfo { get; set; }
         public FdrInfo GetFdrInfo(bool peptideLevel)
         {
             return peptideLevel ? PeptideFdrInfo : PsmFdrInfo;

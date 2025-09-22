@@ -362,16 +362,10 @@ namespace EngineLayer
                 if (peptide.Notch == null && peptide.GetFdrInfo(writePeptideLevelFdr).QValueNotch > 1)
                 {
                     var min = peptide.BestMatchingBioPolymersWithSetMods.MinBy(b => writePeptideLevelFdr ? b.PeptideQValueNotch : b.QValueNotch);
-                    if (min != null && (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch).HasValue)
-                    {
-                        cumulativeTargetNotch = (writePeptideLevelFdr ? min.PeptideCumulativeTargetNotch : min.CumulativeTargetNotch).Value.ToString(CultureInfo.InvariantCulture);
-                        cumulativeDecoyNotch = (writePeptideLevelFdr ? min.PeptideCumulativeDecoyNotch : min.CumulativeDecoyNotch).Value.ToString(CultureInfo.InvariantCulture);
-                        qValueNotch = (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch).Value.ToString("F6", CultureInfo.InvariantCulture);
-                    }
-                    else
-                    {
-                        throw new Exception("If the psm is notch ambiguous, the q value notch in the hypothesis should never be null");
-                    }
+
+                    cumulativeTargetNotch = (writePeptideLevelFdr ? min.PeptideCumulativeTargetNotch : min.CumulativeTargetNotch)!.Value.ToString(CultureInfo.InvariantCulture);
+                    cumulativeDecoyNotch = (writePeptideLevelFdr ? min.PeptideCumulativeDecoyNotch : min.CumulativeDecoyNotch)!.Value.ToString(CultureInfo.InvariantCulture);
+                    qValueNotch = (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
                 }
                 else
                 {
