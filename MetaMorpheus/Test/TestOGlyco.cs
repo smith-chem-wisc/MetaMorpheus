@@ -1904,5 +1904,86 @@ namespace Test
             Directory.Delete(outputFolder_new, true);
 
         }
+
+        [Test]
+        public static void TestCompare()
+        {
+            string MTpath = "E:\\GlycoSearch_WritePrunedDb\\Lue's data\\MTSearchWithNewDb\\Task1-SearchTask\\AllPSMs.psmtsv";
+            string OPpath = "E:\\GlycoSearch_WritePrunedDb\\Lue's data\\GlycoSearchWriteDb\\Task1-GlycoSearchTask\\oglyco.psmtsv";
+            string OP_ZeroPath = "E:\\GlycoSearch_WritePrunedDb\\Lue's data\\OPSearch_withZero\\Task1-GlycoSearchTask\\AllPSMs.psmtsv";
+
+            HashSet<string> MT = new HashSet<string>();
+            HashSet<string> OP = new HashSet<string>();
+            HashSet<string> OP_Zero = new HashSet<string>();
+
+            foreach (var line in File.ReadAllLines(OP_ZeroPath))
+            {
+                var Full = line.Split('\t')[13];
+                if (Full.Contains('|'))
+                {
+                    var list = Full.Split('|').ToList();
+                    foreach (var full in list)
+                    {
+                        OP_Zero.Add(full);
+                    }
+                }
+                else
+                {
+                    OP_Zero.Add(Full);
+                }
+            }
+
+            foreach (var line in File.ReadAllLines(OPpath))
+            {
+                var Full = line.Split('\t')[13];
+                if (Full.Contains('|'))
+                {
+                    var list = Full.Split('|').ToList();
+                    foreach (var full in list)
+                    {
+                        OP.Add(full);
+                    }
+                }
+                else
+                {
+                    OP.Add(Full);
+                }
+            }
+
+            foreach (var line in File.ReadAllLines(MTpath))
+            {
+                var Full = line.Split('\t')[14];
+                if(!Full.Contains('[')) continue;
+                if (Full.Contains('|'))
+                {
+                    var list = Full.Split('|').ToList();
+                    foreach (var full in list)
+                    {
+                        MT.Add(full);
+                    }
+                }
+                else
+                {
+                    MT.Add(Full);
+                }
+            }
+
+            HashSet<string> miss = new HashSet<string>();
+            HashSet<string> hit = new HashSet<string>();
+            foreach (var glyco in OP)
+            {
+                if (!OP_Zero.Contains(glyco))
+                {
+                    miss.Add(glyco);
+                }
+                else
+                {
+                    hit.Add(glyco);
+                }
+            }
+
+            string output = "E:\\GlycoSearch_WritePrunedDb\\Lue's data\\missSeq_OP_Zero.txt";
+            File.WriteAllLines(output,miss.ToList());
+        }
     }
 }
