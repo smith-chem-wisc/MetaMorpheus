@@ -5,6 +5,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using FlashLFQ;
 using Omics.Digestion;
 using Omics.Modifications;

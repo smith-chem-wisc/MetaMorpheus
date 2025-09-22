@@ -1916,7 +1916,7 @@ namespace Test
             HashSet<string> OP = new HashSet<string>();
             HashSet<string> OP_Zero = new HashSet<string>();
 
-            foreach (var line in File.ReadAllLines(OP_ZeroPath))
+            foreach (var line in File.ReadAllLines(OP_ZeroPath).Skip(0))
             {
                 var Full = line.Split('\t')[13];
                 if (Full.Contains('|'))
@@ -1933,9 +1933,17 @@ namespace Test
                 }
             }
 
-            foreach (var line in File.ReadAllLines(OPpath))
+            foreach (var line in File.ReadAllLines(OPpath).Skip(1))
             {
                 var Full = line.Split('\t')[13];
+                string decoy = line.Split('\t')[24];
+                double qvalue = Double.Parse(line.Split('\t')[25]);
+
+                if (qvalue > 0.01 || decoy == "D")
+                {
+                    continue;
+                }
+
                 if (Full.Contains('|'))
                 {
                     var list = Full.Split('|').ToList();
@@ -1950,7 +1958,7 @@ namespace Test
                 }
             }
 
-            foreach (var line in File.ReadAllLines(MTpath))
+            foreach (var line in File.ReadAllLines(MTpath).Skip(0))
             {
                 var Full = line.Split('\t')[14];
                 if(!Full.Contains('[')) continue;
