@@ -1972,7 +1972,7 @@ namespace Test
             HashSet<string> hit = new HashSet<string>();
             foreach (var glyco in OP)
             {
-                if (!OP_Zero.Contains(glyco))
+                if (!MT.Contains(glyco))
                 {
                     miss.Add(glyco);
                 }
@@ -1982,7 +1982,7 @@ namespace Test
                 }
             }
 
-            string output = "E:\\GlycoSearch_WritePrunedDb\\Lue's data\\missSeq_OP_Zero.txt";
+            string output = "E:\\GlycoSearch_WritePrunedDb\\Lue's data\\missSeq_MT.txt";
             File.WriteAllLines(output,miss.ToList());
         }
     }
