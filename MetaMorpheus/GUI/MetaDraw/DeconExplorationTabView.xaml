@@ -47,10 +47,18 @@
 
 
             <TextBlock Grid.Column="0"  Grid.Row="2" Text="Deconvolution Mode:" FontWeight="Bold" />
-            <ComboBox Grid.Column="0"  Grid.Row="3" SelectedValue="{Binding Mode}" ItemsSource="{Binding DeconvolutionModes}" Margin="0,4,0,12" />
-            <CheckBox Grid.Column="1"  Grid.Row="3" Content="Display Annotations" FontWeight="DemiBold" HorizontalAlignment="Right"
-                      VerticalAlignment="Center" Margin="10,4,10,12"
-                      IsChecked="{Binding DisplayIonAnnotations, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"/>
+
+            <ComboBox Grid.Column="0"  Grid.Row="3" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                      SelectedValue="{Binding Mode}" 
+                      ItemsSource="{Binding DeconvolutionModes}" Margin="0,4,0,12" />
+            <StackPanel Grid.Column="1"  Grid.Row="3" Margin="10,4,10,12">
+                <CheckBox  Content="Display Annotations" FontWeight="DemiBold" HorizontalAlignment="Left"
+                           VerticalAlignment="Center" 
+                           IsChecked="{Binding DisplayIonAnnotations, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"/>
+                <CheckBox  Content="Identified Scans" FontWeight="DemiBold" HorizontalAlignment="Left"
+                           VerticalAlignment="Center" 
+                           IsChecked="{Binding OnlyIdentifiedScans}"/>
+            </StackPanel>
 
             <TextBlock Grid.Column="0"  Grid.Row="4"  Grid.ColumnSpan="2" Text="Scans:" FontWeight="Bold" />
             <DataGrid Grid.Column="0"  Grid.Row="5"  Grid.ColumnSpan="2" ItemsSource="{Binding Scans}"

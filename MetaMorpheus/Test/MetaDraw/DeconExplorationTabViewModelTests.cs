@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Windows.Documents;
+using EngineLayer;
 using GuiFunctions;
+using GuiFunctions.MetaDraw;
 using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Wpf;
@@ -16,6 +18,9 @@ public class DeconExplorationTabViewModelTests
 {
     private string mzmlPath;
     private MsDataFile msDataFile;
+    private MetaDrawLogic metaDrawLogic;
+    private MetaDrawLogic realDataLoaded;
+    private List<SpectrumMatchFromTsv> realPsms;
 
     [OneTimeSetUp]
     public void Setup()
@@ -24,12 +29,30 @@ public class DeconExplorationTabViewModelTests
         mzmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML");
         Assert.That(File.Exists(mzmlPath), $"Test mzML file not found: {mzmlPath}");
         msDataFile = MsDataFileReader.GetDataFile(mzmlPath).LoadAllStaticData();
+        metaDrawLogic = new MetaDrawLogic();
+
+        var key = System.IO.Path.GetFileName(mzmlPath.Replace(GlobalVariables.GetFileExtension(mzmlPath), string.Empty));
+        metaDrawLogic.MsDataFiles.Add(key, msDataFile);
+
+        // Set up real data tests
+        realDataLoaded = new();
+        var psmPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchResults.psmtsv");
+        string msDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchSingleSpectra.mzML");
+        key = System.IO.Path.GetFileName(msDataPath.Replace(GlobalVariables.GetFileExtension(msDataPath), string.Empty));
+        realDataLoaded.SpectraFilePaths.Add(msDataPath);
+        realDataLoaded.SpectralMatchResultFilePaths.Add(psmPath);   
+        new MetaDrawDataLoader(realDataLoaded).LoadAllAsync(true, true, true).Wait();
+
+        var file = realDataLoaded.MsDataFiles.First().Value;
+        realDataLoaded.MsDataFiles.Clear();
+        realDataLoaded.MsDataFiles.Add("SmallCalibratible_Yeast", file);
+        realPsms = realDataLoaded.AllSpectralMatches;
     }
 
     [Test]
     public void PopulateScansCollection_FullSpectrumMode_AddsAllScans()
     {
-        var vm = new DeconExplorationTabViewModel();
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
         vm.Mode = DeconvolutionMode.FullSpectrum;
         vm.SelectedMsDataFile = msDataFile;
 
@@ -39,7 +62,7 @@ public class DeconExplorationTabViewModelTests
     [Test]
     public void PopulateScansCollection_IsolationRegionMode_AddsOnlyMs2()
     {
-        var vm = new DeconExplorationTabViewModel();
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
         vm.Mode = DeconvolutionMode.IsolationRegion;
         vm.SelectedMsDataFile = msDataFile;
 
@@ -49,7 +72,7 @@ public class DeconExplorationTabViewModelTests
     [Test]
     public void Changing_Mode_RefreshesScans()
     {
-        var vm = new DeconExplorationTabViewModel();
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
         vm.SelectedMsDataFile = msDataFile;
         vm.Mode = DeconvolutionMode.FullSpectrum;
         int allCount = vm.Scans.Count;
@@ -63,14 +86,14 @@ public class DeconExplorationTabViewModelTests
     [Test]
     public void RunDeconvolutionCommand_DoesNotThrow_WhenNoScanSelected()
     {
-        var vm = new DeconExplorationTabViewModel();
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
         Assert.DoesNotThrow(() => vm.RunDeconvolutionCommand.Execute(null));
     }
 
     [Test, Apartment(System.Threading.ApartmentState.STA)]
     public void RunDeconvolutionCommand_FullSpectrumMode_PopulatesDeconvolutedSpecies()
     {
-        var vm = new DeconExplorationTabViewModel();
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
         vm.Mode = DeconvolutionMode.FullSpectrum;
         vm.SelectedMsDataFile = msDataFile;
         vm.SelectedMsDataScan = msDataFile.GetMsDataScans().FirstOrDefault();
@@ -82,7 +105,7 @@ public class DeconExplorationTabViewModelTests
     [Test, Apartment(System.Threading.ApartmentState.STA)]
     public void RunDeconvolutionCommand_IsolationRegionMode_PopulatesDeconvolutedSpecies()
     {
-        var vm = new DeconExplorationTabViewModel();
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
         vm.Mode = DeconvolutionMode.IsolationRegion;
         vm.SelectedMsDataFile = msDataFile;
         var ms2 = msDataFile.GetMsDataScans().FirstOrDefault(s => s.MsnOrder == 2);
@@ -97,7 +120,7 @@ public class DeconExplorationTabViewModelTests
     [Test]
     public void DeconvolutionModes_ContainsAllModes()
     {
-        var vm = new DeconExplorationTabViewModel();
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
         var modes = vm.DeconvolutionModes;
         Assert.That(modes, Does.Contain(DeconvolutionMode.FullSpectrum));
         Assert.That(modes, Does.Contain(DeconvolutionMode.IsolationRegion));
@@ -113,5 +136,52 @@ public class DeconExplorationTabViewModelTests
 
         Assert.DoesNotThrow(() => plot.AnnotatePlot(null!));
         Assert.DoesNotThrow(() => plot.AnnotatePlot(new List<DeconvolutedSpeciesViewModel>()));
+    }
+
+    [Test]
+    public void OnlyIdentifiedScans_FiltersScans_FullSpectrumMode()
+    {
+        var vm = new DeconExplorationTabViewModel(realDataLoaded);
+        vm.MsDataFiles.Add(realDataLoaded.MsDataFiles.Values.First());
+        vm.SelectedMsDataFile = vm.MsDataFiles.First();
+        vm.Mode = DeconvolutionMode.FullSpectrum;
+
+        // Simulate identified scans
+        var scanCount = vm.Scans.Count;
+
+        var acceptableScanNumbers = realPsms.Select(p => p.Ms2ScanNumber)
+            .Concat(realPsms.Select(p => p.PrecursorScanNum)).ToHashSet();
+
+        vm.OnlyIdentifiedScans = true;
+        var scanCountAfterFilter = vm.Scans.Count;
+        Assert.That(scanCountAfterFilter, Is.LessThan(scanCount));
+        var expectedScanNumbers = acceptableScanNumbers.Intersect(vm.Scans.Select(s => s.OneBasedScanNumber)).ToHashSet();
+        var actualScanNumbers = vm.Scans.Select(s => s.OneBasedScanNumber).ToHashSet();
+
+        Assert.That(actualScanNumbers, Is.EquivalentTo(expectedScanNumbers));
+    }
+
+    [Test]
+    public void OnlyIdentifiedScans_FiltersScans_IsolationRegionMode()
+    {
+        var vm = new DeconExplorationTabViewModel(realDataLoaded);
+        vm.MsDataFiles.Add(realDataLoaded.MsDataFiles.Values.First());
+        vm.SelectedMsDataFile = vm.MsDataFiles.First();
+        vm.Mode = DeconvolutionMode.IsolationRegion;
+
+        // Simulate identified scans
+        var scanCount = vm.Scans.Count;
+
+        var acceptableScanNumbers = realPsms.Select(p => p.Ms2ScanNumber)
+            .ToHashSet();
+
+        vm.OnlyIdentifiedScans = true;
+        var scanCountAfterFilter = vm.Scans.Count;
+        Assert.That(scanCountAfterFilter, Is.LessThan(scanCount));
+        var expectedScanNumbers = acceptableScanNumbers.Intersect(vm.Scans.Select(s => s.OneBasedScanNumber)).ToHashSet();
+        var actualScanNumbers = vm.Scans.Select(s => s.OneBasedScanNumber).ToHashSet();
+
+        Assert.That(actualScanNumbers, Is.EquivalentTo(expectedScanNumbers));
+        Assert.That(vm.Scans.All(s => s.MsnOrder == 2));
     }
 }

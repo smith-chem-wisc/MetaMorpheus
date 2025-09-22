@@ -22,7 +22,7 @@ namespace GuiFunctions.MetaDraw;
 public class BioPolymerTabViewModel : MetaDrawTabViewModel
 {
     private Dictionary<string, IBioPolymer> _allBioPolymers;
-    private MetaDrawLogic _metaDrawLogic;
+    private readonly MetaDrawLogic _metaDrawLogic;
     public override string TabHeader { get; init; } = "BioPolymer Coverage";
 
     public BioPolymerTabViewModel(MetaDrawLogic metaDrawLogic, string exportDirectory = null)

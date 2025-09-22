@@ -104,7 +104,7 @@ public class MetaDrawDataLoaderTests
     [Test]
     public void ProcessDeconTab_EnablesTabAndSetsExportDirectory()
     {
-        var deconTab = new DeconExplorationTabViewModel();
+        var deconTab = new DeconExplorationTabViewModel(logic);
         logic.MsDataFiles.Clear();
         logic.MsDataFiles.Add("test", msDataFile);
         loader.GetType().GetMethod("ProcessDeconTab", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
@@ -180,7 +180,7 @@ public class MetaDrawDataLoaderTests
         logic.SpectraFilePaths.Add("file2.raw");
         logic.SpectralMatchResultFilePaths.Add("psm1.psmtsv");
         logic.SpectralLibraryPaths.Add("lib1.msp");
-        var tab = new DeconExplorationTabViewModel();
+        var tab = new DeconExplorationTabViewModel(logic);
         tab.IsTabEnabled = false;
         var cts = new CancellationTokenSource();
         cts.Cancel();
@@ -224,7 +224,7 @@ public class MetaDrawDataLoaderTests
         logic.SpectralMatchResultFilePaths.Add(smPath);
         var bioTab = new BioPolymerTabViewModel(logic, "C:\\Export");
         bioTab.DatabasePath = dbPath;
-        var deconTab = new DeconExplorationTabViewModel();
+        var deconTab = new DeconExplorationTabViewModel(logic);
         var chimeraTab = new ChimeraAnalysisTabViewModel("C:\\Export");
 
         var errors = loader.LoadAllAsync(

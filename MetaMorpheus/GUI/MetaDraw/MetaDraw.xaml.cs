@@ -58,7 +58,7 @@ namespace MetaMorpheusGUI
 
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
             ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel();
-            DeconExplorationViewModel = new DeconExplorationTabViewModel();
+            DeconExplorationViewModel = new DeconExplorationTabViewModel(MetaDrawLogic);
 
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));

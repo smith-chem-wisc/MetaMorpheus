@@ -90,7 +90,7 @@ public class DeconvolutionPlot : MassSpectrumPlot
         // Isolation Region
         else
         {
-            Model.Title = $"Scan {scan.OneBasedScanNumber} (MS{scan.MsnOrder}) - Isolation Window {isolationRange.Minimum}-{isolationRange.Maximum} m/z";
+            Model.Title = $"Scan {scan.OneBasedScanNumber} (MS{scan.MsnOrder}) - Isolation Window {isolationRange.Minimum:F2}-{isolationRange.Maximum:F2} m/z";
 
             var extracted = scan.MassSpectrum.Extract(isolationRange);
             double maxIntensity = 0;
