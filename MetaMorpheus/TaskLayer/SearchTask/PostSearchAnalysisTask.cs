@@ -639,10 +639,11 @@ namespace TaskLayer
                             }
 
                             PositionFrequencyAnalysis pfa = new PositionFrequencyAnalysis();
-                            pfa.CalculateOccupancies(peptides, false); // one-based indexes, ignores terminal mods on all peptides.
+                            var proteins = proteinGroup.Proteins.Select(p => new KeyValuePair<string, string>(p.Accession, p.BaseSequence)).ToDictionary();
+                            pfa.SetUpQuantificationObjectsFromFullSequences(peptides, proteins); // one-based indexes, ignores terminal mods on all peptides.
 
                             // set the one-based start index in protein for each peptide
-                            foreach (var protein in pfa.ProteinGroupOccupancies.First().Value.Proteins.Values)
+                            foreach (var protein in pfa.ProteinGroups.First().Value.Proteins.Values)
                             {
                                 if (protein.Sequence == null)
                                 {
@@ -655,14 +656,14 @@ namespace TaskLayer
                                         && !peptideBaseSequencesSeen.Contains(peptide.BaseSequence))
                                     {
                                         protein.Peptides[peptide.BaseSequence]
-                                            .OneBasedStartIndexInProtein = peptide.OneBasedStartResidueInProtein;
+                                            .OneBasedStartIndexInProtein = peptide.OneBasedStartResidue;
 
                                         peptideBaseSequencesSeen.Add(peptide.BaseSequence);
                                     }
                                 }
                             }
 
-                            proteinGroup.ModsInfo.Add(spectraFile, pfa.ProteinGroupOccupancies.First().Value); // Getting stoich one protein group at a time, so only getting First() is ok here.
+                            proteinGroup.ModsInfo.Add(spectraFile, pfa.ProteinGroups.First().Value); // Getting stoich one protein group at a time, so only getting First() is ok here.
 
                         }
                     }
