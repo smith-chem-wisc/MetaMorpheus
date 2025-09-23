@@ -16,6 +16,7 @@ using Readers;
 using SpectralAveraging;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using TaskLayer;
@@ -1912,8 +1913,8 @@ namespace Test
             string OPpath = "E:\\GlycoSearch_WritePrunedDb\\Lue's data\\GlycoSearchWriteDb\\Task1-GlycoSearchTask\\oglyco.psmtsv";
             string OP_ZeroPath = "E:\\GlycoSearch_WritePrunedDb\\Lue's data\\OPSearch_withZero\\Task1-GlycoSearchTask\\AllPSMs.psmtsv";
 
-            HashSet<string> MT = new HashSet<string>();
-            HashSet<string> OP = new HashSet<string>();
+            //HashSet<string> MT = new HashSet<string>();
+            Dictionary<string, string> OP = new Dictionary<string, string>();
             HashSet<string> OP_Zero = new HashSet<string>();
 
             foreach (var line in File.ReadAllLines(OP_ZeroPath).Skip(0))
@@ -1938,6 +1939,7 @@ namespace Test
                 var Full = line.Split('\t')[13];
                 string decoy = line.Split('\t')[24];
                 double qvalue = Double.Parse(line.Split('\t')[25]);
+                string level = line.Split('\t')[38];
 
                 if (qvalue > 0.01 || decoy == "D")
                 {
@@ -1949,49 +1951,51 @@ namespace Test
                     var list = Full.Split('|').ToList();
                     foreach (var full in list)
                     {
-                        OP.Add(full);
+                        OP[full] = level;
                     }
                 }
                 else
                 {
-                    OP.Add(Full);
+                    OP[Full] = level;
                 }
             }
 
-            foreach (var line in File.ReadAllLines(MTpath).Skip(0))
-            {
-                var Full = line.Split('\t')[14];
-                if(!Full.Contains('[')) continue;
-                if (Full.Contains('|'))
-                {
-                    var list = Full.Split('|').ToList();
-                    foreach (var full in list)
-                    {
-                        MT.Add(full);
-                    }
-                }
-                else
-                {
-                    MT.Add(Full);
-                }
-            }
+            //foreach (var line in File.ReadAllLines(MTpath).Skip(0))
+            //{
+            //    var Full = line.Split('\t')[14];
+            //    if(!Full.Contains('[')) continue;
+            //    if (Full.Contains('|'))
+            //    {
+            //        var list = Full.Split('|').ToList();
+            //        foreach (var full in list)
+            //        {
+            //            MT.Add(full);
+            //        }
+            //    }
+            //    else
+            //    {
+            //        MT.Add(Full);
+            //    }
+            //}
 
-            HashSet<string> miss = new HashSet<string>();
-            HashSet<string> hit = new HashSet<string>();
+            Dictionary<string, string> hit = new Dictionary<string, string>();
+            Dictionary<string, string> miss = new Dictionary<string, string>();
             foreach (var glyco in OP)
             {
-                if (!MT.Contains(glyco))
+                if (!OP_Zero.Contains(glyco.Key))
                 {
-                    miss.Add(glyco);
+                    miss[glyco.Key] = glyco.Value;
                 }
                 else
                 {
-                    hit.Add(glyco);
+                    hit[glyco.Key] = glyco.Value; ;
                 }
             }
 
             string output = "E:\\GlycoSearch_WritePrunedDb\\Lue's data\\missSeq_MT.txt";
-            File.WriteAllLines(output,miss.ToList());
+            File.WriteAllLines(output,miss.Keys.ToList());
+            var gruop = miss.GroupBy(p => p.Value);
+            int ooo = 0;
         }
     }
 }
