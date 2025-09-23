@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Media;
 using Readers;
+using System.Threading;
 
 namespace Test.MetaDraw;
 
@@ -246,6 +247,7 @@ public class BioPolymerCoverageMapViewModelTests
         var method = typeof(BioPolymerTabViewModel)
             .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         method.Invoke(tabVm, null);
+        Thread.Sleep(1000); // wait for async load
         Assert.That(tabVm.IsDatabaseLoaded, Is.True);
 
         // Plot every group

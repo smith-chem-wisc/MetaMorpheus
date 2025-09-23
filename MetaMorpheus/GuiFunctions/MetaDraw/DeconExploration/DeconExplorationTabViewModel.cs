@@ -5,10 +5,12 @@ using MassSpectrometry;
 using MathNet.Numerics;
 using MzLibUtil;
 using OxyPlot.Wpf;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
 
@@ -40,8 +42,14 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
             if (_selectedMsDataFile == value) return;
             _selectedMsDataFile = value;
 
-            PopulateScansCollection();
-            OnPropertyChanged(nameof(SelectedMsDataFile));
+            if (_selectedMsDataFile?.CheckIfScansLoaded() == false)
+                IsLoading = true;
+
+            Task.Run(PopulateScansCollection).ContinueWith(t =>
+            {
+                IsLoading = false;
+                OnPropertyChanged(nameof(SelectedMsDataFile));
+            });
         }
     }
 
@@ -93,6 +101,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         RunDeconvolutionCommand = new DelegateCommand(pv => RunDeconvolution((pv as PlotView)!));
 
         BindingOperations.EnableCollectionSynchronization(MsDataFiles, ThreadLocker);
+        BindingOperations.EnableCollectionSynchronization(Scans, ThreadLocker);
         _metaDrawLogic = metaDrawLogic;
     }
 

@@ -12,6 +12,7 @@ public abstract class MetaDrawTabViewModel : BaseViewModel
     protected object ThreadLocker { get; } = new();
     public abstract string TabHeader { get; init; }
 
+    // Used when tab is loading externally to disable the tab (from MetaDrawDataLoader)
     private bool _isTabEnabled;
     public bool IsTabEnabled
     {
@@ -32,6 +33,19 @@ public abstract class MetaDrawTabViewModel : BaseViewModel
         {
             _exportDirectory = value;
             OnPropertyChanged(nameof(ExportDirectory));
+        }
+    }
+
+    // Used when the tab is loading internally (adding a database or loading a file)
+    private bool _isLoading;
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set
+        {
+            if (_isLoading == value) return;
+            _isLoading = value;
+            OnPropertyChanged(nameof(IsLoading));
         }
     }
 }

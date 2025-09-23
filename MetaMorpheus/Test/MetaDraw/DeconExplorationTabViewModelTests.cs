@@ -56,6 +56,7 @@ public class DeconExplorationTabViewModelTests
         vm.Mode = DeconvolutionMode.FullSpectrum;
         vm.SelectedMsDataFile = msDataFile;
 
+        Thread.Sleep(3000); // wait for async load
         Assert.That(vm.Scans.Count, Is.EqualTo(msDataFile.GetMsDataScans().Count()));
     }
 
@@ -167,6 +168,7 @@ public class DeconExplorationTabViewModelTests
         var vm = new DeconExplorationTabViewModel(realDataLoaded);
         vm.MsDataFiles.Add(realDataLoaded.MsDataFiles.Values.First());
         vm.SelectedMsDataFile = vm.MsDataFiles.First();
+        Thread.Sleep(2000); // wait for async load
         vm.Mode = DeconvolutionMode.IsolationRegion;
 
         // Simulate identified scans

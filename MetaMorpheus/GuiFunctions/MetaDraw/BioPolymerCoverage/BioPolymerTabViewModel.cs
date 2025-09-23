@@ -5,12 +5,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Easy.Common.Extensions;
+using EngineLayer;
 using MzLibUtil;
 using Omics;
 using Readers;
@@ -90,20 +92,35 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
             return;
         try
         {
-            _allBioPolymers = new SearchTask().LoadBioPolymers("", new()
-                { new DbForTask(DatabasePath, false) }, true, DecoyType.None, new(), new())
-                .ToDictionary(p => p.Accession, p => p);
+            IsLoading = true;
 
-            if (_allBioPolymers.Count == 0) 
-                return;
+            Task.Run(() =>
+            {
+                _allBioPolymers = new SearchTask().LoadBioPolymers("", new()
+                        { new DbForTask(DatabasePath, false) }, true, DecoyType.None, new(), new())
+                    .ToDictionary(p => p.Accession, p => p);
+            }).ContinueWith(t =>
+            {
+                if (_allBioPolymers.Count == 0)
+                {
+                    MessageBox.Show($"No {GlobalVariables.AnalyteType.GetBioPolymerLabel()} loaded from database.");
+                    return;
+                }
 
-            IsDatabaseLoaded = true;
-            if (_metaDrawLogic.AllSpectralMatches != null && _metaDrawLogic.AllSpectralMatches.Count > 0)
-                ProcessSpectralMatches(_metaDrawLogic.AllSpectralMatches);
+                IsDatabaseLoaded = true;
+                if (_metaDrawLogic.AllSpectralMatches is { Count: > 0 })
+                    ProcessSpectralMatches(_metaDrawLogic.AllSpectralMatches);
+            }).ContinueWith(t =>
+            {
+                if (AllGroups.Count == 0)
+                    MessageBox.Show($"Database loaded, but no {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s matched by accession.");
+
+                IsLoading = false;
+            });
         }
         catch (Exception e)
         {
-            // do nothing
+            MessageBox.Show($"An error occurred while loading the database with message {e.Message}\n{e.StackTrace}");
         }
     }
 

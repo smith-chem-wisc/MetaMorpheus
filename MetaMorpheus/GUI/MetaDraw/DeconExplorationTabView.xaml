@@ -82,6 +82,19 @@
                                         Binding="{Binding OneBasedPrecursorScanNumber}" Width="88" />
                 </DataGrid.Columns>
             </DataGrid>
+
+            <!-- Loading overlay -->
+            <Grid x:Name="LoadingOverlay" Grid.Column="0"  Grid.Row="5"  Grid.ColumnSpan="2" Margin="0, 4, 0, 12"
+                  Visibility="{Binding IsLoading, Converter={local:BooleanToVisibilityConverter}}"
+
+                  Background="#80000000"
+                  Panel.ZIndex="100">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True" Width="120" Height="18" Margin="0,0,0,8"/>
+                    <TextBlock Text="Loading..." Foreground="White" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+            
             <Button Grid.Column="0"  Grid.Row="6"  Grid.ColumnSpan="2" Content="Run Deconvolution" Style="{StaticResource MetaDrawButtonStyle}"
                     Command="{Binding RunDeconvolutionCommand}"
                     CommandParameter="{Binding ElementName=DeconPlot}"

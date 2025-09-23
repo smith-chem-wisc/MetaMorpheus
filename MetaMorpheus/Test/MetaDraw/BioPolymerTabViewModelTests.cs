@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Media;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
@@ -259,6 +260,7 @@ namespace Test.MetaDraw
             var method = typeof(BioPolymerTabViewModel)
                 .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             method.Invoke(vm, null);
+            Thread.Sleep(1000); // wait for async load
             Assert.That(vm.IsDatabaseLoaded, Is.True);
         }
 

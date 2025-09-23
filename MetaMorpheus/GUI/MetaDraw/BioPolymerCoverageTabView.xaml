@@ -103,6 +103,18 @@
                     </Grid>
                 </GroupBox>
 
+                <!-- Loading overlay -->
+                <Grid x:Name="LoadOverlay" Grid.Row="4" Margin="2 16 2 4"
+                      Visibility="{Binding IsLoading, Converter={local:BooleanToVisibilityConverter}}"
+
+                      Background="#80000000"
+                      Panel.ZIndex="100">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <ProgressBar IsIndeterminate="True" Width="120" Height="18" Margin="0,0,0,8"/>
+                        <TextBlock Text="Loading..." Foreground="White" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
                 <!-- Export -->
                 <DockPanel Grid.Row="5" LastChildFill="True"  HorizontalAlignment="Center">
                     <Label Content="Export As: "  DockPanel.Dock="Left"/>
