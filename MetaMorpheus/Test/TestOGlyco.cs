@@ -16,7 +16,6 @@ using Readers;
 using SpectralAveraging;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using TaskLayer;

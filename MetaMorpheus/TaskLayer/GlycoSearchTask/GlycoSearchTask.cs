@@ -16,7 +16,6 @@ using System.Text.RegularExpressions;
 using FlashLFQ;
 using Omics;
 using Readers;
-using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
