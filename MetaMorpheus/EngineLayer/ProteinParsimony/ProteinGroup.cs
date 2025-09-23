@@ -10,8 +10,10 @@ using ThermoFisher.CommonCore.Data;
 using Omics;
 using Transcriptomics.Digestion;
 using MzLibUtil;
+using MzLibUtil.PositionFrequencyAnalysis;
 using Easy.Common.Extensions;
 using SharpLearning.InputOutput.Csv;
+using MzLibUtil.PositionFrequencyAnalysis;
 
 namespace EngineLayer
 {
@@ -92,7 +94,6 @@ namespace EngineLayer
         public bool DisplayModsOnPeptides { get; set; }
 
         public Dictionary<SpectraFileInfo, QuantifiedProteinGroup> ModsInfo { get; set; }
-
         public Dictionary<SpectraFileInfo, double> IntensitiesByFile { get; set; }
 
         private List<IBioPolymer> ListOfProteinsOrderedByAccession;
@@ -411,7 +412,7 @@ namespace EngineLayer
                     }
                 }
 
-                var proteinGroupOccupanciesPerProtein = modsInfo.Proteins.Values.Select(x => new KeyValuePair<QuantifiedProtein, Dictionary<int, Dictionary<string, QuantifiedModification>>>
+                var proteinGroupOccupanciesPerProtein = modsInfo.Proteins.Values.Select(x => new KeyValuePair<QuantifiedProtein, Dictionary<int, Dictionary<string, double>>>
                                                                                             (x, x.GetModStoichiometryFromProteinMods())).ToDictionary(x => x.Key, x => x.Value);
 
                 foreach (var protein in proteinGroupOccupanciesPerProtein.Keys)
@@ -422,18 +423,18 @@ namespace EngineLayer
                     }
 
                     modInfoString.Append(protein.Accession + ":{");
-                    var protSeq = Proteins.Where(prot => prot.Accession == protein.Accession).Select(prot => prot.BaseSequence).ToList();
+                    var protSeq = Proteins.Where(prot => prot.Accession == protein.Accession).First().BaseSequence;
 
                     foreach (var modpos in proteinGroupOccupanciesPerProtein[protein].Keys.Order())
                     {
-                        var loc = modpos == 0 ? "N-term" : modpos == protein.Sequence.Length + 1 ? "C-term" : "aa#" + modpos.ToString(); //something's worng with the positions sometimes being longer than the sequence
+                        var loc = modpos == 0 ? "N-term" : modpos == protein.Sequence.Length + 1 ? "C-term" : $"{protSeq[modpos-1]}#" + modpos.ToString(); //something's worng with the positions sometimes being longer than the sequence
                         modInfoString.Append(loc);
 
                         var modStrings = new List<string>();
                         var modposTotalIntensity = protein.Peptides.Where(x => protein.PeptidesByProteinPosition[modpos].Contains(x.Value.BaseSequence)).Sum(x => x.Value.Intensity);
                         foreach (var mod in proteinGroupOccupanciesPerProtein[protein][modpos])
                         {
-                            modStrings.Add($"{mod.Key}, info: occupancy={mod.Value.Intensity.ToString("N4")}({modposTotalIntensity})");
+                            modStrings.Add($"{mod.Key}, info: occupancy={mod.Value.ToString("N4")}({modposTotalIntensity})");
                         }
                         modInfoString.Append("[" + string.Join(";", modStrings) + "]");
                     }
@@ -741,7 +742,7 @@ namespace EngineLayer
                 spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath)
                     .FirstOrDefault();
                 //check that file name wasn't changed (can occur in SILAC searches)
-                if (!silacLabels.IsNullOrEmpty() && spectraFileInfo == null)
+                if (!MzLibUtil.ClassExtensions.IsNullOrEmpty(silacLabels) && spectraFileInfo == null)
                 {
                     foreach (SilacLabel label in silacLabels)
                     {
