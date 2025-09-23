@@ -155,14 +155,14 @@ namespace EngineLayer.DIA
                 // If the fragment XIC is mass-based, we create an isotopic envelope as the neutral mass fragment for each fragment XIC
                 case PseudoMs2ConstructionType.Mass:
                     neutralExperimentalFragments = pfGroup.PFpairs.Select(pf => new IsotopicEnvelope(1,
-                            new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.AveragedMassOrMz, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
+                            new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.ApexPeak.M, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
                     break;
                 default:
                     throw new MetaMorpheusException("Invalid pseudo MS2 construction type specified.");
             }
             // add precursor information
-            var charge = pfGroup.PrecursorXic.Peaks.Cast<IndexedMass>().First().Charge;
-            var monoMz = pfGroup.PrecursorXic.Peaks.Cast<IndexedMass>().First().M.ToMz(charge);
+            var charge = pfGroup.PrecursorXic.Peaks.First() is IndexedMass im ? im.Charge : 1;
+            var monoMz = pfGroup.PrecursorXic.Peaks.First() is IndexedMass im2 ? im2.M.ToMz(charge) : pfGroup.PrecursorXic.ApexPeak.M;
             Ms2ScanWithSpecificMass scanWithprecursor = new Ms2ScanWithSpecificMass(newMs2Scan, monoMz, charge, dataFilePath,
                 commonParameters, neutralExperimentalFragments);
 
