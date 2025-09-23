@@ -76,8 +76,11 @@ public class DeconExplorationTabViewModelTests
         var vm = new DeconExplorationTabViewModel(metaDrawLogic);
         vm.SelectedMsDataFile = msDataFile;
         vm.Mode = DeconvolutionMode.FullSpectrum;
+        Thread.Sleep(1000); // wait for async load
+
         int allCount = vm.Scans.Count;
         vm.Mode = DeconvolutionMode.IsolationRegion;
+        Thread.Sleep(1000); // wait for async load
         int ms2Count = vm.Scans.Count;
 
         Assert.That(allCount, Is.GreaterThan(ms2Count));
@@ -146,6 +149,7 @@ public class DeconExplorationTabViewModelTests
         vm.MsDataFiles.Add(realDataLoaded.MsDataFiles.Values.First());
         vm.SelectedMsDataFile = vm.MsDataFiles.First();
         vm.Mode = DeconvolutionMode.FullSpectrum;
+        Thread.Sleep(1000); // wait for async load
 
         // Simulate identified scans
         var scanCount = vm.Scans.Count;
@@ -154,6 +158,7 @@ public class DeconExplorationTabViewModelTests
             .Concat(realPsms.Select(p => p.PrecursorScanNum)).ToHashSet();
 
         vm.OnlyIdentifiedScans = true;
+        Thread.Sleep(1000); // wait for async load
         var scanCountAfterFilter = vm.Scans.Count;
         Assert.That(scanCountAfterFilter, Is.LessThan(scanCount));
         var expectedScanNumbers = acceptableScanNumbers.Intersect(vm.Scans.Select(s => s.OneBasedScanNumber)).ToHashSet();
@@ -168,8 +173,8 @@ public class DeconExplorationTabViewModelTests
         var vm = new DeconExplorationTabViewModel(realDataLoaded);
         vm.MsDataFiles.Add(realDataLoaded.MsDataFiles.Values.First());
         vm.SelectedMsDataFile = vm.MsDataFiles.First();
-        Thread.Sleep(2000); // wait for async load
         vm.Mode = DeconvolutionMode.IsolationRegion;
+        Thread.Sleep(1000); // wait for async load
 
         // Simulate identified scans
         var scanCount = vm.Scans.Count;
@@ -178,6 +183,7 @@ public class DeconExplorationTabViewModelTests
             .ToHashSet();
 
         vm.OnlyIdentifiedScans = true;
+        Thread.Sleep(1000); // wait for async load
         var scanCountAfterFilter = vm.Scans.Count;
         Assert.That(scanCountAfterFilter, Is.LessThan(scanCount));
         var expectedScanNumbers = acceptableScanNumbers.Intersect(vm.Scans.Select(s => s.OneBasedScanNumber)).ToHashSet();

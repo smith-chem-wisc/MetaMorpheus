@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -25,13 +26,25 @@ public enum DeconvolutionMode
 public class DeconExplorationTabViewModel : MetaDrawTabViewModel
 {
     private readonly MetaDrawLogic _metaDrawLogic;
+    private readonly SemaphoreSlim _populateScansSemaphore = new(1, 1);
+
     public override string TabHeader { get; init; } = "Deconvolution Exploration";
     public ObservableCollection<MsDataFile> MsDataFiles { get; set; } = new();
     public ObservableCollection<MsDataScan> Scans { get; set; } = new();
     public ObservableCollection<DeconvolutedSpeciesViewModel> DeconvolutedSpecies { get; set; } = new();
     public DeconvolutionPlot? Plot { get; set; }
     public List<DeconvolutionMode> DeconvolutionModes { get; } = System.Enum.GetValues<DeconvolutionMode>().ToList();
-    public DeconHostViewModel DeconHostViewModel { get; set; } = new();
+
+    private DeconHostViewModel _deconHostViewModel = new();
+    public DeconHostViewModel DeconHostViewModel
+    {
+        get => _deconHostViewModel;
+        set
+        {
+            _deconHostViewModel = value;
+            OnPropertyChanged(nameof(DeconHostViewModel));
+        }
+    }
 
     private MsDataFile? _selectedMsDataFile;
     public MsDataFile? SelectedMsDataFile
@@ -42,14 +55,8 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
             if (_selectedMsDataFile == value) return;
             _selectedMsDataFile = value;
 
-            if (_selectedMsDataFile?.CheckIfScansLoaded() == false)
-                IsLoading = true;
-
-            Task.Run(PopulateScansCollection).ContinueWith(t =>
-            {
-                IsLoading = false;
-                OnPropertyChanged(nameof(SelectedMsDataFile));
-            });
+            _ = PopulateScansCollection();
+            OnPropertyChanged(nameof(SelectedMsDataFile));
         }
     }
 
@@ -65,7 +72,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         }
     }
 
-    private DeconvolutionMode _mode;
+    private DeconvolutionMode _mode = DeconvolutionMode.IsolationRegion;
     public DeconvolutionMode Mode
     {
         get => _mode;
@@ -74,7 +81,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
             if (_mode == value) return;
             _mode = value;
 
-            PopulateScansCollection();
+            _ = PopulateScansCollection();
             OnPropertyChanged(nameof(Mode));
         }
     }
@@ -88,7 +95,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
             if (_onlyIdentifiedScans == value) return;
             _onlyIdentifiedScans = value;
 
-            PopulateScansCollection();
+            _ = PopulateScansCollection();
             OnPropertyChanged(nameof(OnlyIdentifiedScans));
         }
     }
@@ -97,7 +104,6 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
 
     public DeconExplorationTabViewModel(MetaDrawLogic metaDrawLogic)
     {
-        Mode = DeconvolutionMode.IsolationRegion;
         RunDeconvolutionCommand = new DelegateCommand(pv => RunDeconvolution((pv as PlotView)!));
 
         BindingOperations.EnableCollectionSynchronization(MsDataFiles, ThreadLocker);
@@ -146,42 +152,70 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         => scan.GetIsolatedMassesAndCharges(precursorScan, DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters)
         .Select(envelope => new DeconvolutedSpeciesViewModel(envelope));
 
-    private void PopulateScansCollection()
+    private async Task PopulateScansCollection()
     {
-        Scans.Clear();
-
-        if (SelectedMsDataFile == null)
-            return;
-
-        IEnumerable<MsDataScan> scansToDisplay = _mode switch
+        await _populateScansSemaphore.WaitAsync();
+        try
         {
-            DeconvolutionMode.IsolationRegion => SelectedMsDataFile.GetMsDataScans().Where(scan => scan.MsnOrder == 2),
-            DeconvolutionMode.FullSpectrum => SelectedMsDataFile.GetMsDataScans(),
-            _ => []
-        };
+            Scans.Clear();
 
-        if (OnlyIdentifiedScans)
-        {
-            var key = Path.GetFileName(SelectedMsDataFile.FilePath.Replace(GlobalVariables.GetFileExtension(SelectedMsDataFile.FilePath), string.Empty));
-            if (_metaDrawLogic.SpectralMatchesGroupedByFile.TryGetValue(key, out var matches))
+            if (SelectedMsDataFile == null)
+                return;
+
+            IsLoading = true;
+            try
             {
-                HashSet<int> scanNumbers;
-                if (_mode == DeconvolutionMode.FullSpectrum)
+                var selectedMsDataFile = SelectedMsDataFile;
+                var mode = _mode;
+                var onlyIdentifiedScans = OnlyIdentifiedScans;
+                var metaDrawLogic = _metaDrawLogic;
+
+                // Run scan filtering on a background thread
+                var scansToDisplay = await Task.Run(() =>
                 {
-                    scanNumbers = matches.Select(m => m.Ms2ScanNumber)
-                        .Concat(matches.Select(m => m.PrecursorScanNum))
-                        .ToHashSet();
-                }
-                else
-                {
-                    scanNumbers = matches.Select(m => m.Ms2ScanNumber)
-                        .ToHashSet();
-                }
-                scansToDisplay = scansToDisplay.Where(scan => scanNumbers.Contains(scan.OneBasedScanNumber));
+                    IEnumerable<MsDataScan> scans = mode switch
+                    {
+                        DeconvolutionMode.IsolationRegion => selectedMsDataFile.GetMsDataScans().Where(scan => scan.MsnOrder == 2),
+                        DeconvolutionMode.FullSpectrum => selectedMsDataFile.GetMsDataScans(),
+                        _ => Enumerable.Empty<MsDataScan>()
+                    };
+
+                    if (onlyIdentifiedScans)
+                    {
+                        var key = Path.GetFileName(selectedMsDataFile.FilePath.Replace(GlobalVariables.GetFileExtension(selectedMsDataFile.FilePath), string.Empty));
+                        if (metaDrawLogic.SpectralMatchesGroupedByFile.TryGetValue(key, out var matches))
+                        {
+                            HashSet<int> scanNumbers;
+                            if (mode == DeconvolutionMode.FullSpectrum)
+                            {
+                                scanNumbers = matches.Select(m => m.Ms2ScanNumber)
+                                    .Concat(matches.Select(m => m.PrecursorScanNum))
+                                    .ToHashSet();
+                            }
+                            else
+                            {
+                                scanNumbers = matches.Select(m => m.Ms2ScanNumber)
+                                    .ToHashSet();
+                            }
+                            scans = scans.Where(scan => scanNumbers.Contains(scan.OneBasedScanNumber));
+                        }
+                    }
+
+                    return scans;
+                });
+
+                foreach (var scan in scansToDisplay)
+                    Scans.Add(scan);
+            }
+            catch (Exception e) { MessageBoxHelper.Warn($"An error occurred while populating the scan collection:\n{e}"); }
+            finally
+            {
+                IsLoading = false;
             }
         }
-
-        foreach (var scan in scansToDisplay)
-            Scans.Add(scan);
+        finally
+        {
+            _populateScansSemaphore.Release();
+        }
     }
 }

@@ -86,41 +86,49 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
     public ICommand LoadDatabaseCommand { get; set; }
     public ICommand ResetDatabaseCommand { get; set; }
 
-    private void LoadDatabase()
+    private async void LoadDatabase()
     {
-        if (DatabasePath is null or "")
+        if (string.IsNullOrWhiteSpace(DatabasePath))
             return;
+
+        IsLoading = true;
         try
         {
-            IsLoading = true;
+            // Load biopolymers asynchronously
+            var bioPolymers = await Task.Run(() =>
+                new SearchTask().LoadBioPolymers(
+                    "", new() { new DbForTask(DatabasePath, false) }, true, DecoyType.None, new(), new())
+                .ToDictionary(p => p.Accession, p => p)
+            );
 
-            Task.Run(() =>
+            _allBioPolymers = bioPolymers;
+
+            if (_allBioPolymers.Count == 0)
             {
-                _allBioPolymers = new SearchTask().LoadBioPolymers("", new()
-                        { new DbForTask(DatabasePath, false) }, true, DecoyType.None, new(), new())
-                    .ToDictionary(p => p.Accession, p => p);
-            }).ContinueWith(t =>
+                MessageBoxHelper.Warn($"No {GlobalVariables.AnalyteType.GetBioPolymerLabel()} loaded from database.");
+                return;
+            }
+
+            IsDatabaseLoaded = true;
+
+            if (_metaDrawLogic.AllSpectralMatches is { Count: > 0 })
             {
-                if (_allBioPolymers.Count == 0)
+                try
                 {
-                    MessageBox.Show($"No {GlobalVariables.AnalyteType.GetBioPolymerLabel()} loaded from database.");
-                    return;
-                }
-
-                IsDatabaseLoaded = true;
-                if (_metaDrawLogic.AllSpectralMatches is { Count: > 0 })
                     ProcessSpectralMatches(_metaDrawLogic.AllSpectralMatches);
-            }).ContinueWith(t =>
-            {
-                if (AllGroups.Count == 0)
-                    MessageBox.Show($"Database loaded, but no {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s matched by accession.");
+                }
+                catch (Exception ex) { MessageBoxHelper.Warn($"Error processing spectral matches: {ex.Message}"); }
+            }
 
-                IsLoading = false;
-            });
+            if (AllGroups.Count == 0)
+            {
+                MessageBoxHelper.Warn($"Database loaded, but no {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s matched by accession.");
+            }
         }
-        catch (Exception e)
+        catch (Exception e) { MessageBoxHelper.Warn($"An error occurred while loading the database:\n{e}"); }
+        finally
         {
-            MessageBox.Show($"An error occurred while loading the database with message {e.Message}\n{e.StackTrace}");
+            IsLoading = false;
         }
     }
 

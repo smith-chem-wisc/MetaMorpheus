@@ -1862,6 +1862,8 @@ namespace Test.MetaDraw
             var stationaryCanvas = new Canvas();
             var parentChildScanPlotsView = new ParentChildScanPlotsView();
             string tempDir = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "RefragmentTest");
+            if (Directory.Exists(tempDir))
+                Directory.Delete(tempDir, true);
             Directory.CreateDirectory(tempDir);
 
             // Act

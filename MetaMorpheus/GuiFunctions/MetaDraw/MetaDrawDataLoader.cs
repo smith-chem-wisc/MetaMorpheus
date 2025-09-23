@@ -11,6 +11,10 @@ using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Collections.Concurrent;
 using System.IO;
+using Readers.InternalResults;
+using MassSpectrometry;
+using Nett;
+using TaskLayer;
 
 namespace GuiFunctions.MetaDraw;
 
@@ -49,6 +53,9 @@ public class MetaDrawDataLoader
         var spectraTask = loadSpectra ? LoadSpectraAsync(token) : Task.FromResult(new List<string>());
         var psmsTask = loadPsms ? LoadPsmsAsync(loadSpectra, token) : Task.FromResult(new List<string>());
         var librariesTask = loadLibraries ? LoadLibrariesAsync(token) : Task.FromResult(new List<string>());
+        var proseAndTomlTask = _logic.SpectralMatchResultFilePaths.Any()
+            ? TryLoadProseAndSearchToml(bioPolymerTabViewModel, deconExplorationTabViewModel)
+            : Task.FromResult((false, false));
 
         List<string>[] results;
         try 
@@ -68,6 +75,7 @@ public class MetaDrawDataLoader
         else
             outputDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
+        await proseAndTomlTask;
         // Tabs: run in background, post minimal changes to UI
         if (bioPolymerTabViewModel is not null && _logic.AllSpectralMatches.Any())
             Task.Run(() => ProcessBioPolymerTab(bioPolymerTabViewModel, outputDirectory, token), token);
@@ -85,8 +93,8 @@ public class MetaDrawDataLoader
     public async Task<List<string>> LoadSpectraAsync(CancellationToken token)
     {
         var errors = new ConcurrentBag<string>();
-        var files = _logic.SpectraFilePaths;
-        var total = files.Count;
+        var files = _logic.SpectraFilePaths.Where(path => File.Exists(path) || Directory.Exists(path)).ToArray();
+        var total = files.Length;
         ReportProgress(StepSpectra, 0, total);
 
         var maxDeg = Math.Max(2, Math.Min(Environment.ProcessorCount, 8));
@@ -263,6 +271,112 @@ public class MetaDrawDataLoader
         }
 
         return errors;
+    }
+
+    public async Task<(bool Database, bool SearchParams)> TryLoadProseAndSearchToml(BioPolymerTabViewModel? bpTabVm, DeconExplorationTabViewModel? deconTabVm)
+    {
+        bool loadedDb = false;
+        bool loadedSearchParams = false;
+
+        var searchDirectories = _logic.SpectralMatchResultFilePaths
+            .Select(Path.GetDirectoryName)
+            .Where(p => p != null)
+            .Select(p =>
+            {
+                // If directory name contains "Individual File Results", go up one parent
+                if (Path.GetFileName(p)?.Contains("Individual File Results", StringComparison.OrdinalIgnoreCase) ?? false)
+                {
+                    var parent = Directory.GetParent(p!);
+                    return parent?.FullName ?? p;
+                }
+                return p;
+            })
+            .Distinct()
+            .ToArray();
+
+        if (!searchDirectories.Any())
+            return (loadedDb, loadedSearchParams);
+
+        // Try to find search tomls to load decon parameters. 
+        try
+        {
+            HashSet<string?> distinctSearchTomls = new();
+            foreach (var searchDir in searchDirectories)
+            {
+                if (searchDir == null) continue;
+
+                var parentDir = Directory.GetParent(searchDir)?.FullName ?? null;
+                var searchDirName = Path.GetFileName(searchDir);
+
+                if (parentDir == null) continue;
+
+                // Attempt to locate search toml
+                var settingsDir = Directory.GetDirectories(parentDir).FirstOrDefault(p => p.Contains("Task Settings"));
+                if (settingsDir != null)
+                    distinctSearchTomls.Add(
+                        Directory.GetFiles(settingsDir, $"*{searchDirName}config.toml").FirstOrDefault());
+            }
+
+            List<DeconvolutionParameters> precursorParameters = new();
+            List<DeconvolutionParameters> productParameters = new();
+
+            foreach (var searchToml in distinctSearchTomls.Where(p => p != null))
+            {
+                var task = Toml.ReadFile<SearchTask>(searchToml, MetaMorpheusTask.tomlConfig);
+                precursorParameters.Add(task.CommonParameters.PrecursorDeconvolutionParameters);
+                productParameters.Add(task.CommonParameters.ProductDeconvolutionParameters);
+            }
+
+            // IF we find params, and have multiple, take the last. 
+            // Not the best way to do it, but without an equality comparison on decon params, it's hard to know if they are different or identical. 
+            if (precursorParameters.Any() && productParameters.Any())
+            {
+                var precursor = precursorParameters.Last();
+                var product = productParameters.Last();
+                MetaDrawSettingsViewModel.Instance.DeconHostViewModel = new(precursor, product);
+                loadedSearchParams = true;
+
+                if (deconTabVm != null) 
+                {
+                    deconTabVm.DeconHostViewModel = new(precursor, product);
+                }
+            }
+        }
+        catch (Exception) { loadedSearchParams = false; }
+
+        if (bpTabVm is null)
+            return (loadedDb, loadedSearchParams);
+
+        string[] acceptableDbTypes = new[] { ".fasta", ".fa", ".xml" };
+
+        // Try to find databases from the prose files. 
+        try
+        {
+            List<string> databases = new();
+            foreach (var searchDir in searchDirectories)
+            {
+                if (searchDir == null) continue;
+                var proseFile = MetaMorpheusProseFile.LocateInDirectory(searchDir);
+                if (proseFile == null) continue;
+                databases.AddRange(proseFile.DatabasePaths);
+            }
+
+            // Db tab only supports one database at a time currently, pick the one which occurs the most, then first in order
+            foreach (var dbGroup in databases
+                .Where(p => File.Exists(p) && acceptableDbTypes.Any(p.Contains))
+                            .GroupBy(db => db, StringComparer.OrdinalIgnoreCase)
+                            .OrderByDescending(g => g.Count())
+                            .ThenBy(g => databases.IndexOf(g.Key)))
+            {
+                bpTabVm.DatabasePath = dbGroup.Key;
+                loadedDb = true;
+                break;
+            }
+        }
+        catch (Exception) { loadedDb = false; }
+
+
+        return (loadedDb, loadedSearchParams);
     }
 
     #endregion
