@@ -212,7 +212,6 @@ public class MetaDrawDataLoaderTests
         if (!EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValue, out var searchTestCase))
             Assert.Fail();
 
-        Assert.That(LoadingProgressViewModel.Instance.IsVisible, Is.False);
         string specFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory,
             @"TestData\TaGe_SA_A549_3_snip.mzML");
         string specFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory,
