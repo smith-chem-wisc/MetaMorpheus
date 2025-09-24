@@ -576,6 +576,13 @@ namespace MetaMorpheusGUI
         {
             foreach (var modType in TheTask._glycoSearchParameters.ModsToWriteSelection)
             {
+                //Key is modification type.
+
+                //Value is integer 0, 1, 2 and 3 interpreted as:
+                //   0:   Do not Write
+                //   1:   Write if in DB and Observed
+                //   2:   Write if in DB
+                //   3:   Write if Observed
                 var huhb = ModSelectionGridItems.FirstOrDefault(b => b.ModName == modType.Key);
                 if (huhb != null)
                 {

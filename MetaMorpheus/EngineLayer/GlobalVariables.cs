@@ -558,14 +558,10 @@ namespace EngineLayer
                     glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.N_glycan);
                     glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
                 }
-                else if (glycoMod.ModificationType == "O-linked glycosylation")
+                else
                 {
                     glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.O_glycan);
                     glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
-                }
-                else
-                {
-                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.other_glycan); // Still don't know how to deal with that
                 }
                 _AllModsKnown.Add(glycan);
             }
