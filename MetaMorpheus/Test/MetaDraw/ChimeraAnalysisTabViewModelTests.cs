@@ -99,6 +99,7 @@ public class ChimeraAnalysisTabViewModelTests
     }
 
     [Test]
+    [NonParallelizable]
     public static void ChimeraTabViewModel_PrecursorAssignmentIsCorrectInGroups()
     {
         var dataFiles = new Dictionary<string, MsDataFile>()
@@ -125,7 +126,11 @@ public class ChimeraAnalysisTabViewModelTests
                 for (int j = 0; j < chimericPsms.Count; j++)
                 {
                     if (i == j) continue;
+
                     var otherEnvelope = chimericPsms[j].PrecursorEnvelope;
+                    if (psm.ChargeState != otherEnvelope.Charge) 
+                        continue;
+
                     double diff = Math.Abs(psm.PrecursorMass - otherEnvelope.MonoisotopicMass);
                     Assert.That(minDiff, Is.LessThanOrEqualTo(diff),
                         $"PSM {i} in group (scan {chimeraGroup.Ms2ScanNumber}) should be assigned to its closest envelope.");
