@@ -16,7 +16,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
 using Chemistry;
 using MzLibUtil;
@@ -24,8 +23,6 @@ using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using Omics;
-using Readers.SpectralLibrary;
 
 namespace TaskLayer
 {

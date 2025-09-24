@@ -5,15 +5,12 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
 using FlashLFQ;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using pepXML.Generated;
 using Proteomics.ProteolyticDigestion;
 using Readers;
-using ThermoFisher.CommonCore.Data;
 using ProteinGroup = EngineLayer.ProteinGroup;
 using Omics;
 
