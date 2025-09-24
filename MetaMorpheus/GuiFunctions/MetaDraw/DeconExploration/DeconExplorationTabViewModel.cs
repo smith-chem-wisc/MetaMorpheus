@@ -8,12 +8,14 @@ using OxyPlot.Wpf;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace GuiFunctions;
 
@@ -100,9 +102,30 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         }
     }
 
+    private double minMzToPlot;
+    public double MinMzToPlot
+    {
+        get => minMzToPlot;
+        set
+        {
+            minMzToPlot = value;
+            OnPropertyChanged(nameof(MinMzToPlot));
+        }
+    }
+    private double maxMzToPlot;
+    public double MaxMzToPlot
+    {
+        get => maxMzToPlot;
+        set
+        {
+            maxMzToPlot = value;
+            OnPropertyChanged(nameof(MaxMzToPlot));
+        }
+    }
+
     public ICommand RunDeconvolutionCommand { get; }
 
-    public DeconExplorationTabViewModel(MetaDrawLogic metaDrawLogic)
+    public DeconExplorationTabViewModel(MetaDrawLogic? metaDrawLogic)
     {
         RunDeconvolutionCommand = new DelegateCommand(pv => RunDeconvolution((pv as PlotView)!));
 
@@ -122,7 +145,10 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
 
         if (Mode == DeconvolutionMode.FullSpectrum)
         {
-            isolationRange = null;
+            var min = MinMzToPlot > 0 ? MinMzToPlot : SelectedMsDataScan.MassSpectrum.Range.Minimum;
+            var max = MaxMzToPlot > 0 ? MaxMzToPlot : SelectedMsDataScan.MassSpectrum.Range.Maximum;
+            isolationRange = new MzRange(min, max);
+
             scanToPlot = SelectedMsDataScan;
             results = DeconvoluteFullSpectrum(scanToPlot);
         }
@@ -134,6 +160,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         }
 
         var sortedSpecies = results
+            .Where(p => isolationRange is null || p.Envelope.Peaks.Any(peak => isolationRange.Contains(peak.mz)))
             .OrderByDescending(p => p.MonoisotopicMass.Round(2))
             .ThenByDescending(p => p.Charge)
             .ToList();
@@ -141,7 +168,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         foreach (var species in sortedSpecies)
             DeconvolutedSpecies.Add(species);
 
-        Plot = new DeconvolutionPlot(plotView, scanToPlot, sortedSpecies, isolationRange);
+        Plot = new DeconvolutionPlot(plotView, scanToPlot, sortedSpecies, Mode, isolationRange);
     }
 
     private IEnumerable<DeconvolutedSpeciesViewModel> DeconvoluteFullSpectrum(MsDataScan scan) 
@@ -218,4 +245,11 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
             _populateScansSemaphore.Release();
         }
     }
+}
+
+
+[ExcludeFromCodeCoverage] // for design time display
+public class DeconTabModel() : DeconExplorationTabViewModel(new MetaDrawLogic())
+{
+    public static DeconTabModel Instance => new();
 }

@@ -110,6 +110,7 @@ public class DeconExplorationTabViewModelTests
     public void RunDeconvolutionCommand_IsolationRegionMode_PopulatesDeconvolutedSpecies()
     {
         var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+        Assert.That(vm.IsLoading, Is.False);
         vm.Mode = DeconvolutionMode.IsolationRegion;
         vm.SelectedMsDataFile = msDataFile;
         var ms2 = msDataFile.GetMsDataScans().FirstOrDefault(s => s.MsnOrder == 2);
@@ -119,6 +120,35 @@ public class DeconExplorationTabViewModelTests
         vm.RunDeconvolutionCommand.Execute(new PlotView());
 
         Assert.That(vm.DeconvolutedSpecies.Count, Is.GreaterThanOrEqualTo(0));
+    }
+
+    [Test, Apartment(System.Threading.ApartmentState.STA)]
+    public void RunDeconvolutionCommand_FullSpectrumMode_LimitsAxis()
+    {
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+        vm.Mode = DeconvolutionMode.FullSpectrum;
+        vm.SelectedMsDataFile = msDataFile;
+        vm.SelectedMsDataScan = msDataFile.GetMsDataScans().FirstOrDefault();
+        vm.RunDeconvolutionCommand.Execute(new PlotView());
+
+        var specRange = vm.SelectedMsDataScan!.MassSpectrum.Range;
+        var xAxis = vm.Plot!.Model.Axes[0];
+        Assert.That(xAxis.Minimum, Is.EqualTo(specRange.Minimum).Within(5));
+        Assert.That(xAxis.Maximum, Is.EqualTo(specRange.Maximum).Within(5));
+
+        Assert.That(vm.MinMzToPlot, Is.EqualTo(0));
+        vm.MinMzToPlot = 800;
+        vm.RunDeconvolutionCommand.Execute(new PlotView());
+        xAxis = vm.Plot!.Model.Axes[0];
+        Assert.That(xAxis.ActualMinimum, Is.EqualTo(800).Within(5));
+        Assert.That(xAxis.ActualMaximum, Is.EqualTo(specRange.Maximum).Within(5));
+
+        Assert.That(vm.MaxMzToPlot, Is.EqualTo(0));
+        vm.MaxMzToPlot = 1200;
+        vm.RunDeconvolutionCommand.Execute(new PlotView());
+        xAxis = vm.Plot!.Model.Axes[0];
+        Assert.That(xAxis.ActualMinimum, Is.EqualTo(800).Within(5));
+        Assert.That(xAxis.ActualMaximum, Is.EqualTo(1200).Within(5));
     }
 
     [Test]
@@ -136,7 +166,7 @@ public class DeconExplorationTabViewModelTests
         var plotView = new PlotView();
         var scan = msDataFile.LoadAllStaticData().GetMsDataScans().First();
         var deconResults = new List<DeconvolutedSpeciesViewModel>();
-        var plot = new DeconvolutionPlot(plotView, scan, deconResults);
+        var plot = new DeconvolutionPlot(plotView, scan, deconResults, DeconvolutionMode.FullSpectrum);
 
         Assert.DoesNotThrow(() => plot.AnnotatePlot(null!));
         Assert.DoesNotThrow(() => plot.AnnotatePlot(new List<DeconvolutedSpeciesViewModel>()));

@@ -7,7 +7,7 @@
              xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions" 
              xmlns:oxy="http://oxyplot.org/wpf"
              mc:Ignorable="d" 
-             d:DataContext="{d:DesignInstance guiFunctions:DeconExplorationTabViewModel, IsDesignTimeCreatable=True}"  
+             d:DataContext="{x:Static guiFunctions:DeconTabModel.Instance}"  
              d:DesignHeight="450" d:DesignWidth="800">
 
     <Grid>
@@ -32,6 +32,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
@@ -47,7 +48,6 @@
 
 
             <TextBlock Grid.Column="0"  Grid.Row="2" Text="Deconvolution Mode:" FontWeight="Bold" />
-
             <ComboBox Grid.Column="0"  Grid.Row="3" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                       SelectedValue="{Binding Mode}" 
                       ItemsSource="{Binding DeconvolutionModes}" Margin="0,4,0,12" />
@@ -60,8 +60,22 @@
                            IsChecked="{Binding OnlyIdentifiedScans}"/>
             </StackPanel>
 
-            <TextBlock Grid.Column="0"  Grid.Row="4"  Grid.ColumnSpan="2" Text="Scans:" FontWeight="Bold" />
-            <DataGrid Grid.Column="0"  Grid.Row="5"  Grid.ColumnSpan="2" ItemsSource="{Binding Scans}"
+            <StackPanel Grid.Column="0"  Grid.Row="4"  Grid.ColumnSpan="2" Orientation="Horizontal"
+                        Visibility="{Binding Mode, Converter={local:DeconModeToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Min m/z:"  FontWeight="Bold" VerticalAlignment="Center"/>
+                    <local:DoubleTextBoxControl Width="40" Margin="2" VerticalContentAlignment="Center"
+                                                Text="{Binding MinMzToPlot}" LowerBound="0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Max m/z:"  FontWeight="Bold" VerticalAlignment="Center"/>
+                    <local:DoubleTextBoxControl Width="40" Margin="2" VerticalContentAlignment="Center"
+                                                Text="{Binding MaxMzToPlot}" LowerBound="0"/>
+                </StackPanel>
+            </StackPanel>
+            
+            <TextBlock Grid.Column="0"  Grid.Row="5"  Grid.ColumnSpan="2" Text="Scans:" FontWeight="Bold" />
+            <DataGrid Grid.Column="0"  Grid.Row="6"  Grid.ColumnSpan="2" ItemsSource="{Binding Scans}"
                       SelectedItem="{Binding SelectedMsDataScan}"
                       SelectionMode="Single"
                       SelectedCellsChanged="DataGrid_OnSelectedCellsChanged"
@@ -84,9 +98,8 @@
             </DataGrid>
 
             <!-- Loading overlay -->
-            <Grid x:Name="LoadingOverlay" Grid.Column="0"  Grid.Row="5"  Grid.ColumnSpan="2" Margin="0, 4, 0, 12"
+            <Grid x:Name="LoadingOverlay" Grid.Column="0"  Grid.Row="6"  Grid.ColumnSpan="2" Margin="0, 4, 0, 12"
                   Visibility="{Binding IsLoading, Converter={local:BooleanToVisibilityConverter}}"
-
                   Background="#80000000"
                   Panel.ZIndex="100">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -95,7 +108,7 @@
                 </StackPanel>
             </Grid>
             
-            <Button Grid.Column="0"  Grid.Row="6"  Grid.ColumnSpan="2" Content="Run Deconvolution" Style="{StaticResource MetaDrawButtonStyle}"
+            <Button Grid.Column="0"  Grid.Row="7"  Grid.ColumnSpan="2" Content="Run Deconvolution" Style="{StaticResource MetaDrawButtonStyle}"
                     Command="{Binding RunDeconvolutionCommand}"
                     CommandParameter="{Binding ElementName=DeconPlot}"
                     Margin="0,8,0,0" />

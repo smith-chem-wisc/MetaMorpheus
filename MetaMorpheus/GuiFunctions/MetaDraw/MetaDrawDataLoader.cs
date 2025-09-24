@@ -45,14 +45,23 @@ public class MetaDrawDataLoader
 
         // Prepare progress visualization
         PrepareProgressVisualization(loadSpectra, loadPsms, loadLibraries, _logic);
-        if (chimeraTabViewModel is not null) chimeraTabViewModel.IsTabEnabled = false;
-        if (bioPolymerTabViewModel is not null) bioPolymerTabViewModel.IsTabEnabled = false;
-        if (deconExplorationTabViewModel is not null) deconExplorationTabViewModel.IsTabEnabled = false;
+        if (chimeraTabViewModel is not null) 
+            chimeraTabViewModel.IsTabEnabled = false;
+        if (bioPolymerTabViewModel is not null) 
+            bioPolymerTabViewModel.IsTabEnabled = false;
+        if (deconExplorationTabViewModel is not null) 
+            deconExplorationTabViewModel.IsTabEnabled = false;
 
         // Start core artifact loads (independent steps run concurrently)
-        var spectraTask = loadSpectra ? LoadSpectraAsync(token) : Task.FromResult(new List<string>());
-        var psmsTask = loadPsms ? LoadPsmsAsync(loadSpectra, token) : Task.FromResult(new List<string>());
-        var librariesTask = loadLibraries ? LoadLibrariesAsync(token) : Task.FromResult(new List<string>());
+        var spectraTask = loadSpectra 
+            ? LoadSpectraAsync(token) 
+            : Task.FromResult(new List<string>());
+        var psmsTask = loadPsms 
+            ? LoadPsmsAsync(loadSpectra, token) 
+            : Task.FromResult(new List<string>());
+        var librariesTask = loadLibraries 
+            ? LoadLibrariesAsync(token) 
+            : Task.FromResult(new List<string>());
         var proseAndTomlTask = _logic.SpectralMatchResultFilePaths.Any()
             ? TryLoadProseAndSearchToml(bioPolymerTabViewModel, deconExplorationTabViewModel)
             : Task.FromResult((false, false));
@@ -69,24 +78,33 @@ public class MetaDrawDataLoader
 
         string outputDirectory = null!;
         if (_logic.SpectralMatchResultFilePaths.Count > 0)
+        {
             outputDirectory = Path.GetDirectoryName(_logic.SpectralMatchResultFilePaths.First()) ?? string.Empty;
+        }
         else if (_logic.SpectraFilePaths.Count > 0)
+        {
             outputDirectory = Path.GetDirectoryName(_logic.SpectraFilePaths.First()) ?? string.Empty;
+        }
         else
             outputDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
         await proseAndTomlTask;
         // Tabs: run in background, post minimal changes to UI
         if (bioPolymerTabViewModel is not null && _logic.AllSpectralMatches.Any())
+        {
             Task.Run(() => ProcessBioPolymerTab(bioPolymerTabViewModel, outputDirectory, token), token);
+        }
         if (deconExplorationTabViewModel is not null && _logic.MsDataFiles.Any())
+        {
             Task.Run(() => ProcessDeconTab(deconExplorationTabViewModel, outputDirectory, token), token);
+        }
         if (chimeraTabViewModel is not null && _logic.FilteredListOfPsms.Any() && _logic.MsDataFiles.Any())
+        {
             Task.Run(() => ProcessChimeraTab(chimeraTabViewModel, outputDirectory, token), token);
+        }
 
         return allErrors;
     }
-
 
     #region Core loaders (non-blocking)
 
@@ -115,16 +133,24 @@ public class MetaDrawDataLoader
                     try
                     {
                         if (dataFile is TimsTofFileReader tims)
+                        {
                             tims.LoadAllStaticData(maxThreads: Math.Max(1, Environment.ProcessorCount - 1));
+                        }
                         else
+                        {
                             dataFile.InitiateDynamicConnection();
+                        }
 
                         lock (_logic.ThreadLocker) // MsDataFiles is a Dictionary
                         {
                             if (!_logic.MsDataFiles.ContainsKey(key))
+                            {
                                 _logic.MsDataFiles.Add(key, dataFile);
+                            }
                             else
+                            {
                                 dataFile.CloseDynamicConnection();
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -174,7 +200,10 @@ public class MetaDrawDataLoader
                     try
                     {
                         var psms = SpectrumMatchTsvReader.ReadTsv(rf, out var warnings);
-                        foreach (var w in warnings) errors.Add($"Warning parsing '{rf}': {w}");
+                        foreach (var w in warnings)
+                        {
+                            errors.Add($"Warning parsing '{rf}': {w}");
+                        }
 
                         foreach (var p in psms)
                         {
@@ -192,10 +221,7 @@ public class MetaDrawDataLoader
                             }
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        errors.Add("Error reading PSM file:\n" + ex.Message);
-                    }
+                    catch (Exception ex) { errors.Add($"Error reading PSM file:\n{ex}"); }
                     finally
                     {
                         var done = Interlocked.Increment(ref completed);
@@ -240,7 +266,8 @@ public class MetaDrawDataLoader
             .GroupBy(p => p.FileNameWithoutExtension, StringComparer.OrdinalIgnoreCase)
             .Select(g => $"{g.Count()} PSMs from {g.Key} were not loaded because this spectra file was not found");
 
-        foreach (var m in missingMsgs) errors.Add(m);
+        foreach (var m in missingMsgs) 
+            errors.Add(m);
         return errors.ToList();
     }
 
@@ -256,7 +283,9 @@ public class MetaDrawDataLoader
             {
                 token.ThrowIfCancellationRequested();
                 if (_logic.SpectralLibraryPaths.Count > 0)
+                {
                     _logic.SpectralLibrary = new SpectralLibrary(_logic.SpectralLibraryPaths.ToList());
+                }
             }, token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) { throw; }
@@ -294,27 +323,28 @@ public class MetaDrawDataLoader
             .Distinct()
             .ToArray();
 
-        if (!searchDirectories.Any())
-            return (loadedDb, loadedSearchParams);
-
         // Try to find search tomls to load decon parameters. 
         try
         {
             HashSet<string?> distinctSearchTomls = new();
             foreach (var searchDir in searchDirectories)
             {
-                if (searchDir == null) continue;
+                if (searchDir == null) 
+                    continue;
 
                 var parentDir = Directory.GetParent(searchDir)?.FullName ?? null;
                 var searchDirName = Path.GetFileName(searchDir);
 
-                if (parentDir == null) continue;
+                if (parentDir == null) 
+                    continue;
 
                 // Attempt to locate search toml
                 var settingsDir = Directory.GetDirectories(parentDir).FirstOrDefault(p => p.Contains("Task Settings"));
                 if (settingsDir != null)
+                {
                     distinctSearchTomls.Add(
                         Directory.GetFiles(settingsDir, $"*{searchDirName}config.toml").FirstOrDefault());
+                }
             }
 
             List<DeconvolutionParameters> precursorParameters = new();
@@ -355,9 +385,11 @@ public class MetaDrawDataLoader
             List<string> databases = new();
             foreach (var searchDir in searchDirectories)
             {
-                if (searchDir == null) continue;
+                if (searchDir == null) 
+                    continue;
                 var proseFile = MetaMorpheusProseFile.LocateInDirectory(searchDir);
-                if (proseFile == null) continue;
+                if (proseFile == null) 
+                    continue;
                 databases.AddRange(proseFile.DatabasePaths);
             }
 
@@ -389,10 +421,14 @@ public class MetaDrawDataLoader
 
         // Load DB if present but not loaded
         if (!tab.IsDatabaseLoaded && !string.IsNullOrEmpty(tab.DatabasePath))
+        {
             tab.LoadDatabaseCommand.Execute(null);
+        }
 
         if (tab.IsDatabaseLoaded)
+        {
             tab.ProcessSpectralMatches(_logic.AllSpectralMatches, token);
+        }
 
         tab.ExportDirectory = outDir;
         tab.IsTabEnabled = true;
@@ -405,7 +441,9 @@ public class MetaDrawDataLoader
 
         tab.MsDataFiles.Clear();
         foreach (var file in _logic.MsDataFiles.Values)
+        {
             tab.MsDataFiles.Add(file);
+        }
 
         tab.ExportDirectory = outDir;
         tab.IsTabEnabled = true;

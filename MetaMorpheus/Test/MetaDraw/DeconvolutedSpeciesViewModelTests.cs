@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Chemistry;
 using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
@@ -36,6 +37,8 @@ public class DeconvolutedSpeciesViewModelTests
         Assert.That(vm.Annotation, Does.Contain("z=2"));
         Assert.That(vm.MostAbundantMz, Is.EqualTo(501.0));
         Assert.That(vm.PeakMzs, Is.EqualTo("500, 501, 502"));
+        Assert.That(vm.MonoMz, Is.EqualTo(1000.0.ToMz(2)));
+
     }
 
     [Test]

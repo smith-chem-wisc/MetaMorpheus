@@ -43,7 +43,6 @@ public abstract class MetaDrawTabViewModel : BaseViewModel
         get => _isLoading;
         set
         {
-            if (_isLoading == value) return;
             _isLoading = value;
             OnPropertyChanged(nameof(IsLoading));
         }
