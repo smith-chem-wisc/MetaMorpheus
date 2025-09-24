@@ -12,5 +12,6 @@ namespace EngineLayer.GlycoSearch
     {
         N_glycan,
         O_glycan,
+        otherType,
     }
 }

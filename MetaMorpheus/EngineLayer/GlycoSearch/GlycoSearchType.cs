@@ -8,7 +8,7 @@ namespace EngineLayer.GlycoSearch
     {
         OGlycanSearch,
         NGlycanSearch,
-        N_O_GlycanSearch
-
+        N_O_GlycanSearch,
+        ModSearch,
     }
 }
