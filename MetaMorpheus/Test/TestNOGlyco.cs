@@ -111,7 +111,14 @@ namespace Test
             {
                 db
             }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
-            
+
+            // Check the NOBoxes are built correctly
+            Assert.That(GlycanBox.GlobalOGlycans.Length == 24);
+            Assert.That(GlycanBox.GlobalNGlycans.Count == 10);
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p < 0) > 1)); // no NO box has more than one Nglycan (ids negative)
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.NumberOfMods > task._glycoSearchParameters.MaximumOGlycanAllowed + 1 )); // no NO box has more than 3 glycans (2 O + 1N)
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p >= 0) > task._glycoSearchParameters.MaximumOGlycanAllowed)); // no NO box has more than 2 Oglycans (ids non-negative)
+
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
             List<PsmFromTsv> Psms = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2).ToList();
@@ -149,6 +156,13 @@ namespace Test
                 db
             }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
 
+            // Check the NOBoxes are built correctly
+            Assert.That(GlycanBox.GlobalOGlycans.Length == 24);
+            Assert.That(GlycanBox.GlobalNGlycans.Count == 10);
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p < 0) > 1)); // no NO box has more than one Nglycan (ids negative)
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.NumberOfMods > task._glycoSearchParameters.MaximumOGlycanAllowed + 1 )); // no NO box has more than 3 glycans (2 O + 1N)
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p >= 0) > task._glycoSearchParameters.MaximumOGlycanAllowed)); // no NO box has more than 3 Oglycans (ids non-negative)
+
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
             List<PsmFromTsv> Psms = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2).ToList();
@@ -178,6 +192,13 @@ namespace Test
             {
                 db
             }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+
+            // Check the NOBoxes are built correctly
+            Assert.That(GlycanBox.GlobalOGlycans.Length == 24);
+            Assert.That(GlycanBox.GlobalNGlycans.Count == 10);
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p < 0) > 1)); // no NO box has more than one Nglycan (ids negative)
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.NumberOfMods > task._glycoSearchParameters.MaximumOGlycanAllowed + 1)); // no NO box has more than 3 glycans (2 O + 1N)
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p >= 0) > task._glycoSearchParameters.MaximumOGlycanAllowed)); // no NO box has more than 3 Oglycans (ids non-negative)
 
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
@@ -218,7 +239,7 @@ namespace Test
             GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray();
             
             // Check the number of glycan in each box is less than or equal to max glycan number
-            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p=>p.NumberOfMods > 4));
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p=>p.NumberOfMods > _maxOGlycanNum + 1));
             // Check there is at most one N-glycan in each box (p is negative means Nglycan)
             Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p < 0) > 1));
             // Check there is no duplicated box
@@ -232,11 +253,18 @@ namespace Test
 
             // Make sure some box is Nglycan only
             Assert.That(GlycanBox.NOGlycanBoxes.Any(p=>p.ModIds.Count(p=>p >= 0) == 0));
-            int CountForNglycanOnly_byModId = GlycanBox.NOGlycanBoxes.Count(p => p.ModIds.Count(p => p >= 0) == 0);
-            Assert.That(CountForNglycanOnly_byModId == GlycanBox.GlobalNGlycans.Count);
-            int CountForNglycanOnly_byOGlycanIds = GlycanBox.NOGlycanBoxes.Count(p => p.OGlycanIds == null);
-            Assert.That(CountForNglycanOnly_byOGlycanIds == GlycanBox.GlobalNGlycans.Count);
+            // Check the NOBoxes with Nglycan only is equal to the number of Nglycans in the Nglycan database
 
+            // we count by checking ModIds without any non-negative id (non-negative ids are Oglycans)
+            int countForNglycanOnly_byModId = GlycanBox.NOGlycanBoxes.Count(p => p.ModIds.Count(p => p >= 0) == 0);
+            Assert.That(countForNglycanOnly_byModId == GlycanBox.GlobalNGlycans.Count);
+            // we count by checking OGlycanIds is null
+            int countForNglycanOnly_byOGlycanIds = GlycanBox.NOGlycanBoxes.Count(p => p.OGlycanIds == null);
+            Assert.That(countForNglycanOnly_byOGlycanIds == GlycanBox.GlobalNGlycans.Count);
+
+            //Make sure some box is Oglycan only
+            int countForOglycanOnly = GlycanBox.NOGlycanBoxes.Count(p => p.ModIds.Length == 1 && p.OGlycanIds != null);
+            Assert.That(countForOglycanOnly == GlycanBox.GlobalOGlycans.Length);
 
 
             // Check the mass of each box is equal to the sum of the mass of glycans in the box
@@ -251,6 +279,9 @@ namespace Test
         [Test]
         public static void TestGetModPos()
         {
+            //testing the function to get the possible modification sites on a peptide with setMod. If the N in NxS/T is modified, then this site should not be counted as a possible N-glycosylation site.
+
+            // case 1: no modification on the peptide
             PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVSCR", null);
             string[] motifs = new string[] {"S", "T",  "Nxs", "Nxt" };
             var sites = GlycoSpectralMatch.GetPossibleModSites(pep, motifs);
@@ -258,7 +289,8 @@ namespace Test
             Assert.That(sites[4] == "Nxt" && sites[6] == "T");
             Assert.That(sites[12] == "Nxs" && sites[14] == "S");
 
-            
+
+            // case 2: with modification on NxT
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif);
             Modification mod = new Modification(_originalId: "Test of N", _modificationType: "Common Fixed", _target: motif, _locationRestriction: "Anywhere.");
             var testN = new PeptideWithSetModifications("ELN[Common Fixed:Test of N]PTPNVEVNVSCR", new Dictionary<string, Modification> {  { "Test of N", mod } });
@@ -267,6 +299,7 @@ namespace Test
             Assert.That(site_case2[6] == "T");
             Assert.That(site_case2[12] == "Nxs" && site_case2[14] == "S");
 
+            // case 3: with modification on NxS
             var testN_2 = new PeptideWithSetModifications("ELNPTPNVEVN[Common Fixed:Test of N]VSCR", new Dictionary<string, Modification> { { "Test of N", mod } });
             var site_case3 = GlycoSpectralMatch.GetPossibleModSites(testN_2, motifs);
             Assert.That(site_case3.Count() == 3 && site_case3.ContainsKey(4) && site_case3.ContainsKey(6) && site_case3.ContainsKey(14));
