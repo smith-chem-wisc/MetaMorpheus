@@ -154,11 +154,15 @@ namespace Test
 
             Directory.Delete(outputFolder_NSearch, true);
 
-
             string outputFolder_NOSearch = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder_NOSearch);
 
             var glycoSearchTask_NOSearch = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigN_OGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+            
+            // we use a smaller N-glycan database for this testing. Because using the full database will make the test tooooo long (over 10000000 NOBoxes will be created and their childBoxes).
+            glycoSearchTask_NOSearch._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_ForNoSearch.gdb"; 
+            GlobalVariables.NGlycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_ForNoSearch.gdb"));
+            glycoSearchTask_NOSearch._glycoSearchParameters.MaximumOGlycanAllowed = 2; // In order to reduce the search space, set the max O-glycan number to 2.
 
             string spectraFile_NOSearch = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask_NOSearch) }, new List<string> { spectraFile_NOSearch }, new List<DbForTask> { db }, outputFolder_NOSearch).Run();
