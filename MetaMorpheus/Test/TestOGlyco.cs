@@ -21,7 +21,6 @@ using System.Linq;
 using TaskLayer;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
-using static Nett.TomlObjectFactory;
 
 namespace Test
 {
@@ -367,7 +366,7 @@ namespace Test
 
             int[] modPos = { 9, 3 }; //OGlyGetTheoreticalPeptide is only used for generating modifiedPeptide. In here I just follow the original code to test the fragment ions.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[22]);
-            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on T]LFKNVS[O-Glycosylation:N1 on S]LYK");
+            Assert.That(peptideWithMod.FullSequence == "PT[O-linked glycosylation:N1A1 on T]LFKNVS[O-linked glycosylation:N1 on S]LYK");
 
             var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, new List<ProductType>(), peptide, peptideWithMod);
 
@@ -390,7 +389,7 @@ namespace Test
             List<int> modPos = new List<int> { 2, 8 };
 
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, glycanBox);
-            Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on T]VYLGAS[O-Glycosylation:H1N1A1 on S]K");
+            Assert.That(peptideWithMod.FullSequence == "T[O-linked glycosylation:H1N1 on T]VYLGAS[O-linked glycosylation:H1N1A1 on S]K");
 
             var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
 
@@ -417,7 +416,7 @@ namespace Test
 
             int[] modPos = { 9, 3 }; //OGlyGetTheoreticalPeptide is only used for generating modifiedPeptide. In here I just follow the original code to test the fragment ions.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, glycanBox);
-            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on T]LFKNVS[O-Glycosylation:N1 on S]LYK");
+            Assert.That(peptideWithMod.FullSequence == "PT[O-linked glycosylation:N1A1 on T]LFKNVS[O-linked glycosylation:N1 on S]LYK");
 
             //The following code prove that the default Fragment method doesn't work for O-glycopeptide due to neutral losses.
             var fragments_hcd = new List<Product>();
@@ -479,7 +478,7 @@ namespace Test
 
             //Known peptideWithMod match.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox);
-            Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on T]T[O-Glycosylation:H1N1 on T]GSLEPSS[O-Glycosylation:N1 on S]GASGPQVSSVK");
+            Assert.That(peptideWithMod.FullSequence == "T[O-linked glycosylation:H1N1 on T]T[O-linked glycosylation:H1N1 on T]GSLEPSS[O-linked glycosylation:N1 on S]GASGPQVSSVK");
             List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, new List<ProductType>(), peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
@@ -534,7 +533,7 @@ namespace Test
 
             //Known peptideWithMod match.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[1] {4}, peptide, glycanBox);
-            Assert.That(peptideWithMod.FullSequence == "AAT[O-Glycosylation:N1 on T]VGSLAGQPLQER");
+            Assert.That(peptideWithMod.FullSequence == "AAT[O-linked glycosylation:N1 on T]VGSLAGQPLQER");
             //List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
             List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
@@ -1142,7 +1141,8 @@ namespace Test
                     MaximumOGlycanAllowed = 4,
                     DoParsimony = true,
                     WriteContaminants = writeContaminants,
-                    WriteDecoys = writeDecoys
+                    WriteDecoys = writeDecoys,
+                    WritePrunedDataBase = false,
                 }
             };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, isContaminant) }, rawFilePaths, "");
@@ -1199,7 +1199,8 @@ namespace Test
                     DoParsimony = true,
                     WriteContaminants = true,
                     WriteDecoys = true,
-                    WriteIndividualFiles = true
+                    WriteIndividualFiles = true,
+                    WritePrunedDataBase = false,
                 }
             };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");
@@ -1268,7 +1269,8 @@ namespace Test
                     WriteContaminants = true,
                     WriteDecoys = true,
                     WriteIndividualFiles = true,
-                    DoQuantification = true
+                    DoQuantification = true,
+                    WritePrunedDataBase = false,
                 }
             };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");
@@ -1788,5 +1790,57 @@ namespace Test
             Assert.That(localizedMod.Where(p => p.SiteIndex == 5 && p.ModId == 1).All(p => p.Confident)); // The Pair with SiteIndex 5 and ModId 1 should be confident, as it appears in both routes.
             Assert.That(localizedMod.Where(p => p.SiteIndex != 5 ).All(p => !p.Confident)); // The other pairs should not be confident, as they do not appear in both routes.
         }
+        //test if prunedDatabase matches expected output
+        [Test]
+        public static void TestPrunedDatabase()
+        {
+            // In this unit test, we run a glyco search task and try to write a pruned database with only the modifications that were observed in the search.
+            // The psm is TTGS[O-linked glycosylation:H1N1 on S]LEPS[O-linked glycosylation:H2N2A1 on S]S[O-linked glycosylation:H2N2A1F1 on S]GASGPQVSSVK
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.WritePrunedDataBase = true;
+            //only write o-glycan in pruned database
+            glycoSearchTask._glycoSearchParameters.ModsToWriteSelection = new Dictionary<string, int> { {"O-linked glycosylation", 3}, }; 
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
+
+
+            var psmFromGlycoSearch = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder,"Task", "AllPSMs.psmtsv"), out var warnings);
+            Assert.That(psmFromGlycoSearch.Count == 1);
+            string xml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData", "Task","P16150proteinPruned.xml");
+            List<Protein> proteinFromNewDb = ProteinDbLoader.LoadProteinXML(xml, true,
+                DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+
+            // The observed Mods should be [O-linked glycosylation:H1N1 on S], [O-linked glycosylation:H2N2A1 on S], [O-linked glycosylation:H2N2A1F1 on S]
+            var modsAdded = proteinFromNewDb.First().ConsensusVariant.OneBasedPossibleLocalizedModifications
+                .SelectMany(p => p.Value).ToList();
+            Assert.That(modsAdded.Count == 3);
+            Assert.That(modsAdded.All(p => p.ModificationType == "O-linked glycosylation"));
+            Assert.That(modsAdded[0].IdWithMotif == "H1N1 on S");
+            Assert.That(modsAdded[1].IdWithMotif == "H2N2A1 on S");
+            Assert.That(modsAdded[2].IdWithMotif == "H2N2A1F1 on S");
+
+            string outputFolder_new = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTSearchData");
+            DbForTask db_new = new(xml, false);
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory,
+                    @"GlycoTestData\TaskForOglycoPruneDb.toml"), MetaMorpheusTask.tomlConfig);
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", searchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db_new }, outputFolder_new).Run();
+
+            // Compare the psm from glyco search and new search with pruned database, they should be identical
+            var psmFromNewSearch = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder_new, "Task", "AllPSMs.psmtsv"), out var warning_news);
+            Assert.That(psmFromNewSearch.Count == 1);
+            Assert.That(psmFromGlycoSearch.First().BaseSequence == psmFromNewSearch.First().BaseSequence);
+            Assert.That(psmFromGlycoSearch.First().ProteinName == psmFromNewSearch.First().ProteinName);
+            Assert.That(psmFromGlycoSearch.First().FullSequence == psmFromNewSearch.First().FullSequence);
+            Directory.Delete(outputFolder, true);
+            Directory.Delete(outputFolder_new, true);
+
+        }
+
     }
 }
