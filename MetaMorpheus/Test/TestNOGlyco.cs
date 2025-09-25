@@ -124,14 +124,14 @@ namespace Test
             List<PsmFromTsv> Psms = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2).ToList();
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             Assert.That(Psms.Count == 1);
-            Assert.That(Psms.First().FullSequence == "DAN[N-Glycosylation:H5N2 on Nxt]NTQFQFTSR");
+            Assert.That(Psms.First().FullSequence == "DAN[N-linked glycosylation:H5N2 on Nxt]NTQFQFTSR");
 
             //For GlycoPSMs
             string oGlycoPath = Path.Combine(outputFolder, "Task", "no_glyco.psmtsv");
             List<PsmFromTsv> glycoPsms = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var errors).ToList(); // the filtering (Q<0.01)
             Assert.That(errors.Count == 0);// if we cannot find the file, we will get an error message
             Assert.That(glycoPsms.Count == 1);
-            Assert.That(glycoPsms.First().FullSequence == "DAN[N-Glycosylation:H5N2 on Nxt]NTQFQFTSR");
+            Assert.That(glycoPsms.First().FullSequence == "DAN[N-linked glycosylation:H5N2 on Nxt]NTQFQFTSR");
 
             Directory.Delete(outputFolder, true);
         }
@@ -168,7 +168,7 @@ namespace Test
             List<PsmFromTsv> Psms = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2).ToList();
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             Assert.That(Psms.Count == 1);
-            Assert.That(Psms.First().FullSequence == "TTGS[O-Glycosylation:H1N1 on S]LEPS[O-Glycosylation:H2N2A1 on S]S[O-Glycosylation:H2N2A1F1 on S]GASGPQVSSVK");
+            Assert.That(Psms.First().FullSequence == "TTGS[O-linked glycosylation:H1N1 on S]LEPS[O-linked glycosylation:H2N2A1 on S]S[O-linked glycosylation:H2N2A1F1 on S]GASGPQVSSVK");
             Assert.That(Psms.First().Score, Is.EqualTo(13.0).Within(0.1));
             Directory.Delete(outputFolder, true);
         }
@@ -205,7 +205,7 @@ namespace Test
             List<PsmFromTsv> Psms = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2).ToList();
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             Assert.That(Psms.Count == 1);
-            Assert.That(Psms.First().FullSequence == "AAT[O-Glycosylation:N1 on T]VGSLAGQPLQER");
+            Assert.That(Psms.First().FullSequence == "AAT[O-linked glycosylation:N1 on T]VGSLAGQPLQER");
             Assert.That(Psms.First().Score, Is.EqualTo(23.2).Within(0.1));
             Directory.Delete(outputFolder, true);
         }
@@ -221,7 +221,7 @@ namespace Test
             // reading the O-Glycan database and storing it in GlycanBox.GlobalOGlycans
             GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(oglycanPath, true, true).ToArray();
             Assert.That(GlycanBox.GlobalOGlycans.Count() == 24);
-            Assert.That(GlycanBox.GlobalOGlycans.All(p => p.ModificationType == "O-Glycosylation"));
+            Assert.That(GlycanBox.GlobalOGlycans.All(p => p.ModificationType == "O-linked glycosylation"));
 
             // reading the N-Glycan database and storing it in GlycanBox.GlobalNGlycans with negative keys
             GlycanBox.GlobalNGlycans = new Dictionary<int, Glycan>();
@@ -234,7 +234,7 @@ namespace Test
             }
             Assert.That(GlycanBox.GlobalNGlycans.Count == 20); // we have 20 Nglycans in the database
             Assert.That(GlycanBox.GlobalNGlycans.All(p=>p.Key < 0)); // all keys in GlobalNGlycans should be negative
-            Assert.That(GlycanBox.GlobalNGlycans.All(p=>p.Value.ModificationType == "N-Glycosylation"));
+            Assert.That(GlycanBox.GlobalNGlycans.All(p=>p.Value.ModificationType == "N-linked glycosylation"));
 
             // Building the NO_glycan boxes
             int _maxOGlycanNum = 3;
