@@ -36,15 +36,11 @@ namespace EngineLayer.GlycoSearch
         {
             get
             {
-                if (GlycoSearchType == GlycoSearchType.OGlycanSearch)
-                {
-                    return new string[] { "S", "T" };
-                }
                 if (GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
                 {
                     return new string[] { "S", "T", "Nxs", "Nxt" };
                 }
-                return new string[] { };
+                return new string[] { "S", "T" }; // motif for the OSearch
             }
         }
 
@@ -313,10 +309,10 @@ namespace EngineLayer.GlycoSearch
             var fragmentsForEachGlycoPeptide = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.DissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
 
             // if the peptide contains N-glycan, we need to add the Y ion from N-glycan.
-            if (peptideWithMod.AllModsOneIsNterminus.Any(p=>p.Value.ModificationType == "N-Glycosylation"))
+            if (peptideWithMod.AllModsOneIsNterminus.Any(p=>p.Value.ModificationType == "N-linked glycosylation"))
             {
                 Glycan nGlycan = peptideWithMod.AllModsOneIsNterminus.First(p =>
-                    p.Value.ModificationType == "N-Glycosylation").Value as Glycan;
+                    p.Value.ModificationType == "N-linked glycosylation").Value as Glycan;
                 fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan));
             }
 
