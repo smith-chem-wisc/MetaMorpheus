@@ -221,18 +221,20 @@ namespace Test
             // reading the O-Glycan database and storing it in GlycanBox.GlobalOGlycans
             GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(oglycanPath, true, true).ToArray();
             Assert.That(GlycanBox.GlobalOGlycans.Count() == 24);
+            Assert.That(GlycanBox.GlobalOGlycans.All(p => p.ModificationType == "O-Glycosylation"));
 
             // reading the N-Glycan database and storing it in GlycanBox.GlobalNGlycans with negative keys
             GlycanBox.GlobalNGlycans = new Dictionary<int, Glycan>();
-            var nGlycans = GlycanDatabase.LoadGlycan(nglycanPath, true, true).ToArray();
+            var nGlycans = GlycanDatabase.LoadGlycan(nglycanPath, true, false).ToArray();
             int indexForNGlycan = -1;
             foreach (var nGlycan in nGlycans)
             {
                 GlycanBox.GlobalNGlycans.Add(indexForNGlycan, nGlycan);
                 indexForNGlycan--;
             }
-            Assert.That(GlycanBox.GlobalNGlycans.Count == 20);
-            Assert.That(!GlycanBox.GlobalNGlycans.Any(p=>p.Key > 0));
+            Assert.That(GlycanBox.GlobalNGlycans.Count == 20); // we have 20 Nglycans in the database
+            Assert.That(GlycanBox.GlobalNGlycans.All(p=>p.Key < 0)); // all keys in GlobalNGlycans should be negative
+            Assert.That(GlycanBox.GlobalNGlycans.All(p=>p.Value.ModificationType == "N-Glycosylation"));
 
             // Building the NO_glycan boxes
             int _maxOGlycanNum = 3;
@@ -273,6 +275,41 @@ namespace Test
                 double totalOglycanMass = glycanBox.ModIds.Where(p => p >= 0).Select(p => GlycanBox.GlobalOGlycans[p].Mass / 1E5).Sum();
                 double totalNglycanMass = glycanBox.ModIds.Where(p => p < 0).Select(p => GlycanBox.GlobalNGlycans[p].Mass / 1E5).Sum();
                 Assert.That(glycanBox.Mass, Is.EqualTo(totalNglycanMass + totalOglycanMass).Within(1E-4));
+            }
+        }
+
+        [Test]
+        public static void TestNOGlycanBox_Decoy()
+        {
+            // Loading the glycan databases
+            string oglycanPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"OGlycan.gdb");
+            string nglycanPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_NOBoxesTesting.gdb");
+
+            // reading the Glycan database and storing it in GlycanBox
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(oglycanPath, true, true).ToArray();
+            GlycanBox.GlobalNGlycans = new Dictionary<int, Glycan>();
+            var nGlycans = GlycanDatabase.LoadGlycan(nglycanPath, true, false).ToArray();
+            int indexForNGlycan = -1;
+            foreach (var nGlycan in nGlycans)
+            {
+                GlycanBox.GlobalNGlycans.Add(indexForNGlycan, nGlycan);
+                indexForNGlycan--;
+            }
+
+            // Building the NO_glycan boxes
+            int _maxOGlycanNum = 2;
+            GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(_maxOGlycanNum, true).OrderBy(p => p.Mass).ToArray();
+            Assert.That(GlycanBox.NOGlycanBoxes.Any(p=>p.TargetDecoy == false));
+            Assert.That(GlycanBox.NOGlycanBoxes.Count(p=>!p.TargetDecoy) == GlycanBox.NOGlycanBoxes.Count(p=>p.TargetDecoy));
+
+            foreach (var decoyBox in GlycanBox.NOGlycanBoxes.Where(p=>!p.TargetDecoy))
+            {
+                var theBoxWithSameComponent = GlycanBox.NOGlycanBoxes.Where(p => p.TargetDecoy).Where(p => p.ModIds.SequenceEqual(decoyBox.ModIds));
+                Assert.That(theBoxWithSameComponent.Count() == 1);
+                var targetBox = theBoxWithSameComponent.First();
+                Assert.That(decoyBox.NGlycanId == targetBox.NGlycanId);
+                Assert.That(decoyBox.OGlycanIds == targetBox.OGlycanIds);
+                Assert.That(decoyBox.Mass != targetBox.Mass);
             }
         }
 
