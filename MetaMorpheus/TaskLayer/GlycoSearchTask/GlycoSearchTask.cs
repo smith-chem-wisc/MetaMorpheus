@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using EngineLayer.CrosslinkSearch;
 using EngineLayer.GlycoSearch;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -9,12 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MzLibUtil;
-using EngineLayer.FdrAnalysis;
-using System;
 using FlashLFQ;
-using Omics;
 using Readers;
-using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -217,7 +212,8 @@ namespace TaskLayer
                 FlashLfqResults = flashLfqResults,
                 FileSettingsList = fileSettingsList,
                 DatabaseFilenameList = dbFilenameList,
-                CurrentRawFileList = currentRawFileList
+                CurrentRawFileList = currentRawFileList,
+                BioPolymerList = proteinList,
             };
             
             PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask()
