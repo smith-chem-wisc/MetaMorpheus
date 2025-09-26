@@ -685,6 +685,9 @@
     <None Update="Transcriptomics\TestData\22merMethyl_Snip.mzML">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Transcriptomics\TestData\AllOligos.osmtsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Transcriptomics\TestData\GUACUG_NegativeMode_Sliced.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

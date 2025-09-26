@@ -29,6 +29,8 @@ namespace GuiFunctions
         private ObservableCollection<IonTypeForTreeViewModel> _IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
         private ObservableCollection<CoverageTypeForTreeViewModel> _CoverageColors = new ObservableCollection<CoverageTypeForTreeViewModel>();
         private ObservableCollection<ColorForTreeViewModel> _DataVisualizationColors = new ObservableCollection<ColorForTreeViewModel>();
+        private ObservableCollection<ColorForTreeViewModel> _BioPolymerCoverageColors = new ObservableCollection<ColorForTreeViewModel>();
+
         private bool _LoadedIons { get { return (_IonGroups.Count > 0); } }
         private bool _LoadedPTMs { get { return (_Modifications.Count > 0); } }
         private bool _LoadedSequenceCoverage { get { return (_CoverageColors.Count > 0); } }
@@ -246,6 +248,23 @@ namespace GuiFunctions
             set { MetaDrawSettings.NormalizeHistogramToFile = value; OnPropertyChanged(nameof(NormalizeHistogramToFile)); }
         }
 
+        // BioPolymer Coverage Settings
+        public ObservableCollection<ColorForTreeViewModel> BioPolymerCoverageColors
+        {
+            get => _BioPolymerCoverageColors;
+            set
+            {
+                _BioPolymerCoverageColors = value;
+                OnPropertyChanged(nameof(BioPolymerCoverageColors));
+            }
+        }
+
+        public int BioPolymerCoverageFontSize
+        {
+            get => MetaDrawSettings.BioPolymerCoverageFontSize;
+            set { MetaDrawSettings.BioPolymerCoverageFontSize = value; OnPropertyChanged(nameof(BioPolymerCoverageFontSize)); }
+        }
+
         #endregion
 
         #region Constructor
@@ -272,6 +291,7 @@ namespace GuiFunctions
                 LoadIonTypes();
                 LoadSequenceCoverage();
                 LoadDataVisualizationColors();
+                LoadBioPolymerCoverageColors();
                 Initialization = Task.CompletedTask;
             }
 
@@ -294,6 +314,7 @@ namespace GuiFunctions
             LoadIonTypes();
             LoadSequenceCoverage();
             LoadDataVisualizationColors();
+            LoadBioPolymerCoverageColors();
             await Task.Delay(100);
         }
 
@@ -350,6 +371,15 @@ namespace GuiFunctions
                 var color = DataVisualizationColors[i];
                 if (color.HasChanged)
                     MetaDrawSettings.DataVisualizationColorOrder[i] = DrawnSequence.ParseOxyColorFromName(color.SelectedColor.Replace(" ", ""));
+            }
+
+            foreach (var color in BioPolymerCoverageColors)
+            {
+                if (color.HasChanged)
+                {
+                    var key = Enum.Parse<BioPolymerCoverageType>(color.Name.Replace(" ", ""));
+                    MetaDrawSettings.BioPolymerCoverageColors[key] = color.ColorBrush;
+                }
             }
         }
 
@@ -421,6 +451,14 @@ namespace GuiFunctions
             for (int i = 0; i < MetaDrawSettings.DataVisualizationColorOrder.Count; i++)
             {
                 _DataVisualizationColors.Add(new ColorForTreeViewModel((i + 1).ToString(), MetaDrawSettings.DataVisualizationColorOrder[i]));   
+            }
+        }
+
+        public void LoadBioPolymerCoverageColors()
+        {
+            foreach (var col in MetaDrawSettings.BioPolymerCoverageColors)
+            {
+                _BioPolymerCoverageColors.Add(new(AddSpaces(col.Key.ToString()), col.Value));
             }
         }
 

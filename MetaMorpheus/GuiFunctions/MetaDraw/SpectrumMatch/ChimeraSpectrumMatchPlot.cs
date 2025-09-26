@@ -28,13 +28,13 @@ namespace GuiFunctions
                     matchedIons.Add(group[i].Item1);
             MatchedFragmentIons = matchedIons;
 
+            ZoomAxes();
             AnnotateMatchedIons(chimeraGroupVm);
             if (Math.Abs(mzMax - double.MaxValue) > 0.001)
             {
                 Model.Axes[0].Maximum = mzMax;
             }
 
-            ZoomAxes();
             RefreshChart();
         }
 
