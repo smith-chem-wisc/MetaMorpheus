@@ -1,13 +1,11 @@
 ﻿using EngineLayer.ModernSearch;
 using MzLibUtil;
-using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using EngineLayer;
 using MassSpectrometry;
 using EngineLayer.SpectrumMatch;
 

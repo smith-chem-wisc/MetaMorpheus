@@ -1,13 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Chemistry;
 using System;
-using EngineLayer.GlycoSearch;
-using Proteomics;
-using MassSpectrometry;
 using MzLibUtil;
-using Omics.Modifications;
 
 namespace EngineLayer
 {
@@ -211,7 +205,8 @@ namespace EngineLayer
                     {
                         seen.Add(string.Join(",", ids.Select(p => p.ToString())));
                         int[] oGlycanIds = ids.Where(p => p > -1).ToArray();
-                        int nGlycanid = ids.Any(p => p < 0)? ids.Where(p => p < 0).First():0;
+                        // If there is no N-glycan on the peptide, the nGlycanid = 0;
+                        var nGlycanid = ids.FirstOrDefault(p => p < 0); 
                         GlycanBox glycanBox = new GlycanBox(oGlycanIds,nGlycanid, isTarget);
 
                         yield return glycanBox;

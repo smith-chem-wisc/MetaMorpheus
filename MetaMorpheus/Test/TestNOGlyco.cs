@@ -12,8 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -46,7 +44,7 @@ namespace Test
                     OxoniumIonFilt = true,
                     DecoyType = DecoyType.Reverse,
                     GlycoSearchTopNum = 50,
-                    MaximumOGlycanAllowed = 4,
+                    MaximumOGlycanAllowed = 2,
                     DoParsimony = true,
                     WriteContaminants = true,
                     WriteDecoys = true,
