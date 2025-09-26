@@ -89,7 +89,7 @@
                                 <StackPanel Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
                                     <RadioButton x:Name="RbtOGlycoSearch" Content="O-Glycopeptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
                                     <RadioButton x:Name="RbtNGlycoSearch" Visibility="Visible"  Content="N-Glycopeptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
-                                    <RadioButton x:Name="Rbt_N_O_GlycoSearch" Visibility="Hidden"  Content="N-O-Glyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
+                                    <RadioButton x:Name="Rbt_N_O_GlycoSearch" Visibility="Visible"  Content="N-O-Glyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
                             <Grid Grid.Row="1">
