@@ -18,6 +18,7 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
 using Omics.BioPolymer;
+using EngineLayer.SpectrumMatch;
 
 namespace Test
 {
@@ -89,13 +90,20 @@ namespace Test
 
             fdr.Run();
 
+            // Notch ambiguous should not have values set until resolved. 
+            var notchAmbiguous = newPsms[2];
+            Assert.That(notchAmbiguous.FdrInfo.CumulativeTargetNotch, Is.EqualTo(0));
+            Assert.That(notchAmbiguous.FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
+            Assert.That(notchAmbiguous.FdrInfo.QValueNotch, Is.EqualTo(2));
+            notchAmbiguous.ResolveAllAmbiguities();
+
             Assert.That(searchModes.NumNotches, Is.EqualTo(2));
             Assert.That(newPsms[0].FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
             Assert.That(newPsms[0].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1));
             Assert.That(newPsms[1].FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
             Assert.That(newPsms[1].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1));
             Assert.That(newPsms[2].FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
-            Assert.That(newPsms[2].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1));
+            Assert.That(newPsms[2].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1.5));
 
             Assert.That(newPsms[0].FdrInfo.CumulativeDecoy, Is.EqualTo(0));
             Assert.That(newPsms[0].FdrInfo.CumulativeTarget, Is.EqualTo(1));
@@ -776,6 +784,86 @@ namespace Test
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27";
             Assert.That(pd.ToString("top-down"), Is.EqualTo(topDownToString));
+        }
+
+        [Test]
+        public static void QValueNotch_IsSet_OnlyOnUnambiguousPSMs_BeforeDisambiguation_Traditional()
+        {
+            // Create a list of dummy PSMs: one unambiguous, one ambiguous
+            var unambiguous = GptmdFilterTests.DummySpectralMatch(5, 1);
+
+            var ambiguous = GptmdFilterTests.DummySpectralMatch();
+            // Add two hypotheses with different notches
+            var hyp1 = ambiguous.BestMatchingBioPolymersWithSetMods.First();
+            var hyp2 = new SpectralMatchHypothesis(2, hyp1.SpecificBioPolymer, hyp1.MatchedIons, hyp1.Score);
+            ambiguous.AddOrReplace(hyp2.SpecificBioPolymer, hyp2.Score, 2, true, hyp2.MatchedIons);
+
+            var psms = new List<SpectralMatch> { unambiguous, ambiguous };
+
+            // Run FDR analysis
+            FdrAnalysisEngine.CalculateQValue(psms, peptideLevelCalculation: false);
+
+            // Assert QValueNotch is set for unambiguous, not for ambiguous
+            Assert.That(unambiguous.FdrInfo.QValueNotch, Is.LessThanOrEqualTo(1.0));
+            Assert.That(ambiguous.FdrInfo.QValueNotch, Is.GreaterThanOrEqualTo(1.0));
+
+            Assert.That(unambiguous.BestMatchingBioPolymersWithSetMods.All(p => p.QValueNotch == null), Is.True, "QValueNotch should not be set for notch unambiguous hypothesis");
+            Assert.That(ambiguous.BestMatchingBioPolymersWithSetMods.All(p => p.QValueNotch != null), Is.True, "QValueNotch should be set for notch ambiguous hypothesis");
+
+
+
+            // Run FDR analysis - Peptide level
+            FdrAnalysisEngine.CalculateQValue(psms, peptideLevelCalculation: true);
+
+            // Assert QValueNotch is set for unambiguous, not for ambiguous
+            Assert.That(unambiguous.PeptideFdrInfo.QValueNotch, Is.LessThanOrEqualTo(1.0));
+            Assert.That(ambiguous.PeptideFdrInfo.QValueNotch, Is.GreaterThanOrEqualTo(1.0));
+
+            Assert.That(unambiguous.BestMatchingBioPolymersWithSetMods.All(p => p.QValueNotch == null), Is.True, "QValueNotch should not be set for notch unambiguous hypothesis");
+            Assert.That(ambiguous.BestMatchingBioPolymersWithSetMods.All(p => p.QValueNotch != null), Is.True, "QValueNotch should be set for notch ambiguous hypothesis");
+        }
+
+        [Test]
+        [NonParallelizable]
+        public static void QValueNotch_IsSet_OnlyOnUnambiguousPSMs_BeforeDisambiguation_Inverted()
+        {
+            // Create a list of dummy PSMs: one unambiguous, one ambiguous
+            var unambiguous = GptmdFilterTests.DummySpectralMatch(5, 1);
+
+            var ambiguous = GptmdFilterTests.DummySpectralMatch();
+            // Add two hypotheses with different notches
+            var hyp1 = ambiguous.BestMatchingBioPolymersWithSetMods.First();
+            var hyp2 = new SpectralMatchHypothesis(2, hyp1.SpecificBioPolymer, hyp1.MatchedIons, hyp1.Score);
+            ambiguous.AddOrReplace(hyp2.SpecificBioPolymer, hyp2.Score, 2, true, hyp2.MatchedIons);
+
+            var psms = new List<SpectralMatch> { unambiguous, ambiguous };
+
+            var property = typeof(FdrAnalysisEngine).GetProperty("QvalueThresholdOverride")!;
+            property.SetValue(null, true);
+
+            // Run FDR analysis
+            FdrAnalysisEngine.CalculateQValue(psms, peptideLevelCalculation: false);
+
+            // Assert QValueNotch is set for unambiguous, not for ambiguous
+            Assert.That(unambiguous.FdrInfo.QValueNotch, Is.LessThanOrEqualTo(1.0));
+            Assert.That(ambiguous.FdrInfo.QValueNotch, Is.GreaterThanOrEqualTo(1.0));
+
+            Assert.That(unambiguous.BestMatchingBioPolymersWithSetMods.All(p => p.QValueNotch == null), Is.True, "QValueNotch should not be set for notch unambiguous hypothesis");
+            Assert.That(ambiguous.BestMatchingBioPolymersWithSetMods.All(p => p.QValueNotch != null), Is.True, "QValueNotch should be set for notch ambiguous hypothesis");
+
+
+
+            // Run FDR analysis - Peptide level
+            FdrAnalysisEngine.CalculateQValue(psms, peptideLevelCalculation: true);
+
+            // Assert QValueNotch is set for unambiguous, not for ambiguous
+            Assert.That(unambiguous.PeptideFdrInfo.QValueNotch, Is.LessThanOrEqualTo(1.0));
+            Assert.That(ambiguous.PeptideFdrInfo.QValueNotch, Is.GreaterThanOrEqualTo(1.0));
+
+            Assert.That(unambiguous.BestMatchingBioPolymersWithSetMods.All(p => p.QValueNotch == null), Is.True, "QValueNotch should not be set for notch unambiguous hypothesis");
+            Assert.That(ambiguous.BestMatchingBioPolymersWithSetMods.All(p => p.QValueNotch != null), Is.True, "QValueNotch should be set for notch ambiguous hypothesis");
+
+            property.SetValue(null, false);
         }
     }
 }

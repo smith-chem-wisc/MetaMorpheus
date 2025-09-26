@@ -78,9 +78,9 @@ namespace Test
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 3, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=2", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 2 + 132.040, 1, null, new CommonParameters());
             Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 4, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=3", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 3, 1, null, new CommonParameters());
 
-            SpectralMatch matchA = new PeptideSpectralMatch(compactPeptide1, 0, 0, 0, scanA, CommonParameters, new List<MatchedFragmentIon>());
-            SpectralMatch matchB = new PeptideSpectralMatch(compactPeptide2, 0, 0, 0, scanB, CommonParameters, new List<MatchedFragmentIon>());
-            SpectralMatch matchC = new PeptideSpectralMatch(compactPeptide3, 0, 0, 0, scanC, CommonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch matchA = new PeptideSpectralMatch(compactPeptide1, 0, 10, 0, scanA, CommonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch matchB = new PeptideSpectralMatch(compactPeptide2, 0, 10, 0, scanB, CommonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch matchC = new PeptideSpectralMatch(compactPeptide3, 0, 10, 0, scanC, CommonParameters, new List<MatchedFragmentIon>());
 
             var newPsms = new List<SpectralMatch> { matchA, matchB, matchC };
 

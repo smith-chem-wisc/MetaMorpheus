@@ -23,6 +23,22 @@ public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, Lis
     public bool IsDecoy => SpecificBioPolymer.Parent.IsDecoy;
     public string FullSequence => SpecificBioPolymer.FullSequence;
 
+    #region Notch Ambiguous Q-Value Properties
+
+    // If we have an ambiguous spectral match that contains multiple notches, we store the q-values and cumulative counts for each notch here.
+    // We can then use this information to disambiguate at the end. 
+    // If we end up with a notch ambiguous PSM and these fields are not set after FDR analysis engine, something went wrong. 
+
+    public double? QValueNotch { get; set; } = null;
+    public double? CumulativeTargetNotch { get; set; } = null;
+    public double? CumulativeDecoyNotch { get; set; } = null;
+
+    public double? PeptideQValueNotch { get; set; } = null;
+    public double? PeptideCumulativeTargetNotch { get; set; } = null;
+    public double? PeptideCumulativeDecoyNotch { get; set; } = null;
+
+    #endregion
+
     public bool Equals(ISearchAttempt? other)
     {
         if (other is SpectralMatchHypothesis hypothesis) return Equals(hypothesis);

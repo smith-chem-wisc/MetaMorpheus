@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -98,15 +99,23 @@ namespace EngineLayer
         internal static (string ResolvedString, double? ResolvedValue) Resolve(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
-            if (list.Max() - list.Min() < ToleranceForDoubleResolutionF5)
+            double min = list.Min();
+            double max = list.Max();
+            double avg = list.Average();
+
+            // If all values are within tolerance, check if all are integers
+            if (max - min < ToleranceForDoubleResolutionF5)
             {
-                return (list.Average().ToString("F5", CultureInfo.InvariantCulture), list.Average());
+                bool allInts = list.All(x => Math.Abs(x - Math.Round(x)) < ToleranceForDoubleResolutionF2);
+                if (!allInts)
+                    return (avg.ToString("F5", CultureInfo.InvariantCulture), avg);
+
+                int intVal = (int)Math.Round(avg);
+                return (intVal.ToString(CultureInfo.InvariantCulture), intVal);
             }
-            else
-            {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))));
-                return (returnString, null);
-            }
+
+            var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))));
+            return (returnString, null);
         }
 
         internal static (string ResolvedString, int? ResolvedValue) Resolve(IEnumerable<int> enumerable)
@@ -178,7 +187,7 @@ namespace EngineLayer
                 s[SpectrumMatchFromTsvHeader.OneOverK0] = psm == null ? " " : psm.ScanOneOverK0.HasValue ? psm.ScanOneOverK0.Value.ToString("F5", CultureInfo.InvariantCulture) : "N/A";
             s[SpectrumMatchFromTsvHeader.Score] = psm == null ? " " : psm.Score.ToString("F3", CultureInfo.InvariantCulture);
             s[SpectrumMatchFromTsvHeader.DeltaScore] = psm == null ? " " : psm.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
-            s[SpectrumMatchFromTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch / MassDiffAcceptor.NotchScalar)).ResolvedString;
         }
 
         internal static void AddPeptideSequenceData(Dictionary<string, string> s, SpectralMatch sm, IReadOnlyDictionary<string, int> ModsToWritePruned)
@@ -346,11 +355,24 @@ namespace EngineLayer
                 cumulativeTarget = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeTarget.ToString(CultureInfo.InvariantCulture);
                 cumulativeDecoy = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeDecoy.ToString(CultureInfo.InvariantCulture);
                 qValue = peptide.GetFdrInfo(writePeptideLevelFdr).QValue.ToString("F6", CultureInfo.InvariantCulture);
-                cumulativeTargetNotch = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture);
-                cumulativeDecoyNotch = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture);
-                qValueNotch = peptide.GetFdrInfo(writePeptideLevelFdr).QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
                 PEP = peptide.GetFdrInfo(writePeptideLevelFdr).PEP.ToString();
                 PEP_Qvalue = peptide.GetFdrInfo(writePeptideLevelFdr).PEP_QValue.ToString();
+
+                // ambiguous notch, has never been resolved by our disambiguation, so take the best of the notches for the fdr columns. 
+                if (peptide.Notch == null && peptide.GetFdrInfo(writePeptideLevelFdr).QValueNotch > 1)
+                {
+                    var min = peptide.BestMatchingBioPolymersWithSetMods.MinBy(b => writePeptideLevelFdr ? b.PeptideQValueNotch : b.QValueNotch);
+
+                    cumulativeTargetNotch = (writePeptideLevelFdr ? min.PeptideCumulativeTargetNotch : min.CumulativeTargetNotch)!.Value.ToString(CultureInfo.InvariantCulture);
+                    cumulativeDecoyNotch = (writePeptideLevelFdr ? min.PeptideCumulativeDecoyNotch : min.CumulativeDecoyNotch)!.Value.ToString(CultureInfo.InvariantCulture);
+                    qValueNotch = (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
+                }
+                else
+                {
+                    cumulativeTargetNotch = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeTargetNotch.ToString("F6", CultureInfo.InvariantCulture);
+                    cumulativeDecoyNotch = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeDecoyNotch.ToString("F6", CultureInfo.InvariantCulture);
+                    qValueNotch = peptide.GetFdrInfo(writePeptideLevelFdr).QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
+                }
             }
 
             s[SpectrumMatchFromTsvHeader.CumulativeTarget] = cumulativeTarget;

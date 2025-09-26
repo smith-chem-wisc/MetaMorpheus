@@ -23,6 +23,10 @@ using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
+using Omics;
+using Readers.SpectralLibrary;
+using EngineLayer.SpectrumMatch;
+
 
 namespace TaskLayer
 {
@@ -73,6 +77,7 @@ namespace TaskLayer
                 Parameters.AllSpectralMatches = Parameters.AllSpectralMatches.OrderByDescending(b => b)
                     .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
                 CalculatePsmAndPeptideFdr(Parameters.AllSpectralMatches);
+                DisambiguateSpectralMatches();
             }
             ConstructResultsDictionary();
             DoMassDifferenceLocalizationAnalysis();
@@ -153,6 +158,17 @@ namespace TaskLayer
                     new List<string> { Parameters.SearchTaskId }, analysisType: analysisType, doPEP: doPep, outputFolder: Parameters.OutputFolder).Run();
 
             Status($"Done estimating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} FDR!", Parameters.SearchTaskId);
+        }
+
+        private void DisambiguateSpectralMatches()
+        {
+            Status($"Disambiguating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s...", Parameters.SearchTaskId);
+            var disambiguationEngine = new DisambiguationEngine(Parameters.AllSpectralMatches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId });
+
+            // should modify in place the spectral matches. 
+            var disambiguationResults = (DisambiguationEngineResults)disambiguationEngine.Run();
+
+            Status($"Done disambiguating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s!", Parameters.SearchTaskId);
         }
 
         private void ProteinAnalysis()
