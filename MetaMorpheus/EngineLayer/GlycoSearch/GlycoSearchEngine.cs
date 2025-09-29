@@ -208,7 +208,7 @@ namespace EngineLayer.GlycoSearch
                         {
                             gsms = MatchGlycopeptide(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff); // Use the peptide candidate and the scan to generate the gsms.
                         }
-                        else //GlycoSearchType == GlycoSearchType.NGlycanSearch
+                        else
                         {                     
                             gsms = MatchNGlycopeptide(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
                         }

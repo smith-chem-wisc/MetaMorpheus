@@ -102,7 +102,7 @@ namespace Test
             task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.N_O_GlycanSearch;
             task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_ForNoSearch.gdb";
             task._glycoSearchParameters.OGlycanDatabasefile = "OGlycan.gdb";
-            task._glycoSearchParameters.MaximumOGlycanAllowed = 2;
+            task._glycoSearchParameters.MaximumOGlycanAllowed = 1;
             GlobalVariables.NGlycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_ForNoSearch.gdb"));
             // run task
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask>
@@ -114,8 +114,8 @@ namespace Test
             Assert.That(GlycanBox.GlobalOGlycans.Length == 24);
             Assert.That(GlycanBox.GlobalNGlycans.Count == 10);
             Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p < 0) > 1)); // no NO box has more than one Nglycan (ids negative)
-            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.NumberOfMods > task._glycoSearchParameters.MaximumOGlycanAllowed + 1 )); // no NO box has more than 3 glycans (2 O + 1N)
-            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p >= 0) > task._glycoSearchParameters.MaximumOGlycanAllowed)); // no NO box has more than 2 Oglycans (ids non-negative)
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.NumberOfMods > task._glycoSearchParameters.MaximumOGlycanAllowed + 1 )); // no NO box has more than 2 glycans (2 O + 1N)
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p >= 0) > task._glycoSearchParameters.MaximumOGlycanAllowed)); // no NO box has more than 1 Oglycans (ids non-negative)
 
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
@@ -183,7 +183,7 @@ namespace Test
             task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.N_O_GlycanSearch;
             task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_ForNoSearch.gdb";
             task._glycoSearchParameters.OGlycanDatabasefile = "OGlycan.gdb";
-            task._glycoSearchParameters.MaximumOGlycanAllowed = 3;
+            task._glycoSearchParameters.MaximumOGlycanAllowed = 1;
             GlobalVariables.NGlycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", @"NGlycan_ForNoSearch.gdb"));
             // run task
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask>
@@ -195,8 +195,8 @@ namespace Test
             Assert.That(GlycanBox.GlobalOGlycans.Length == 24);
             Assert.That(GlycanBox.GlobalNGlycans.Count == 10);
             Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p < 0) > 1)); // no NO box has more than one Nglycan (ids negative)
-            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.NumberOfMods > task._glycoSearchParameters.MaximumOGlycanAllowed + 1)); // no NO box has more than 3 glycans (2 O + 1N)
-            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p >= 0) > task._glycoSearchParameters.MaximumOGlycanAllowed)); // no NO box has more than 3 Oglycans (ids non-negative)
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.NumberOfMods > task._glycoSearchParameters.MaximumOGlycanAllowed + 1)); // no NO box has more than 2 glycans (1 O + 1N)
+            Assert.That(!GlycanBox.NOGlycanBoxes.Any(p => p.ModIds.Count(p => p >= 0) > task._glycoSearchParameters.MaximumOGlycanAllowed)); // no NO box has more than 1 Oglycans (ids non-negative)
 
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
