@@ -1279,7 +1279,7 @@ namespace MetaMorpheusGUI
 
                 // Get search results
                 var searchResult = Directory.GetFiles(finalSearchTask.Task.OutputFolder)
-                    .First(p => p.EndsWith(".psmtsv") || p.EndsWith(".osmtsv"));
+                    .First(p => p.EndsWith("PSMs.psmtsv") || p.EndsWith("OSMs.osmtsv"));
 
                 filesToLoad = spectraFiles.Append(searchResult).ToArray();
             }

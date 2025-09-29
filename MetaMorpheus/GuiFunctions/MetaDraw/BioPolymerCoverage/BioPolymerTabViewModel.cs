@@ -223,7 +223,7 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
                 bool singleLocalization = siteSplits.Length == 1;
 
                 // TODO: Better ambiguity handling for missed cleavages. 
-                var missedCleavageSplits = match.MissedCleavage.Split("|").Select(int.Parse).ToArray();
+                var missedCleavageSplits = match.MissedCleavage?.Split("|").Select(int.Parse).ToArray() ?? new int[] { 0 };
                 int missedCleavages = missedCleavageSplits[0];
 
                 // belongs to single biopolymer and single localization 
