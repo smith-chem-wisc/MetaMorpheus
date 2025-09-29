@@ -193,6 +193,9 @@
     <None Update="GlycoTestData\sliced_glyco_hcd_ethcd.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\TaskForOglycoPruneDb.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\yeast_glycan_25170.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
