@@ -640,28 +640,7 @@ namespace TaskLayer
 
                             PositionFrequencyAnalysis pfa = new PositionFrequencyAnalysis();
                             var proteins = proteinGroup.Proteins.Select(p => new KeyValuePair<string, string>(p.Accession, p.BaseSequence)).ToDictionary();
-                            pfa.SetUpQuantificationObjectsFromFullSequences(peptides, proteins); // one-based indexes, ignores terminal mods on all peptides.
-
-                            // set the one-based start index in protein for each peptide
-                            foreach (var protein in pfa.ProteinGroups.First().Value.Proteins.Values)
-                            {
-                                if (protein.Sequence == null)
-                                {
-                                    protein.Sequence = proteinGroup.Proteins.Where(p => p.Accession == protein.Accession).Select(p => p.BaseSequence).First();
-                                }
-                                List<string> peptideBaseSequencesSeen = new List<string>();
-                                foreach (var peptide in proteinGroup.AllPeptides)
-                                {
-                                    if (protein.Peptides.ContainsKey(peptide.BaseSequence)
-                                        && !peptideBaseSequencesSeen.Contains(peptide.BaseSequence))
-                                    {
-                                        protein.Peptides[peptide.BaseSequence]
-                                            .OneBasedStartIndexInProtein = peptide.OneBasedStartResidue;
-
-                                        peptideBaseSequencesSeen.Add(peptide.BaseSequence);
-                                    }
-                                }
-                            }
+                            pfa.SetUpQuantificationObjectsFromFullSequences(peptides, proteins); // uses zero-based indexes for the mods.
 
                             proteinGroup.ModsInfo.Add(spectraFile, pfa.ProteinGroups.First().Value); // Getting stoich one protein group at a time, so only getting First() is ok here.
 
@@ -1455,7 +1434,7 @@ namespace TaskLayer
 
                 foreach (var variant in variants)
                 {
-                    if (variantPWSM.IntersectsAndIdentifiesVariation(variant).identifies == true)
+                    if (variantPWSM.IntersectsAndIdentifiesVariation(variant).identifies == true && variant.Description.Description.IsNotNullOrEmpty())
                     {
                         if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
                         {
