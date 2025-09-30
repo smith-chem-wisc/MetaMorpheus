@@ -85,6 +85,8 @@ namespace Test
 
             //string exectedProteinGroupToString = proteinGroup1.ToString();
             string exectedProteinGroupToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
+            var out1 = proteinGroup1.ToString();
+            var out1h = proteinGroup1.GetTabSeparatedHeader();
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupToString));
 
 
@@ -93,6 +95,7 @@ namespace Test
             ProteinGroup proteinGroup3 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList3),
                                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
             string exectedProteinGroupWithDecoyToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
+            var out2 = proteinGroup1.ToString();
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupWithDecoyToString));
         }
 

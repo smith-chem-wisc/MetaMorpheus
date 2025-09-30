@@ -254,9 +254,8 @@ namespace Test
             ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new CommonParameters(), null, new List<string>());
             f.Run();
 
-            // Commented out the assertions below because the occupancy is no longer at the PSM level.
-            // Needs updating.
             //Assert.That(proteinGroups.First().ModsInfo[0], Is.EqualTo("#aa5[resMod on S,info:occupancy=0.67(2/3)];#aa10[iModOne on I,info:occupancy=0.33(2/6)];#aa10[iModTwo on I,info:occupancy=0.33(2/6)]"));
+            Assert.That(true == false); // intentional test fail.
         }
 
         [Test]
