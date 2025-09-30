@@ -1,5 +1,4 @@
-﻿using Chemistry;
-using Easy.Common.Extensions;
+﻿using Easy.Common.Extensions;
 using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
@@ -8,10 +7,6 @@ using EngineLayer.ModificationAnalysis;
 using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
-using MzLibUtil;
-using Omics.Modifications;
-using Omics.SpectrumMatch;
-using OpenMcdf.Extensions.OLEProperties;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -21,11 +16,13 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Windows.Markup;
 using TaskLayer.MbrAnalysis;
 using Chemistry;
 using EngineLayer.DatabaseLoading;
 using MzLibUtil;
+using MzLibUtil.PositionFrequencyAnalysis;
+using Omics.Digestion;
+using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using Omics;
@@ -704,7 +701,7 @@ namespace TaskLayer
             }
 
             //Silac stuff for post-quantification
-            if (Parameters.SearchParameters.SilacLabels != null && Parameters.AllPsms.First() is PeptideSpectralMatch) //if we're doing silac
+            if (Parameters.SearchParameters.SilacLabels != null && Parameters.AllSpectralMatches.First() is PeptideSpectralMatch) //if we're doing silac
             {
                 SilacConversions.SilacConversionsPostQuantification(allSilacLabels, startLabel, endLabel, spectraFileInfo, ProteinGroups, Parameters.ListOfDigestionParams,
                     Parameters.FlashLfqResults, Parameters.AllSpectralMatches.Cast<PeptideSpectralMatch>().ToList(), Parameters.SearchParameters.ModsToWriteSelection, quantifyUnlabeledPeptides);
@@ -1272,13 +1269,14 @@ namespace TaskLayer
                 .Where(ion => ion.NeutralTheoreticalProduct.ProductType == Omics.Fragmentation.ProductType.D)
                 .OrderBy(ion => ion.Mz)
                 .ToArray();
-            double[] expIonMzs = diagnosticIons.Select(ion => ion.Mz).ToArray(); 
+            double[] expIonMzs = diagnosticIons.Select(ion => ion.Mz).ToArray();
             double[] ionIntensities = new double[theoreticalIonMzs.Length];
-            
-            for (int ionIndex = 0; ionIndex < ionIntensities.Length; ionIndex++)
+
+            int expIonIndex = 0;
+            for (int theoreticalIonIndex = 0; theoreticalIonIndex < ionIntensities.Length; theoreticalIonIndex++)
             {
-                while (peakIndex <= lastPeakIndex && 
-                       scan.XArray[peakIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[ionIndex]))
+                while (expIonIndex < expIonMzs.Length &&
+                       expIonMzs[expIonIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[theoreticalIonIndex]))
                 {
                     expIonIndex++;
                 }
