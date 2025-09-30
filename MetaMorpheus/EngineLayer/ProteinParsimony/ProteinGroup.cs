@@ -417,17 +417,16 @@ namespace EngineLayer
 
                 foreach (var protein in proteinGroupOccupanciesPerProtein.Keys)
                 {
-                    if (!proteinGroupOccupanciesPerProtein[protein].IsNotNullOrEmpty())
+                    if (proteinGroupOccupanciesPerProtein[protein].IsNullOrEmpty())
                     {
                         continue;
                     }
 
                     modInfoString.Append(protein.Accession + ":{");
-                    var protSeq = Proteins.Where(prot => prot.Accession == protein.Accession).First().BaseSequence;
 
                     foreach (var modpos in proteinGroupOccupanciesPerProtein[protein].Keys.Order())
                     {
-                        var loc = modpos == 0 ? "N-term" : modpos == protein.Sequence.Length + 1 ? "C-term" : $"{protSeq[modpos-1]}#" + modpos.ToString(); //something's worng with the positions sometimes being longer than the sequence
+                        var loc = modpos == 0 ? "N-terminal" : modpos == protein.Sequence.Length + 1 ? "C-terminal" : $"{protein.Sequence[modpos-1]}#" + modpos.ToString(); 
                         modInfoString.Append(loc);
 
                         var modStrings = new List<string>();
