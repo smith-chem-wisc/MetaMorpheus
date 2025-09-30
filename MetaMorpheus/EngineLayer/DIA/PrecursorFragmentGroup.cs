@@ -16,7 +16,7 @@ namespace EngineLayer.DIA
         public ExtractedIonChromatogram PrecursorXic { get; set; }
 
         public List<PrecursorFragmentPair> PFpairs { get; set; }
-        public int PFgroupIndex { get; set; } 
+        public int PFgroupIndex { get; set; } //an index identifier for each group and also used as the scan number for the pseudo MS2 scan generated from this group
 
         public PrecursorFragmentsGroup(ExtractedIonChromatogram precursorXic, List<PrecursorFragmentPair> pfPairs)
         {

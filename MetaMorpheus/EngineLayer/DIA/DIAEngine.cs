@@ -86,9 +86,6 @@ namespace EngineLayer.DIA
             return joinedMap;
         }
 
-
-        //write spectral library
-
         private static int GetClosestWindowIndex(int mz, SortedList<int, List<MsDataScan>> map, Tolerance tolerance)
         {
             int closestIndex = -1;
