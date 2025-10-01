@@ -9,6 +9,8 @@ using Omics.Modifications;
 using Omics;
 using Omics.Digestion;
 using EngineLayer.SpectrumMatch;
+using MzLibUtil.PositionFrequencyAnalysis;
+using Easy.Common.Extensions;
 
 namespace EngineLayer
 {
@@ -460,6 +462,7 @@ namespace EngineLayer
                     {
                         proteinGroup.FilesForQuantification = allInfo;
                         proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
+                        proteinGroup.ModsInfo = new Dictionary<SpectraFileInfo, QuantifiedProteinGroup>();
 
                         foreach (var spectraFile in allInfo)
                         {
@@ -471,6 +474,28 @@ namespace EngineLayer
                             {
                                 //needed for decoys/contaminants/proteins that aren't quantified
                                 proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
+                            }
+
+                            // get modification stoichiometry using FlashLFQ spectraFile-specific intensities
+                            var pgQuantifiedPeptides = flashLfqResults.PeptideModifiedSequences.Where(x => proteinGroup.AllPeptides.Select(x => x.FullSequence).Contains(x.Key)).ToList();
+
+                            if (pgQuantifiedPeptides.IsNotNullOrEmpty())
+                            {
+                                var peptides = pgQuantifiedPeptides.Where(pep => pep.Value.GetIntensity(spectraFile) > 0)
+                                                                   .Select(pep => (pep.Value.Sequence,
+                                                                                   new List<string> { proteinGroup.ProteinGroupName },
+                                                                                   pep.Value.GetIntensity(spectraFile))).ToList();
+                                if (!peptides.IsNotNullOrEmpty())
+                                {
+                                    proteinGroup.ModsInfo.Add(spectraFile, new QuantifiedProteinGroup(proteinGroup.ProteinGroupName));
+                                    continue;
+                                }
+
+                                PositionFrequencyAnalysis pfa = new PositionFrequencyAnalysis();
+                                var proteins = proteinGroup.Proteins.Select(p => new KeyValuePair<string, string>(p.Accession, p.BaseSequence)).ToDictionary();
+                                pfa.SetUpQuantificationObjectsFromFullSequences(peptides, proteins); // uses zero-based indexes for the mods.
+
+                                proteinGroup.ModsInfo.Add(spectraFile, pfa.ProteinGroups.First().Value); // Getting stoich one protein group at a time, so only getting First() is ok here.
                             }
                         }
                     }

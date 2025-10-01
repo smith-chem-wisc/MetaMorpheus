@@ -85,8 +85,9 @@ namespace Test
 
             //string exectedProteinGroupToString = proteinGroup1.ToString();
             string exectedProteinGroupToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
-            var out1 = proteinGroup1.ToString();
-            var out1h = proteinGroup1.GetTabSeparatedHeader();
+            var out1 = proteinGroup1.ToString().Split("\t");
+            var out1h = proteinGroup1.GetTabSeparatedHeader().Split("\t");
+            var out1zipped = out1h.Zip(out1, (a, b) => (a, b)).ToDictionary();
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupToString));
 
 
@@ -249,7 +250,8 @@ namespace Test
             List<string> proteinGroupsOutput = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllQuantifiedProteinGroups.tsv")).ToList();
             string firstDataLine = proteinGroupsOutput[2];
             string modInfoListProteinTwo = firstDataLine.Split('\t')[14];
-            Assert.That(modInfoListProteinTwo, Is.EqualTo("#aa71[Oxidation on S,info:occupancy=0.50(1/2)]"));
+            Assert.That(modInfoListProteinTwo, Is.EqualTo("P10591:{M#65[Common Variable:Oxidation on M, info: occupancy=1.0000(654315.977066199)]S#71[Less Common:Oxidation on S, info: occupancy=0.1957(654315.977066199)]}" +
+                                                          "P10592:{M#65[Common Variable:Oxidation on M, info: occupancy=1.0000(654315.977066199)]S#71[Less Common:Oxidation on S, info: occupancy=0.1957(654315.977066199)]}"));
 
             Directory.Delete(outputFolder, true);
         }

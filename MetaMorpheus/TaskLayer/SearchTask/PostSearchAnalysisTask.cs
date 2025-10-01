@@ -617,7 +617,6 @@ namespace TaskLayer
                         else
                         {
                             proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
-                            continue; // no need to calculate stoichiometry if the protein group is not in the FlashLFQ results
                         }
 
                         // get modification stoichiometry using FlashLFQ spectraFile-specific intensities
@@ -629,7 +628,7 @@ namespace TaskLayer
                                                                .Select(pep => (pep.Value.Sequence,
                                                                                new List<string> { proteinGroup.ProteinGroupName },
                                                                                pep.Value.GetIntensity(spectraFile))).ToList();
-                            if (!peptides.IsNotNullOrEmpty())
+                            if (peptides.IsNullOrEmpty())
                             {
                                 proteinGroup.ModsInfo.Add(spectraFile, new QuantifiedProteinGroup(proteinGroup.ProteinGroupName));
                                 continue;
@@ -640,64 +639,9 @@ namespace TaskLayer
                             pfa.SetUpQuantificationObjectsFromFullSequences(peptides, proteins); // uses zero-based indexes for the mods.
 
                             proteinGroup.ModsInfo.Add(spectraFile, pfa.ProteinGroups.First().Value); // Getting stoich one protein group at a time, so only getting First() is ok here.
-
                         }
                     }
                 }
-
-                
-
-                //foreach (var proteinGroup in ProteinGroups)
-                //{
-                //    if (proteinGroup.FilesForQuantification.IsNotNullOrEmpty())
-                //    {
-                //        var pgQuantifiedPeptides = Parameters.FlashLfqResults.PeptideModifiedSequences.Where(p => peptideSequencesForQuantification.Contains(p.Key)).Select(p => p.Value);
-                //
-                //        
-                //
-                //        
-                //        var sb = new StringBuilder();
-                //           
-                //
-                //        foreach (var file in proteinGroup.FilesForQuantification)
-                //        {
-                //            
-                //
-                //            
-                //
-                //                proteinGroupsOccupancyByProteins[proteinGroup.ProteinGroupName]
-                //                    .Proteins[protein.Accession]
-                //                    .SetProteinModsFromPeptides();
-                //
-                //                // build modInfoString for this protein
-                //                var occupancyPGProtein = proteinGroupsOccupancyByProteins[proteinGroup.ProteinGroupName].Proteins[protein.Accession];
-                //                var proteinStoichiometry = occupancyPGProtein.GetModStoichiometryFromProteinMods();
-                //                var aaModStrings = new List<string>();
-                //
-                //                foreach (var modpos in occupancyPGProtein.ModifiedAminoAcidPositionsInProtein.Keys.Order())
-                //                {
-                //                    var totalIntensity = occupancyPGProtein.Peptides.Where(pep => occupancyPGProtein.PeptidesByProteinPosition[modpos].Contains(pep.Key)).Sum(pep => pep.Value.Intensity);
-                //                    var aaModString = new StringBuilder();
-                //                    aaModString.Append($"aa#{modpos.ToString()}");
-                //
-                //                    foreach (var mod in occupancyPGProtein.ModifiedAminoAcidPositionsInProtein[modpos])
-                //                    {
-                //                        var modStoichiometry = mod.Value.Intensity;
-                //                        aaModString.Append($"[{mod.Key}, info:occupancy={modStoichiometry.ToString("N4")}({totalIntensity})]");
-                //                    }
-                //
-                //                    aaModStrings.Add(aaModString.ToString());
-                //                }
-                //                if (aaModStrings.IsNotNullOrEmpty())
-                //                {
-                //                    sb.Append($"protein:{protein.Accession}{{{string.Join(";", aaModStrings)}}}");
-                //                }
-                //            }
-                //            proteinGroup.ModsInfo = new Dictionary<SpectraFileInfo, string>();
-                //            proteinGroup.ModsInfo.Add(file.First(), sb.ToString());
-                //        }
-                //    }
-                //}
             }
 
             //Silac stuff for post-quantification
