@@ -349,9 +349,13 @@ namespace EngineLayer
                     }
                 }
             }
+            else
+            {
+                sb.Append("\t");
+            }
 
-            // number of PSMs for listed peptides
-            sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
+                // number of PSMs for listed peptides
+                sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
 
             // isDecoy
@@ -445,7 +449,6 @@ namespace EngineLayer
             {
                 return "";
             }
-            
         }
 
         // this method is only used internally, to make protein grouping faster
