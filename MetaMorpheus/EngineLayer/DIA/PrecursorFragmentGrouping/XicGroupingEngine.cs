@@ -54,7 +54,7 @@ namespace EngineLayer.DIA
 
         /// <summary>
         /// Given one precursor XIC and all eligibile fragment XICs, select fragments that meet the grouping criteria and construct a precursor-fragment group for this precursor.
-        /// <summary>
+        /// </summary>
         public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, List<ExtractedIonChromatogram> fragmentXics, double overlapThreshold, double correlationThreshold, int minFragmentCountForGrouping)
         {
             var pfPairs = new List<PrecursorFragmentPair>();
