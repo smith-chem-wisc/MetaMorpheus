@@ -248,8 +248,10 @@ namespace Test
             Assert.That(totalNumberOfMods, Is.EqualTo(4));
 
             List<string> proteinGroupsOutput = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllQuantifiedProteinGroups.tsv")).ToList();
-            string firstDataLine = proteinGroupsOutput[2];
-            string modInfoListProteinTwo = firstDataLine.Split('\t')[14];
+            string testDataLine = proteinGroupsOutput.Where(x => x.StartsWith("P10591")).First();
+            string modInfoListProteinTwo = testDataLine.Split('\t')[14];
+
+            Assert.That(8, Is.EqualTo(proteinGroupsOutput.Count));
             Assert.That(modInfoListProteinTwo, Is.EqualTo("P10591:{M#65[Common Variable:Oxidation on M, info: occupancy=1.0000(654315.977066199)]S#71[Less Common:Oxidation on S, info: occupancy=0.1957(654315.977066199)]}" +
                                                           "P10592:{M#65[Common Variable:Oxidation on M, info: occupancy=1.0000(654315.977066199)]S#71[Less Common:Oxidation on S, info: occupancy=0.1957(654315.977066199)]}"));
 

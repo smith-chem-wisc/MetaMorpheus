@@ -170,7 +170,7 @@ namespace EngineLayer
             sb.Append("Fragment Sequence Coverage" + '\t');
             //sb.Append("Modification Info List" + "\t");
 
-            if (FilesForQuantification != null)
+            if (IntensitiesByFile != null && FilesForQuantification != null)
             {
                 bool unfractionated = FilesForQuantification.Select(p => p.Fraction).Distinct().Count() == 1;
                 bool conditionsUndefined = FilesForQuantification.All(p => string.IsNullOrEmpty(p.Condition));
@@ -204,8 +204,12 @@ namespace EngineLayer
                     }
                 }
             }
+            else
+            {
+                sb.Append("\t");
+            }
 
-            sb.Append("Number of PSMs" + '\t');
+                sb.Append("Number of PSMs" + '\t');
             sb.Append("Protein Decoy/Contaminant/Target" + '\t');
             sb.Append("Protein Cumulative Target" + '\t');
             sb.Append("Protein Cumulative Decoy" + '\t');
