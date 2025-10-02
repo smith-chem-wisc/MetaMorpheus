@@ -176,7 +176,7 @@ namespace Test.DIATests
             var ms2Xics = ms2XicConstructor.GetAllXics(fakeaMs2Scans);
             var xicGroupingEngine = new XicGroupingEngine(0.1f, 0.5, 0.5);
             var allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics).ToArray();
-            var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.MzPeak, new CommonParameters(), "test");
+            var pseudoScan = allGroups[0].GetPseudoMs2ScanFromPfGroup(PseudoMs2ConstructionType.MzPeak, new CommonParameters(), "test");
 
             //The precursor information should match with PrecursorDist
             Assert.That(pseudoScan.PrecursorCharge, Is.EqualTo(1));
@@ -191,7 +191,7 @@ namespace Test.DIATests
             //Test with PseudoMs2ConstructionType.Mass when we use mass indexing on Ms2 scans
             ms2Xics = ms1XicConstructor.GetAllXics(fakeaMs2Scans);
             allGroups = xicGroupingEngine.PrecursorFragmentGrouping(ms1Xics, ms2Xics).ToArray();
-            pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], PseudoMs2ConstructionType.Mass, new CommonParameters(), "test");
+            pseudoScan = allGroups[0].GetPseudoMs2ScanFromPfGroup(PseudoMs2ConstructionType.Mass, new CommonParameters(), "test");
 
             //The precursor information should still match
             Assert.That(pseudoScan.PrecursorCharge, Is.EqualTo(1));
@@ -204,7 +204,7 @@ namespace Test.DIATests
 
             //Test exception handling
             var invalidType = (PseudoMs2ConstructionType)999;
-            var ex = Assert.Throws<MetaMorpheusException>(() => PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(allGroups[0], invalidType, new CommonParameters(), "test"));
+            var ex = Assert.Throws<MetaMorpheusException>(() => allGroups[0].GetPseudoMs2ScanFromPfGroup(invalidType, new CommonParameters(), "test"));
             Assert.That(ex.Message, Is.EqualTo("Invalid pseudo MS2 construction type specified."));
         }
 

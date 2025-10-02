@@ -44,7 +44,7 @@ namespace EngineLayer.DIA
                 {
                     OneBasedScanNumber++;
                     pfGroup.PFgroupIndex = OneBasedScanNumber;
-                    var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(pfGroup, DIAparams.PseudoMs2ConstructionType, CommonParams, DataFile.FilePath);
+                    var pseudoScan = pfGroup.GetPseudoMs2ScanFromPfGroup(DIAparams.PseudoMs2ConstructionType, CommonParams, DataFile.FilePath);
                     yield return pseudoScan;
                 }
             }

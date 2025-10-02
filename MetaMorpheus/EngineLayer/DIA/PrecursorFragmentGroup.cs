@@ -134,15 +134,14 @@ namespace EngineLayer.DIA
             return overlap;
         }
 
-        public static Ms2ScanWithSpecificMass GetPseudoMs2ScanFromPfGroup(PrecursorFragmentsGroup pfGroup, PseudoMs2ConstructionType pseudoMs2ConstructionType, CommonParameters commonParameters, string dataFilePath)
+        public Ms2ScanWithSpecificMass GetPseudoMs2ScanFromPfGroup(PseudoMs2ConstructionType pseudoMs2ConstructionType, CommonParameters commonParameters, string dataFilePath)
         {
-            //sort all fragment XICs by their m/z value
-            pfGroup.PFpairs.Sort((a, b) => a.FragmentXic.AveragedMassOrMz.CompareTo(b.FragmentXic.AveragedMassOrMz));
-            // This is currently taking the mz value of the first peak as the representative mz for the fragment XIC; it is only for testing purposes
-            // It will be changed to the mz value of the highest peak or the averaged mz value of the XIC when there is a release for the updated mzLib.
-            var mzs = pfGroup.PFpairs.Select(pf => (double)pf.FragmentXic.Peaks.First().M).ToArray();
-            var intensities = pfGroup.PFpairs.Select(pf => (double)pf.FragmentXic.Peaks.First().Intensity).ToArray();
-            var newMs2Scan = new MsDataScan(new MzSpectrum(mzs, intensities, false), pfGroup.PFgroupIndex, 2, true, Polarity.Positive, pfGroup.PrecursorXic.ApexRT, new MzRange(mzs.Min(), mzs.Max()), null, MZAnalyzerType.Unknown, intensities.Sum(), null, null, null, oneBasedPrecursorScanNumber: pfGroup.PFgroupIndex);
+            //sort all fragment XICs by their m/z value of the apex peak
+            PFpairs.Sort((a, b) => a.FragmentXic.ApexPeak.M.CompareTo(b.FragmentXic.ApexPeak.M));
+            //We use the apex peak of each Xic to construct the pseudo MS2 scan (might change if other values work better)
+            var mzs = PFpairs.Select(pf => (double)pf.FragmentXic.ApexPeak.M).ToArray();
+            var intensities = PFpairs.Select(pf => (double)pf.FragmentXic.ApexPeak.Intensity).ToArray();
+            var newMs2Scan = new MsDataScan(new MzSpectrum(mzs, intensities, false), PFgroupIndex, 2, true, Polarity.Positive, PrecursorXic.ApexRT, new MzRange(mzs.Min(), mzs.Max()), null, MZAnalyzerType.Unknown, intensities.Sum(), null, null, null, oneBasedPrecursorScanNumber: PFgroupIndex);
 
             // assign neutral experimental fragments for the new MS2 scan
             IsotopicEnvelope[] neutralExperimentalFragments = null;
@@ -154,15 +153,15 @@ namespace EngineLayer.DIA
                     break;
                 // If the fragment XIC is mass-based, we create an isotopic envelope as the neutral mass fragment for each fragment XIC
                 case PseudoMs2ConstructionType.Mass:
-                    neutralExperimentalFragments = pfGroup.PFpairs.Select(pf => new IsotopicEnvelope(1,
+                    neutralExperimentalFragments = PFpairs.Select(pf => new IsotopicEnvelope(1,
                             new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.ApexPeak.M, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
                     break;
                 default:
                     throw new MetaMorpheusException("Invalid pseudo MS2 construction type specified.");
             }
             // add precursor information
-            var charge = pfGroup.PrecursorXic.ApexPeak is IndexedMass im ? im.Charge : 1;
-            var monoMz = pfGroup.PrecursorXic.ApexPeak is IndexedMass im2 ? im2.M.ToMz(charge) : pfGroup.PrecursorXic.AveragedMassOrMz.ToMz(charge);
+            var charge = PrecursorXic.ApexPeak is IndexedMass im ? im.Charge : 1;
+            var monoMz = PrecursorXic.ApexPeak.M.ToMz(charge);
             Ms2ScanWithSpecificMass scanWithprecursor = new Ms2ScanWithSpecificMass(newMs2Scan, monoMz, charge, dataFilePath,
                 commonParameters, neutralExperimentalFragments);
 
