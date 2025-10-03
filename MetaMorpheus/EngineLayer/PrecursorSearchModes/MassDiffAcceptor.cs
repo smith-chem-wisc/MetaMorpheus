@@ -4,6 +4,7 @@ namespace EngineLayer
 {
     public abstract class MassDiffAcceptor
     {
+        public const double NotchScalar = 1E5;
         protected MassDiffAcceptor(string fileNameAddition)
         {
             FileNameAddition = fileNameAddition;
