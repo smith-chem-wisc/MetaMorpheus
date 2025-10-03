@@ -20,6 +20,7 @@
         {
             QValue = 2;
             PEP_QValue = 2;
+            QValueNotch = 2;
         }
     }
 }

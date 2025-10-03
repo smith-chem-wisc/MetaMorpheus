@@ -16,7 +16,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
 using Chemistry;
 using MzLibUtil;
@@ -26,6 +25,8 @@ using Omics.Modifications;
 using Omics.SpectrumMatch;
 using Omics;
 using Readers.SpectralLibrary;
+using EngineLayer.SpectrumMatch;
+
 
 namespace TaskLayer
 {
@@ -76,6 +77,7 @@ namespace TaskLayer
                 Parameters.AllSpectralMatches = Parameters.AllSpectralMatches.OrderByDescending(b => b)
                     .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
                 CalculatePsmAndPeptideFdr(Parameters.AllSpectralMatches);
+                DisambiguateSpectralMatches();
             }
             ConstructResultsDictionary();
             DoMassDifferenceLocalizationAnalysis();
@@ -101,7 +103,9 @@ namespace TaskLayer
             }
             WriteProteinResults();
             AddResultsTotalsToAllResultsTsv();
-            WritePrunedDatabase();
+            if (Parameters.SearchParameters.WritePrunedDatabase)
+                WritePrunedDatabase(Parameters.AllSpectralMatches, Parameters.BioPolymerList, Parameters.SearchParameters.ModsToWriteSelection, Parameters.DatabaseFilenameList, Parameters.OutputFolder, Parameters.SearchTaskId);
+
             var k = CommonParameters;
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
@@ -154,6 +158,17 @@ namespace TaskLayer
                     new List<string> { Parameters.SearchTaskId }, analysisType: analysisType, doPEP: doPep, outputFolder: Parameters.OutputFolder).Run();
 
             Status($"Done estimating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} FDR!", Parameters.SearchTaskId);
+        }
+
+        private void DisambiguateSpectralMatches()
+        {
+            Status($"Disambiguating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s...", Parameters.SearchTaskId);
+            var disambiguationEngine = new DisambiguationEngine(Parameters.AllSpectralMatches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId });
+
+            // should modify in place the spectral matches. 
+            var disambiguationResults = (DisambiguationEngineResults)disambiguationEngine.Run();
+
+            Status($"Done disambiguating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s!", Parameters.SearchTaskId);
         }
 
         private void ProteinAnalysis()
@@ -1053,292 +1068,6 @@ namespace TaskLayer
             }
         }
 
-        private void WritePrunedDatabase()
-        {
-            if (Parameters.SearchParameters.WritePrunedDatabase)
-            {
-                Status("Writing Pruned Database...", new List<string> { Parameters.SearchTaskId });
-                HashSet<Modification> modificationsToWriteIfBoth = new HashSet<Modification>();
-                HashSet<Modification> modificationsToWriteIfInDatabase = new HashSet<Modification>();
-                HashSet<Modification> modificationsToWriteIfObserved = new HashSet<Modification>();
-
-                var filteredPsms = FilteredPsms.Filter(Parameters.AllSpectralMatches,
-                    CommonParameters,
-                    includeDecoys: false,
-                    includeContaminants: true,
-                    includeAmbiguous: false,
-                    includeHighQValuePsms: false);
-
-                var proteinToConfidentBaseSequences = new Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>>();
-
-                // associate all confident PSMs with all possible proteins they could be digest products of (before or after parsimony)
-                foreach (SpectralMatch psm in filteredPsms)
-                {
-                    var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer);
-
-                    foreach (IBioPolymerWithSetMods peptide in myPepsWithSetMods)
-                    {
-                        if (proteinToConfidentBaseSequences.TryGetValue(peptide.Parent.ConsensusVariant, out var myPepList))
-                        {
-                            myPepList.Add(peptide);
-                        }
-                        else
-                        {
-                            proteinToConfidentBaseSequences.Add(peptide.Parent.ConsensusVariant, new List<IBioPolymerWithSetMods> { peptide });
-                        }
-                    }
-                }
-
-                // Add user mod selection behavours to Pruned DB
-                foreach (var modType in Parameters.SearchParameters.ModsToWriteSelection)
-                {
-                    foreach (Modification mod in GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)))
-                    {
-                        if (modType.Value == 1) // Write if observed and in database
-                        {
-                            modificationsToWriteIfBoth.Add(mod);
-                        }
-                        if (modType.Value == 2) // Write if in database
-                        {
-                            modificationsToWriteIfInDatabase.Add(mod);
-                        }
-                        if (modType.Value == 3) // Write if observed
-                        {
-                            modificationsToWriteIfObserved.Add(mod);
-                        }
-                    }
-                }
-
-                //generates dictionary of proteins with only localized modifications
-                var originalModPsms = FilteredPsms.Filter(filteredPsms,
-                        CommonParameters,
-                        includeDecoys: false,
-                        includeContaminants: true,
-                        includeAmbiguous: false,
-                        includeAmbiguousMods: false,
-                        includeHighQValuePsms: false);
-
-
-                var proteinToConfidentModifiedSequences = new Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>>();
-
-                HashSet<string> modPsmsFullSeq = originalModPsms.Select(p => p.FullSequence).ToHashSet();
-                HashSet<string> originalModPsmsFullSeq = originalModPsms.Select(p => p.FullSequence).ToHashSet();
-                modPsmsFullSeq.ExceptWith(originalModPsmsFullSeq);
-
-                foreach (SpectralMatch psm in originalModPsms)
-                {
-                    var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer);
-
-                    foreach (IBioPolymerWithSetMods peptide in myPepsWithSetMods)
-                    {
-                        if (proteinToConfidentModifiedSequences.TryGetValue(peptide.Parent.ConsensusVariant, out var myPepList))
-                        {
-                            myPepList.Add(peptide);
-                        }
-                        else
-                        {
-                            proteinToConfidentModifiedSequences.Add(peptide.Parent.ConsensusVariant, new List<IBioPolymerWithSetMods> { peptide });
-                        }
-                    }
-                }
-
-                Dictionary<IBioPolymer, Dictionary<int, List<Modification>>> proteinsOriginalModifications = new Dictionary<IBioPolymer, Dictionary<int, List<Modification>>>();
-                Dictionary<SequenceVariation, Dictionary<int, List<Modification>>> originalSequenceVariantModifications = new Dictionary<SequenceVariation, Dictionary<int, List<Modification>>>();
-
-                // mods included in pruned database will only be confidently localized mods (peptide's FullSequence != null)
-                foreach (var nonVariantProtein in Parameters.BioPolymerList.Select(p => p.ConsensusVariant).Distinct())
-                {
-                    if (!nonVariantProtein.IsDecoy)
-                    {
-                        proteinToConfidentModifiedSequences.TryGetValue(nonVariantProtein, out var psms);
-                        HashSet<(int, Modification, SequenceVariation)> modsObservedOnThisProtein = new HashSet<(int, Modification, SequenceVariation)>(); // sequence variant is null if mod is not on a variant
-                        foreach (IBioPolymerWithSetMods psm in psms ?? new List<IBioPolymerWithSetMods>())
-                        {
-                            foreach (var idxModKV in psm.AllModsOneIsNterminus)
-                            {
-                                int proteinIdx = GetOneBasedIndexInProtein(idxModKV.Key, psm);
-                                SequenceVariation relevantVariant = psm.Parent.AppliedSequenceVariations.FirstOrDefault(sv => VariantApplication.IsSequenceVariantModification(sv, proteinIdx));
-                                SequenceVariation unappliedVariant =
-                                    relevantVariant == null ? null : // it's not a sequence variant mod
-                                    psm.Parent.SequenceVariations.FirstOrDefault(sv => sv.Description != null && sv.Description.Equals(relevantVariant.Description));
-                                modsObservedOnThisProtein.Add((VariantApplication.RestoreModificationIndex(psm.Parent, proteinIdx), idxModKV.Value, unappliedVariant));
-                            }
-                        }
-
-                        IDictionary<(SequenceVariation, int), List<Modification>> modsToWrite = new Dictionary<(SequenceVariation, int), List<Modification>>();
-
-                        //Add if observed (regardless if in database)
-                        foreach (var observedMod in modsObservedOnThisProtein)
-                        {
-                            var tempMod = observedMod.Item2;
-
-                            if (modificationsToWriteIfObserved.Contains(tempMod))
-                            {
-                                var svIdxKey = (observedMod.Item3, observedMod.Item1);
-                                if (!modsToWrite.ContainsKey(svIdxKey))
-                                {
-                                    modsToWrite.Add(svIdxKey, new List<Modification> { observedMod.Item2 });
-                                }
-                                else
-                                {
-                                    modsToWrite[svIdxKey].Add(observedMod.Item2);
-                                }
-                            }
-                        }
-
-                        // Add modification if in database (two cases: always or if observed)
-                        foreach (var modkv in nonVariantProtein.OneBasedPossibleLocalizedModifications)
-                        {
-                            foreach (var mod in modkv.Value)
-                            {
-                                //Add if always In Database or if was observed and in database and not set to not include
-                                if (modificationsToWriteIfInDatabase.Contains(mod) ||
-                                    (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, null))))
-                                {
-                                    if (!modsToWrite.ContainsKey((null, modkv.Key)))
-                                    {
-                                        modsToWrite.Add((null, modkv.Key), new List<Modification> { mod });
-                                    }
-                                    else
-                                    {
-                                        modsToWrite[(null, modkv.Key)].Add(mod);
-                                    }
-                                }
-                            }
-                        }
-
-                        //TODO add unit test here
-                        // Add variant modification if in database (two cases: always or if observed)
-                        foreach (SequenceVariation sv in nonVariantProtein.SequenceVariations)
-                        {
-                            foreach (var modkv in sv.OneBasedModifications)
-                            {
-                                foreach (var mod in modkv.Value)
-                                {
-                                    //Add if always In Database or if was observed and in database and not set to not include
-                                    if (modificationsToWriteIfInDatabase.Contains(mod) ||
-                                        (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, sv))))
-                                    {
-                                        if (!modsToWrite.ContainsKey((sv, modkv.Key)))
-                                        {
-                                            modsToWrite.Add((sv, modkv.Key), new List<Modification> { mod });
-                                        }
-                                        else
-                                        {
-                                            modsToWrite[(sv, modkv.Key)].Add(mod);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        var oldMods = nonVariantProtein.OneBasedPossibleLocalizedModifications.ToDictionary(p => p.Key, v => v.Value);
-                        if (proteinsOriginalModifications.ContainsKey(nonVariantProtein.ConsensusVariant))
-                        {
-                            foreach (var entry in oldMods)
-                            {
-                                if (proteinsOriginalModifications[nonVariantProtein.ConsensusVariant].ContainsKey(entry.Key))
-                                {
-                                    proteinsOriginalModifications[nonVariantProtein.ConsensusVariant][entry.Key].AddRange(entry.Value);
-                                }
-                                else
-                                {
-                                    proteinsOriginalModifications[nonVariantProtein.ConsensusVariant].Add(entry.Key, entry.Value);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            proteinsOriginalModifications.Add(nonVariantProtein.ConsensusVariant, oldMods);
-                        }
-
-                        // adds confidently localized and identified mods
-                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
-                        foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 == null))
-                        {
-                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(kvp.Key.Item2, kvp.Value);
-                        }
-                        foreach (var sv in nonVariantProtein.SequenceVariations)
-                        {
-                            var oldVariantModifications = sv.OneBasedModifications.ToDictionary(p => p.Key, v => v.Value);
-                            if (originalSequenceVariantModifications.ContainsKey(sv))
-                            {
-                                foreach (var entry in oldVariantModifications)
-                                {
-                                    if (originalSequenceVariantModifications[sv].ContainsKey(entry.Key))
-                                    {
-                                        originalSequenceVariantModifications[sv][entry.Key].AddRange(entry.Value);
-                                    }
-                                    else
-                                    {
-                                        originalSequenceVariantModifications[sv].Add(entry.Key, entry.Value);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                originalSequenceVariantModifications.Add(sv, oldVariantModifications);
-                            }
-
-                            sv.OneBasedModifications.Clear();
-                            foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
-                            {
-                                sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
-                            }
-                        }
-                    }
-                }
-
-                //writes all proteins
-                if (Parameters.DatabaseFilenameList.Any(b => !b.IsContaminant))
-                {
-                    string outputXMLdbFullName = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), Parameters.BioPolymerList.Select(p => p.ConsensusVariant).Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
-                    FinishedWritingFile(outputXMLdbFullName, new List<string> { Parameters.SearchTaskId });
-                }
-                if (Parameters.DatabaseFilenameList.Any(b => b.IsContaminant))
-                {
-                    string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), Parameters.BioPolymerList.Select(p => p.ConsensusVariant).Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
-                    FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
-                }
-
-                //writes only detected proteins
-                if (Parameters.DatabaseFilenameList.Any(b => !b.IsContaminant))
-                {
-                    string outputXMLdbFullName = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
-                    FinishedWritingFile(outputXMLdbFullName, new List<string> { Parameters.SearchTaskId });
-                }
-                if (Parameters.DatabaseFilenameList.Any(b => b.IsContaminant))
-                {
-                    string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
-                    FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
-                }
-
-                foreach (var nonVariantProtein in Parameters.BioPolymerList.Select(p => p.ConsensusVariant).Distinct())
-                {
-                    if (!nonVariantProtein.IsDecoy)
-                    {
-                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
-                        foreach (var originalMod in proteinsOriginalModifications[nonVariantProtein.ConsensusVariant])
-                        {
-                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(originalMod.Key, originalMod.Value);
-                        }
-                        foreach (var sv in nonVariantProtein.SequenceVariations)
-                        {
-                            sv.OneBasedModifications.Clear();
-                            foreach (var originalVariantMods in originalSequenceVariantModifications[sv])
-                            {
-                                sv.OneBasedModifications.Add(originalVariantMods.Key, originalVariantMods.Value);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         private void WritePsmPlusMultiplexIons(IEnumerable<SpectralMatch> psms, string filePath, bool writePeptideLevelResults = false)
         {
             PpmTolerance ionTolerance = new PpmTolerance(10);
@@ -1717,19 +1446,6 @@ namespace TaskLayer
 
             string filePath = Path.Combine(Parameters.OutputFolder, "VariantAnalysisResultSummary.txt");
             File.WriteAllLines(filePath, variantResults);
-        }
-
-        private static int GetOneBasedIndexInProtein(int oneIsNterminus, IBioPolymerWithSetMods peptideWithSetModifications)
-        {
-            if (oneIsNterminus == 1)
-            {
-                return peptideWithSetModifications.OneBasedStartResidue;
-            }
-            if (oneIsNterminus == peptideWithSetModifications.Length + 2)
-            {
-                return peptideWithSetModifications.OneBasedEndResidue;
-            }
-            return peptideWithSetModifications.OneBasedStartResidue + oneIsNterminus - 2;
         }
 
         private static void WriteTree(BinTreeStructure myTreeStructure, string writtenFile)
