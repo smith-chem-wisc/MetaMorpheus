@@ -355,9 +355,6 @@ namespace Test.DIATests
             bSpline.SetXicSplineXYData(xic2, true);
             bSpline.SetXicSplineXYData(xic3, true);
             bSpline.SetXicSplineXYData(xic4, true);
-            corr = PrecursorFragmentsGroup.CalculateXicCorrXYData_Umpire(xic1, xic2, 150);
-            var corr2 = PrecursorFragmentsGroup.CalculateXicCorrXYData_Umpire(xic1, xic3, 150);
-            var corr3 = PrecursorFragmentsGroup.CalculateXicCorrXYData_Umpire(xic1, xic4, 150);
         }
 
         [Test]
