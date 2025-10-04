@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using MassSpectrometry;
 using System.Collections.Concurrent;
-using ThermoFisher.CommonCore.Data.Business;
-using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace EngineLayer.DIA
 {
     /// <summary>
     /// XicGroupingEngine is a specific implementation of PfGroupingEngine that groups precursor and fragment XICs into PrecursorFragmentsGroup objects 
     /// based on specified criteria including apex RT tolerance, overlap threshold, and correlation threshold.
-    /// <summary>
+    /// </summary>
     public class XicGroupingEngine : PfGroupingEngine
     {
         public float ApexRTTolerance { get; set; }
@@ -33,7 +30,9 @@ namespace EngineLayer.DIA
             FragmentRankThreshold = fragmentRankThreshold;
         }
 
-        public override List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, IEnumerable<ExtractedIonChromatogram> fragments)
+        /// <summary>
+        /// Given a list of precursor XICs and all eligible fragment XICs, loop over each precursor and group fragments with the precursor based on the grouping criteria.
+        public override IEnumerable<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments)
         {
             var pfGroups = new ConcurrentBag<PrecursorFragmentsGroup>();
             var apexSortedFragmentXics = BuildApexSortedXics(fragments);
@@ -65,6 +64,10 @@ namespace EngineLayer.DIA
         }
 
         public virtual PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, IEnumerable<ExtractedIonChromatogram> fragmentXics)
+        /// <summary>
+        /// Given one precursor XIC and all eligibile fragment XICs, select fragments that meet the grouping criteria and construct a precursor-fragment group for this precursor.
+        /// </summary>
+        public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, List<ExtractedIonChromatogram> fragmentXics, double overlapThreshold, double correlationThreshold, int minFragmentCountForGrouping)
         {
             return GroupFragmentsForOnePrecursor(precursorXic, fragmentXics, ApexRTTolerance, OverlapThreshold, CorrelationThreshold, MinFragmentCountForPfGroup);
         }

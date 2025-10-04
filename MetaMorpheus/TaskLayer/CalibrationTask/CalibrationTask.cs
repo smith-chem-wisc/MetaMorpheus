@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.Util;
 using Omics.Modifications;
 using Readers;
 using UsefulProteomicsDatabases;
@@ -103,6 +104,7 @@ namespace TaskLayer
                 }
 
                 string calibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
+                calibratedNewFullFilePath = PathSafety.MakeSafeOutputPath(calibratedNewFullFilePath, CalibSuffix + ".mzML");
                 string uncalibratedNewFullFilePath = Path.Combine(OutputFolder, Path.GetFileName(originalUncalibratedFilePath));
 
                 // mark the file as in-progress
@@ -268,7 +270,7 @@ namespace TaskLayer
                 new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
 
             Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
-            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });

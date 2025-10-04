@@ -5,14 +5,13 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using MassSpectrometry;
-using MzLibUtil;
 
 
 namespace EngineLayer.DIA
 {
     /// <summary>
     /// PrecursorFragmentPair class represents a pair of precursor XIC and fragment XIC, along with their relationship metrics such as correlation and overlap.
-    /// <summary>
+    /// </summary>
     public class PrecursorFragmentPair
     {
         public ExtractedIonChromatogram PrecursorXic { get; set; }

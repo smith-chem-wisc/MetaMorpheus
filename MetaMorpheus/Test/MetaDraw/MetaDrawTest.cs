@@ -384,21 +384,13 @@ namespace Test.MetaDraw
             // test that the stationary sequence annotation was drawn
             string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
             string fullSequence = psm.BaseSeq;
-            Dictionary<int, List<string>> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
+            Dictionary<int, string> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
             foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
             {
                 // if modification is within the visible region
                 if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
                 {
-                    // account for multiple modifications on the same amino acid
-                    for (int i = mod.Value.Count - 1; i > -1; i--)
-                    {
-                        fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value[i] + "]");
-                        if (i >= 1)
-                        {
-                            fullSequence = fullSequence.Insert(mod.Key, "|");
-                        }
-                    }
+                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
                 }
             }
             List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
@@ -432,15 +424,7 @@ namespace Test.MetaDraw
                 // if modification is within the visible region
                 if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
                 {
-                    // account for multiple modifications on the same amino acid
-                    for (int i = mod.Value.Count - 1; i > -1; i--)
-                    {
-                        fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value[i] + "]");
-                        if (i >= 1)
-                        {
-                            fullSequence = fullSequence.Insert(mod.Key, "|");
-                        }
-                    }
+                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
                 }
             }
             matchedIons = modPsm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
@@ -825,12 +809,12 @@ namespace Test.MetaDraw
             Assert.That((int)peakPoints[1].Y, Is.EqualTo(8496));
 
             // write pdf
-            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "STTAVQTPTSGEPLVST[O-Glycosylation:H1N1 on T]SEPLSSK").ToList();
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "STTAVQTPTSGEPLVST[O-linked glycosylation:H1N1 on T]SEPLSSK").ToList();
             metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
 
             // test that pdf exists
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // child scan
             Directory.Delete(outputFolder, true);
 
             Canvas ptmLegend = new();
@@ -840,14 +824,14 @@ namespace Test.MetaDraw
             ptmLegend.UpdateLayout();   
             Vector ptmLegendVector = new(10, 10);
             metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors, ptmLegend, ptmLegendVector);
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // child scan
 
             // test that a directory is created if it does not exist
             Directory.Delete(outputFolder, true);
             metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // child scan
 
 
 
@@ -1762,6 +1746,79 @@ namespace Test.MetaDraw
             Assert.That(variantPoints2[0].Y, Is.EqualTo(16.363848874371111));
             Assert.That(variantPoints2[0].Tag, Is.EqualTo("MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK"));
 
+            // Histogram of Fragment Ion Types by Count
+            var plot11 = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
+            var series11 = plot11.Model.Series.ToList()[0];
+            var items11 = (List<OxyPlot.Series.ColumnItem>)series11.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series11);
+            Assert.That(items11.Count, Is.GreaterThan(0)); // At least one fragment type
+            Assert.That(items11.Sum(i => i.Value), Is.GreaterThan(0)); // At least one count
+
+            // Histogram of Fragment Ion Types by Intensity
+            var plot12 = new PlotModelStat("Histogram of Fragment Ion Types by Intensity", psms, psmDict);
+            var series12 = plot12.Model.Series.ToList()[0];
+            var items12 = (List<OxyPlot.Series.ColumnItem>)series12.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series12);
+            Assert.That(items12.Count, Is.GreaterThan(0)); // At least one fragment type
+            Assert.That(items12.Sum(i => i.Value), Is.GreaterThan(0)); // At least one intensity
+
+            // Histogram of Ids by Retention Time
+            var plot13 = new PlotModelStat("Histogram of Ids by Retention Time", psms, psmDict);
+            var series13 = plot13.Model.Series.ToList()[0];
+            var items13 = (List<OxyPlot.Series.ColumnItem>)series13.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series13);
+            Assert.That(items13.Count, Is.GreaterThan(0)); // At least one retention time bin
+            Assert.That(items13.Sum(i => i.Value), Is.GreaterThan(0)); // At least one ID
+
+            // Histogram of Missed Cleavages
+            var plot14 = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
+            var series14 = plot14.Model.Series.ToList()[0];
+            var items14 = (List<OxyPlot.Series.ColumnItem>)series14.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series14);
+            Assert.That(items14.Count, Is.GreaterThan(0)); // At least one missed cleavage bin
+            Assert.That(items14.Sum(i => i.Value), Is.GreaterThanOrEqualTo(0)); // Non-negative count
+
+            // Test normalization for missed cleavages
+            MetaDrawSettings.NormalizeHistogramToFile = false;
+            var plotMissedNormOff = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
+            var seriesMissedNormOff = plotMissedNormOff.Model.Series.ToList()[0];
+            var itemsMissedNormOff = (List<OxyPlot.Series.ColumnItem>)seriesMissedNormOff.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesMissedNormOff);
+            double sumMissedNormOff = itemsMissedNormOff.Sum(i => i.Value);
+
+            MetaDrawSettings.NormalizeHistogramToFile = true;
+            var plotMissedNormOn = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
+            var seriesMissedNormOn = plotMissedNormOn.Model.Series.ToList()[0];
+            var itemsMissedNormOn = (List<OxyPlot.Series.ColumnItem>)seriesMissedNormOn.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesMissedNormOn);
+            double sumMissedNormOn = itemsMissedNormOn.Sum(i => i.Value);
+
+            Assert.That(sumMissedNormOn, Is.LessThanOrEqualTo(1.0));
+            Assert.That(sumMissedNormOff, Is.GreaterThanOrEqualTo(sumMissedNormOn));
+
+            // Reset normalization for other tests
+            MetaDrawSettings.NormalizeHistogramToFile = false;
+
+            // Test normalization OFF
+            MetaDrawSettings.NormalizeHistogramToFile = false;
+            var plotNormOff = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
+            var seriesNormOff = plotNormOff.Model.Series.ToList()[0];
+            var itemsNormOff = (List<OxyPlot.Series.ColumnItem>)seriesNormOff.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesNormOff);
+            double sumNormOff = itemsNormOff.Sum(i => i.Value);
+
+            // Test normalization ON
+            MetaDrawSettings.NormalizeHistogramToFile = true;
+            var plotNormOn = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
+            var seriesNormOn = plotNormOn.Model.Series.ToList()[0];
+            var itemsNormOn = (List<OxyPlot.Series.ColumnItem>)seriesNormOn.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesNormOn);
+            double sumNormOn = itemsNormOn.Sum(i => i.Value);
+
+            // When normalized, the sum should be <= 1 (since values are divided by total count)
+            Assert.That(sumNormOn, Is.LessThanOrEqualTo(1.0));
+            Assert.That(sumNormOff, Is.GreaterThan(sumNormOn));
+
             Directory.Delete(folderPath, true);
         }
 
@@ -1867,6 +1924,13 @@ namespace Test.MetaDraw
 
             // Clean up
             Directory.Delete(tempDir, true);
+        }
+
+        [Test] // Ensures no plot names accidently get deleted. 
+        public static void PlotNamesDoNotChange()
+        {
+            var plotNames = PlotModelStat.PlotNames;
+            Assert.That(plotNames.Count, Is.EqualTo(14));
         }
     }
 }

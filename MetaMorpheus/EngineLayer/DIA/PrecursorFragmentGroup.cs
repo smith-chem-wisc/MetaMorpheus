@@ -1,25 +1,22 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using MathNet.Numerics.Statistics;
 using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngineLayer.DIA
 {
     /// <summary>
     /// PrecursorFragmentsGroup represents a group of precursor-fragment pairs belonging to the same precursor XIC.
-    /// <summary>
+    /// </summary>
     public class PrecursorFragmentsGroup
     {
         public ExtractedIonChromatogram PrecursorXic { get; set; }
 
         public List<PrecursorFragmentPair> PFpairs { get; set; }
-        public int PFgroupIndex { get; set; } 
+        public int PFgroupIndex { get; set; } //an index identifier for each group and also used as the scan number for the pseudo MS2 scan generated from this group
 
         public PrecursorFragmentsGroup(ExtractedIonChromatogram precursorXic, List<PrecursorFragmentPair> pfPairs)
         {
@@ -27,15 +24,13 @@ namespace EngineLayer.DIA
             PFpairs = pfPairs;
         }
 
-        public static double CalculateXicCorrelationXYData(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
+        public static double CalculateXicCorrelation(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
         {
             if (xic1.XYData == null || xic2.XYData == null)
             {
-                var xy1 = xic1.Peaks.Select(p => ((float)p.ZeroBasedScanIndex, p.Intensity)).ToArray();
-                var xy2 = xic2.Peaks.Select(p => ((float)p.ZeroBasedScanIndex, p.Intensity)).ToArray();
-                return CalculateCorrelation(xy1, xy2);
+                return CalculateXicCorrelationRawPeaks(xic1, xic2);
             }
-            double corr = CalculateCorrelation(xic1.XYData, xic2.XYData);
+            double corr = CalculateCorrelationXYData(xic1.XYData, xic2.XYData);
             return corr;
         }
 
@@ -122,11 +117,43 @@ namespace EngineLayer.DIA
 
         public static double CalculateCorrelation<T> ((T, T)[] xy1, (T, T)[] xy2) where T : INumber<T>
         {
-            if (xy1 == null || xy2 == null)
+            var start = Math.Max(xic1.StartScanIndex, xic2.StartScanIndex);
+            var end = Math.Min(xic1.EndScanIndex, xic2.EndScanIndex);
+
+            if (end - start + 1 < 3) // Ideally we need at least 3 points to calculate correlation
             {
                 return double.NaN;
             }
+            var y1 = new float[end - start + 1];
+            var y2 = new float[end - start + 1];
+            var peakScanIndices1 = xic1.Peaks.Select(p => p.ZeroBasedScanIndex).ToArray();
+            var peakScanIndices2 = xic2.Peaks.Select(p => p.ZeroBasedScanIndex).ToArray();
+            for (int i = 0; i < y1.Length; i++)
+            {
+                int index1 = Array.BinarySearch(peakScanIndices1, i + start);
+                int index2 = Array.BinarySearch(peakScanIndices2, i + start);
+                if (index1 >= 0)
+                {
+                    y1[i] = xic1.Peaks[index1].Intensity;
+                }
+                else
+                {
+                    y1[i] = 0;
+                }
+                if (index2 >= 0)
+                {
+                    y2[i] = xic2.Peaks[index2].Intensity;
+                }
+                else
+                {
+                    y2[i] = 0;
+                }
+            }
+            return PearsonCorrelation(y1, y2);
+        }
 
+        public static double CalculateCorrelationXYData<T> ((T, T)[] xy1, (T, T)[] xy2) where T : INumber<T>
+        {
             T start = T.Max(xy1[0].Item1, xy2[0].Item1);
             T end = T.Min(xy1[xy1.Length - 1].Item1, xy2[xy2.Length - 1].Item1);
 
@@ -147,7 +174,6 @@ namespace EngineLayer.DIA
 
         public static double PearsonCorrelation<T>(T[] x, T[] y) where T : INumber<T>
         {
-            if (x == null || y == null) throw new ArgumentNullException();
             if (x.Length != y.Length) throw new ArgumentException("Arrays must have the same length.");
 
             int n = x.Length;
@@ -176,7 +202,7 @@ namespace EngineLayer.DIA
 
         public static double CalculateXicOverlapRatio(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
         {
-            if (xic1.EndScanIndex < xic2.StartScanIndex || xic2.EndScanIndex < xic1.StartScanIndex)
+            if (xic1.EndScanIndex <= xic2.StartScanIndex || xic2.EndScanIndex <= xic1.StartScanIndex)
             {
                 return 0;
             }
@@ -215,26 +241,32 @@ namespace EngineLayer.DIA
 
         public static Ms2ScanWithSpecificMass GetPseudoMs2ScanFromPfGroup(PrecursorFragmentsGroup pfGroup, PseudoMs2ConstructionType pseudoMs2ConstructionType, CommonParameters commonParameters, string dataFilePath)
         {
-            pfGroup.PFpairs.Sort((a, b) => a.FragmentXic.AveragedMassOrMz.CompareTo(b.FragmentXic.AveragedMassOrMz));
-            var mzs = pfGroup.PFpairs.Select(pf => (double)pf.FragmentXic.Peaks.First().M).ToArray();
-            var intensities = pfGroup.PFpairs.Select(pf => (double)pf.FragmentXic.Peaks.First().Intensity).ToArray();
-            var newMs2Scan = new MsDataScan(new MzSpectrum(mzs, intensities, false), pfGroup.PFgroupIndex, 2, true, Polarity.Positive, pfGroup.PrecursorXic.ApexRT, new MzRange(mzs.Min(), mzs.Max()), null, MZAnalyzerType.Unknown, intensities.Sum(), null, null, null, oneBasedPrecursorScanNumber: pfGroup.PFgroupIndex);
+            //sort all fragment XICs by their m/z value of the apex peak
+            PFpairs.Sort((a, b) => a.FragmentXic.ApexPeak.M.CompareTo(b.FragmentXic.ApexPeak.M));
+            //We use the apex peak of each Xic to construct the pseudo MS2 scan (might change if other values work better)
+            var mzs = PFpairs.Select(pf => (double)pf.FragmentXic.ApexPeak.M).ToArray();
+            var intensities = PFpairs.Select(pf => (double)pf.FragmentXic.ApexPeak.Intensity).ToArray();
+            var newMs2Scan = new MsDataScan(new MzSpectrum(mzs, intensities, false), PFgroupIndex, 2, true, Polarity.Positive, PrecursorXic.ApexRT, new MzRange(mzs.Min(), mzs.Max()), null, MZAnalyzerType.Unknown, intensities.Sum(), null, null, null, oneBasedPrecursorScanNumber: PFgroupIndex);
 
+            // assign neutral experimental fragments for the new MS2 scan
             IsotopicEnvelope[] neutralExperimentalFragments = null;
             switch (pseudoMs2ConstructionType)
             {
+                // If the fragment XIC is mzPeak-based, we deconvolute the scan as normal
                 case PseudoMs2ConstructionType.MzPeak:
                     neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(newMs2Scan, commonParameters);
                     break;
+                // If the fragment XIC is mass-based, we create an isotopic envelope as the neutral mass fragment for each fragment XIC
                 case PseudoMs2ConstructionType.Mass:
-                    neutralExperimentalFragments = pfGroup.PFpairs.Select(pf => new IsotopicEnvelope(1,
-                            new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.AveragedMassOrMz, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
+                    neutralExperimentalFragments = PFpairs.Select(pf => new IsotopicEnvelope(1,
+                            new List<(double mz, double intensity)> { (1, 1) }, pf.FragmentXic.ApexPeak.M, pf.FragmentXic.Peaks.Cast<IndexedMass>().First().Charge, 1, 0)).ToArray();
                     break;
                 default:
-                    throw new ArgumentException("Invalid pseudo MS2 construction type specified.");
+                    throw new MetaMorpheusException("Invalid pseudo MS2 construction type specified.");
             }
-            var charge = pfGroup.PrecursorXic.Peaks.First() is IndexedMass im ? im.Charge : 1;
-            var monoMz = pfGroup.PrecursorXic.Peaks.First() is IndexedMass im2? im2.M.ToMz(charge) : pfGroup.PrecursorXic.AveragedMassOrMz.ToMz(charge);
+            // add precursor information
+            var charge = PrecursorXic.ApexPeak is IndexedMass im ? im.Charge : 1;
+            var monoMz = PrecursorXic.ApexPeak.M.ToMz(charge);
             Ms2ScanWithSpecificMass scanWithprecursor = new Ms2ScanWithSpecificMass(newMs2Scan, monoMz, charge, dataFilePath,
                 commonParameters, neutralExperimentalFragments);
 
