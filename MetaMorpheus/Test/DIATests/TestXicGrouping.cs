@@ -269,14 +269,14 @@ namespace Test.DIATests
             //Create XicGroupingEngine and do precursor-fragment grouping for all fake Xics with a relatively loose threshold for correlation
             //When there is no rank filter, all fragment XICs should be grouped with each precursor XIC
             var xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, null, null);
-            var groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics);
+            var groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics).ToArray();
             //So there will be 3 pfGroups, each with 10 grouped fragments
             Assert.That(groups.Count, Is.EqualTo(3));
             Assert.That(groups.All(g => g.PFpairs.Count == 10));
 
             //When we set a threshold of 4 for fragment rank but no precursor rank threshold
             xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, null, 4);
-            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics);
+            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics).ToArray();
             Assert.That(groups.Count, Is.EqualTo(3));
             //The 4 fragment Xics that correlate better with each precursor Xic should be retained
             Assert.That(groups.All(g => g.PFpairs.Count == 4));
@@ -288,7 +288,7 @@ namespace Test.DIATests
 
             //When we set a threshold of 1 for precursor rank but no fragment rank threshold
             xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, 1, null);
-            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics);
+            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics).ToArray();
             //Precursor 3 should not have any fragments grouped with it since each fragment Xic is limited to be paired with only one precursor
             Assert.That(groups.Count, Is.EqualTo(2));
             //The precursor Xic that correlate best with each fragment Xic should be retained
@@ -299,7 +299,7 @@ namespace Test.DIATests
 
             //When we set a threshold of 2 for precursor rank and 6 for fragment rank
             xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, 2, 6);
-            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics);
+            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics).ToArray();
             //Precursor 3 should still not have any fragments so there are two groups
             Assert.That(groups.Count, Is.EqualTo(2));
             //Each group should have 6 fragments
@@ -325,7 +325,7 @@ namespace Test.DIATests
                 peakList2.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 501.0));
             }
             var xic2 = new ExtractedIonChromatogram(peakList2);
-            double corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic2);
+            double corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
             //Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
 
             //XICs with completely opposite trends
@@ -336,7 +336,7 @@ namespace Test.DIATests
                 peakList3.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers2[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 501.0));
             }
             var xic3 = new ExtractedIonChromatogram(peakList3);
-            corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic3);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic3);
             //Assert.That(corr, Is.EqualTo(-1.0).Within(1e-6));
 
             //XICs with insufficient overlap points
@@ -346,7 +346,7 @@ namespace Test.DIATests
                 peakList4.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i + 4, mz: 502.0));
             }
             var xic4 = new ExtractedIonChromatogram(peakList4);
-            corr = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(xic1, xic4);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic4);
             //Assert.That(corr, Is.EqualTo(double.NaN).Within(1e-6));
 
             //XICs with spline

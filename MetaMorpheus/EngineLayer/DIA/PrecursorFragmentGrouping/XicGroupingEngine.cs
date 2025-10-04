@@ -63,11 +63,10 @@ namespace EngineLayer.DIA
             return pfGroupsList;
         }
 
-        public virtual PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, IEnumerable<ExtractedIonChromatogram> fragmentXics)
         /// <summary>
         /// Given one precursor XIC and all eligibile fragment XICs, select fragments that meet the grouping criteria and construct a precursor-fragment group for this precursor.
         /// </summary>
-        public static PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, List<ExtractedIonChromatogram> fragmentXics, double overlapThreshold, double correlationThreshold, int minFragmentCountForGrouping)
+        public virtual PrecursorFragmentsGroup GroupFragmentsForOnePrecursor(ExtractedIonChromatogram precursorXic, IEnumerable<ExtractedIonChromatogram> fragmentXics)
         {
             return GroupFragmentsForOnePrecursor(precursorXic, fragmentXics, ApexRTTolerance, OverlapThreshold, CorrelationThreshold, MinFragmentCountForPfGroup);
         }
@@ -80,7 +79,7 @@ namespace EngineLayer.DIA
                 double overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(precursorXic, fragmentXic);
                 if (overlap >= overlapThreshold)
                 {
-                    double correlation = PrecursorFragmentsGroup.CalculateXicCorrelationXYData(precursorXic, fragmentXic);
+                    double correlation = PrecursorFragmentsGroup.CalculateXicCorrelation(precursorXic, fragmentXic);
                     if (correlation >= correlationThreshold)
                     {
                         var pfPair = new PrecursorFragmentPair(precursorXic, fragmentXic, correlation, overlap);
@@ -116,32 +115,6 @@ namespace EngineLayer.DIA
 
             var subset = apexSortedFragmentXics.Where(kvp => kvp.Key >= minRt && kvp.Key <= maxRt).SelectMany(kvp => kvp.Value).ToList();
             return subset;
-        }
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine($"XicGroupingEngineSettings: ");
-            sb.AppendLine($"ApexRTTolerance: {ApexRTTolerance}");
-            sb.AppendLine($"OverlapThreshold: {OverlapThreshold}");
-            sb.AppendLine($"CorrelationThreshold: {CorrelationThreshold}");
-            if (PrecursorRankThreshold.HasValue)
-            {
-                sb.AppendLine($"PrecursorRankThreshold: {PrecursorRankThreshold}");
-            }
-            else
-            {
-                sb.AppendLine($"PrecursorRankThreshold: None");
-            }
-            if (FragmentRankThreshold.HasValue)
-            {
-                sb.AppendLine($"FragmentRankThreshold: {FragmentRankThreshold}");
-            }
-            else
-            {
-                sb.AppendLine($"FragmentRankThreshold: None");
-            }
-            return sb.ToString();
         }
     }
 }

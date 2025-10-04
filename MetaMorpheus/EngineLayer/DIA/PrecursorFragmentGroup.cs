@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using MathNet.Numerics.Statistics;
 using MzLibUtil;
 using System;
 using System.Collections.Generic;
@@ -32,6 +33,43 @@ namespace EngineLayer.DIA
             }
             double corr = CalculateCorrelationXYData(xic1.XYData, xic2.XYData);
             return corr;
+        }
+
+        public static double CalculateXicCorrelationRawPeaks(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
+        {
+            var start = Math.Max(xic1.StartScanIndex, xic2.StartScanIndex);
+            var end = Math.Min(xic1.EndScanIndex, xic2.EndScanIndex);
+
+            if (end - start + 1 < 3) // Ideally we need at least 3 points to calculate correlation
+            {
+                return double.NaN;
+            }
+            var y1 = new float[end - start + 1];
+            var y2 = new float[end - start + 1];
+            var peakScanIndices1 = xic1.Peaks.Select(p => p.ZeroBasedScanIndex).ToArray();
+            var peakScanIndices2 = xic2.Peaks.Select(p => p.ZeroBasedScanIndex).ToArray();
+            for (int i = 0; i < y1.Length; i++)
+            {
+                int index1 = Array.BinarySearch(peakScanIndices1, i + start);
+                int index2 = Array.BinarySearch(peakScanIndices2, i + start);
+                if (index1 >= 0)
+                {
+                    y1[i] = xic1.Peaks[index1].Intensity;
+                }
+                else
+                {
+                    y1[i] = 0;
+                }
+                if (index2 >= 0)
+                {
+                    y2[i] = xic2.Peaks[index2].Intensity;
+                }
+                else
+                {
+                    y2[i] = 0;
+                }
+            }
+            return PearsonCorrelation(y1, y2);
         }
 
         public static double CalculateXicCorrXYData_Umpire(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2, int NoPointPerInterval)
@@ -113,43 +151,6 @@ namespace EngineLayer.DIA
 
             double corr = Correlation.Pearson(arrayA, arrayB);
             return corr;
-        }
-
-        public static double CalculateCorrelation<T> ((T, T)[] xy1, (T, T)[] xy2) where T : INumber<T>
-        {
-            var start = Math.Max(xic1.StartScanIndex, xic2.StartScanIndex);
-            var end = Math.Min(xic1.EndScanIndex, xic2.EndScanIndex);
-
-            if (end - start + 1 < 3) // Ideally we need at least 3 points to calculate correlation
-            {
-                return double.NaN;
-            }
-            var y1 = new float[end - start + 1];
-            var y2 = new float[end - start + 1];
-            var peakScanIndices1 = xic1.Peaks.Select(p => p.ZeroBasedScanIndex).ToArray();
-            var peakScanIndices2 = xic2.Peaks.Select(p => p.ZeroBasedScanIndex).ToArray();
-            for (int i = 0; i < y1.Length; i++)
-            {
-                int index1 = Array.BinarySearch(peakScanIndices1, i + start);
-                int index2 = Array.BinarySearch(peakScanIndices2, i + start);
-                if (index1 >= 0)
-                {
-                    y1[i] = xic1.Peaks[index1].Intensity;
-                }
-                else
-                {
-                    y1[i] = 0;
-                }
-                if (index2 >= 0)
-                {
-                    y2[i] = xic2.Peaks[index2].Intensity;
-                }
-                else
-                {
-                    y2[i] = 0;
-                }
-            }
-            return PearsonCorrelation(y1, y2);
         }
 
         public static double CalculateCorrelationXYData<T> ((T, T)[] xy1, (T, T)[] xy2) where T : INumber<T>
@@ -239,7 +240,7 @@ namespace EngineLayer.DIA
             return overlap;
         }
 
-        public static Ms2ScanWithSpecificMass GetPseudoMs2ScanFromPfGroup(PrecursorFragmentsGroup pfGroup, PseudoMs2ConstructionType pseudoMs2ConstructionType, CommonParameters commonParameters, string dataFilePath)
+        public Ms2ScanWithSpecificMass GetPseudoMs2ScanFromPfGroup(PseudoMs2ConstructionType pseudoMs2ConstructionType, CommonParameters commonParameters, string dataFilePath)
         {
             //sort all fragment XICs by their m/z value of the apex peak
             PFpairs.Sort((a, b) => a.FragmentXic.ApexPeak.M.CompareTo(b.FragmentXic.ApexPeak.M));

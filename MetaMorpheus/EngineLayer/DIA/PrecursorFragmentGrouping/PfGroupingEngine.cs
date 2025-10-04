@@ -1,5 +1,6 @@
 ﻿using MassSpectrometry;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer.DIA
 {
@@ -10,7 +11,7 @@ namespace EngineLayer.DIA
     {
         public int MaxThreadsForGrouping { get; set; }
         public int MinFragmentCountForPfGroup { get; set; }
-        public abstract List<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, IEnumerable<ExtractedIonChromatogram> fragments);
+        public abstract IEnumerable<PrecursorFragmentsGroup> PrecursorFragmentGrouping(List<ExtractedIonChromatogram> precursors, List<ExtractedIonChromatogram> fragments);
 
         public static void FilterPfPairsByRank(List<PrecursorFragmentsGroup> pfGroups, int? precursorRankThreshold, int? fragmentRankThreshold)
         {
