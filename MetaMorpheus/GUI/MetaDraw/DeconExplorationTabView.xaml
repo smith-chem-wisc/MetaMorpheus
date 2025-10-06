@@ -1,0 +1,166 @@
+﻿<UserControl x:Class="MetaMorpheusGUI.DeconExplorationTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MetaMorpheusGUI"
+             xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions" 
+             xmlns:oxy="http://oxyplot.org/wpf"
+             mc:Ignorable="d" 
+             d:DataContext="{x:Static guiFunctions:DeconTabModel.Instance}"  
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="2"/>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="2"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Left: File and scan selection -->
+        <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Margin="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            
+            <TextBlock Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2"  Text="Select Data File:" FontWeight="Bold" />
+            <ComboBox Grid.Column="0"  Grid.Row="1"  Grid.ColumnSpan="2" ItemsSource="{Binding MsDataFiles}"
+                      SelectedItem="{Binding SelectedMsDataFile}"
+                      DisplayMemberPath="FilePath" Margin="0,4,0,12" />
+
+
+            <TextBlock Grid.Column="0"  Grid.Row="2" Text="Deconvolution Mode:" FontWeight="Bold" />
+            <ComboBox Grid.Column="0"  Grid.Row="3" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                      SelectedValue="{Binding Mode}" 
+                      ItemsSource="{Binding DeconvolutionModes}" Margin="0,4,0,12" />
+            <StackPanel Grid.Column="1"  Grid.Row="3" Margin="10,4,10,12">
+                <CheckBox  Content="Display Annotations" FontWeight="DemiBold" HorizontalAlignment="Left"
+                           VerticalAlignment="Center" 
+                           IsChecked="{Binding DisplayIonAnnotations, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"/>
+                <CheckBox  Content="Identified Scans" FontWeight="DemiBold" HorizontalAlignment="Left"
+                           VerticalAlignment="Center" 
+                           IsChecked="{Binding OnlyIdentifiedScans}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="0"  Grid.Row="4"  Grid.ColumnSpan="2" Orientation="Horizontal"
+                        Visibility="{Binding Mode, Converter={local:DeconModeToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Min m/z:"  FontWeight="Bold" VerticalAlignment="Center"/>
+                    <local:DoubleTextBoxControl Width="40" Margin="2" VerticalContentAlignment="Center"
+                                                Text="{Binding MinMzToPlot}" LowerBound="0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Max m/z:"  FontWeight="Bold" VerticalAlignment="Center"/>
+                    <local:DoubleTextBoxControl Width="40" Margin="2" VerticalContentAlignment="Center"
+                                                Text="{Binding MaxMzToPlot}" LowerBound="0"/>
+                </StackPanel>
+            </StackPanel>
+            
+            <TextBlock Grid.Column="0"  Grid.Row="5"  Grid.ColumnSpan="2" Text="Scans:" FontWeight="Bold" />
+            <DataGrid Grid.Column="0"  Grid.Row="6"  Grid.ColumnSpan="2" ItemsSource="{Binding Scans}"
+                      SelectedItem="{Binding SelectedMsDataScan}"
+                      SelectionMode="Single"
+                      SelectedCellsChanged="DataGrid_OnSelectedCellsChanged"
+                      AutoGenerateColumns="False"
+                      Margin="0,4,0,12"
+                      IsReadOnly="True"
+                      VerticalAlignment="Stretch">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Scan #" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                        Binding="{Binding OneBasedScanNumber}" Width="50" />
+                    <DataGridTextColumn Header="RT" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                        Binding="{Binding RetentionTime, StringFormat={}{0:F2}}" Width="40" />
+                    <DataGridTextColumn Header="MS Order" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                        Binding="{Binding MsnOrder}" Width="60" />
+                    <DataGridTextColumn Header="Isolation Mz" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                        Binding="{Binding IsolationMz, StringFormat={}{0:F2}}" Width="78" />
+                    <DataGridTextColumn Header="Precursor Scan #" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                        Binding="{Binding OneBasedPrecursorScanNumber}" Width="88" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Loading overlay -->
+            <Grid x:Name="LoadingOverlay" Grid.Column="0"  Grid.Row="6"  Grid.ColumnSpan="2" Margin="0, 4, 0, 12"
+                  Visibility="{Binding IsLoading, Converter={local:BooleanToVisibilityConverter}}"
+                  Background="#80000000"
+                  Panel.ZIndex="100">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True" Width="120" Height="18" Margin="0,0,0,8"/>
+                    <TextBlock Text="Loading..." Foreground="White" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+            
+            <Button Grid.Column="0"  Grid.Row="7"  Grid.ColumnSpan="2" Content="Run Deconvolution" Style="{StaticResource MetaDrawButtonStyle}"
+                    Command="{Binding RunDeconvolutionCommand}"
+                    CommandParameter="{Binding ElementName=DeconPlot}"
+                    Margin="0,8,0,0" />
+        </Grid>
+
+        <!-- Grid Splitter -->
+        <GridSplitter Grid.Column="1" Grid.Row="0" Width="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+        <!-- Plot -->
+        <Grid Grid.Column="2" Grid.Row="0" >
+            <oxy:PlotView x:Name="DeconPlot" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0"/>
+            <local:SettingsButtonControl Height="52" x:Name="SettingsButton"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                                         Panel.ZIndex="1" SelectedTabIndex="0" />
+        </Grid>
+        <!-- Grid Splitter -->
+        <GridSplitter Grid.Column="3" Grid.Row="0" Width="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        
+        <!-- Right: Deconvoluted species -->
+        <DataGrid Grid.Column="4" Grid.Row="0" Grid.RowSpan="2"  ItemsSource="{Binding DeconvolutedSpecies}" AutoGenerateColumns="False" Margin="8" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Width="20">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Rectangle StrokeThickness="0"
+                                       Margin="0"
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Stretch"
+                                       Fill="{Binding Color, Converter={local:OxyColorToColorBrushConverter}}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Mono Mass" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding MonoisotopicMass, StringFormat={}{0:F2}}" Width="80"/>
+                <DataGridTextColumn Header="Mz (Most Abundant)" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding MostAbundantMz, StringFormat={}{0:F2}}" Width="60"/>
+                <DataGridTextColumn Header="Z" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding Charge}" Width="30"/>
+                <DataGridTextColumn Header="Intensity" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding Intensity, StringFormat={}{0:F2}}" Width="70"/>
+                <DataGridTextColumn Header="Peaks" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding PeakCount}" Width="40"/>
+                <DataGridTextColumn Header="Mz (Monoisotopic)" ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                    Binding="{Binding MonoMz, StringFormat={}{0:F2}}" Width="60"/>
+                <DataGridTextColumn Header="Peak Mzs" 
+                                    Binding="{Binding PeakMzs}" Width="Auto"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Expander Grid.Column="2" Grid.Row="1" Header="Deconvolution Parameters" IsExpanded="True">
+            <local:HostDeconParamControl Margin="8" 
+                                         DataContext="{Binding DeconHostViewModel}" />
+        </Expander>
+    </Grid>
+</UserControl>
