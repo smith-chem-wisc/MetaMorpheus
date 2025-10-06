@@ -993,7 +993,7 @@ namespace MetaMorpheusGUI
                 outputFolder);
 
             var t = new Task(a.Run);
-            t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
+            //t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
             t.Start();
         }
 
