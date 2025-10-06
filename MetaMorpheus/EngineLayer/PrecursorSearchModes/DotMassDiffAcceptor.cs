@@ -8,11 +8,13 @@ namespace EngineLayer
     public class DotMassDiffAcceptor : MassDiffAcceptor
     {
         private readonly double[] AcceptableSortedMassShifts;
+        private readonly int[] NotchIntegers;
         private readonly Tolerance Tolerance;
 
-        public DotMassDiffAcceptor(string FileNameAddition, IEnumerable<double> acceptableMassShifts, Tolerance tol) : base(FileNameAddition)
+        public DotMassDiffAcceptor(string fileNameAddition, IEnumerable<double> acceptableMassShifts, Tolerance tol) : base(fileNameAddition)
         {
             AcceptableSortedMassShifts = acceptableMassShifts.OrderBy(Math.Abs).ThenBy(p => p < 0).ToArray();
+            NotchIntegers = AcceptableSortedMassShifts.Select(b => (int)Math.Round(b * NotchScalar)).ToArray();
             Tolerance = tol;
             NumNotches = AcceptableSortedMassShifts.Length;
         }
@@ -25,10 +27,10 @@ namespace EngineLayer
                 index = ~index;
 
             if (index < AcceptableSortedMassShifts.Length && Tolerance.Within(scanPrecursorMass, AcceptableSortedMassShifts[index] + peptideMass))
-                return index;
+                return NotchIntegers[index];
 
             if (index > 0 && Tolerance.Within(scanPrecursorMass, AcceptableSortedMassShifts[index - 1] + peptideMass))
-                return index - 1;
+                return NotchIntegers[index - 1];
             return -1;
         }
 
@@ -36,8 +38,9 @@ namespace EngineLayer
         {
             for (int j = 0; j < AcceptableSortedMassShifts.Length; j++)
             {
+                var notch = NotchIntegers[j];
                 var mass = peptideMonoisotopicMass + AcceptableSortedMassShifts[j];
-                yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), j);
+                yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), notch);
             }
         }
 
@@ -45,8 +48,9 @@ namespace EngineLayer
         {
             for (int j = 0; j < AcceptableSortedMassShifts.Length; j++)
             {
+                var notch = NotchIntegers[j];
                 var mass = peptideMonoisotopicMass - AcceptableSortedMassShifts[j];
-                yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), j);
+                yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), notch);
             }
         }
 
