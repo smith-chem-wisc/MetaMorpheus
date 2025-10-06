@@ -34,6 +34,23 @@ namespace Test
         public static void GlobalTearDown()
         {
             EverythingRunnerEngineTestCase.DisposeAll();
+
+            // Delete all "DatabaseIndex" folders in the test directory
+            string testDir = TestContext.CurrentContext.TestDirectory;
+            if (Directory.Exists(testDir))
+            {
+                foreach (var dir in Directory.GetDirectories(testDir, "DatabaseIndex", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        Directory.Delete(dir, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to delete directory '{dir}': {ex.Message}");
+                    }
+                }
+            }
         }
 
         private static void SuccessfullyFinishedAllTasks(object sender, StringEventArgs rootOutputFolderPath)
