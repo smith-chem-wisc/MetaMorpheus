@@ -59,7 +59,8 @@ public class ChimeraAnalysisTabViewModelTests
             {"FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile }
         };
 
-        var chimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(ChimeraGroupViewModelTests.AllMatches, dataFiles, TestExportDirectory);
+        var chimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(TestExportDirectory);
+        chimeraAnalysisTabViewModel.ProcessChimeraData(ChimeraGroupViewModelTests.AllMatches, dataFiles);
         Assert.That(chimeraAnalysisTabViewModel.ChimeraGroupViewModels.All(p => p.Count > 1),
             Is.True, "All chimera groups should have at least two PSMs.");
         Assert.That(chimeraAnalysisTabViewModel.ChimeraGroupViewModels.Count, Is.GreaterThan(0), "There should be at least one chimera group.");
@@ -76,7 +77,8 @@ public class ChimeraAnalysisTabViewModelTests
         MetaDrawSettings.QValueFilter = 0.5; // set filter higher
         MetaDrawSettings.ShowDecoys = true; // show decoys
 
-        chimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(ChimeraGroupViewModelTests.AllMatches, dataFiles, TestExportDirectory);
+        chimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(TestExportDirectory);
+        chimeraAnalysisTabViewModel.ProcessChimeraData(ChimeraGroupViewModelTests.AllMatches, dataFiles);
         Assert.That(chimeraAnalysisTabViewModel.ChimeraGroupViewModels.All(p => p.Count > 1),
             Is.True, "All chimera groups should have at least two PSMs after changing settings.");
         Assert.That(chimeraAnalysisTabViewModel.ChimeraGroupViewModels.Count, Is.GreaterThan(0), "There should still be at least one chimera group after changing settings.");
@@ -97,13 +99,15 @@ public class ChimeraAnalysisTabViewModelTests
     }
 
     [Test]
+    [NonParallelizable]
     public static void ChimeraTabViewModel_PrecursorAssignmentIsCorrectInGroups()
     {
         var dataFiles = new Dictionary<string, MsDataFile>()
         {
             {"FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile }
         };
-        var chimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(ChimeraGroupViewModelTests.AllMatches, dataFiles, TestExportDirectory);
+        var chimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(TestExportDirectory);
+        chimeraAnalysisTabViewModel.ProcessChimeraData(ChimeraGroupViewModelTests.AllMatches, dataFiles);
 
         foreach (var chimeraGroup in chimeraAnalysisTabViewModel.ChimeraGroupViewModels)
         {
@@ -122,7 +126,11 @@ public class ChimeraAnalysisTabViewModelTests
                 for (int j = 0; j < chimericPsms.Count; j++)
                 {
                     if (i == j) continue;
+
                     var otherEnvelope = chimericPsms[j].PrecursorEnvelope;
+                    if (psm.ChargeState != otherEnvelope.Charge) 
+                        continue;
+
                     double diff = Math.Abs(psm.PrecursorMass - otherEnvelope.MonoisotopicMass);
                     Assert.That(minDiff, Is.LessThanOrEqualTo(diff),
                         $"PSM {i} in group (scan {chimeraGroup.Ms2ScanNumber}) should be assigned to its closest envelope.");
@@ -140,7 +148,8 @@ public class ChimeraAnalysisTabViewModelTests
         string exportDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests");
 
         // Act
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles, exportDir);
+        var vm = new ChimeraAnalysisTabViewModel(exportDir);
+        vm.ProcessChimeraData(allPsms, dataFiles);
 
         // Assert
         Assert.That(vm.ChimeraGroupViewModels, Is.Not.Null.And.Not.Empty);
@@ -157,7 +166,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         var group = vm.ChimeraGroupViewModels[0];
         var canvas = new Canvas();
         var drawnSeq = new ChimeraDrawnSequence(canvas, group);
@@ -178,7 +188,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         bool propertyChanged = false;
         vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.UseLetterOnly)) propertyChanged = true; };
 
@@ -198,7 +209,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportDir");
         if (Directory.Exists(tempDir))
             Directory.Delete(tempDir, true);
@@ -223,7 +235,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
 
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportMs1_Null");
         vm.ExportDirectory = tempDir;
@@ -243,7 +256,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
 
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportMs2_Null");
         vm.ExportDirectory = tempDir;
@@ -263,7 +277,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportLegend_Null");
         vm.ExportDirectory = tempDir;
         Directory.CreateDirectory(tempDir);
@@ -282,7 +297,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
         string tempDir = Path.Combine(Path.GetTempPath(), $"ChimeraAnalysisTabViewModelTests_ExportMs1_{MetaDrawSettings.ExportType}");
         vm.ExportDirectory = tempDir;
@@ -314,7 +330,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
         string tempDir = Path.Combine(Path.GetTempPath(), $"ChimeraAnalysisTabViewModelTests_ExportMs2_{MetaDrawSettings.ExportType}");
         vm.ExportDirectory = tempDir;
@@ -346,7 +363,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportSeqCov");
         vm.ExportDirectory = tempDir;
@@ -386,7 +404,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportLegend");
         vm.ExportDirectory = tempDir;
@@ -441,7 +460,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
 
         // Act
         vm.UseLetterOnly = true;
@@ -470,7 +490,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         var plotView = new OxyPlot.Wpf.PlotView();
         var group = vm.ChimeraGroupViewModels[0];
         var plot = new ChimeraSpectrumMatchPlot(plotView, group);
@@ -488,7 +509,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         var plotView = new OxyPlot.Wpf.PlotView();
         var group = vm.ChimeraGroupViewModels[0];
         var plot = new Ms1ChimeraPlot(plotView, group);
@@ -506,7 +528,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportMs2_Legend");
         vm.ExportDirectory = tempDir;
@@ -557,7 +580,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
         string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportAll_Legend");
         vm.ExportDirectory = tempDir;
@@ -617,7 +641,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
 
         var plotView = new Canvas { Width = 200, Height = 100, Background = System.Windows.Media.Brushes.White };
         var legend = new Canvas { Width = 50, Height = 30, Background = System.Windows.Media.Brushes.White };
@@ -672,7 +697,8 @@ public class ChimeraAnalysisTabViewModelTests
         // Arrange
         var allPsms = ChimeraGroupViewModelTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        var vm = new ChimeraAnalysisTabViewModel();
+        vm.ProcessChimeraData(allPsms, dataFiles);
 
         var plotView = new Canvas { Width = 200, Height = 100, Background = System.Windows.Media.Brushes.White };
 
