@@ -56,5 +56,10 @@ namespace GuiFunctions
         public LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
         public string ExportType { get; set; }
+
+        // BioPolymer coverage settings
+
+        public int BioPolymerCoverageFontSize { get; set; } = 16;
+        public List<string> BioPolymerCoverageColors { get; set; }
     }
 }
