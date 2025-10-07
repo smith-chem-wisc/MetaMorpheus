@@ -1,10 +1,12 @@
 ﻿// Copyright 2016 Stefan Solntsev
 using EngineLayer;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.IO;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using GuiFunctions;
 
 namespace Test
 {
@@ -24,7 +26,7 @@ namespace Test
 
             MetaMorpheusEngine.WarnHandler += WarnStatusHandler;
             MetaMorpheusTask.WarnHandler += WarnStatusHandler;
-
+            MessageBoxHelper.SuppressMessageBoxes = true;
             EverythingRunnerEngine.FinishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
         }
 

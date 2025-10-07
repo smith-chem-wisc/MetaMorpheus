@@ -1,4 +1,5 @@
 ﻿using OxyPlot;
+using OxyPlot.Wpf;
 using System.Windows.Media;
 
 namespace GuiFunctions
@@ -45,6 +46,13 @@ namespace GuiFunctions
             Name = name;
             SelectedColor = AddSpaces(defaultColor.GetColorName());
             ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(defaultColor);
+        }
+
+        public ColorForTreeViewModel(string name, SolidColorBrush brush)
+        {
+            Name = name;
+            ColorBrush = brush;
+            SelectedColor = AddSpaces(brush.ToOxyColor().GetColorName());
         }
 
         #endregion

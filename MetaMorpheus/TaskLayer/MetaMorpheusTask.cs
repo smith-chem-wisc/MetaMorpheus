@@ -100,9 +100,7 @@ namespace TaskLayer
                     })))
             // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
             .ConfigureType<ClassicDeconvolutionParameters>(type => type
-                .CreateInstance(() => new ClassicDeconvolutionParameters(1, 20, 4, 3))
-                .IgnoreProperty(p => p.IntensityRatioLimit)
-                .IgnoreProperty(p => p.DeconvolutionTolerancePpm))
+                .CreateInstance(() => new ClassicDeconvolutionParameters(1, 20, 4, 3)))
             .ConfigureType<IsoDecDeconvolutionParameters>(type => type
                 .CreateInstance(() => new IsoDecDeconvolutionParameters())
                 .IgnoreProperty(p => p.Verbose)
@@ -687,7 +685,7 @@ namespace TaskLayer
 
         #region Database Loading
 
-        protected List<IBioPolymer> LoadBioPolymers(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
+        public List<IBioPolymer> LoadBioPolymers(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
         {
             Status($"Loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s...", new List<string> { taskId });
             int emptyEntries = 0;
