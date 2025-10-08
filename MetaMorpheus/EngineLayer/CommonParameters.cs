@@ -9,6 +9,7 @@ using Nett;
 using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
 using Transcriptomics.Digestion;
+using EngineLayer.DIA;
 
 namespace EngineLayer
 {
@@ -58,7 +59,8 @@ namespace EngineLayer
             bool addTruncations = false,
             DeconvolutionParameters precursorDeconParams = null,
             DeconvolutionParameters productDeconParams = null,
-            bool useMostAbundantPrecursorIntensity = true)
+            bool useMostAbundantPrecursorIntensity = true,
+            DIAparameters diaParameters = null)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -93,6 +95,7 @@ namespace EngineLayer
             MaxHeterozygousVariants = maxHeterozygousVariants;
             MinVariantDepth = minVariantDepth;
             AddTruncations = addTruncations;
+            DIAparameters = diaParameters;
 
             // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
             if (deconvolutionMaxAssumedChargeState > 0) // positive mode
@@ -195,7 +198,8 @@ namespace EngineLayer
         public DissociationType MS3ChildScanDissociationType { get; private set; }
 
         public bool UseMostAbundantPrecursorIntensity { get; set; }
-        
+        public DIAparameters? DIAparameters { get; set; } //only for DIA analysis involving pseudo ms2 scan generation
+
         public CommonParameters Clone()
         {
             CommonParameters c = new CommonParameters();

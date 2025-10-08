@@ -27,6 +27,7 @@ using UsefulProteomicsDatabases.Transcriptomics;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using EngineLayer.Util;
+using EngineLayer.DIA;
 
 namespace TaskLayer
 {
@@ -378,6 +379,17 @@ namespace TaskLayer
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
+            if (commonParameters.DIAparameters != null)
+            {
+                switch (commonParameters.DIAparameters.AanalysisType)
+                {
+                    case DIAanalysisType.DIA:
+                        var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
+                        return diaEngine.GetPseudoMs2Scans();
+                    default:
+                        throw new NotImplementedException("DIA analysis type not implemented.");
+                }
+            }
             var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
 
             if (scansWithPrecursors.Length == 0)
