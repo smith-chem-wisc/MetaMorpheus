@@ -435,7 +435,7 @@ namespace Test
             Dictionary<int, List<Modification>> variantMods = new Dictionary<int, List<Modification>>();
             variantMods.Add(1, new List<Modification>(){ modToNotWrite});
 
-            List<SequenceVariation> variants = new List<SequenceVariation> { new SequenceVariation(4, 4, "V", "T", @"20\t41168825\t.\tT\tC\t14290.77\t.\tANN=C|missense_variant|MODERATE|PLCG1|ENSG00000124181|transcript|ENST00000244007.7|protein_coding|22/33|c.2438T>C|p.Ile813Thr|2635/5285|2438/3876|813/1291||\tGT:AD:DP:GQ:PL\t1/1:1,392:393:99:14319,1142,0", variantMods) };
+            List<SequenceVariation> variants = new List<SequenceVariation> { new SequenceVariation(4, 4, "V", "T", "", @"20\t41168825\t.\tT\tC\t14290.77\t.\tANN=C|missense_variant|MODERATE|PLCG1|ENSG00000124181|transcript|ENST00000244007.7|protein_coding|22/33|c.2438T>C|p.Ile813Thr|2635/5285|2438/3876|813/1291||\tGT:AD:DP:GQ:PL\t1/1:1,392:393:99:14319,1142,0", variantMods) };
 
             var protein1 = new Protein("PEPVIDEKPEPT", "1", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 12, new List<Modification> { modToWrite } } }, sequenceVariations: variants);
             var protein2 = new Protein("PEPIDPEPT", "2", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 9, new List<Modification> { modToWrite } } });
