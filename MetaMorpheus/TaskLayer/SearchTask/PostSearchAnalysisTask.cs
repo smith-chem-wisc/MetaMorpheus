@@ -37,7 +37,7 @@ namespace TaskLayer
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
 
-        public override string OutputFolder => Parameters.OutputFolder;
+        public override string OutputFolder => Parameters?.OutputFolder;
 
         /// <summary>
         /// Used for storage of results for writing to Results.tsv. It is explained in the method ConstructResultsDictionary()
