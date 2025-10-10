@@ -559,8 +559,9 @@ namespace TaskLayer
                 listOfModsFixed: commonParams.ListOfModsFixed,
                 taskDescriptor: commonParams.TaskDescriptor,
                 assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments,
-                maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
-                minVariantDepth: commonParams.MinVariantDepth,
+                maxSequenceVariantsPerIsoform: commonParams.MaxSequenceVariantsPerIsoform,
+                minAlleleDepth: commonParams.MinAlleleDepth,
+                maxSequenceVariantIsoforms: commonParams.MaxSequenceVariantIsoforms,
                 addTruncations: commonParams.AddTruncations,
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
                 productDeconParams: commonParams.ProductDeconvolutionParameters,
@@ -792,7 +793,9 @@ namespace TaskLayer
             {
                 List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
                 //proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, commonParameters.MaxHeterozygousVariants, commonParameters.MinVariantDepth, addTruncations: commonParameters.AddTruncations);
-                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, 0, commonParameters.MinVariantDepth, addTruncations: commonParameters.AddTruncations);
+                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, 
+                    maxSequenceVariantIsoforms: commonParameters.MaxSequenceVariantsPerIsoform, 
+                    minAlleleDepth: commonParameters.MinAlleleDepth, maxSequenceVariantsPerIsoform: commonParameters.MaxSequenceVariantIsoforms, addTruncations: commonParameters.AddTruncations);
 
             }
 

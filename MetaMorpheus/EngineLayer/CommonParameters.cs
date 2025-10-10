@@ -53,9 +53,10 @@ namespace EngineLayer
             IDigestionParams digestionParams = null, 
             IEnumerable<(string, string)> listOfModsVariable = null, 
             IEnumerable<(string, string)> listOfModsFixed = null,
-            bool assumeOrphanPeaksAreZ1Fragments = true, 
-            int maxHeterozygousVariants = 4, 
-            int minVariantDepth = 1, 
+            bool assumeOrphanPeaksAreZ1Fragments = true,
+            int maxSequenceVariantsPerIsoform = 0,
+            int minAlleleDepth = 0,
+            int maxSequenceVariantIsoforms = 1,
             bool addTruncations = false,
             DeconvolutionParameters precursorDeconParams = null,
             DeconvolutionParameters productDeconParams = null,
@@ -92,8 +93,9 @@ namespace EngineLayer
             MS3ChildScanDissociationType = ms3childScanDissociationType;
             UseMostAbundantPrecursorIntensity = useMostAbundantPrecursorIntensity;
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
-            MaxHeterozygousVariants = maxHeterozygousVariants;
-            MinVariantDepth = minVariantDepth;
+            MaxSequenceVariantsPerIsoform = maxSequenceVariantsPerIsoform;
+            MinAlleleDepth = minAlleleDepth;
+            MaxSequenceVariantIsoforms = maxSequenceVariantIsoforms;
             AddTruncations = addTruncations;
             DIAparameters = diaParameters;
 
@@ -188,8 +190,9 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; private set; }
         public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
-        public int MaxHeterozygousVariants { get; private set; }
-        public int MinVariantDepth { get; private set; }
+        public int MaxSequenceVariantsPerIsoform { get; private set; }
+        public int MinAlleleDepth { get; private set; }
+        public int MaxSequenceVariantIsoforms { get; private set; }
         public bool AddTruncations { get; private set; }
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }
@@ -263,8 +266,9 @@ namespace EngineLayer
                                 ListOfModsVariable,
                                 ListOfModsFixed,
                                 AssumeOrphanPeaksAreZ1Fragments,
-                                MaxHeterozygousVariants,
-                                MinVariantDepth,
+                                MaxSequenceVariantsPerIsoform,
+                                MinAlleleDepth,
+                                MaxSequenceVariantIsoforms,
                                 AddTruncations,
                                 PrecursorDeconvolutionParameters, 
                                 ProductDeconvolutionParameters);
