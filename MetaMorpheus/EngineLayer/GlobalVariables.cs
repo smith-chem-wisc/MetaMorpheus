@@ -68,7 +68,6 @@ namespace EngineLayer
         public static List<string> OGlycanDatabasePaths { get; private set; }
         public static List<string> NGlycanDatabasePaths { get; private set; }
 
-
         public static void SetUpGlobalVariables()
         {
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };

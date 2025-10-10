@@ -36,7 +36,12 @@ public class RnaDatabaseLoadingTests
         var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
 
         var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbForTask, "TestTaskId", DecoyType.None);
-        var bioPolymers = (loader.Run() as DatabaseLoadingEngineResults)!.BioPolymers;
+        var results = (DatabaseLoadingEngineResults)loader.Run()!;
+        var bioPolymers = results.BioPolymers;
+
+        Assert.That(dbForTask[0].BioPolymerCount, Is.EqualTo(1));   
+        Assert.That(dbForTask[0].TargetCount, Is.EqualTo(1));
+        Assert.That(dbForTask[0].DecoyCount, Is.EqualTo(0));
 
         Assert.That(bioPolymers![0], Is.TypeOf<RNA>());
         Assert.That(bioPolymers.Count, Is.EqualTo(1));
@@ -58,13 +63,8 @@ public class RnaDatabaseLoadingTests
         var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "20mer1.fasta");
         var dbsForTask = new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(dbPath, true) };
         var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbsForTask, "TestTaskId", DecoyType.None, tcAmbiguity: type);
-        var bioPolymers = (loader.Run() as DatabaseLoadingEngineResults)!.BioPolymers;
-
-        // Use reflection to access protected SanitizeBiopolymers method
-        var sanitizeBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("SanitizeBioPolymerDatabase",
-            BindingFlags.NonPublic | BindingFlags.Static);
-        var genericMethod = sanitizeBioPolymersMethod.MakeGenericMethod(typeof(IBioPolymer));
-        genericMethod.Invoke(null, new object[] { bioPolymers, type });
+        var results = (DatabaseLoadingEngineResults)loader.Run()!;
+        var bioPolymers = results.BioPolymers;
 
         Assert.That(bioPolymers.Count, Is.EqualTo(expectedAccessions.Length));
         Assert.That(bioPolymers[0].Accession, Is.EqualTo(expectedAccessions[0]));
@@ -88,20 +88,14 @@ public class RnaDatabaseLoadingTests
             new TestBioPolymer() {Accession= "TestingA"},
         };
 
-        // Use reflection to access protected SanitizeBiopolymers method
-        var sanitizeBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("SanitizeBioPolymerDatabase",
-            BindingFlags.NonPublic | BindingFlags.Static);
-        var genericMethod = sanitizeBioPolymersMethod.MakeGenericMethod(typeof(IBioPolymer));
-
-        var exception = Assert.Throws<TargetInvocationException>(() =>
+        var loader = new DatabaseLoadingEngine(new(), [], [], [], "TestTaskId", DecoyType.None, tcAmbiguity: TargetContaminantAmbiguity.RenameProtein);
+        var exception = Assert.Throws<ArgumentException>(() =>
         {
-            genericMethod.Invoke(null, new object[] { notImplementedBioPolymers, TargetContaminantAmbiguity.RenameProtein });
+            loader.SanitizeBioPolymerDatabase(notImplementedBioPolymers, TargetContaminantAmbiguity.RenameProtein);
         });
 
         Assert.That(exception, Is.Not.Null);
-        Assert.That(exception.InnerException, Is.Not.Null);
-        Assert.That(exception.InnerException, Is.TypeOf<ArgumentException>());
-        Assert.That(exception.InnerException.Message, Does.Contain("Database sanitization assumed BioPolymer was a protein when it was Test.Transcriptomics.TestBioPolymer"));
+        Assert.That(exception.Message, Does.Contain("Database sanitization assumed BioPolymer was a protein when it was Test.Transcriptomics.TestBioPolymer"));
     }
 
     [Test]
@@ -126,7 +120,8 @@ public class RnaDatabaseLoadingTests
         var localizableModificationTypes = (List<string>)modArgs[3];
 
         var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbsForTask, "TestTaskId", DecoyType.Reverse, true, localizableModificationTypes);
-        var rna = (loader.Run() as DatabaseLoadingEngineResults)!.BioPolymers;
+        var results = (DatabaseLoadingEngineResults)loader.Run()!;
+        var rna = results.BioPolymers;
 
         Assert.That(rna.All(p => p.SequenceVariations.Count == 1));
         Assert.That(rna.All(p => p.OriginalNonVariantModifications.Count == 2));
