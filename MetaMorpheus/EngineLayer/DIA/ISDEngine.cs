@@ -25,16 +25,20 @@ namespace EngineLayer.DIA
             var isdVoltageMap = ConstructIsdGroups(allScans, out MsDataScan[] ms1Scans);
             ReLabelIsdScans(isdVoltageMap, allScans);
 
-            //Get all MS1 and MS2 XICs
+            //Get all MS1 XICs
             var allMs1Xics = DIAparams.Ms1XicConstructor.GetAllXicsWithXicSpline(ms1Scans);
-            var allMs2Xics = new Dictionary<double, List<ExtractedIonChromatogram>>();
 
             //Precursor-fragment Grouping
             var allPfGroups = new List<PrecursorFragmentsGroup>();
             if (DIAparams.CombineFragments)
             {
-                var ms2Xics = allMs2Xics.Values.SelectMany(p => p).ToList();
-                allPfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics, ms2Xics).ToList();
+                var allMs2Xics = new Dictionary<int, List<ExtractedIonChromatogram>>();
+                foreach (var kvp in isdVoltageMap)
+                {
+                    var ms2Xics = DIAparams.Ms2XicConstructor.GetAllXics(kvp.Value.ToArray());
+                    allMs2Xics.Add(kvp.Key, ms2Xics);
+                }
+                allPfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics, allMs2Xics.Values.SelectMany(p => p).ToList()).ToList();
             }
             else
             {

@@ -377,7 +377,7 @@ namespace Test.DIATests
             var commonParams = new CommonParameters { DIAparameters = DIAparams };
             var pseudoScans = MetaMorpheusTask.GetMs2Scans(testMsDataFile, null, commonParams).ToArray();
 
-            //Without combining the fragments, each ISD level should give one pseudo scan, so there should be three pseudo scans in total
+            //Without combining the fragments, each ISD level should give one pseudo scan and each scan contains a different fake fragment, so there should be three pseudo scans in total
             Assert.That(pseudoScans.Length, Is.EqualTo(3));
             for (int i = 0; i < pseudoScans.Length; i++)
             {
@@ -390,6 +390,15 @@ namespace Test.DIATests
                 //The fragment mass in each pseudo scan should match with the fake fragments above
                 Assert.That(pseudoScans[i].ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(cfs[i + 1].MonoisotopicMass).Within(0.01));
             }
+
+            //If we combine the fragments, there should be one pseudo scan with three fragments
+            DIAparams = new DIAparameters(DIAanalysisType.ISD, new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, new ClassicDeconvolutionParameters(1, 20, 4, 3)), new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, new ClassicDeconvolutionParameters(1, 20, 4, 3)), new XicGroupingEngine(0.2f, 0.5, 0.5, 1), PseudoMs2ConstructionType.Mass, combineFragments: true);
+            commonParams = new CommonParameters { DIAparameters = DIAparams };
+            pseudoScans = MetaMorpheusTask.GetMs2Scans(testMsDataFile, null, commonParams).ToArray();
+            Assert.That(pseudoScans.Length, Is.EqualTo(1));
+            Assert.That(pseudoScans[0].PrecursorCharge, Is.EqualTo(2));
+            Assert.That(pseudoScans[0].PrecursorMass, Is.EqualTo(cfs[0].MonoisotopicMass).Within(0.01));
+            Assert.That(pseudoScans[0].ExperimentalFragments.Count, Is.EqualTo(3));
         }
     }
 }
