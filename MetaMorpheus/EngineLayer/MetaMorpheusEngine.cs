@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Transcriptomics.Digestion;
 
 namespace EngineLayer
@@ -288,6 +289,8 @@ namespace EngineLayer
             FinishedSingleEngine(myResults);
             return myResults;
         }
+
+        public Task<MetaMorpheusEngineResults> RunAsync() => Task.Run(Run);
 
         /// <summary>
         /// Changes the name of the analytes from "peptide" to "proteoform" or "oligo" if the protease is set to top-down
