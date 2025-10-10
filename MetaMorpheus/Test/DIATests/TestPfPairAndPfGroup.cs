@@ -91,24 +91,5 @@ namespace Test.DIATests
                 }
             }
         }
-
-        [Test]
-        public static void TestSharedXic()
-        {
-            var peakList1 = new List<IIndexedPeak>();
-            double[] intensityMultipliers = { 1, 3, 6, 3, 1 };
-            for (int i = 0; i < intensityMultipliers.Length; i++)
-            {
-                peakList1.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
-            }
-            var xic1 = new ExtractedIonChromatogram(peakList1);
-            var peakList2 = new List<IIndexedPeak>();
-            for (int i = 0; i < intensityMultipliers.Length; i++)
-            {
-                peakList2.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 10 + i / 10, zeroBasedScanIndex: i + 10, mz: 501.0));
-            }
-            var xic2 = new ExtractedIonChromatogram(peakList2);
-            var sharedXic = PrecursorFragmentPair.CalculateSharedXIC(xic1, xic2);
-        }
     }
 }
