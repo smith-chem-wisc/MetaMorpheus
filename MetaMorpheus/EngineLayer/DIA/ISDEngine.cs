@@ -6,20 +6,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using static Proteomics.RetentionTimePrediction.SSRCalc3;
 
 namespace EngineLayer.DIA
 {
     public class ISDEngine : DIAEngine
     {
         private readonly MsDataFile DataFile;
-        public List<double> sourceVoltages { get; set; } 
-        public ISDEngine(List<double> sourceVoltages, DIAparameters DIAparameters, MsDataFile dataFile, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds) : base(DIAparameters, dataFile, commonParameters, fileSpecificParameters, nestedIds)
-        {
-        }
 
-        protected override MetaMorpheusEngineResults RunSpecific()
+        public ISDEngine(MsDataFile dataFile, CommonParameters commonParameters) : base(dataFile, commonParameters)
+        {
+            DataFile = dataFile;
+        }
+       
+        public override IEnumerable<Ms2ScanWithSpecificMass> GetPseudoMs2Scans()
         {
             //read in scans and isd scan pre-process
             var allScans = DataFile.GetAllScansList().ToArray();
@@ -29,41 +28,34 @@ namespace EngineLayer.DIA
             //Get all MS1 and MS2 XICs
             var allMs1Xics = DIAparams.Ms1XicConstructor.GetAllXicsWithXicSpline(ms1Scans);
             var allMs2Xics = new Dictionary<double, List<ExtractedIonChromatogram>>();
-            foreach (var ms2Group in isdVoltageMap)
-            {
-                allMs2Xics[ms2Group.Key] = DIAparams.Ms2XicConstructor.GetAllXicsWithXicSpline(ms2Group.Value.ToArray());
-            }
 
             //Precursor-fragment Grouping
             var allPfGroups = new List<PrecursorFragmentsGroup>();
             if (DIAparams.CombineFragments)
             {
-                allPfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics, allMs2Xics.Values.SelectMany(p => p));
+                var ms2Xics = allMs2Xics.Values.SelectMany(p => p).ToList();
+                allPfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics, ms2Xics).ToList();
             }
             else
             {
-                foreach (var ms2Group in isdVoltageMap.Keys)
+                foreach(var kvp in isdVoltageMap)
                 {
-                    var pfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics, allMs2Xics[ms2Group]);
+                    var ms2Xics = DIAparams.Ms2XicConstructor.GetAllXics(kvp.Value.ToArray());
+                    var pfGroups = DIAparams.PfGroupingEngine.PrecursorFragmentGrouping(allMs1Xics, ms2Xics);
                     allPfGroups.AddRange(pfGroups);
                 }
             }
-            
-            //Convert pfGroups to pseudo MS2 scans
-            PseudoMs2Scans = new List<Ms2ScanWithSpecificMass>();
-            int pfGroupIndex = 1;
+
             foreach (var pfGroup in allPfGroups)
             {
-                pfGroup.PFgroupIndex = pfGroupIndex;
-                var pseudoScan = PrecursorFragmentsGroup.GetPseudoMs2ScanFromPfGroup(pfGroup, DIAparams.PseudoMs2ConstructionType, CommonParameters, DataFile.FilePath);
-                PseudoMs2Scans.Add(pseudoScan);
-                pfGroupIndex++;
+                OneBasedScanNumber++;
+                pfGroup.PFgroupIndex = OneBasedScanNumber;
+                var pseudoScan = pfGroup.GetPseudoMs2ScanFromPfGroup(DIAparams.PseudoMs2ConstructionType, CommonParams, DataFile.FilePath);
+                yield return pseudoScan;
             }
-
-            return new MetaMorpheusEngineResults(this);
         }
 
-        public static void ReLabelIsdScans(Dictionary<double, List<MsDataScan>> isdVoltageScanMap, MsDataScan[] ms1Scans)
+        public static void ReLabelIsdScans(Dictionary<int, List<MsDataScan>> isdVoltageScanMap, MsDataScan[] ms1Scans)
         {
             for (int i = 0; i < isdVoltageScanMap.Count; i++)
             {
@@ -80,15 +72,15 @@ namespace EngineLayer.DIA
             }
         }
 
-        public static Dictionary<double, List<MsDataScan>> ConstructIsdGroups(MsDataScan[] scans, out MsDataScan[] ms1Scans)
+        public static Dictionary<int, List<MsDataScan>> ConstructIsdGroups(MsDataScan[] scans, out MsDataScan[] ms1Scans)
         {
-            var isdVoltageScanMap = new Dictionary<double, List<MsDataScan>>();
+            var isdVoltageScanMap = new Dictionary<int, List<MsDataScan>>();
             string pattern = $@"sid=(\d+)";
             foreach (var scan in scans)
             {
-                double voltage = 0;
+                int voltage = 0;
                 var match = Regex.Match(scan.ScanFilter, pattern);
-                if (match.Success) voltage = double.Parse(match.Groups[1].Value);
+                if (match.Success) voltage = int.Parse(match.Groups[1].Value);
                 if (!isdVoltageScanMap.ContainsKey(voltage))
                 {
                     isdVoltageScanMap[voltage] = new List<MsDataScan> { scan };

@@ -26,23 +26,12 @@ namespace EngineLayer.DIA
             var neutralMassIndexingEngine = new MassIndexingEngine();
             if (neutralMassIndexingEngine.IndexPeaks(scans, DeconParameters, isolationRange, MinMass, MinCharge))
             {
-                return neutralMassIndexingEngine.GetAllXics(PeakFindingTolerance, MaxMissedScansAllowed, MaxPeakHalfWidth, MinNumberOfPeaks, out var matchedPeaks);
+                return neutralMassIndexingEngine.GetAllXics(PeakFindingTolerance, MaxMissedScansAllowed, MaxPeakHalfWidth, MinNumberOfPeaks);
             }
             else
             {
                 throw new MetaMorpheusException("XIC construction failed.");
             }
-        }
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(BaseToString());
-            sb.AppendLine($"NeutralMassXicConstructorSettings: ");
-            sb.AppendLine($"DeconvolutionParameters: {DeconParameters}");
-            sb.AppendLine($"MinMass: {MinMass}");
-            sb.AppendLine($"MinCharge: {MinCharge}");
-            return base.ToString();
         }
     }
 }

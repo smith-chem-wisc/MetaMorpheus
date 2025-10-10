@@ -25,17 +25,5 @@ namespace EngineLayer.DIA
             PseudoMs2ConstructionType = pseudoMs2ConstructionType;
             CombineFragments = combineFragments;
         }
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("DIAparameters:");
-            sb.AppendLine($"{Ms1XicConstructor.ToString()}");
-            sb.AppendLine($"{Ms2XicConstructor.ToString()}");
-            sb.AppendLine($"{PfGroupingEngine.ToString()}");
-            sb.AppendLine($"PseudoMs2ConstructionType: {PseudoMs2ConstructionType}");
-            sb.AppendLine($"CombineFragments: {CombineFragments}");
-            return sb.ToString();
-        }
     }
 }

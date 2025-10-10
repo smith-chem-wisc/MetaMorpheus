@@ -10,7 +10,7 @@ using TaskLayer;
 using System.IO;
 using Chemistry;
 using Readers;
-using MathNet.Numerics.Interpolation;
+using System.Drawing.Imaging;
 
 namespace Test.DIATests
 {
@@ -312,7 +312,7 @@ namespace Test.DIATests
         [Test]
         public static void IsdVoltageScanTest()
         {
-            string dataPath = @"E:\ISD Project\ISD_240812\08-12-24_PEPPI_FractionD_orbiMS1_ISD60-80-100_RT8.1-9.23.mzML";
+            string dataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData\\DIA\\08-12-24_PEPPI_FractionD_orbiMS1_ISD60-80-100_RT8.1-9.23.mzML");
             var myFileManager = new MyFileManager(true);
             var dataFile = myFileManager.LoadFile(dataPath, new CommonParameters());
             var allScans = dataFile.GetAllScansList().ToArray();
@@ -341,6 +341,54 @@ namespace Test.DIATests
                 var ms1Scan = ms1Scans.Where(s => s.OneBasedScanNumber == scan.OneBasedPrecursorScanNumber.Value).FirstOrDefault();
                 Assert.That(scan.IsolationRange.Minimum, Is.EqualTo(ms1Scan.ScanWindowRange.Minimum));
                 Assert.That(scan.IsolationRange.Maximum, Is.EqualTo(ms1Scan.ScanWindowRange.Maximum));
+            }
+        }
+
+        [Test]
+        public static void ISDEngineTest()
+        {
+            //Create fake scans with a fake precursor and three fake fragments that appear in isd60, 80, 100 scans respectively
+            //There are four masses which should give four distinct XICs
+            var sequences = new List<string> { "PEPTIDEPEPTIDE", "PEPTIDEPEP", "PEPTIDE", "PEP" };
+            //create five scan cycles, each with a different intensity level; (ms1, isd60, isd80, isd100) x 5
+            double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
+            var cfs = sequences.Select(p => new Proteomics.AminoAcidPolymer.Peptide(p).GetChemicalFormula()).ToArray();
+            var dists = cfs.Select(cf => IsotopicDistribution.GetDistribution(cf, 0.125, 1e-4)).ToArray();
+            var fakeScans = new MsDataScan[intensityMultipliers.Length * cfs.Length];
+            var fakeScanFilters = new string[] { "sid=15", "sid=60", "sid=80", "sid=100" };
+            var rtStart = new double[] { 1.0, 1.1, 1.2, 1.3, 1.4};
+
+            //There should be 20 fake scans in total
+            int oneBasedScanNumber = 1;
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                for (int j = 0; j < fakeScanFilters.Length; j++)
+                {
+                    double[] mzs = dists[j].Masses.Select(v => v.ToMz(2)).ToArray();
+                    double[] intensities = dists[j].Intensities.Select(v => v * 1e6 * intensityMultipliers[i]).ToArray();
+                    fakeScans[oneBasedScanNumber - 1] = new MsDataScan(massSpectrum: new MzSpectrum(mzs, intensities, false), oneBasedScanNumber: oneBasedScanNumber, msnOrder: 1, isCentroid: true, polarity: Polarity.Positive, retentionTime: rtStart[i] + j / 100.0, scanWindowRange: new MzRange(100, 2000), scanFilter: fakeScanFilters[j], MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=" + oneBasedScanNumber, dissociationType: DissociationType.Unknown); 
+                    oneBasedScanNumber++;
+                }
+            }
+            var testMsDataFile = new GenericMsDataFile(fakeScans, new SourceFile("no nativeID format", "mzML format", null, null, null));
+            
+            //put the data into the search pipeline to see if it returns pseudo scans
+            var DIAparams = new DIAparameters(DIAanalysisType.ISD, new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, new ClassicDeconvolutionParameters(1, 20, 4, 3)), new NeutralMassXicConstructor(new PpmTolerance(20), 2, 1, 3, new ClassicDeconvolutionParameters(1, 20, 4, 3)), new XicGroupingEngine(0.2f, 0.5, 0.5, 1), PseudoMs2ConstructionType.Mass);
+            var commonParams = new CommonParameters { DIAparameters = DIAparams };
+            var pseudoScans = MetaMorpheusTask.GetMs2Scans(testMsDataFile, null, commonParams).ToArray();
+
+            //Without combining the fragments, each ISD level should give one pseudo scan, so there should be three pseudo scans in total
+            Assert.That(pseudoScans.Length, Is.EqualTo(3));
+            for (int i = 0; i < pseudoScans.Length; i++)
+            {
+                //The precursor charge should be 2
+                Assert.That(pseudoScans[i].PrecursorCharge, Is.EqualTo(2));
+                //The precursor mass should match with the fake precursor
+                Assert.That(pseudoScans[i].PrecursorMass, Is.EqualTo(cfs[0].MonoisotopicMass).Within(0.01));
+                //Each pseudo scan should have one fragment mass
+                Assert.That(pseudoScans[i].ExperimentalFragments.Count, Is.EqualTo(1));
+                //The fragment mass in each pseudo scan should match with the fake fragments above
+                Assert.That(pseudoScans[i].ExperimentalFragments.First().MonoisotopicMass, Is.EqualTo(cfs[i + 1].MonoisotopicMass).Within(0.01));
             }
         }
     }
