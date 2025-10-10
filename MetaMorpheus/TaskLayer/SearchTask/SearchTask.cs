@@ -19,6 +19,7 @@ using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
 using Readers;
+using EngineLayer.DatabaseLoading;
 
 namespace TaskLayer
 {
@@ -88,6 +89,7 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, 
             FileSpecificParameters[] fileSettingsList)
         {
+            MyTaskResults = new(this);
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
@@ -152,16 +154,9 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
-            List<IBioPolymer> bioPolymerList = null;
-            Task<List<IBioPolymer>> proteinLoadingTask = new(() =>
-            {
-                var proteins = LoadBioPolymers(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType,
-                    localizeableModificationTypes,
-                    CommonParameters);
-                SanitizeBioPolymerDatabase(proteins, SearchParameters.TCAmbiguity);
-                return proteins;
-            });
-            proteinLoadingTask.Start();
+            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, SearchParameters.DecoyType, SearchParameters.SearchTarget, localizeableModificationTypes, SearchParameters.TCAmbiguity);
+            var proteinLoadingTask = dbLoader.RunAsync();
+            List<IBioPolymer> bioPolymerList = null!;
 
             // load spectral libraries
             var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
@@ -186,7 +181,6 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append($"report {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
 
             // start the search task
-            MyTaskResults = new MyTaskResults(this);
             List<SpectralMatch> allPsms = new List<SpectralMatch>();
 
             //generate an array to store category specific fdr values (for speedy semi/nonspecific searches)
@@ -257,13 +251,13 @@ namespace TaskLayer
                 switch (proteinLoadingTask.IsCompleted)
                 {
                     case true when bioPolymerList is null: // has finished loading but not been set
-                        bioPolymerList = proteinLoadingTask.Result;
+                        bioPolymerList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
                         break;
                     case true when bioPolymerList.Any(): // has finished loading and already been set
                         break;
                     case false: // has not finished loading
                         proteinLoadingTask.Wait();
-                        bioPolymerList = proteinLoadingTask.Result;
+                        bioPolymerList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
                         break;
                 }
 

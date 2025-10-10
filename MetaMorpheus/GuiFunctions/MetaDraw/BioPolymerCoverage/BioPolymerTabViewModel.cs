@@ -96,13 +96,10 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
         try
         {
             // Load biopolymers asynchronously
-            var bioPolymers = await Task.Run(() =>
-                new SearchTask().LoadBioPolymers(
-                    "", new() { new DbForTask(DatabasePath, false) }, true, DecoyType.None, new(), new())
-                .ToDictionary(p => p.Accession, p => p)
-            );
+            var dbLoader = new DatabaseLoadingEngine(new(), [], [], [new DbForTask(DatabasePath, false)], "", DecoyType.None);
+            var loadingResults = await dbLoader.RunAsync();
 
-            _allBioPolymers = bioPolymers;
+            _allBioPolymers = (loadingResults as DatabaseLoadingEngineResults)!.BioPolymers.ToDictionary(bp => bp.Accession, bp => bp);
 
             if (_allBioPolymers.Count == 0)
             {
