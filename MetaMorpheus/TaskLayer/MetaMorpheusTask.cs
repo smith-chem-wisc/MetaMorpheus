@@ -157,7 +157,7 @@ namespace TaskLayer
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
         [TomlIgnore]
-        public string OutputFolder { get; private set; }
+        public virtual string OutputFolder { get; private set; }
 
         protected MyTaskResults MyTaskResults;
 
@@ -1301,6 +1301,25 @@ namespace TaskLayer
             return false;
         }
 
+        protected void EngineCrashed(string engineName, Exception e)
+        {
+            var outPath = Path.Combine(OutputFolder, $"{engineName}_crash.txt");
+            e.Data.Add("folder", OutputFolder);
+            using (StreamWriter file = new StreamWriter(outPath))
+            {
+                file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
+                file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
+                file.Write("e: " + e);
+                file.Write("e.Message: " + e.Message);
+                file.Write("e.InnerException: " + e.InnerException);
+                file.Write("e.Source: " + e.Source);
+                file.Write("e.StackTrace: " + e.StackTrace);
+                file.Write("e.TargetSite: " + e.TargetSite);
+            }
+
+            Warn($"{engineName} engine Crashed! Error written to {outPath}");
+        }
+
         private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
@@ -1587,6 +1606,7 @@ namespace TaskLayer
             where TBioPolymer : IBioPolymer
         {
             List<TBioPolymer> toRemove = new();
+            bioPolymers.RemoveAll(p => p == null);
             foreach (var accessionGroup in bioPolymers.GroupBy(p => p.Accession)
                          .Where(group => group.Count() > 1) // only keep the ones with multiple entries sharing an accession
                          .Select(group => group.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count) // order by mods then truncation products (this is what was here before)
