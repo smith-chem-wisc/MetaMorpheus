@@ -3,7 +3,7 @@ namespace EngineLayer.DatabaseLoading;
 
 public class DbForTask
 {
-    public DbForTask(string filePath, bool isContaminant, string decoyIdentifier = "DECOY")
+    public DbForTask(string filePath, bool isContaminant, string decoyIdentifier = GlobalVariables.DefaultDecoyIdentifier)
     {
         FilePath = filePath;
         IsContaminant = isContaminant;
