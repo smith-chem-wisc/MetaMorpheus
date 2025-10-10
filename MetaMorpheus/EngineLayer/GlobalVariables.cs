@@ -21,6 +21,7 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
+        public const string DefaultDecoyIdentifier = "DECOY";
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
         public static List<string> AcceptedDatabaseFormats { get; private set; }
@@ -66,6 +67,7 @@ namespace EngineLayer
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
         public static List<string> OGlycanDatabasePaths { get; private set; }
         public static List<string> NGlycanDatabasePaths { get; private set; }
+
 
         public static void SetUpGlobalVariables()
         {

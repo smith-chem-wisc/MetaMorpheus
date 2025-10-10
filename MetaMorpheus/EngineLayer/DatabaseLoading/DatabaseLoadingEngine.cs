@@ -128,7 +128,7 @@ public class DatabaseLoadingEngine(
     public static IEnumerable<RNA> LoadOligoDb(string fileName, bool generateTargets, DecoyType decoyType,
         List<string> localizeableModificationTypes, bool isContaminant,
         out Dictionary<string, Modification> unknownMods, out int emptyEntriesCount,
-        CommonParameters commonParameters, string decoyIdentifier = "DECOY")
+        CommonParameters commonParameters, string decoyIdentifier = GlobalVariables.DefaultDecoyIdentifier)
     {
         List<string> dbErrors = new List<string>();
         List<RNA> rnaList = new List<RNA>();
@@ -154,7 +154,7 @@ public class DatabaseLoadingEngine(
     }
 
     public static IEnumerable<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um,
-            out int emptyEntriesCount, CommonParameters commonParameters, string decoyIdentifier = "DECOY")
+            out int emptyEntriesCount, CommonParameters commonParameters, string decoyIdentifier = GlobalVariables.DefaultDecoyIdentifier)
     {
         List<string> dbErrors = new List<string>();
         List<Protein> proteinList = new List<Protein>();
