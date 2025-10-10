@@ -139,6 +139,12 @@
     <None Update="GlycoTestData\leukosialin.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\NGlycan_ForNoSearch.gdb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\NGlycan_NOBoxesTesting.gdb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\NGlycan_struct.gdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -162,6 +168,9 @@
     </None>
     <None Update="GlycoTestData\N_O_glycoWithFileSpecific\FourMucins_NoSigPeps_FASTA.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\OGlycan.gdb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\P02649.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -689,6 +698,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Transcriptomics\TestData\22merMethyl_Snip.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\AllOligos.osmtsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Transcriptomics\TestData\GUACUG_NegativeMode_Sliced.mzML">

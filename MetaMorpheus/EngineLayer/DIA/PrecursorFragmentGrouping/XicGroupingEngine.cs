@@ -47,7 +47,8 @@ namespace EngineLayer.DIA
                         var pfGroup = GroupFragmentsForOnePrecursor(precursor, fragmentsInRange);
                         if (pfGroup != null)
                         {
-                            pfGroups.Add(pfGroup);
+                            lock (pfGroups)
+                                pfGroups.Add(pfGroup);
                         }
                     }
                 });
@@ -100,7 +101,7 @@ namespace EngineLayer.DIA
             var tree = new SortedDictionary<double, List<ExtractedIonChromatogram>>();
             foreach (var xic in xics)
             {
-                double roundedApexRt = Math.Round(xic.ApexRT, 2);
+                double roundedApexRt = Math.Round(xic.ApexRT, 2); 
                 if (!tree.ContainsKey(roundedApexRt))
                     tree[roundedApexRt] = new List<ExtractedIonChromatogram>();
                 tree[roundedApexRt].Add(xic);

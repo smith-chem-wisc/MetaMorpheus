@@ -10,7 +10,7 @@ using TaskLayer;
 using System.IO;
 using Chemistry;
 using Readers;
-using System.Drawing.Imaging;
+using MathNet.Numerics.Interpolation;
 
 namespace Test.DIATests
 {
