@@ -1,4 +1,5 @@
-﻿using EngineLayer.DIA;
+﻿using EngineLayer;
+using EngineLayer.DIA;
 using MassSpectrometry;
 using MathNet.Numerics.Statistics;
 using MzLibUtil;
@@ -6,13 +7,156 @@ using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity.Core;
 using System.Linq;
+using TaskLayer;
 using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 
 namespace Test.DIATests
 {
     public class TestPfPairAndPfGroup
     {
+        [Test]
+        public static void TestCorrelationCalculation()
+        {
+            //Create two perfectly aligned XICs
+            var peakList1 = new List<IIndexedPeak>();
+            double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                peakList1.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
+            }
+            var xic1 = new ExtractedIonChromatogram(peakList1);
+            var peakList2 = new List<IIndexedPeak>();
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                peakList2.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 501.0));
+            }
+            var xic2 = new ExtractedIonChromatogram(peakList2);
+            double corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
+            //The Pearson's correlation should be 1
+            Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
+
+            //XICs with completely opposite trends
+            var peakList3 = new List<IIndexedPeak>();
+            double[] intensityMultipliers2 = { 3, 2, 1, 2, 3 };
+            for (int i = 0; i < intensityMultipliers2.Length; i++)
+            {
+                peakList3.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers2[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 501.0));
+            }
+            var xic3 = new ExtractedIonChromatogram(peakList3);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic3);
+            //The Pearson's correlation should be -1
+            Assert.That(corr, Is.EqualTo(-1.0).Within(1e-6));
+
+            //XICs with insufficient overlap points
+            var peakList4 = new List<IIndexedPeak>();
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                peakList4.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i + 4, mz: 502.0));
+            }
+            var xic4 = new ExtractedIonChromatogram(peakList4);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic4);
+            Assert.That(corr, Is.NaN);
+
+            //Test with missing points in XICs
+            var peakList5 = new List<IIndexedPeak>();
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                if (i != 1) //missing the peak at scan index 1
+                    peakList5.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 503.0));
+            }
+            var xic5 = new ExtractedIonChromatogram(peakList5);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic5);
+            Assert.That(corr, Is.LessThan(1.0));
+            Assert.That(corr, Is.GreaterThan(0.0)); //Correlation should still be positive but less than 1 due to missing point
+        }
+
+        [Test]
+        public static void TestCorrelationCalculationWithSpline()
+        {
+            //When spline is available, the correlation is calculated with the spline data
+            //xic1 and xic2 are perfectly aligned; xic3 does not have enough overlap points so corr will be NaN
+            var peakList1 = new List<IIndexedPeak>();
+            var peakList2 = new List<IIndexedPeak>();
+            var peakList3 = new List<IIndexedPeak>();
+            double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                peakList1.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
+                peakList2.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 501.0));
+                peakList3.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1.5 + i / 10, zeroBasedScanIndex: i + 5, mz: 501.0));
+            }
+            var xic1 = new ExtractedIonChromatogram(peakList1);
+            var xic2 = new ExtractedIonChromatogram(peakList2);
+            var xic3 = new ExtractedIonChromatogram(peakList3);
+
+            //It should still return 1.0 for two perfectly aligned XICs (xic1 and xic2)
+            var cubicSpline = new XicCubicSpline();
+            cubicSpline.SetXicSplineXYData(xic1, true);
+            cubicSpline.SetXicSplineXYData(xic2, true);
+            var corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
+            Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
+            var linearSpline = new XicLinearSpline();
+            linearSpline.SetXicSplineXYData(xic1, true);
+            linearSpline.SetXicSplineXYData(xic2, true);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
+            Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
+
+            //For the XICs with insufficient overlap points (xic1 and xic3), it should return NaN
+            linearSpline.SetXicSplineXYData(xic3, true);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic3);
+            Assert.That(corr, Is.NaN);
+            //Test on umpire correlation calculation, should also return NaN
+            var bSpline = new Bspline(2, 2);
+            bSpline.SetXicSplineXYData(xic1);
+            bSpline.SetXicSplineXYData(xic3);
+            corr = PrecursorFragmentsGroup.CalculateXicCorrXYData_Umpire(xic1, xic3, 2);
+            Assert.That(corr, Is.NaN);
+        }
+
+        [Test]
+        public static void TestCalculateOverlapRatio()
+        {
+            //perfectly aligned XICs, should return 1
+            var peakList1 = new List<IIndexedPeak>();
+            double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                peakList1.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
+            }
+            var xic1 = new ExtractedIonChromatogram(peakList1);
+            var peakList2 = new List<IIndexedPeak>();
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                peakList2.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 501.0));
+            }
+            var xic2 = new ExtractedIonChromatogram(peakList2);
+            double overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(xic1, xic2);
+            Assert.That(overlap, Is.EqualTo(1.0).Within(1e-6));
+
+            //XICs with no overlap, should return 0
+            var peakList3 = new List<IIndexedPeak>();
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                peakList3.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 100 + i / 10, zeroBasedScanIndex: i + 100, mz: 501.0));
+            }
+            var xic3 = new ExtractedIonChromatogram(peakList3);
+            overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(xic1, xic3);
+            Assert.That(overlap, Is.EqualTo(0));
+
+            //XICs with partial overlap
+            //xic1 covers scan 0 to 4, xic4 covers scan 1 to 5, so the overlap should be 0.6 (3 out of 5 scans)
+            var peakList4 = new List<IIndexedPeak>();
+            for (int i = 0; i < intensityMultipliers.Length; i++)
+            {
+                peakList4.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i + 1, mz: 502.0));
+            }
+            var xic4 = new ExtractedIonChromatogram(peakList4);
+            overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(xic1, xic4);
+            Assert.That(overlap, Is.EqualTo(0.6).Within(1e-6));
+        }
+
         [Test]
         public static void TestFragmentAndPrecursorRank()
         {
@@ -90,6 +234,16 @@ namespace Test.DIATests
                     Assert.That(fragmentPairs[i].Correlation, Is.GreaterThanOrEqualTo(fragmentPairs[i + 1].Correlation));
                 }
             }
+        }
+
+        [Test]
+        public static void TestPfPairRankingExceptionHandling()
+        {
+            var peakList = new List<IIndexedPeak> { new IndexedMassSpectralPeak(500.0 , 1, 1, 1) };
+            var emptyXic = new ExtractedIonChromatogram(peakList);
+            var pfGroup = new PrecursorFragmentsGroup(emptyXic, null);
+            var ex = Assert.Throws<MetaMorpheusException>(() => pfGroup.SetFragmentRankForPfPairs());
+            Assert.That(ex.Message, Is.EqualTo("The PfGroup does not contain any PFpairs."));
         }
     }
 }

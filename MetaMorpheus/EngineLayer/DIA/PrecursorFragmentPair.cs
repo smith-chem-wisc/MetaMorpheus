@@ -32,7 +32,6 @@ namespace EngineLayer.DIA
 
         public static void SetPrecursorRankForPfPairs(IEnumerable<PrecursorFragmentPair> allPfPairs)
         {
-            if (allPfPairs.IsNullOrEmpty()) return;
             var fragmentPairMap = new Dictionary<ExtractedIonChromatogram, List<PrecursorFragmentPair>>();
             foreach (var pair in allPfPairs)
             {

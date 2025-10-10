@@ -81,7 +81,7 @@ namespace EngineLayer.DIA
 
             if (num < 6)
             {
-                return 0f;
+                return double.NaN;
             }
             double[] arrayA = new double[num];
             double[] arrayB = new double[num];
@@ -275,7 +275,10 @@ namespace EngineLayer.DIA
 
         public void SetFragmentRankForPfPairs()
         {
-            if (PFpairs.IsNullOrEmpty()) return;
+            if (PFpairs.IsNullOrEmpty())
+            {
+                throw new MetaMorpheusException("The PfGroup does not contain any PFpairs.");
+            }
             PFpairs.Sort((a, b) => b.Correlation.Value.CompareTo(a.Correlation.Value));
             for (int i = 0; i < PFpairs.Count; i++)
             {
