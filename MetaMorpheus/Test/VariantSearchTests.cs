@@ -82,10 +82,11 @@ namespace Test
                 new Protein("MPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "PPP", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", new Dictionary<int, List<Modification>> {{ 5, new[] { mp }.ToList() } }) }),
                 new Protein("MPEPTIDEPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "PTIDEPEPTIDE", "PPP", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
             };
-            IBioPolymerWithSetMods pep = proteins[proteinIdx].GetVariantBioPolymers().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).ToList()[peptideIdx];
+            var variantProtein = proteins[proteinIdx].GetVariantBioPolymers(minAlleleDepth: 0, maxSequenceVariantsPerIsoform: 1, maxSequenceVariantIsoforms: 2).First(v=>v.AppliedSequenceVariations.Count > 0);
+            IBioPolymerWithSetMods pep = variantProtein.Digest(CommonParameters.DigestionParams, null, null).First();
 
             string xmlName = $"andguiaheov{proteinIdx.ToString()}.xml";
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { proteins[proteinIdx] }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { variantProtein }, xmlName);
 
             string mzmlName = $"ajgdiv{proteinIdx.ToString()}.mzML";
             MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pep });
