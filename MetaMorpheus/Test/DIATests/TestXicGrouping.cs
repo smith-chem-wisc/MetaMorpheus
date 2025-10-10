@@ -152,7 +152,7 @@ namespace Test.DIATests
             double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
             for (int i = 0; i < intensityMultipliers.Length; i++)
             {
-                ms1Peaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
+                ms1Peaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1f + i / 10f, zeroBasedScanIndex: i, mz: 500.0));
             }
             var ms1Xic = new ExtractedIonChromatogram(ms1Peaks);
 
@@ -163,7 +163,7 @@ namespace Test.DIATests
             {
                 var fragPeaks = new List<IIndexedPeak>();
                 for (int i = 0; i < intensityMultipliers.Length; i++)
-                    fragPeaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1.1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
+                    fragPeaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1.1f + i / 10f, zeroBasedScanIndex: i, mz: 500.0));
                 var fragXic = new ExtractedIonChromatogram(fragPeaks);
                 matchedFragXics.Add(fragXic);
             }
@@ -174,7 +174,7 @@ namespace Test.DIATests
             {
                 var fragPeaks = new List<IIndexedPeak>();
                 for (int i = 0; i < intensityMultipliers.Length; i++)
-                    fragPeaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1.5 + i / 10, zeroBasedScanIndex: i + 50, mz: 500.0));
+                    fragPeaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1.5f + i / 10f, zeroBasedScanIndex: i + 50, mz: 500.0));
                 var fragXic = new ExtractedIonChromatogram(fragPeaks);
                 apexXics.Add(fragXic);
             }
@@ -186,7 +186,7 @@ namespace Test.DIATests
             {
                 var fragPeaks = new List<IIndexedPeak>();
                 for (int i = 0; i < intensityMultipliers.Length; i++)
-                    fragPeaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers2[i], retentionTime: 1.1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
+                    fragPeaks.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers2[i], retentionTime: 1.1f + i / 10f, zeroBasedScanIndex: i, mz: 500.0));
                 var fragXic = new ExtractedIonChromatogram(fragPeaks);
                 corrXics.Add(fragXic);
             }
@@ -217,6 +217,22 @@ namespace Test.DIATests
             Assert.That(pfGroups.Count(), Is.EqualTo(1));
             Assert.That(pfGroups[0].PFpairs.Count, Is.EqualTo(5 + 3)); //5 from matchedFragXics and 3 from corrXics
             //check that all fragment XICs grouped are from matchedFragXics and corrXics
+            foreach (var pfPair in pfGroups[0].PFpairs)
+            {
+                Assert.That(matchedFragXics.Contains(pfPair.FragmentXic) || corrXics.Contains(pfPair.FragmentXic));
+            }
+
+            //Test UmpireGrouping, apply the same fake data as above, should return the same results as XicGrouping
+            //UmpireGrouping requires B spline so we need to set the spline for all Xics first
+            var bSpline = new Bspline(2, 150);
+            foreach(var xic in allFragXics.Append(ms1Xic))
+            {
+                bSpline.SetXicSplineXYData(xic);
+            }
+            var umpireGroupingEngine = new UmpirePfGroupingEngine(150, 0.2f, 0.5, 0, 1, 2);
+            pfGroups = umpireGroupingEngine.PrecursorFragmentGrouping(new List<ExtractedIonChromatogram> { ms1Xic }, allFragXics).ToArray();
+            Assert.That(pfGroups.Count(), Is.EqualTo(1));
+            Assert.That(pfGroups[0].PFpairs.Count, Is.EqualTo(5 + 3));
             foreach (var pfPair in pfGroups[0].PFpairs)
             {
                 Assert.That(matchedFragXics.Contains(pfPair.FragmentXic) || corrXics.Contains(pfPair.FragmentXic));
@@ -355,12 +371,6 @@ namespace Test.DIATests
             bSpline.SetXicSplineXYData(xic2, true);
             bSpline.SetXicSplineXYData(xic3, true);
             bSpline.SetXicSplineXYData(xic4, true);
-        }
-
-        [Test]
-        public static void TestDeconHighestPeakXicConstructor()
-        {
-
         }
     }
 }

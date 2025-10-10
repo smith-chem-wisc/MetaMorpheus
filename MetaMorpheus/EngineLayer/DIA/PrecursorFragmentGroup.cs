@@ -76,7 +76,6 @@ namespace EngineLayer.DIA
         {
             double start = Math.Max(xic1.XYData[0].Item1, xic2.XYData[0].Item1);
 
-            //int num = Math.Min(curve1.SmoothedData.Count, curve2.SmoothedData.Count) / 2;
             int num = Math.Max(xic1.XYData.Count(), xic2.XYData.Count()) / 2;
             double timeInterval = (double)2 / NoPointPerInterval;
 
