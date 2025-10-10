@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using TaskLayer;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;

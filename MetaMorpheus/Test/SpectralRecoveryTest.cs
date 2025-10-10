@@ -15,6 +15,7 @@ using TaskLayer.MbrAnalysis;
 using Omics;
 using UsefulProteomicsDatabases;
 using System.Threading;
+using EngineLayer.DatabaseLoading;
 using Readers;
 using Omics.Digestion;
 using Readers.SpectralLibrary;

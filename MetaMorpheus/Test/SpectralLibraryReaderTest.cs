@@ -9,6 +9,7 @@ using Omics.Fragmentation;
 using Proteomics;
 using MassSpectrometry;
 using EngineLayer.ClassicSearch;
+using EngineLayer.DatabaseLoading;
 using Omics.Modifications;
 using Readers.SpectralLibrary;
 
