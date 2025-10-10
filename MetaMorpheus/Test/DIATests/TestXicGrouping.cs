@@ -292,7 +292,7 @@ namespace Test.DIATests
 
             //When we set a threshold of 4 for fragment rank but no precursor rank threshold
             xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, null, 4);
-            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics).ToArray();
+            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics).OrderBy(g => g.PrecursorXic.AveragedMassOrMz).ToArray();
             Assert.That(groups.Count, Is.EqualTo(3));
             //The 4 fragment Xics that correlate better with each precursor Xic should be retained
             Assert.That(groups.All(g => g.PFpairs.Count == 4));
@@ -304,7 +304,7 @@ namespace Test.DIATests
 
             //When we set a threshold of 1 for precursor rank but no fragment rank threshold
             xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, 1, null);
-            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics).ToArray();
+            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics).OrderBy(g => g.PrecursorXic.AveragedMassOrMz).ToArray();
             //Precursor 3 should not have any fragments grouped with it since each fragment Xic is limited to be paired with only one precursor
             Assert.That(groups.Count, Is.EqualTo(2));
             //The precursor Xic that correlate best with each fragment Xic should be retained
@@ -315,7 +315,7 @@ namespace Test.DIATests
 
             //When we set a threshold of 2 for precursor rank and 6 for fragment rank
             xicGroupingEngine = new XicGroupingEngine(0.5f, 0.5, 0.25, 2, 1, 2, 6);
-            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics).ToArray();
+            groups = xicGroupingEngine.PrecursorFragmentGrouping(allPrecursorXics, allFragmentXics).OrderBy(g => g.PrecursorXic.AveragedMassOrMz).ToArray();
             //Precursor 3 should still not have any fragments so there are two groups
             Assert.That(groups.Count, Is.EqualTo(2));
             //Each group should have 6 fragments
