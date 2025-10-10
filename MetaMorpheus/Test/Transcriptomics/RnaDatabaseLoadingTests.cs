@@ -34,14 +34,9 @@ public class RnaDatabaseLoadingTests
         var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", databaseFileName);
         var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
         var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
-        var bioPolymers = new SearchTask().LoadBioPolymers(
-            "TestTaskId",
-            dbForTask,
-            true, 
-            DecoyType.None,
-            [], 
-            commonParameters
-        );
+
+        var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbForTask, "TestTaskId", DecoyType.None);
+        var bioPolymers = (loader.Run() as DatabaseLoadingEngineResults)!.BioPolymers;
 
         Assert.That(bioPolymers![0], Is.TypeOf<RNA>());
         Assert.That(bioPolymers.Count, Is.EqualTo(1));
@@ -62,14 +57,8 @@ public class RnaDatabaseLoadingTests
         // Create two instances of the same database, one as a contaminant, one as a target. 
         var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "20mer1.fasta");
         var dbsForTask = new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(dbPath, true) };
-        var bioPolymers = new SearchTask().LoadBioPolymers(
-            "TestTaskId",
-            dbsForTask,
-            true,
-            DecoyType.None,
-            [],
-            commonParameters
-        );
+        var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbsForTask, "TestTaskId", DecoyType.None, tcAmbiguity: type);
+        var bioPolymers = (loader.Run() as DatabaseLoadingEngineResults)!.BioPolymers;
 
         // Use reflection to access protected SanitizeBiopolymers method
         var sanitizeBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("SanitizeBioPolymerDatabase",
@@ -136,14 +125,8 @@ public class RnaDatabaseLoadingTests
         loadModificationsMethod.Invoke(task, modArgs);
         var localizableModificationTypes = (List<string>)modArgs[3];
 
-        var rna = new SearchTask().LoadBioPolymers(
-            "TestTaskId",
-            dbsForTask,
-            true, // searchTarget
-            DecoyType.Reverse,
-            localizableModificationTypes, // pass the loaded localizable mods
-            commonParameters
-        );
+        var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbsForTask, "TestTaskId", DecoyType.Reverse, true, localizableModificationTypes);
+        var rna = (loader.Run() as DatabaseLoadingEngineResults)!.BioPolymers;
 
         Assert.That(rna.All(p => p.SequenceVariations.Count == 1));
         Assert.That(rna.All(p => p.OriginalNonVariantModifications.Count == 2));

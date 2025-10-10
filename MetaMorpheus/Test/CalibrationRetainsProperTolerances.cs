@@ -44,6 +44,7 @@ namespace Test
             int calibrationEngineCount = 0;
             int dataPointAcquisitionCount = 0;
             int fdrAnalysisEngineCount = 0;
+            int dbLoadingEngineCount = 0;
 
             List<(double precursor, double product, double expectedPrecursor, double expectedProduct)> classicSearchResults = new();
             List<(double precursor, double product, double expectedPrecursor, double expectedProduct)> calibrationResults = new();
@@ -105,6 +106,9 @@ namespace Test
                     case FdrAnalysisEngine fdre:
                         fdrAnalysisEngineCount++;
                         break;
+                    case DatabaseLoadingEngine db:
+                        dbLoadingEngineCount++;
+                        break;
 
                     default:
                         Assert.Fail("Unexpected Engine Type");
@@ -125,6 +129,7 @@ namespace Test
             Assert.That(classicSearchEngineCount, Is.EqualTo(expectedClassicSearchCount));
             Assert.That(dataPointAcquisitionCount, Is.EqualTo(expectedDataPointAcquisitionCount));
             Assert.That(fdrAnalysisEngineCount, Is.EqualTo(expectedFdrAnalysisEngineCount));
+            Assert.That(dbLoadingEngineCount, Is.EqualTo(1));
 
             foreach (var result in classicSearchResults)
             {

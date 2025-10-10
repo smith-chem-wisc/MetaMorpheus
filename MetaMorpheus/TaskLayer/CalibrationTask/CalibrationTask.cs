@@ -48,10 +48,17 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            MyTaskResults = new MyTaskResults(this)
+            {
+                NewSpectra = new List<string>(),
+                NewFileSpecificTomls = new List<string>()
+            };
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<IBioPolymer> proteinList = LoadBioPolymers(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
+            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, DecoyType.Reverse, true, localizeableModificationTypes);
+            var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
+            List<IBioPolymer> proteinList = loadingResults!.BioPolymers;
 
             // write prose settings
             _ = ProseCreatedWhileRunning.Append("The following calibration settings were used: ");
@@ -73,11 +80,7 @@ namespace TaskLayer
 
             // start the calibration task
             Status("Calibrating...", new List<string> { taskId });
-            MyTaskResults = new MyTaskResults(this)
-            {
-                NewSpectra = new List<string>(),
-                NewFileSpecificTomls = new List<string>()
-            };
+
 
             MyFileManager myFileManager = new MyFileManager(true);
             List<string> unsuccessfullyCalibratedFilePaths = new List<string>();

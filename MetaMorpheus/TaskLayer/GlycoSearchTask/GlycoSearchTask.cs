@@ -1,16 +1,18 @@
 ﻿using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.GlycoSearch;
 using EngineLayer.Indexing;
+using FlashLFQ;
 using MassSpectrometry;
+using MzLibUtil;
+using Omics;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using EngineLayer.DatabaseLoading;
-using MzLibUtil;
-using FlashLFQ;
-using Readers;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -48,7 +50,9 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadBioPolymers(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters).Cast<Protein>().ToList();
+            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, _glycoSearchParameters.DecoyType, true, localizeableModificationTypes);
+            var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
+            List<Protein> proteinList = loadingResults!.BioPolymers.Cast<Protein>().ToList();
 
             MyFileManager myFileManager = new (_glycoSearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
