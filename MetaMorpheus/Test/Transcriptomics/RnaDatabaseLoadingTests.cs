@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using NUnit.Framework;
 using Omics;
 using Omics.BioPolymer;

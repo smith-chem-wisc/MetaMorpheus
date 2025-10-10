@@ -18,6 +18,7 @@ using System.Linq;
 using System.Text;
 using TaskLayer.MbrAnalysis;
 using Chemistry;
+using EngineLayer.DatabaseLoading;
 using MzLibUtil;
 using Omics.Digestion;
 using Omics.BioPolymer;

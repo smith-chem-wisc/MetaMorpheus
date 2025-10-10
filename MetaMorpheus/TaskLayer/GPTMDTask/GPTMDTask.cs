@@ -12,6 +12,7 @@ using UsefulProteomicsDatabases;
 using System.Globalization;
 using Omics.Modifications;
 using System.Threading.Tasks;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.Util;
 using Omics;
 using Proteomics.ProteolyticDigestion;

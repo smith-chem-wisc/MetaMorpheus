@@ -18,6 +18,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using EngineLayer.DatabaseLoading;
 using Omics.Digestion;
 using Omics.Modifications;
 using Readers;

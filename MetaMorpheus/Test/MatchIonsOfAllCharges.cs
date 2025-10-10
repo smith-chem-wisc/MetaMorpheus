@@ -11,6 +11,7 @@ using Proteomics.ProteolyticDigestion;
 using TaskLayer;
 using Chemistry;
 using System;
+using EngineLayer.DatabaseLoading;
 using MassSpectrometry;
 using Nett;
 using NUnit.Framework.Legacy;
