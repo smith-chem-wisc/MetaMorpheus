@@ -137,6 +137,13 @@ namespace Test.DIATests
                 Assert.That(xic.XYData, Is.Not.Null);
                 Assert.That(xic.XYData.Length, Is.GreaterThan(intensityMultipliers.Length));
             }
+            //Test coverage with parallelization
+            mzXics = mzPeakXicConstructor.GetAllXicsWithXicSpline(fakeScans1, null, 5);
+            foreach (var xic in mzXics)
+            {
+                Assert.That(xic.XYData, Is.Not.Null);
+                Assert.That(xic.XYData.Length, Is.GreaterThan(intensityMultipliers.Length));
+            }
         }
 
         [Test]
