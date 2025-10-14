@@ -1,28 +1,30 @@
 ﻿using Chemistry;
+using Easy.Common;
 using EngineLayer;
+using EngineLayer.ClassicSearch;
+using EngineLayer.DatabaseLoading;
+using EngineLayer.FdrAnalysis;
 using EngineLayer.Gptmd;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
-using Proteomics;
+using NUnit.Framework.Internal;
+using Omics;
+using Omics.BioPolymer;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
-using Omics.Modifications;
+using System.Reflection;
+using System.Threading.Tasks;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using EngineLayer.FdrAnalysis;
-using System.Threading.Tasks;
-using EngineLayer.ClassicSearch;
-using System.IO;
-using System.Globalization;
-using NUnit.Framework.Internal;
-using Easy.Common;
-using EngineLayer.DatabaseLoading;
-using Omics.BioPolymer;
-using Omics;
 
 namespace Test
 {
@@ -368,6 +370,197 @@ namespace Test
                     Assert.That(!modFits);
                 }
             }
+        }
+
+        [Test]
+        public static void AddsModsToDecoys()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestDecoyWriting");
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+            Directory.CreateDirectory(outputFolder);
+
+            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
+            string fastaName = @"TestData\DbForPrunedDb_Reversed.fasta";
+            var commonParameters = new CommonParameters();
+            List<(string FileName, CommonParameters Parameters)> fileSpecificParameters = new() { (mzmlName, commonParameters) };
+            var gptmdParams = new GptmdParameters
+            {
+                ListOfModsGptmd = GlobalVariables.AllModsKnown.Where(b =>
+                    b.ModificationType.Equals("Common Artifact")
+                    || b.ModificationType.Equals("Common Biological")
+                    || b.ModificationType.Equals("Metal")
+                    || b.ModificationType.Equals("Less Common")
+                ).Select(b => (b.ModificationType, b.IdWithMotif)).ToList()
+            };
+
+            // Load Information just like the task does
+            var spectraFile = MsDataFileReader.GetDataFile(mzmlName).LoadAllStaticData();
+            var ms2Scans = MetaMorpheusTask.GetMs2Scans(spectraFile, mzmlName, commonParameters)
+                .OrderBy(b => b.PrecursorMass)
+                .ToArray();
+            SpectralMatch[] psmArray = new SpectralMatch[ms2Scans.Length];
+
+            var modConversionMethod = typeof(MetaMorpheusTask).GetMethod("LoadModifications", BindingFlags.NonPublic | BindingFlags.Instance);
+            object[] parameters = new object[] { "taskId", null, null, null };
+            modConversionMethod!.Invoke(new SearchTask(), parameters);
+            List<Modification> variableMods = (List<Modification>)parameters[1];
+            List<Modification> fixedMods = (List<Modification>)parameters[2];
+            List<string> localizableMods = (List<string>)parameters[3];
+            List<Modification> gptmdModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b =>
+                gptmdParams.ListOfModsGptmd.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            var combos = GptmdTask.LoadCombos(gptmdModifications, true).ToList();
+            MassDiffAcceptor searchMode = new DotMassDiffAcceptor("", GptmdTask.GetAcceptableMassShifts(fixedMods, variableMods, gptmdModifications, combos), commonParameters.PrecursorMassTolerance);
+
+            var dbLoadingEngine = new DatabaseLoadingEngine(commonParameters, fileSpecificParameters, ["t1"], [new(fastaName, false)], "t1", DecoyType.Reverse, true, localizableMods);
+            var proteins = (dbLoadingEngine.Run() as DatabaseLoadingEngineResults)!.BioPolymers;
+            // Run the search engine and FDR just like the task. 
+            new ClassicSearchEngine(psmArray, ms2Scans, variableMods, fixedMods, null, null, null,
+                proteins, searchMode, commonParameters, fileSpecificParameters, null, new List<string> { "t1", "Individual Spectra Files", mzmlName }, false).Run();
+
+            new FdrAnalysisEngine(psmArray.Where(p => p != null).ToList(), searchMode.NumNotches, commonParameters, fileSpecificParameters, new List<string> { "t1" }, doPEP: false).Run();
+
+            // Manually set all q value notches to be 0. This simulates a big dataset in which decoys would pass the filtering. 
+            foreach (var psm in psmArray.Where(p => p != null))
+            {
+                psm.SetMs2Scan(ms2Scans[psm.ScanIndex].TheScan);
+                var fdrInfo = psm.FdrInfo;
+                psm.SetFdrValues(fdrInfo.CumulativeTarget, fdrInfo.CumulativeDecoy, fdrInfo.QValue, fdrInfo.CumulativeTargetNotch, fdrInfo.CumulativeDecoyNotch, 0, fdrInfo.PEP, fdrInfo.PEP_QValue);
+            }
+
+            Dictionary<string, HashSet<Tuple<int, Modification>>> allModDictionary = new();
+            new GptmdEngine(psmArray.Where(p => p != null).ToList(), gptmdModifications, combos, new() { { mzmlName, commonParameters.PrecursorMassTolerance } }, commonParameters, fileSpecificParameters, new List<string> { "t1" }, allModDictionary, gptmdParams.GptmdFilters).Run();
+
+
+            // Assert that mods were added to the decoys by the engine. 
+            var decoyModDicts = allModDictionary.Where(kvp => kvp.Key.StartsWith("DECOY_")).ToList();
+            Assert.That(decoyModDicts.Count, Is.GreaterThan(0));
+            Assert.That(decoyModDicts.SelectMany(kvp => kvp.Value).Count, Is.GreaterThan(0));
+
+            // Filter proteins and test filtering
+            var toWrite = GptmdTask.GetBioPolymersToWrite(proteins, allModDictionary).ToList();
+            Assert.That(toWrite.Count, Is.GreaterThan(0));
+            Assert.That(toWrite.Count(b => b.Accession.StartsWith("DECOY_")), Is.GreaterThan(0));
+
+            int decoyByAcCount = toWrite.Count(b => b.Accession.StartsWith("DECOY_"));
+            int decoyByPropCount = toWrite.Count(b => b.IsDecoy);
+            int decoysInModDictCount = allModDictionary.Count(kvp => kvp.Key.StartsWith("DECOY_"));
+            Assert.That(decoyByAcCount, Is.EqualTo(decoyByPropCount));
+            int targetByAcCount = toWrite.Count(b => !b.Accession.StartsWith("DECOY_"));
+            int targetByPropCount = toWrite.Count(b => !b.IsDecoy);
+            Assert.That(targetByAcCount, Is.EqualTo(targetByPropCount));
+
+            Assert.That(proteins.Count(p => !p.IsDecoy), Is.EqualTo(targetByPropCount), "Not all targets are being retained :(");
+            Assert.That(decoyByAcCount, Is.EqualTo(decoysInModDictCount), "Not all decoys with mods added are being retained :(");
+
+            // write the xml 
+            string outputFile = Path.Combine(outputFolder, "moddedDB.xml");
+            ProteinDbWriter.WriteXmlDatabase(allModDictionary, toWrite, outputFile);
+
+            // read the xml and do not generate decoys
+            dbLoadingEngine = new DatabaseLoadingEngine(commonParameters, fileSpecificParameters, ["t1"], [new(outputFile, false)], "t1", DecoyType.None, true, localizableMods);
+            var reloadedProteinsNoDecoyGen = (dbLoadingEngine.Run() as DatabaseLoadingEngineResults)!.BioPolymers;
+            Assert.That(reloadedProteinsNoDecoyGen.Count, Is.EqualTo(targetByAcCount + decoysInModDictCount));
+            var targetCount = reloadedProteinsNoDecoyGen.Count(p => !p.IsDecoy);
+            Assert.That(targetCount, Is.EqualTo(targetByAcCount));
+
+            // Only decoys with mods written should have been loaded back in 
+            var decoyCount = reloadedProteinsNoDecoyGen.Count(p => p.IsDecoy);
+            Assert.That(decoyCount, Is.EqualTo(decoysInModDictCount));
+            foreach (var reloadedProt in reloadedProteinsNoDecoyGen.Where(p => p.IsDecoy))
+            {
+                Assert.That(reloadedProt.OneBasedPossibleLocalizedModifications.Count, Is.GreaterThan(0));
+                Assert.That(reloadedProt.OriginalNonVariantModifications.Count, Is.GreaterThan(0));
+                Assert.That(allModDictionary.ContainsKey(reloadedProt.Accession));
+            }
+
+            // read the xml and generate decoys. 
+            dbLoadingEngine = new DatabaseLoadingEngine(commonParameters, fileSpecificParameters, ["t1"], [new(outputFile, false)], "t1", DecoyType.Reverse, true, localizableMods);
+            var reloadedProteinsWithDecoyGen = (dbLoadingEngine.Run() as DatabaseLoadingEngineResults)!.BioPolymers;
+
+            // should be the same number of targets and decoys as before. 
+            Assert.That(reloadedProteinsWithDecoyGen.Count(b => !b.IsDecoy), Is.EqualTo(reloadedProteinsWithDecoyGen.Count(b => b.IsDecoy)));
+            Assert.That(reloadedProteinsWithDecoyGen.Count(b => b.Accession.StartsWith("DECOY_")), Is.EqualTo(reloadedProteinsWithDecoyGen.Count(b => !b.Accession.StartsWith("DECOY_"))));
+
+            foreach (var reloadedProt in reloadedProteinsWithDecoyGen)
+            {
+                string targetAccession;
+                string decoyAccession;
+                if (reloadedProt.IsDecoy)
+                {
+                    decoyAccession = reloadedProt.Accession;
+                    targetAccession = reloadedProt.Accession.Replace("DECOY_", "");
+
+                }
+                else
+                {
+                    targetAccession = reloadedProt.Accession;
+                    decoyAccession = "DECOY_" + reloadedProt.Accession;
+                }
+
+                allModDictionary.TryGetValue(targetAccession, out var targetModSet);
+                allModDictionary.TryGetValue(decoyAccession, out var decoyModSet);
+
+                // Reloaded Target
+                if (!reloadedProt.IsDecoy)
+                {
+                    // No mod added via GPTMD - No Modifications should be present
+                    if (targetModSet == null)
+                    {
+                        Assert.That(reloadedProt.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(0));
+                        Assert.That(reloadedProt.OriginalNonVariantModifications.Count, Is.EqualTo(0));
+                    }
+                    // Mods added via GPTMD - Target Mods will match 1 to 1 with what gptmd added
+                    else
+                    {
+                        int expectedMods = targetModSet.Count;
+                        Assert.That(reloadedProt.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(expectedMods));
+                        Assert.That(reloadedProt.OriginalNonVariantModifications.Count, Is.EqualTo(expectedMods));
+                    }
+                }
+                // Reloaded Decoy
+                else
+                {
+                    // Target for decoy had no mods added via gptmd 
+                    if (targetModSet == null)
+                    {
+                        // Decoy had no mods added in gptmd
+                        if (decoyModSet == null)
+                        {
+                            int expectedMods = 0;
+                            Assert.That(reloadedProt.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(expectedMods));
+                            Assert.That(reloadedProt.OriginalNonVariantModifications.Count, Is.EqualTo(expectedMods));
+                        }
+                        // Decoy had mods added in gptmd
+                        else
+                        {
+                            int expectedMods = decoyModSet.Count;
+                            Assert.That(reloadedProt.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(expectedMods));
+                            Assert.That(reloadedProt.OriginalNonVariantModifications.Count, Is.EqualTo(expectedMods));
+                        }
+                    }
+                    // Target for decoy had mods added via gptmd 
+                    else
+                    {
+                        // Decoy had no mods added in gptmd - mod count is equal to that of target
+                        if (decoyModSet == null)
+                        {
+                            int expectedMods = targetModSet.Count;
+                            Assert.That(reloadedProt.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(expectedMods));
+                            Assert.That(reloadedProt.OriginalNonVariantModifications.Count, Is.EqualTo(expectedMods));
+                        }
+                        // Decoy had mods added in gptmd - mod count is equal to target + decoy mods added from gptmd
+                        else
+                        {
+                            int expectedMods = targetModSet.Count + decoyModSet.Count;
+                            Assert.That(reloadedProt.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(expectedMods));
+                            Assert.That(reloadedProt.OriginalNonVariantModifications.Count, Is.EqualTo(expectedMods));
+                        }
+                    }
+                }
+            }
+
+            Directory.Delete(outputFolder, true);
         }
     }
 }

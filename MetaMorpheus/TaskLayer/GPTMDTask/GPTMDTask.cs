@@ -193,9 +193,8 @@ namespace TaskLayer
                 string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + GptmdDatabaseSuffix);
                 outputXMLdbFullName = PathSafety.MakeSafeOutputPath(outputXMLdbFullName, GptmdDatabaseSuffix);
 
-                var newModsActuallyWritten = isProtein
-                    ? ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullName)
-                    : ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullName);
+                var toWrite = GetBioPolymersToWrite(proteinList.Where(p => !p.IsContaminant), allModDictionary).ToList();
+                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(allModDictionary, toWrite, outputXMLdbFullName);
 
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
@@ -222,9 +221,8 @@ namespace TaskLayer
                 string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + GptmdDatabaseSuffix);
                 outputXMLdbFullNameContaminants = PathSafety.MakeSafeOutputPath(outputXMLdbFullNameContaminants, GptmdDatabaseSuffix);
 
-                var newModsActuallyWritten = isProtein
-                    ? ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullNameContaminants)
-                    : ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullNameContaminants);
+                var toWrite = GetBioPolymersToWrite(proteinList.Where(p => p.IsContaminant), allModDictionary).ToList();
+                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(allModDictionary, toWrite, outputXMLdbFullNameContaminants);
 
                 FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
@@ -236,7 +234,25 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        private static IEnumerable<Tuple<double, double>> LoadCombos(List<Modification> modificationsThatCanBeCombined, bool isProtein = false)
+        /// <summary>
+        /// Returns targets and decoys that have had mods added to them. Decoys without mods added are not written.
+        /// </summary>
+        public static IEnumerable<IBioPolymer> GetBioPolymersToWrite(IEnumerable<IBioPolymer> allBioPolymers, Dictionary<string, HashSet<Tuple<int, Modification>>> modsAddedDict) 
+        {
+            foreach (var b in allBioPolymers)
+            {
+                // Write all targets
+                if (!b.IsDecoy) 
+                    yield return b;
+                // Write Decoys if they have a mod added
+                else if (modsAddedDict.TryGetValue(b.Accession, out var modsAdded) && modsAdded.Count > 0)
+                {
+                    yield return b;
+                }
+            }
+        }
+
+        public static IEnumerable<Tuple<double, double>> LoadCombos(List<Modification> modificationsThatCanBeCombined, bool isProtein = false)
         {
             string specificPath = isProtein ? CombosTextFileName : RnaCombosTextFileName;
             using (StreamReader r = new StreamReader(Path.Combine(GlobalVariables.DataDir, "Data", specificPath)))
@@ -253,7 +269,7 @@ namespace TaskLayer
             }
         }
 
-        private static IEnumerable<double> GetAcceptableMassShifts(List<Modification> fixedMods, List<Modification> variableMods, List<Modification> gptmdMods, IEnumerable<Tuple<double, double>> combos)
+        public static IEnumerable<double> GetAcceptableMassShifts(List<Modification> fixedMods, List<Modification> variableMods, List<Modification> gptmdMods, IEnumerable<Tuple<double, double>> combos)
         {
             IEnumerable<double> gptmdNotches = gptmdMods.Where(b => b.ValidModification == true).Select(b => (double)b.MonoisotopicMass);
             IEnumerable<double> gptmdMinusOtherModsNotches = GetObservedMasses(variableMods.Concat(fixedMods), gptmdMods);

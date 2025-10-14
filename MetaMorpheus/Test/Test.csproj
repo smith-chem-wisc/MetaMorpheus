@@ -250,6 +250,9 @@
     <None Update="TestData\customCZ.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\DbForPrunedDb_Reversed.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\DbForPrunedDb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
