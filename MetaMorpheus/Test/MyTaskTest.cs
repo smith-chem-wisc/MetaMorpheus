@@ -178,7 +178,7 @@ namespace Test
             Assert.That(k.Contains("Localized mods seen below q-value 0.01:\r\n\tCarbamidomethyl on C\t84"));
             Assert.That(k.Contains("(Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:\r\n\tCarbamidomethyl on C\t9"));
             Assert.That(k.Contains("(Approx) Additional unlocalized mods seen below q-value 0.01:\r\n\tDecarboxylation on E\t2"));
-            Assert.That(k.Contains("(Approx) Additional unlocalized modification formulas seen below q-value 0.01:\r\n\tO3\t4"));
+            Assert.That(k.Contains("(Approx) Additional unlocalized modification formulas seen below q-value 0.01:\r\n\tCH2\t2"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -548,7 +548,7 @@ namespace Test
                 new Tuple<int, Modification>(3, modToAdd)
             };
             modList.Add("test", Hash);
-            ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProtein }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { TestProtein }, xmlName);
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
@@ -731,7 +731,10 @@ namespace Test
             var modernPsms = File.ReadAllLines(modernPath).ToList();
             counts.Add(modernPsms.Count);
 
-            Assert.That(modernPsms.SequenceEqual(classicPsms));
+            for (int i = 0; i < modernPsms.Count; i++)
+            {
+                Assert.That(modernPsms[i], Is.EqualTo(classicPsms[i]), $"Mismatch at line {i + 1}: modern='{modernPsms[i]}', classic='{classicPsms[i]}'");
+            }
             Directory.Delete(outputFolder, true);
         }
 
@@ -760,6 +763,96 @@ namespace Test
             List<string> warnings = engine.Warnings;
 
             Assert.That(warnings[0], Is.EqualTo("Cannot proceed. No protein database files selected."));
+        }
+
+        [Test]
+        public static void TestEngineCrashed_WritesCrashFile()
+        {
+            var modToWrite = GlobalVariables.AllModsKnown.First(p => p.ModificationType == "UniProt" && p.Target.ToString() == "T");
+            var modToNotWrite = GlobalVariables.AllModsKnown.First(p => p.ModificationType == "Common Artifact" && p.Target.ToString() == "X");
+
+            var protein1 = new Protein("PEPTIDEKPEPT", "1", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 12, new List<Modification> { modToWrite } } });
+            var protein2 = new Protein("PEPTIDPEPT", "2", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 10, new List<Modification> { modToWrite } } });
+
+            string path = @"temp";
+
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, path);
+
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"InduceCrash"));
+
+            Dictionary<string, HashSet<Tuple<int, Modification>>> modList = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
+            var Hash = new HashSet<Tuple<int, Modification>>
+            {
+                new Tuple<int, Modification>(1, modToWrite),
+                new Tuple<int, Modification>(2, modToNotWrite),
+
+            };
+
+            var db = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, Path.Combine(TestContext.CurrentContext.TestDirectory, @"InduceCrash/fakeDb.xml"));
+
+            var peptideObserved = protein1.Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>())
+            .Where(p => p.BaseSequence == "PEPT" && p.AllModsOneIsNterminus.Count > 0).First();
+            PostSearchAnalysisParameters testPostTaskParameters = new PostSearchAnalysisParameters();
+            CommonParameters commonParam = new CommonParameters();
+            double[,] noiseData = new double[10000, 10000];
+            noiseData[0, 0] = 1.0;
+            List<Omics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Omics.Fragmentation.MatchedFragmentIon>() { };
+            MzSpectrum spectrum = new MzSpectrum(noiseData);
+            MsDataScan scan = new MsDataScan(spectrum, 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
+            testPostTaskParameters.BioPolymerList = new List<IBioPolymer>() { protein1, protein2 };
+            testPostTaskParameters.AllSpectralMatches = new List<SpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
+            testPostTaskParameters.SearchParameters = new SearchParameters();
+            testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
+            testPostTaskParameters.SearchParameters.DoLabelFreeQuantification = false;
+            testPostTaskParameters.SearchParameters.WriteMzId = false;
+            testPostTaskParameters.DatabaseFilenameList = new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"InduceCrash/fakeDb.xml"), false) };
+            testPostTaskParameters.OutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"InduceCrash");
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"InduceCrash/individual"));
+            testPostTaskParameters.IndividualResultsOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"InduceCrash/individual");
+            int[] stuffForSpectraFile = new int[2];
+            stuffForSpectraFile[0] = 10;
+            stuffForSpectraFile[1] = 10;
+            Dictionary<string, int[]> numSpectraPerFile = new Dictionary<string, int[]>();
+            numSpectraPerFile.Add("", stuffForSpectraFile);
+            testPostTaskParameters.NumMs2SpectraPerFile = numSpectraPerFile;
+
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
+            { peptideObserved});
+            string mzmlName = @"newMzml.mzML";
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
+            modList.Add("test", Hash);
+
+            testPostTaskParameters.CurrentRawFileList = new List<string>() { mzmlName };
+
+            SearchTask task5 = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    WritePrunedDatabase = true,
+                    SearchTarget = true,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                },
+                CommonParameters = new CommonParameters()
+            };
+
+            var test = task5.RunTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"InduceCrash"), new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"InduceCrash/fakeDb.xml"), false) }, new List<string>() { mzmlName }, "name");
+
+            // Set silac labels to induce a crash in quant. 
+            testPostTaskParameters.SearchTaskResults = test;
+            testPostTaskParameters.SearchParameters.DoLabelFreeQuantification = true;
+
+            PostSearchAnalysisTask testPostTask = new PostSearchAnalysisTask();
+            testPostTask.Parameters = testPostTaskParameters;
+            testPostTask.CommonParameters = commonParam;
+            testPostTask.FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> { ("newMzMl.mzml", commonParam) };
+            testPostTask.Run();
+
+
+            var expectedCrashPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"InduceCrash", "Quantification_crash.txt");
+
+            Assert.That(File.Exists(expectedCrashPath));
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"InduceCrash"), true);
         }
     }
 }

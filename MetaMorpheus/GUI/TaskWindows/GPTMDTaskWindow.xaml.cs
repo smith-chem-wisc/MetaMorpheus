@@ -15,6 +15,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using GuiFunctions;
+using EngineLayer;
 using System.Threading.Tasks;
 using Transcriptomics.Digestion;
 using Omics.Modifications;
@@ -27,6 +28,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GptmdTaskWindow : Window
     {
+        public ObservableCollection<GptmdFilterViewModel> FilterOptions { get; } = new();
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
@@ -57,6 +59,7 @@ namespace MetaMorpheusGUI
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             PopulateChoices();
+            FilterOptionsListBox.ItemsSource = FilterOptions;
             UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
             DeisotopingControl.DataContext = DeconHostViewModel;
@@ -206,6 +209,11 @@ namespace MetaMorpheusGUI
             {
                 ye.VerifyCheckState();
             }
+
+            foreach (var filter in FilterOptions)
+            {
+                filter.IsSelected = TheTask.GptmdParameters.GptmdFilters.Any(f => f.GetType() == filter.Filter.GetType());
+            }
         }
 
         private void PopulateChoices()
@@ -254,6 +262,28 @@ namespace MetaMorpheusGUI
                 }
             }
             gptmdModsTreeView.DataContext = GptmdModTypeForTreeViewObservableCollection;
+
+            FilterOptions.Clear();
+            FilterOptions.Add(new GptmdFilterViewModel(
+                new ImprovedScoreFilter(),
+                "Improved Score",
+                "Requires that the new score is greater than the original score."
+            ));
+            FilterOptions.Add(new GptmdFilterViewModel(
+                new DualDirectionalIonCoverageFilter(),
+                "Dual Directional Ion Coverage",
+                "Requires the mod site to be covered by at least one N-terminal and one C-terminal ion. That is, ions from both directions must include the mod, even if not flanking it."
+            ));
+            FilterOptions.Add(new GptmdFilterViewModel(
+                new UniDirectionalIonCoverageFilter(),
+                "Uni-Directional Ion Coverage",
+                "Requires the mod site to be covered by at least one N-terminal or one C-terminal ion. That is, ions from one direction must include the mod, even if not flanking it."
+            ));
+            FilterOptions.Add(new GptmdFilterViewModel(
+                new FlankingIonCoverageFilter(),
+                "Flanking Ion Coverage",
+                "Requires flanking ions — a fragment from *before* and one from *after* the mod site, regardless of fragmentation direction."
+            ));
 
             if (isRnaMode)
             {
@@ -555,6 +585,7 @@ namespace MetaMorpheusGUI
             {
                 TheTask.GptmdParameters.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
+            TheTask.GptmdParameters.GptmdFilters = FilterOptions.Where(f => f.IsSelected).Select(f => f.Filter).ToList();
 
             TheTask.CommonParameters = commonParamsToSave;
 

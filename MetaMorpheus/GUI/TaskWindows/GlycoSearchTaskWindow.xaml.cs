@@ -28,6 +28,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
+        private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
         private CustomFragmentationWindow CustomFragmentationWindow;
         private DeconHostViewModel DeconHostViewModel;
 
@@ -89,6 +90,13 @@ namespace MetaMorpheusGUI
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
+
+            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
+            {
+                var theModType = new ModTypeForGrid(hm.Key);
+                ModSelectionGridItems.Add(theModType);
+            }
+            ModSelectionGrid.ItemsSource = ModSelectionGridItems;
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
@@ -237,6 +245,8 @@ namespace MetaMorpheusGUI
             {
                 ye.VerifyCheckState();
             }
+            WritePrunedDBCheckBox.IsChecked = task._glycoSearchParameters.WritePrunedDataBase;
+            UpdateModSelectionGrid();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -403,6 +413,8 @@ namespace MetaMorpheusGUI
                 precursorDeconParams: precursorDeconvolutionParameters,
                 productDeconParams: productDeconvolutionParameters);
 
+            TheTask._glycoSearchParameters.WritePrunedDataBase = WritePrunedDBCheckBox.IsChecked.Value;
+            SetModSelectionForPrunedDB();
             TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
@@ -535,6 +547,77 @@ namespace MetaMorpheusGUI
             CheckBoxNoOneHitWonders.IsChecked = false;
             ModPepsAreUnique.IsChecked = false;
 
+        }
+
+        private void SetModSelectionForPrunedDB()
+        {
+            TheTask._glycoSearchParameters.ModsToWriteSelection = new Dictionary<string, int>();
+            //checks the grid values for which button is checked then sets paramaters accordingly
+            foreach (var modTypeInGrid in ModSelectionGridItems)
+            {
+                if (modTypeInGrid.Item3)
+                {
+                    TheTask._glycoSearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 1;
+                    continue;
+                }
+                if (modTypeInGrid.Item4)
+                {
+                    TheTask._glycoSearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 2;
+                    continue;
+                }
+                if (modTypeInGrid.Item5)
+                {
+                    TheTask._glycoSearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 3;
+                }
+            }
+        }
+
+        private void UpdateModSelectionGrid()
+        {
+            foreach (var modType in TheTask._glycoSearchParameters.ModsToWriteSelection)
+            {
+                //Key is modification type.
+
+                //Value is integer 0, 1, 2 and 3 interpreted as:
+                //   0:   Do not Write
+                //   1:   Write if in DB and Observed
+                //   2:   Write if in DB
+                //   3:   Write if Observed
+                var huhb = ModSelectionGridItems.FirstOrDefault(b => b.ModName == modType.Key);
+                if (huhb != null)
+                {
+                    switch (modType.Value)
+                    {
+                        case (0):
+                            huhb.Item2 = true;
+                            huhb.Item3 = false;
+                            huhb.Item4 = false;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (1):
+                            huhb.Item2 = false;
+                            huhb.Item3 = true;
+                            huhb.Item4 = false;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (2):
+                            huhb.Item2 = false;
+                            huhb.Item3 = false;
+                            huhb.Item4 = true;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (3):
+                            huhb.Item2 = false;
+                            huhb.Item3 = false;
+                            huhb.Item4 = false;
+                            huhb.Item5 = true;
+                            break;
+                    }
+                }
+            }
         }
     }
 }

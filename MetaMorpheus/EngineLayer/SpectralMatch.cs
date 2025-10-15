@@ -90,10 +90,9 @@ namespace EngineLayer
         {
             get => PsmFdrInfo;
             set => PsmFdrInfo = value;
-
         }
-        public FdrInfo PsmFdrInfo { get;  set; }
-        public FdrInfo PeptideFdrInfo { get;  set; }
+        public FdrInfo PsmFdrInfo { get; set; }
+        public FdrInfo PeptideFdrInfo { get; set; }
         public FdrInfo GetFdrInfo(bool peptideLevel)
         {
             return peptideLevel ? PeptideFdrInfo : PsmFdrInfo;
@@ -181,10 +180,14 @@ namespace EngineLayer
                     RunnerUpScore = Score;
                 }
                 Score = newScore;
+                Notch = notch;
             }
             else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
                 _BestMatchingBioPolymersWithSetMods.Add(new(notch, pwsm, matchedFragmentIons, newScore));
+
+                if (Notch != notch)
+                    Notch = null;
             }
             else if (newScore - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
@@ -223,6 +226,30 @@ namespace EngineLayer
             ModsIdentified = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.AllModsOneIsNterminus)).ResolvedValue;
             ModsChemicalFormula = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
             Notch = PsmTsvWriter.Resolve(bestMatches.Select(b => b.Notch)).ResolvedValue;
+            if (Notch == null) // notch ambiguous resolve q-value notch fields if possible. 
+            {
+                if (bestMatches.First().QValueNotch != null) // Psm Level FDR has run
+                {
+                    var qNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.QValueNotch!.Value)).ResolvedValue;
+                    if (qNotch != null) // Q-value notches are identical even if the notches are not
+                    {
+                        PsmFdrInfo.QValueNotch = qNotch.Value;
+                        PsmFdrInfo.CumulativeTargetNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.CumulativeTargetNotch!.Value)).ResolvedValue ?? 0;
+                        PsmFdrInfo.CumulativeDecoyNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.CumulativeDecoyNotch!.Value)).ResolvedValue ?? 0;
+                    }
+                }
+
+                if (bestMatches.First().PeptideQValueNotch != null) // Peptide Level FDR has run
+                {
+                    var pepQNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.PeptideQValueNotch!.Value)).ResolvedValue;
+                    if (pepQNotch != null) // Q-value notches are identical even if the notches are not
+                    {
+                        PeptideFdrInfo.QValueNotch = pepQNotch.Value;
+                        PeptideFdrInfo.CumulativeTargetNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.PeptideCumulativeTargetNotch!.Value)).ResolvedValue ?? 0;
+                        PeptideFdrInfo.CumulativeDecoyNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.PeptideCumulativeDecoyNotch!.Value)).ResolvedValue ?? 0;
+                    }
+                }
+            }
 
             //if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
             if (IsDecoy)
@@ -531,21 +558,13 @@ namespace EngineLayer
         {
             if (matchedFragments != null && matchedFragments.Count != 0)
             {
-                List<int> nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime).Select(f => f.NeutralTheoreticalProduct.FragmentNumber).ToList();
-                List<int> cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime).Select(f => (peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.FragmentNumber)).ToList();
-                if (nIons.Any() && cIons.Any())
-                {
-                    return nIons.Intersect(cIons).Count();
-                }
-                else
-                {
-                    return 0;
-                }
+                var nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime).Select(f => f.NeutralTheoreticalProduct.FragmentNumber);
+                var cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime).Select(f => peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.FragmentNumber);
+
+                return nIons.Intersect(cIons).Count();
             }
-            else
-            {
-                return 0;
-            }
+
+            return 0;
         }
 
         /// <summary>

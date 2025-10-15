@@ -1,6 +1,5 @@
 ﻿using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,6 +24,7 @@ namespace EngineLayer.GlycoSearch
         public List<Glycan> NGlycan { get; set; }  //Identified NGlycan
         public List<int> NGlycanLocalizations { get; set; }
 
+        public static GlycanBox[] GlycanBoxes { get; set; }
 
         public List<LocalizationGraph> LocalizationGraphs { get; set; }  //Graph-based Localization information.
         public List<Route> Routes { get; set; } //Localized modification sites and modfication ID.
@@ -289,7 +289,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(DiagnosticIonScore + "\t");
 
-                var glycanBox = GlycanBox.OGlycanBoxes[Routes.First().ModBoxId];
+                var glycanBox = GlycanBoxes[Routes.First().ModBoxId];
 
                 sb.Append(glycanBox.NumberOfMods + "\t");
 
@@ -309,12 +309,12 @@ namespace EngineLayer.GlycoSearch
                 var glycans = new Glycan[glycanBox.NumberOfMods];
                 for (int i = 0; i < glycanBox.NumberOfMods; i++)
                 {
-                    glycans[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]];
+                    glycans[i] = glycanBox.ModIds[i] >= 0?  GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]] : GlycanBox.GlobalNGlycans[glycanBox.ModIds[i]];
                 } //Convert the glycanBox index into the real glycan object. ex. [H1N1, H2N2A1, H2N2A1F1]
 
                 if (glycans.First().Struc != null)
                 {
-                    sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); //ex. (N(H)),(N(H(A))(N(H))),(N(H)(N(H(A))(F))
+                    sb.Append(string.Join(",", glycans.Where(p => p.Struc != null).Select(p => p.Struc.ToString()).ToArray())); //ex. (N(H)),(N(H(A))(N(H))),(N(H)(N(H(A))(F))
                 }
                 sb.Append("\t");
 
@@ -524,10 +524,11 @@ namespace EngineLayer.GlycoSearch
             {
                 var site_glycanProb = glycositePair.Probability; // get the probability of the specfic glycan on the specific site.
                 var peptide_site = glycositePair.SiteIndex - 1;
-                local_peptide += "[" + peptide_site + "," + GlycanBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
+                string glycanString = glycositePair.ModId >=0 ? GlycanBox.GlobalOGlycans[glycositePair.ModId].Composition : GlycanBox.GlobalNGlycans[glycositePair.ModId].Composition;
+                local_peptide += "[" + peptide_site + "," + glycanString + "," + site_glycanProb.ToString("0.000") + "]";
 
                 var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + glycositePair.SiteIndex - 2 : -1;
-                local_protein += "[" + protein_site + "," + GlycanBox.GlobalOGlycans[glycositePair.ModId].Composition + "," + site_glycanProb.ToString("0.000") + "]";
+                local_protein += "[" + protein_site + "," + glycanString + "," + site_glycanProb.ToString("0.000") + "]";
             }
 
         }

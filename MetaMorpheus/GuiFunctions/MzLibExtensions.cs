@@ -55,6 +55,14 @@ namespace GuiFunctions
             return true;
         }
 
+        public static string GetDigestionProductLabel(this SpectrumMatchFromTsv sm)
+        {
+            if (sm.IsPeptide())
+                return "Peptide";
+            else
+                return "Oligo";
+        }
+
         public static IBioPolymerWithSetMods ToBioPolymerWithSetMods(this SpectrumMatchFromTsv sm, string fullSequence = null)
         {
             var splitStartAndEnd = sm.StartAndEndResiduesInParentSequence
@@ -103,6 +111,15 @@ namespace GuiFunctions
         {
             int within = values.Count(p => p >= range.Minimum && p <= range.Maximum);
             return within > values.Count() / 2;
+        }
+
+        public static IEnumerable<(int Start, int End)> GetStartAndEndPosition(this SpectrumMatchFromTsv sm)
+        {
+            foreach (var ambigSplit in sm.StartAndEndResiduesInParentSequence.Split('|'))
+            {
+                var split = ambigSplit.Replace("[", "").Replace("]", "").Split("to");
+                yield return (int.Parse(split[0]), int.Parse(split[1]));
+            }
         }
     }
 }

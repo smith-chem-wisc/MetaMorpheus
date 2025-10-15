@@ -10,6 +10,7 @@ using System.Windows.Media;
 using Easy.Common.Extensions;
 using Readers;
 using GuiFunctions.MetaDraw;
+using OxyPlot.Wpf;
 
 namespace GuiFunctions
 {
@@ -77,7 +78,11 @@ namespace GuiFunctions
         public static string AmbiguityFilter { get; set; } = "No Filter";
         public static LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public static LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
-        public static string ExportType { get; set; } = "Pdf"; 
+        public static string ExportType { get; set; } = "Pdf";
+
+        // biopolymer coverage settings
+        public static int BioPolymerCoverageFontSize { get; set; } = 16;
+        public static Dictionary<BioPolymerCoverageType, SolidColorBrush> BioPolymerCoverageColors { get; set; }
 
         #endregion
 
@@ -163,6 +168,7 @@ namespace GuiFunctions
                 ModificationTypeToColor.TryAdd(rnaMod.IdWithMotif, OxyColors.Orange);
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
             CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
+            BioPolymerCoverageColors = Enum.GetValues<BioPolymerCoverageType>().ToDictionary(p => p, _ => Brushes.LightGray);
 
             // If no default settings are saved, load in defaults
             string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
@@ -300,6 +306,7 @@ namespace GuiFunctions
             SetDefaultModificationColors();
             SetDefaultSpectrumDescriptors();
             SetDefaultDataVisualizationColors();
+            SetDefaultBioPolymerCoverageColors();
 
             UnannotatedPeakColor = OxyColors.LightGray;
             InternalIonColor = OxyColors.Purple;
@@ -454,6 +461,19 @@ namespace GuiFunctions
             };
         }
 
+        private static void SetDefaultBioPolymerCoverageColors()
+        {
+            BioPolymerCoverageColors = new()
+            {
+                { BioPolymerCoverageType.Unique, Brushes.LightGreen },
+                { BioPolymerCoverageType.UniqueMissedCleavage, Brushes.YellowGreen },
+                { BioPolymerCoverageType.TandemRepeat, Brushes.LightBlue },
+                { BioPolymerCoverageType.TandemRepeatMissedCleavage, Brushes.SkyBlue },
+                { BioPolymerCoverageType.Shared, Brushes.Orange },
+                { BioPolymerCoverageType.SharedMissedCleavage, Brushes.OrangeRed }
+            };
+        }
+
         /// <summary>
         /// Lines to be written on the spectrum in the upper right hand corner
         /// </summary>
@@ -530,6 +550,8 @@ namespace GuiFunctions
                 NormalizeHistogramToFile = NormalizeHistogramToFile,
                 DisplayFilteredOnly = DisplayFilteredOnly,
                 DataVisualizationColorOrder = DataVisualizationColorOrder?.Select(c => c.GetColorName()).ToList(),
+                BioPolymerCoverageFontSize = BioPolymerCoverageFontSize,
+                BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList()
             };
         }
 
@@ -572,6 +594,7 @@ namespace GuiFunctions
             ChimeraLegendMaxWidth = settings.ChimeraLegendMaxWidth;
             NormalizeHistogramToFile = settings.NormalizeHistogramToFile;
             DisplayFilteredOnly = settings.DisplayFilteredOnly;
+            BioPolymerCoverageFontSize = settings.BioPolymerCoverageFontSize;
 
             try // Product Type Colors
             {
@@ -774,6 +797,30 @@ namespace GuiFunctions
             catch (Exception)
             {
                 SetDefaultDataVisualizationColors();
+                flaggedErrorOnRead = true;
+            }
+
+            // BioPolymer Coverage visualization colors
+            try
+            {
+                if (settings.BioPolymerCoverageColors is { Count: > 0 })
+                {
+                    foreach (var savedProductType in settings.BioPolymerCoverageColors)
+                    {
+                        var key = savedProductType.Split(',')[0];
+                        var color = savedProductType.Split(',')[1];
+                        var enumVal = Enum.Parse<BioPolymerCoverageType>(key);
+                        BioPolymerCoverageColors[enumVal] = DrawnSequence.ParseColorBrushFromName(color);
+                    }
+                }
+                else
+                {
+                    throw new Exception();
+                }
+            }
+            catch (Exception)
+            {
+                SetDefaultBioPolymerCoverageColors();
                 flaggedErrorOnRead = true;
             }
         }

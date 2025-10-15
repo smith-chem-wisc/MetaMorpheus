@@ -11,6 +11,7 @@ using Omics;
 using IDigestionParams = Omics.Digestion.IDigestionParams;
 using Transcriptomics.Digestion;
 using Transcriptomics;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer
 {
@@ -211,7 +212,15 @@ namespace EngineLayer
                                                     _fdrFilteredPeptides.Add(pep);
                                                 }
 
-                                                psm.AddProteinMatch(new(proteinWithDigestInfo.Value.Notch, pep, mfi, psm.Score));
+                                                var hypothesis = new SpectralMatchHypothesis(proteinWithDigestInfo.Value.Notch, pep, mfi, psm.Score);
+                                                hypothesis.QValueNotch = tentativeMatch.QValueNotch;
+                                                hypothesis.CumulativeTargetNotch = tentativeMatch.CumulativeTargetNotch;
+                                                hypothesis.CumulativeDecoyNotch = tentativeMatch.CumulativeDecoyNotch;
+                                                hypothesis.PeptideQValueNotch = tentativeMatch.PeptideQValueNotch;
+                                                hypothesis.PeptideCumulativeTargetNotch = tentativeMatch.PeptideCumulativeTargetNotch;
+                                                hypothesis.PeptideCumulativeDecoyNotch = tentativeMatch.PeptideCumulativeDecoyNotch;
+
+                                                psm.AddProteinMatch(hypothesis);
                                             }
                                         }
                                     }

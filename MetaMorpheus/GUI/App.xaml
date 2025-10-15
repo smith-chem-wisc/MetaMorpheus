@@ -10,7 +10,7 @@
         <SolidColorBrush x:Key="AccentColor" Color="#0097e6" />
         <SolidColorBrush x:Key="LightAccentColor" Color="#bdf0ff" />
         <SolidColorBrush x:Key="PurpleAccentColor" Color="#e6aeff" />
-        <SolidColorBrush x:Key="SecondaryButtonColor" Color="#2f3640" />
+        <SolidColorBrush x:Key="SecondaryButtonColor" Color="#504B59" />
         <SolidColorBrush x:Key="BackgroundColor" Color="#f5f6fa" />
         <SolidColorBrush x:Key="DataGridBackgroundColor" Color="#f5f6fa" />
         <SolidColorBrush x:Key="DataGridHeaderColor" Color="#dcdde1" />

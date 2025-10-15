@@ -12,6 +12,7 @@ using UsefulProteomicsDatabases;
 using System.Globalization;
 using Omics.Modifications;
 using System.Threading.Tasks;
+using EngineLayer.Util;
 using Omics;
 using Proteomics.ProteolyticDigestion;
 using Proteomics;
@@ -24,6 +25,7 @@ namespace TaskLayer
         private const double tolForComboLoading = 1e-3;
         private const string CombosTextFileName = "combos.txt";
         private const string RnaCombosTextFileName = "rnaCombos.txt";
+        private const string GptmdDatabaseSuffix = "GPTMD.xml";
 
         public GptmdTask() : base(MyTask.Gptmd)
         {
@@ -175,7 +177,7 @@ namespace TaskLayer
             // GPTMD doesn't work as well if you do FDR on a file-by-file basis. Presumably this is because it takes multiple files to get enough PSMs for all the different notches
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
             Dictionary<string, HashSet<Tuple<int, Modification>>> allModDictionary = new();
-            new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary).Run();
+            new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary, GptmdParameters.GptmdFilters).Run();
 
             //Move this text after search because proteins don't get loaded until search begins.
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
@@ -194,7 +196,8 @@ namespace TaskLayer
                     bool compressed = theExtension.EndsWith("gz");
                     databaseNames.Add(compressed ? Path.GetFileNameWithoutExtension(dbName) : dbName);
                 }
-                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
+                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + GptmdDatabaseSuffix);
+                outputXMLdbFullName = PathSafety.MakeSafeOutputPath(outputXMLdbFullName, GptmdDatabaseSuffix);
 
                 var newModsActuallyWritten = isProtein
                     ? ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullName)
@@ -214,7 +217,7 @@ namespace TaskLayer
             if (dbFilenameList.Any(b => b.IsContaminant))
             {
                 // do NOT use this code (Path.GetFilenameWithoutExtension) because GPTMD on .xml.gz will result in .xml.xml file type being written
-                //string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
+                //string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + GptmdDatabaseSuffix);
                 List<string> databaseNames = new List<string>();
                 foreach (var contaminantDb in dbFilenameList.Where(p => p.IsContaminant))
                 {
@@ -222,7 +225,8 @@ namespace TaskLayer
                     int indexOfFirstDot = dbName.IndexOf(".");
                     databaseNames.Add(dbName.Substring(0, indexOfFirstDot));
                 }
-                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
+                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + GptmdDatabaseSuffix);
+                outputXMLdbFullNameContaminants = PathSafety.MakeSafeOutputPath(outputXMLdbFullNameContaminants, GptmdDatabaseSuffix);
 
                 var newModsActuallyWritten = isProtein
                     ? ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullNameContaminants)

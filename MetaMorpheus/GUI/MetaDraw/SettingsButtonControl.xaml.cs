@@ -92,9 +92,3 @@ public partial class SettingsButtonControl : UserControl
         SettingsChanged?.Invoke(this, args);
     }
 }
-
-public class MetaDrawSettingsChangedEventArgs : EventArgs
-{
-    public bool FilterChanged { get; set; } = false;
-    public bool DataVisualizationChanged { get; set; } = false;
-}

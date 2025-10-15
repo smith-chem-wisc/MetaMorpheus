@@ -195,6 +195,10 @@ namespace EngineLayer
                 FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeHydrophobicityValues(trainingData,  true);
                 FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = ComputeMobilityValues(trainingData);
             }
+            if (trainingVariables.Contains("ChimeraCount"))
+            {
+                chimeraCountDictionary = trainingData.GroupBy(p => p.ChimeraIdString).ToDictionary(g => g.Key, g => g.Count());
+            }
         }
 
         public static List<int>[] GetPeptideGroupIndices(List<SpectralMatchGroup> peptides, int numGroups)

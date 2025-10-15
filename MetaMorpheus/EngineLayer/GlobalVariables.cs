@@ -1,7 +1,9 @@
 ﻿using Chemistry;
+using Easy.Common.Extensions;
+using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using Nett;
-using Proteomics;
+using Omics.Modifications;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -11,11 +13,9 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using Omics.Modifications;
 using TopDownProteomics;
-using UsefulProteomicsDatabases;
-using Easy.Common.Extensions;
 using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
 using System.Reflection;
 
 namespace EngineLayer
@@ -71,7 +71,7 @@ namespace EngineLayer
         public static void SetUpGlobalVariables()
         {
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };
-            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf", ".msalign" };
+            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf", ".msalign", ".tdf", ".tdf_bin", ".d" };
             AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
@@ -407,6 +407,11 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
+                if (modFile.Contains("glyco.txt"))
+                {
+                    // Glycan modifications are handled separately in LoadGlycans()
+                    continue;
+                }
                 if (modFile.Contains("Rna"))
                     continue;
                 AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
@@ -488,6 +493,7 @@ namespace EngineLayer
                     {
                         AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                     }
+                    _AllModsKnown.Add(glycan);
                 }
             }
             foreach (var path in NGlycanDatabasePaths)
@@ -499,8 +505,10 @@ namespace EngineLayer
                     {
                         AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                     }
+                    _AllModsKnown.Add(glycan);
                 }
             }
+            LoadTxtGlycan();
         }
 
         private static void LoadDissociationTypes()
@@ -536,6 +544,39 @@ namespace EngineLayer
             if (File.Exists(settingsPath))
             {
                 GlobalSettings = Toml.ReadFile<GlobalSettings>(settingsPath);
+            }
+        }
+
+        /// <summary>
+        /// Convert glyco.txt into Glycan objects and add them to AllModsKnown.
+        /// </summary>
+        private static void LoadTxtGlycan()
+        {
+            string glycoFile = Path.Combine(DataDir, @"Mods", "glyco.txt");
+            var glycoMods = PtmListLoader.ReadModsFromFile(glycoFile, out var errorMods);
+            foreach (var glycoMod in glycoMods)
+            {
+                var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+
+                // If we cannot parse the glycan string, we add the glycoMod as a normal modification.
+                if (kind.Sum(p => p) == 0)
+                {
+                    _AllModsKnown.Add(glycoMod);
+                    continue;
+                }
+
+                Glycan glycan;
+                if (glycoMod.ModificationType == "N-linked glycosylation")
+                {
+                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.N_glycan);
+                    glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
+                }
+                else
+                {
+                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.O_glycan);
+                    glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
+                }
+                _AllModsKnown.Add(glycan);
             }
         }
     }
