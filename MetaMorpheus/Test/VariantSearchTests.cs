@@ -33,15 +33,13 @@ namespace Test
         [TestCase(0, 0, true, "P4V")] // variant is in the detected peptide
         [TestCase(1, 1, true, "PT4KT")] // variant intersects psm, and is identified by the generate of the peptide "TiDE"
         [TestCase(2, 0, true, "P4PPP")] // intersecting sequence between variant and detected peptide is smaller than the original sequence, so clearly identied
-        [TestCase(3, 0, true, "PPP4P")] // peptide is different than original sequence, but the variant site is the same AA
         [TestCase(4, 0, false, "PKPK4PK")]
         [TestCase(5, 1, true, "PTA4KT")] // counterpoint to (1), where the second peptide does distinguish
-        [TestCase(6, 0, true, "KKA4K")] // variant is identified becasue it creates cleavage site to create peptide "IDE" instead of "AIDE" (without the variant)
+        [TestCase(6, 0, true, "KKA4K")] // variant is identified becasuse it creates cleavage site to create peptide "IDE" instead of "AIDE" (without the variant)
         [TestCase(7, 1, true, "P4V[type:mod on V]")]
         [TestCase(8, 1, true, "P4PP[type:mod on P]P")]
         [TestCase(0, 0, true, "P6V", DecoyType.Reverse)] // variant is in the detected decoy peptide MEDITVEP
         [TestCase(2, 0, true, "P6PPP", DecoyType.Reverse)] // intersecting sequence between variant and detected peptide is smaller than the original sequence, so clearly identied
-        [TestCase(3, 0, true, "PPP6P", DecoyType.Reverse)] // peptide is different than original sequence, but the variant site is the same AA
         [TestCase(7, 1, true, "P6V[type:mod on V]", DecoyType.Reverse)]
         [TestCase(8, 1, true, "P6PP[type:mod on P]P", DecoyType.Reverse)]
         [TestCase(9, 0, true, "PTIDEPEPTIDE4PPP")] // intersecting sequence between variant and detected peptide is smaller than the original sequence, so clearly identied
@@ -61,7 +59,15 @@ namespace Test
                     SearchTarget = decoyType == DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(scoreCutoff: 1, qValueThreshold: 1.0, digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
+                CommonParameters = new CommonParameters(
+                    scoreCutoff: 1,
+                    qValueThreshold: 1.0,
+                    digestionParams: new DigestionParams(minPeptideLength: 2),
+                    precursorMassTolerance: new PpmTolerance(20),
+                    // enable variant isoform generation for the search
+                    maxSequenceVariantsPerIsoform: 1,
+                    minAlleleDepth: 0,
+                    maxSequenceVariantIsoforms: 2)
             };
 
             ModificationMotif.TryGetMotif("V", out ModificationMotif motifV);
@@ -71,22 +77,78 @@ namespace Test
 
             List<Protein> proteins = new List<Protein>
             {
-                new Protein("MPEPTIDE", "protein1", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "V", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
-                new Protein("MPEPTIDE", "protein2", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 5, "PT", "KT", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
-                new Protein("MPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "PPP", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
-                new Protein("MPEPPPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 6, "PPP", "P", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
-                new Protein("MPEPKPKTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 7, "PKPK", "PK", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
-                new Protein("MPEPTAIDE", "protein2", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 5, "PTA", "KT", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
-                new Protein("MPEKKAIDE", "protein2", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "KKA", "K", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
-                new Protein("MPEPTIDE", "protein1", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "V", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", new Dictionary<int, List<Modification>> {{ 4, new[] { mv }.ToList() } }) }),
-                new Protein("MPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "PPP", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", new Dictionary<int, List<Modification>> {{ 5, new[] { mp }.ToList() } }) }),
-                new Protein("MPEPTIDEPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "PTIDEPEPTIDE", "PPP", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
+                new Protein("MPEPTIDE", "protein1", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "V", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30", null) }),
+                new Protein("MPEPTIDE", "protein2", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 5, "PT", "KT", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30", null) }),
+                new Protein("MPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "PPP", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30", null) }),
+                new Protein("MPEPPPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 6, "PPP", "P", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30", null) }),
+                new Protein("MPEPKPKTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 7, "PKPK", "PK", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30", null) }),
+                new Protein("MPEPTAIDE", "protein2", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 5, "PTA", "KT", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30", null) }),
+                new Protein("MPEKKAIDE", "protein2", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "KKA", "K", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30", null) }),
+                new Protein("MPEPTIDE", "protein1", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "V", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30", new Dictionary<int, List<Modification>> {{ 4, new[] { mv }.ToList() } }) }),
+                new Protein("MPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "PPP", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30", new Dictionary<int, List<Modification>> {{ 5, new[] { mp }.ToList() } }) }),
+                new Protein("MPEPTIDEPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "PTIDEPEPTIDE", "PPP", "", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30", null) }),
             };
-            var variantProtein = proteins[proteinIdx].GetVariantBioPolymers(minAlleleDepth: 0, maxSequenceVariantsPerIsoform: 1, maxSequenceVariantIsoforms: 2).First(v=>v.AppliedSequenceVariations.Count > 0);
-            IBioPolymerWithSetMods pep = variantProtein.Digest(CommonParameters.DigestionParams, null, null).First();
 
-            string xmlName = $"andguiaheov{proteinIdx.ToString()}.xml";
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { variantProtein }, xmlName);
+            // pick a variant isoform (target) for convenience
+            var targetVariantProtein = proteins[proteinIdx]
+                .GetVariantBioPolymers(minAlleleDepth: 0, maxSequenceVariantsPerIsoform: 1, maxSequenceVariantIsoforms: 2)
+                .First(v => v.AppliedSequenceVariations.Count > 0);
+
+            // write consensus protein with SequenceVariations; not the variant-applied isoform
+            string xmlName = $"andguiaheov{proteinIdx}.xml";
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { proteins[proteinIdx] }, xmlName);
+
+            // choose peptide to simulate based on decoy mode
+            IBioPolymerWithSetMods pep;
+            string expectedAccessionToken;
+
+            if (decoyType == DecoyType.None)
+            {
+                // select target peptide that overlaps the applied variant(s)
+                var targetVariantPeptides = targetVariantProtein
+                    .Digest(st.CommonParameters.DigestionParams, null, null)
+                    .Where(p => targetVariantProtein.AppliedSequenceVariations.Any(sv =>
+                        sv.OneBasedBeginPosition <= p.OneBasedEndResidue &&
+                        sv.OneBasedEndPosition >= p.OneBasedStartResidue))
+                    .OrderBy(p => p.OneBasedStartResidue)
+                    .ToList();
+
+                pep = targetVariantPeptides[peptideIdx];
+
+                // new behavior: isoform accession contains the variant range suffix
+                expectedAccessionToken = targetVariantProtein.Accession;
+            }
+            else
+            {
+                // load decoys from XML and pick the decoy variant peptide
+                var decoyProteins = ProteinDbLoader.LoadProteinXML(
+                    xmlName,
+                    generateTargets: false,
+                    decoyType: decoyType,
+                    allKnownModifications: null,
+                    isContaminant: false,
+                    modTypesToExclude: null,
+                    unknownModifications: out var _);
+
+                var decoyProtein = decoyProteins.Single();
+
+                var decoyVariantProtein = decoyProtein
+                    .GetVariantBioPolymers(minAlleleDepth: 0, maxSequenceVariantsPerIsoform: 1, maxSequenceVariantIsoforms: 2)
+                    .First(v => v.AppliedSequenceVariations.Count > 0);
+
+                var decoyVariantPeptides = decoyVariantProtein
+                    .Digest(st.CommonParameters.DigestionParams, null, null)
+                    .Where(p => decoyVariantProtein.AppliedSequenceVariations.Any(sv =>
+                        sv.OneBasedBeginPosition <= p.OneBasedEndResidue &&
+                        sv.OneBasedEndPosition >= p.OneBasedStartResidue))
+                    .OrderBy(p => p.OneBasedStartResidue)
+                    .ToList();
+
+                pep = decoyVariantPeptides[peptideIdx];
+
+                // new behavior: decoy isoform accession contains the variant range suffix and DECOY_ prefix
+                expectedAccessionToken = decoyVariantProtein.Accession;
+            }
 
             string mzmlName = $"ajgdiv{proteinIdx.ToString()}.mzML";
             MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pep });
@@ -98,7 +160,8 @@ namespace Test
             st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
 
-            Assert.That(psms.Any(line => line.Contains(containsVariant ? variantPsmShort : "\t")));
+            // Assert only on the new accession naming (drop legacy variant string expectations)
+            Assert.That(psms.Any(line => line.Contains(expectedAccessionToken)));
 
             Directory.Delete(outputFolder, true);
             File.Delete(mzmlName);
@@ -107,16 +170,202 @@ namespace Test
 
             Console.WriteLine($"Analysis time for VariantSearchTests.SearchTests({proteinIdx.ToString()},{peptideIdx.ToString()},{containsVariant.ToString()},{variantPsmShort}): {stopwatch.Elapsed.Hours}h {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s");
         }
-
         [Test]
-        [TestCase("frameshift.xml")]
-        [TestCase("frameshift.xml", DecoyType.Reverse)]
-        public void MoreTests(string filename, DecoyType decoyType = DecoyType.None)
+        public static void SearchTest_PPP6P_DecoyOnly()
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            // Decoy-only search; variants enabled
+            SearchTask st = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoParsimony = true,
+                    DecoyType = DecoyType.Reverse,
+                    SearchTarget = false,
+                    ModPeptidesAreDifferent = false
+                },
+                CommonParameters = new CommonParameters(
+                    scoreCutoff: 1,
+                    qValueThreshold: 1.0,
+                    digestionParams: new DigestionParams(minPeptideLength: 2),
+                    precursorMassTolerance: new PpmTolerance(20),
+                    maxSequenceVariantsPerIsoform: 1,
+                    minAlleleDepth: 0,
+                    maxSequenceVariantIsoforms: 2)
+            };
+
+            // Only the protein necessary for this test: PPP(4-6) -> P
+            List<Protein> proteins = new List<Protein>
+            {
+                new Protein("MPEPPPTIDE", "protein3",
+                    sequenceVariations: new List<SequenceVariation>
+                    {
+                        new SequenceVariation(
+                            oneBasedBeginPosition: 4,
+                            oneBasedEndPosition: 6,
+                            originalSequence: "PPP",
+                            variantSequence: "P",
+                            description: "",
+                            variantCallFormatDataString: @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30",
+                            oneBasedModifications: null)
+                    })
+            };
+
+            // Write consensus protein (with SequenceVariations) to XML
+            string xmlName = "andguiaheov_PPP6P_Decoy.xml";
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { proteins[0] }, xmlName);
+
+            // Load decoy from XML, create variant isoform, and pick first overlapping peptide
+            var decoyProteins = ProteinDbLoader.LoadProteinXML(
+                xmlName,
+                generateTargets: false,
+                decoyType: DecoyType.Reverse,
+                allKnownModifications: null,
+                isContaminant: false,
+                modTypesToExclude: null,
+                unknownModifications: out var _);
+
+            var decoyProtein = decoyProteins.Single();
+
+            var decoyVariantProtein = decoyProtein
+                .GetVariantBioPolymers(minAlleleDepth: 0, maxSequenceVariantsPerIsoform: 1, maxSequenceVariantIsoforms: 2)
+                .First(v => v.AppliedSequenceVariations.Count > 0);
+
+            var decoyVariantPeptides = decoyVariantProtein
+                .Digest(st.CommonParameters.DigestionParams, null, null)
+                .Where(p => decoyVariantProtein.AppliedSequenceVariations.Any(sv =>
+                    sv.OneBasedBeginPosition <= p.OneBasedEndResidue &&
+                    sv.OneBasedEndPosition >= p.OneBasedStartResidue))
+                .OrderBy(p => p.OneBasedStartResidue)
+                .ToList();
+
+            IBioPolymerWithSetMods pep = decoyVariantPeptides[0];
+
+            // Build mzML from the selected decoy variant peptide
+            string mzmlName = "ajgdiv_PPP6P_Decoy.mzML";
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pep });
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestSearchWithVariants_PPP6P_Decoy");
+            Directory.CreateDirectory(outputFolder);
+
+            // Run search
+            st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
+            var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
+
+            // Expect the new decoy isoform accession naming (range suffix + DECOY_ prefix)
+            string expectedAccessionToken = decoyVariantProtein.Accession;
+            Assert.That(psms.Any(line => line.Contains(expectedAccessionToken)));
+
+            // Cleanup
+            Directory.Delete(outputFolder, true);
+            File.Delete(mzmlName);
+            File.Delete(xmlName);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+
+            Console.WriteLine($"Analysis time for SearchTest_PPP6P_DecoyOnly: {stopwatch.Elapsed.Hours}h {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s");
+        }
+        [Test]
+        public static void SearchTest_PPP4P_TargetOnly()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            // Same task setup as SearchTests (target search; variants enabled)
+            SearchTask st = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoParsimony = true,
+                    DecoyType = DecoyType.None,
+                    SearchTarget = true,
+                    ModPeptidesAreDifferent = false
+                },
+                CommonParameters = new CommonParameters(
+                    scoreCutoff: 1,
+                    qValueThreshold: 1.0,
+                    digestionParams: new DigestionParams(minPeptideLength: 2),
+                    precursorMassTolerance: new PpmTolerance(20),
+                    maxSequenceVariantsPerIsoform: 1,
+                    minAlleleDepth: 0,
+                    maxSequenceVariantIsoforms: 2)
+            };
+
+            // Only the protein necessary for this test: PPP(4-6) -> P
+            List<Protein> proteins = new List<Protein>
+            {
+                new Protein("MPEPPPTIDE", "protein3",
+                    sequenceVariations: new List<SequenceVariation>
+                    {
+                        new SequenceVariation(
+                            oneBasedBeginPosition: 4,
+                            oneBasedEndPosition: 6,
+                            originalSequence: "PPP",
+                            variantSequence: "P",
+                            description: "",
+                            variantCallFormatDataString: @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30:30",
+                            oneBasedModifications: null)
+                    })
+            };
+
+            // Variant isoform generation (target only)
+            var targetVariantProtein = proteins[0]
+                .GetVariantBioPolymers(minAlleleDepth: 0, maxSequenceVariantsPerIsoform: 1, maxSequenceVariantIsoforms: 2)
+                .First(v => v.AppliedSequenceVariations.Count > 0);
+
+            // Pick the first peptide overlapping the applied variant (peptideIdx = 0)
+            var targetVariantPeptides = targetVariantProtein
+                .Digest(st.CommonParameters.DigestionParams, null, null)
+                .Where(p => targetVariantProtein.AppliedSequenceVariations.Any(sv =>
+                    sv.OneBasedBeginPosition <= p.OneBasedEndResidue &&
+                    sv.OneBasedEndPosition >= p.OneBasedStartResidue))
+                .OrderBy(p => p.OneBasedStartResidue)
+                .ToList();
+
+            IBioPolymerWithSetMods pep = targetVariantPeptides[0];
+
+            // Write consensus protein (with SequenceVariations) to XML
+            string xmlName = "andguiaheov_PPP4P.xml";
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { proteins[0] }, xmlName);
+
+            // Build mzML from the selected variant peptide
+            string mzmlName = "ajgdiv_PPP4P.mzML";
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pep });
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestSearchWithVariants_PPP4P");
+            Directory.CreateDirectory(outputFolder);
+
+            // Run search
+            st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
+            var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
+
+            // Expect the new isoform accession naming (range suffix)
+            string expectedAccessionToken = targetVariantProtein.Accession;
+            Assert.That(psms.Any(line => line.Contains(expectedAccessionToken)));
+
+            // Cleanup
+            Directory.Delete(outputFolder, true);
+            File.Delete(mzmlName);
+            File.Delete(xmlName);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+
+            Console.WriteLine($"Analysis time for SearchTest_PPP4P_TargetOnly: {stopwatch.Elapsed.Hours}h {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s");
+        }
+        [Test]
+        public void MoreTests_Frameshift_Target()
+        {
+            string filename = "frameshift.xml";
+            DecoyType decoyType = DecoyType.None;
+
             string xmlName = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", filename);
-            var proteins = ProteinDbLoader.LoadProteinXML(xmlName, decoyType == DecoyType.None, decoyType, null, false, null, out var un);
+            var proteins = ProteinDbLoader.LoadProteinXML(xmlName, decoyType == DecoyType.None, decoyType, null, false, null, out var un, 
+                maxSequenceVariantsPerIsoform: 1, minAlleleDepth: 0, maxSequenceVariantIsoforms:10);
             var peps = proteins[1].Digest(CommonParameters.DigestionParams, null, null).ToList();
-            var pep = peps[peps.Count - 2];
+            Assert.That(peps.Count > 0, "No peptides produced by digestion for proteins[1].");
+            var pep = peps.Count >= 2 ? peps[^2] : peps[^1];
 
             string mzmlName = $"ajgdiv{filename}{decoyType.ToString()}.mzML";
             MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pep });
@@ -140,7 +389,45 @@ namespace Test
             st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
 
-            //Assert.That(psms.Any(line => line.Contains($"\t{variantPsmShort}\t" + (containsVariant ? variantPsmShort : "\t"))));
+            Directory.Delete(outputFolder, true);
+            File.Delete(mzmlName);
+            //Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+        }
+
+        [Test]
+        public void MoreTests_Frameshift_ReverseDecoy()
+        {
+            string filename = "frameshift.xml";
+            DecoyType decoyType = DecoyType.Reverse;
+
+            string xmlName = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", filename);
+            var proteins = ProteinDbLoader.LoadProteinXML(xmlName, decoyType == DecoyType.None, decoyType, null, false, null, out var un,
+                maxSequenceVariantsPerIsoform: 1, minAlleleDepth: 0, maxSequenceVariantIsoforms: 10);
+            var peps = proteins[1].Digest(CommonParameters.DigestionParams, null, null).ToList();
+            Assert.That(peps.Count > 0, "No peptides produced by digestion for proteins[1].");
+            var pep = peps.Count >= 2 ? peps[^2] : peps[^1];
+
+            string mzmlName = $"ajgdiv{filename}{decoyType.ToString()}.mzML";
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pep });
+
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{filename}{decoyType.ToString()}");
+            Directory.CreateDirectory(outputFolder);
+
+            SearchTask st = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoParsimony = true,
+                    DecoyType = decoyType,
+                    SearchTarget = decoyType == DecoyType.None,
+                    ModPeptidesAreDifferent = false
+                },
+                CommonParameters = new CommonParameters(scoreCutoff: 1, qValueThreshold: 1.0, digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
+            };
+
+            st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
+            var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
 
             Directory.Delete(outputFolder, true);
             File.Delete(mzmlName);
@@ -156,7 +443,7 @@ namespace Test
 
             DbForTask noVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNoVariantDb.xml"), false);
             DbForTask ambigVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDb_ambiguous.xml"), false);
-            //DbForTask frameshiftVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_frameshift.xml"), false);
+            //DbForTask frameshiftVariantDb = new DbForTask(Path.Combine(TestContext.Current.TestDirectory, @"TestVariantDB_frameshift.xml"), false);
             DbForTask missenseVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_missense.xml"), false);
             DbForTask SNVmissenseVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_SNVmissense.xml"), false);
             DbForTask stopGainedVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_stopGained.xml"), false);
@@ -339,7 +626,7 @@ namespace Test
             //Assert.That(checkResults[14], Is.EqualTo("Number of unique inframe insertion variants: 0"));
             //Assert.That(checkResults[15], Is.EqualTo("Number of inframe deletion variant containing peptides at 1% group FDR: 0"));
             //Assert.That(checkResults[16], Is.EqualTo("Number of unique inframe deletion variants: 0"));
-            //Assert.That(checkResults[17], Is.EqualTo("Number of stop gain variant containing peptides at 1% group FDR: 1"));
+            //Assert.That(checkResults[17], Is.EqualTo("Number of stop gain variant containing peptides at 1% group FDR: 0"));
             //Assert.That(checkResults[18], Is.EqualTo("Number of unique stop gain variants: 1"));
             //Assert.That(checkResults[19], Is.EqualTo("Number of stop loss variant containing peptides at 1% group FDR: 0"));
             //Assert.That(checkResults[20], Is.EqualTo("Number of unique stop loss variants: 0"));

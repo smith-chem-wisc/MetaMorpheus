@@ -16,7 +16,7 @@
   <ItemGroup>
     <PackageReference Include="itext7" Version="8.0.5" />
     <PackageReference Include="itext7.bouncy-castle-adapter" Version="8.0.5" />
-    <PackageReference Include="mzLib" Version="9.9.999" />
+    <PackageReference Include="mzLib" Version="9.9.998" />
     <PackageReference Include="OxyPlot.Wpf" Version="2.0.0" />
     <PackageReference Include="Svg" Version="3.4.7" />
   </ItemGroup>
