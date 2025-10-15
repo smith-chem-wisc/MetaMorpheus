@@ -1151,7 +1151,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-            if (GuiGlobalParamsViewModel.Instance.AskBeforeExitingMetaMorpheus /*&& !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG")*/)
+            if (GuiGlobalParamsViewModel.Instance.AskBeforeExitingMetaMorpheus && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
             {
                 var exit = ExitMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
 

@@ -55,7 +55,7 @@ namespace MetaMorpheusGUI
             SettingsButtonControl.SettingsChanged += RefreshPlotsAfterSettingsChange;
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
-            ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel; 
+            ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
             AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
             AdditionalFragmentIonControl.LinkMetaDraw(this);
 
@@ -482,7 +482,7 @@ namespace MetaMorpheusGUI
 
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
-            var selectedChimeraGroup = ChimeraAnalysisTabViewModel?.SelectedChimeraGroup;
+            var selectedChimeraGroup = ChimeraAnalysisTabViewModel.SelectedChimeraGroup;
 
             // filter based on new settings
             if (e.FilterChanged)
@@ -494,11 +494,6 @@ namespace MetaMorpheusGUI
                 {
                     group.UpdatePropertiesAfterFilter();
                 }
-            }
-
-            if (e.DataVisualizationChanged && (string)((TabItem)MainTabControl.SelectedItem).Header == "Data Visualization")
-            {
-                PlotSelected(plotsListBox, null);
             }
 
             if (e.DataVisualizationChanged && (string)((TabItem)MainTabControl.SelectedItem).Header == "Data Visualization")

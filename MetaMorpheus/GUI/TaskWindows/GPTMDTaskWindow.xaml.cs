@@ -15,8 +15,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using GuiFunctions;
-using EngineLayer;
-using System.Threading.Tasks;
 using Transcriptomics.Digestion;
 using Omics.Modifications;
 using Omics.Digestion;
@@ -45,13 +43,13 @@ namespace MetaMorpheusGUI
                 TheTask = new GptmdTask();
                 if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
                 {
-                    Title = "RNA Search Task";
+                    Title = "RNA G-PTM-D Task";
                     TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
                     TheTask.CommonParameters = new CommonParameters("RnaGPTMDTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20, precursorMassTolerance: new PpmTolerance(15));
                 }
                 else
                 {
-                    Title = "Search Task";
+                    Title = "G-PTM-D Task";
                 }
             }
             else

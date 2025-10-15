@@ -4,7 +4,6 @@ using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using Omics.Digestion;
-using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -14,7 +13,6 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -43,12 +41,12 @@ namespace MetaMorpheusGUI
                 TheTask = new CalibrationTask();
                 if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
                 {
-                    Title = "RNA Search Task";
+                    Title = "RNA Calibration Task";
                     TheTask.CommonParameters = new CommonParameters("RnaCalibrationTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20, precursorMassTolerance: new PpmTolerance(15));
                 }
                 else
                 {
-                    Title = "Search Task";
+                    Title = "Calibration Task";
                 }
             }
             else

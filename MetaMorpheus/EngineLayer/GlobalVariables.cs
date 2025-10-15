@@ -16,7 +16,6 @@ using System.Text;
 using TopDownProteomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
-using System.Reflection;
 
 namespace EngineLayer
 {
