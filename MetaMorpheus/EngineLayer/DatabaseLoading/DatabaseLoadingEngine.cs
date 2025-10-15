@@ -48,7 +48,7 @@ public class DatabaseLoadingEngine(
         foreach (var error in errors)
             Warn(error);
 
-        if (!bioPolymers.Any(p => p.IsDecoy))
+        if (bioPolymers.Any(p => p.IsDecoy))
             scrambled = ScrambleHomologousDecoys(bioPolymers, CommonParameters.DigestionParams);
 
         (removed, renamed) = SanitizeBioPolymerDatabase(bioPolymers, TcAmbiguity, out errors);
