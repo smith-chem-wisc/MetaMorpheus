@@ -669,7 +669,8 @@ namespace MetaMorpheusGUI
             }
 
             // user is probably just checking or unchecking a checkbox, don't open the file
-            if (sender is DataGridCell cell && cell.Column is DataGridCheckBoxColumn)
+            // User is double clicking the decoy ident column. 
+            if (sender is DataGridCell { Column: DataGridCheckBoxColumn } || sender is DataGridCell { Column: DataGridTextColumn, TabIndex: >= 3})
             {
                 return;
             }
@@ -990,7 +991,7 @@ namespace MetaMorpheusGUI
             // everything is ready to run
             EverythingRunnerEngine a = new EverythingRunnerEngine(InProgressTasks.Select(b => (b.DisplayName, b.Task)).ToList(),
                 SpectraFiles.Where(b => b.Use).Select(b => b.FilePath).ToList(),
-                ProteinDatabases.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(),
+                ProteinDatabases.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant, b.DecoyIdentifier)).ToList(),
                 outputFolder);
 
             var t = new Task(a.Run);
@@ -1092,11 +1093,12 @@ namespace MetaMorpheusGUI
         {
             if (!RunTasksButton.IsEnabled) return;
 
+            
             switch (e.Key)
             {
                 // delete selected task/db/spectra
-                case Key.Delete:
-                case Key.Back:
+                case Key.Delete when e.OriginalSource is DataGrid:
+                case Key.Back when e.OriginalSource is DataGrid:
                     Delete_Click(sender, e);
                     e.Handled = true;
                     break;

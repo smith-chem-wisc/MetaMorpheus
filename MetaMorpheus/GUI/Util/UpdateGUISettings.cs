@@ -23,6 +23,7 @@ namespace MetaMorpheusGUI
                 Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
             }
 
+            GlobalVariables.DecoyIdentifier = Params.DecoyIdentifier ??= "DECOY";
             if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
             {
                 Params.AskAboutUpdating = false;
