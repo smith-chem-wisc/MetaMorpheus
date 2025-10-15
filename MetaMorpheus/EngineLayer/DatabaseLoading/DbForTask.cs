@@ -1,15 +1,15 @@
-﻿
+﻿#nullable enable
 namespace EngineLayer.DatabaseLoading;
 
 public class DbForTask
 {
-    public DbForTask(string filePath, bool isContaminant, string decoyIdentifier = GlobalVariables.DefaultDecoyIdentifier)
+    public DbForTask(string filePath, bool isContaminant, string? decoyIdentifier = null)
     {
         FilePath = filePath;
         IsContaminant = isContaminant;
         FileName = System.IO.Path.GetFileName(filePath);
         IsSpectralLibrary = GlobalVariables.GetFileExtension(filePath).ToLowerInvariant() == ".msp";
-        DecoyIdentifier = decoyIdentifier;
+        DecoyIdentifier = decoyIdentifier ?? GlobalVariables.DecoyIdentifier;
     }
 
     public bool IsSpectralLibrary { get; }

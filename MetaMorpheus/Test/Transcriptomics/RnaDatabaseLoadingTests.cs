@@ -88,10 +88,9 @@ public class RnaDatabaseLoadingTests
             new TestBioPolymer() {Accession= "TestingA"},
         };
 
-        var loader = new DatabaseLoadingEngine(new(), [], [], [], "TestTaskId", DecoyType.None, tcAmbiguity: TargetContaminantAmbiguity.RenameProtein);
         var exception = Assert.Throws<ArgumentException>(() =>
         {
-            loader.SanitizeBioPolymerDatabase(notImplementedBioPolymers, TargetContaminantAmbiguity.RenameProtein);
+            DatabaseLoadingEngine.SanitizeBioPolymerDatabase(notImplementedBioPolymers, TargetContaminantAmbiguity.RenameProtein, out _);
         });
 
         Assert.That(exception, Is.Not.Null);

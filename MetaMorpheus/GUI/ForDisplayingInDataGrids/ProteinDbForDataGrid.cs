@@ -1,10 +1,12 @@
 ﻿using System.IO;
+using EngineLayer;
 using EngineLayer.DatabaseLoading;
+using GuiFunctions;
 using TaskLayer;
 
 namespace MetaMorpheusGUI
 {
-    public class ProteinDbForDataGrid
+    public class ProteinDbForDataGrid : BaseViewModel
     {
         #region Public Constructors
 
@@ -28,17 +30,41 @@ namespace MetaMorpheusGUI
             Contaminant = uu.IsContaminant;
             FilePath = uu.FilePath;
             FileName = uu.FileName;
+            DecoyIdentifier = uu.DecoyIdentifier;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public bool Use { get; set; }
-        public bool Contaminant { get; set; }
+        private bool _use;
+        private bool _isContaminant;
+        private bool _inProgress;
+        private string _decoyIdentifier = GlobalVariables.DecoyIdentifier;
+
+        public bool Use
+        {
+            get => _use;
+            set { _use = value; OnPropertyChanged(nameof(Use)); }
+        }
+        public bool Contaminant
+        {
+            get => _isContaminant;
+            set { _isContaminant = value; OnPropertyChanged(nameof(Contaminant)); }
+        }
         public string FileName { get; private set; }
         public string FilePath { get; private set; }
-        public bool InProgress { get; private set; }
+        public bool InProgress
+        {
+            get => _inProgress;
+            private set { _inProgress = value; OnPropertyChanged(nameof(InProgress)); }
+        }
+
+        public string DecoyIdentifier
+        {
+            get => _decoyIdentifier;
+            set { _decoyIdentifier = value; OnPropertyChanged(nameof(DecoyIdentifier)); }
+        }
 
         #endregion Public Properties
 
