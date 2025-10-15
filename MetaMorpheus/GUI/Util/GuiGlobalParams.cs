@@ -11,6 +11,7 @@
 
         // User can set a custom proteome directory. Be sure to use double slashes in the path, otherwise it will not be read in properly. 
         public string UserSpecifiedProteomeDir { get; internal set; } = "";
+        public string DecoyIdentifier { get; internal set; } = "DECOY";
 
         //Ask about protease-specific parameter recommendations
         public bool AskAboutTopDownParams { get; internal set; } = true;
