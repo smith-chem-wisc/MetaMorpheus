@@ -142,12 +142,14 @@ namespace TaskLayer
                 {
                     case true when proteinList is null: // has finished loading but not been set
                         proteinList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
+                        Status("Running G-PTM-D...", new List<string> { taskId });
                         break;
                     case true when proteinList.Any(): // has finished loading and already been set
                         break;
                     case false: // has not finished loading
                         proteinLoadingTask.Wait();
                         proteinList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
+                        Status("Running G-PTM-D...", new List<string> { taskId });
                         break;
                 }
 

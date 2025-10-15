@@ -252,12 +252,14 @@ namespace TaskLayer
                 {
                     case true when bioPolymerList is null: // has finished loading but not been set
                         bioPolymerList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
+                        Status("Searching files...", new List<string> { taskId });
                         break;
                     case true when bioPolymerList.Any(): // has finished loading and already been set
                         break;
                     case false: // has not finished loading
                         proteinLoadingTask.Wait();
                         bioPolymerList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
+                        Status("Searching files...", new List<string> { taskId });
                         break;
                 }
 
