@@ -172,6 +172,7 @@
                 <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
                 <Setter Property="Background" Value="{StaticResource DataGridBackgroundColor}"/>
                 <Setter Property="Height" Value="Auto"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 <Setter Property="FontSize" Value="12"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
