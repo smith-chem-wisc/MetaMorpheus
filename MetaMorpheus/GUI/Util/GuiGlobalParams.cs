@@ -36,7 +36,6 @@ namespace MetaMorpheusGUI
         public bool UseSpectralRecoveryParams { get; internal set; } = true;
 
         // Rna Toggles
-        public bool ExposeRnaToUser { get; internal set; }
         public bool IsRnaMode { get; internal set; }
     }
 }
