@@ -245,6 +245,14 @@ namespace Test.MetaDraw
                 var expectedNumberCount = startAA.Length + endAA.Length;
                 var expectedNumberLineConnectorCount = 2;
 
+                var modCount = metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.OfType<Ellipse>().Count();
+                var letterAndNumberCount = metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.OfType<TextBlock>().Count();
+                var ionAndConnectorCount = metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.OfType<Polyline>().Count();
+
+                Assert.That(modCount, Is.EqualTo(expectedModCount), "Number of annotated modifications in stationary sequence does not match expected");
+                Assert.That(letterAndNumberCount, Is.EqualTo(expectedBaseSequence + expectedNumberCount), "Number of annotated residues and numbers in stationary sequence does not match expected");
+                Assert.That(ionAndConnectorCount, Is.EqualTo(expectedIonAnnotations + expectedNumberLineConnectorCount), "Number of annotated ions and line connectors in stationary sequence does not match expected");
+
                 var expected = expectedBaseSequence + expectedIonAnnotations + expectedModCount + expectedNumberCount + expectedNumberLineConnectorCount;
                 Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, Is.EqualTo(expected));
             }
