@@ -989,7 +989,16 @@ namespace TaskLayer
 
                         if (modificationsToWriteIfObserved.Contains(tempMod))
                         {
-                            var svIdxKey = (observedMod.Item3, observedMod.Item1);
+                            // Normalize the SequenceVariation key to the consensus protein's instance
+                            SequenceVariation svKey = null;
+                            if (observedMod.Item3 != null)
+                            {
+                                svKey = nonVariantProtein.SequenceVariations
+                                    .FirstOrDefault(sv => sv.Description != null
+                                                       && sv.Description.Equals(observedMod.Item3.Description));
+                            }
+
+                            var svIdxKey = (svKey, observedMod.Item1);
                             if (!modsToWrite.ContainsKey(svIdxKey))
                             {
                                 modsToWrite.Add(svIdxKey, new List<Modification> { observedMod.Item2 });
@@ -1098,7 +1107,13 @@ namespace TaskLayer
                         sv.OneBasedModifications.Clear();
                         foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
                         {
-                            sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
+                            // Upsert per position and de-duplicate mods
+                            var uniqueMods = kvp.Value
+                                .GroupBy(m => (m.ModificationType, m.IdWithMotif))
+                                .Select(g => g.First())
+                                .ToList();
+
+                            sv.OneBasedModifications[kvp.Key.Item2] = uniqueMods;
                         }
                     }
                 }
@@ -1610,7 +1625,7 @@ namespace TaskLayer
                         if (originalBioPolymer is RNA r)
                         {
                             renamed = new RNA(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + bioPolymerNumber,
-                                r.OneBasedPossibleLocalizedModifications, r.FivePrimeTerminus, r.ThreePrimeTerminus, r.Name, r.Organism,
+                                r.OneBasedPossibleLocalizedModifications, r.ThreePrimeTerminus, r.FivePrimeTerminus, r.Name, r.Organism,
                                 r.DatabaseFilePath, r.IsContaminant, r.IsDecoy, r.GeneNames, r.AdditionalDatabaseFields, r.TruncationProducts,
                                 r.SequenceVariations, r.AppliedSequenceVariations, r.SampleNameForVariants, r.FullName);
                         }
