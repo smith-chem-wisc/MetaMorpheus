@@ -93,7 +93,8 @@ namespace Test.GuiTests
             if (xmlFormat)
             {
                 reader = ProteinDbLoader.LoadProteinXML(proteinDbLocation: filePath, generateTargets: true, decoyType: DecoyType.Reverse,
-                    allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out var unknownMod);
+                    allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out var unknownMod,
+                    maxSequenceVariantsPerIsoform:1, minAlleleDepth: 0, maxSequenceVariantIsoforms:2);
             }
             else
             {

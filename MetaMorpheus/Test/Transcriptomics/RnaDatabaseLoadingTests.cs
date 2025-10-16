@@ -119,7 +119,7 @@ public class RnaDatabaseLoadingTests
     {
         GlobalVariables.AnalyteType = AnalyteType.Oligo;
         var task = new SearchTask();
-        var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams("RNase T1"));
+        var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams("RNase T1"), maxSequenceVariantsPerIsoform: 3, minAlleleDepth: 0, maxSequenceVariantIsoforms: 10);
         string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "TruncationAndVariantMods.xml");
         var dbsForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
 
