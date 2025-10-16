@@ -67,7 +67,7 @@ namespace Test.MetaDraw
             Assert.That(viewModel.SelectedDissociationType, Is.EqualTo(DissociationType.HCD));
 
             viewModel = new FragmentationReanalysisViewModel(false);
-            Assert.That(viewModel.SelectedDissociationType, Is.EqualTo(DissociationType.LowCID));
+            Assert.That(viewModel.SelectedDissociationType, Is.EqualTo(DissociationType.CID));
             viewModel.SelectedDissociationType = DissociationType.BIRD;
             Assert.That(viewModel.SelectedDissociationType, Is.EqualTo(DissociationType.HCD));
         }

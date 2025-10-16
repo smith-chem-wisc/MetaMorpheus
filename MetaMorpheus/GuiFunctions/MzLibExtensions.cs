@@ -65,11 +65,16 @@ namespace GuiFunctions
 
         public static IBioPolymerWithSetMods ToBioPolymerWithSetMods(this SpectrumMatchFromTsv sm, string fullSequence = null)
         {
-            var splitStartAndEnd = sm.StartAndEndResiduesInParentSequence
-                .Replace('[', ' ')
-                .Replace(']', ' ').Split("to");
-            int startResidue = int.Parse(splitStartAndEnd[0].Trim());
-            int endResidue = int.Parse(splitStartAndEnd[1].Split('|')[0].Trim());
+            int startResidue = 0, endResidue = sm.BaseSeq.Length;
+
+            if (sm.StartAndEndResiduesInParentSequence != null)
+            {
+                var splitStartAndEnd = sm.StartAndEndResiduesInParentSequence
+                    .Replace('[', ' ')
+                    .Replace(']', ' ').Split("to");
+                startResidue = int.Parse(splitStartAndEnd[0].Trim());
+                endResidue = int.Parse(splitStartAndEnd[1].Split('|')[0].Trim());
+            }
 
             if (sm.IsPeptide())
                 return new PeptideWithSetModifications(fullSequence ?? sm.FullSequence, GlobalVariables.AllModsKnownDictionary, oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);

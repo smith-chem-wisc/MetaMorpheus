@@ -65,7 +65,7 @@ namespace GuiFunctions
         {
             // Clear the canvas if we are plotting the NOT Sequence Coverage Map or if we are NOT plotting a Cross-Linked Peptide
             // This is so that we can add the XL sequence to the same canvas by one call with the alpha sequence and one call with the beta sequence. 
-            if (!Annotation || (match is PsmFromTsv psm && (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence))))
+            if (!Annotation && (match is PsmFromTsv psm && (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence))))
             {
                 ClearCanvas(SequenceDrawingCanvas);
             }
@@ -316,18 +316,15 @@ namespace GuiFunctions
                 string fullSequence = baseSequence;
                 foreach (var mod in modDictionary)
                 {
-                    int insertIndex = mod.Key - i - 1;
-                    // If the modification is on the 3' terminal end, append to the end
-                    if (insertIndex == fullSequence.Length)
+                    // if first chunk in the row
+                    if (i % segmentsPerRow == 0 && mod.Key - 1 >= i && mod.Key - 1 <= i + residuesPerSegment)
                     {
-                        fullSequence += "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]";
+                        fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                     }
-                    // If the modification is within the bounds of the segment, insert at the correct position
-                    else if (insertIndex >= 0 && insertIndex < fullSequence.Length)
+                    else if (mod.Key - 1 > i && mod.Key - 1 <= i + residuesPerSegment)
                     {
-                        fullSequence = fullSequence.Insert(insertIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
+                        fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                     }
-                    // Otherwise, skip (modification not in this segment)
                 }
 
                 SpectrumMatchFromTsv tempSm = sm.ReplaceFullSequence(fullSequence, baseSequence);
@@ -338,10 +335,6 @@ namespace GuiFunctions
             // draw each resulting match
             for (int i = 0; i < segments.Count; i++)
             {
-                int startPosition = i * residuesPerSegment;
-                int endPosition = (i + 1) * residuesPerSegment;
-                List<MatchedFragmentIon> matchedIons = sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > startPosition &&
-                                                       p.NeutralTheoreticalProduct.ResiduePosition < endPosition).ToList();
                 int currentRowZeroIndexed = i / segmentsPerRow;
                 int yLoc = 10 + (currentRowZeroIndexed * 42);
                 int chunkPositionInRow = (i % segmentsPerRow);
