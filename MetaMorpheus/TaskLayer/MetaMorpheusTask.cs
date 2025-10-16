@@ -904,7 +904,7 @@ namespace TaskLayer
                 }
             }
 
-            // Add user mod selection behavours to Pruned DB
+            // Add user mod selection behavour to Pruned DB
             foreach (var modType in modificationsToWrite)
             {
                 foreach (Modification mod in GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)))
@@ -987,26 +987,52 @@ namespace TaskLayer
                     {
                         var tempMod = observedMod.Item2;
 
-                        if (modificationsToWriteIfObserved.Contains(tempMod))
+                        if (!modificationsToWriteIfObserved.Contains(tempMod))
+                            continue;
+
+                        // Normalize the SequenceVariation key to the consensus protein's instance
+                        SequenceVariation svKey = null;
+                        if (observedMod.Item3 != null)
                         {
-                            // Normalize the SequenceVariation key to the consensus protein's instance
-                            SequenceVariation svKey = null;
-                            if (observedMod.Item3 != null)
+                            // First try Description-based matching (when present)
+                            svKey = nonVariantProtein.SequenceVariations
+                                .FirstOrDefault(sv =>
+                                    sv.Description != null
+                                    && observedMod.Item3.Description != null
+                                    && sv.Description.Equals(observedMod.Item3.Description));
+
+                            // Fallback: match by coordinates and ref/alt sequence if Description is missing
+                            if (svKey == null)
                             {
-                                svKey = nonVariantProtein.SequenceVariations
-                                    .FirstOrDefault(sv => sv.Description != null
-                                                       && sv.Description.Equals(observedMod.Item3.Description));
+                                svKey = nonVariantProtein.SequenceVariations.FirstOrDefault(sv =>
+                                    sv.OneBasedBeginPosition == observedMod.Item3.OneBasedBeginPosition &&
+                                    sv.OneBasedEndPosition == observedMod.Item3.OneBasedEndPosition &&
+                                    string.Equals(sv.OriginalSequence, observedMod.Item3.OriginalSequence, StringComparison.Ordinal) &&
+                                    string.Equals(sv.VariantSequence, observedMod.Item3.VariantSequence, StringComparison.Ordinal));
                             }
 
-                            var svIdxKey = (svKey, observedMod.Item1);
-                            if (!modsToWrite.ContainsKey(svIdxKey))
+                            // If still not found, last-resort: match by just coordinates
+                            if (svKey == null)
                             {
-                                modsToWrite.Add(svIdxKey, new List<Modification> { observedMod.Item2 });
+                                svKey = nonVariantProtein.SequenceVariations.FirstOrDefault(sv =>
+                                    sv.OneBasedBeginPosition == observedMod.Item3.OneBasedBeginPosition &&
+                                    sv.OneBasedEndPosition == observedMod.Item3.OneBasedEndPosition);
                             }
-                            else
-                            {
-                                modsToWrite[svIdxKey].Add(observedMod.Item2);
-                            }
+                        }
+
+                        // When observedMod.Item3 == null, this is a consensus (non-variant) site; svKey stays null on purpose.
+                        // When observedMod.Item3 != null but we couldn't resolve svKey, skip rather than misclassifying as consensus.
+                        if (observedMod.Item3 != null && svKey == null)
+                            continue;
+
+                        var svIdxKey = (svKey, observedMod.Item1);
+                        if (!modsToWrite.ContainsKey(svIdxKey))
+                        {
+                            modsToWrite.Add(svIdxKey, new List<Modification> { observedMod.Item2 });
+                        }
+                        else
+                        {
+                            modsToWrite[svIdxKey].Add(observedMod.Item2);
                         }
                     }
 
@@ -1035,13 +1061,15 @@ namespace TaskLayer
                     // Add variant modification if in database (two cases: always or if observed)
                     foreach (SequenceVariation sv in nonVariantProtein.SequenceVariations)
                     {
+                        if (sv.OneBasedModifications == null)
+                            continue; // nothing in DB for this variant
+
                         foreach (var modkv in sv.OneBasedModifications)
                         {
                             foreach (var mod in modkv.Value)
                             {
-                                //Add if always In Database or if was observed and in database and not set to not include
-                                if (modificationsToWriteIfInDatabase.Contains(mod) ||
-                                    (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, sv))))
+                                if (modificationsToWriteIfInDatabase.Contains(mod)
+                                    || (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, sv))))
                                 {
                                     if (!modsToWrite.ContainsKey((sv, modkv.Key)))
                                     {
@@ -1084,19 +1112,18 @@ namespace TaskLayer
                     }
                     foreach (var sv in nonVariantProtein.SequenceVariations)
                     {
-                        var oldVariantModifications = sv.OneBasedModifications.ToDictionary(p => p.Key, v => v.Value);
+                        // Store original variant mods (handle null gracefully)
+                        var oldVariantModifications = (sv.OneBasedModifications ?? new Dictionary<int, List<Modification>>())
+                            .ToDictionary(p => p.Key, v => v.Value);
+
                         if (originalSequenceVariantModifications.ContainsKey(sv))
                         {
                             foreach (var entry in oldVariantModifications)
                             {
                                 if (originalSequenceVariantModifications[sv].ContainsKey(entry.Key))
-                                {
                                     originalSequenceVariantModifications[sv][entry.Key].AddRange(entry.Value);
-                                }
                                 else
-                                {
                                     originalSequenceVariantModifications[sv].Add(entry.Key, entry.Value);
-                                }
                             }
                         }
                         else
@@ -1104,16 +1131,38 @@ namespace TaskLayer
                             originalSequenceVariantModifications.Add(sv, oldVariantModifications);
                         }
 
-                        sv.OneBasedModifications.Clear();
-                        foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
+                        // If there are no variant-specific writes for this sv, move on (avoid lambda)
+                        bool hasVariantWrites = false;
+                        foreach (var key in modsToWrite.Keys)
                         {
-                            // Upsert per position and de-duplicate mods
-                            var uniqueMods = kvp.Value
+                            if (key.Item1 != null && ReferenceEquals(key.Item1, sv))
+                            {
+                                hasVariantWrites = true;
+                                break;
+                            }
+                        }
+                        if (!hasVariantWrites)
+                            continue;
+
+                        // Mutate the existing dict; do not assign (property is read-only)
+                        if (sv.OneBasedModifications == null)
+                            continue; // cannot populate if backing dict is null
+
+                        sv.OneBasedModifications.Clear();
+
+                        // Write de-duplicated mods for this sv (avoid lambda)
+                        foreach (var entry in modsToWrite)
+                        {
+                            var key = entry.Key;
+                            if (key.Item1 == null || !ReferenceEquals(key.Item1, sv))
+                                continue;
+
+                            var uniqueMods = entry.Value
                                 .GroupBy(m => (m.ModificationType, m.IdWithMotif))
                                 .Select(g => g.First())
                                 .ToList();
 
-                            sv.OneBasedModifications[kvp.Key.Item2] = uniqueMods;
+                            sv.OneBasedModifications[key.Item2] = uniqueMods;
                         }
                     }
                 }
@@ -1156,12 +1205,21 @@ namespace TaskLayer
                     {
                         nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(originalMod.Key, originalMod.Value);
                     }
+
                     foreach (var sv in nonVariantProtein.SequenceVariations)
                     {
+                        // If we didn't save anything for this sv (shouldn't happen), skip
+                        if (!originalSequenceVariantModifications.TryGetValue(sv, out var savedMods))
+                            continue;
+
+                        // If the backing dict is null, we cannot assign a new one (read-only property). Skip safely.
+                        if (sv.OneBasedModifications == null)
+                            continue;
+
                         sv.OneBasedModifications.Clear();
-                        foreach (var originalVariantMods in originalSequenceVariantModifications[sv])
+                        foreach (var kv in savedMods)
                         {
-                            sv.OneBasedModifications.Add(originalVariantMods.Key, originalVariantMods.Value);
+                            sv.OneBasedModifications[kv.Key] = kv.Value;
                         }
                     }
                 }
