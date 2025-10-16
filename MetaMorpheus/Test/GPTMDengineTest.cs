@@ -206,10 +206,10 @@ namespace Test
 
             // 2) Build a parent protein with one SequenceVariation.
             //    Protein: "NNNPPP" (length 6). Variation is at 6..6 (the final P).
-            //    OriginalSequence: "P", VariantSequence: "P" => a no-op variant (same residue).
+            //    OriginalSequence: "P", VariantSequence: "A" => a real variant (P->A).
             //    This is important because:
-            //      - The applied-variant isoform will have the same sequence as the parent.
-            //      - We still expect the variant to be tracked in metadata (AppliedSequenceVariations),
+            //      - The applied-variant isoform will have a different sequence from the parent ("NNNPPA").
+            //      - We expect the variant to be tracked in metadata (AppliedSequenceVariations),
             //        which downstream systems use to reason about variant-aware mods or reporting.
             var svDescription = @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30";
             var parentProtein = new Protein(
@@ -217,15 +217,18 @@ namespace Test
                 "protein",
                 sequenceVariations: new List<SequenceVariation>
                 {
-            // Begin=6, End=6, Original="P", Variant="P" (no-op), carries a VCF-like description.
-            new SequenceVariation(6, 6, "P", "P", "", svDescription, null)
+                    // Begin=6, End=6, Original="P", Variant="A" (real change), carries a VCF-like description.
+                    new SequenceVariation(6, 6, "P", "A", svDescription, svDescription, null)
                 });
 
             // 3) Ask the parent to produce variant-aware isoforms.
             //    - GetVariantBioPolymers applies combinations of SequenceVariations and produces
             //      isoforms (Proteins) with AppliedSequenceVariations recorded.
-            //    - For a no-op variant, we typically get a single isoform with the same BaseSequence.
-            var variantProteins = parentProtein.GetVariantBioPolymers();
+            //    - With a real P->A variant, we expect at least one isoform with the variant applied.
+            var variantProteins = parentProtein
+                .GetVariantBioPolymers(maxSequenceVariantsPerIsoform: 1, minAlleleDepth: 0, maxSequenceVariantIsoforms: 10)
+                .Where(v => v.AppliedSequenceVariations.Count > 0)
+                .ToList();
 
             // Validate the SequenceVariation metadata on the parent
             Assert.Multiple(() =>
@@ -236,31 +239,39 @@ namespace Test
                 Assert.That(sv.OneBasedBeginPosition, Is.EqualTo(6));
                 Assert.That(sv.OneBasedEndPosition, Is.EqualTo(6));
                 Assert.That(sv.OriginalSequence, Is.EqualTo("P"));
-                Assert.That(sv.VariantSequence, Is.EqualTo("P")); // no-op
+                Assert.That(sv.VariantSequence, Is.EqualTo("A"));
 
-                // Description is a SequenceVariantDescription (not string). Use ToString() for textual checks.
+                // In newer mzLib:
+                // - Description is a SequenceVariantDescription and may be empty
+                // - The raw VCF string is carried in VariantCallFormatDataString when Description is empty
                 Assert.That(sv.Description, Is.Not.Null);
-                Assert.That(sv.Description.ToString(), Does.Contain("ANN="));
+                if (!string.IsNullOrEmpty(sv.Description.ToString()))
+                {
+                    Assert.That(sv.Description.ToString(), Does.Contain("ANN="));
+                }
+                else
+                {
+                    Assert.That(sv.VariantCallFormatData, Is.Not.Null.And.Not.Empty);
+                    Assert.That(sv.VariantCallFormatData, Does.Contain("ANN="));
+                }
             });
 
             // Validate the isoforms produced
             Assert.Multiple(() =>
             {
                 Assert.That(variantProteins, Is.Not.Null);
-                Assert.That(variantProteins.Count, Is.GreaterThanOrEqualTo(1)); // no-op typically collapses to a single isoform
+                Assert.That(variantProteins.Count, Is.GreaterThanOrEqualTo(1));
                 var iso = variantProteins.First();
-                // BaseSequence should remain unchanged since the variant is no-op
-                Assert.That(iso.BaseSequence, Is.EqualTo(parentProtein.BaseSequence));
-                // AppliedSequenceVariations may be 0 or 1 for a no-op; both are acceptable across versions.
-                Assert.That(iso.AppliedSequenceVariations.Count, Is.LessThanOrEqualTo(1));
-                if (iso.AppliedSequenceVariations.Count == 1)
-                {
-                    var applied = iso.AppliedSequenceVariations[0];
-                    Assert.That(applied.OneBasedBeginPosition, Is.EqualTo(6));
-                    Assert.That(applied.OneBasedEndPosition, Is.EqualTo(6));
-                    Assert.That(applied.OriginalSequence, Is.EqualTo("P"));
-                    Assert.That(applied.VariantSequence, Is.EqualTo("P"));
-                }
+                // BaseSequence should reflect the variant (P->A at position 6) => "NNNPPA"
+                Assert.That(iso.BaseSequence.Length, Is.EqualTo(parentProtein.BaseSequence.Length));
+                Assert.That(iso.BaseSequence[5], Is.EqualTo('A'), "6th residue should be A in the variant-applied isoform");
+                // AppliedSequenceVariations should include the P->A change
+                Assert.That(iso.AppliedSequenceVariations.Count, Is.EqualTo(1));
+                var applied = iso.AppliedSequenceVariations[0];
+                Assert.That(applied.OneBasedBeginPosition, Is.EqualTo(6));
+                Assert.That(applied.OneBasedEndPosition, Is.EqualTo(6));
+                Assert.That(applied.OriginalSequence, Is.EqualTo("P"));
+                Assert.That(applied.VariantSequence, Is.EqualTo("A"));
             });
 
             // 4) Digest the (variant) protein and synthesize a single PSM whose precursor mass
@@ -277,11 +288,9 @@ namespace Test
                 // Ensure the peptide originates from one of the variant-applied isoforms
                 Assert.That(variantProteins.Any(v => ReferenceEquals(v, modPep.Parent)), Is.True,
                     "Peptide.Parent should be one of the variant-applied isoforms returned by GetVariantBioPolymers()");
-
                 // And the isoform's consensus should be the original parent protein
                 Assert.That(ReferenceEquals(modPep.Parent.ConsensusVariant, parentProtein), Is.True,
                     "Isoform.ConsensusVariant should reference the original consensus parent protein");
-
                 // Check peptide indexing sanity
                 Assert.That(modPep.OneBasedStartResidue, Is.GreaterThanOrEqualTo(1));
                 Assert.That(modPep.OneBasedEndResidue, Is.GreaterThanOrEqualTo(modPep.OneBasedStartResidue));
@@ -348,13 +357,14 @@ namespace Test
             };
             modList.Add(parentProtein.Accession, consensusHash);
 
-            // Variant-specific mod at residue 6 (P target) on the variant isoform’s accession
+            // Variant-specific mod at residue 6 (A target) on the variant isoform’s accession
+            Assert.That(ModificationMotif.TryGetMotif("A", out ModificationMotif motifA), Is.True, "Expected Alanine motif to exist");
             var variantAccession = VariantApplication.GetAccession(parentProtein, parentProtein.SequenceVariations.ToArray());
             var variantHash = new HashSet<Tuple<int, Modification>>
             {
                 new Tuple<int, Modification>(
                     6,
-                    new Modification(_originalId: "variant-P@6", _modificationType: "type", _target: motifP, _monoisotopicMass: 42, _locationRestriction: "Anywhere."))
+                    new Modification(_originalId: "variant-A@6", _modificationType: "type", _target: motifA, _monoisotopicMass: 42, _locationRestriction: "Anywhere."))
             };
             modList.Add(variantAccession, variantHash);
 
@@ -372,29 +382,79 @@ namespace Test
             var target = loaded.First(p => !p.IsDecoy);
             var decoy = loaded.First(p => p.IsDecoy);
 
-            // After read, both consensus and variant-specific mods are present on the target protein's
-            // OneBasedPossibleLocalizedModifications (the loaded protein sequence includes applied variants).
-            // For "NNNPPP" length 6, positions are:
-            //   - target: {2, 6}
-            //   - decoy (reverse): index map i -> 6 - i + 1, so {2 -> 5, 6 -> 1} => {1, 5}
+            // Loader may return consensus or variant-applied as the target. Detect which we got.
+            bool targetIsVariantApplied = target.BaseSequence.Length >= 6 && target.BaseSequence[5] == 'A';
+            var expectedTargetIndices = targetIsVariantApplied ? new[] { 2, 6 } : new[] { 2 };
+
             Assert.Multiple(() =>
             {
-                Assert.That(target.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
+                Assert.That(target.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(expectedTargetIndices.Length));
                 var targetIndices = target.OneBasedPossibleLocalizedModifications.Keys.OrderBy(i => i).ToArray();
-                CollectionAssert.AreEqual(new[] { 2, 6 }, targetIndices);
+                CollectionAssert.AreEqual(expectedTargetIndices, targetIndices);
 
-                Assert.That(decoy.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
-                var decoyIndices = decoy.OneBasedPossibleLocalizedModifications.Keys.OrderBy(i => i).ToArray();
-                CollectionAssert.AreEqual(new[] { 1, 5 }, decoyIndices);
+                // Always expect the N@2 mod
+                Assert.That(target.OneBasedPossibleLocalizedModifications.ContainsKey(2), Is.True);
+                var t2 = target.OneBasedPossibleLocalizedModifications[2];
+                Assert.That(t2.Any(m => Math.Abs(m.MonoisotopicMass.Value - 21.981943) < 1e-6 && m.IdWithMotif.EndsWith("on N", StringComparison.Ordinal)), Is.True);
 
-                // Ensure variants remain attached to the target sequence and are queryable
+                // A@6 only present when the variant is applied on the loaded target
+                if (targetIsVariantApplied)
+                {
+                    var t6 = target.OneBasedPossibleLocalizedModifications[6];
+                    Assert.That(t6.Any(m => Math.Abs(m.MonoisotopicMass.Value - 42.0) < 1e-6 && m.IdWithMotif.EndsWith("on A", StringComparison.Ordinal)), Is.True);
+                }
+
+                // Ensure variant metadata is present
                 Assert.That(target.SequenceVariations.Count, Is.EqualTo(1));
                 var rtv = target.SequenceVariations[0];
                 Assert.That(rtv.OneBasedBeginPosition, Is.EqualTo(6));
                 Assert.That(rtv.OneBasedEndPosition, Is.EqualTo(6));
                 Assert.That(rtv.OriginalSequence, Is.EqualTo("P"));
-                Assert.That(rtv.VariantSequence, Is.EqualTo("P"));
+                Assert.That(rtv.VariantSequence, Is.EqualTo("A"));
             });
+
+            // If the target is consensus, verify the A@6 mod exists on a variant-applied isoform
+            if (!targetIsVariantApplied)
+            {
+                var targetIsoforms = target
+                    .GetVariantBioPolymers(maxSequenceVariantsPerIsoform: 1, minAlleleDepth: 0, maxSequenceVariantIsoforms: 10)
+                    .Where(v => v.AppliedSequenceVariations.Any())
+                    .ToList();
+
+                Assert.That(targetIsoforms, Is.Not.Empty, "Expected a variant-applied isoform from the loaded target");
+                var isoVar = targetIsoforms.First();
+                Assert.Multiple(() =>
+                {
+                    Assert.That(isoVar.BaseSequence[5], Is.EqualTo('A'), "Variant-applied isoform should have A at pos6");
+                    Assert.That(isoVar.OneBasedPossibleLocalizedModifications.ContainsKey(6), Is.True, "Variant-applied isoform should carry the A@6 mod");
+                    var iso6 = isoVar.OneBasedPossibleLocalizedModifications[6];
+                    Assert.That(iso6.Any(m => Math.Abs(m.MonoisotopicMass.Value - 42.0) < 1e-6 && m.IdWithMotif.EndsWith("on A", StringComparison.Ordinal)), Is.True);
+                });
+            }
+
+            // Decoy mapping mirrors indices from whatever the target carries
+            var mirrored = expectedTargetIndices
+                .Select(i => target.BaseSequence.Length - i + 1)
+                .OrderBy(i => i)
+                .ToArray();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(decoy.IsDecoy, Is.True);
+                Assert.That(decoy.BaseSequence, Is.EqualTo(new string(target.BaseSequence.Reverse().ToArray())));
+                Assert.That(decoy.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(mirrored.Length));
+                var decoyIndices = decoy.OneBasedPossibleLocalizedModifications.Keys.OrderBy(i => i).ToArray();
+                CollectionAssert.AreEqual(mirrored, decoyIndices);
+
+                foreach (var idx in decoyIndices)
+                {
+                    var modsAt = decoy.OneBasedPossibleLocalizedModifications[idx];
+                    Assert.That(modsAt.Any(m => Math.Abs(m.MonoisotopicMass.Value - 21.981943) < 1e-6 || Math.Abs(m.MonoisotopicMass.Value - 42.0) < 1e-6),
+                        Is.True, $"Decoy position {idx} should carry mirrored mods (~21.98 or ~42 Da)");
+                }
+            });
+
+            // ... (rest of method unchanged)
         }
         [Test]
         public static void TestSearchPtmVariantDatabase()
@@ -462,15 +522,15 @@ namespace Test
             // This demonstrates how to attach modifications to both the consensus and a variant isoform.
             var modList = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
             var hashConsensus = new HashSet<Tuple<int, Modification>>
-    {
-        new Tuple<int, Modification>(1, new Modification(
-            _originalId: "acetyl on P", _modificationType: "type", _target: motifP, _monoisotopicMass: 42, _locationRestriction: "Anywhere."))
-    };
+            {
+                new Tuple<int, Modification>(1, new Modification(
+                    _originalId: "acetyl on P", _modificationType: "type", _target: motifP, _monoisotopicMass: 42, _locationRestriction: "Anywhere."))
+            };
             var hashVariant = new HashSet<Tuple<int, Modification>>
-    {
-        new Tuple<int, Modification>(3, new Modification(
-            _originalId: "acetyl on K", _modificationType: "type", _target: motifK, _monoisotopicMass: 42, _locationRestriction: "Anywhere."))
-    };
+            {
+                new Tuple<int, Modification>(3, new Modification(
+                    _originalId: "acetyl on K", _modificationType: "type", _target: motifK, _monoisotopicMass: 42, _locationRestriction: "Anywhere."))
+            };
             modList.Add(testProteinWithMod.Accession, hashConsensus);
             modList.Add(variantAcc, hashVariant);
 
@@ -565,9 +625,7 @@ namespace Test
                 // Use mass + motif checks for robustness
                 Assert.That(decoyPos6Mods.Concat(decoyPos4Mods).Any(m =>
                         Math.Abs(m.MonoisotopicMass.Value - 42.0) < 1e-6 &&
-                        (m.IdWithMotif.EndsWith("on P", StringComparison.Ordinal) ||
-                         m.IdWithMotif.EndsWith("on K", StringComparison.Ordinal))),
-                    Is.True, "Decoy should carry mirrored acetyl-like mods (~42 Da) at mirrored positions");
+                        (m.IdWithMotif.EndsWith("on P", StringComparison.Ordinal) || m.IdWithMotif.EndsWith("on K", StringComparison.Ordinal))), Is.True, "Decoy should carry mirrored acetyl-like mods (~42 Da) at mirrored positions");
             });
 
             // Variant-aware digestion check (sanity): digesting the target's variant isoform should
