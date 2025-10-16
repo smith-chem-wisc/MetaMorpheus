@@ -106,7 +106,7 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WritePrunedDatabase)
                 WritePrunedDatabase(Parameters.AllSpectralMatches, Parameters.BioPolymerList, Parameters.SearchParameters.ModsToWriteSelection, Parameters.DatabaseFilenameList, Parameters.OutputFolder, Parameters.SearchTaskId);
 
-            var k = CommonParameters;
+            
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
                 SpectralLibraryGeneration();

@@ -439,7 +439,7 @@ namespace Test
 
             var protein1 = new Protein("PEPVIDEKPEPT", "1", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 12, new List<Modification> { modToWrite } } }, sequenceVariations: variants);
             var protein2 = new Protein("PEPIDPEPT", "2", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 9, new List<Modification> { modToWrite } } });
-            var protein1Variants = protein1.GetVariantBioPolymers(1,0);           
+            var protein1Variants = protein1.GetVariantBioPolymers(1,0, maxSequenceVariantIsoforms: 10).Where(v=>v.AppliedSequenceVariations.Count > 0);           
             
             string path = @"temp";
 
@@ -458,12 +458,14 @@ namespace Test
 
             };
 
-            var db = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList, Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTestVariant/fakeDb.xml"));
+            var db = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList, Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTestVariant/fakeDb.xml"),
+                includeAppliedVariantEntries: true);
 
             var peptideObserved = protein1Variants.First().Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>())
             .Where(p => p.BaseSequence == "PEPT").First();
             PostSearchAnalysisParameters testPostTaskParameters = new PostSearchAnalysisParameters();
-            CommonParameters commonParam = new CommonParameters();
+            CommonParameters commonParam = new CommonParameters( maxSequenceVariantsPerIsoform: 1, minAlleleDepth: 0, maxSequenceVariantIsoforms:10);
+
             double[,] noiseData = new double[10000, 10000];
             noiseData[0, 0] = 1.0;
             List<Omics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Omics.Fragmentation.MatchedFragmentIon>() { };
@@ -501,8 +503,10 @@ namespace Test
                     SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 },
-                CommonParameters = new CommonParameters()
+                CommonParameters = commonParam
             };
+
+            
 
             var test = task5.RunTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest"), new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"), false) }, new List<string>() { mzmlName }, "name");
             testPostTaskParameters.SearchTaskResults = test;
@@ -510,10 +514,11 @@ namespace Test
             PostSearchAnalysisTask testPostTask = new PostSearchAnalysisTask();
             testPostTask.Parameters = testPostTaskParameters;
             testPostTask.CommonParameters = commonParam;
-            testPostTask.FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> { ("newMzMl.mzml", commonParam) };
+            testPostTask.FileSpecificParameters = new List<(string FileName, CommonParameters commonParam)> { ("newMzMl.mzml", commonParam) };
             testPostTask.Run();
 
-            var proteinsLoaded = ProteinDbLoader.LoadProteinXML(path, true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods);
+            var proteinsLoaded = ProteinDbLoader.LoadProteinXML(path, true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods,
+                maxSequenceVariantsPerIsoform: 1, minAlleleDepth: 0, maxSequenceVariantIsoforms: 10);
 
             // assert that mods on proteins are the same before/after task is run            
             Assert.That(protein1Variants.First().Accession, Is.EqualTo(proteinsLoaded.First().Accession));
@@ -521,11 +526,13 @@ namespace Test
             Assert.That(protein2.OneBasedPossibleLocalizedModifications.Count(), Is.EqualTo(proteinsLoaded.ElementAt(1).OneBasedPossibleLocalizedModifications.Count()));
 
             // assert that protein pruned DB has correct proteins mods
-            var proteinPruned = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDbproteinPruned.xml"), true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods1);
+            var proteinPruned = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDbproteinPruned.xml"), true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods1,
+                maxSequenceVariantsPerIsoform: 1, minAlleleDepth: 0, maxSequenceVariantIsoforms: 10);
             Assert.That(proteinPruned.Count().Equals(1));
             Assert.That(proteinPruned.FirstOrDefault().OneBasedPossibleLocalizedModifications.Count().Equals(1));
             // assert that mod-pruned DB has correct proteins and mods
-            var modPruned = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDbpruned.xml"), true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods2);
+            var modPruned = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDbpruned.xml"), true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods2,
+                maxSequenceVariantsPerIsoform: 1, minAlleleDepth: 0, maxSequenceVariantIsoforms: 10);
             Assert.That(modPruned.Count().Equals(2));
             Assert.That(modPruned.ElementAt(0).OneBasedPossibleLocalizedModifications.Count().Equals(1));
             Assert.That(modPruned.ElementAt(1).OneBasedPossibleLocalizedModifications.Count().Equals(1));
