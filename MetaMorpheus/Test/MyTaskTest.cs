@@ -734,6 +734,30 @@ namespace Test
             Assert.That(GlobalVariables.ErrorsReadingMods.Last(), Does.StartWith("Modification id and type are equal,"));
         }
 
+        [Test]
+        [NonParallelizable]
+        public static void TestAddMods_ModMatchIdOnlyButNotEqual_FromXml()
+        {
+            int startErrorCount = GlobalVariables.ErrorsReadingMods.Count;
+
+            var mod = GlobalVariables.AllModsKnown.First();
+            var sameIdButNotEqual = new Modification(mod.OriginalId, mod.Accession, "Tacos", mod.FeatureType, mod.Target, mod.LocationRestriction, mod.ChemicalFormula, null, mod.DatabaseReference, mod.TaxonomicRange, mod.Keywords, mod.NeutralLosses, mod.DiagnosticIons, mod.FileOrigin);
+
+            var modList = new List<Modification> { sameIdButNotEqual };
+            GlobalVariables.AddMods(modList, true);
+
+            var replacedMod = GlobalVariables.AllModsKnown.First(v => v.IdWithMotif == sameIdButNotEqual.IdWithMotif);
+            Assert.That(GlobalVariables.ErrorsReadingMods.Count, Is.EqualTo(startErrorCount));
+
+            Assert.That(replacedMod.IdWithMotif, Is.EqualTo(mod.IdWithMotif));
+            Assert.That(replacedMod.ModificationType, Is.Not.EqualTo(mod.ModificationType));
+            Assert.That(replacedMod.MonoisotopicMass, Is.EqualTo(mod.MonoisotopicMass).Within(1e-5));
+
+
+            // Ensure we put the original mod back for other tests
+            GlobalVariables.AddMods([mod], true);
+        }
+
         /// <summary>
         /// Tests that pepXML is written
         ///

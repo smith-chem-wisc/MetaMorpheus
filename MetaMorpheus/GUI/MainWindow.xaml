@@ -382,7 +382,7 @@
 
                     <!--Text content-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
-                        MetaMorpheus is a search program for MS/MS proteomics data. It takes a protein database (.xml or .fasta)
+                        MetaMorpheus is a search program for MS/MS proteomic and transcriptomic data. It takes a protein database (.xml or .fasta)
                         as input,as well as spectra files in ms2.msalign, .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library 
                         (.msp) can be used to improve search results.
                         
@@ -494,18 +494,31 @@
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
-                    <Label Content="Protein Databases and Spectral Libraries" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4"/>
+                    <Label Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4" Grid.Row="0"  >
+                        <Label.Content>
+                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Protein Databases and Spectral Libraries"/>
+                        </Label.Content>
+                    </Label>
 
                     <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Grid.ColumnSpan="4">
-                        Add 
+                        <Run>
+                            Add 
+                        </Run>
                         
                         <Hyperlink NavigateUri="https://www.uniprot.org/" RequestNavigate="Hyperlink_RequestNavigate">
                             reference proteome(s)
                         </Hyperlink> 
                         
-                        in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations,
-                        whereas .fasta format only contains amino acid sequences.
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static local:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter="in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations, whereas .fasta format only contains amino acid sequences."/>
+                            </Run.Text>
+                        </Run>
+
                        <Hyperlink NavigateUri="https://chemdata.nist.gov/dokuwiki/doku.php?id=peptidew:start" RequestNavigate="Hyperlink_RequestNavigate">
                             Spectral libraries
                        </Hyperlink>
