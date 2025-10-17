@@ -121,6 +121,12 @@ namespace Test.MetaDraw
             var intersect = newMatchedIons.Select(p => p.Annotation).Intersect(psmToResearch.MatchedIons.Select(p => p.Annotation));
             Assert.That(intersect.Count(), Is.EqualTo(psmToResearch.MatchedIons.Count));
 
+            // Search with all charges
+            viewModel.MatchAllCharges = true;
+            var allChargeIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            Assert.That(psmToResearch.MatchedIons.Count, Is.LessThan(allChargeIons.Count));
+            viewModel.MatchAllCharges = false;
+
             // perform the same operation but also with internal ions
             viewModel.UseInternalIons = true;
             viewModel.MinInternalIonLength = 3;
