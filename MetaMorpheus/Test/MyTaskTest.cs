@@ -17,6 +17,7 @@ using UsefulProteomicsDatabases;
 using NUnit.Framework.Legacy;
 using System.Text;
 using Omics.BioPolymer;
+using Chemistry;
 
 namespace Test
 {
@@ -669,6 +670,68 @@ namespace Test
             // should have an error message...
             Assert.That(GlobalVariables.ErrorsReadingMods.Where(v => v.Contains("Hydroxyproline")).Count() > 0);
             Directory.Delete(outputDir, true);
+        }
+
+        [Test]
+        public static void TestAddMods_NullCases()
+        {
+            int startErrorCount = GlobalVariables.ErrorsReadingMods.Count;
+
+            var mod = GlobalVariables.AllModsKnown.First();
+            var nullId = new Modification(null!, mod.Accession, mod.ModificationType, mod.FeatureType, mod.Target, mod.LocationRestriction, mod.ChemicalFormula, mod.MonoisotopicMass.Value!, mod.DatabaseReference, mod.TaxonomicRange, mod.Keywords, mod.NeutralLosses, mod.DiagnosticIons, mod.FileOrigin);
+            var nullType = new Modification(mod.OriginalId, mod.Accession, null!, mod.FeatureType, mod.Target, mod.LocationRestriction, mod.ChemicalFormula, mod.MonoisotopicMass.Value!, mod.DatabaseReference, mod.TaxonomicRange, mod.Keywords, mod.NeutralLosses, mod.DiagnosticIons, mod.FileOrigin);
+
+            var modList = new List<Modification> { nullId };
+            GlobalVariables.AddMods(modList, false);
+            Assert.That(GlobalVariables.ErrorsReadingMods.Count, Is.EqualTo(startErrorCount + 1));
+            Assert.That(GlobalVariables.ErrorsReadingMods.Last(), Does.EndWith(" has null or empty modification type"));
+
+            modList = new List<Modification> { nullType };
+            GlobalVariables.AddMods(modList, false);
+            Assert.That(GlobalVariables.ErrorsReadingMods.Count, Is.EqualTo(startErrorCount + 2));
+            Assert.That(GlobalVariables.ErrorsReadingMods.Last(), Does.EndWith(" has null or empty modification type"));
+        }
+
+        [Test]
+        [NonParallelizable]
+        public static void TestAddMods_ModMatchButNotEqual_FromXml()
+        {
+            int startErrorCount = GlobalVariables.ErrorsReadingMods.Count;
+
+            var waterChemicalFormula = ChemicalFormula.ParseFormula("H2O");
+            var mod = GlobalVariables.AllModsKnown.First();
+            var modMass = mod.MonoisotopicMass!.Value;
+            var sameIdButNotEqual = new Modification(mod.OriginalId, mod.Accession, mod.ModificationType, mod.FeatureType, mod.Target, mod.LocationRestriction, mod.ChemicalFormula + waterChemicalFormula, null, mod.DatabaseReference, mod.TaxonomicRange, mod.Keywords, mod.NeutralLosses, mod.DiagnosticIons, mod.FileOrigin);
+
+            var modList = new List<Modification> { sameIdButNotEqual };
+            GlobalVariables.AddMods(modList, true);
+
+            var replacedMod = GlobalVariables.AllModsKnown.First(v => v.IdWithMotif == sameIdButNotEqual.IdWithMotif);
+            Assert.That(GlobalVariables.ErrorsReadingMods.Count, Is.EqualTo(startErrorCount));
+
+            Assert.That(replacedMod.IdWithMotif, Is.EqualTo(mod.IdWithMotif));
+            Assert.That(replacedMod.MonoisotopicMass, Is.EqualTo(modMass + waterChemicalFormula.MonoisotopicMass).Within(1e-5));
+
+            // Ensure we put the original mod back for other tests
+            GlobalVariables.AddMods([mod], true);
+        }
+
+        [Test]
+        [NonParallelizable]
+        public static void TestAddMods_ModMatchButNotEqual_NotFromXml()
+        {
+            int startErrorCount = GlobalVariables.ErrorsReadingMods.Count;
+
+            var waterChemicalFormula = ChemicalFormula.ParseFormula("H2O");
+            var mod = GlobalVariables.AllModsKnown.First();
+            var modMass = mod.MonoisotopicMass!.Value;
+            var sameIdButNotEqual = new Modification(mod.OriginalId, mod.Accession, mod.ModificationType, mod.FeatureType, mod.Target, mod.LocationRestriction, mod.ChemicalFormula + waterChemicalFormula, null, mod.DatabaseReference, mod.TaxonomicRange, mod.Keywords, mod.NeutralLosses, mod.DiagnosticIons, mod.FileOrigin);
+
+            var modList = new List<Modification> { sameIdButNotEqual };
+            GlobalVariables.AddMods(modList, false);
+
+            Assert.That(GlobalVariables.ErrorsReadingMods.Count, Is.EqualTo(startErrorCount + 1));
+            Assert.That(GlobalVariables.ErrorsReadingMods.Last(), Does.StartWith("Modification id and type are equal,"));
         }
 
         /// <summary>

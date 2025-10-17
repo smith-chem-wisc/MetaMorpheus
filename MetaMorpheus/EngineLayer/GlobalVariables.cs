@@ -94,7 +94,6 @@ namespace EngineLayer
             var allMods = isRna ? _AllRnaModsKnown : _AllModsKnown;
             var modTypes = isRna ? _AllRnaModTypesKnown : _AllModTypesKnown;
 
-
             foreach (var mod in modifications)
             {
                 if (string.IsNullOrEmpty(mod.ModificationType) || string.IsNullOrEmpty(mod.IdWithMotif))
@@ -117,14 +116,14 @@ namespace EngineLayer
                     }
                     continue;
                 }
-                else if (allMods.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType)))
+                if (allMods.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType)))
                 {
                     // same ID, same mod type, and same mod properties; continue and don't output an error message
                     // this could result from reading in an XML database with mods annotated at the top
                     // that are already loaded in MetaMorpheus
                     continue;
                 }
-                else if (allMods.Any(m => m.IdWithMotif == mod.IdWithMotif))
+                if (allMods.Any(m => m.IdWithMotif == mod.IdWithMotif))
                 {
                     // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
                     // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
@@ -141,12 +140,10 @@ namespace EngineLayer
                     }
                     continue;
                 }
-                else
-                {
-                    // no errors! add the mod
-                    allMods.Add(mod);
-                    modTypes.Add(mod.ModificationType);
-                }
+
+                // no errors! add the mod
+                allMods.Add(mod);
+                modTypes.Add(mod.ModificationType);
             }
         }
 
