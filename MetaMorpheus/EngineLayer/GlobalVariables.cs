@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using TopDownProteomics;
@@ -446,10 +447,8 @@ namespace EngineLayer
             using (var reader = new StreamReader(stream))
             {
                 string fileContent = reader.ReadToEnd();
-                foreach (var mod in PtmListLoader.ReadModsFromString(fileContent, out var errors))
-                {
-                    _AllRnaModsKnown.Add(mod);
-                }
+                var mods = PtmListLoader.ReadModsFromString(fileContent, out var errors);
+                AddMods(mods, false, true);
             }
 
             var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");

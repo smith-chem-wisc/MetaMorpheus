@@ -7,11 +7,14 @@ using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
+using MzLibUtil;
 using Nett;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using Readers;
 using TaskLayer;
+using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
 
 namespace Test.MetaDraw
 {
@@ -102,7 +105,7 @@ namespace Test.MetaDraw
             viewModel.ProductIonMassTolerance = 2;
             newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
             Assert.That(newMatchedIons.Count < psmToResearch.MatchedIons.Count);
-            viewModel.ProductIonMassTolerance = 20;
+            viewModel.ProductIonMassTolerance = 150; // Set big to ensure intersection with XCorr results. 
 
             // ensure ambiguous psms get kicked out before reanalysis
             var ambiguousPsm = parsedPsms.First(p => p.FullSequence.Contains('|'));
@@ -115,7 +118,7 @@ namespace Test.MetaDraw
             // searching with additional ions should yield more 
             Assert.That(psmToResearch.MatchedIons.Count, Is.LessThan(newMatchedIons.Count));
             // all original ions should be retained
-            var intersect = newMatchedIons.Intersect(psmToResearch.MatchedIons);
+            var intersect = newMatchedIons.Select(p => p.Annotation).Intersect(psmToResearch.MatchedIons.Select(p => p.Annotation));
             Assert.That(intersect.Count(), Is.EqualTo(psmToResearch.MatchedIons.Count));
 
             // perform the same operation but also with internal ions
@@ -128,11 +131,77 @@ namespace Test.MetaDraw
             Assert.That(newMatchedIons.Count, Is.LessThan(internalIonNewIons.Count));
 
             // all original ions should be retained
-            intersect = internalIonNewIons.Intersect(psmToResearch.MatchedIons);
+            intersect = internalIonNewIons.Select(p => p.Annotation).Intersect(psmToResearch.MatchedIons.Select(p => p.Annotation));
             Assert.That(intersect.Count(), Is.EqualTo(psmToResearch.MatchedIons.Count));
 
             // clean up
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        [NonParallelizable]
+        public static void TestFragmentationReanalysisViewModel_RematchIons_RNA()
+        {
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            var viewModel = new FragmentationReanalysisViewModel(false);
+            viewModel.SelectedDissociationType = DissociationType.CID;
+
+            // run a quick search 
+            var searchTaskLoaded = new SearchTask()
+            {
+                SearchParameters = new RnaSearchParameters
+                {
+                    DecoyType = DecoyType.Reverse,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Custom,
+                    CustomMdac = "Custom interval [-5,5]",
+                    DisposeOfFileWhenDone = true
+                },
+                CommonParameters = new CommonParameters
+                (
+                    dissociationType: DissociationType.CID,
+                    deconvolutionMaxAssumedChargeState: -20,
+                    deconvolutionIntensityRatio: 3,
+                    deconvolutionMassTolerance: new PpmTolerance(4),
+                    precursorMassTolerance: new PpmTolerance(5),
+                    productMassTolerance: new PpmTolerance(20),
+                    scoreCutoff: 5,
+                    totalPartitions: 1,
+                    maxThreadsToUsePerFile: 1,
+                    doPrecursorDeconvolution: true,
+                    useProvidedPrecursorInfo: false,
+                    digestionParams: new RnaDigestionParams()
+                ),
+            };
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestRefragmentRNA");
+            var myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"Transcriptomics\TestData\GUACUG_NegativeMode_Sliced.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"Transcriptomics\TestData\6mer.fasta");
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engineToml.Run();
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllOSMs.osmtsv");
+            var dataFile = MsDataFileReader.GetDataFile(myFile);
+
+            // parse out psm and its respective scan
+            List<OsmFromTsv> parsedOsms = SpectrumMatchTsvReader.ReadOsmTsv(psmFile, out var warnings);
+            var psmToResearch = parsedOsms.First();
+            var scan = dataFile.GetOneBasedScan(psmToResearch.Ms2ScanNumber);
+
+            // increase product ion tolerance and ensure more ions are found
+            viewModel.ProductIonMassTolerance = 200;
+            var newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            Assert.That(psmToResearch.MatchedIons.Count < newMatchedIons.Count);
+
+            // decrease product ion tolerance and ensure fewer ions are found
+            viewModel.ProductIonMassTolerance = 2;
+            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            Assert.That(newMatchedIons.Count < psmToResearch.MatchedIons.Count);
+            viewModel.ProductIonMassTolerance = 20;
+
+            viewModel.PossibleProducts.ForEach(p => p.Use = true);
+            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+
+            // clean up
+            Directory.Delete(outputFolder, true);
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
         }
     }
 }

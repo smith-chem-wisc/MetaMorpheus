@@ -111,6 +111,13 @@ namespace GuiFunctions
             set { _productIonMassTolerance = value; OnPropertyChanged(nameof(ProductIonMassTolerance)); }
         }
 
+        private bool _matchAllCharges;
+        public bool MatchAllCharges
+        {
+            get => _matchAllCharges;
+            set { _matchAllCharges = value; OnPropertyChanged(nameof(MatchAllCharges)); }
+        }
+
         private IEnumerable<FragmentViewModel> GetPossibleProducts()
         {
             foreach (var product in Enum.GetValues<ProductType>())
@@ -215,26 +222,6 @@ namespace GuiFunctions
 
             IBioPolymerWithSetMods bioPolymer = smToRematch.ToBioPolymerWithSetMods();
 
-            // temp patch until fragment is no longer dependent upon parent. 
-            if (!smToRematch.IsPeptide())
-            {
-                var nucleolyticOligo = bioPolymer as NucleolyticOligo;
-                if (nucleolyticOligo != null)
-                {
-                    // Convert GlobalVariables.AllModsKnown (IEnumerable<Modification>) to the expected type: IDictionary<int, List<Modification>>?
-                    // If you have no modifications, pass null; otherwise, build the dictionary as needed.
-                    // If you need to map modifications, do so here. For now, pass null as in most usages.
-                    var rna = new RNA(bioPolymer.BaseSequence);
-
-                    // Use reflection to set the protected setter of NucleicAcid
-                    var prop = typeof(NucleolyticOligo).GetProperty("NucleicAcid");
-                    if (prop != null)
-                    {
-                        prop.SetValue(nucleolyticOligo, rna);
-                    }
-                }
-            }
-
             List<Product> terminalProducts = new List<Product>();
             smToRematch.ProductsFromDissociationType()[DissociationType.Custom] = _productsToUse.ToList(); 
             bioPolymer.Fragment(DissociationType.Custom, FragmentationTerminus.Both, terminalProducts);
@@ -247,26 +234,40 @@ namespace GuiFunctions
             }
             var allProducts = terminalProducts.Concat(internalProducts).ToList();
 
-            // TODO: Adjust decon params for when RNA gets incorporated
-            var commonParams = new CommonParameters();
+            // These will either be default or parsed from the search toml leading to the PSMs. 
+            var commonParams = new CommonParameters(
+                precursorDeconParams: MetaDrawSettingsViewModel.Instance.DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters,
+                productDeconParams: MetaDrawSettingsViewModel.Instance.DeconHostViewModel.ProductDeconvolutionParameters.Parameters,
+                deconvolutionMaxAssumedChargeState: _isProtein ? 60 : -60,
+                digestionParams: _isProtein ? new DigestionParams() : new RnaDigestionParams() // no digestion occurs, just used to set values. S
+                );
+
+
             if (Math.Abs(commonParams.ProductMassTolerance.Value - ProductIonMassTolerance) > 0.00001)
                 commonParams.ProductMassTolerance = new PpmTolerance(ProductIonMassTolerance);
 
             var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, smToRematch.PrecursorMz,
                 smToRematch.PrecursorCharge, smToRematch.FileNameWithoutExtension, commonParams);
 
+            var newMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, MatchAllCharges);
+            var uniqueMatches = newMatches.Concat(smToRematch.MatchedIons)
+                .Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType))
+                .Where(p => Math.Abs(p.MassErrorPpm) <= ProductIonMassTolerance);
 
-            var newMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false);
-            var existingMatches = smToRematch.MatchedIons.Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType));
-            var uniqueMatches = newMatches.Concat(existingMatches)
-                .Distinct(MatchedFragmentIonComparer)
+            // retain only internal ions
+            if (!UseInternalIons)
+                uniqueMatches = uniqueMatches.Where(p => !p.IsInternalFragment);
+            // retain terminal and internals greater than min length
+            else
+                uniqueMatches = uniqueMatches.Where(p => !p.IsInternalFragment || Math.Abs(p.NeutralTheoreticalProduct.FragmentNumber - p.NeutralTheoreticalProduct.SecondaryFragmentNumber) >= MinInternalIonLength);
+
+            return uniqueMatches.Distinct(MatchedFragmentIonComparer)
                 .ToList();
-            return uniqueMatches;
         }
 
         public static readonly IEqualityComparer<MatchedFragmentIon> MatchedFragmentIonComparer = new MatchedFragmentIonEqualityComparer();
 
-        private class MatchedFragmentIonEqualityComparer : IEqualityComparer<MatchedFragmentIon>
+        public class MatchedFragmentIonEqualityComparer : IEqualityComparer<MatchedFragmentIon>
         {
             public bool Equals(MatchedFragmentIon x, MatchedFragmentIon y)
             {
