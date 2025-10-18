@@ -34,7 +34,7 @@ namespace TaskLayer
 
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
+        protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
             FileSpecificParameters[] fileSettingsList)
         {
             // comment to force new checks on github
@@ -59,7 +59,7 @@ namespace TaskLayer
                 // get filename stuff
                 var originalUnaveragedFilepath = currentRawFileList[spectraFileIndex];
                 var originalUnaveragedFilepathWithoutExtenstion = Path.GetFileNameWithoutExtension(originalUnaveragedFilepath);
-                var averagedFilepath = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".mzML");
+                var averagedFilepath = Path.Combine(outputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".mzML");
                 averagedFilepath = PathSafety.MakeSafeOutputPath(averagedFilepath, AveragingSuffix + ".mzML");
                 var originalFileExtension = GlobalVariables.GetFileExtension(originalUnaveragedFilepath);
                 if (originalFileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase))
@@ -99,7 +99,7 @@ namespace TaskLayer
                 if (fileSettingsList[spectraFileIndex] != null)
                 {
                     var fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();// write toml settings for the averaged file if there are file specific parameters
-                    var newTomlFileName = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".toml");
+                    var newTomlFileName = Path.Combine(outputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".toml");
                     Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
                     FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
                     MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
@@ -121,7 +121,7 @@ namespace TaskLayer
                     Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
                 if (File.Exists(assumedPathToExperDesign))
                 {
-                    WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, currentRawFileList,
+                    WriteNewExperimentalDesignFile(assumedPathToExperDesign, outputFolder, currentRawFileList,
                         unsuccessfulyAveragedFilePaths);
                 }
             }

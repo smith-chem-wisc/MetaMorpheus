@@ -39,7 +39,7 @@ namespace TaskLayer
 
         public XlSearchParameters XlSearchParameters { get; set; }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
             List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan = new List<List<CrosslinkSpectralMatch>>();
@@ -238,7 +238,7 @@ namespace TaskLayer
                     _postXLSearchAnalysisTask.FileSpecificParameters = this.FileSpecificParameters;
                     if (currentRawFileList.Count > 1)
                     {
-                        var _filteredAllPsms = _postXLSearchAnalysisTask.RunSingleFile(OutputFolder + '/' + Path.GetFileNameWithoutExtension(origDataFile), taskId,
+                        var _filteredAllPsms = _postXLSearchAnalysisTask.RunSingleFile(outputFolder + '/' + Path.GetFileNameWithoutExtension(origDataFile), taskId,
                             _ListOfCsmsPerMS2ScanParsimony.Select(p => p.First()).OrderByDescending(p => p.XLTotalScore).ToList(), XlSearchParameters);
                         AllCsms.AddRange(_filteredAllPsms);
                     }
@@ -258,7 +258,7 @@ namespace TaskLayer
             PostXLSearchAnalysisTask postXLSearchAnalysisTask = new PostXLSearchAnalysisTask();
             postXLSearchAnalysisTask.FileSpecificParameters = this.FileSpecificParameters;
 
-            return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, AllCsms.OrderByDescending(p => p.XLTotalScore).ToList(), CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
+            return postXLSearchAnalysisTask.Run(outputFolder, dbFilenameList, currentRawFileList, taskId, AllCsms.OrderByDescending(p => p.XLTotalScore).ToList(), CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
         }
 
 

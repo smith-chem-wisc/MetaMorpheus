@@ -217,9 +217,6 @@ namespace Test
         {
             CalibrationTask calibrationTask = new CalibrationTask();
 
-            CommonParameters CommonParameters = new(dissociationType: DissociationType.LowCID,
-                scoreCutoff: 1);
-
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationLow");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");

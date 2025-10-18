@@ -85,7 +85,7 @@ namespace TaskLayer
             }
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, 
+        protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, 
             FileSpecificParameters[] fileSettingsList)
         {
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
@@ -461,8 +461,8 @@ namespace TaskLayer
                 CurrentRawFileList = currentRawFileList,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,
-                OutputFolder = OutputFolder,
-                IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results"),
+                OutputFolder = outputFolder,
+                IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),
                 FlashLfqResults = flashLfqResults,
                 FileSettingsList = fileSettingsList,
                 NumMs2SpectraPerFile = numMs2SpectraPerFile,
