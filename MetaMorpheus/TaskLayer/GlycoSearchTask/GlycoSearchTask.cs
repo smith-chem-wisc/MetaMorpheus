@@ -39,7 +39,7 @@ namespace TaskLayer
 
         public GlycoSearchParameters _glycoSearchParameters { get; set; }
 
-        protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
             List<List<GlycoSpectralMatch>> ListOfGsmsPerMS2Scan = new List<List<GlycoSpectralMatch>>();
@@ -207,8 +207,8 @@ namespace TaskLayer
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
                 AllPsms = filteredAllPsms.OrderByDescending(p => p.Score).ToList(),
-                OutputFolder = outputFolder,
-                IndividualResultsOutputFolder = Path.Combine(outputFolder, "IndividualFileResults"),
+                OutputFolder = OutputFolder,
+                IndividualResultsOutputFolder = Path.Combine(OutputFolder, "IndividualFileResults"),
                 FlashLfqResults = flashLfqResults,
                 FileSettingsList = fileSettingsList,
                 DatabaseFilenameList = dbFilenameList,
@@ -223,7 +223,7 @@ namespace TaskLayer
                 CommonParameters = this.CommonParameters
             };
 
-            return postGlycoSearchAnalysisTask.Run(outputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.Score).ToList(), CommonParameters, _glycoSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
+            return postGlycoSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.Score).ToList(), CommonParameters, _glycoSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
 
         }
 

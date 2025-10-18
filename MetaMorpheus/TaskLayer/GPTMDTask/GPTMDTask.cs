@@ -35,7 +35,7 @@ namespace TaskLayer
 
         public GptmdParameters GptmdParameters { get; set; }
 
-        protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             bool isProtein = GlobalVariables.AnalyteType != AnalyteType.Oligo;
             MyFileManager myFileManager = new MyFileManager(true);
@@ -196,7 +196,7 @@ namespace TaskLayer
                     bool compressed = theExtension.EndsWith("gz");
                     databaseNames.Add(compressed ? Path.GetFileNameWithoutExtension(dbName) : dbName);
                 }
-                string outputXMLdbFullName = Path.Combine(outputFolder, string.Join("-", databaseNames) + GptmdDatabaseSuffix);
+                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + GptmdDatabaseSuffix);
                 outputXMLdbFullName = PathSafety.MakeSafeOutputPath(outputXMLdbFullName, GptmdDatabaseSuffix);
 
                 var newModsActuallyWritten = isProtein
@@ -225,7 +225,7 @@ namespace TaskLayer
                     int indexOfFirstDot = dbName.IndexOf(".");
                     databaseNames.Add(dbName.Substring(0, indexOfFirstDot));
                 }
-                string outputXMLdbFullNameContaminants = Path.Combine(outputFolder, string.Join("-", databaseNames) + GptmdDatabaseSuffix);
+                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + GptmdDatabaseSuffix);
                 outputXMLdbFullNameContaminants = PathSafety.MakeSafeOutputPath(outputXMLdbFullNameContaminants, GptmdDatabaseSuffix);
 
                 var newModsActuallyWritten = isProtein
