@@ -38,12 +38,10 @@ namespace TaskLayer
         private static readonly int NumRequiredMs1Datapoints = 40;
         private static readonly int NumRequiredMs2Datapoints = 80;
         private static readonly double InitialSearchToleranceMultiplier = 2.0;
-
-
-        private static readonly double PrecursorMultiplierForToml = 5;
-        private static readonly double ProductMultiplierForToml = 10;
-        private static readonly double InitialProductTolerance = 50;
-        private static readonly double InitialPrecursorTolerance = 20;
+        private static readonly double PrecursorMultiplierForToml = 3;
+        private static readonly double ProductMultiplierForToml = 6;
+        private static readonly double InitialProductTolerance = 30;
+        private static readonly double InitialPrecursorTolerance = 10;
 
         public const string CalibSuffix = "-calib";
 
@@ -88,7 +86,7 @@ namespace TaskLayer
                 Status("Loading spectra file...", new List<string> { _taskId, "Individual Spectra Files" });
                 MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams).LoadAllStaticData();
 
-                // First round of Calibration
+                // First round of calibration
                 Status("Acquiring calibration data points...", new List<string> { _taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams);
 
@@ -121,9 +119,10 @@ namespace TaskLayer
 
                 // If the second acquisition results are worse, then calibration made things worse. So we should give up 
                 // and write the uncalibrated file
+                // TODO: We should check if calibration made things better, and if so keep the calibrated file
+                // this if statement only checks if things got worse
                 if (!SufficientAcquisitionResults(acquisitionResultsSecond))
                 {
-                    // TODO: Still Write the toml here
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, taskId);
                     continue;
                 }
@@ -146,12 +145,12 @@ namespace TaskLayer
                     UpdateCombinedParameters(combinedParams, acquisitionResultsThird);
                 }
 
-                // write toml settings for the calibrated file
-                string calibratedTomlFilename = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
-
                 // Update file specific params to reflect the new tolerances, then write them out
                 fileSpecificParams.PrecursorMassTolerance = combinedParams.PrecursorMassTolerance;
                 fileSpecificParams.ProductMassTolerance = combinedParams.ProductMassTolerance;
+
+                // write toml settings for the calibrated file
+                string calibratedTomlFilename = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
                 CalibrationOutput(myMsDataFile, calibratedNewFullFilePath, fileSpecificParams, calibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
 
                 // finished calibrating this file
@@ -161,16 +160,22 @@ namespace TaskLayer
             }
 
             // re-write experimental design (if it has been defined) with new calibrated file names
+            UpdateExperimentalDesignFile(currentRawFileList, outputFolder);
+
+            // finished calibrating all files for the task
+            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
+
+            return MyTaskResults;
+        }
+
+        private void UpdateExperimentalDesignFile(List<string> currentRawFileList, string outputFolder)
+        {
             string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
             assumedPathToExperDesign = Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
             if (File.Exists(assumedPathToExperDesign))
             {
                 WriteNewExperimentalDesignFile(assumedPathToExperDesign, outputFolder, currentRawFileList, _unsuccessfullyCalibratedFilePaths);
             }
-            // finished calibrating all files for the task
-            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
-
-            return MyTaskResults;
         }
 
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters)
@@ -364,7 +369,7 @@ namespace TaskLayer
                  Math.Round(newProductTolerance, 2) + " ppm product");
         }
 
-        private void CalibrationWarnMessage(DataPointAquisitionResults acquisitionResults)
+        public void CalibrationWarnMessage(DataPointAquisitionResults acquisitionResults)
         {
             // provide a message indicating why we couldn't calibrate
             if (acquisitionResults.Psms.Count < NumRequiredPsms)
