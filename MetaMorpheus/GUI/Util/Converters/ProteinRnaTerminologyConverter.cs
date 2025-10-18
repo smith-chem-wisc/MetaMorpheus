@@ -24,6 +24,7 @@ namespace MetaMorpheusGUI
             { "Peptide", "Oligo" },
             { "Peptides", "Oligos" },
             { "proteome", "transcriptome" },
+            { "Proteoform", "Oligo" },
             { "post-translational", "post-transcriptional" },
             { "PSM", "OSM" },
             { "PSMs", "OSMs" },
