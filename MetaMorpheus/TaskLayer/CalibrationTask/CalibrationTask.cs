@@ -85,6 +85,13 @@ namespace TaskLayer
                 1));
         }
 
+        public void WarnForWiderTolerance(double newPrecursorTolerance, double newProductTolerance)
+        {
+            Warn("Could not find enough PSMs to calibrate with; opening up tolerances to " +
+                 Math.Round(newPrecursorTolerance, 2) + " ppm precursor and " +
+                 Math.Round(newProductTolerance, 2) + " ppm product");
+        }
+
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
@@ -142,8 +149,10 @@ namespace TaskLayer
                 //not enough points on the first go so try again with a little wider tolerance
                 if (!SufficientAcquisitionResults(acquisitionResultsFirst))
                 {
+                    WarnForWiderTolerance(combinedParams.PrecursorMassTolerance.Value * InitialSearchToleranceMultiplier, combinedParams.ProductMassTolerance.Value * InitialSearchToleranceMultiplier);
                     acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams,
-                    new PpmTolerance(combinedParams.ProductMassTolerance.Value * InitialSearchToleranceMultiplier), new PpmTolerance(combinedParams.PrecursorMassTolerance.Value * InitialSearchToleranceMultiplier));
+                        precursorTolerance: new PpmTolerance(combinedParams.ProductMassTolerance.Value * InitialSearchToleranceMultiplier),
+                        productTolerance: new PpmTolerance(combinedParams.PrecursorMassTolerance.Value * InitialSearchToleranceMultiplier));
                 }
                 // If there still aren't enough points, give up
                 if(!SufficientAcquisitionResults(acquisitionResultsFirst))
@@ -301,13 +310,13 @@ namespace TaskLayer
         }
 
         private void WriteUncalibratedFile(string originalUncalibratedFilePath, string uncalibratedNewFullFilePath, List<string> unsuccessfullyCalibratedFilePaths,
-            DataPointAquisitionResults acquisitionResultsFirst, string taskId)
+            DataPointAquisitionResults acquisitionResults, string taskId)
         {
             // if we didn't calibrate, write the uncalibrated file to the output folder as an mzML
             File.Copy(originalUncalibratedFilePath, uncalibratedNewFullFilePath, true);
             unsuccessfullyCalibratedFilePaths.Add(uncalibratedNewFullFilePath);
             // provide a message indicating why we couldn't calibrate
-            CalibrationWarnMessage(acquisitionResultsFirst);
+            CalibrationWarnMessage(acquisitionResults);
             FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) }));
         }
