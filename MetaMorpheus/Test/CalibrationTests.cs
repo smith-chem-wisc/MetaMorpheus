@@ -73,6 +73,63 @@ namespace Test
         }
 
         [Test]
+        [TestCase("filename1.mzML")]
+        public static void TestWindowExpands(string nonCalibratedFile)
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(unitTestFolder, nonCalibratedFile);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            // set up original experimental design (input to calibration)
+            SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
+            _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+
+            // run calibration
+            CalibrationTask calibrationTask = new();
+            calibrationTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(2);
+            calibrationTask.CommonParameters.ProductMassTolerance = new PpmTolerance(2);
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+
+            // test new experimental design written by calibration
+            var newExpDesignPath = Path.Combine(outputFolder, @"ExperimentalDesign.tsv");
+            string expectedCalibratedFileName = Path.GetFileNameWithoutExtension(nonCalibratedFilePath) + "-calib.mzML";
+            var expectedCalibratedFilePath = Path.Combine(outputFolder, expectedCalibratedFileName);
+            var newExperDesign = ExperimentalDesign.ReadExperimentalDesign(newExpDesignPath, new List<string> { expectedCalibratedFilePath }, out var errors);
+
+            Assert.That(!errors.Any());
+            Assert.That(newExperDesign.Count == 1);
+
+            // test file-specific toml written by calibration w/ suggested ppm tolerances
+            string expectedTomlName = Path.GetFileNameWithoutExtension(nonCalibratedFilePath) + "-calib.toml";
+
+            Assert.That(File.Exists(Path.Combine(outputFolder, expectedTomlName)));
+
+            var lines = File.ReadAllLines(Path.Combine(outputFolder, expectedTomlName));
+            var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
+            var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
+
+            Assert.That(double.TryParse(tolerance, out double tol) == true);
+            Assert.That(double.TryParse(tolerance1, out double tol1) == true);
+            Assert.That(lines[0].Contains("PrecursorMassTolerance"));
+            Assert.That(lines[1].Contains("ProductMassTolerance"));
+
+            // check that calibrated .mzML exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, expectedCalibratedFilePath)));
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
+
+        [Test]
         public static void CalibrationTestNoPsms()
         {
             // set up directories
