@@ -865,7 +865,7 @@ namespace TaskLayer
                     .Where(b => !localizeableModificationTypes.Contains(b))
                     .ToList();
 
-                // IMPORTANT: pass variant/truncation parameters so variant-applied isoforms are emitted
+                // IMPORTANT: pass variant/truncation parameters so variant-applied isoforms can be emitted
                 rnaList = RnaDbLoader.LoadRnaXML(
                     fileName,
                     generateTargets,
@@ -878,7 +878,9 @@ namespace TaskLayer
                     maxSequenceVariantsPerIsoform: commonParameters.MaxSequenceVariantsPerIsoform,
                     minAlleleDepth: commonParameters.MinAlleleDepth,
                     maxSequenceVariantIsoforms: commonParameters.MaxSequenceVariantIsoforms,
-                    addTruncations: commonParameters.AddTruncations
+                    fivePrimeTerm: null,
+                    threePrimeTerm: null,
+                    decoyIdentifier: "DECOY"
                 );
             }
 
