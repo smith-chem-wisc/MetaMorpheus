@@ -53,32 +53,6 @@ namespace EngineLayer.Calibration
         public readonly double PsmProductIqrPpmError;
         public readonly List<SpectralMatch> Psms;
 
-        public void WriteResults(string outputFolder)
-        {
-            // Write out the Ms1List as a tsv file,
-            // with columns: ExperimentalMz, TheoreticalMz, Intensity, ScanNumber, Charge, PeptideSequence
-            var ms1OutputPath = System.IO.Path.Combine(outputFolder, "Ms1CalibrationDataPoints.tsv");
-            using(var sw = new StreamWriter(ms1OutputPath))
-            {
-                sw.WriteLine("ExperimentalMz\tTheoreticalMz\tRelativeError\tLogIntensity\tScanNumber\tCharge");
-                foreach (var dataPoint in Ms1List)
-                {
-                    sw.WriteLine($"{dataPoint.ExperimentalMz}\t{dataPoint.TheoreticalMz}\t{dataPoint.RelativeMzError}\t{dataPoint.LogIntensity}\t{dataPoint.ScanNumber}");
-                }
-            }
-            // Write out the Ms2List as a tsv file
-            var ms2OutputPath = System.IO.Path.Combine(outputFolder, "Ms2CalibrationDataPoints.tsv");
-            using (var sw = new StreamWriter(ms2OutputPath))
-            {
-                sw.WriteLine("ExperimentalMz\tTheoreticalMz\tRelativeError\tLogIntensity\tScanNumber\tCharge");
-                foreach (var dataPoint in Ms2List)
-                {
-                    sw.WriteLine($"{dataPoint.ExperimentalMz}\t{dataPoint.TheoreticalMz}\t{dataPoint.RelativeMzError}\t{dataPoint.LogIntensity}\t{dataPoint.ScanNumber}");
-                }
-            }
-
-        }
-
         public override string ToString()
         {
             var sb = new StringBuilder();

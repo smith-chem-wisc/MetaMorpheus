@@ -40,8 +40,8 @@ namespace TaskLayer
         private static readonly double InitialSearchToleranceMultiplier = 2.0;
         private static readonly double PrecursorMultiplierForToml = 3;
         private static readonly double ProductMultiplierForToml = 6;
-        private static readonly double InitialProductTolerance = 30;
         private static readonly double InitialPrecursorTolerance = 10;
+        private static readonly double InitialProductTolerance = 30;
 
         public const string CalibSuffix = "-calib";
 
