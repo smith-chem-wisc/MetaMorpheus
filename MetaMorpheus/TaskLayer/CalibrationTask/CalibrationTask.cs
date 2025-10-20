@@ -107,8 +107,6 @@ namespace TaskLayer
                     continue;
                 }
 
-                acquisitionResultsFirst.WriteResults(outputFolder);
-
                 // Second round of calibration
                 UpdateCombinedParameters(combinedParams, acquisitionResultsFirst);
 
