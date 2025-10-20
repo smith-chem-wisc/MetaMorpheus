@@ -36,8 +36,8 @@ namespace Test
             int expectedDataPointAcquisitionCount = 3;
             int expectedFdrAnalysisEngineCount = 3;
 
-            double[] expectedPrecursorTolerances = [30, 7.7, 7.4];
-            double[] expectedProductTolerances = [10, 13, 13];
+            double[] expectedPrecursorTolerances = [10, 8.6, 7.3];
+            double[] expectedProductTolerances = [30, 14.4, 13.9];
 
             int classicSearchEngineCount = 0;
             int calibrationEngineCount = 0;
@@ -48,6 +48,11 @@ namespace Test
             List<(double precursor, double product, double expectedPrecursor, double expectedProduct)> calibrationResults = new();
             List<(double precursor, double product, double expectedPrecursor, double expectedProduct)> dataPointAcquisitionResults = new();
 
+            // In one Calibration task, the ClassicSearchEngine, DataPointAcquisitionEngine, and FdrAnalysisEngine all run three times,
+            // Each time, calibration is refined and tolerances get progressively smaller. 
+            // This event handler listens for engine calls, and records what tolerances are used on each call.
+            // This is compared to the expected values, which start with the initial default tolerances (10 precursor, 30 product),
+            // and then get smaller with each calibration round in a way which is dependent on the data being calibrated
             EventHandler<SingleEngineFinishedEventArgs> finishedEngineEventHandler = (sender, e) =>
             {
                 switch (sender)
@@ -74,6 +79,7 @@ namespace Test
                             classicSearchResults.Add((precursor, product, expectedPrecursor, expectedProduct));
                         }
                         break;
+                    // CalibrationEngine only twice, once after the initial round of calibration, once after the second round of calibration
                     case CalibrationEngine cale:
                         {
                             calibrationEngineCount++;
@@ -81,8 +87,8 @@ namespace Test
                             var precursor = cale.CommonParameters.PrecursorMassTolerance.Value;
                             var product = cale.CommonParameters.ProductMassTolerance.Value;
 
-                            var expectedPrecursor = expectedPrecursorTolerances[calibrationEngineCount - 1];
-                            var expectedProduct = expectedProductTolerances[calibrationEngineCount - 1];
+                            var expectedPrecursor = expectedPrecursorTolerances[calibrationEngineCount];
+                            var expectedProduct = expectedProductTolerances[calibrationEngineCount];
 
                             calibrationResults.Add((precursor, product, expectedPrecursor, expectedProduct));
                         }

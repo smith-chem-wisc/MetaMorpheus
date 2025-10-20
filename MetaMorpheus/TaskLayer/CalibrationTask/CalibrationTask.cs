@@ -62,7 +62,7 @@ namespace TaskLayer
                 if (GlobalVariables.StopLoops) { break; }
 
                 // Can't calibrate .mgf, .d, or .msalign files
-                if (!CanFileTypeBeCalibrated(currentRawFileList[spectraFileIndex], _taskId))
+                if (!CanFileTypeBeCalibrated(currentRawFileList[spectraFileIndex]))
                 {
                     continue;
                 }
@@ -71,7 +71,8 @@ namespace TaskLayer
                 string originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 string uncalibratedNewFullFilePath = Path.Combine(outputFolder, Path.GetFileName(currentRawFileList[spectraFileIndex]));
                 string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-                string calibratedNewFullFilePath = GetCalibratedFilePath(originalUncalibratedFilenameWithoutExtension);
+                string calibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML")
+                    .ToSafeOutputPath(CalibSuffix + ".mzML");
 
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { _taskId, "Individual Spectra Files", originalUncalibratedFilePath });
@@ -105,6 +106,8 @@ namespace TaskLayer
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, _taskId);
                     continue;
                 }
+
+                acquisitionResultsFirst.WriteResults(outputFolder);
 
                 // Second round of calibration
                 UpdateCombinedParameters(combinedParams, acquisitionResultsFirst);
@@ -275,7 +278,7 @@ namespace TaskLayer
             _ = ProseCreatedWhileRunning.Append("The combined search database contained " + bioPolymerList.Count(p => !p.IsDecoy) + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + bioPolymerList.Count(p => p.IsContaminant) + " contaminant sequences. ");
         }
 
-        public bool CanFileTypeBeCalibrated(string originalUncalibratedFilePath, string taskId)
+        public bool CanFileTypeBeCalibrated(string originalUncalibratedFilePath)
         {
             string fileExtension = Path.GetExtension(originalUncalibratedFilePath);
             string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
@@ -284,18 +287,11 @@ namespace TaskLayer
                 _unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
                 // provide a message indicating why we couldn't calibrate
                 Warn("Calibration for " + fileExtension + " files is not supported.");
-                FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
+                FinishedDataFile(originalUncalibratedFilePath, new List<string> { _taskId, "Individual Spectra Files", originalUncalibratedFilePath });
+                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { _taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
                 return false;
             }
             return true;
-        }
-
-        public string GetCalibratedFilePath(string originalUncalibratedFilenameWithoutExtension)
-        {
-            string calibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
-            calibratedNewFullFilePath = PathSafety.MakeSafeOutputPath(calibratedNewFullFilePath, CalibSuffix + ".mzML");
-            return calibratedNewFullFilePath;
         }
 
         /// <summary>
