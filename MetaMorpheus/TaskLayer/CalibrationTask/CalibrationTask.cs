@@ -107,7 +107,6 @@ namespace TaskLayer
                     continue;
                 }
 
-                // Second round of calibration
                 UpdateCombinedParameters(combinedParams, acquisitionResultsFirst);
 
                 // generate calibration function and shift data points
@@ -115,7 +114,7 @@ namespace TaskLayer
                 CalibrationEngine engine = new(myMsDataFile, acquisitionResultsFirst, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 _ = engine.Run();
 
-                // get the calibrated data points again to see if there was an increase
+                // Second round of calibration
                 DataPointAquisitionResults acquisitionResultsSecond = GetDataAcquisitionResults(engine.CalibratedDataFile, combinedParams);
 
                 // If the second acquisition results are worse, then calibration made things worse. So we should give up 
@@ -128,7 +127,6 @@ namespace TaskLayer
                     continue;
                 }
 
-                // Third round of calibration
                 myMsDataFile = engine.CalibratedDataFile; // Start with the calibrated data from round 2
                 UpdateCombinedParameters(combinedParams, acquisitionResultsSecond);
 
@@ -137,7 +135,7 @@ namespace TaskLayer
                 engine = new(myMsDataFile, acquisitionResultsSecond, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 _ = engine.Run();
 
-                // get the calibrated data points again to see if there was an increase
+                // Third round of calibration
                 DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile,  combinedParams);
 
                 if (CalibrationHasValue(acquisitionResultsSecond, acquisitionResultsThird))
