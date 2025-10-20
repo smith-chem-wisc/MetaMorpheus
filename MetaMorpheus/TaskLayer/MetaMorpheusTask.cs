@@ -842,7 +842,6 @@ namespace TaskLayer
                 Warn("Unrecognized mod " + unrecognizedMod + "; are you using an old .toml?");
             }
         }
-
         protected List<RNA> LoadOligoDb(string fileName, bool generateTargets, DecoyType decoyType,
             List<string> localizeableModificationTypes, bool isContaminant,
             out Dictionary<string, Modification> unknownMods, out int emptyEntriesCount,
@@ -852,7 +851,7 @@ namespace TaskLayer
             List<RNA> rnaList = new List<RNA>();
 
             string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
+            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too
             theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
 
             if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
@@ -862,14 +861,30 @@ namespace TaskLayer
             }
             else
             {
-                List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile);
+                List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown
+                    .Where(b => !localizeableModificationTypes.Contains(b))
+                    .ToList();
+
+                // IMPORTANT: pass variant/truncation parameters so variant-applied isoforms are emitted
+                rnaList = RnaDbLoader.LoadRnaXML(
+                    fileName,
+                    generateTargets,
+                    decoyType,
+                    isContaminant,
+                    GlobalVariables.AllRnaModsKnown,
+                    modTypesToExclude,
+                    out unknownMods,
+                    commonParameters.MaxThreadsToUsePerFile,
+                    maxSequenceVariantsPerIsoform: commonParameters.MaxSequenceVariantsPerIsoform,
+                    minAlleleDepth: commonParameters.MinAlleleDepth,
+                    maxSequenceVariantIsoforms: commonParameters.MaxSequenceVariantIsoforms,
+                    addTruncations: commonParameters.AddTruncations
+                );
             }
 
             emptyEntriesCount = rnaList.Count(p => p.BaseSequence.Length == 0);
             return rnaList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
-
         protected void WritePrunedDatabase(List<SpectralMatch> allSpectralMatches, List<IBioPolymer> bioPolymersToWrite, Dictionary<string, int> modificationsToWrite, List<DbForTask> inputDatabases, string outputDirectory, string taskId)
         {
             Status("Writing Pruned Database...", new List<string> { taskId });
