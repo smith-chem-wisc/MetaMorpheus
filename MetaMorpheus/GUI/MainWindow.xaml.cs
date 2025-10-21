@@ -1323,6 +1323,12 @@ namespace MetaMorpheusGUI
             dialog.ShowDialog();
         }
 
+        private void AddCustomProtease_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Views.CustomProteaseWindow();
+            dialog.ShowDialog();
+        }
+
         private void MoveTaskUp_Click(object sender, RoutedEventArgs e)
         {
             var item = GetItemDataContext(sender, e).FirstOrDefault();

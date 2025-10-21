@@ -733,16 +733,19 @@
                         <Button Grid.Row="2" Grid.Column="1" Content="Create new crosslinker" 
                                 HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomCrosslinker_Click" />
 
-                        <Button Grid.Row="4" Grid.Column="1" Content="Close program and open global settings" 
+                        <Button Grid.Row="3" Grid.Column="1" Content="Create new protease" 
+                                HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomProtease_Click" />
+
+                        <Button Grid.Row="5" Grid.Column="1" Content="Close program and open global settings" 
                                 HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenSettings_Click" />
 
-                        <Button Grid.Row="5" Grid.Column="1" Content="Close program and open GUI settings" 
+                        <Button Grid.Row="6" Grid.Column="1" Content="Close program and open GUI settings" 
                                 HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_GuiSettings_Click" />
 
-                        <Button Grid.Row="6" Grid.Column="1" Content="Open mods/data folder" 
+                        <Button Grid.Row="7" Grid.Column="1" Content="Open mods/data folder" 
                                 HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenDataDir_Click" />
 
-                        <Button Grid.Row="7" Grid.Column="1" Content="Reset to factory defaults" 
+                        <Button Grid.Row="8" Grid.Column="1" Content="Reset to factory defaults" 
                                 HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ResetDefaults_Click"
                                 ToolTip="Reset saved tasks and MetaDraw Settings to default values"/>
                     </Grid>

@@ -2,6 +2,7 @@
 using Easy.Common.Extensions;
 using EngineLayer.GlycoSearch;
 using MassSpectrometry;
+using MzLibUtil;
 using Nett;
 using Omics.Modifications;
 using Proteomics.AminoAcidPolymer;
@@ -16,6 +17,7 @@ using System.Text;
 using TopDownProteomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
+using Omics.Digestion;
 
 namespace EngineLayer
 {
@@ -86,6 +88,7 @@ namespace EngineLayer
             SetUpGlobalSettings();
             LoadDissociationTypes();
             LoadAvailableProteomes();
+            LoadCustomProtease();
         }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
@@ -209,6 +212,32 @@ namespace EngineLayer
             }
         }
 
+        public static void LoadCustomProtease()
+        {
+            string ProtDirectory = Path.Combine(DataDir, @"ProteolyticDigestion");
+            string customProteasePath = Path.Combine(ProtDirectory, @"CustomProtease.tsv");
+            //load proteases from customProtease file or the original file to Protease dictionary
+            if (File.Exists(customProteasePath))
+            {
+                string[] proteaseToAdd = File.ReadAllLines(customProteasePath);
+                for (int i = 1; i < proteaseToAdd.Length; i++)
+                {
+                    string[] array = proteaseToAdd[i].Split('\t');
+                    List<DigestionMotif> motifList = DigestionMotif.ParseDigestionMotifsFromString(array[1]);
+                    string name = array[0];
+                    CleavageSpecificity cleavageSpecificity = (CleavageSpecificity)Enum.Parse(typeof(CleavageSpecificity), array[4], ignoreCase: true);
+                    string psiMSAccessionNumber = array[5];
+                    string psiMSName = array[6];
+                    string proteaseModDetails = array[8];
+                    Protease protease = new Protease(name, cleavageSpecificity, psiMSAccessionNumber, psiMSName, motifList);
+                    if (!ProteaseDictionary.Dictionary.ContainsKey(protease.Name))
+                    {
+                        ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+                    }
+                }
+            }
+        }
+    
         public static void WriteAminoAcidsFile()
         {
             string directory = Path.Combine(DataDir, @"CustomAminoAcids");
