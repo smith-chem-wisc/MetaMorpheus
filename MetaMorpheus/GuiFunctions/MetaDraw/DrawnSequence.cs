@@ -208,9 +208,9 @@ namespace GuiFunctions
 
             // read glycans if applicable
             List<Tuple<int, string, double>> localGlycans = null;
-            if (spectrumMatch is PsmFromTsv { GlycanLocalizationLevel: not null } psm)
+            if (spectrumMatch is GlycoPsmFromTsv psm)
             {
-                localGlycans = SpectrumMatchFromTsv.ReadLocalizedGlycan(psm.LocalizedGlycan);
+                localGlycans = GlycoPsmFromTsv.ReadLocalizedGlycan(psm.LocalizedGlycanInPeptide);
             }
 
             // annotate mods
