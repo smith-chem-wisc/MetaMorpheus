@@ -171,7 +171,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="LbMinVariantDepth" Content="Min Read Depth for Variants" />
-                                        <local:IntegerTexBoxControl x:Name="MinVariantDepthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MinAlleleDepthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The minimum number of reads to consider a nucleic acid sequence variant.
@@ -181,7 +181,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="LbMaxHeterozygousVariants" Content="Max Heterozygous variants for Combinitorics" />
-                                        <local:IntegerTexBoxControl x:Name="MaxHeterozygousVariantsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MaxSequenceVariantIsoformsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The maximum number of heterozygous variants for combinitorics.

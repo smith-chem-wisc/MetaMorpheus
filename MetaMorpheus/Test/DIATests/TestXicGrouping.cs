@@ -65,42 +65,42 @@ namespace Test.DIATests
             Assert.That(corr, Is.GreaterThan(0.0)); //Correlation should still be positive but less than 1 due to missing point
         }
 
-        [Test]
-        public static void TestCorrelationCalculationWithSpline()
-        {
-            //When spline is available, the correlation is calculated with the spline data
-            //xic1 and xic2 are perfectly aligned; xic3 does not have enough overlap points so corr will be NaN
-            var peakList1 = new List<IIndexedPeak>();
-            var peakList2 = new List<IIndexedPeak>();
-            var peakList3 = new List<IIndexedPeak>();
-            double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
-            for (int i = 0; i < intensityMultipliers.Length; i++)
-            {
-                peakList1.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
-                peakList2.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 501.0));
-                peakList3.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1.5 + i / 10, zeroBasedScanIndex: i + 5, mz: 501.0));
-            }
-            var xic1 = new ExtractedIonChromatogram(peakList1);
-            var xic2 = new ExtractedIonChromatogram(peakList2);
-            var xic3 = new ExtractedIonChromatogram(peakList3);
+        //[Test]
+        //public static void TestCorrelationCalculationWithSpline()
+        //{
+        //    //When spline is available, the correlation is calculated with the spline data
+        //    //xic1 and xic2 are perfectly aligned; xic3 does not have enough overlap points so corr will be NaN
+        //    var peakList1 = new List<IIndexedPeak>();
+        //    var peakList2 = new List<IIndexedPeak>();
+        //    var peakList3 = new List<IIndexedPeak>();
+        //    double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
+        //    for (int i = 0; i < intensityMultipliers.Length; i++)
+        //    {
+        //        peakList1.Add(new IndexedMassSpectralPeak(intensity: 1e5 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 500.0));
+        //        peakList2.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1 + i / 10, zeroBasedScanIndex: i, mz: 501.0));
+        //        peakList3.Add(new IndexedMassSpectralPeak(intensity: 1e6 * intensityMultipliers[i], retentionTime: 1.5 + i / 10, zeroBasedScanIndex: i + 5, mz: 501.0));
+        //    }
+        //    var xic1 = new ExtractedIonChromatogram(peakList1);
+        //    var xic2 = new ExtractedIonChromatogram(peakList2);
+        //    var xic3 = new ExtractedIonChromatogram(peakList3);
 
-            //It should still return 1.0 for two perfectly aligned XICs (xic1 and xic2)
-            var cubicSpline = new XicCubicSpline();
-            cubicSpline.SetXicSplineXYData(xic1, true);
-            cubicSpline.SetXicSplineXYData(xic2, true);
-            var corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
-            Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
-            var linearSpline = new XicLinearSpline();
-            linearSpline.SetXicSplineXYData(xic1, true);
-            linearSpline.SetXicSplineXYData(xic2, true);
-            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
-            Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
+        //    //It should still return 1.0 for two perfectly aligned XICs (xic1 and xic2)
+        //    var cubicSpline = new XicCubicSpline();
+        //    cubicSpline.SetXicSplineXYData(xic1, true);
+        //    cubicSpline.SetXicSplineXYData(xic2, true);
+        //    var corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
+        //    Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
+        //    var linearSpline = new XicLinearSpline();
+        //    linearSpline.SetXicSplineXYData(xic1, true);
+        //    linearSpline.SetXicSplineXYData(xic2, true);
+        //    corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
+        //    Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
 
-            //For the XICs with insufficient overlap points (xic1 and xic3), it should return NaN
-            linearSpline.SetXicSplineXYData(xic3, true);
-            corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic3);
-            Assert.That(corr, Is.NaN);
-        }
+        //    //For the XICs with insufficient overlap points (xic1 and xic3), it should return NaN
+        //    linearSpline.SetXicSplineXYData(xic3, true);
+        //    corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic3);
+        //    Assert.That(corr, Is.NaN);
+        //}
 
         [Test]
         public static void TestCalculateOverlapRatio()

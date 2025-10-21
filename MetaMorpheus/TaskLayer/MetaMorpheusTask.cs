@@ -1,14 +1,8 @@
-using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
-using Omics;
-using Omics.BioPolymer;
-using Omics.Digestion;
-using Omics.Modifications;
-using Omics.SpectrumMatch;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers.SpectralLibrary;
@@ -22,12 +16,17 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UsefulProteomicsDatabases;
-using UsefulProteomicsDatabases.Transcriptomics;
-using Transcriptomics;
-using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
+using Omics;
+using Omics.BioPolymer;
+using Omics.Digestion;
+using Omics.Modifications;
+using Omics.SpectrumMatch;
+using Transcriptomics;
+using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
+using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace TaskLayer
 {
@@ -559,8 +558,9 @@ namespace TaskLayer
                 listOfModsFixed: commonParams.ListOfModsFixed,
                 taskDescriptor: commonParams.TaskDescriptor,
                 assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments,
-                maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
-                minVariantDepth: commonParams.MinVariantDepth,
+                maxSequenceVariantsPerIsoform: commonParams.MaxSequenceVariantsPerIsoform,
+                minAlleleDepth: commonParams.MinAlleleDepth,
+                maxSequenceVariantIsoforms: commonParams.MaxSequenceVariantIsoforms,
                 addTruncations: commonParams.AddTruncations,
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
                 productDeconParams: commonParams.ProductDeconvolutionParameters,
@@ -700,7 +700,8 @@ namespace TaskLayer
                 }
                 else
                 {
-                    var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
+                    var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, 
+                        out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
                     bioPolymerList = bioPolymerList.Concat(dbProteinList).ToList();
                     emptyEntries += emptyProteinEntriesForThisDb;
                 }
@@ -792,7 +793,9 @@ namespace TaskLayer
             {
                 List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
                 //proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, commonParameters.MaxHeterozygousVariants, commonParameters.MinVariantDepth, addTruncations: commonParameters.AddTruncations);
-                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, 0, commonParameters.MinVariantDepth, addTruncations: commonParameters.AddTruncations);
+                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile,
+                    maxSequenceVariantsPerIsoform: commonParameters.MaxSequenceVariantsPerIsoform, 
+                    minAlleleDepth: commonParameters.MinAlleleDepth, maxSequenceVariantIsoforms: commonParameters.MaxSequenceVariantIsoforms, addTruncations: commonParameters.AddTruncations);
 
             }
 
@@ -838,7 +841,6 @@ namespace TaskLayer
                 Warn("Unrecognized mod " + unrecognizedMod + "; are you using an old .toml?");
             }
         }
-
         protected List<RNA> LoadOligoDb(string fileName, bool generateTargets, DecoyType decoyType,
             List<string> localizeableModificationTypes, bool isContaminant,
             out Dictionary<string, Modification> unknownMods, out int emptyEntriesCount,
@@ -848,7 +850,7 @@ namespace TaskLayer
             List<RNA> rnaList = new List<RNA>();
 
             string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
+            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too
             theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
 
             if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
@@ -858,14 +860,32 @@ namespace TaskLayer
             }
             else
             {
-                List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile);
+                List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown
+                    .Where(b => !localizeableModificationTypes.Contains(b))
+                    .ToList();
+
+                // IMPORTANT: pass variant/truncation parameters so variant-applied isoforms can be emitted
+                rnaList = RnaDbLoader.LoadRnaXML(
+                    fileName,
+                    generateTargets,
+                    decoyType,
+                    isContaminant,
+                    GlobalVariables.AllRnaModsKnown,
+                    modTypesToExclude,
+                    out unknownMods,
+                    commonParameters.MaxThreadsToUsePerFile,
+                    maxSequenceVariantsPerIsoform: commonParameters.MaxSequenceVariantsPerIsoform,
+                    minAlleleDepth: commonParameters.MinAlleleDepth,
+                    maxSequenceVariantIsoforms: commonParameters.MaxSequenceVariantIsoforms,
+                    fivePrimeTerm: null,
+                    threePrimeTerm: null,
+                    decoyIdentifier: "DECOY"
+                );
             }
 
             emptyEntriesCount = rnaList.Count(p => p.BaseSequence.Length == 0);
             return rnaList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
-
         protected void WritePrunedDatabase(List<SpectralMatch> allSpectralMatches, List<IBioPolymer> bioPolymersToWrite, Dictionary<string, int> modificationsToWrite, List<DbForTask> inputDatabases, string outputDirectory, string taskId)
         {
             Status("Writing Pruned Database...", new List<string> { taskId });
@@ -900,7 +920,7 @@ namespace TaskLayer
                 }
             }
 
-            // Add user mod selection behavours to Pruned DB
+            // Add user mod selection behavour to Pruned DB
             foreach (var modType in modificationsToWrite)
             {
                 foreach (Modification mod in GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)))
@@ -983,17 +1003,52 @@ namespace TaskLayer
                     {
                         var tempMod = observedMod.Item2;
 
-                        if (modificationsToWriteIfObserved.Contains(tempMod))
+                        if (!modificationsToWriteIfObserved.Contains(tempMod))
+                            continue;
+
+                        // Normalize the SequenceVariation key to the consensus protein's instance
+                        SequenceVariation svKey = null;
+                        if (observedMod.Item3 != null)
                         {
-                            var svIdxKey = (observedMod.Item3, observedMod.Item1);
-                            if (!modsToWrite.ContainsKey(svIdxKey))
+                            // First try Description-based matching (when present)
+                            svKey = nonVariantProtein.SequenceVariations
+                                .FirstOrDefault(sv =>
+                                    sv.Description != null
+                                    && observedMod.Item3.Description != null
+                                    && sv.Description.Equals(observedMod.Item3.Description));
+
+                            // Fallback: match by coordinates and ref/alt sequence if Description is missing
+                            if (svKey == null)
                             {
-                                modsToWrite.Add(svIdxKey, new List<Modification> { observedMod.Item2 });
+                                svKey = nonVariantProtein.SequenceVariations.FirstOrDefault(sv =>
+                                    sv.OneBasedBeginPosition == observedMod.Item3.OneBasedBeginPosition &&
+                                    sv.OneBasedEndPosition == observedMod.Item3.OneBasedEndPosition &&
+                                    string.Equals(sv.OriginalSequence, observedMod.Item3.OriginalSequence, StringComparison.Ordinal) &&
+                                    string.Equals(sv.VariantSequence, observedMod.Item3.VariantSequence, StringComparison.Ordinal));
                             }
-                            else
+
+                            // If still not found, last-resort: match by just coordinates
+                            if (svKey == null)
                             {
-                                modsToWrite[svIdxKey].Add(observedMod.Item2);
+                                svKey = nonVariantProtein.SequenceVariations.FirstOrDefault(sv =>
+                                    sv.OneBasedBeginPosition == observedMod.Item3.OneBasedBeginPosition &&
+                                    sv.OneBasedEndPosition == observedMod.Item3.OneBasedEndPosition);
                             }
+                        }
+
+                        // When observedMod.Item3 == null, this is a consensus (non-variant) site; svKey stays null on purpose.
+                        // When observedMod.Item3 != null but we couldn't resolve svKey, skip rather than misclassifying as consensus.
+                        if (observedMod.Item3 != null && svKey == null)
+                            continue;
+
+                        var svIdxKey = (svKey, observedMod.Item1);
+                        if (!modsToWrite.ContainsKey(svIdxKey))
+                        {
+                            modsToWrite.Add(svIdxKey, new List<Modification> { observedMod.Item2 });
+                        }
+                        else
+                        {
+                            modsToWrite[svIdxKey].Add(observedMod.Item2);
                         }
                     }
 
@@ -1022,13 +1077,15 @@ namespace TaskLayer
                     // Add variant modification if in database (two cases: always or if observed)
                     foreach (SequenceVariation sv in nonVariantProtein.SequenceVariations)
                     {
+                        if (sv.OneBasedModifications == null)
+                            continue; // nothing in DB for this variant
+
                         foreach (var modkv in sv.OneBasedModifications)
                         {
                             foreach (var mod in modkv.Value)
                             {
-                                //Add if always In Database or if was observed and in database and not set to not include
-                                if (modificationsToWriteIfInDatabase.Contains(mod) ||
-                                    (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, sv))))
+                                if (modificationsToWriteIfInDatabase.Contains(mod)
+                                    || (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, sv))))
                                 {
                                     if (!modsToWrite.ContainsKey((sv, modkv.Key)))
                                     {
@@ -1071,19 +1128,18 @@ namespace TaskLayer
                     }
                     foreach (var sv in nonVariantProtein.SequenceVariations)
                     {
-                        var oldVariantModifications = sv.OneBasedModifications.ToDictionary(p => p.Key, v => v.Value);
+                        // Store original variant mods (handle null gracefully)
+                        var oldVariantModifications = (sv.OneBasedModifications ?? new Dictionary<int, List<Modification>>())
+                            .ToDictionary(p => p.Key, v => v.Value);
+
                         if (originalSequenceVariantModifications.ContainsKey(sv))
                         {
                             foreach (var entry in oldVariantModifications)
                             {
                                 if (originalSequenceVariantModifications[sv].ContainsKey(entry.Key))
-                                {
                                     originalSequenceVariantModifications[sv][entry.Key].AddRange(entry.Value);
-                                }
                                 else
-                                {
                                     originalSequenceVariantModifications[sv].Add(entry.Key, entry.Value);
-                                }
                             }
                         }
                         else
@@ -1091,10 +1147,38 @@ namespace TaskLayer
                             originalSequenceVariantModifications.Add(sv, oldVariantModifications);
                         }
 
-                        sv.OneBasedModifications.Clear();
-                        foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
+                        // If there are no variant-specific writes for this sv, move on (avoid lambda)
+                        bool hasVariantWrites = false;
+                        foreach (var key in modsToWrite.Keys)
                         {
-                            sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
+                            if (key.Item1 != null && ReferenceEquals(key.Item1, sv))
+                            {
+                                hasVariantWrites = true;
+                                break;
+                            }
+                        }
+                        if (!hasVariantWrites)
+                            continue;
+
+                        // Mutate the existing dict; do not assign (property is read-only)
+                        if (sv.OneBasedModifications == null)
+                            continue; // cannot populate if backing dict is null
+
+                        sv.OneBasedModifications.Clear();
+
+                        // Write de-duplicated mods for this sv (avoid lambda)
+                        foreach (var entry in modsToWrite)
+                        {
+                            var key = entry.Key;
+                            if (key.Item1 == null || !ReferenceEquals(key.Item1, sv))
+                                continue;
+
+                            var uniqueMods = entry.Value
+                                .GroupBy(m => (m.ModificationType, m.IdWithMotif))
+                                .Select(g => g.First())
+                                .ToList();
+
+                            sv.OneBasedModifications[key.Item2] = uniqueMods;
                         }
                     }
                 }
@@ -1137,12 +1221,21 @@ namespace TaskLayer
                     {
                         nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(originalMod.Key, originalMod.Value);
                     }
+
                     foreach (var sv in nonVariantProtein.SequenceVariations)
                     {
+                        // If we didn't save anything for this sv (shouldn't happen), skip
+                        if (!originalSequenceVariantModifications.TryGetValue(sv, out var savedMods))
+                            continue;
+
+                        // If the backing dict is null, we cannot assign a new one (read-only property). Skip safely.
+                        if (sv.OneBasedModifications == null)
+                            continue;
+
                         sv.OneBasedModifications.Clear();
-                        foreach (var originalVariantMods in originalSequenceVariantModifications[sv])
+                        foreach (var kv in savedMods)
                         {
-                            sv.OneBasedModifications.Add(originalVariantMods.Key, originalVariantMods.Value);
+                            sv.OneBasedModifications[kv.Key] = kv.Value;
                         }
                     }
                 }
@@ -1626,7 +1719,7 @@ namespace TaskLayer
                         if (originalBioPolymer is RNA r)
                         {
                             renamed = new RNA(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + bioPolymerNumber,
-                                r.OneBasedPossibleLocalizedModifications, r.FivePrimeTerminus, r.ThreePrimeTerminus, r.Name, r.Organism,
+                                r.OneBasedPossibleLocalizedModifications, r.ThreePrimeTerminus, r.FivePrimeTerminus, r.Name, r.Organism,
                                 r.DatabaseFilePath, r.IsContaminant, r.IsDecoy, r.GeneNames, r.AdditionalDatabaseFields, r.TruncationProducts,
                                 r.SequenceVariations, r.AppliedSequenceVariations, r.SampleNameForVariants, r.FullName);
                         }

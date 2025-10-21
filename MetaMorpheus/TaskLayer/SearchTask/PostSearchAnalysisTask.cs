@@ -109,7 +109,7 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WritePrunedDatabase)
                 WritePrunedDatabase(Parameters.AllSpectralMatches, Parameters.BioPolymerList, Parameters.SearchParameters.ModsToWriteSelection, Parameters.DatabaseFilenameList, Parameters.OutputFolder, Parameters.SearchTaskId);
 
-            var k = CommonParameters;
+            
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
                 SpectralLibraryGeneration();
@@ -1231,7 +1231,6 @@ namespace TaskLayer
                 Directory.Delete(Parameters.IndividualResultsOutputFolder, true);
             }
         }
-
         private void WriteVariantResults()
         {
             Status("Writing variant peptide results...", Parameters.SearchTaskId);
@@ -1240,22 +1239,22 @@ namespace TaskLayer
             string variantPeptideFile = Path.Combine(Parameters.OutputFolder, filename);
 
             var fdrPsms = FilteredPsms.Filter(Parameters.AllSpectralMatches,
-                        CommonParameters,
-                        includeDecoys: true,
-                        includeContaminants: true,
-                        includeAmbiguous: true,
-                        includeHighQValuePsms: false,
-                        filterAtPeptideLevel: true);
+                CommonParameters,
+                includeDecoys: true,
+                includeContaminants: true,
+                includeAmbiguous: true,
+                includeHighQValuePsms: false,
+                filterAtPeptideLevel: true);
 
             var possibleVariantPsms = fdrPsms.Where(p =>
-                    p.BestMatchingBioPolymersWithSetMods.Any(pep => pep.SpecificBioPolymer is PeptideWithSetModifications pwsm && pwsm.IsVariantPeptide()))
-                .OrderByDescending(pep => pep.Score)
-                .ToList();
+                p.BestMatchingBioPolymersWithSetMods.Any(pep =>
+                    pep.SpecificBioPolymer is PeptideWithSetModifications pwsm &&
+                    pwsm.Protein.AppliedSequenceVariations.Any())).OrderByDescending(pep => pep.Score).ToList();
 
             new FdrAnalysisEngine(possibleVariantPsms, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
                 new List<string> { Parameters.SearchTaskId }, "variant_PSMs", doPEP: false).Run();
 
-            possibleVariantPsms
+            possibleVariantPsms = possibleVariantPsms
                 .OrderBy(p => p.FdrInfo.QValue)
                 .ThenByDescending(p => p.Score)
                 .ThenBy(p => p.FdrInfo.CumulativeTarget)
@@ -1268,241 +1267,187 @@ namespace TaskLayer
                 .Select(b => b.FirstOrDefault())
                 .OrderByDescending(b => b.Score)
                 .ToList();
-            List<SpectralMatch> confidentVariantPeps = new List<SpectralMatch>();
+            List<SpectralMatch> confidentVariantPeps = new();
 
             new FdrAnalysisEngine(variantPeptides, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
                 new List<string> { Parameters.SearchTaskId }, "variant_Peptides", doPEP: false).Run();
 
             WritePsmsToTsv(variantPeptides, variantPeptideFile);
 
-            // if a potential variant peptide can be explained by a canonical protein seqeunce then should not be counted as a confident variant peptide
-            //because it is most probable that the peptide originated from the canonical protien.
+            // Only count as confident if all peptide options are variant peptides
             foreach (var entry in variantPeptides)
             {
-                var pwsm = entry.BestMatchingBioPolymersWithSetMods;
-                var nonVariantOption = pwsm.Any(p => p.SpecificBioPolymer is PeptideWithSetModifications pwsm && pwsm.IsVariantPeptide() == false);
-                if (nonVariantOption == false)
+                var pwsmList = entry.BestMatchingBioPolymersWithSetMods
+                    .Select(x => x.SpecificBioPolymer as PeptideWithSetModifications)
+                    .Where(x => x != null)
+                    .ToList();
+
+                bool allVariant = pwsmList.All(pwsm => pwsm.Protein.AppliedSequenceVariations.Any());
+                if (allVariant)
                 {
                     confidentVariantPeps.Add(entry);
                 }
             }
-            // count of peptides that contain at least 1 of the given variant type
-            int SNVmissenseCount = 0;
-            int MNVmissenseCount = 0;
-            int insertionCount = 0;
-            int deletionCount = 0;
-            int frameshiftCount = 0;
-            int stopGainCount = 0;
-            int stopLossCount = 0;
 
-            // dictionaries facilitate the determination of unique variant sites
-            Dictionary<Protein, HashSet<SequenceVariation>> MNVmissenseVariants = new();
-            Dictionary<Protein, HashSet<SequenceVariation>> SNVmissenseVariants = new();
-            Dictionary<Protein, HashSet<SequenceVariation>> insertionVariants = new();
-            Dictionary<Protein, HashSet<SequenceVariation>> deletionVariants = new();
-            Dictionary<Protein, HashSet<SequenceVariation>> frameshiftVariants = new();
-            Dictionary<Protein, HashSet<SequenceVariation>> stopGainVariants = new();
-            Dictionary<Protein, HashSet<SequenceVariation>> stopLossVariants = new();
+            // Variant type counters and site dictionaries
+            int snvCount = 0, mnvCount = 0, insCount = 0, delCount = 0, fsCount = 0, stopGainCount = 0, stopLossCount = 0;
+            var snvSites = new Dictionary<Protein, HashSet<SequenceVariation>>();
+            var mnvSites = new Dictionary<Protein, HashSet<SequenceVariation>>();
+            var insSites = new Dictionary<Protein, HashSet<SequenceVariation>>();
+            var delSites = new Dictionary<Protein, HashSet<SequenceVariation>>();
+            var fsSites = new Dictionary<Protein, HashSet<SequenceVariation>>();
+            var stopGainSites = new Dictionary<Protein, HashSet<SequenceVariation>>();
+            var stopLossSites = new Dictionary<Protein, HashSet<SequenceVariation>>();
 
             var filteredVariants = FilteredPsms.Filter(confidentVariantPeps,
-                        CommonParameters,
-                        includeDecoys: false,
-                        includeContaminants: false,
-                        includeAmbiguous: false,
-                        includeHighQValuePsms: false);
+                CommonParameters,
+                includeDecoys: false,
+                includeContaminants: false,
+                includeAmbiguous: false,
+                includeHighQValuePsms: false);
 
             List<PeptideSpectralMatch> modifiedVariantPeptides = filteredVariants
                 .Where(p => p.ModsIdentified != null && p.ModsIdentified.Count > 0 && p is PeptideSpectralMatch)
                 .Select(p => (PeptideSpectralMatch)p)
-                .ToList(); //modification can be on any AA in variant peptide
+                .ToList();
 
-            List<PeptideSpectralMatch> modifiedVariantSitePeptides = new();// modification is speciifcally on the variant residue within the peptide
+            List<PeptideSpectralMatch> modifiedVariantSitePeptides = new();
             foreach (PeptideSpectralMatch entry in modifiedVariantPeptides)
             {
-                PeptideWithSetModifications firstOrDefault = entry.BestMatchingBioPolymersWithSetMods.FirstOrDefault().SpecificBioPolymer as PeptideWithSetModifications;
+                var pwsm = entry.BestMatchingBioPolymersWithSetMods.FirstOrDefault()?.SpecificBioPolymer as PeptideWithSetModifications;
+                if (pwsm == null) continue;
 
-                var variantPWSM = firstOrDefault;
-                var peptideMods = variantPWSM.AllModsOneIsNterminus.Values.ToList();
-                var variantProteinModifications = variantPWSM.Parent.OneBasedPossibleLocalizedModifications.Where(k => k.Key >= variantPWSM.OneBasedStartResidue && k.Key <= variantPWSM.OneBasedEndResidue).ToList();
-                var variants = firstOrDefault.Protein.AppliedSequenceVariations.Where(v => firstOrDefault.IntersectsAndIdentifiesVariation(v).identifies).ToList();
+                var peptideMods = pwsm.AllModsOneIsNterminus.Values.ToList();
+                var variantSites = pwsm.Protein.AppliedSequenceVariations
+                    .Where(v => pwsm.IntersectsAndIdentifiesVariation(v).identifies)
+                    .ToList();
+
                 bool modifiedVariant = false;
-                foreach (var mod in variantProteinModifications)
+                foreach (var variant in variantSites)
                 {
-                    var residue = mod.Key;
-                    var peptideModsIdentified = mod.Value.Intersect(peptideMods).ToList().Count;
-                    var modOnVariant = variants.Where(p => p.OneBasedBeginPosition >= residue && p.OneBasedEndPosition <= residue);
-                    if (modOnVariant.Any() && peptideModsIdentified != 0)
+                    foreach (var modKvp in variant.OneBasedModifications)
                     {
-                        modifiedVariant = true;
+                        if (modKvp.Value.Any(mod => peptideMods.Contains(mod)))
+                        {
+                            modifiedVariant = true;
+                            break;
+                        }
                     }
+                    if (modifiedVariant) break;
                 }
-                if (modifiedVariant == true)
+                if (modifiedVariant)
                 {
                     modifiedVariantSitePeptides.Add(entry);
                 }
             }
+
             foreach (var peptide in confidentVariantPeps)
             {
-                var variantPWSM =
-                    peptide.BestMatchingBioPolymersWithSetMods.FirstOrDefault()?.SpecificBioPolymer is PeptideWithSetModifications peptideWithSetModifications
-                        ? peptideWithSetModifications
-                        : null;//TODO: expand to all peptide options not just the first
-                var variants = variantPWSM.Protein.AppliedSequenceVariations;
-                var culture = CultureInfo.CurrentCulture;
-                // these bools allow for us to accurrately count the number of peptides that have at least one variants of a given type.
-                // they will prevent double counting if a variant type is found more than once in a given peptide (most typically missense, but all will be covered)
-                bool SNVmissenseIdentified = false;
-                bool MNVmissenseIdentified = false;
-                bool insertionIdentified = false;
-                bool deletionIdentified = false;
-                bool frameshiftIdentified = false;
-                bool stopGainIdentified = false;
-                bool stopLossIdentifed = false;
+                var pwsm = peptide.BestMatchingBioPolymersWithSetMods.FirstOrDefault()?.SpecificBioPolymer as PeptideWithSetModifications;
+                if (pwsm == null) continue;
+
+                var variants = pwsm.Protein.AppliedSequenceVariations
+                    .Where(v => pwsm.IntersectsAndIdentifiesVariation(v).identifies)
+                    .ToList();
+
+                bool snv = false, mnv = false, ins = false, del = false, fs = false, stopGain = false, stopLoss = false;
 
                 foreach (var variant in variants)
                 {
-                    if (variantPWSM.IntersectsAndIdentifiesVariation(variant).identifies == true)
+                    if (variant.IsPointSubstitution)
                     {
-                        if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
+                        if (!snv)
                         {
-                            if (variant.Description.ReferenceAlleleString.Length == 1 && variant.Description.AlternateAlleleString.Length == 1)
-                            {
-                                if (SNVmissenseIdentified == false)
-                                {
-                                    SNVmissenseCount++;
-                                    SNVmissenseIdentified = true;
-                                }
-                                SNVmissenseVariants.AddOrCreate(variantPWSM.Protein, variant);
-                            }
-                            else
-                            {
-                                if (MNVmissenseIdentified == false)
-                                {
-                                    MNVmissenseCount++;
-                                    MNVmissenseIdentified = true;
-                                }
-                                MNVmissenseVariants.AddOrCreate(variantPWSM.Protein, variant);
-                            }
+                            snvCount++; snv = true;
                         }
-                        else if (culture.CompareInfo.IndexOf(variant.Description.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
-                        {
-                            if (frameshiftIdentified == false)
-                            {
-                                frameshiftCount++;
-                                frameshiftIdentified = true;
-                            }
-                            frameshiftVariants.AddOrCreate(variantPWSM.Protein, variant);
-                        }
-                        else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
-                        {
-                            if (stopGainIdentified == false)
-                            {
-                                stopGainCount++;
-                                stopGainIdentified = true;
-                            }
-                            stopGainVariants.AddOrCreate(variantPWSM.Protein, variant);
-                        }
-                        else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
-                        {
-                            if (insertionIdentified == false)
-                            {
-                                insertionCount++;
-                                insertionIdentified = true;
-                            }
-                            insertionVariants.AddOrCreate(variantPWSM.Protein, variant);
-                        }
-                        else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
-                        {
-                            if (deletionIdentified == false)
-                            {
-                                deletionCount++;
-                                deletionIdentified = true;
-                            }
-                            deletionVariants.AddOrCreate(variantPWSM.Protein, variant);
-                        }
-                        else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
-                        {
-                            if (stopLossIdentifed == false)
-                            {
-                                stopLossCount++;
-                                stopLossIdentifed = true;
-                            }
-                            stopLossVariants.AddOrCreate(variantPWSM.Protein, variant);
-                        }
+                        if (!snvSites.TryGetValue(pwsm.Protein, out var set)) snvSites[pwsm.Protein] = set = new();
+                        set.Add(variant);
                     }
+                    else if (variant.IsMultiResidueSubstitution)
+                    {
+                        if (!mnv)
+                        {
+                            mnvCount++; mnv = true;
+                        }
+                        if (!mnvSites.TryGetValue(pwsm.Protein, out var set)) mnvSites[pwsm.Protein] = set = new();
+                        set.Add(variant);
+                    }
+                    else if (variant.IsInsertion)
+                    {
+                        if (!ins)
+                        {
+                            insCount++; ins = true;
+                        }
+                        if (!insSites.TryGetValue(pwsm.Protein, out var set)) insSites[pwsm.Protein] = set = new();
+                        set.Add(variant);
+                    }
+                    else if (variant.IsDeletion)
+                    {
+                        if (!del)
+                        {
+                            delCount++; del = true;
+                        }
+                        if (!delSites.TryGetValue(pwsm.Protein, out var set)) delSites[pwsm.Protein] = set = new();
+                        set.Add(variant);
+                    }
+                    else if (variant.IsLikelyFrameshift)
+                    {
+                        if (!fs)
+                        {
+                            fsCount++; fs = true;
+                        }
+                        if (!fsSites.TryGetValue(pwsm.Protein, out var set)) fsSites[pwsm.Protein] = set = new();
+                        set.Add(variant);
+                    }
+                    else if (variant.IsStopGain)
+                    {
+                        if (!stopGain)
+                        {
+                            stopGainCount++; stopGain = true;
+                        }
+                        if (!stopGainSites.TryGetValue(pwsm.Protein, out var set)) stopGainSites[pwsm.Protein] = set = new();
+                        set.Add(variant);
+                    }
+                    // Stop loss: not directly available, but can be inferred if needed
                 }
             }
-            int SNVmissenseSites = 0;
-            foreach (var entry in SNVmissenseVariants)
-            {
-                SNVmissenseSites += entry.Value.Count;
-            }
 
-            int MNVmissenseSites = 0;
-            foreach (var entry in MNVmissenseVariants)
-            {
-                MNVmissenseSites += entry.Value.Count;
-            }
+            int snvSitesCount = snvSites.Values.Sum(s => s.Count);
+            int mnvSitesCount = mnvSites.Values.Sum(s => s.Count);
+            int insSitesCount = insSites.Values.Sum(s => s.Count);
+            int delSitesCount = delSites.Values.Sum(s => s.Count);
+            int fsSitesCount = fsSites.Values.Sum(s => s.Count);
+            int stopGainSitesCount = stopGainSites.Values.Sum(s => s.Count);
+            int stopLossSitesCount = stopLossSites.Values.Sum(s => s.Count); // Not directly set above
 
-            int insertionSites = 0;
-            foreach (var entry in insertionVariants)
-            {
-                insertionSites += entry.Value.Count;
-            }
-
-            int deletionSites = 0;
-            foreach (var entry in deletionVariants)
-            {
-                deletionSites += entry.Value.Count;
-            }
-
-            int frameshiftSites = 0;
-            foreach (var entry in frameshiftVariants)
-            {
-                frameshiftSites += entry.Value.Count;
-            }
-
-            int stopGainSites = 0;
-            foreach (var entry in stopGainVariants)
-            {
-                stopGainSites += entry.Value.Count;
-            }
-
-            int stopLossSites = 0;
-            foreach (var entry in stopLossVariants)
-            {
-                stopLossSites += entry.Value.Count;
-            }
-
-            int totalVariantSites = SNVmissenseSites + MNVmissenseSites + insertionSites + deletionSites + frameshiftSites + stopGainSites + stopLossSites;
+            int totalVariantSites = snvSitesCount + mnvSitesCount + insSitesCount + delSitesCount + fsSitesCount + stopGainSitesCount + stopLossSitesCount;
 
             string[] variantResults = new string[25];
             variantResults[0] = "Variant Result Summary";
             variantResults[2] = "--------------------------------------------------";
-            variantResults[4] = "Number of potential variant containing peptides identified at " + fdrPsms.FilterThreshold * 100 + "% group FDR: " + fdrPsms.TargetPsmsAboveThreshold;
-            variantResults[5] = "Number of unqiuely identified variant peptides at " + filteredVariants.FilterThreshold * 100 + "% group FDR: " + filteredVariants.TargetPsmsAboveThreshold;
-            variantResults[6] = "Number of unique variants: " + totalVariantSites;
-            variantResults[7] = "Number of SNV missense variant containing peptides at " + fdrPsms.FilterThreshold * 100 + "% group FDR: " + SNVmissenseCount;
-            variantResults[8] = "Number of unique SNV missense variants: " + SNVmissenseSites;
-            variantResults[9] = "Number of MNV missense variant containing peptides at " + fdrPsms.FilterThreshold * 100 + "% group FDR: " + MNVmissenseCount;
-            variantResults[10] = "Number of unique MNV missense variants: " + MNVmissenseSites;
-            variantResults[11] = "Number of frameshift variant containing peptides at " + fdrPsms.FilterThreshold * 100 + "% group FDR: " + frameshiftCount;
-            variantResults[12] = "Number of unique frameshift variants: " + frameshiftSites;
-            variantResults[13] = "Number of inframe insertion variant containing peptides at " + fdrPsms.FilterThreshold * 100 + "% group FDR: " + insertionCount;
-            variantResults[14] = "Number of unique inframe insertion variants: " + insertionSites;
-            variantResults[15] = "Number of inframe deletion variant containing peptides at " + fdrPsms.FilterThreshold * 100 + "% group FDR: " + deletionCount;
-            variantResults[16] = "Number of unique inframe deletion variants: " + deletionSites;
-            variantResults[17] = "Number of stop gain variant containing peptides at " + fdrPsms.FilterThreshold * 100 + "% group FDR: " + stopGainCount;
-            variantResults[18] = "Number of unique stop gain variants: " + stopGainSites;
-            variantResults[19] = "Number of stop loss variant containing peptides at " + fdrPsms.FilterThreshold * 100 + "% group FDR: " + stopLossCount;
-            variantResults[20] = "Number of unique stop loss variants: " + stopLossSites;
-            variantResults[21] = "Number of variant peptides at " + fdrPsms.FilterThreshold * 100 + "% group FDR with unambiguous localized modifications: " + modifiedVariantPeptides.Count;
-            variantResults[22] = "Number of variant peptides at " + fdrPsms.FilterThreshold * 100 + "% group FDR with unambiguous localized modifications at the variant sites : " + modifiedVariantSitePeptides.Count;
+            variantResults[4] = $"Number of potential variant containing peptides identified at {fdrPsms.FilterThreshold * 100}% group FDR: {fdrPsms.TargetPsmsAboveThreshold}";
+            variantResults[5] = $"Number of unqiuely identified variant peptides at {filteredVariants.FilterThreshold * 100}% group FDR: {filteredVariants.TargetPsmsAboveThreshold}";
+            variantResults[6] = $"Number of unique variants: {totalVariantSites}";
+            variantResults[7] = $"Number of SNV missense variant containing peptides at {fdrPsms.FilterThreshold * 100}% group FDR: {snvCount}";
+            variantResults[8] = $"Number of unique SNV missense variants: {snvSitesCount}";
+            variantResults[9] = $"Number of MNV missense variant containing peptides at {fdrPsms.FilterThreshold * 100}% group FDR: {mnvCount}";
+            variantResults[10] = $"Number of unique MNV missense variants: {mnvSitesCount}";
+            variantResults[11] = $"Number of frameshift variant containing peptides at {fdrPsms.FilterThreshold * 100}% group FDR: {fsCount}";
+            variantResults[12] = $"Number of unique frameshift variants: {fsSitesCount}";
+            variantResults[13] = $"Number of inframe insertion variant containing peptides at {fdrPsms.FilterThreshold * 100}% group FDR: {insCount}";
+            variantResults[14] = $"Number of unique inframe insertion variants: {insSitesCount}";
+            variantResults[15] = $"Number of inframe deletion variant containing peptides at {fdrPsms.FilterThreshold * 100}% group FDR: {delCount}";
+            variantResults[16] = $"Number of unique inframe deletion variants: {delSitesCount}";
+            variantResults[17] = $"Number of stop gain variant containing peptides at {fdrPsms.FilterThreshold * 100}% group FDR: {stopGainCount}";
+            variantResults[18] = $"Number of unique stop gain variants: {stopGainSitesCount}";
+            variantResults[19] = $"Number of stop loss variant containing peptides at {fdrPsms.FilterThreshold * 100}% group FDR: {stopLossCount}";
+            variantResults[20] = $"Number of unique stop loss variants: {stopLossSitesCount}";
+            variantResults[21] = $"Number of variant peptides at {fdrPsms.FilterThreshold * 100}% group FDR with unambiguous localized modifications: {modifiedVariantPeptides.Count}";
+            variantResults[22] = $"Number of variant peptides at {fdrPsms.FilterThreshold * 100}% group FDR with unambiguous localized modifications at the variant sites : {modifiedVariantSitePeptides.Count}";
 
             string filePath = Path.Combine(Parameters.OutputFolder, "VariantAnalysisResultSummary.txt");
             File.WriteAllLines(filePath, variantResults);
         }
-
         private static void WriteTree(BinTreeStructure myTreeStructure, string writtenFile)
         {
             using (StreamWriter output = new(writtenFile))

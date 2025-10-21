@@ -90,8 +90,9 @@ namespace MetaMorpheusGUI
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             MaxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             AddCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
-            MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
-            MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
+            //add max variants per isoform here
+            MinAlleleDepthTextBox.Text = task.CommonParameters.MinAlleleDepth.ToString(CultureInfo.InvariantCulture);
+            MaxSequenceVariantIsoformsTextBox.Text = task.CommonParameters.MaxSequenceVariantIsoforms.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
@@ -402,8 +403,9 @@ namespace MetaMorpheusGUI
             int maxMissedCleavages = string.IsNullOrEmpty(MissedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(MissedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int minPeptideLength = int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int maxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            int minVariantDepth = int.Parse(MinVariantDepthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
-            int maxHeterozygousVariants = int.Parse(MaxHeterozygousVariantsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int minAlleleDepth = int.Parse(MinAlleleDepthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            // add max variants per isoform here
+            int maxSequenceVariantIsoforms = int.Parse(MaxSequenceVariantIsoformsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int maxModificationIsoforms = int.Parse(MaxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             int maxModsPerPeptide = int.Parse(MaxModsPerPeptideTextBox.Text, CultureInfo.InvariantCulture);
             InitiatorMethionineBehavior initiatorMethionineBehavior = (InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex;
@@ -509,8 +511,9 @@ namespace MetaMorpheusGUI
                     listOfModsVariable: listOfModsVariable,
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                     addCompIons: AddCompIonCheckBox.IsChecked.Value,
-                    minVariantDepth: minVariantDepth,
-                    maxHeterozygousVariants: maxHeterozygousVariants,
+                    // add mx variants per isoform here
+                    minAlleleDepth: minAlleleDepth,
+                    maxSequenceVariantIsoforms: maxSequenceVariantIsoforms,
                     precursorDeconParams: precursorDeconvolutionParameters,
                     productDeconParams: productDeconvolutionParameters);
 

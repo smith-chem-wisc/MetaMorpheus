@@ -70,8 +70,8 @@ namespace MetaMorpheusGUI
             MaxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             MaxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-            MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
-            MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
+            MinAlleleDepthTextBox.Text = task.CommonParameters.MinAlleleDepth.ToString(CultureInfo.InvariantCulture);
+            MaxSequenceVariantIsoformsTextBox.Text = task.CommonParameters.MaxSequenceVariantIsoforms.ToString(CultureInfo.InvariantCulture);
 
             ProductMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             ProductMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
@@ -211,8 +211,8 @@ namespace MetaMorpheusGUI
             int maxMissedCleavages = string.IsNullOrEmpty(MissedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(MissedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
             int minPeptideLength = int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int maxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            int minVariantDepth = int.Parse(MinVariantDepthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
-            int maxHeterozygousVariants = int.Parse(MaxHeterozygousVariantsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int minAlleleDepth = int.Parse(MinAlleleDepthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int maxSequenceVariantIsoforms = int.Parse(MaxSequenceVariantIsoformsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int maxModificationIsoforms = int.Parse(MaxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             int maxModsPerPeptide = int.Parse(MaxModsPerPeptideTextBox.Text, CultureInfo.InvariantCulture);
             //bool addTruncations = addTruncations.
@@ -283,8 +283,9 @@ namespace MetaMorpheusGUI
                     productMassTolerance: productMassTolerance,
                     precursorMassTolerance: precursorMassTolerance,
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
-                    minVariantDepth: minVariantDepth,
-                    maxHeterozygousVariants: maxHeterozygousVariants,
+                    // add max variants per isoform
+                    minAlleleDepth: minAlleleDepth,
+                    maxSequenceVariantIsoforms: maxSequenceVariantIsoforms,
                     trimMsMsPeaks: false,
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,
@@ -305,8 +306,9 @@ namespace MetaMorpheusGUI
                     productMassTolerance: productMassTolerance,
                     precursorMassTolerance: precursorMassTolerance,
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
-                    minVariantDepth: minVariantDepth,
-                    maxHeterozygousVariants: maxHeterozygousVariants,
+                    minAlleleDepth: minAlleleDepth,
+                    // add max variants per isoform
+                    maxSequenceVariantIsoforms: maxSequenceVariantIsoforms,
                     useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,
