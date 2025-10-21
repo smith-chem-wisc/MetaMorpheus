@@ -94,10 +94,10 @@ namespace EngineLayer.DIA
                     isdVoltageScanMap[voltage].Add(scan);
                 }
             }
-            var soretedMap = isdVoltageScanMap.OrderBy(kvp => kvp.Key).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-            ms1Scans = soretedMap.First().Value.ToArray();
-            soretedMap.Remove(soretedMap.First().Key);
-            return soretedMap;
+            var sortedMap = isdVoltageScanMap.OrderBy(kvp => kvp.Key).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            ms1Scans = sortedMap.First().Value.ToArray();
+            sortedMap.Remove(sortedMap.First().Key);
+            return sortedMap;
         }
     }
 }
