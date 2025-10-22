@@ -277,5 +277,20 @@ namespace Test.UtilitiesTest
             var result = (string)method.Invoke(null, new object[] { string.Empty, "file.txt" });
             Assert.That(result, Is.EqualTo("file.txt"));
         }
+
+        [Test]
+        public void ToSafeOutputPath_LeavesAlreadyValidPath_Alone()
+        {
+            string input = @"C:\work\out\good_name.mzML"; string safe = input.ToSafeOutputPath(".mzML");
+            Assert.That(safe, Is.EqualTo(input));
+        }
+
+        // Extension method: throws on whitespace path
+        [Test]
+        public void ToSafeOutputPath_Throws_OnWhitespacePath() 
+        { 
+            Assert.That( () => "   \t".ToSafeOutputPath(".mzML"), Throws.TypeOf<ArgumentException>().With.Message.Contains("Path is null or whitespace")); 
+        }
+
     }
 }
