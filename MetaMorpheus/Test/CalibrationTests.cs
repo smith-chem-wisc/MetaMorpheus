@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using TaskLayer;
 using System;
 using EngineLayer.DatabaseLoading;
+using System.Diagnostics;
 using MzLibUtil;
 using Proteomics;
 
@@ -71,6 +72,80 @@ namespace Test
 
             // clean up
             Directory.Delete(unitTestFolder, true);
+        }
+
+        [Test]
+        public static void TestToleranceExpansion()
+        {
+            // capture warnings
+            var originalOut = Console.Out; 
+            var originalErr = Console.Error; 
+            var sw = new StringWriter(); 
+            var listener = new TextWriterTraceListener(sw) { TraceOutputOptions = TraceOptions.None }; 
+            Trace.Listeners.Add(listener); 
+            Console.SetOut(sw); 
+            Console.SetError(sw);
+
+            try
+            {
+                // set up directories
+                string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
+                string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+                Directory.CreateDirectory(unitTestFolder);
+                Directory.CreateDirectory(outputFolder);
+
+                // set up original spectra file (input to calibration)
+                string nonCalibratedFilePath = Path.Combine(unitTestFolder, "filename1.mzML");
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+
+                // protein db
+                string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+                // run calibration
+                CalibrationTask calibrationTask = new();
+                calibrationTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(2);
+                calibrationTask.CommonParameters.ProductMassTolerance = new PpmTolerance(2);
+                calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+
+
+                string expectedCalibratedFileName = Path.GetFileNameWithoutExtension(nonCalibratedFilePath) + "-calib.mzML";
+                var expectedCalibratedFilePath = Path.Combine(outputFolder, expectedCalibratedFileName);
+
+                // test file-specific toml written by calibration w/ suggested ppm tolerances
+                string expectedTomlName = Path.GetFileNameWithoutExtension(nonCalibratedFilePath) + "-calib.toml";
+
+                Assert.That(File.Exists(Path.Combine(outputFolder, expectedTomlName)));
+
+                var lines = File.ReadAllLines(Path.Combine(outputFolder, expectedTomlName));
+                var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
+                var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
+
+                Assert.That(double.TryParse(tolerance, out double tol));
+                Assert.That(double.TryParse(tolerance1, out double tol1));
+                Assert.That(lines[0].Contains("PrecursorMassTolerance"));
+                Assert.That(lines[1].Contains("ProductMassTolerance"));
+
+                // check that calibrated .mzML exists
+                Assert.That(File.Exists(Path.Combine(outputFolder, expectedCalibratedFilePath)));
+
+                // assert warning for wider tolerance occurred
+                var output = sw.ToString();
+                Assert.That(output, Does.Contain("Could not find enough PSMs to calibrate with; opening up tolerances to"));
+                Assert.That(output, Does.Contain("ppm precursor and"));
+                Assert.That(output, Does.Contain("ppm product"));
+
+                // clean up
+                Directory.Delete(unitTestFolder, true);
+
+            }
+            finally
+            {
+                Trace.Listeners.Remove(listener);
+                listener.Flush();
+                listener.Close();
+                Console.SetOut(originalOut);
+                Console.SetError(originalErr);
+            }
         }
 
         [Test]
@@ -160,9 +235,6 @@ namespace Test
         public static void CalibrationTestLowRes()
         {
             CalibrationTask calibrationTask = new CalibrationTask();
-
-            CommonParameters CommonParameters = new(dissociationType: DissociationType.LowCID,
-                scoreCutoff: 1);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationLow");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
