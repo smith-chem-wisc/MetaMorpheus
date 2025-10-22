@@ -232,7 +232,8 @@ public class GuiGlobalParamsViewModel : BaseViewModel
             UseNonSpecificParams == other.UseNonSpecificParams &&
             UseSemiTrypsinParams == other.UseSemiTrypsinParams &&
             UseArgCParams == other.UseArgCParams &&
-            UseSpectralRecoveryParams == other.UseSpectralRecoveryParams;
+            UseSpectralRecoveryParams == other.UseSpectralRecoveryParams
+            && IsRnaMode == other.IsRnaMode;
     }
 
     public override int GetHashCode() => _current.GetHashCode();
@@ -258,7 +259,8 @@ public class GuiGlobalParamsViewModel : BaseViewModel
             UseNonSpecificParams = src.UseNonSpecificParams,
             UseSemiTrypsinParams = src.UseSemiTrypsinParams,
             UseArgCParams = src.UseArgCParams,
-            UseSpectralRecoveryParams = src.UseSpectralRecoveryParams
+            UseSpectralRecoveryParams = src.UseSpectralRecoveryParams,
+            IsRnaMode = src.IsRnaMode
         };
     }
 }

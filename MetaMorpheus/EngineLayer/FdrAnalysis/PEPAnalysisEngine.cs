@@ -614,8 +614,6 @@ namespace EngineLayer
                 isIntra = Convert.ToSingle(csm.CrossType == PsmCrossType.Intra);
             }
 
-
-            CreateData:
             psm.PsmData_forPEPandPercolator = new PsmData
             {
                 TotalMatchingFragmentCount = totalMatchingFragmentCount,

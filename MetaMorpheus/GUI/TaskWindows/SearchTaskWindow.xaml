@@ -731,7 +731,7 @@
                                 <CheckBox x:Name="WriteHighQPsmsCheckBox" >
                                     <CheckBox.Content>
                                         <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
-                                                 ConverterParameter="Write PSMs &amp; peptides with q-value above thresholds"/>
+                                                 ConverterParameter="Write PSMs &amp; peptides with q-value above threshold"/>
                                     </CheckBox.Content>
                                 </CheckBox>
                                 <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />

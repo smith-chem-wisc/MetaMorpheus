@@ -2132,7 +2132,7 @@ namespace MetaMorpheusGUI
             }
             else
                 MessageBox.Show(
-                    $"Cannot find proteome directory ${GuiGlobalParamsViewModel.Instance.ProteomeDirectory}/r/nSee settings tab to update directory path");
+                    $"Cannot find proteome directory ${GuiGlobalParamsViewModel.Instance.ProteomeDirectory}{Environment.NewLine}See settings tab to update directory path");
         }
     }
 }

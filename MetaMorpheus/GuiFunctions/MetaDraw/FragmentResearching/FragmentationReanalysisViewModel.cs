@@ -239,7 +239,7 @@ namespace GuiFunctions
                 precursorDeconParams: MetaDrawSettingsViewModel.Instance.DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters,
                 productDeconParams: MetaDrawSettingsViewModel.Instance.DeconHostViewModel.ProductDeconvolutionParameters.Parameters,
                 deconvolutionMaxAssumedChargeState: _isProtein ? 60 : -60,
-                digestionParams: _isProtein ? new DigestionParams() : new RnaDigestionParams() // no digestion occurs, just used to set values. S
+                digestionParams: _isProtein ? new DigestionParams() : new RnaDigestionParams() // no digestion occurs, just used to set values.
                 );
 
 
