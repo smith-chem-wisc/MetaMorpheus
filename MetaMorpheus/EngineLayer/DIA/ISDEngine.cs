@@ -9,6 +9,9 @@ using System.Text.RegularExpressions;
 
 namespace EngineLayer.DIA
 {
+    /// <summary>
+    /// ISDEngine inherits from DIAEngine and employs a similar workflow of generating XICs, grouping XICs and make pseudo Ms2 scans for ISD data analysis. 
+    /// </summary>
     public class ISDEngine : DIAEngine
     {
         private readonly MsDataFile DataFile;
@@ -59,6 +62,9 @@ namespace EngineLayer.DIA
             }
         }
 
+        /// <summary>
+        /// Relabel ISD scans to have correct Ms level, precursor scan number and isolation m/z/range.
+        /// </summary>
         public static void ReLabelIsdScans(Dictionary<int, List<MsDataScan>> isdVoltageScanMap, MsDataScan[] ms1Scans)
         {
             for (int i = 0; i < isdVoltageScanMap.Count; i++)
@@ -76,9 +82,14 @@ namespace EngineLayer.DIA
             }
         }
 
+        /// <summary>
+        /// Divide all ISD scans into groups based on their source energy level and extract real MS1 scans. 
+        /// </summary>
+        /// <returns> A dictionary where the key is ISD voltage and the values are MS2 scans. </returns>
         public static Dictionary<int, List<MsDataScan>> ConstructIsdGroups(MsDataScan[] scans, out MsDataScan[] ms1Scans)
         {
             var isdVoltageScanMap = new Dictionary<int, List<MsDataScan>>();
+            //ISD voltage is written in the scan filter like "sid=15" in the raw file
             string pattern = $@"sid=(\d+)";
             foreach (var scan in scans)
             {
@@ -95,6 +106,7 @@ namespace EngineLayer.DIA
                 }
             }
             var soretedMap = isdVoltageScanMap.OrderBy(kvp => kvp.Key).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            //ISD runs start with MS1 scans so the first kvp is removed from the dictionary
             ms1Scans = soretedMap.First().Value.ToArray();
             soretedMap.Remove(soretedMap.First().Key);
             return soretedMap;

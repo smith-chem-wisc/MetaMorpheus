@@ -19,6 +19,16 @@ namespace EngineLayer.DIA
         public int? PrecursorRankThreshold { get; set; } 
         public int? FragmentRankThreshold { get; set; }
 
+        /// <summary>
+        /// A generic method of grouping correlated XICs into PrecursorFragmentsGroup objects based on specified criteria.
+        /// </summary>
+        /// <param name="apexRTTolerance"> maximum apex RT difference allowed between two XICs </param>
+        /// <param name="overlapThreshold"> minimum overlap between two XICs </param>
+        /// <param name="correlationThreshold"> minimum Pearson's correlation between two XICs </param>
+        /// <param name="maxThreadsForGrouping"> the maximum threads for parallelization of grouping </param>
+        /// <param name="minFragmentCountForGrouping"> minimun number of fragments needed to construct a PF group </param>
+        /// <param name="precursorRankThreshold"> filter out PF pairs ranked low for the precursor </param>
+        /// <param name="fragmentRankThreshold"> filter out PF pairs ranked low for the fragment </param>
         public XicGroupingEngine(float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0, int? precursorRankThreshold = null, int? fragmentRankThreshold = null)
         {
             ApexRTTolerance = apexRTTolerance;
