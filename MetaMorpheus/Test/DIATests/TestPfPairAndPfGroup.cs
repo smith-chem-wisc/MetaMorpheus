@@ -10,8 +10,6 @@ using System.Collections.Generic;
 using System.Data.Entity.Core;
 using System.Linq;
 using TaskLayer;
-using static Org.BouncyCastle.Asn1.Cmp.Challenge;
-
 namespace Test.DIATests
 {
     public class TestPfPairAndPfGroup
