@@ -151,14 +151,14 @@ namespace Test
         {
             var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
 
-            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTnGlycoData"));
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask>
                 {
                     db
-                }, Path.Combine(Environment.CurrentDirectory, @"TESTnGlycoData")).Run();
-            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTnGlycoData"), true);
+                }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
 
         [Test]
