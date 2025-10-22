@@ -16,9 +16,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EngineLayer.DatabaseLoading;
-using EngineLayer.Util;
-using Omics.Modifications;
-using Readers;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -242,6 +239,11 @@ namespace TaskLayer
         /// </summary>
         private void Initialize(string taskId, List<DbForTask> dbFilenameList)
         {
+            MyTaskResults = new MyTaskResults(this)
+            {
+                NewSpectra = new List<string>(),
+                NewFileSpecificTomls = new List<string>()
+            };
             _taskId = taskId;
             LoadModifications(_taskId, out _variableModifications, out _fixedModifications, out var localizeableModificationTypes);
             // load proteins
@@ -251,11 +253,6 @@ namespace TaskLayer
             
             _myFileManager = new MyFileManager(true);
             _unsuccessfullyCalibratedFilePaths = new List<string>();
-            MyTaskResults = new MyTaskResults(this)
-            {
-                NewSpectra = new List<string>(),
-                NewFileSpecificTomls = new List<string>()
-            };
 
             // write prose settings
             WriteProse(_fixedModifications, _variableModifications, _proteinList);
