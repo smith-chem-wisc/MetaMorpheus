@@ -27,17 +27,18 @@ namespace Test
             {
                 "File Name",
                 "Scan Number",
-                "Retention Time",
+                "Scan Retention Time",
                 "Precursor Scan Number",
                 "Precursor MZ",
                 "Precursor Charge",
                 "Precursor Mass",
                 "Protein Accession",
-                "Organism",
+                "Organism Name",
                 "Protein Name",
+                "Missed Cleavages",
                 "Start and End Residues In Protein",
                 "Base Sequence",
-                "FlankingResidues",
+                "Flanking Residues",
                 "Full Sequence",
                 "Number of Mods",
                 "Peptide Monoisotopic Mass",
@@ -67,12 +68,13 @@ namespace Test
                 "Localized Glycans with Peptide Site Specific Probability",
                 "Localized Glycans with Protein Site Specific Probability",
                 "All potential glycan localizations",//Not used for N-Glyco
-                "AllSiteSpecificLocalizationProbability",//Not used for N-Glyco
-
+                "All SiteSpecific Localization Probability",//Not used for N-Glyco
             };
 
+            headerTerms = headerTerms.Select(p => p.ToLower()).ToList();
+
             string nglycoHeaderString = GlycoSpectralMatch.GetTabSepHeaderSingle() + GlycoSpectralMatch.GetTabSeperatedHeaderGlyco();
-            List<string> nGlycoHeaderTerms = nglycoHeaderString.Split('\t').ToList();
+            List<string> nGlycoHeaderTerms = nglycoHeaderString.Split('\t').Select(p => p.ToLower()).ToList();
 
             CollectionAssert.AreEquivalent(headerTerms, nGlycoHeaderTerms);
         }
@@ -149,14 +151,14 @@ namespace Test
         {
             var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
 
-            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTnGlycoData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask>
                 {
                     db
-                }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
-            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+                }, Path.Combine(Environment.CurrentDirectory, @"TESTnGlycoData")).Run();
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTnGlycoData"), true);
         }
 
         [Test]

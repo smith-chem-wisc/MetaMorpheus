@@ -141,7 +141,8 @@ namespace GuiFunctions
             if (sm.QValue <= QValueFilter
                  && (sm.QValueNotch == null || sm.QValueNotch <= QValueFilter)
                  && (sm.DecoyContamTarget == "T" || (sm.DecoyContamTarget == "D" && ShowDecoys) || (sm.DecoyContamTarget == "C" && ShowContaminants))
-                 && (!sm.IsCrossLinkedPeptide() || (sm is GlycoPsmFromTsv psm && (!psm.GlycanLocalizationLevel.HasValue || psm.GlycanLocalizationLevel.Value >= LocalizationLevelStart && psm.GlycanLocalizationLevel.Value <= LocalizationLevelEnd))))
+                 // Glyco localization level filtering - only applies to glyco psms that have localization levels
+                 && (sm is not GlycoPsmFromTsv { GlycanLocalizationLevel: not null } gly || (gly.GlycanLocalizationLevel.Value >= LocalizationLevelStart && gly.GlycanLocalizationLevel.Value <= LocalizationLevelEnd)))
             {
                 // Ambiguity filtering conditionals, should only be hit if Ambiguity Filtering is selected
                 if (AmbiguityFilter == "No Filter" || sm.AmbiguityLevel == AmbiguityFilter)

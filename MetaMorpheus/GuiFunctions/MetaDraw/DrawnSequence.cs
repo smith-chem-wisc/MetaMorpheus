@@ -208,7 +208,7 @@ namespace GuiFunctions
 
             // read glycans if applicable
             List<Tuple<int, string, double>> localGlycans = null;
-            if (spectrumMatch is GlycoPsmFromTsv psm)
+            if (spectrumMatch is GlycoPsmFromTsv { GlycanLocalizationLevel: not null } psm)
             {
                 localGlycans = GlycoPsmFromTsv.ReadLocalizedGlycan(psm.LocalizedGlycanInPeptide);
             }
@@ -227,7 +227,7 @@ namespace GuiFunctions
 
                 if (mod.Value.ModificationType == "O-linked glycosylation")
                 {
-                    if (localGlycans.Where(p => p.Item1 + 1 == mod.Key).Count() > 0)
+                    if (localGlycans?.Count(p => p.Item1 + 1 == mod.Key) > 0)
                     {
                         DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), ParseColorBrushFromOxyColor(MetaDrawSettings.GetValueOrDefault(MetaDrawSettings.ModificationTypeToColor, mod.Value.IdWithMotif, OxyColors.Blue)));
                     }
