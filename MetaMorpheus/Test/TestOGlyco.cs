@@ -704,7 +704,7 @@ namespace Test
 
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
-            List<PsmFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2)
+            List<SpectrumMatchFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadTsv(allPsmPath, out var errors2)
             .Where(p => p.QValue <= 0.01).ToList();
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             int readInPsmsCount = onePercentPsms1.Count;
@@ -784,7 +784,7 @@ namespace Test
 
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
-            List<PsmFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2)
+            List<SpectrumMatchFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadTsv(allPsmPath, out var errors2)
             .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C" && p.DecoyContamTarget != "D").ToList();
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             int readInPsmsCount = onePercentPsms1.Count;
@@ -881,7 +881,7 @@ namespace Test
 
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
-            List<PsmFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2)
+            List<SpectrumMatchFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadTsv(allPsmPath, out var errors2)
             .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C" && p.DecoyContamTarget != "D").ToList();
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             int readInPsmsCount = onePercentPsms1.Count;
