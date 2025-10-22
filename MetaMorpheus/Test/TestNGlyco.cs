@@ -27,17 +27,18 @@ namespace Test
             {
                 "File Name",
                 "Scan Number",
-                "Retention Time",
+                "Scan Retention Time",
                 "Precursor Scan Number",
                 "Precursor MZ",
                 "Precursor Charge",
                 "Precursor Mass",
                 "Protein Accession",
-                "Organism",
+                "Organism Name",
                 "Protein Name",
+                "Missed Cleavages",
                 "Start and End Residues In Protein",
                 "Base Sequence",
-                "FlankingResidues",
+                "Flanking Residues",
                 "Full Sequence",
                 "Number of Mods",
                 "Peptide Monoisotopic Mass",
@@ -67,12 +68,13 @@ namespace Test
                 "Localized Glycans with Peptide Site Specific Probability",
                 "Localized Glycans with Protein Site Specific Probability",
                 "All potential glycan localizations",//Not used for N-Glyco
-                "AllSiteSpecificLocalizationProbability",//Not used for N-Glyco
-
+                "All SiteSpecific Localization Probability",//Not used for N-Glyco
             };
 
+            headerTerms = headerTerms.Select(p => p.ToLower()).ToList();
+
             string nglycoHeaderString = GlycoSpectralMatch.GetTabSepHeaderSingle() + GlycoSpectralMatch.GetTabSeperatedHeaderGlyco();
-            List<string> nGlycoHeaderTerms = nglycoHeaderString.Split('\t').ToList();
+            List<string> nGlycoHeaderTerms = nglycoHeaderString.Split('\t').Select(p => p.ToLower()).ToList();
 
             CollectionAssert.AreEquivalent(headerTerms, nGlycoHeaderTerms);
         }
