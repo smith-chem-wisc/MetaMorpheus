@@ -124,37 +124,38 @@ namespace EngineLayer.GlycoSearch
         public static string GetTabSepHeaderSingle() //Most complicate part in this class
         {
             var sb = new StringBuilder();
-            sb.Append("File Name" + '\t');
-            sb.Append("Scan Number" + '\t');
-            sb.Append("Retention Time" + '\t');
-            sb.Append("Precursor Scan Number" + '\t');
-            sb.Append("Precursor MZ" + '\t');
-            sb.Append("Precursor Charge" + '\t');
-            sb.Append("Precursor Mass" + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.FileName + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.Ms2ScanNumber + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.Ms2ScanRetentionTime + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PrecursorScanNum + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PrecursorMz + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PrecursorCharge + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PrecursorMass + '\t');
 
-            sb.Append("Protein Accession" + '\t');
-            sb.Append("Organism" + '\t');
-            sb.Append("Protein Name" + '\t');
-            sb.Append("Start and End Residues In Protein" + '\t');
-            sb.Append("Base Sequence" + '\t');
-            sb.Append("FlankingResidues" + '\t');
-            sb.Append("Full Sequence" + '\t');
-            sb.Append("Number of Mods" + '\t');
-            sb.Append("Peptide Monoisotopic Mass" + '\t');
-            sb.Append("Score" + '\t');
-            sb.Append("Rank" + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.ProteinAccession + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.OrganismName + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.ProteinName + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MissedCleavages + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.StartAndEndResiduesInProtein + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.BaseSequence + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.FlankingResidues + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.FullSequence + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.NumberOfMods + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PeptideMonoMass + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.Score + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.RankLabel + '\t');
 
-            sb.Append("Matched Ion Series" + '\t');
-            sb.Append("Matched Ion Mass-To-Charge Ratios" + '\t');
-            sb.Append("Matched Ion Mass Diff (Da)" + '\t');
-            sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
-            sb.Append("Matched Ion Intensities" + '\t');
-            
-            sb.Append("Matched Ion Counts" + '\t');
-            sb.Append("Decoy/Contaminant/Target" + '\t');
-            sb.Append("QValue" + '\t');
-            sb.Append("PEP" + '\t');
-            sb.Append("PEP_QValue");
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonSeries + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonMzRatios + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonMassDiffDa + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonMassDiffPpm + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonIntensities + '\t');
+
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonCounts + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.DecoyContaminantTarget + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.QValue + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PEP + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PEP_QValue);
 
             return sb.ToString();
         }
@@ -166,22 +167,23 @@ namespace EngineLayer.GlycoSearch
         public static string GetTabSeperatedHeaderGlyco()
         {
             var sb = new StringBuilder();
+
             sb.Append("\t");//provides the separation needed from GetTabSepHeaderSingle()
-            sb.Append("Localization Score" + '\t');
-            sb.Append("Yion Score" + '\t');
-            sb.Append("DiagonosticIon Score" + '\t');
-            sb.Append("Plausible Number Of Glycans" + '\t');//Not used for N-Glyco
-            sb.Append("Total Glycosylation sites" + '\t');//Not used for N-Glyco
-            sb.Append("GlycanMass" + '\t');
-            sb.Append("Plausible GlycanComposition" + '\t');
-            sb.Append("N-Glycan motif Check" + '\t');//Not used for N-Glyco
-            sb.Append("R138/144" + '\t');
-            sb.Append("Plausible GlycanStructure" + '\t');
-            sb.Append("GlycanLocalizationLevel" + '\t');
-            sb.Append("Localized Glycans with Peptide Site Specific Probability" + '\t');
-            sb.Append("Localized Glycans with Protein Site Specific Probability" + '\t');
-            sb.Append("All potential glycan localizations" + '\t');//Not used for N-Glyco
-            sb.Append("AllSiteSpecificLocalizationProbability");//Not used for N-Glyco
+            sb.Append(SpectrumMatchFromTsvHeader.LocalizationScore + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.YionScore + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.DiagonosticIonScore + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.NumberOfGlycan + '\t');//Not used for N-Glyco
+            sb.Append(SpectrumMatchFromTsvHeader.TotalGlycanSite + '\t');//Not used for N-Glyco
+            sb.Append(SpectrumMatchFromTsvHeader.GlycanMass + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.GlycanComposition + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.NGlycanMotifCheck + '\t');//Not used for N-Glyco
+            sb.Append(SpectrumMatchFromTsvHeader.R138144 + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.GlycanStructure + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.GlycanLocalizationLevel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.LocalizedGlycanInPeptide + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.LocalizedGlycanInProtein + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.AllPotentialGlycanLocalization + '\t');//Not used for N-Glyco
+            sb.Append(SpectrumMatchFromTsvHeader.AllSiteSpecificLocalizationProbability);//Not used for N-Glyco
 
             return sb.ToString();
         }
@@ -205,6 +207,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append(proteinAccessionString + "\t");
             sb.Append(Organism + "\t");
             sb.Append(PsmTsvWriter.Resolve(BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.FullName), FullSequence).ResolvedString + "\t"); //protein name
+            sb.Append(PsmTsvWriter.Resolve(BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.MissedCleavages)).ResolvedString + "\t"); 
             int _FirstOneBasedStartResidueInProtein = OneBasedStartResidue.HasValue ? OneBasedStartResidue.Value : BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.OneBasedStartResidue;
             int _FirstOneBasedEndResidueInProtein = OneBasedEndResidue.HasValue ? OneBasedEndResidue.Value : BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.OneBasedEndResidue; ;
 

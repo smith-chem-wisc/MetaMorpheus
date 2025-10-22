@@ -189,7 +189,7 @@ namespace Test
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { targetDbForTask, contaminDbForTask }, outputFolder).Run();
             
             string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");            
-            var glycanLevel_filterOFF = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
+            var glycanLevel_filterOFF = SpectrumMatchTsvReader.ReadGlycoPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
                 .Where(p => p.Ms2ScanNumber == 161 && p.BaseSeq == "HTSVQTTSSGSGPFTDVR").ToList()[0].GlycanLocalizationLevel;
 
             
@@ -198,7 +198,7 @@ namespace Test
 
             glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = true;
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { targetDbForTask, contaminDbForTask }, outputFolder).Run();
-            var glycanLevel_filterON = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var error) //load the PSMs data from the "csv file" and bulid the objects
+            var glycanLevel_filterON = SpectrumMatchTsvReader.ReadGlycoPsmTsv(oGlycoPath, out var error) //load the PSMs data from the "csv file" and bulid the objects
                 .Where(p => p.Ms2ScanNumber == 161 && p.BaseSeq == "HTSVQTTSSGSGPFTDVR").ToList()[0].GlycanLocalizationLevel;
 
             Assert.That(glycanLevel_filterON == LocalizationLevel.Level1);
@@ -209,8 +209,8 @@ namespace Test
         [Test]
         public static void GlycoSpectralHeader()
         {
-            string header = GlycoSpectralMatch.GetTabSepHeaderSingle().Trim();
-            string expectedHeader = "File Name\tScan Number\tRetention Time\tPrecursor Scan Number\tPrecursor MZ\tPrecursor Charge\tPrecursor Mass\tProtein Accession\tOrganism\tProtein Name\tStart and End Residues In Protein\tBase Sequence\tFlankingResidues\tFull Sequence\tNumber of Mods\tPeptide Monoisotopic Mass\tScore\tRank\tMatched Ion Series\tMatched Ion Mass-To-Charge Ratios\tMatched Ion Mass Diff (Da)\tMatched Ion Mass Diff (Ppm)\tMatched Ion Intensities\tMatched Ion Counts\tDecoy/Contaminant/Target\tQValue\tPEP\tPEP_QValue\t";
+            string header = GlycoSpectralMatch.GetTabSepHeaderSingle().ToLower().Trim();
+            string expectedHeader = "File Name\tScan Number\tScan Retention Time\tPrecursor Scan Number\tPrecursor MZ\tPrecursor Charge\tPrecursor Mass\tProtein Accession\tOrganism Name\tProtein Name\tMissed Cleavages\tStart and End Residues In Protein\tBase Sequence\tFlanking Residues\tFull Sequence\tNumber of Mods\tPeptide Monoisotopic Mass\tScore\tRank\tMatched Ion Series\tMatched Ion Mass-To-Charge Ratios\tMatched Ion Mass Diff (Da)\tMatched Ion Mass Diff (Ppm)\tMatched Ion Intensities\tMatched Ion Counts\tDecoy/Contaminant/Target\tQValue\tPEP\tPEP_QValue\t".ToLower();
             Assert.That(header.Equals(expectedHeader.Trim()));
         }
 
@@ -705,7 +705,7 @@ namespace Test
 
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
-            List<PsmFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2)
+            List<SpectrumMatchFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadTsv(allPsmPath, out var errors2)
             .Where(p => p.QValue <= 0.01).ToList();
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             int readInPsmsCount = onePercentPsms1.Count;
@@ -719,7 +719,7 @@ namespace Test
 
             //For GlycoPSMs
             string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");
-            List<PsmFromTsv> onePercentoGlycoPsms = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
+            List<GlycoPsmFromTsv> onePercentoGlycoPsms = SpectrumMatchTsvReader.ReadGlycoPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
                 .Where(p => p.QValue <= 0.01).ToList(); // the filtering (Q<0.01)
             int readInGlycoPsmCount = onePercentoGlycoPsms.Count; // the gPSMs number with Fdr<0.01
             Assert.That(errors.Count == 0);// if we cannot find the file, we will get an error message
@@ -785,7 +785,7 @@ namespace Test
 
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
-            List<PsmFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2)
+            List<SpectrumMatchFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadTsv(allPsmPath, out var errors2)
             .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C" && p.DecoyContamTarget != "D").ToList();
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             int readInPsmsCount = onePercentPsms1.Count;
@@ -801,7 +801,7 @@ namespace Test
 
             //For GlycoPSMs
             string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");
-            List<PsmFromTsv> onePercentoGlycoPsms = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
+            List<GlycoPsmFromTsv> onePercentoGlycoPsms = SpectrumMatchTsvReader.ReadGlycoPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
                 .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C" && p.DecoyContamTarget != "D").ToList(); // the filtering (Q<0.01)
             int readInGlycoPsmCount = onePercentoGlycoPsms.Count; // the gPSMs number with Fdr<0.01
             Assert.That(errors.Count == 0);// if we cannot find the file, we will get an error message
@@ -882,7 +882,7 @@ namespace Test
 
             //For PSMs
             var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
-            List<PsmFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2)
+            List<SpectrumMatchFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadTsv(allPsmPath, out var errors2)
             .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C" && p.DecoyContamTarget != "D").ToList();
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             int readInPsmsCount = onePercentPsms1.Count;
@@ -898,7 +898,7 @@ namespace Test
 
             //For GlycoPSMs
             string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");
-            List<PsmFromTsv> onePercentoGlycoPsms = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
+            List<GlycoPsmFromTsv> onePercentoGlycoPsms = SpectrumMatchTsvReader.ReadGlycoPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
                 .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C" && p.DecoyContamTarget != "D").ToList(); // the filtering (Q<0.01, decoy and contaminat)
             int readInGlycoPsmCount = onePercentoGlycoPsms.Count; // the gPSMs number with Fdr<0.01
             Assert.That(errors.Count == 0);// if we cannot find the file, we will get an error message

@@ -720,7 +720,7 @@ namespace GuiFunctions
             {
                 FilteredListOfPsms.Clear();
 
-                foreach (var psm in AllSpectralMatches.Where(p => MetaDrawSettings.FilterAcceptsPsm(p)))
+                foreach (var psm in AllSpectralMatches.Where(MetaDrawSettings.FilterAcceptsPsm))
                 {
                     FilteredListOfPsms.Add(psm);
                 }
