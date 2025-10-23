@@ -90,19 +90,19 @@ namespace Test.DIATests
             var xic3 = new ExtractedIonChromatogram(peakList3);
 
             //It should still return 1.0 for two perfectly aligned XICs (xic1 and xic2)
-            var cubicSpline = new XicCubicSpline();
-            cubicSpline.SetXicSplineXYData(xic1, true);
-            cubicSpline.SetXicSplineXYData(xic2, true);
+            var cubicSpline = new XicCubicSpline(scanIndexBased: true);
+            cubicSpline.SetXicSplineXYData(xic1);
+            cubicSpline.SetXicSplineXYData(xic2);
             var corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
             Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
             var linearSpline = new XicLinearSpline();
-            linearSpline.SetXicSplineXYData(xic1, true);
-            linearSpline.SetXicSplineXYData(xic2, true);
+            linearSpline.SetXicSplineXYData(xic1);
+            linearSpline.SetXicSplineXYData(xic2);
             corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
             Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
 
             //For the XICs with insufficient overlap points (xic1 and xic3), it should return NaN
-            linearSpline.SetXicSplineXYData(xic3, true);
+            linearSpline.SetXicSplineXYData(xic3);
             corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic3);
             Assert.That(corr, Is.NaN);
             //Test on umpire correlation calculation, should also return NaN
