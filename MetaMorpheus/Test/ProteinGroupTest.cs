@@ -85,6 +85,9 @@ namespace Test
 
             //string exectedProteinGroupToString = proteinGroup1.ToString();
             string exectedProteinGroupToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
+            var out1 = proteinGroup1.ToString().Split("\t");
+            var out1h = proteinGroup1.GetTabSeparatedHeader().Split("\t");
+            var out1zipped = out1h.Zip(out1, (a, b) => (a, b)).ToDictionary();
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupToString));
 
 
@@ -93,6 +96,7 @@ namespace Test
             ProteinGroup proteinGroup3 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList3),
                                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
             string exectedProteinGroupWithDecoyToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
+            var out2 = proteinGroup1.ToString();
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupWithDecoyToString));
         }
 
@@ -244,9 +248,12 @@ namespace Test
             Assert.That(totalNumberOfMods, Is.EqualTo(4));
 
             List<string> proteinGroupsOutput = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllQuantifiedProteinGroups.tsv")).ToList();
-            string firstDataLine = proteinGroupsOutput[2];
-            string modInfoListProteinTwo = firstDataLine.Split('\t')[14];
-            Assert.That(modInfoListProteinTwo, Is.EqualTo("#aa71[Oxidation on S,info:occupancy=0.50(1/2)]"));
+            string testDataLine = proteinGroupsOutput.Where(x => x.StartsWith("P10591")).First();
+            string modInfoListProteinTwo = testDataLine.Split('\t')[14];
+
+            Assert.That(8, Is.EqualTo(proteinGroupsOutput.Count));
+            Assert.That(modInfoListProteinTwo, Is.EqualTo("P10591:{M#65[Common Variable:Oxidation on M, info: occupancy=1.0000(654315.977066199)]S#71[Less Common:Oxidation on S, info: occupancy=0.1957(654315.977066199)]}" +
+                                                          "P10592:{M#65[Common Variable:Oxidation on M, info: occupancy=1.0000(654315.977066199)]S#71[Less Common:Oxidation on S, info: occupancy=0.1957(654315.977066199)]}"));
 
             Directory.Delete(outputFolder, true);
         }
