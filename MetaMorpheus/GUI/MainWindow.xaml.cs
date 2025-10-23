@@ -22,6 +22,7 @@ using TaskLayer;
 using System.Text.RegularExpressions;
 using Readers.InternalResults;
 using System.Diagnostics;
+using EngineLayer.DatabaseLoading;
 
 namespace MetaMorpheusGUI
 {
@@ -665,7 +666,8 @@ namespace MetaMorpheusGUI
             }
 
             // user is probably just checking or unchecking a checkbox, don't open the file
-            if (sender is DataGridCell cell && cell.Column is DataGridCheckBoxColumn)
+            // User is double clicking the decoy ident column. 
+            if (sender is DataGridCell { Column: DataGridCheckBoxColumn } || sender is DataGridCell { Column: DataGridTextColumn, TabIndex: >= 3})
             {
                 return;
             }
@@ -986,7 +988,7 @@ namespace MetaMorpheusGUI
             // everything is ready to run
             EverythingRunnerEngine a = new EverythingRunnerEngine(InProgressTasks.Select(b => (b.DisplayName, b.Task)).ToList(),
                 SpectraFiles.Where(b => b.Use).Select(b => b.FilePath).ToList(),
-                ProteinDatabases.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(),
+                ProteinDatabases.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant, b.DecoyIdentifier)).ToList(),
                 outputFolder);
 
             var t = new Task(a.Run);
@@ -1088,31 +1090,34 @@ namespace MetaMorpheusGUI
         {
             if (!RunTasksButton.IsEnabled) return;
 
+            bool IsDatabaseOrSpectra(KeyEventArgs args) => args.OriginalSource is DataGrid;
+            bool IsTask(KeyEventArgs args) => args.OriginalSource is TreeViewItem;
+
             switch (e.Key)
             {
                 // delete selected task/db/spectra
-                case Key.Delete:
-                case Key.Back:
+                case Key.Delete when IsDatabaseOrSpectra(e) || IsTask(e):
+                case Key.Back when IsDatabaseOrSpectra(e) || IsTask(e):
                     Delete_Click(sender, e);
                     e.Handled = true;
                     break;
 
                 // move task down
-                case Key.Add:
-                case Key.OemPlus:
+                case Key.Add when IsTask(e):
+                case Key.OemPlus when IsTask(e):
                     MoveSelectedTask_Click(sender, e, false);
                     e.Handled = true;
                     break;
 
                 // move task up
-                case Key.Subtract:
-                case Key.OemMinus:
+                case Key.Subtract when IsTask(e):
+                case Key.OemMinus when IsTask(e):
                     MoveSelectedTask_Click(sender, e, true);
                     e.Handled = true;
                     break;
 
                 // copy selected task
-                case Key.C when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                case Key.C when IsTask(e) && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
                     if (sender is TreeView { SelectedItem: PreRunTask preRunTask })
                     {
                         _clipboard = preRunTask.metaMorpheusTask;
@@ -1122,7 +1127,7 @@ namespace MetaMorpheusGUI
                     break;
 
                 // paste selected task 
-                case Key.V when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                case Key.V when IsTask(e) && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
                     if (sender is TreeView && _clipboard != null)
                     {
                         PreRunTasks.Add(new PreRunTask(_clipboard));
@@ -1132,7 +1137,7 @@ namespace MetaMorpheusGUI
                     break;
 
                 // Duplicate Selected Task
-                case Key.D when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                case Key.D when IsTask(e) && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
                     if (sender is TreeView { SelectedItem: PreRunTask task })
                     {
                         PreRunTasks.Add(task);

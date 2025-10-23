@@ -18,6 +18,7 @@ using System.Linq;
 using System.Text;
 using TaskLayer.MbrAnalysis;
 using Chemistry;
+using EngineLayer.DatabaseLoading;
 using MzLibUtil;
 using Omics.Digestion;
 using Omics.BioPolymer;
@@ -1728,7 +1729,7 @@ namespace TaskLayer
                 writer.WriteLine("Protein Accession\tPrimary Sequence\tDigestion Products");
                 foreach (var proteinEntry in DigestionCountDictionary!)
                 {
-                    if (!Parameters.SearchParameters.WriteDecoys && proteinEntry.Key.Accession.StartsWith("DECOY"))
+                    if (!Parameters.SearchParameters.WriteDecoys && proteinEntry.Key.Accession.StartsWith(GlobalVariables.DecoyIdentifier))
                         continue;
                     writer.WriteLine($"{proteinEntry.Key.Accession}\t{proteinEntry.Key.BaseSeqeunce}\t{proteinEntry.Value}");
                 }
@@ -1751,7 +1752,7 @@ namespace TaskLayer
             var countDictionary = new Dictionary<int, int>(CommonParameters.DigestionParams.MaxModificationIsoforms);
             foreach (var proteinEntry in DigestionCountDictionary!)
             {
-                if (!Parameters.SearchParameters.WriteDecoys && proteinEntry.Key.Accession.StartsWith("DECOY"))
+                if (!Parameters.SearchParameters.WriteDecoys && proteinEntry.Key.Accession.StartsWith(GlobalVariables.DecoyIdentifier))
                     continue;
                 countDictionary.Increment(proteinEntry.Value);
             }

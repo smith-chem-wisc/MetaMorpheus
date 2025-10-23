@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -238,16 +239,20 @@ namespace TaskLayer
         /// </summary>
         private void Initialize(string taskId, List<DbForTask> dbFilenameList)
         {
-            _taskId = taskId;
-            LoadModifications(_taskId, out _variableModifications, out _fixedModifications, out var localizeableModificationTypes);
-            _proteinList = LoadBioPolymers(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
-            _myFileManager = new MyFileManager(true);
-            _unsuccessfullyCalibratedFilePaths = new List<string>();
             MyTaskResults = new MyTaskResults(this)
             {
                 NewSpectra = new List<string>(),
                 NewFileSpecificTomls = new List<string>()
             };
+            _taskId = taskId;
+            LoadModifications(_taskId, out _variableModifications, out _fixedModifications, out var localizeableModificationTypes);
+            // load proteins
+            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, DecoyType.Reverse, true, localizeableModificationTypes);
+            var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
+            _proteinList = loadingResults!.BioPolymers;
+            
+            _myFileManager = new MyFileManager(true);
+            _unsuccessfullyCalibratedFilePaths = new List<string>();
 
             // write prose settings
             WriteProse(_fixedModifications, _variableModifications, _proteinList);

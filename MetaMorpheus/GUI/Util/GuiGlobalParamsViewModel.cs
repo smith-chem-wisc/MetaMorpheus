@@ -191,7 +191,9 @@ public class GuiGlobalParamsViewModel : BaseViewModel
                 ProteomeDirectory = DefaultProteomePath
             };
             Toml.WriteFile(_current, SettingsPath, MetaMorpheusTask.tomlConfig);
-        }
+        }        
+        
+        GlobalVariables.DecoyIdentifier = _current.DecoyIdentifier ??= "DECOY";
         _loaded = Clone(_current);
     }
 

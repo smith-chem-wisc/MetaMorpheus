@@ -22,6 +22,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EngineLayer.DatabaseLoading;
 using UsefulProteomicsDatabases;
 using UsefulProteomicsDatabases.Transcriptomics;
 using Transcriptomics;
@@ -685,75 +686,6 @@ namespace TaskLayer
 
         #region Database Loading
 
-        public List<IBioPolymer> LoadBioPolymers(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
-        {
-            Status($"Loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s...", new List<string> { taskId });
-            int emptyEntries = 0;
-            List<IBioPolymer> bioPolymerList = new();
-            foreach (var db in dbFilenameList.Where(p => !p.IsSpectralLibrary))
-            {
-                if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
-                {
-                    var dbOligoList = LoadOligoDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyOligoEntriesForThisDb, commonParameters);
-                    bioPolymerList = bioPolymerList.Concat(dbOligoList).ToList();
-                    emptyEntries += emptyOligoEntriesForThisDb;
-                }
-                else
-                {
-                    var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
-                    bioPolymerList = bioPolymerList.Concat(dbProteinList).ToList();
-                    emptyEntries += emptyProteinEntriesForThisDb;
-                }
-            }
-            if (!bioPolymerList.Any())
-            {
-                Warn($"Warning: No {GlobalVariables.AnalyteType.GetBioPolymerLabel()} entries were found in the database");
-            }
-            else if (emptyEntries > 0)
-            {
-                Warn("Warning: " + emptyEntries + $" empty {GlobalVariables.AnalyteType.GetBioPolymerLabel()} entries ignored");
-            }
-
-            // We are not generating decoys, so just return the read in database
-            if (!bioPolymerList.Any(p => p.IsDecoy))
-            {
-                Status($"Done loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s", new List<string> { taskId });
-                return bioPolymerList;
-            }
-
-            // Sanitize the decoys
-            // TODO: Fix this so that it accounts for multi-protease searches. Currently, we only consider the first protease
-            // when looking for target/decoy collisions
-            HashSet<string> targetPeptideSequences = new();
-            foreach(var bioPolymer in bioPolymerList.Where(p => !p.IsDecoy))
-            {
-                // When thinking about decoy collisions, we can ignore modifications
-                foreach(var peptide in bioPolymer.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
-                {
-                    targetPeptideSequences.Add(peptide.BaseSequence);
-                }
-            }
-            // Now, we iterate through the decoys and scramble the sequences that correspond to target peptides
-            for(int i = 0; i < bioPolymerList.Count; i++)
-            {
-                if(bioPolymerList[i].IsDecoy)
-                {
-                    var peptidesToReplace = bioPolymerList[i]
-                        .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
-                        .Select(p => p.BaseSequence)
-                        .Where(targetPeptideSequences.Contains)
-                        .ToList();
-                    if(peptidesToReplace.Any())
-                    {
-                        bioPolymerList[i] = DecoySequenceValidator.ScrambleDecoyBioPolymer(bioPolymerList[i], commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
-                    }
-                }
-            }
-
-            Status($"Done loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s", new List<string> { taskId });
-            return bioPolymerList;
-        }
-
         protected SpectralLibrary LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
         {
             Status("Loading spectral libraries...", new List<string> { taskId });
@@ -769,35 +701,6 @@ namespace TaskLayer
 
             Status("Done loading spectral libraries", new List<string> { taskId });
             return lib;
-        }
-
-        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um,
-            out int emptyEntriesCount, CommonParameters commonParameters)
-        {
-            List<string> dbErrors = new List<string>();
-            List<Protein> proteinList = new List<Protein>();
-
-            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
-            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
-
-            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
-            {
-                um = null;
-                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors,
-                    ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, commonParameters.MaxThreadsToUsePerFile, addTruncations: commonParameters.AddTruncations);
-            }
-            else
-            {
-                List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                //proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, commonParameters.MaxHeterozygousVariants, commonParameters.MinVariantDepth, addTruncations: commonParameters.AddTruncations);
-                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, 0, commonParameters.MinVariantDepth, addTruncations: commonParameters.AddTruncations);
-                GlobalVariables.AddMods(ProteinDbLoader.GetPtmListFromProteinXml(fileName), true, false);
-            }
-
-            emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
-            return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
         protected void LoadModifications(string taskId, out List<Modification> variableModifications, out List<Modification> fixedModifications, out List<string> localizableModificationTypes)
@@ -837,34 +740,6 @@ namespace TaskLayer
             {
                 Warn("Unrecognized mod " + unrecognizedMod + "; are you using an old .toml?");
             }
-        }
-
-        protected List<RNA> LoadOligoDb(string fileName, bool generateTargets, DecoyType decoyType,
-            List<string> localizeableModificationTypes, bool isContaminant,
-            out Dictionary<string, Modification> unknownMods, out int emptyEntriesCount,
-            CommonParameters commonParameters)
-        {
-            List<string> dbErrors = new List<string>();
-            List<RNA> rnaList = new List<RNA>();
-
-            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
-            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
-
-            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
-            {
-                unknownMods = null;
-                rnaList = RnaDbLoader.LoadRnaFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors);
-            }
-            else
-            {
-                List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile);
-                GlobalVariables.AddMods(ProteinDbLoader.GetPtmListFromProteinXml(fileName), true, true);
-            }
-
-            emptyEntriesCount = rnaList.Count(p => p.BaseSequence.Length == 0);
-            return rnaList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
         protected void WritePrunedDatabase(List<SpectralMatch> allSpectralMatches, List<IBioPolymer> bioPolymersToWrite, Dictionary<string, int> modificationsToWrite, List<DbForTask> inputDatabases, string outputDirectory, string taskId)

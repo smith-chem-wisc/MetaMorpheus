@@ -7,6 +7,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using EngineLayer.DatabaseLoading;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;

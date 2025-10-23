@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Easy.Common.Extensions;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;

@@ -550,10 +550,11 @@
                             <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource DataGridCellStyle}" />
                         </DataGrid.CellStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="250" />
-                            <DataGridTextColumn Header="File Path" Binding="{Binding FilePath, Mode=OneWay}" Width="200" />
-                            <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=OneWay}" Width="250" />
-                            <DataGridCheckBoxColumn Header="Use?" Binding="{Binding Use, Mode=TwoWay}"/>
+                            <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="366" />
+                            <DataGridTextColumn Header="File Path" Binding="{Binding FilePath, Mode=OneWay}" Width="160" />
+                            <DataGridCheckBoxColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=TwoWay}" MinWidth="90" />
+                            <DataGridCheckBoxColumn Header="Use?" Binding="{Binding Use, Mode=TwoWay}" MinWidth="80"/>
+                            <DataGridTextColumn Header="Decoy Identifier" Binding="{Binding DecoyIdentifier, Mode=TwoWay}" Width="160"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -698,8 +699,9 @@
                                 </DataGrid.CellStyle>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="230" />
-                                    <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=OneWay}" Width="170" />
-                                    <DataGridCheckBoxColumn Header="Use?" Binding="{Binding Use, Mode=TwoWay}"/>
+                                    <DataGridCheckBoxColumn Header="Use?" Binding="{Binding Use, Mode=TwoWay}" MinWidth="40"/>
+                                    <DataGridCheckBoxColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=TwoWay}" MinWidth="90"/>
+                                    <DataGridTextColumn Header="Decoy Identifier" Binding="{Binding DecoyIdentifier, Mode=TwoWay}" Width="160" />
                                 </DataGrid.Columns>
                             </DataGrid>
                             <Button Name="MiniAddProteinDbButton" Grid.Row="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,1,1" Content="+" 

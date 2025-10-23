@@ -16,6 +16,7 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using NUnit.Framework.Legacy;
 using System.Text;
+using EngineLayer.DatabaseLoading;
 using Omics.BioPolymer;
 using Chemistry;
 

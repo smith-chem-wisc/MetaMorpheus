@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Shapes;
 using Chemistry;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
 using MassSpectrometry;

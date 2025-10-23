@@ -20,6 +20,7 @@ using System.IO;
 using System.Globalization;
 using NUnit.Framework.Internal;
 using Easy.Common;
+using EngineLayer.DatabaseLoading;
 using Omics.BioPolymer;
 using Omics;
 
