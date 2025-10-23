@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using Easy.Common;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
