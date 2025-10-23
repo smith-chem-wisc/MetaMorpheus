@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using Omics;
 using Omics.Digestion;
 using Omics.Modifications;

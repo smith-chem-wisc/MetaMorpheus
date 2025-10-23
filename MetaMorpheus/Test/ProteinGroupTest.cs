@@ -13,6 +13,7 @@ using Omics.Digestion;
 using Omics.Modifications;
 using UsefulProteomicsDatabases;
 using System.Text.RegularExpressions;
+using EngineLayer.DatabaseLoading;
 using Omics;
 
 namespace Test

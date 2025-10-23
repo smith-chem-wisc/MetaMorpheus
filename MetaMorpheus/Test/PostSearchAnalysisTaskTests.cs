@@ -9,6 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using EngineLayer.DatabaseLoading;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -196,20 +197,31 @@ namespace Test
             // The Q-Value test case and the PEP-Q value test case represent the same data ran twice
             // These assert staments compare the outputs of the PepAnalysisEngine for each test case
             // They should be identical!!! If they aren't, then PEP is not reproducible for some reason
-            Assert.That(resultsPepQ[37], Is.EqualTo(resultsQ[37]));
-            Assert.That(resultsPepQ[38], Is.EqualTo(resultsQ[38]));
-            Assert.That(resultsPepQ[39], Is.EqualTo(resultsQ[39]));
-            Assert.That(resultsPepQ[40], Is.EqualTo(resultsQ[40]));
-            Assert.That(resultsPepQ[41], Is.EqualTo(resultsQ[41]));
-            Assert.That(resultsPepQ[42], Is.EqualTo(resultsQ[42]));
-            Assert.That(resultsPepQ[43], Is.EqualTo(resultsQ[43]));
-            Assert.That(resultsPepQ[44], Is.EqualTo(resultsQ[44]));
-            Assert.That(resultsPepQ[45], Is.EqualTo(resultsQ[45]));
-            Assert.That(resultsPepQ[46], Is.EqualTo(resultsQ[46]));
-            Assert.That(resultsPepQ[47], Is.EqualTo(resultsQ[47]));
-            Assert.That(resultsPepQ[48], Is.EqualTo(resultsQ[48]));
-            Assert.That(resultsPepQ[49], Is.EqualTo(resultsQ[49]));
-            Assert.That(resultsPepQ[50], Is.EqualTo(resultsQ[50]));
+            int startIndexQ = resultsQ.IndexOf("Engine type: FdrAnalysisEngine");
+            int startIndexPep = resultsPepQ.IndexOf("Engine type: FdrAnalysisEngine");
+
+            Assert.That(startIndexQ, Is.EqualTo(startIndexPep));
+
+            int starsFound = 0;
+            for (int i = startIndexQ; i < int.MaxValue; i++)
+            {
+                var qLine = resultsQ[i];
+                var pepLine = resultsPepQ[i];
+
+                if (qLine.StartsWith("Time to run"))
+                    continue;
+
+                if (qLine.StartsWith("*****"))
+                {
+                    starsFound++;
+                    if (starsFound == 2)
+                    {
+                        break; // We've reached the end of the PepAnalysisEngine output
+                    }
+                }
+
+                Assert.That(pepLine, Is.EqualTo(qLine), "Outputs of PepAnalysisEngine differ between Q-Value and PEP Q-Value test cases");
+            }
         }
 
         /// <summary>
