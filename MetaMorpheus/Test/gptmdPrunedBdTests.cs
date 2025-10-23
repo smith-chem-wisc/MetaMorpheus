@@ -1,26 +1,18 @@
 ﻿using EngineLayer;
-using EngineLayer.ClassicSearch;
-using EngineLayer.DatabaseLoading;
-using EngineLayer.FdrAnalysis;
-using EngineLayer.Gptmd;
 using MassSpectrometry;
 using NUnit.Framework;
-using MzLibUtil;
-using Omics;
-using Omics.BioPolymer;
-using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
-using Readers;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
+using EngineLayer.DatabaseLoading;
+using Omics.BioPolymer;
+using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using static iText.IO.Image.Jpeg2000ImageData;
+using Omics;
 
 namespace Test
 {
