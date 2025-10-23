@@ -232,10 +232,10 @@ namespace Test.DIATests
 
             //XICs with spline
             var bSpline = new Bspline(2, 150);
-            bSpline.SetXicSplineXYData(xic1, true);
-            bSpline.SetXicSplineXYData(xic2, true);
-            bSpline.SetXicSplineXYData(xic3, true);
-            bSpline.SetXicSplineXYData(xic4, true);
+            bSpline.SetXicSplineXYData(xic1);
+            bSpline.SetXicSplineXYData(xic2);
+            bSpline.SetXicSplineXYData(xic3);
+            bSpline.SetXicSplineXYData(xic4);
         }
     }
 }
