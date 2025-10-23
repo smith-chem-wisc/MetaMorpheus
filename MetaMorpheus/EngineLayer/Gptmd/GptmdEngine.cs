@@ -21,6 +21,7 @@ namespace EngineLayer.Gptmd
         private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
         //The ScoreTolerance property is used to differentiatie when a PTM candidate is added to a peptide. We check the score at each position and then add that mod where the score is highest.
         private readonly double ScoreTolerance = 0.1;
+        private static readonly double QValueNotchThreshold = 0.05;
         public Dictionary<string, HashSet<Tuple<int, Modification>>> ModDictionary { get; init; }
         private readonly List<IGptmdFilter> Filters;
 
@@ -84,7 +85,9 @@ namespace EngineLayer.Gptmd
             int modsAdded = 0;
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
-            var psms = AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy).ToList();
+
+            // Keep psms if they are below q value notch threshold, or notch ambiguous results with hypothesis below threshold. 
+            var psms = AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= QValueNotchThreshold || (Math.Abs(b.FdrInfo.QValueNotch - 2) < 0.001 && b.BestMatchingBioPolymersWithSetMods.Any(p => p.QValueNotch.HasValue && p.QValueNotch <= QValueNotchThreshold))).ToList();
             if (psms.Any() == false)
             {
                 return new GptmdResults(this, ModDictionary, 0);
@@ -106,9 +109,14 @@ namespace EngineLayer.Gptmd
                     var peptideTheorProducts = new List<Product>();
                     List<(int site, Modification mod, string proteinAccession)> bestMatches = [];
 
-                    foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer))
+                    foreach (var hypothesis in psm.BestMatchingBioPolymersWithSetMods.Select(v => v))
                     {
+                        // skip hypotheses that are above the q value notch threshold - will be null unless psm is notch ambiguous
+                        if (hypothesis.QValueNotch.HasValue && hypothesis.QValueNotch > QValueNotchThreshold)
+                            continue;
+
                         bestMatches.Clear();
+                        var pepWithSetMods = hypothesis.SpecificBioPolymer;
                         var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Parent.ConsensusVariant;
                         var possibleModifications = GetPossibleMods(precursorMass, GptmdModifications, Combos,
                             FilePathToPrecursorMassTolerance[fileName], pepWithSetMods);
