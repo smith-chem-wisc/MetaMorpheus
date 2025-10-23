@@ -27,8 +27,8 @@ namespace EngineLayer.DIA
         /// <param name="correlationThreshold"> minimum Pearson's correlation between two XICs </param>
         /// <param name="maxThreadsForGrouping"> the maximum threads for parallelization of grouping </param>
         /// <param name="minFragmentCountForGrouping"> minimun number of fragments needed to construct a PF group </param>
-        /// <param name="precursorRankThreshold"> filter out PF pairs ranked low for the precursor </param>
-        /// <param name="fragmentRankThreshold"> filter out PF pairs ranked low for the fragment </param>
+        /// <param name="precursorRankThreshold">  threshold for filtering out PF pairs ranked low for the precursor </param>
+        /// <param name="fragmentRankThreshold"> threshold for filtering out PF pairs ranked low for the fragment </param>
         public XicGroupingEngine(float apexRTTolerance, double overlapThreshold, double correlationThreshold, int maxThreadsForGrouping = 1, int minFragmentCountForGrouping = 0, int? precursorRankThreshold = null, int? fragmentRankThreshold = null)
         {
             ApexRTTolerance = apexRTTolerance;
