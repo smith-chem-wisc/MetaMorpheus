@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using NUnit.Framework;
 using Omics;
 using Omics.BioPolymer;
@@ -33,14 +34,14 @@ public class RnaDatabaseLoadingTests
         var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", databaseFileName);
         var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
         var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
-        var bioPolymers = new SearchTask().LoadBioPolymers(
-            "TestTaskId",
-            dbForTask,
-            true, 
-            DecoyType.None,
-            [], 
-            commonParameters
-        );
+
+        var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbForTask, "TestTaskId", DecoyType.None);
+        var results = (DatabaseLoadingEngineResults)loader.Run()!;
+        var bioPolymers = results.BioPolymers;
+
+        Assert.That(dbForTask[0].BioPolymerCount, Is.EqualTo(1));   
+        Assert.That(dbForTask[0].TargetCount, Is.EqualTo(1));
+        Assert.That(dbForTask[0].DecoyCount, Is.EqualTo(0));
 
         Assert.That(bioPolymers![0], Is.TypeOf<RNA>());
         Assert.That(bioPolymers.Count, Is.EqualTo(1));
@@ -61,20 +62,9 @@ public class RnaDatabaseLoadingTests
         // Create two instances of the same database, one as a contaminant, one as a target. 
         var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "20mer1.fasta");
         var dbsForTask = new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(dbPath, true) };
-        var bioPolymers = new SearchTask().LoadBioPolymers(
-            "TestTaskId",
-            dbsForTask,
-            true,
-            DecoyType.None,
-            [],
-            commonParameters
-        );
-
-        // Use reflection to access protected SanitizeBiopolymers method
-        var sanitizeBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("SanitizeBioPolymerDatabase",
-            BindingFlags.NonPublic | BindingFlags.Static);
-        var genericMethod = sanitizeBioPolymersMethod.MakeGenericMethod(typeof(IBioPolymer));
-        genericMethod.Invoke(null, new object[] { bioPolymers, type });
+        var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbsForTask, "TestTaskId", DecoyType.None, tcAmbiguity: type);
+        var results = (DatabaseLoadingEngineResults)loader.Run()!;
+        var bioPolymers = results.BioPolymers;
 
         Assert.That(bioPolymers.Count, Is.EqualTo(expectedAccessions.Length));
         Assert.That(bioPolymers[0].Accession, Is.EqualTo(expectedAccessions[0]));
@@ -98,20 +88,13 @@ public class RnaDatabaseLoadingTests
             new TestBioPolymer() {Accession= "TestingA"},
         };
 
-        // Use reflection to access protected SanitizeBiopolymers method
-        var sanitizeBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("SanitizeBioPolymerDatabase",
-            BindingFlags.NonPublic | BindingFlags.Static);
-        var genericMethod = sanitizeBioPolymersMethod.MakeGenericMethod(typeof(IBioPolymer));
-
-        var exception = Assert.Throws<TargetInvocationException>(() =>
+        var exception = Assert.Throws<ArgumentException>(() =>
         {
-            genericMethod.Invoke(null, new object[] { notImplementedBioPolymers, TargetContaminantAmbiguity.RenameProtein });
+            DatabaseLoadingEngine.SanitizeBioPolymerDatabase(notImplementedBioPolymers, TargetContaminantAmbiguity.RenameProtein, out _);
         });
 
         Assert.That(exception, Is.Not.Null);
-        Assert.That(exception.InnerException, Is.Not.Null);
-        Assert.That(exception.InnerException, Is.TypeOf<ArgumentException>());
-        Assert.That(exception.InnerException.Message, Does.Contain("Database sanitization assumed BioPolymer was a protein when it was Test.Transcriptomics.TestBioPolymer"));
+        Assert.That(exception.Message, Does.Contain("Database sanitization assumed BioPolymer was a protein when it was Test.Transcriptomics.TestBioPolymer"));
     }
 
     [Test]
@@ -135,14 +118,9 @@ public class RnaDatabaseLoadingTests
         loadModificationsMethod.Invoke(task, modArgs);
         var localizableModificationTypes = (List<string>)modArgs[3];
 
-        var rna = new SearchTask().LoadBioPolymers(
-            "TestTaskId",
-            dbsForTask,
-            true, // searchTarget
-            DecoyType.Reverse,
-            localizableModificationTypes, // pass the loaded localizable mods
-            commonParameters
-        );
+        var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbsForTask, "TestTaskId", DecoyType.Reverse, true, localizableModificationTypes);
+        var results = (DatabaseLoadingEngineResults)loader.Run()!;
+        var rna = results.BioPolymers;
 
         Assert.That(rna.All(p => p.SequenceVariations.Count == 1));
         Assert.That(rna.All(p => p.OriginalNonVariantModifications.Count == 2));

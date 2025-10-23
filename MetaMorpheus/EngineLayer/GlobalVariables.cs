@@ -21,6 +21,7 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
+        public static string DecoyIdentifier { get; set; } = "DECOY";
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
         public static List<string> AcceptedDatabaseFormats { get; private set; }

@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
+using EngineLayer.DatabaseLoading;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -48,7 +49,8 @@ namespace Test
 
             protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
             {
-                LoadBioPolymers("", dbFilenameList, true, DecoyType.None, new List<string>(), new CommonParameters());
+                var dbLoader = new DatabaseLoadingEngine(new(), [], [], dbFilenameList, taskId, DecoyType.None);
+                var results = dbLoader.Run();
                 return null;
             }
         }

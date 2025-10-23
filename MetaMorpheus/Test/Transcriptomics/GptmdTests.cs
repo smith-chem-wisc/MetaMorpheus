@@ -13,6 +13,7 @@ using Transcriptomics.Digestion;
 using Transcriptomics;
 using System.IO;
 using System.Xml.Linq;
+using EngineLayer.DatabaseLoading;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using UsefulProteomicsDatabases.Transcriptomics;

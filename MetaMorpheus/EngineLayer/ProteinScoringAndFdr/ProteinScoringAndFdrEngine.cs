@@ -12,6 +12,7 @@ namespace EngineLayer
         private readonly bool TreatModPeptidesAsDifferentPeptides;
         private readonly bool MergeIndistinguishableProteinGroups;
         private readonly List<ProteinGroup> ProteinGroups;
+        private readonly HashSet<string> _decoyIdentifiers;
 
         public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<SpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
@@ -20,6 +21,7 @@ namespace EngineLayer
             NoOneHitWonders = noOneHitWonders;
             TreatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
             MergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
+            _decoyIdentifiers = proteinGroups.SelectMany(p => p.Proteins.Where(b => b.IsDecoy).Select(b => b.Accession.Split('_')[0])).ToHashSet();
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -31,9 +33,12 @@ namespace EngineLayer
             return myAnalysisResults;
         }
 
-        private static string StripDecoyIdentifier(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
+        private static string StripDecoyIdentifier(string proteinGroupName, HashSet<string> decoyIdentifiers) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
         {
-            return proteinGroupName.Contains("DECOY_") ? proteinGroupName.Replace("DECOY_", "") : proteinGroupName;
+            foreach (var ident in decoyIdentifiers.Where(proteinGroupName.Contains))
+                return proteinGroupName.Replace($"{ident}_", "");
+
+            return proteinGroupName;
         }
 
         private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<SpectralMatch> psmList)
@@ -142,7 +147,7 @@ namespace EngineLayer
             {
                 foreach (var protein in pg.Proteins)
                 {
-                    string stippedAccession = StripDecoyIdentifier(protein.Accession); //remove "DECOY_" from the accession
+                    string stippedAccession = StripDecoyIdentifier(protein.Accession, _decoyIdentifiers); //remove "DECOY_" from the accession
 
                     if (accessionToProteinGroup.TryGetValue(stippedAccession, out List<ProteinGroup> groups))
                     {
