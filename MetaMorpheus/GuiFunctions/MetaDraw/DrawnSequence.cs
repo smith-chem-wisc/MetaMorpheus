@@ -290,6 +290,8 @@ namespace GuiFunctions
             // create an individual match for each chunk to be drawn
             List<SpectrumMatchFromTsv> segments = new();
             List<List<MatchedFragmentIon>> matchedIonSegments = new();
+            bool IsOnFirstSegment(int segmentNumber, int modIndex) => segmentNumber % segmentsPerRow == 0 && modIndex - 1 >= segmentNumber && modIndex - 1 <= segmentNumber + residuesPerSegment;
+            bool IsOnFinalSegment(int segmentNumber, int modIndex) => segmentNumber * residuesPerSegment + residuesPerSegment >= sm.BaseSeq.Length;
             for (int i = 0; i < sm.BaseSeq.Length; i += residuesPerSegment)
             {
                 // split base seq
@@ -316,15 +318,15 @@ namespace GuiFunctions
                 string fullSequence = baseSequence;
                 foreach (var mod in modDictionary)
                 {
-                    // if first chunk in the row
-                    if (i % segmentsPerRow == 0 && mod.Key - 1 >= i && mod.Key - 1 <= i + residuesPerSegment)
-                    {
-                        fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
-                    }
                     // if C or 3' Terminal
-                    else if (i * residuesPerSegment > sm.BaseSequence.Length && mod.Key == sm.BaseSeq.Length + 2)
+                    if (IsOnFinalSegment(i, mod.Key) && mod.Key == sm.BaseSeq.Length +2)
                     {
                         fullSequence += $"-[{mod.Value.ModificationType}:{mod.Value.IdWithMotif}]";
+                    }
+                    // if first segment in row
+                    else if (IsOnFirstSegment(i, mod.Key))
+                    {
+                        fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                     }
                     else if (mod.Key - 1 > i && mod.Key - 1 <= i + residuesPerSegment)
                     {
