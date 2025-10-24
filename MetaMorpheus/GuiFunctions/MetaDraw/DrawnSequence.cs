@@ -63,12 +63,14 @@ namespace GuiFunctions
         public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, SpectrumMatchFromTsv match, 
             bool stationary = false, int annotationRow = 0, int chunkPositionInRow = 0)
         {
-            // Clear the canvas if we are plotting the NOT Sequence Coverage Map or if we are NOT plotting a Cross-Linked Peptide
+            // We clear the canvas for all cases except when plotting the annotation or crosslinked peptide alpha call. 
             // This is so that we can add the XL sequence to the same canvas by one call with the alpha sequence and one call with the beta sequence. 
-            if (!Annotation && (match is PsmFromTsv psm && (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence))))
+            bool isAlphaCall = match is PsmFromTsv psm && psm.IsCrossLinkedPeptide() && !psm.BetaPeptideBaseSequence.Equals(baseSequence);
+            if (!Annotation && !isAlphaCall)
             {
                 ClearCanvas(SequenceDrawingCanvas);
             }
+
             double canvasWidth = SequenceDrawingCanvas.Width;
             int spacing = 12;
 

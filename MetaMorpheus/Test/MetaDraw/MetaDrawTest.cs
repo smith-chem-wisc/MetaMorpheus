@@ -565,7 +565,7 @@ namespace Test.MetaDraw
             int numAnnotatedResidues = csm.BaseSeq.Length;
             int numAnnotatedIons = csm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M);
             int numAnnotatedMods = csm.FullSequence.Count(p => p == '[');
-            Assert.That(parentPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+            Assert.That(parentPlot.TheCanvas.Children.Count, Is.EqualTo(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods));
 
             peak = (LineSeries)parentPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
