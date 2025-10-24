@@ -187,7 +187,7 @@ namespace MetaMorpheusGUI
                     }
                 }
             }
-            else
+            else if (theExtension.IsNotNullOrEmpty())
             {
                 MessageBox.Show("Cannot read file type: " + theExtension);
             }
