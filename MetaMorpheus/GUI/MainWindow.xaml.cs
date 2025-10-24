@@ -23,6 +23,7 @@ using System.Text.RegularExpressions;
 using Readers.InternalResults;
 using System.Diagnostics;
 using EngineLayer.DatabaseLoading;
+using GuiFunctions;
 
 namespace MetaMorpheusGUI
 {

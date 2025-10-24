@@ -8,6 +8,7 @@ using System.Windows;
 using MassSpectrometry;
 using Proteomics;
 using System.Globalization;
+using GuiFunctions;
 using Omics.Modifications;
 
 namespace MetaMorpheusGUI

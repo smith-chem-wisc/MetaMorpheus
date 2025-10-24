@@ -5,7 +5,7 @@ using GuiFunctions;
 using Nett;
 using TaskLayer;
 
-namespace MetaMorpheusGUI;
+namespace GuiFunctions;
 
 public class GuiGlobalParamsViewModel : BaseViewModel
 {
@@ -151,12 +151,19 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         set { _current.UseSpectralRecoveryParams = value; OnPropertyChanged(nameof(UseSpectralRecoveryParams)); }
     }
 
+
+    private AnalyteType? _previous;
     public bool IsRnaMode
     {
         get => _current.IsRnaMode;
         set
         {
             _current.IsRnaMode = value;
+            if (_current.IsRnaMode)
+                GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            else
+                GlobalVariables.AnalyteType = _previous ??= AnalyteType.Peptide;
+
             OnPropertyChanged(nameof(IsRnaMode));
             OnPropertyChanged(nameof(MainWindowTitle));
         }
@@ -194,6 +201,7 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         }        
         
         GlobalVariables.DecoyIdentifier = _current.DecoyIdentifier ??= "DECOY";
+        IsRnaMode = _current.IsRnaMode;
         _loaded = Clone(_current);
     }
 
