@@ -375,6 +375,8 @@ namespace MetaMorpheusGUI
                 psm.MatchedIons = oldMatchedIons;
         }
 
+        #region File Selection and Resetting 
+
         private void selectSpectraFileButton_Click(object sender, RoutedEventArgs e)
         {
             string filterString = string.Join(";", GlobalVariables.AcceptedSpectraFormats.Select(p => "*" + p));
@@ -466,6 +468,8 @@ namespace MetaMorpheusGUI
                 MetaDrawLogic.FilteredListOfPsms.Clear();
             }
         }
+
+        #endregion
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
@@ -578,6 +582,8 @@ namespace MetaMorpheusGUI
             string txt = (sender as TextBox).Text;
             MetaDrawLogic.FilterPsmsByString(txt);
         }
+
+        #region Plot Export
 
         /// <summary>
         /// Exports images of the parent and child scan
@@ -727,6 +733,8 @@ namespace MetaMorpheusGUI
                 MessageBoxHelper.Show(MetaDrawSettings.ExportType + " exported to: " + directoryPath);
             }
         }
+
+        #endregion
 
         #region Data Visualization Tab
 
@@ -1028,6 +1036,8 @@ namespace MetaMorpheusGUI
             }
         }
 
+        #region Sequence Annotaiton Chunk Controls
+
         /// <summary>
         /// Method to set the MetaDrawSettings fields FirstAAOnScreen and NumberofAAonScreen to the current scrolling sequence position
         /// </summary>
@@ -1140,6 +1150,7 @@ namespace MetaMorpheusGUI
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
         }
 
+        #endregion
 
         private void MetaDrawTabControl_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {

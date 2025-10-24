@@ -285,6 +285,16 @@ namespace GuiFunctions
             int residuesPerSegment = MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment;
             var bioPolymerWithSetMods = sm.ToBioPolymerWithSetMods();
             var modDictionary = bioPolymerWithSetMods.AllModsOneIsNterminus.OrderByDescending(p => p.Key).ToList();
+            var nTermMod = bioPolymerWithSetMods.AllModsOneIsNterminus
+                .Where(p => p.Key == 1)
+                .Select(p => p.Value)
+                .FirstOrDefault();
+            var cTermMod = 
+                bioPolymerWithSetMods.AllModsOneIsNterminus
+                .Where(p => p.Key == sm.BaseSeq.Length + 2)
+                .Select(p => p.Value)
+                .FirstOrDefault();
+
             int numberOfRows = (int)Math.Ceiling(((double)sm.BaseSeq.Length / residuesPerSegment) / segmentsPerRow);
             int remaining = sm.BaseSeq.Length;
 
@@ -292,8 +302,6 @@ namespace GuiFunctions
             // create an individual match for each chunk to be drawn
             List<SpectrumMatchFromTsv> segments = new();
             List<List<MatchedFragmentIon>> matchedIonSegments = new();
-            bool IsOnFirstSegment(int segmentNumber, int modIndex) => segmentNumber % segmentsPerRow == 0 && modIndex - 1 >= segmentNumber && modIndex - 1 <= segmentNumber + residuesPerSegment;
-            bool IsOnFinalSegment(int segmentNumber, int modIndex) => segmentNumber * residuesPerSegment + residuesPerSegment >= sm.BaseSeq.Length;
             for (int i = 0; i < sm.BaseSeq.Length; i += residuesPerSegment)
             {
                 // split base seq
@@ -318,24 +326,21 @@ namespace GuiFunctions
 
                 // add the mods onto the trimmed full sequence
                 string fullSequence = baseSequence;
-                foreach (var mod in modDictionary)
+
+                // Apply N-term mod if applicable
+                if (i == 0 && nTermMod != null)
+                    fullSequence = $"[{nTermMod.ModificationType}:{nTermMod.IdWithMotif}]{fullSequence}";
+
+                foreach (var mod in modDictionary
+                    .Where(p => p.Key - 1 > i && p.Key <= i + baseSequence.Length))
                 {
-                    // if C or 3' Terminal
-                    if (IsOnFinalSegment(i, mod.Key) && mod.Key == sm.BaseSeq.Length +2)
-                    {
-                        fullSequence += $"-[{mod.Value.ModificationType}:{mod.Value.IdWithMotif}]";
-                    }
-                    // if first segment in row
-                    else if (IsOnFirstSegment(i, mod.Key))
-                    {
-                        fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
-                    }
-                    else if (mod.Key - 1 > i && mod.Key - 1 <= i + residuesPerSegment)
-                    {
-                        fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
-                    }
+                    fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                 }
-                
+
+                // Apply C-term mod if applicable
+                if (i + residuesPerSegment >= sm.BaseSeq.Length && cTermMod != null)
+                    fullSequence += $"-[{cTermMod.ModificationType}:{cTermMod.IdWithMotif}]";
+
                 SpectrumMatchFromTsv tempSm = sm.ReplaceFullSequence(fullSequence, baseSequence);
                 segments.Add(tempSm);
                 matchedIonSegments.Add(ions);
