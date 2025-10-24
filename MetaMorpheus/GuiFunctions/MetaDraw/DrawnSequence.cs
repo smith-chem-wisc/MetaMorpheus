@@ -321,6 +321,11 @@ namespace GuiFunctions
                     {
                         fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                     }
+                    // if C or 3' Terminal
+                    else if (i * residuesPerSegment > sm.BaseSequence.Length && mod.Key == sm.BaseSeq.Length + 2)
+                    {
+                        fullSequence += $"-[{mod.Value.ModificationType}:{mod.Value.IdWithMotif}]";
+                    }
                     else if (mod.Key - 1 > i && mod.Key - 1 <= i + residuesPerSegment)
                     {
                         fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
