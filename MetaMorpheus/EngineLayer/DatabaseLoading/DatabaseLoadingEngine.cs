@@ -125,6 +125,7 @@ public class DatabaseLoadingEngine(
         }
         else
         {
+            GlobalVariables.AddMods(ProteinDbLoader.GetPtmListFromProteinXml(fileName), true, true);
             // TODO: Add in variant params when fixed in MzLib. 
             List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
             rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile, decoyIdentifier: decoyIdentifier);
@@ -154,10 +155,10 @@ public class DatabaseLoadingEngine(
         else
         {
             List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
+            GlobalVariables.AddMods(ProteinDbLoader.GetPtmListFromProteinXml(fileName), true, false);
             //proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, commonParameters.MaxHeterozygousVariants, commonParameters.MinVariantDepth, addTruncations: commonParameters.AddTruncations, decoyIdentifier: decoyIdentifier);
             proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, 0, commonParameters.MinVariantDepth, addTruncations: commonParameters.AddTruncations, decoyIdentifier: decoyIdentifier);
         }
-
         emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
         return proteinList.Where(p => p.BaseSequence.Length > 0);
     }

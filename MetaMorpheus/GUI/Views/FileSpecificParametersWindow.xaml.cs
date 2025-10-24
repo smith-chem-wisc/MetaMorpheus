@@ -43,7 +43,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificPrecursorMassTolEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                if (GlobalGuiSettings.CheckPrecursorMassTolerance(precursorMassToleranceTextBox.Text))
+                if (TaskValidator.CheckPrecursorMassTolerance(precursorMassToleranceTextBox.Text))
                 {
                     double value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
                     if (precursorMassToleranceComboBox.SelectedIndex == 0)
@@ -63,7 +63,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificProductMassTolEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                if (GlobalGuiSettings.CheckProductMassTolerance(productMassToleranceTextBox.Text))
+                if (TaskValidator.CheckProductMassTolerance(productMassToleranceTextBox.Text))
                 {
                     double value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
                     if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -111,8 +111,8 @@ namespace MetaMorpheusGUI
             if (fileSpecificMaxPeptideLengthEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                string lengthMaxPeptide = GlobalGuiSettings.MaxValueConversion(MaxPeptideLengthTextBox.Text);
-                if (GlobalGuiSettings.CheckPeptideLength(MinPeptideLengthTextBox.Text, lengthMaxPeptide))
+                string lengthMaxPeptide = TaskValidator.MaxValueConversion(MaxPeptideLengthTextBox.Text);
+                if (TaskValidator.CheckPeptideLength(MinPeptideLengthTextBox.Text, lengthMaxPeptide))
                 {
                     parametersToWrite.MaxPeptideLength = int.Parse(lengthMaxPeptide);
                 }
@@ -124,8 +124,8 @@ namespace MetaMorpheusGUI
             if (fileSpecificMissedCleavagesEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                string lengthCleavage = GlobalGuiSettings.MaxValueConversion(missedCleavagesTextBox.Text);
-                if (GlobalGuiSettings.CheckMaxMissedCleavages(lengthCleavage))
+                string lengthCleavage = TaskValidator.MaxValueConversion(missedCleavagesTextBox.Text);
+                if (TaskValidator.CheckMaxMissedCleavages(lengthCleavage))
                 {
                     parametersToWrite.MaxMissedCleavages = int.Parse(lengthCleavage);
                 }
@@ -137,7 +137,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificMaxModNumEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                if (GlobalGuiSettings.CheckMaxModsPerPeptide(MaxModNumTextBox.Text))
+                if (TaskValidator.CheckMaxModsPerPeptide(MaxModNumTextBox.Text))
                 {
                     parametersToWrite.MaxModsForPeptide = int.Parse(MaxModNumTextBox.Text);
                 }

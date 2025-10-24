@@ -9,15 +9,14 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Shapes;
 using Chemistry;
-using Easy.Common.Extensions;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
 using MassSpectrometry;
 using NUnit.Framework;
-using OxyPlot.Series;
 using Omics.Fragmentation;
 using OxyPlot;
 using Proteomics.ProteolyticDigestion;
@@ -25,7 +24,9 @@ using Readers;
 using TaskLayer;
 using OxyPlot.Wpf;
 using LineSeries = OxyPlot.Series.LineSeries;
-using OxyPlot;
+using Path = System.IO.Path;
+using Polyline = System.Windows.Shapes.Polyline;
+using Omics;
 
 namespace Test.MetaDraw
 {
@@ -196,7 +197,7 @@ namespace Test.MetaDraw
             MetaDrawSettings.DrawMatchedIons = true;
             int numAnnotatedResidues = psm.BaseSeq.Length;
             int numAnnotatedIons = psm.MatchedIons.Count;
-            int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
+            int numAnnotatedMods = IBioPolymerWithSetMods.GetModificationDictionaryFromFullSequence(psm.FullSequence, GlobalVariables.AllModsKnownDictionary).Count;
             var peptide = new PeptideWithSetModifications(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
 
             // Iterates through the psm, simulating scrolling, until the sequence is scrolled as far as allowed
@@ -206,8 +207,20 @@ namespace Test.MetaDraw
                 metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
                 Assert.That(errors == null || !errors.Any());
                 // Checks to see if scrollable sequence is the same each time
-                Assert.That(metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
-                Assert.That(sequenceAnnotationCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+                var scrollableSeqCount = metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.OfType<TextBlock>().Count();
+                var scrollableMatchedIonCount = metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.OfType<Polyline>().Count();
+                var scrollableModCount = metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.OfType<Ellipse>().Count();
+
+                Assert.That(scrollableSeqCount, Is.EqualTo(numAnnotatedResidues), "Number of annotated residues in scrollable sequence does not match expected");
+                Assert.That(scrollableMatchedIonCount, Is.EqualTo(numAnnotatedIons), "Number of annotated ions in scrollable sequence does not match expected");
+                Assert.That(scrollableModCount, Is.EqualTo(numAnnotatedMods), "Number of annotated modifications in scrollable sequence does not match expected");
+
+                var canvasSeqCount = sequenceAnnotationCanvas.Children.OfType<TextBlock>().Count();
+                var canvasMatchedIonCount = sequenceAnnotationCanvas.Children.OfType<Polyline>().Count();
+                var canvasModCount = sequenceAnnotationCanvas.Children.OfType<Ellipse>().Count();
+                Assert.That(canvasSeqCount, Is.EqualTo(numAnnotatedResidues), "Number of annotated residues in sequence annotation canvas does not match expected");
+                Assert.That(canvasMatchedIonCount, Is.EqualTo(numAnnotatedIons), "Number of annotated ions in sequence annotation canvas does not match expected");
+                Assert.That(canvasModCount, Is.EqualTo(numAnnotatedMods), "Number of annotated modifications in sequence annotation canvas does not match expected");
 
                 // Checks to see if the stationary sequence updated with the new positioning
                 string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
@@ -232,6 +245,14 @@ namespace Test.MetaDraw
                 var expectedModCount = fullSequence.Count(p => p == '[');
                 var expectedNumberCount = startAA.Length + endAA.Length;
                 var expectedNumberLineConnectorCount = 2;
+
+                var modCount = metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.OfType<Ellipse>().Count();
+                var letterAndNumberCount = metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.OfType<TextBlock>().Count();
+                var ionAndConnectorCount = metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.OfType<Polyline>().Count();
+
+                Assert.That(modCount, Is.EqualTo(expectedModCount), "Number of annotated modifications in stationary sequence does not match expected");
+                Assert.That(letterAndNumberCount, Is.EqualTo(expectedBaseSequence + expectedNumberCount), "Number of annotated residues and numbers in stationary sequence does not match expected");
+                Assert.That(ionAndConnectorCount, Is.EqualTo(expectedIonAnnotations + expectedNumberLineConnectorCount), "Number of annotated ions and line connectors in stationary sequence does not match expected");
 
                 var expected = expectedBaseSequence + expectedIonAnnotations + expectedModCount + expectedNumberCount + expectedNumberLineConnectorCount;
                 Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, Is.EqualTo(expected));
@@ -544,7 +565,7 @@ namespace Test.MetaDraw
             int numAnnotatedResidues = csm.BaseSeq.Length;
             int numAnnotatedIons = csm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M);
             int numAnnotatedMods = csm.FullSequence.Count(p => p == '[');
-            Assert.That(parentPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+            Assert.That(parentPlot.TheCanvas.Children.Count, Is.EqualTo(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods));
 
             peak = (LineSeries)parentPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
