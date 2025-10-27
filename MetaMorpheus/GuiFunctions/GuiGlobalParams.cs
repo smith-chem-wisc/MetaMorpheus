@@ -4,7 +4,7 @@ namespace GuiFunctions;
 
 /// <summary>
 /// Gui Parameters that are written out to a toml file. 
-/// This gets parsed in and an exception is thrown, the file is deleted and a new default file is written out.
+/// This gets parsed in and if an exception is thrown, a new default instance is created and the file is overwritten.
 /// </summary>
 public class GuiGlobalParams
 {
