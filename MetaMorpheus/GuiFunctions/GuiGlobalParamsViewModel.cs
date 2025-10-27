@@ -202,75 +202,23 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         
         GlobalVariables.DecoyIdentifier = _current.DecoyIdentifier ??= "DECOY";
         IsRnaMode = _current.IsRnaMode;
-        _loaded = Clone(_current);
+        _loaded = _current.Clone();
     }
 
     // Save to disk
     public void Save()
     {
         Toml.WriteFile(_current, SettingsPath, MetaMorpheusTask.tomlConfig);
-        _loaded = Clone(_current);
+        _loaded = _current.Clone();
     }
 
     public bool IsDirty()
     {
-        return !Equals(_current, _loaded);
+        return !_current.Equals(_loaded);
     }
 
     public static bool SettingsFileExists() => File.Exists(SettingsPath);
 
     #endregion
 
-    // Deep equality check (can be improved for more complex types)
-    public override bool Equals(object obj)
-    {
-        if (obj is not GuiGlobalParams other) return false;
-        return
-            AskAboutUpdating == other.AskAboutUpdating &&
-            AskBeforeExitingMetaMorpheus == other.AskBeforeExitingMetaMorpheus &&
-            ProteomeDirectory == other.ProteomeDirectory &&
-            AskAboutTopDownParams == other.AskAboutTopDownParams &&
-            AskAboutChymotrypsinParams == other.AskAboutChymotrypsinParams &&
-            AskAboutElastaseParams == other.AskAboutElastaseParams &&
-            AskAboutNonSpecificParams == other.AskAboutNonSpecificParams &&
-            AskAboutSemiTrypsinParams == other.AskAboutSemiTrypsinParams &&
-            AskAboutArgCParams == other.AskAboutArgCParams &&
-            AskAboutSpectralRecoveryParams == other.AskAboutSpectralRecoveryParams &&
-            UseTopDownParams == other.UseTopDownParams &&
-            UseChymotrypsinParams == other.UseChymotrypsinParams &&
-            UseElastaseParams == other.UseElastaseParams &&
-            UseNonSpecificParams == other.UseNonSpecificParams &&
-            UseSemiTrypsinParams == other.UseSemiTrypsinParams &&
-            UseArgCParams == other.UseArgCParams &&
-            UseSpectralRecoveryParams == other.UseSpectralRecoveryParams
-            && IsRnaMode == other.IsRnaMode;
-    }
-
-    public override int GetHashCode() => _current.GetHashCode();
-
-    // Helper for deep copy
-    private static GuiGlobalParams Clone(GuiGlobalParams src)
-    {
-        return new GuiGlobalParams
-        {
-            AskAboutUpdating = src.AskAboutUpdating,
-            AskBeforeExitingMetaMorpheus = src.AskBeforeExitingMetaMorpheus,
-            ProteomeDirectory = src.ProteomeDirectory,
-            AskAboutTopDownParams = src.AskAboutTopDownParams,
-            AskAboutChymotrypsinParams = src.AskAboutChymotrypsinParams,
-            AskAboutElastaseParams = src.AskAboutElastaseParams,
-            AskAboutNonSpecificParams = src.AskAboutNonSpecificParams,
-            AskAboutSemiTrypsinParams = src.AskAboutSemiTrypsinParams,
-            AskAboutArgCParams = src.AskAboutArgCParams,
-            AskAboutSpectralRecoveryParams = src.AskAboutSpectralRecoveryParams,
-            UseTopDownParams = src.UseTopDownParams,
-            UseChymotrypsinParams = src.UseChymotrypsinParams,
-            UseElastaseParams = src.UseElastaseParams,
-            UseNonSpecificParams = src.UseNonSpecificParams,
-            UseSemiTrypsinParams = src.UseSemiTrypsinParams,
-            UseArgCParams = src.UseArgCParams,
-            UseSpectralRecoveryParams = src.UseSpectralRecoveryParams,
-            IsRnaMode = src.IsRnaMode
-        };
-    }
 }
