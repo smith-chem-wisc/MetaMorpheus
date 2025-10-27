@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using EngineLayer;
+﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics;
@@ -9,6 +6,11 @@ using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics.ProteolyticDigestion;
 using Readers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Chemistry;
+using Transcriptomics;
 using Transcriptomics.Digestion;
 
 namespace GuiFunctions
@@ -79,7 +81,14 @@ namespace GuiFunctions
             if (sm.IsPeptide())
                 return new PeptideWithSetModifications(fullSequence ?? sm.FullSequence, GlobalVariables.AllModsKnownDictionary, oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
             else
-                return new OligoWithSetMods(fullSequence ?? sm.FullSequence, GlobalVariables.AllRnaModsKnownDictionary, oneBaseStartResidue: startResidue, oneBasedEndResidue: endResidue);
+            {
+                // Determine termini based on position in parent sequence, future versions would read it from the SM. 
+                IHasChemicalFormula fivePrimeTerminus = startResidue == 1 ? NucleicAcid.DefaultFivePrimeTerminus : Rnase.DefaultFivePrimeTerminus;
+                IHasChemicalFormula threePrimeTerminus = endResidue == sm.BaseSeq.Length ? NucleicAcid.DefaultThreePrimeTerminus : Rnase.DefaultThreePrimeTerminus;
+
+                return new OligoWithSetMods(fullSequence ?? sm.FullSequence, GlobalVariables.AllRnaModsKnownDictionary,
+                    oneBaseStartResidue: startResidue, oneBasedEndResidue: endResidue, fivePrimeTerminus: fivePrimeTerminus, threePrimeTerminus: threePrimeTerminus);
+            }
         }
 
         public static SpectrumMatchFromTsv ReplaceFullSequence(this SpectrumMatchFromTsv sm, string fullSequence, string baseSequence = "")
