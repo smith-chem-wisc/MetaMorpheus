@@ -1168,7 +1168,7 @@ namespace MetaMorpheusGUI
                 else if (exit == MessageBoxResult.OK) // yes and don't ask me again
                 {
                     GuiGlobalParamsViewModel.Instance.AskBeforeExitingMetaMorpheus = false;
-                    Toml.WriteFile(GuiGlobalParamsViewModel.Instance, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    GuiGlobalParamsViewModel.Instance.Save();
                     e.Cancel = false;
                 }
                 else // no, do not exit MetaMorpheus
