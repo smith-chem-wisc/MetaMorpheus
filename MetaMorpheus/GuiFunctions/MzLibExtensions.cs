@@ -83,8 +83,8 @@ namespace GuiFunctions
             else
             {
                 // Determine termini based on position in parent sequence, future versions would read it from the SM. 
-                IHasChemicalFormula fivePrimeTerminus = startResidue == 1 ? NucleicAcid.DefaultFivePrimeTerminus : Rnase.DefaultFivePrimeTerminus;
-                IHasChemicalFormula threePrimeTerminus = endResidue == sm.BaseSeq.Length ? NucleicAcid.DefaultThreePrimeTerminus : Rnase.DefaultThreePrimeTerminus;
+                IHasChemicalFormula fivePrimeTerminus = sm.PreviousResidue == "-" ? NucleicAcid.DefaultFivePrimeTerminus : Rnase.DefaultFivePrimeTerminus;
+                IHasChemicalFormula threePrimeTerminus = sm.NextResidue == "-" ? NucleicAcid.DefaultThreePrimeTerminus : Rnase.DefaultThreePrimeTerminus;
 
                 return new OligoWithSetMods(fullSequence ?? sm.FullSequence, GlobalVariables.AllRnaModsKnownDictionary,
                     oneBaseStartResidue: startResidue, oneBasedEndResidue: endResidue, fivePrimeTerminus: fivePrimeTerminus, threePrimeTerminus: threePrimeTerminus);

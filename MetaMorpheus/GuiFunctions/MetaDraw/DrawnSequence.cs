@@ -65,10 +65,17 @@ namespace GuiFunctions
         {
             // We clear the canvas for all cases except when plotting the annotation or crosslinked peptide alpha call. 
             // This is so that we can add the XL sequence to the same canvas by one call with the alpha sequence and one call with the beta sequence. 
-            bool isAlphaCall = match is PsmFromTsv psm && psm.IsCrossLinkedPeptide() && !psm.BetaPeptideBaseSequence.Equals(baseSequence);
-            if (!Annotation && !isAlphaCall)
+            //bool isAlphaCall = match is PsmFromTsv psm && (!psm.IsCrossLinkedPeptide() || !psm.BetaPeptideBaseSequence.Equals(baseSequence));
+            if (!Annotation)
             {
-                ClearCanvas(SequenceDrawingCanvas);
+                if (match is PsmFromTsv psm && psm.IsCrossLinkedPeptide() && psm.BetaPeptideBaseSequence.Equals(baseSequence))
+                {
+                    // don't clear for beta peptide of crosslink
+                }
+                else
+                {
+                    ClearCanvas(SequenceDrawingCanvas);
+                }
             }
 
             double canvasWidth = SequenceDrawingCanvas.Width;
@@ -332,7 +339,7 @@ namespace GuiFunctions
                     fullSequence = $"[{nTermMod.ModificationType}:{nTermMod.IdWithMotif}]{fullSequence}";
 
                 foreach (var mod in modDictionary
-                    .Where(p => p.Key - 1 > i && p.Key <= i + baseSequence.Length))
+                    .Where(p => p.Key - 1 > i && p.Key <= i + 1 + baseSequence.Length))
                 {
                     fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                 }
