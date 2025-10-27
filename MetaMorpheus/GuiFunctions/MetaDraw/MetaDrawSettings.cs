@@ -445,11 +445,6 @@ namespace GuiFunctions
                 ModificationTypeToColor[mod] = OxyColors.PowderBlue;
             }
 
-            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
-                         .Where(p => p.ModificationType == "Biological").Select(p => p.IdWithMotif))
-            {
-                ModificationTypeToColor[mod] = OxyColors.Plum;
-            }
         }
 
         private static void SetDefaultDataVisualizationColors()
