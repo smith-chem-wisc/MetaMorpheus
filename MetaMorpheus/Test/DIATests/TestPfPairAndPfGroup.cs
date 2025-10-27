@@ -95,7 +95,7 @@ namespace Test.DIATests
             cubicSpline.SetXicSplineXYData(xic2);
             var corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
             Assert.That(corr, Is.EqualTo(1.0).Within(1e-6));
-            var linearSpline = new XicLinearSpline();
+            var linearSpline = new XicLinearSpline(scanIndexBased: true);
             linearSpline.SetXicSplineXYData(xic1);
             linearSpline.SetXicSplineXYData(xic2);
             corr = PrecursorFragmentsGroup.CalculateXicCorrelation(xic1, xic2);
