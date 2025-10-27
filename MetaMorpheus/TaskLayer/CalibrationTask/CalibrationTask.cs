@@ -178,14 +178,14 @@ namespace TaskLayer
             }
         }
 
-        private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string currentDataFile)
+        private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
         {
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(currentDataFile);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalDataFile);
             MassDiffAcceptor searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
                 new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
                 new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
