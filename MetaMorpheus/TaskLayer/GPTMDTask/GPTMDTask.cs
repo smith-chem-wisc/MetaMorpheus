@@ -12,6 +12,7 @@ using UsefulProteomicsDatabases;
 using System.Globalization;
 using Omics.Modifications;
 using System.Threading.Tasks;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.Util;
 using Omics;
 using Proteomics.ProteolyticDigestion;
@@ -37,6 +38,10 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            MyTaskResults = new MyTaskResults(this)
+            {
+                NewDatabases = new List<DbForTask>()
+            };
             bool isProtein = GlobalVariables.AnalyteType != AnalyteType.Oligo;
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -47,15 +52,8 @@ namespace TaskLayer
 
             // start loading proteins in the background
             List<IBioPolymer> proteinList = null;
-            Task<List<IBioPolymer>> proteinLoadingTask = new(() =>
-            {
-                var proteins = LoadBioPolymers(taskId, dbFilenameList, true, DecoyType.Reverse,
-                    localizeableModificationTypes,
-                    CommonParameters);
-                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
-                return proteins;
-            });
-            proteinLoadingTask.Start();
+            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, DecoyType.Reverse, true, localizeableModificationTypes);
+            var proteinLoadingTask = dbLoader.RunAsync();
 
             // TODO: print error messages loading GPTMD mods
             var gptmdModifications = isProtein
@@ -89,10 +87,6 @@ namespace TaskLayer
 
             // start the G-PTM-D task
             Status("Running G-PTM-D...", new List<string> { taskId });
-            MyTaskResults = new MyTaskResults(this)
-            {
-                NewDatabases = new List<DbForTask>()
-            };
 
             var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
             for (int i = 0; i < currentRawFileList.Count; i++)
@@ -147,13 +141,15 @@ namespace TaskLayer
                 switch (proteinLoadingTask.IsCompleted)
                 {
                     case true when proteinList is null: // has finished loading but not been set
-                        proteinList = proteinLoadingTask.Result;
+                        proteinList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
+                        Status("Running G-PTM-D...", new List<string> { taskId });
                         break;
                     case true when proteinList.Any(): // has finished loading and already been set
                         break;
                     case false: // has not finished loading
                         proteinLoadingTask.Wait();
-                        proteinList = proteinLoadingTask.Result;
+                        proteinList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
+                        Status("Running G-PTM-D...", new List<string> { taskId });
                         break;
                 }
 

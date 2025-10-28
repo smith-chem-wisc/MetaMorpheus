@@ -105,11 +105,11 @@ namespace EngineLayer.DIA
                     isdVoltageScanMap[voltage].Add(scan);
                 }
             }
-            var soretedMap = isdVoltageScanMap.OrderBy(kvp => kvp.Key).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            var sortedMap = isdVoltageScanMap.OrderBy(kvp => kvp.Key).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             //ISD runs start with MS1 scans so the first kvp is removed from the dictionary
-            ms1Scans = soretedMap.First().Value.ToArray();
-            soretedMap.Remove(soretedMap.First().Key);
-            return soretedMap;
+            ms1Scans = sortedMap.First().Value.ToArray();
+            sortedMap.Remove(sortedMap.First().Key);
+            return sortedMap;
         }
     }
 }

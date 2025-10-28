@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.HistogramAnalysis;
 using Omics.Modifications;
 using TaskLayer;

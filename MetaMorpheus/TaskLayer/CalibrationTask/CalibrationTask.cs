@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -89,7 +90,7 @@ namespace TaskLayer
 
                 // First round of calibration
                 Status("Acquiring calibration data points...", new List<string> { _taskId, "Individual Spectra Files" });
-                DataPointAquisitionResults acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams);
+                DataPointAquisitionResults acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
 
                 //not enough points on the first go so try again with a little wider tolerance
                 if (!SufficientAcquisitionResults(acquisitionResultsFirst))
@@ -98,7 +99,7 @@ namespace TaskLayer
                         combinedParams.PrecursorMassTolerance.Value * InitialSearchToleranceMultiplier,
                         combinedParams.ProductMassTolerance.Value * InitialSearchToleranceMultiplier);
                     WarnForWiderTolerance(combinedParams.PrecursorMassTolerance.Value, combinedParams.ProductMassTolerance.Value);
-                    acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams);
+                    acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
                 }
                 // If there still aren't enough points, give up
                 if(!SufficientAcquisitionResults(acquisitionResultsFirst))
@@ -115,7 +116,7 @@ namespace TaskLayer
                 _ = engine.Run();
 
                 // Second round of calibration
-                DataPointAquisitionResults acquisitionResultsSecond = GetDataAcquisitionResults(engine.CalibratedDataFile, combinedParams);
+                DataPointAquisitionResults acquisitionResultsSecond = GetDataAcquisitionResults(engine.CalibratedDataFile, combinedParams, originalUncalibratedFilePath);
 
                 // If the second acquisition results are worse, then calibration made things worse. So we should give up 
                 // and write the uncalibrated file
@@ -136,7 +137,7 @@ namespace TaskLayer
                 _ = engine.Run();
 
                 // Third round of calibration
-                DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile,  combinedParams);
+                DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile,  combinedParams, originalUncalibratedFilePath);
 
                 if (CalibrationHasValue(acquisitionResultsSecond, acquisitionResultsThird))
                 {
@@ -177,14 +178,14 @@ namespace TaskLayer
             }
         }
 
-        private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters)
+        private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
         {
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(myMsDataFile.FilePath);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalDataFile);
             MassDiffAcceptor searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
                 new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
                 new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, myMsDataFile.FilePath, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
@@ -238,16 +239,20 @@ namespace TaskLayer
         /// </summary>
         private void Initialize(string taskId, List<DbForTask> dbFilenameList)
         {
-            _taskId = taskId;
-            LoadModifications(_taskId, out _variableModifications, out _fixedModifications, out var localizeableModificationTypes);
-            _proteinList = LoadBioPolymers(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
-            _myFileManager = new MyFileManager(true);
-            _unsuccessfullyCalibratedFilePaths = new List<string>();
             MyTaskResults = new MyTaskResults(this)
             {
                 NewSpectra = new List<string>(),
                 NewFileSpecificTomls = new List<string>()
             };
+            _taskId = taskId;
+            LoadModifications(_taskId, out _variableModifications, out _fixedModifications, out var localizeableModificationTypes);
+            // load proteins
+            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, DecoyType.Reverse, true, localizeableModificationTypes);
+            var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
+            _proteinList = loadingResults!.BioPolymers;
+            
+            _myFileManager = new MyFileManager(true);
+            _unsuccessfullyCalibratedFilePaths = new List<string>();
 
             // write prose settings
             WriteProse(_fixedModifications, _variableModifications, _proteinList);
