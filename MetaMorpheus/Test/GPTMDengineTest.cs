@@ -433,10 +433,15 @@ namespace Test
             Assert.That(decoyModDicts.Count, Is.GreaterThan(0));
             Assert.That(decoyModDicts.SelectMany(kvp => kvp.Value).Count, Is.GreaterThan(0));
 
+            var toWrite = GptmdTask.GetBioPolymersToWrite(proteins, allModDictionary, false).ToList();
+            Assert.That(toWrite.Count, Is.GreaterThan(0));
+            Assert.That(toWrite.Count(b => b.Accession.StartsWith("DECOY_")), Is.EqualTo(0));
+
             // Filter proteins and test filtering
-            var toWrite = GptmdTask.GetBioPolymersToWrite(proteins, allModDictionary).ToList();
+            toWrite = GptmdTask.GetBioPolymersToWrite(proteins, allModDictionary).ToList();
             Assert.That(toWrite.Count, Is.GreaterThan(0));
             Assert.That(toWrite.Count(b => b.Accession.StartsWith("DECOY_")), Is.GreaterThan(0));
+
 
             int decoyByAcCount = toWrite.Count(b => b.Accession.StartsWith("DECOY_"));
             int decoyByPropCount = toWrite.Count(b => b.IsDecoy);

@@ -176,7 +176,7 @@ namespace TaskLayer
             new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary, GptmdParameters.GptmdFilters).Run();
 
             //Move this text after search because proteins don't get loaded until search begins.
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
             // run GPTMD engine
             Status("Creating the GPTMD Database", new List<string> { taskId });
@@ -195,7 +195,7 @@ namespace TaskLayer
                 string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + GptmdDatabaseSuffix);
                 outputXMLdbFullName = PathSafety.MakeSafeOutputPath(outputXMLdbFullName, GptmdDatabaseSuffix);
 
-                var toWrite = GetBioPolymersToWrite(proteinList.Where(p => !p.IsContaminant), allModDictionary).ToList();
+                var toWrite = GetBioPolymersToWrite(proteinList.Where(p => !p.IsContaminant), allModDictionary, GptmdParameters.WriteDecoys).ToList();
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(allModDictionary, toWrite, outputXMLdbFullName);
 
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
@@ -203,7 +203,7 @@ namespace TaskLayer
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullName, false));
                 if(dbFilenameList.Any(p=>p.IsSpectralLibrary))
                 {
-                    MyTaskResults.NewDatabases.Add(dbFilenameList.Where(p => p.IsSpectralLibrary).First());
+                    MyTaskResults.NewDatabases.Add(dbFilenameList.First(p => p.IsSpectralLibrary));
                 }
                 MyTaskResults.AddTaskSummaryText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddTaskSummaryText("Mods types and counts:");
@@ -223,7 +223,7 @@ namespace TaskLayer
                 string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + GptmdDatabaseSuffix);
                 outputXMLdbFullNameContaminants = PathSafety.MakeSafeOutputPath(outputXMLdbFullNameContaminants, GptmdDatabaseSuffix);
 
-                var toWrite = GetBioPolymersToWrite(proteinList.Where(p => p.IsContaminant), allModDictionary).ToList();
+                var toWrite = GetBioPolymersToWrite(proteinList.Where(p => p.IsContaminant), allModDictionary, GptmdParameters.WriteDecoys).ToList();
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(allModDictionary, toWrite, outputXMLdbFullNameContaminants);
 
                 FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
@@ -239,15 +239,15 @@ namespace TaskLayer
         /// <summary>
         /// Returns targets and decoys that have had mods added to them. Decoys without mods added are not written.
         /// </summary>
-        public static IEnumerable<IBioPolymer> GetBioPolymersToWrite(IEnumerable<IBioPolymer> allBioPolymers, Dictionary<string, HashSet<Tuple<int, Modification>>> modsAddedDict) 
+        public static IEnumerable<IBioPolymer> GetBioPolymersToWrite(IEnumerable<IBioPolymer> allBioPolymers, Dictionary<string, HashSet<Tuple<int, Modification>>> modsAddedDict, bool writeDecoys = true) 
         {
             foreach (var b in allBioPolymers)
             {
                 // Write all targets
                 if (!b.IsDecoy) 
                     yield return b;
-                // Write Decoys if they have a mod added
-                else if (modsAddedDict.TryGetValue(b.Accession, out var modsAdded) && modsAdded.Count > 0)
+                // Write Decoys if they have a mod added and we want to write them out
+                else if (writeDecoys && modsAddedDict.TryGetValue(b.Accession, out var modsAdded) && modsAdded.Count > 0)
                 {
                     yield return b;
                 }
