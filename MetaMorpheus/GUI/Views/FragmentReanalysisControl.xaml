@@ -26,7 +26,7 @@
                 <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Row="0" Grid.Column="0" x:Name="SearchButton" Content="Search" Width="48" Height="26"
+            <Button Grid.Row="0" Grid.Column="0" x:Name="SearchButton" Content="Search" Width="64" Height="20"
                     VerticalAlignment="Center" Margin="5 3" Style="{StaticResource MetaDrawButtonStyle}"
                     VerticalContentAlignment="Center" Click="SearchWithNewIons_OnClick" />
 

@@ -367,20 +367,20 @@ namespace EngineLayer
             s.AppendLine("************************************************************");
             s.AppendLine("*       Metrics for Determination of PEP Using Binary Classification      ");
             s.AppendLine("*-----------------------------------------------------------");
-            s.AppendLine("*       Accuracy:  " + accuracy.Average().ToString());
-            s.AppendLine("*       Area Under Curve:  " + areaUnderRocCurve.Average().ToString());
-            s.AppendLine("*       Area under Precision recall Curve:  " + areaUnderPrecisionRecallCurve.Average().ToString());
-            s.AppendLine("*       F1Score:  " + F1Score.Average().ToString());
-            s.AppendLine("*       LogLoss:  " + logLossAverage.ToString());
-            s.AppendLine("*       LogLossReduction:  " + logLossReductionAverage.ToString());
-            s.AppendLine("*       PositivePrecision:  " + positivePrecision.Average().ToString());
-            s.AppendLine("*       PositiveRecall:  " + positiveRecall.Average().ToString());
-            s.AppendLine("*       NegativePrecision:  " + negativePrecision.Average().ToString());
-            s.AppendLine("*       NegativeRecall:  " + negativeRecall.Average().ToString());
-            s.AppendLine("*       Count of Ambiguous Peptides Removed:  " + sumOfAllAmbiguousPeptidesResolved.ToString());
+            s.AppendLine("*       Accuracy:  " + accuracy.Average());
+            s.AppendLine("*       Area Under Curve:  " + areaUnderRocCurve.Average());
+            s.AppendLine("*       Area under Precision recall Curve:  " + areaUnderPrecisionRecallCurve.Average());
+            s.AppendLine("*       F1Score:  " + F1Score.Average());
+            s.AppendLine("*       LogLoss:  " + logLossAverage);
+            s.AppendLine("*       LogLossReduction:  " + logLossReductionAverage);
+            s.AppendLine("*       PositivePrecision:  " + positivePrecision.Average());
+            s.AppendLine("*       PositiveRecall:  " + positiveRecall.Average());
+            s.AppendLine("*       NegativePrecision:  " + negativePrecision.Average());
+            s.AppendLine("*       NegativeRecall:  " + negativeRecall.Average());
+            s.AppendLine($"*       Count of Ambiguous {char.ToUpper(GlobalVariables.AnalyteType.GetUniqueFormLabel()[0]) + GlobalVariables.AnalyteType.GetUniqueFormLabel()[1..]}s Removed:  " + sumOfAllAmbiguousPeptidesResolved);
             s.AppendLine("*       Q-Value Cutoff for Training Targets:  " + qValueCutoff);
-            s.AppendLine("*       Targets Used for Training:  " + positiveTrainingCount.ToString());
-            s.AppendLine("*       Decoys Used for Training:  " + negativeTrainingCount.ToString());
+            s.AppendLine("*       Targets Used for Training:  " + positiveTrainingCount);
+            s.AppendLine("*       Decoys Used for Training:  " + negativeTrainingCount);
             s.AppendLine("************************************************************");
             return s.ToString();
         }
@@ -539,22 +539,23 @@ namespace EngineLayer
                 if (psm.DigestionParams.DigestionAgent.Name != "top-down")
                 {
                     missedCleavages = tentativeSpectralMatch.SpecificBioPolymer.MissedCleavages;
-                    bool fileIsCzeSeparationType = FileSpecificParametersDictionary.ContainsKey(Path.GetFileName(psm.FullFilePath)) && FileSpecificParametersDictionary[Path.GetFileName(psm.FullFilePath)].SeparationType == "CZE";
-
-                    if (!fileIsCzeSeparationType)
+                    var fileName = Path.GetFileName(psm.FullFilePath);
+                    bool fileIsCzeSeparationType = FileSpecificParametersDictionary.TryGetValue(fileName, out var fileParams) && fileParams.SeparationType == "CZE";
+                     
+                    if (searchType != "RNA")
                     {
-                        if (tentativeSpectralMatch.SpecificBioPolymer.BaseSequence.Equals(tentativeSpectralMatch.SpecificBioPolymer.FullSequence))
+                        if (!fileIsCzeSeparationType)
                         {
-                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified) * 10.0, 0);
+                            var isUnmodified = tentativeSpectralMatch.SpecificBioPolymer.BaseSequence.Equals(tentativeSpectralMatch.SpecificBioPolymer.FullSequence);
+                            var dict = isUnmodified
+                                ? FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified
+                                : FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified;
+                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, dict) * 10.0, 0);
                         }
                         else
                         {
-                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified) * 10.0, 0);
+                            hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer) * 10.0, 0);
                         }
-                    }
-                    else
-                    {
-                        hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer) * 10.0, 0);
                     }
                 }
                 //this is not for actual crosslinks but for the byproducts of crosslink loop links, deadends, etc.

@@ -1,4 +1,11 @@
-﻿using System;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
+using EngineLayer.DatabaseLoading;
+using MzLibUtil;
+using Omics;
+using Proteomics.ProteolyticDigestion;
+using Readers;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -11,13 +18,8 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Easy.Common.Extensions;
-using EngineLayer;
-using EngineLayer.DatabaseLoading;
-using MzLibUtil;
-using Omics;
-using Readers;
 using TaskLayer;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
 namespace GuiFunctions.MetaDraw;
@@ -95,8 +97,13 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
         IsLoading = true;
         try
         {
+            // This is needed to set the proper analyte type in the Engine.Run() method. 
+            CommonParameters commonParams = GuiGlobalParamsViewModel.Instance.IsRnaMode
+                ? new(digestionParams: new RnaDigestionParams())
+                : new();
+
             // Load biopolymers asynchronously
-            var dbLoader = new DatabaseLoadingEngine(new(), [], [], [new DbForTask(DatabasePath, false)], "", DecoyType.None);
+            var dbLoader = new DatabaseLoadingEngine(commonParams, [], [], [new DbForTask(DatabasePath, false)], "", DecoyType.None);
             var loadingResults = await dbLoader.RunAsync();
 
             _allBioPolymers = (loadingResults as DatabaseLoadingEngineResults)!.BioPolymers.ToDictionary(bp => bp.Accession, bp => bp);

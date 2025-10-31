@@ -25,7 +25,9 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
     public ObservableCollection<MassDifferenceAcceptorTypeViewModel> MassDiffAcceptorTypes { get; }
     public ObservableCollection<SelectableNotchViewModel> PredefinedNotches { get; } = new()
     {
-        new SelectableNotchViewModel("Missed Mono", Chemistry.Constants.C13MinusC12)
+        new SelectableNotchViewModel("Missed Mono", Chemistry.Constants.C13MinusC12),
+        new SelectableNotchViewModel("Na+", ChemicalFormula.ParseFormula("Na1H-1").MonoisotopicMass),
+        new SelectableNotchViewModel("K+", ChemicalFormula.ParseFormula("K1H-1").MonoisotopicMass),
     };
 
     public MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType selectedType, string customText, double defaultCustomTolerance = 5)

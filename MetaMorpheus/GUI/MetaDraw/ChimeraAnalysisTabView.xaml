@@ -52,8 +52,11 @@
                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
                     <DataGridTextColumn Header="Unique Fragments" Binding="{Binding UniqueFragments}" Width="80"
                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
-                    <DataGridTextColumn Header="Proteins" Binding="{Binding ProteinCount}" Width="50"
-                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                    <DataGridTextColumn Binding="{Binding ProteinCount}" Width="50"
+                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"
+                                Header="{Binding Path=ActualWidth, 
+                                RelativeSource={RelativeSource Mode=Self},
+                                Converter={StaticResource ProteinRnaTerminologyConverter}, ConverterParameter=Proteins}" />
                     <DataGridTextColumn Header="Primary Sequences" Binding="{Binding PrimarySequenceCount}" Width="74"
                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
                     <DataGridTextColumn Header="DataFile" Binding="{Binding FileNameWithoutExtension}" Width="140"
@@ -151,7 +154,10 @@
           CanUserAddRows="False" CanUserDeleteRows="False" ScrollViewer.CanContentScroll="False" IsReadOnly="True" AutoGenerateColumns="False"
           HorizontalScrollBarVisibility="Disabled" CanUserResizeColumns="True">
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="Proteoform" >
+                <DataGridTemplateColumn Header="{Binding Path=ActualWidth, 
+                    RelativeSource={RelativeSource Mode=Self},
+                    Converter={StaticResource ProteinRnaTerminologyConverter}, 
+                    ConverterParameter=Proteoform}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Rectangle  Stroke="{Binding Color, Converter={local:OxyColorToColorBrushConverter}}"
@@ -175,7 +181,10 @@
                                     ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
                 <DataGridTextColumn Header="Ambiguity" Binding="{Binding Psm.AmbiguityLevel}"  Width="70"
                                     ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
-                <DataGridTemplateColumn Header="Protein">
+                <DataGridTemplateColumn Header="{Binding Path=ActualWidth, 
+                    RelativeSource={RelativeSource Mode=Self},
+                    Converter={StaticResource ProteinRnaTerminologyConverter}, 
+                    ConverterParameter=Protein}">                    
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Rectangle Stroke="{Binding ProteinColor, Converter={local:OxyColorToColorBrushConverter}}"
