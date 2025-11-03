@@ -988,25 +988,35 @@ namespace MetaMorpheusGUI
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
             string outputFolder = OutputFolderTextBox.Text.Replace("$DATETIME", startTimeForAllFilenames);
 
-            if (Directory.Exists(outputFolder))
+            bool rename = false;
+            bool exists = Directory.Exists(outputFolder);
+            if (exists && UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory)
             {
-                if (UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory)
-                {
-                    (bool Overwrite, bool AskAgain) results = ProteaseSpecificMsgBox.Show($"Output directory '{outputFolder}' already exists!",
-                        "Would you like to overwrite it?");
+                (bool Overwrite, bool AskAgain) results = ProteaseSpecificMsgBox.Show($"Output directory '{outputFolder}' already exists!",
+                    "Would you like to overwrite it?");
 
-                    if (!results.Overwrite)
-                        outputFolder = outputFolder.ToSafeOutputPath(outputFolder[^2..^1]);
+                if (!results.Overwrite)
+                    rename = true;
 
-                    if (!results.AskAgain)
-                        UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory = false;
+                if (!results.AskAgain)
+                    UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory = false;
 
-                }
-                else if (!UpdateGUISettings.Params.OverwriteOutputDirectory)
-                {
-                    outputFolder = outputFolder.ToSafeOutputPath(outputFolder[^2..^1]);
-                }
             }
+            else if (exists && !UpdateGUISettings.Params.OverwriteOutputDirectory)
+                rename = true;
+
+            if (rename)
+            {
+                int counter = 1;
+                string newOutputFolder;
+                do
+                {
+                    newOutputFolder = outputFolder + "_" + counter;
+                    counter++;
+                } while (Directory.Exists(newOutputFolder));
+                outputFolder = newOutputFolder;
+            }
+
             OutputFolderTextBox.Text = outputFolder;
 
             // everything is ready to run
