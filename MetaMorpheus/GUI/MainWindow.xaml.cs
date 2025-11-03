@@ -23,6 +23,7 @@ using System.Text.RegularExpressions;
 using Readers.InternalResults;
 using System.Diagnostics;
 using EngineLayer.DatabaseLoading;
+using EngineLayer.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -986,6 +987,26 @@ namespace MetaMorpheusGUI
 
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
             string outputFolder = OutputFolderTextBox.Text.Replace("$DATETIME", startTimeForAllFilenames);
+
+            if (Directory.Exists(outputFolder))
+            {
+                if (UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory)
+                {
+                    (bool Overwrite, bool AskAgain) results = ProteaseSpecificMsgBox.Show($"Output directory '{outputFolder}' already exists!",
+                        "Would you like to overwrite it?");
+
+                    if (!results.Overwrite)
+                        outputFolder = outputFolder.ToSafeOutputPath(outputFolder[^2..^1]);
+
+                    if (!results.AskAgain)
+                        UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory = false;
+
+                }
+                else if (!UpdateGUISettings.Params.OverwriteOutputDirectory)
+                {
+                    outputFolder = outputFolder.ToSafeOutputPath(outputFolder[^2..^1]);
+                }
+            }
             OutputFolderTextBox.Text = outputFolder;
 
             // everything is ready to run
