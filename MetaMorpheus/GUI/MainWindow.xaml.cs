@@ -993,7 +993,7 @@ namespace MetaMorpheusGUI
             if (exists && UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory)
             {
                 (bool Overwrite, bool AskAgain) results = ProteaseSpecificMsgBox.Show($"Output directory '{outputFolder}' already exists!",
-                    "Would you like to overwrite it?");
+                    $"\tOutput directory '{outputFolder}' already exists!\r\n\t\t\tWould you like to overwrite it?");
 
                 if (!results.Overwrite)
                     rename = true;

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Height="275" Width="545.393"
+        Height="275" Width="545.393" MinHeight="160"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
     <Grid Margin="5,5,5,5">
