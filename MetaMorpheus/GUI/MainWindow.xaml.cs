@@ -24,6 +24,7 @@ using Readers.InternalResults;
 using System.Diagnostics;
 using EngineLayer.DatabaseLoading;
 using GuiFunctions;
+using Easy.Common.Extensions;
 
 namespace MetaMorpheusGUI
 {
@@ -300,7 +301,7 @@ namespace MetaMorpheusGUI
             {
                 Dispatcher.BeginInvoke(new Action(() => NewoutLabelStatus(sender, s)));
             }
-            else if (InProgressTasks != null)
+            else if (InProgressTasks != null && s.NestedIDs?.Count > 0) 
             {
                 // Find the task or the collection!!!
 
