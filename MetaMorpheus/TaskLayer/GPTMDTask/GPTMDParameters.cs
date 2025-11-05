@@ -22,5 +22,6 @@ namespace EngineLayer
 
         public List<(string, string)> ListOfModsGptmd { get; set; }
         public List<IGptmdFilter> GptmdFilters { get; set; } 
+        public bool WriteDecoys { get; set; } = true;
     }
 }

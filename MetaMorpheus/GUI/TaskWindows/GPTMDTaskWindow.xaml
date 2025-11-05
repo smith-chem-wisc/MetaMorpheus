@@ -6,8 +6,6 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
         KeyDown="KeyPressed"
         Title="GPTMD Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
 
@@ -508,6 +506,21 @@
                         </Grid>
                     </Expander>
                 </GroupBox>
+                <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                    <Expander>
+                        <CheckBox x:Name="WriteDecoysCheckBox" Margin="20 0 0 0"
+                                  Content="Write decoys with discovered mods">
+                            <ToolTipService.ToolTip>
+                                <TextBlock>
+                                    Write out decoys to the database if and only if they contain discovered modifications.
+                                    <LineBreak/>
+                                    This is to ensure proper false discovery rate calculations in subsequent searches, particularly for top-down
+                                </TextBlock>
+                            </ToolTipService.ToolTip>
+                        </CheckBox>
+                    </Expander>
+                </GroupBox>
+
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
