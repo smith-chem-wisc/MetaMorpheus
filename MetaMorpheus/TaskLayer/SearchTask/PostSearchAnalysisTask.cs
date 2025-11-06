@@ -568,11 +568,11 @@ namespace TaskLayer
                         flashLFQIdentifications.Add(
                             new Identification(
                                 fileInfo: rawfileinfo,
-                                psm.BaseSequence, 
+                                psm.BaseSequence,
                                 psm.FullSequence,
-                                psm.BioPolymerWithSetModsMonoisotopicMass.Value, 
-                                psm.ScanRetentionTime, 
-                                psm.ScanPrecursorCharge, 
+                                psm.BioPolymerWithSetModsMonoisotopicMass.Value,
+                                psm.ScanRetentionTime,
+                                psm.ScanPrecursorCharge,
                                 psmToProteinGroups[psm],
                                 psmScore: psm.Score,
                                 qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
@@ -598,57 +598,64 @@ namespace TaskLayer
                     Parameters.FlashLfqResults = flashLfqEngine.Run();
                 }
 
-            // get protein intensity and mod stoichiometry back from FlashLFQ
-            if (ProteinGroups != null && Parameters.FlashLfqResults != null)
-            {
-                // get protein intensity back from FlashLFQ
-                foreach (var proteinGroup in ProteinGroups)
+                // get protein intensity and mod stoichiometry back from FlashLFQ
+                if (ProteinGroups != null && Parameters.FlashLfqResults != null)
                 {
-                    proteinGroup.FilesForQuantification = spectraFileInfo;
-                    proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
-                    proteinGroup.ModsInfo = new Dictionary<SpectraFileInfo, QuantifiedProteinGroup>();
-
-                    foreach (var spectraFile in proteinGroup.FilesForQuantification)
+                    // get protein intensity back from FlashLFQ
+                    foreach (var proteinGroup in ProteinGroups)
                     {
-                        if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
-                        {
-                            proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
-                        }
-                        else
-                        {
-                            proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
-                        }
+                        proteinGroup.FilesForQuantification = spectraFileInfo;
+                        proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
+                        proteinGroup.ModsInfo = new Dictionary<SpectraFileInfo, QuantifiedProteinGroup>();
 
-                        // get modification stoichiometry using FlashLFQ spectraFile-specific intensities
-                        var pgQuantifiedPeptides = Parameters.FlashLfqResults.PeptideModifiedSequences.Where(x => proteinGroup.AllPeptides.Select(x=>x.FullSequence).Contains(x.Key)).ToList();
-
-                        if (pgQuantifiedPeptides.IsNotNullOrEmpty())
+                        foreach (var spectraFile in proteinGroup.FilesForQuantification)
                         {
-                            var peptides = pgQuantifiedPeptides.Where(pep => pep.Value.GetIntensity(spectraFile) > 0)
-                                                               .Select(pep => (pep.Value.Sequence,
-                                                                               new List<string> { proteinGroup.ProteinGroupName },
-                                                                               pep.Value.GetIntensity(spectraFile))).ToList();
-                            if (peptides.IsNullOrEmpty())
+                            if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
                             {
-                                proteinGroup.ModsInfo.Add(spectraFile, new QuantifiedProteinGroup(proteinGroup.ProteinGroupName));
-                                continue;
+                                proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
+                            }
+                            else
+                            {
+                                proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
                             }
 
-                            PositionFrequencyAnalysis pfa = new PositionFrequencyAnalysis();
-                            var proteins = proteinGroup.Proteins.Select(p => new KeyValuePair<string, string>(p.Accession, p.BaseSequence)).ToDictionary();
-                            pfa.SetUpQuantificationObjectsFromFullSequences(peptides, proteins); // uses zero-based indexes for the mods.
+                            // Now get the modification stoichiometries using FlashLFQ spectraFile-specific intensities
+                            // and add them to the proteinGroup.ModsInfo property. The stoichiometry strings will only be
+                            // extracted from the protein group's ToString method.
 
-                            proteinGroup.ModsInfo.Add(spectraFile, pfa.ProteinGroups.First().Value); // Getting stoich one protein group at a time, so only getting First() is ok here.
+                            // Pull out only the peptides in this protein group that were quantified by FlashLFQ
+                            var pgQuantifiedPeptides = Parameters.FlashLfqResults.PeptideModifiedSequences.Where(x => proteinGroup.AllPeptides.Select(x => x.FullSequence).Contains(x.Key)).ToList();
+
+                            if (pgQuantifiedPeptides.IsNotNullOrEmpty())
+                            {
+                                var peptides = pgQuantifiedPeptides.Select(pep => new QuantifiedPeptideRecord(pep.Value.Sequence,
+                                                                                                              new HashSet<string> { proteinGroup.ProteinGroupName },
+                                                                                                              pep.Value.GetIntensity(spectraFile))).ToList();
+                                if (peptides.IsNullOrEmpty())
+                                {
+                                    proteinGroup.ModsInfo.Add(spectraFile, new QuantifiedProteinGroup(proteinGroup.ProteinGroupName));
+                                    continue;
+                                }
+
+                                var proteins = proteinGroup.Proteins.Select(p => new KeyValuePair<string, string>(p.Accession, p.BaseSequence)).ToDictionary();
+                                PositionFrequencyAnalysis pfa = new PositionFrequencyAnalysis();
+                                pfa.SetUpQuantificationFromQuantifiedPeptideRecords(peptides, proteins); // uses zero-based indexes for the mods.
+                                proteinGroup.ModsInfo.Add(spectraFile, pfa.ProteinGroups.First().Value); // Getting stoich one protein group at a time, so only getting First() is ok here.
+                            }
                         }
                     }
                 }
-            }
 
-            //Silac stuff for post-quantification
-            if (Parameters.SearchParameters.SilacLabels != null && Parameters.AllSpectralMatches.First() is PeptideSpectralMatch) //if we're doing silac
+                //Silac stuff for post-quantification
+                if (Parameters.SearchParameters.SilacLabels != null && Parameters.AllSpectralMatches.First() is PeptideSpectralMatch) //if we're doing silac
+                {
+                    SilacConversions.SilacConversionsPostQuantification(allSilacLabels, startLabel, endLabel, spectraFileInfo, ProteinGroups, Parameters.ListOfDigestionParams,
+                        Parameters.FlashLfqResults, Parameters.AllSpectralMatches.Cast<PeptideSpectralMatch>().ToList(), Parameters.SearchParameters.ModsToWriteSelection, quantifyUnlabeledPeptides);
+                }
+            }
+            catch (Exception e)
             {
-                SilacConversions.SilacConversionsPostQuantification(allSilacLabels, startLabel, endLabel, spectraFileInfo, ProteinGroups, Parameters.ListOfDigestionParams,
-                    Parameters.FlashLfqResults, Parameters.AllSpectralMatches.Cast<PeptideSpectralMatch>().ToList(), Parameters.SearchParameters.ModsToWriteSelection, quantifyUnlabeledPeptides);
+                EngineCrashed("Quantification", e);
             }
         }
 
@@ -936,22 +943,27 @@ namespace TaskLayer
                     includeAmbiguous: false,
                     includeHighQValuePsms: false);
 
-            //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
-            var fullSeqChargeGrouping = peptidesForSpectralLibrary.GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge));
-            List<LibrarySpectrum> spectraLibrary = new();
-            foreach (var matchGroup in fullSeqChargeGrouping)
-            {
-                SpectralMatch bestPsm = matchGroup.MaxBy(p => p.Score);
-                if (bestPsm == null) continue;
-                spectraLibrary.Add(new LibrarySpectrum(
-                    bestPsm.FullSequence,
-                    bestPsm.ScanPrecursorMonoisotopicPeakMz,
-                    bestPsm.ScanPrecursorCharge,
-                    bestPsm.MatchedFragmentIons,
-                    bestPsm.ScanRetentionTime));
-            }
+                //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
+                var fullSeqChargeGrouping = peptidesForSpectralLibrary.GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge));
+                List<LibrarySpectrum> spectraLibrary = new();
+                foreach (var matchGroup in fullSeqChargeGrouping)
+                {
+                    SpectralMatch bestPsm = matchGroup.MaxBy(p => p.Score);
+                    if (bestPsm == null) continue;
+                    spectraLibrary.Add(new LibrarySpectrum(
+                        bestPsm.FullSequence,
+                        bestPsm.ScanPrecursorMonoisotopicPeakMz,
+                        bestPsm.ScanPrecursorCharge,
+                        bestPsm.MatchedFragmentIons,
+                        bestPsm.ScanRetentionTime));
+                }
 
-            WriteSpectrumLibrary(spectraLibrary, Parameters.OutputFolder);
+                WriteSpectrumLibrary(spectraLibrary, Parameters.OutputFolder);
+            }
+            catch (Exception e)
+            {
+                EngineCrashed("SpectralLibraryGeneration", e);
+            }
         }
 
         private void WriteProteinResults()

@@ -1,6 +1,4 @@
 ﻿using FlashLFQ;
-using Proteomics;
-using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,8 +10,6 @@ using Transcriptomics.Digestion;
 using MzLibUtil;
 using MzLibUtil.PositionFrequencyAnalysis;
 using Easy.Common.Extensions;
-using SharpLearning.InputOutput.Csv;
-using MzLibUtil.PositionFrequencyAnalysis;
 
 namespace EngineLayer
 {
@@ -408,19 +404,29 @@ namespace EngineLayer
                 var modInfoString = new StringBuilder();
 
                 // Create a combined quantified protein group for all fraction/techrep
-                var modsInfo = ModsInfo[spectraFiles.First()];
+                var groupedFilesQuantifiedProteinGroup = ModsInfo[spectraFiles.First()];
                 foreach (var spectraFile in spectraFiles.Skip(1))
                 {
-                    foreach (var protein in ModsInfo[spectraFile].Proteins)
+                    foreach (var protein in ModsInfo[spectraFile].Proteins.Values)
                     {
-                        foreach (var peptide in protein.Value.Peptides)
+                        foreach (var peptide in protein.Peptides.Values)
                         {
-                            modsInfo.Proteins[protein.Key].Peptides[peptide.Key].MergePeptide(peptide.Value);
+                            // TODO: If all flashlfq quantified peptides have the same spectrafiles, I can get rid of this condition.
+                            // Need to also double check that merging of peptides is properly updating total position intensity. If so, 
+                            // only write mods with finite, >0 intensities.
+                            if (groupedFilesQuantifiedProteinGroup.Proteins[protein.Accession].Peptides.ContainsKey(peptide.BaseSequence))
+                            {
+                                groupedFilesQuantifiedProteinGroup.Proteins[protein.Accession].Peptides[peptide.BaseSequence].MergePeptide(peptide);
+                            }
+                            else
+                            {
+                                groupedFilesQuantifiedProteinGroup.Proteins[protein.Accession].Peptides[peptide.BaseSequence] = peptide;
+                            }
                         }
                     }
                 }
 
-                var proteinGroupOccupanciesPerProtein = modsInfo.Proteins.Values.Select(x => new KeyValuePair<QuantifiedProtein, Dictionary<int, Dictionary<string, double>>>
+                var proteinGroupOccupanciesPerProtein = groupedFilesQuantifiedProteinGroup.Proteins.Values.Select(x => new KeyValuePair<QuantifiedProtein, Dictionary<int, Dictionary<string, double>>>
                                                                                             (x, x.GetModStoichiometryFromProteinMods())).ToDictionary(x => x.Key, x => x.Value);
 
                 foreach (var protein in proteinGroupOccupanciesPerProtein.Keys)
@@ -434,21 +440,35 @@ namespace EngineLayer
 
                     foreach (var modpos in proteinGroupOccupanciesPerProtein[protein].Keys.Order())
                     {
-                        var loc = modpos == 0 ? "N-terminal" : modpos == protein.Sequence.Length + 1 ? "C-terminal" : $"{protein.Sequence[modpos-1]}#" + modpos.ToString(); 
-                        modInfoString.Append(loc);
+                        var modposTotalIntensity = protein.Peptides.Values.Where(x => protein.PeptidesByProteinPosition[modpos].Contains(x.BaseSequence)).Sum(x => x.Intensity);
 
-                        var modStrings = new List<string>();
-                        var modposTotalIntensity = protein.Peptides.Where(x => protein.PeptidesByProteinPosition[modpos].Contains(x.Value.BaseSequence)).Sum(x => x.Value.Intensity);
-                        foreach (var mod in proteinGroupOccupanciesPerProtein[protein][modpos])
+                        if (double.IsFinite(modposTotalIntensity)) // Need to check if is finite because quantified peptides can have an intensity of Zero, leading to NaN occupancies.
                         {
-                            modStrings.Add($"{mod.Key}, info: occupancy={mod.Value.ToString("N4")}({modposTotalIntensity})");
+                            var loc = modpos == 0 ? "N-terminal" : modpos == protein.Sequence.Length + 1 ? "C-terminal" : $"{protein.Sequence[modpos-1]}#" + modpos.ToString(); 
+                            modInfoString.Append(loc);
+
+                            var modStrings = new List<string>();
+
+                            foreach (var mod in proteinGroupOccupanciesPerProtein[protein][modpos])
+                            {
+                                if (mod.Value > 0) // Do not write mods with zero occupancy.
+                                {
+                                    modStrings.Add($"{mod.Key}, info: occupancy={mod.Value.ToString("N4")}({modposTotalIntensity})");
+                                }
+                            }
+
+                            // If mods with nonzero fractions found, append them
+                            if (modStrings.Count > 0)
+                            {
+                                modInfoString.Append("[" + string.Join(";", modStrings) + "]");
+                            }
                         }
-                        modInfoString.Append("[" + string.Join(";", modStrings) + "]");
                     }
                     modInfoString.Append("}");
                 }
                 return modInfoString.ToString();
             }
+
             else
             {
                 return "";

@@ -11,6 +11,7 @@ using Omics.Digestion;
 using EngineLayer.SpectrumMatch;
 using MzLibUtil.PositionFrequencyAnalysis;
 using Easy.Common.Extensions;
+using MzLibUtil;
 
 namespace EngineLayer
 {
@@ -481,11 +482,10 @@ namespace EngineLayer
 
                             if (pgQuantifiedPeptides.IsNotNullOrEmpty())
                             {
-                                var peptides = pgQuantifiedPeptides.Where(pep => pep.Value.GetIntensity(spectraFile) > 0)
-                                                                   .Select(pep => (pep.Value.Sequence,
-                                                                                   new List<string> { proteinGroup.ProteinGroupName },
-                                                                                   pep.Value.GetIntensity(spectraFile))).ToList();
-                                if (!peptides.IsNotNullOrEmpty())
+                                var peptides = pgQuantifiedPeptides.Select(pep => new QuantifiedPeptideRecord(pep.Value.Sequence,
+                                                                                                              new HashSet<string> { proteinGroup.ProteinGroupName },
+                                                                                                              pep.Value.GetIntensity(spectraFile))).ToList();
+                                if (peptides.IsNullOrEmpty())
                                 {
                                     proteinGroup.ModsInfo.Add(spectraFile, new QuantifiedProteinGroup(proteinGroup.ProteinGroupName));
                                     continue;
@@ -493,7 +493,7 @@ namespace EngineLayer
 
                                 PositionFrequencyAnalysis pfa = new PositionFrequencyAnalysis();
                                 var proteins = proteinGroup.Proteins.Select(p => new KeyValuePair<string, string>(p.Accession, p.BaseSequence)).ToDictionary();
-                                pfa.SetUpQuantificationObjectsFromFullSequences(peptides, proteins); // uses zero-based indexes for the mods.
+                                pfa.SetUpQuantificationFromQuantifiedPeptideRecords(peptides, proteins); // uses zero-based indexes for the mods.
 
                                 proteinGroup.ModsInfo.Add(spectraFile, pfa.ProteinGroups.First().Value); // Getting stoich one protein group at a time, so only getting First() is ok here.
                             }
