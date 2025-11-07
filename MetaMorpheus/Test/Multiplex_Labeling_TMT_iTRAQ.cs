@@ -218,6 +218,41 @@ namespace Test
             Directory.Delete(outputFolder, true);
         }
 
+
+        [Test]
+        public static void TestMs3TmtQuantificationWithLocalData()
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT11_LowCID_SearchTask.toml"),
+                MetaMorpheusTask.tomlConfig);
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
+            string mzmlName = @"D:\TMT_MS3\a11223_TMT7_8.mzML";
+            string fastaName = @"D:\TMT_MS3\MUS_canonical_isoform_190712.fasta";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtOutput");
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            engine.Run();
+
+            string[] peaksResults = File.ReadAllLines(Path.Combine(outputFolder, "search", "AllPeptides.psmtsv")).ToArray();
+            Assert.That(peaksResults.Length == 5);
+
+            string[] header = peaksResults[0].Trim().Split('\t');
+            string[] ionLabelsInHeader = header[^11..]; // Last 11 columns should be the TMT labels
+            Assert.That(ionLabelsInHeader, Is.EquivalentTo(new string[]
+                { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" }));
+
+            double channelSum127N = 0;
+            for (int i = 1; i < peaksResults.Length; i++)
+            {
+                channelSum127N += Double.Parse(peaksResults[i].Trim().Split('\t')[^10]);
+            }
+            Assert.That(channelSum127N, Is.EqualTo(577226.336).Within(0.001));
+
+            Directory.Delete(outputFolder, true);
+        }
+
         [Test]
         public static void TestTMT10vs11()
         {

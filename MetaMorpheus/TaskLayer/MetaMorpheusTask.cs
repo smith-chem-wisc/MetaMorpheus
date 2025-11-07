@@ -430,9 +430,9 @@ namespace TaskLayer
 
                             foreach (var childScan in parentScan.ChildScans)
                             {
-                                if (((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID) ||
-                                (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID))
-                                && !childScan.TheScan.MassSpectrum.XcorrProcessed)
+                                if ((childScan.TheScan.MsnOrder == 2 || childScan.TheScan.MsnOrder == 3) 
+                                    && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID
+                                    && !childScan.TheScan.MassSpectrum.XcorrProcessed)
                                 {
                                     lock (childScan.TheScan)
                                     {
