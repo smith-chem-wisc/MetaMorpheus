@@ -442,19 +442,20 @@ namespace EngineLayer
                     {
                         var modposTotalIntensity = protein.Peptides.Values.Where(x => protein.PeptidesByProteinPosition[modpos].Contains(x.BaseSequence)).Sum(x => x.Intensity);
 
-                        if (double.IsFinite(modposTotalIntensity)) // Need to check if is finite because quantified peptides can have an intensity of Zero, leading to NaN occupancies.
+                        bool writeModPos = proteinGroupOccupanciesPerProtein[protein][modpos].Values.Any(x => x > 0);
+
+                        // Need to check if is finite because quantified peptides can have an intensity of Zero, leading to NaN occupancies.
+                        // Also, only write mod positions with nonzero total intensity.
+                        if (double.IsFinite(modposTotalIntensity) && modposTotalIntensity > 0 && writeModPos)
                         {
-                            var loc = modpos == 0 ? "N-terminal" : modpos == protein.Sequence.Length + 1 ? "C-terminal" : $"{protein.Sequence[modpos-1]}#" + modpos.ToString(); 
+                            var loc = modpos == 0 ? "N-terminal" : modpos == protein.Sequence.Length + 1 ? "C-terminal" : $"{protein.Sequence[modpos - 1]}#" + modpos.ToString();
                             modInfoString.Append(loc);
 
                             var modStrings = new List<string>();
 
                             foreach (var mod in proteinGroupOccupanciesPerProtein[protein][modpos])
                             {
-                                if (mod.Value > 0) // Do not write mods with zero occupancy.
-                                {
-                                    modStrings.Add($"{mod.Key}, info: occupancy={mod.Value.ToString("N4")}({modposTotalIntensity})");
-                                }
+                                modStrings.Add($"{mod.Key}, info: occupancy={mod.Value.ToString("N4")}({modposTotalIntensity})");
                             }
 
                             // If mods with nonzero fractions found, append them
