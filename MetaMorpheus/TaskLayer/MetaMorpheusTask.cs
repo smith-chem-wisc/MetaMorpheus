@@ -291,7 +291,9 @@ namespace TaskLayer
                         // get child scans
                         List<MsDataScan> ms2ChildScans = null;
                         List<MsDataScan> ms3ChildScans = null;
-                        if (commonParameters.MS2ChildScanDissociationType != DissociationType.Unknown || commonParameters.MS3ChildScanDissociationType != DissociationType.Unknown)
+                        if (commonParameters.MS2ChildScanDissociationType != DissociationType.Unknown 
+                            || commonParameters.MS3ChildScanDissociationType != DissociationType.Unknown
+                            || true)
                         {
                             ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
 
@@ -430,8 +432,12 @@ namespace TaskLayer
 
                             foreach (var childScan in parentScan.ChildScans)
                             {
-                                if ((childScan.TheScan.MsnOrder == 2 || childScan.TheScan.MsnOrder == 3) 
-                                    && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID
+                                if (
+                                    (
+                                        (childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID) 
+                                        // Temporarily remove XCorrPreProcessing for MS3s, as TMT ms3s are hi-res and should not be xcorr processed
+                                     //|| (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID) 
+                                    )
                                     && !childScan.TheScan.MassSpectrum.XcorrProcessed)
                                 {
                                     lock (childScan.TheScan)

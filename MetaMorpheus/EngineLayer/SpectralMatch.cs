@@ -156,6 +156,12 @@ namespace EngineLayer
 
         protected List<SpectralMatchHypothesis> _BestMatchingBioPolymersWithSetMods;
 
+        /// <summary>
+        /// An array containing the intensities of the reporter ions for isobaric mass tags. 
+        /// If multiplex quantification wasn't performed, this will be null
+        /// </summary>
+        public double[]? IsobaricMassTagReporterIonIntensities { get; private set; }
+
         public IEnumerable<SpectralMatchHypothesis> BestMatchingBioPolymersWithSetMods
         {
             get

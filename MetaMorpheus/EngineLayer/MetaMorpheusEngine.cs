@@ -168,7 +168,6 @@ namespace EngineLayer
             }
 
             // search for ions in the spectrum
-            //foreach (Product product in theoreticalProducts)
             for (int i = 0; i < theoreticalProducts.Count; i++)
             {
                 var product = theoreticalProducts[i];

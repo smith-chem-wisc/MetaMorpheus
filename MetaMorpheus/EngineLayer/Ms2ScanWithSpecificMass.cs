@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ namespace EngineLayer
 {
     public class Ms2ScanWithSpecificMass
     {
-        public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam, 
+        public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam,
             IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null)
         {
             PrecursorMonoisotopicPeakMz = precursorMonoisotopicPeakMz;
@@ -48,17 +49,17 @@ namespace EngineLayer
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
         private double[] DeconvolutedMonoisotopicMasses;
-        public string NativeId { get; } 
-
+        public string NativeId { get; }
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
-
         public int? OneBasedPrecursorScanNumber => TheScan.OneBasedPrecursorScanNumber;
-
         public double RetentionTime => TheScan.RetentionTime;
-
         public int NumPeaks => TheScan.MassSpectrum.Size;
-
         public double TotalIonCurrent => TheScan.TotalIonCurrent;
+        /// <summary>
+        /// An array containing the intensities of the reporter ions for isobaric mass tags. 
+        /// If multiplex quantification wasn't performed, this will be null
+        /// </summary>
+        public double[]? IsobaricMassTagReporterIonIntensities { get; private set; }
 
         public static IsotopicEnvelope[] GetNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
         {
@@ -88,6 +89,46 @@ namespace EngineLayer
             return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
         }
 
+
+        private bool ChildScansHaveHigherHcdEnergy(out Ms2ScanWithSpecificMass mostIntenseChildScan)
+        {
+            mostIntenseChildScan = null;
+            if (ChildScans.IsNullOrEmpty()) return false;
+            double parentScanHcdEnergy = Double.TryParse(TheScan.HcdEnergy, out var thisHcdEnergy) ? thisHcdEnergy : 0;
+            double childScanMaxHcdEnergy = ChildScans.Max(s => Double.TryParse(s.TheScan.HcdEnergy, out var hcdEnergy) ? hcdEnergy : 0);
+
+            if (childScanMaxHcdEnergy > parentScanHcdEnergy)
+            {
+                mostIntenseChildScan = ChildScans
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Writes the reporter ion intensities into the IsobaricMassTagReporterIonIntensities property
+        /// If the scan has
+        /// </summary>
+        /// <param name="massTag"></param>
+        public void GetIsobaricMassTagReporterIonIntensities(IsobaricMassTag massTag)
+        {
+            if (TheScan.ScanWindowRange.Minimum > massTag.ReporterIonMzs[^1] // If the scan window is above the highest reporter ion mass, check if MS3 was used for the reporter ions
+                || (ChildScans.Any() 
+                && ChildScans.Max(s => Double.TryParse(s.TheScan.HcdEnergy, out var hcdEnergy) ? hcdEnergy : 0) > 
+                (Double.TryParse(TheScan.HcdEnergy, out var thisHcdEnergy) ? thisHcdEnergy : 0))) // If any child scan has higher HCD energy than this scan, assume reporter ions were measured in MS3
+            {
+                if (ChildScans.IsNullOrEmpty()) return;
+                if (ChildScans.All(s => s.TheScan.ScanWindowRange.Minimum > massTag.ReporterIonMzs[^1])) return;
+                // If there are multiple child scans, we'll just pick the most intense one (In general, there should only be one MS3 scan for reporter ions)
+                var ms3Scan = ChildScans.Where(s => s.TheScan.MsnOrder == 3)
+                    .MaxBy(s => s.TotalIonCurrent);
+                IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(ms3Scan.TheScan.MassSpectrum);
+                return;
+            }
+            IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(TheScan.MassSpectrum);
+        }
+       
         public IsotopicEnvelope GetClosestExperimentalIsotopicEnvelope(double theoreticalNeutralMass)
         {
             if (DeconvolutedMonoisotopicMasses.Length == 0)

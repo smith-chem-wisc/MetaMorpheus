@@ -1,25 +1,27 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using EngineLayer.ClassicSearch;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
+using Omics;
+using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Omics.Digestion;
-using Omics.Modifications;
-using Omics;
-using Readers;
-using EngineLayer.DatabaseLoading;
+using Chemistry;
 
 namespace TaskLayer
 {
@@ -261,6 +263,21 @@ namespace TaskLayer
                         bioPolymerList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
                         Status("Searching files...", new List<string> { taskId });
                         break;
+                }
+
+                if (SearchParameters.DoMultiplexQuantification)
+                {
+                   IsobaricMassTag massTag = IsobaricMassTag.GetIsobaricMassTag(SearchParameters.MultiplexModId);
+                   if(massTag == null)
+                   {
+                        // Could probably throw a warn/ status update here
+                   }
+
+                   foreach (var scan in arrayOfMs2ScansSortedByMass)
+                   {
+                      scan. 
+                   }
+
                 }
 
                 // modern search

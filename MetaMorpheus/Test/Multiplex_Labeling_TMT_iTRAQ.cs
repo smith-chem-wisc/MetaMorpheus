@@ -184,6 +184,143 @@ namespace Test
             Assert.That(diagnosticIons.Count(), Is.EqualTo(0));
         }
 
+
+        [TestCase("PEPTIDE", 1104.5694)]
+        [TestCase("PEPTIDEK", 1536.8666)]
+        public static void TestPeptideLabelledWiddth_iTRAQ_8plex(string peptide, double totalMass)
+        {
+            List<Modification> gptmdModifications = new List<Modification>();
+            gptmdModifications.AddRange(GlobalVariables.AllModsKnown);
+            List<Modification> itraq8plex = gptmdModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("iTRAQ-8plex")).ToList();
+
+            Protein P = new Protein(peptide, "", "", null, null, null, null, null, false, false, null, null, null, null);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
+            var p = P.Digest(CommonParameters.DigestionParams, itraq8plex, new List<Modification>()).First();
+            var f = new List<Product>();
+            p.Fragment(DissociationType.HCD, FragmentationTerminus.Both, f);
+
+            List<double> productMasses = f.Select(m => m.NeutralMass.ToMz(1)).ToList();
+            productMasses.Distinct();
+            productMasses.Sort();
+
+            Assert.That(ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4), Is.EqualTo(totalMass));
+        }
+
+        [Test]
+        public static void TestTmtIonsArentTreatedLikePeptideIsotopicEnvelopes()
+        {
+            // Previously, TMT reporter ions could sometime be mis-identified as isotopic envelopes
+            // When MS2 Spectra are deconvoluted, if adjacent reporter ions have ratios that mimic an isotopic distribution,
+            // Ex: 127C:128C 92:8, the 128C ion could be mis-identified as the M+1 peak of the 127C ion
+            // and not reported as a distinct ion, resulting in loss of quantificative information.
+            // 
+            // In the new implementation, we ensure that TMT reporter ions are never treated as isotopic envelopes,
+            // but instead are recovered directly from the raw MS2 spectra. 
+
+
+            // Get the TMT 11 plex modifications (lysine and N-terminal)
+            List<Modification> tmt11Mods = GlobalVariables.AllModsKnown.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT11")).ToList();
+
+            Protein protein = new Protein("PEPTIDEK", "", "", null, null, null, null, null, false, false, null, null, null, null);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
+            var peptide = protein.Digest(CommonParameters.DigestionParams, tmt11Mods, new List<Modification>()).First();
+            var fragments = new List<Product>();
+            peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, fragments);
+
+            // We're going to create a fake MsDataScan that contains all fragment ions for PEPTIDEK and all TMT reporter ions
+            // The TMT reporter ions will have intensities that mimic the isotopic distribution predicted by the Averagine Model
+           
+            List<double> allIonMzs = fragments.Select(m => m.NeutralMass.ToMz(1)).OrderBy(m => m).ToList();
+            
+            double[] mzArray = allIonMzs.ToArray();
+            double[] intensityArray = new double[mzArray.Length];
+
+            // Corresponding to                 126, 127N, 127C, 128N, 128C, 129N, 129C, 130N, 130C, 131N, 131C
+            var tmtIntensities = new double[] {  92,   92,    8,    12,  92,   92,    16,    20,    2,   3,   5 };
+
+            for (int i = 0; i < intensityArray.Length; i++)
+            {
+                if(i < tmtIntensities.Length)
+                {
+                    intensityArray[i] = tmtIntensities[i];
+                }
+                else
+                {
+                    intensityArray[i] = 100; // arbitrary intensity for fragment ions
+                }
+            }
+
+            // Create a MS1 scan
+            var ms1Spectrum = new MzSpectrum(new double[] { peptide.MonoisotopicMass.ToMz(2), (peptide.MonoisotopicMass + Constants.C13MinusC12).ToMz(2) }, new double[] { 10000, 5000 }, false);
+            var ms1Scan = new MsDataScan(ms1Spectrum, 1, 1, true, Polarity.Positive, 1.0, new MzRange(100, 2000), 
+                scanFilter: "",
+                MZAnalyzerType.Orbitrap, 
+                totalIonCurrent: 1000,
+                null,
+                noiseData: null,
+                nativeId: "scan=1",
+                selectedIonMz: double.NaN,
+                selectedIonChargeStateGuess: null,
+                selectedIonIntensity: null,
+                isolationMZ: double.NaN, null, null, null,
+                selectedIonMonoisotopicGuessMz: null);
+
+            // Create a MS2 scan
+            var ms2Spectrum = new MzSpectrum(mzArray, intensityArray, false);
+            var ms2Scan = new MsDataScan(ms2Spectrum, 2, 2, true, Polarity.Positive, 1.1, new MzRange(100, 2000),
+                scanFilter: "", MZAnalyzerType.Orbitrap,
+                totalIonCurrent: 1000, null, null, "scan=2", 
+                selectedIonMz: peptide.MonoisotopicMass.ToMz(2), 
+                selectedIonChargeStateGuess: 2,
+                selectedIonIntensity: 10000, 
+                isolationMZ: peptide.MonoisotopicMass.ToMz(2), 
+                isolationWidth: 2.2,
+                DissociationType.HCD, 1, 
+                selectedIonMonoisotopicGuessMz: peptide.MonoisotopicMass.ToMz(2));
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtOutput");
+            var mzmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TMT_test", "SingleScan_TMT10.mzML");
+            try
+            {
+                GenericMsDataFile singleScanDataFile = new GenericMsDataFile(new MsDataScan[] { ms1Scan, ms2Scan }, new SourceFile("no nativeID format", "mzML format", null, null, null));
+
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(singleScanDataFile, mzmlPath, true);
+
+                // Now, run a task with this mzml and a simple fasta (contains only PEPTIDEK)
+                var searchTask = Toml.ReadFile<SearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                    MetaMorpheusTask.tomlConfig);
+
+                List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
+                string mzmlName = @"TMT_test\SingleScan_TMT10.mzML";
+                string fastaName = @"TMT_test\PEPTIDEK.fasta";
+                if (Directory.Exists(outputFolder))
+                    Directory.Delete(outputFolder, true);
+                var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+                engine.Run();
+
+                string[] peaksResults = File.ReadAllLines(Path.Combine(outputFolder, "search", "AllPeptides.psmtsv")).ToArray();
+
+
+                string[] header = peaksResults[0].Trim().Split('\t');
+                string[] ionLabelsInHeader = header[^11..]; // Last 11 columns should be the TMT labels
+                Assert.That(ionLabelsInHeader, Is.EquivalentTo(new string[]
+                    { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" }));
+
+                var reportedIntensities = peaksResults[1].Split('\t')[^11..];
+                for (int i = 0; i < reportedIntensities.Length; i++)
+                {
+                    Assert.That(reportedIntensities[i], Is.EqualTo(tmtIntensities[i].ToString()), $"The intensity for TMT channel {ionLabelsInHeader[i]} was not reported correctly. Expected {tmtIntensities[i]}, but was reported as {reportedIntensities[i]}.");
+                }
+                Assert.That(reportedIntensities.All(i => Double.Parse(i) > 0), Is.True, "All TMT channels should have intensities reported.");
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+                File.Delete(mzmlPath);
+            }
+        }
+
         [Test]
         public static void TestTmtQuantificationOutput()
         {
@@ -227,7 +364,8 @@ namespace Test
                 MetaMorpheusTask.tomlConfig);
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
-            string mzmlName = @"D:\TMT_MS3\a11223_TMT7_8.mzML";
+            //string mzmlName = @"D:\TMT_MS3\a11223_TMT7_8.mzML";
+            string mzmlName = @"D:\TMT_MS3\a11223_TMT7_8.raw"; // MS2 and MS3  scan orders get confused, so a simple snip doesn't work
             string fastaName = @"D:\TMT_MS3\MUS_canonical_isoform_190712.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtOutput");
             if (Directory.Exists(outputFolder))
