@@ -268,16 +268,13 @@ namespace TaskLayer
                 if (SearchParameters.DoMultiplexQuantification)
                 {
                    IsobaricMassTag massTag = IsobaricMassTag.GetIsobaricMassTag(SearchParameters.MultiplexModId);
-                   if(massTag == null)
-                   {
-                        // Could probably throw a warn/ status update here
-                   }
-
-                   foreach (var scan in arrayOfMs2ScansSortedByMass)
-                   {
-                      scan. 
-                   }
-
+                    if (massTag != null) // Should probably warn/update results if null
+                    {
+                        foreach (var scan in arrayOfMs2ScansSortedByMass)
+                        {
+                            scan.SetIsobaricMassTagReporterIonIntensities(massTag);
+                        }
+                    }
                 }
 
                 // modern search

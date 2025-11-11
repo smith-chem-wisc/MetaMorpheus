@@ -38,8 +38,9 @@ namespace EngineLayer
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = -1;
+            IsobaricMassTagReporterIonIntensities = scan.IsobaricMassTagReporterIonIntensities;
 
-            if(scan.TheScan is TimsDataScan timsScan)
+            if (scan.TheScan is TimsDataScan timsScan)
             {
                 ScanOneOverK0 = timsScan.OneOverK0;
             }

@@ -4,6 +4,7 @@ using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Markup;
 
 namespace EngineLayer
 {
@@ -89,44 +90,49 @@ namespace EngineLayer
             return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
         }
 
-
-        private bool ChildScansHaveHigherHcdEnergy(out Ms2ScanWithSpecificMass mostIntenseChildScan)
-        {
-            mostIntenseChildScan = null;
-            if (ChildScans.IsNullOrEmpty()) return false;
-            double parentScanHcdEnergy = Double.TryParse(TheScan.HcdEnergy, out var thisHcdEnergy) ? thisHcdEnergy : 0;
-            double childScanMaxHcdEnergy = ChildScans.Max(s => Double.TryParse(s.TheScan.HcdEnergy, out var hcdEnergy) ? hcdEnergy : 0);
-
-            if (childScanMaxHcdEnergy > parentScanHcdEnergy)
-            {
-                mostIntenseChildScan = ChildScans
-                return true;
-            }
-
-            return false;
-        }
-
         /// <summary>
         /// Writes the reporter ion intensities into the IsobaricMassTagReporterIonIntensities property
         /// If the scan has
         /// </summary>
         /// <param name="massTag"></param>
-        public void GetIsobaricMassTagReporterIonIntensities(IsobaricMassTag massTag)
+        public void SetIsobaricMassTagReporterIonIntensities(IsobaricMassTag massTag)
         {
-            if (TheScan.ScanWindowRange.Minimum > massTag.ReporterIonMzs[^1] // If the scan window is above the highest reporter ion mass, check if MS3 was used for the reporter ions
-                || (ChildScans.Any() 
-                && ChildScans.Max(s => Double.TryParse(s.TheScan.HcdEnergy, out var hcdEnergy) ? hcdEnergy : 0) > 
-                (Double.TryParse(TheScan.HcdEnergy, out var thisHcdEnergy) ? thisHcdEnergy : 0))) // If any child scan has higher HCD energy than this scan, assume reporter ions were measured in MS3
+            if (UseChildScansForIsobaricQuant(massTag, out var mostIntenseChildScan))
             {
-                if (ChildScans.IsNullOrEmpty()) return;
-                if (ChildScans.All(s => s.TheScan.ScanWindowRange.Minimum > massTag.ReporterIonMzs[^1])) return;
-                // If there are multiple child scans, we'll just pick the most intense one (In general, there should only be one MS3 scan for reporter ions)
-                var ms3Scan = ChildScans.Where(s => s.TheScan.MsnOrder == 3)
-                    .MaxBy(s => s.TotalIonCurrent);
-                IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(ms3Scan.TheScan.MassSpectrum);
+                IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(mostIntenseChildScan.TheScan.MassSpectrum);
                 return;
             }
             IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(TheScan.MassSpectrum);
+        }
+
+        /// <summary>
+        /// Helper method to determine if child scans contain isobaric mass tag (e.g., TMT) reporter ions
+        /// This determination is made based on heuristics like scan range and HCD energy
+        /// </summary>
+        /// <param name="mostIntenseChildScan">The child scan that has the highest ion current </param>
+        private bool UseChildScansForIsobaricQuant(IsobaricMassTag massTag, out Ms2ScanWithSpecificMass mostIntenseChildScan)
+        {
+            mostIntenseChildScan = null;
+            if (ChildScans.IsNullOrEmpty()) return false;
+            mostIntenseChildScan = ChildScans
+                .OrderByDescending(s => s.TotalIonCurrent)
+                .MaxBy(s => Double.TryParse(s.TheScan.HcdEnergy, out var hcdEnergy) ? hcdEnergy : 0);
+
+            // If the parent scan's scan range doesn't contain any reporter ions but the child scan's scan range does, use the child scan
+            if (TheScan.ScanWindowRange.Minimum > massTag.ReporterIonMzs[^1] && mostIntenseChildScan.TheScan.ScanWindowRange.Minimum < massTag.ReporterIonMzs[0])
+            {
+                return true;
+            }
+
+            // Otherwise, check if the child scans have higher HCD energy than the parent scan
+            double parentScanHcdEnergy = Double.TryParse(TheScan.HcdEnergy, out var thisHcdEnergy) ? thisHcdEnergy : 0;
+            double childScanMaxHcdEnergy = Double.TryParse(mostIntenseChildScan.TheScan.HcdEnergy, out var maxHcdEnergy) ? maxHcdEnergy : 0;
+            if (childScanMaxHcdEnergy > parentScanHcdEnergy)
+            {
+                return true;
+            }
+
+            return false;
         }
        
         public IsotopicEnvelope GetClosestExperimentalIsotopicEnvelope(double theoreticalNeutralMass)
