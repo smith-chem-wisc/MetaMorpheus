@@ -9,7 +9,7 @@
         mc:Ignorable="d"
         Drop="Window_Drop" AllowDrop="true" 
         Background="{StaticResource BackgroundColor}" 
-        WindowStartupLocation="CenterScreen" MinHeight="400" 
+        WindowStartupLocation="CenterScreen" MinHeight="460" 
         MinWidth="800" Height="550" Width="1000"
         Loaded="MyWindow_Loaded"
         Title="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=MainWindowTitle}"
@@ -61,40 +61,36 @@
                         <ControlTemplate TargetType="TabControl">
                             <Grid ClipToBounds="true">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/> <!-- For tab headers --> 
-                                    <ColumnDefinition Width="*"/>  <!-- For content -->
+                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- For tab headers -->
+                                    <ColumnDefinition Width="*"/>
+                                    <!-- For content -->
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Header Panel (Vertical Tabs + Custom Toggle) -->
-                                <StackPanel Grid.Row="0" Grid.Column="0"
-                                 Orientation="Vertical"
-                                 IsItemsHost="False"
-                                 Background="Transparent">
+                                <!-- Actual Tab Headers -->
+                                <TabPanel Grid.Row="0" Grid.Column="0"
+                                          Name="HeaderPanel"
+                                          IsItemsHost="True"
+                                          Margin="0"
+                                          KeyboardNavigation.TabIndex="1"
+                                          Panel.ZIndex="1"
+                                          Background="Transparent"/>
 
-                                    <!-- Protein/RNA Toggle Control -->
-                                    <local:ProteinRnaImageToggle Margin="0 5 0 10" Width="100" Height="75"
-                                                                 ContextMenu="{StaticResource BigDeleteContextMenu}"/>
-
-                                    <!-- Actual Tab Headers -->
-                                    <TabPanel
-                                         Name="HeaderPanel"
-                                         IsItemsHost="True"
-                                         Margin="0"
-                                         KeyboardNavigation.TabIndex="1"
-                                         Panel.ZIndex="1"
-                                         Background="Transparent"/>
-                                </StackPanel>
+                                <!-- Protein/RNA Toggle Control -->
+                                <local:ProteinRnaImageToggle Grid.Row="1" Grid.Column="0" Width="100"/>
 
                                 <!-- Content Panel -->
                                 <ContentPresenter
-                         Name="PART_SelectedContentHost"
-                         Margin="4 0 0 0 "
-                         Grid.Row="0"
-                         Grid.Column="1"
-                         ContentSource="SelectedContent"/>
+                                    Name="PART_SelectedContentHost"
+                                    Margin="4 0 0 0 "
+                                    Grid.Row="0"
+                                    Grid.RowSpan="2"
+                                    Grid.Column="1"
+                                    ContentSource="SelectedContent"/>
                             </Grid>
                         </ControlTemplate>
                     </Setter.Value>
