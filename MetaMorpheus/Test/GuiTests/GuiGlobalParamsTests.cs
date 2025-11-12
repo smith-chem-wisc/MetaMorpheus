@@ -7,6 +7,7 @@ using GuiFunctions;
 using NUnit.Framework;
 using EngineLayer;
 using MzLibUtil;
+using GuiFunctions.Util;
 
 namespace Test.GuiTests
 {
@@ -24,6 +25,9 @@ namespace Test.GuiTests
             ResetSingleton();
             // Ensure GlobalVariables initialized for tests
             GlobalVariables.SetUpGlobalVariables();
+            
+            // Clear any event handlers from previous tests
+            ClearEventHandlers();
         }
 
         [TearDown]
@@ -40,6 +44,7 @@ namespace Test.GuiTests
             catch { }
 
             ResetSingleton();
+            ClearEventHandlers();
         }
 
         private static void ResetSingleton()
@@ -47,6 +52,14 @@ namespace Test.GuiTests
             var vmType = typeof(GuiGlobalParamsViewModel);
             var instField = vmType.GetField("_instance", BindingFlags.NonPublic | BindingFlags.Static);
             instField.SetValue(null, null);
+        }
+
+        private static void ClearEventHandlers()
+        {
+            // Clear static event handlers to prevent cross-test contamination
+            var requestModeSwitchField = typeof(GuiGlobalParamsViewModel)
+                .GetProperty("RequestModeSwitchConfirmation", BindingFlags.Public | BindingFlags.Static);
+            requestModeSwitchField.SetValue(null, null);
         }
 
         [Test]
@@ -183,6 +196,8 @@ namespace Test.GuiTests
                 if (prop.PropertyType != typeof(bool)) continue;
                 if (!prop.CanRead || !prop.CanWrite) continue;
                 if (prop.GetIndexParameters().Length > 0) continue;
+                // Skip IsRnaMode as it has special behavior tested separately
+                if (prop.Name == nameof(GuiGlobalParamsViewModel.IsRnaMode)) continue;
 
                 testedCount++;
 
@@ -220,21 +235,218 @@ namespace Test.GuiTests
         public void IsRnaMode_TogglesGlobalAnalyteType_And_MainWindowTitle_And_RaisesEvents()
         {
             var vm = GuiGlobalParamsViewModel.Instance;
-            // capture previous analyte
-            GlobalVariables.SetUpGlobalVariables(); // ensure defaults
+            GlobalVariables.SetUpGlobalVariables();
+
+            // Hook up event handler that auto-approves the switch
+            EventHandler<ModeSwitchRequestEventArgs> handler = (s, e) =>
+            {
+                e.Result = ModeSwitchResult.SwitchKeepFiles;
+            };
+            GuiGlobalParamsViewModel.RequestModeSwitchConfirmation += handler;
 
             int eventCount = 0;
-            vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.IsRnaMode) || e.PropertyName == nameof(vm.MainWindowTitle)) eventCount++; };
+            vm.PropertyChanged += (s, e) => 
+            { 
+                if (e.PropertyName == nameof(vm.IsRnaMode) || e.PropertyName == nameof(vm.MainWindowTitle)) 
+                    eventCount++; 
+            };
 
-            vm.IsRnaMode = true;
-            Assert.That(GlobalVariables.AnalyteType, Is.EqualTo(EngineLayer.AnalyteType.Oligo));
-            Assert.That(vm.MainWindowTitle, Does.Contain("RNA"));
+            try
+            {
+                vm.IsRnaMode = true;
+                Assert.That(GlobalVariables.AnalyteType, Is.EqualTo(EngineLayer.AnalyteType.Oligo));
+                Assert.That(vm.MainWindowTitle, Does.Contain("RNA"));
 
-            vm.IsRnaMode = false;
-            Assert.That(GlobalVariables.AnalyteType, Is.EqualTo(EngineLayer.AnalyteType.Peptide));
-            Assert.That(vm.MainWindowTitle, Does.Contain("Protein"));
+                vm.IsRnaMode = false;
+                Assert.That(GlobalVariables.AnalyteType, Is.EqualTo(EngineLayer.AnalyteType.Peptide));
+                Assert.That(vm.MainWindowTitle, Does.Contain("Protein"));
 
-            Assert.That(eventCount, Is.GreaterThanOrEqualTo(2));
+                Assert.That(eventCount, Is.GreaterThanOrEqualTo(2));
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.RequestModeSwitchConfirmation -= handler;
+            }
+        }
+
+        [Test]
+        public void IsRnaMode_WithCancel_DoesNotSwitch()
+        {
+            var vm = GuiGlobalParamsViewModel.Instance;
+            GlobalVariables.SetUpGlobalVariables();
+
+            // Hook up event handler that cancels the switch
+            EventHandler<ModeSwitchRequestEventArgs> handler = (s, e) =>
+            {
+                e.Result = ModeSwitchResult.Cancel;
+            };
+            GuiGlobalParamsViewModel.RequestModeSwitchConfirmation += handler;
+
+            try
+            {
+                bool originalMode = vm.IsRnaMode;
+                var originalAnalyteType = GlobalVariables.AnalyteType;
+
+                // Try to switch
+                vm.IsRnaMode = !originalMode;
+
+                // Should not have changed
+                Assert.That(vm.IsRnaMode, Is.EqualTo(originalMode));
+                Assert.That(GlobalVariables.AnalyteType, Is.EqualTo(originalAnalyteType));
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.RequestModeSwitchConfirmation -= handler;
+            }
+        }
+
+        [Test]
+        public void IsRnaMode_WithRememberDecision_UpdatesSettings()
+        {
+            var vm = GuiGlobalParamsViewModel.Instance;
+            GlobalVariables.SetUpGlobalVariables();
+
+            Assert.That(vm.AskAboutModeSwitch, Is.True, "Should start with AskAboutModeSwitch = true");
+
+            // Hook up event handler that approves and remembers
+            EventHandler<ModeSwitchRequestEventArgs> handler = (s, e) =>
+            {
+                e.Result = ModeSwitchResult.SwitchRemoveFiles;
+                e.RememberMyDecision = true;
+            };
+            GuiGlobalParamsViewModel.RequestModeSwitchConfirmation += handler;
+
+            try
+            {
+                vm.IsRnaMode = true;
+
+                // Should have updated the cached result and disabled asking
+                Assert.That(vm.AskAboutModeSwitch, Is.False);
+                Assert.That(vm.CachedModeSwitchResult, Is.EqualTo(ModeSwitchResult.SwitchRemoveFiles));
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.RequestModeSwitchConfirmation -= handler;
+            }
+        }
+
+        [Test]
+        public void IsRnaMode_EventInvoked_WithCorrectArguments()
+        {
+            var vm = GuiGlobalParamsViewModel.Instance;
+            GlobalVariables.SetUpGlobalVariables();
+
+            bool eventWasInvoked = false;
+            ModeSwitchRequestEventArgs capturedArgs = null;
+
+            EventHandler<ModeSwitchRequestEventArgs> handler = (s, e) =>
+            {
+                eventWasInvoked = true;
+                capturedArgs = e;
+                e.Result = ModeSwitchResult.SwitchKeepFiles;
+            };
+            GuiGlobalParamsViewModel.RequestModeSwitchConfirmation += handler;
+
+            try
+            {
+                vm.IsRnaMode = true;
+
+                Assert.That(eventWasInvoked, Is.True, "Event should have been invoked");
+                Assert.That(capturedArgs, Is.Not.Null, "Event args should not be null");
+                Assert.That(capturedArgs.Result, Is.EqualTo(ModeSwitchResult.SwitchKeepFiles));
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.RequestModeSwitchConfirmation -= handler;
+            }
+        }
+
+        [Test]
+        public void CachedModeSwitchResult_GetSet_WorksCorrectly()
+        {
+            var vm = GuiGlobalParamsViewModel.Instance;
+
+            // Test all enum values
+            foreach (ModeSwitchResult result in Enum.GetValues(typeof(ModeSwitchResult)))
+            {
+                vm.CachedModeSwitchResult = result;
+                Assert.That(vm.CachedModeSwitchResult, Is.EqualTo(result));
+            }
+        }
+
+        [Test]
+        public void CachedModeSwitchResult_TriggersPropertyChanged()
+        {
+            var vm = GuiGlobalParamsViewModel.Instance;
+
+            bool eventFired = false;
+            PropertyChangedEventHandler handler = (s, e) =>
+            {
+                if (e.PropertyName == nameof(vm.CachedModeSwitchResult))
+                    eventFired = true;
+            };
+
+            vm.PropertyChanged += handler;
+            try
+            {
+                vm.CachedModeSwitchResult = ModeSwitchResult.SwitchKeepFiles;
+                Assert.That(eventFired, Is.True);
+            }
+            finally
+            {
+                vm.PropertyChanged -= handler;
+            }
+        }
+
+        [Test]
+        public void AskAboutModeSwitch_GetSet_WorksCorrectly()
+        {
+            var vm = GuiGlobalParamsViewModel.Instance;
+
+            vm.AskAboutModeSwitch = false;
+            Assert.That(vm.AskAboutModeSwitch, Is.False);
+
+            vm.AskAboutModeSwitch = true;
+            Assert.That(vm.AskAboutModeSwitch, Is.True);
+        }
+
+        [Test]
+        public void AskAboutModeSwitch_TriggersPropertyChanged()
+        {
+            var vm = GuiGlobalParamsViewModel.Instance;
+
+            bool eventFired = false;
+            PropertyChangedEventHandler handler = (s, e) =>
+            {
+                if (e.PropertyName == nameof(vm.AskAboutModeSwitch))
+                    eventFired = true;
+            };
+
+            vm.PropertyChanged += handler;
+            try
+            {
+                vm.AskAboutModeSwitch = !vm.AskAboutModeSwitch;
+                Assert.That(eventFired, Is.True);
+            }
+            finally
+            {
+                vm.PropertyChanged -= handler;
+            }
+        }
+
+        [Test]
+        public void AllModeSwitchValues_ContainsAllEnumValues()
+        {
+            var vm = GuiGlobalParamsViewModel.Instance;
+            var allValues = Enum.GetValues(typeof(ModeSwitchResult)).Cast<ModeSwitchResult>().ToList();
+
+            Assert.That(vm.AllModeSwitchValues.Count, Is.EqualTo(allValues.Count));
+            
+            foreach (var value in allValues)
+            {
+                Assert.That(vm.AllModeSwitchValues.Contains(value), Is.True, 
+                    $"AllModeSwitchValues should contain {value}");
+            }
         }
 
         [Test]
@@ -251,6 +463,139 @@ namespace Test.GuiTests
 
             Assert.That(a.Equals(b), Is.False);
             Assert.That(a.Equals(null), Is.False);
+        }
+
+        [Test]
+        public void GuiGlobalParams_Equals_ChecksAllModeSwitchFields()
+        {
+            var a = new GuiGlobalParams();
+            var b = a.Clone();
+
+            Assert.That(a.Equals(b), Is.True, "Cloned params should be equal");
+
+            // Change IsRnaMode
+            b.IsRnaMode = !a.IsRnaMode;
+            Assert.That(a.Equals(b), Is.False, "Should not be equal after changing IsRnaMode");
+            b.IsRnaMode = a.IsRnaMode;
+
+            // Change AskAboutModeSwitch
+            b.AskAboutModeSwitch = !a.AskAboutModeSwitch;
+            Assert.That(a.Equals(b), Is.False, "Should not be equal after changing AskAboutModeSwitch");
+            b.AskAboutModeSwitch = a.AskAboutModeSwitch;
+
+            // Change CachedModeSwitchResult
+            b.CachedModeSwitchResult = ModeSwitchResult.SwitchRemoveFiles;
+            Assert.That(a.Equals(b), Is.False, "Should not be equal after changing CachedModeSwitchResult");
+            b.CachedModeSwitchResult = a.CachedModeSwitchResult;
+
+            Assert.That(a.Equals(b), Is.True, "Should be equal after reverting all changes");
+        }
+
+        [Test]
+        public void GuiGlobalParams_Clone_CopiesAllModeSwitchFields()
+        {
+            var original = new GuiGlobalParams
+            {
+                IsRnaMode = true,
+                AskAboutModeSwitch = false,
+                CachedModeSwitchResult = ModeSwitchResult.SwitchRemoveFiles
+            };
+
+            var clone = original.Clone();
+
+            Assert.That(clone.IsRnaMode, Is.EqualTo(original.IsRnaMode));
+            Assert.That(clone.AskAboutModeSwitch, Is.EqualTo(original.AskAboutModeSwitch));
+            Assert.That(clone.CachedModeSwitchResult, Is.EqualTo(original.CachedModeSwitchResult));
+        }
+
+        [Test]
+        public void ModeSwitchRequestEventArgs_DefaultValues()
+        {
+            var args = new ModeSwitchRequestEventArgs();
+
+            Assert.That(args.Result, Is.EqualTo(ModeSwitchResult.Cancel), 
+                "Default result should be Cancel");
+            Assert.That(args.RememberMyDecision, Is.False, 
+                "Default RememberMyDecision should be false");
+        }
+
+        [Test]
+        public void ModeSwitchRequestEventArgs_CanSetValues()
+        {
+            var args = new ModeSwitchRequestEventArgs
+            {
+                Result = ModeSwitchResult.SwitchRemoveFiles,
+                RememberMyDecision = true
+            };
+
+            Assert.That(args.Result, Is.EqualTo(ModeSwitchResult.SwitchRemoveFiles));
+            Assert.That(args.RememberMyDecision, Is.True);
+        }
+
+        [Test]
+        public void IsRnaMode_SavesAndLoadsCorrectly()
+        {
+            var vm = GuiGlobalParamsViewModel.Instance;
+
+            // Setup event handler
+            EventHandler<ModeSwitchRequestEventArgs> handler = (s, e) =>
+            {
+                e.Result = ModeSwitchResult.SwitchKeepFiles;
+            };
+            GuiGlobalParamsViewModel.RequestModeSwitchConfirmation += handler;
+
+            try
+            {
+                // Set RNA mode
+                vm.IsRnaMode = true;
+                vm.Save();
+
+                // Reset singleton and reload
+                ResetSingleton();
+                var vm2 = GuiGlobalParamsViewModel.Instance;
+
+                Assert.That(vm2.IsRnaMode, Is.True, "IsRnaMode should persist after save/load");
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.RequestModeSwitchConfirmation -= handler;
+            }
+        }
+
+        [Test]
+        public void ModeSwitchSettings_SaveAndLoad_PersistCorrectly()
+        {
+            var vm = GuiGlobalParamsViewModel.Instance;
+
+            // Set mode switch settings
+            vm.AskAboutModeSwitch = false;
+            vm.CachedModeSwitchResult = ModeSwitchResult.SwitchRemoveFiles;
+            vm.Save();
+
+            // Reset and reload
+            ResetSingleton();
+            var vm2 = GuiGlobalParamsViewModel.Instance;
+
+            Assert.That(vm2.AskAboutModeSwitch, Is.False);
+            Assert.That(vm2.CachedModeSwitchResult, Is.EqualTo(ModeSwitchResult.SwitchRemoveFiles));
+        }
+
+        [Test]
+        public void ModeSwitchRequestEventArgs_IsInheritedFromEventArgs()
+        {
+            var args = new ModeSwitchRequestEventArgs();
+            Assert.That(args, Is.InstanceOf<EventArgs>());
+        }
+
+        [Test]
+        public void ModeSwitchResult_EnumValues_AreCorrect()
+        {
+            var values = Enum.GetValues(typeof(ModeSwitchResult)).Cast<ModeSwitchResult>().ToList();
+            
+            Assert.That(values, Contains.Item(ModeSwitchResult.Cancel));
+            Assert.That(values, Contains.Item(ModeSwitchResult.SwitchKeepFiles));
+            Assert.That(values, Contains.Item(ModeSwitchResult.SwitchRemoveFiles));
+            Assert.That(values.Count, Is.EqualTo(3), "ModeSwitchResult should have exactly 3 values");
         }
     }
 }
