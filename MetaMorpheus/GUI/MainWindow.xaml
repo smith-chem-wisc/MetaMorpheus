@@ -375,15 +375,16 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="60"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition/>
-                        <RowDefinition/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
                     <Label Content="About" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
                     <!--Text content-->
-                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Margin="14 0">
                         MetaMorpheus is a search program for MS/MS proteomic and transcriptomic data. It takes a protein database (.xml or .fasta)
                         as input,as well as spectra files in ms2.msalign, .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library 
                         (.msp) can be used to improve search results.
@@ -403,7 +404,6 @@
                         
                         task performs mass calibration; 
                         
-                        <!-- TODO: Change link to averaging paper once published -->
                         <LineBreak />
 
                         ● The 
@@ -441,9 +441,10 @@
                         </Hyperlink>
                         
                         options;
-                        
-                        <LineBreak />
-                        
+                    </TextBlock>
+
+                    <TextBlock Grid.Row="2" Style="{StaticResource TextBlockStyle}"  Margin="14 0"
+                               Visibility="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode,   Converter={StaticResource CollapseOnRnaModeConverter}}">
                         ● The 
                         
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141" RequestNavigate="Hyperlink_RequestNavigate">
@@ -464,22 +465,17 @@
                         
                         <LineBreak />
                         <LineBreak />
-                        
+                    </TextBlock>
+
+                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}"  Margin="14">
                         Visit the 
                         <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
                             MetaMorpheus wiki
                         </Hyperlink> 
                         to learn more.
-                        
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        
+                    </TextBlock>
+
+                    <TextBlock Grid.Row="4" Style="{StaticResource TextBlockStyle}" VerticalAlignment="Bottom" Margin="14">
                         MetaMorpheus uses Thermo's RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.
                     </TextBlock>
                 </Grid>
