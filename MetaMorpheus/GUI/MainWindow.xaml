@@ -23,6 +23,37 @@
             <!--Allows use of "not" (i.e., inverse of true boolean) in binding properties-->
             <local:BooleanInverter x:Key="InvertedBooleanConverter" />
 
+            <!--Styling for the context menu to add tasks-->
+            <Style x:Key="ContextMenuStyle" TargetType="ContextMenu">
+                <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
+                <Setter Property="OverridesDefaultStyle" Value="True" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ContextMenu}">
+                            <Border BorderThickness="1" BorderBrush="{StaticResource BorderColor}" x:Name="Border" 
+                                    Background="{StaticResource BackgroundColor}">
+                                <StackPanel ClipToBounds="True" Orientation="Vertical" IsItemsHost="True" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="true">
+                                    <Setter TargetName="Border" Property="Background" Value="{StaticResource BackgroundColor}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            
+            <!--Defines the context menu to remove sections of the pre-run setup-->
+            <ContextMenu x:Key="BigDeleteContextMenu" Style="{StaticResource ContextMenuStyle}">
+                <MenuItem Header="Remove All" Click="DeleteAll" />
+                <MenuItem Header="Remove Spectra" Click="DeleteAll_Spectra" />
+                <MenuItem Header="Remove Databases" Click="DeleteAll_Databases" />
+                <MenuItem Header="Remove Tasks" Click="DeleteAll_Tasks" />
+            </ContextMenu>
+            
             <Style TargetType="TabControl" x:Key="TabControlStyle">
                 <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
                 <Setter Property="Template">
@@ -44,7 +75,8 @@
                                  Background="Transparent">
 
                                     <!-- Protein/RNA Toggle Control -->
-                                    <local:ProteinRnaImageToggle Margin="0 5 0 10" Width="100" Height="75" />
+                                    <local:ProteinRnaImageToggle Margin="0 5 0 10" Width="100" Height="75"
+                                                                 ContextMenu="{StaticResource BigDeleteContextMenu}"/>
 
                                     <!-- Actual Tab Headers -->
                                     <TabPanel
@@ -172,29 +204,6 @@
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="TextWrapping" Value="WrapWithOverflow" />
                 <Setter Property="Margin" Value="15,0,10,0"/>
-            </Style>
-
-            <!--Styling for the context menu to add tasks-->
-            <Style x:Key="ContextMenuStyle" TargetType="ContextMenu">
-                <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
-                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
-                <Setter Property="OverridesDefaultStyle" Value="True" />
-                <Setter Property="SnapsToDevicePixels" Value="True" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type ContextMenu}">
-                            <Border BorderThickness="1" BorderBrush="{StaticResource BorderColor}" x:Name="Border" 
-                                    Background="{StaticResource BackgroundColor}">
-                                <StackPanel ClipToBounds="True" Orientation="Vertical" IsItemsHost="True" />
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="true">
-                                    <Setter TargetName="Border" Property="Background" Value="{StaticResource BackgroundColor}" />
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
 
             <!--Defines the context menu when "add task" button is clicked-->
@@ -348,7 +357,7 @@
         </ResourceDictionary>
     </Window.Resources>
     <!--Window content-->
-    <Grid>
+    <Grid ContextMenu="{StaticResource BigDeleteContextMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
             <RowDefinition Height="Auto" />

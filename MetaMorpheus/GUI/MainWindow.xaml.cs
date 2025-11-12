@@ -1340,19 +1340,24 @@ namespace MetaMorpheusGUI
         {
             var item = GetItemDataContext(sender, e).FirstOrDefault();
 
-            if (item is PreRunTask task)
-            {
-                PreRunTasks.Clear();
-            }
-            else if (item is ProteinDbForDataGrid db)
-            {
-                ProteinDatabases.Clear();
-            }
-            else if (item is RawDataForDataGrid spectra)
-            {
-                SpectraFiles.Clear();
-            }
+            if (item is PreRunTask)
+                DeleteAll_Tasks(sender, e);
+            else if (item is ProteinDbForDataGrid)
+                DeleteAll_Databases(sender, e);
+            else if (item is RawDataForDataGrid)
+                DeleteAll_Spectra(sender, e);
         }
+
+        private void DeleteAll(object sender, RoutedEventArgs e)
+        {
+            DeleteAll_Tasks(sender, e);
+            DeleteAll_Databases(sender, e);
+            DeleteAll_Spectra(sender, e);
+        }
+
+        private void DeleteAll_Spectra(object sender, RoutedEventArgs e) => SpectraFiles.Clear();
+        private void DeleteAll_Databases(object sender, RoutedEventArgs e) => ProteinDatabases.Clear();
+        private void DeleteAll_Tasks(object sender, RoutedEventArgs e) => PreRunTasks.Clear();
 
         #endregion
 
