@@ -96,8 +96,9 @@ namespace EngineLayer
         /// Takes in a spectrum, searches for the reporter ions within the specified ppm tolerance,
         /// and returns their intensities. If a reporter ion is not found, its intensity will be zero.
         /// </summary>
-        public double[] GetReporterIonIntensities(MzSpectrum spectrum)
+        public double[]? GetReporterIonIntensities(MzSpectrum spectrum)
         {
+            if (spectrum.Size < 1) return null;
             double[] reporterIonIntensities = new double[ReporterIonMzs.Length];
             if (spectrum.XArray[0] > Tolerance.GetMaximumValue(ReporterIonMzs[^1]))
             {

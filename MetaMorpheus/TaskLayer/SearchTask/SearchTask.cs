@@ -234,6 +234,14 @@ namespace TaskLayer
                     combinedParams.UseProvidedPrecursorInfo = true;
                 }
 
+                // If we're doing multiplex quantification, and there are MS3 scans, we assume that
+                // MS3 was used for reporter ion detection, and adjust the parameters accordingly
+                if (SearchParameters.DoMultiplexQuantification && myMsDataFile.Scans.Any(s => s.MsnOrder ==3))
+                {
+                    // Should we also set MS2ChildScanDissociationType to LowCID? That will usually be the case in these experiments.
+                    combinedParams.MS3ChildScanDissociationType = DissociationType.HCD;
+                }
+
                 // if another file exists, then begin loading it in while the previous is being searched
                 if (origDataFile != currentRawFileList.Last())
                 {

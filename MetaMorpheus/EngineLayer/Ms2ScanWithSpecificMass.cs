@@ -114,24 +114,11 @@ namespace EngineLayer
         {
             mostIntenseChildScan = null;
             if (ChildScans.IsNullOrEmpty()) return false;
-            mostIntenseChildScan = ChildScans
-                .OrderByDescending(s => s.TotalIonCurrent)
-                .MaxBy(s => Double.TryParse(s.TheScan.HcdEnergy, out var hcdEnergy) ? hcdEnergy : 0);
-
-            // If the parent scan's scan range doesn't contain any reporter ions but the child scan's scan range does, use the child scan
-            if (TheScan.ScanWindowRange.Minimum > massTag.ReporterIonMzs[^1] && mostIntenseChildScan.TheScan.ScanWindowRange.Minimum < massTag.ReporterIonMzs[0])
+            mostIntenseChildScan = ChildScans.MaxBy(s => s.TotalIonCurrent);
+            if(mostIntenseChildScan != null)
             {
                 return true;
             }
-
-            // Otherwise, check if the child scans have higher HCD energy than the parent scan
-            double parentScanHcdEnergy = Double.TryParse(TheScan.HcdEnergy, out var thisHcdEnergy) ? thisHcdEnergy : 0;
-            double childScanMaxHcdEnergy = Double.TryParse(mostIntenseChildScan.TheScan.HcdEnergy, out var maxHcdEnergy) ? maxHcdEnergy : 0;
-            if (childScanMaxHcdEnergy > parentScanHcdEnergy)
-            {
-                return true;
-            }
-
             return false;
         }
        

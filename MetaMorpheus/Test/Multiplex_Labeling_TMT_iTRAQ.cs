@@ -357,7 +357,7 @@ namespace Test
         }
 
 
-        //[Test]
+        [Test]
         public static void TestMs3TmtQuantificationWithLocalData()
         {
             var searchTask = Toml.ReadFile<SearchTask>(
