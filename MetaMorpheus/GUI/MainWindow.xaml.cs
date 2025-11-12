@@ -25,6 +25,7 @@ using System.Diagnostics;
 using EngineLayer.DatabaseLoading;
 using GuiFunctions;
 using Easy.Common.Extensions;
+using GuiFunctions.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -78,6 +79,7 @@ namespace MetaMorpheusGUI
             MetaMorpheusEngine.WarnHandler += NotificationHandler;
 
             MyFileManager.WarnHandler += NotificationHandler;
+            GuiGlobalParamsViewModel.RequestModeSwitchConfirmation += HandleModeSwitchConfirmation;
         }
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
@@ -1346,6 +1348,42 @@ namespace MetaMorpheusGUI
                 DeleteAll_Databases(sender, e);
             else if (item is RawDataForDataGrid)
                 DeleteAll_Spectra(sender, e);
+        }
+
+        private void HandleModeSwitchConfirmation(object sender, ModeSwitchRequestEventArgs e)
+        {
+            // No files loaded, just return and switch modes
+            if (SpectraFiles.Count == 0 && ProteinDatabases.Count == 0 && PreRunTasks.Count == 0)
+            {
+                e.Result = ModeSwitchResult.SwitchKeepFiles;
+                return;
+            }
+
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => HandleModeSwitchConfirmation(sender, e));
+                return;
+            }
+
+            if (GuiGlobalParamsViewModel.Instance.AskAboutModeSwitch)
+            {
+                var confirmationWindow = new ModeSwitchConfirmationWindow(e)
+                {
+                    Owner = this
+                };
+
+                confirmationWindow.ShowDialog();
+            }
+            else
+            {
+                e.Result = GuiGlobalParamsViewModel.Instance.CachedModeSwitchResult;
+            }
+
+
+            if (e.Result == ModeSwitchResult.SwitchRemoveFiles)
+            {
+                DeleteAll(sender, new());
+            }
         }
 
         private void DeleteAll(object sender, RoutedEventArgs e)

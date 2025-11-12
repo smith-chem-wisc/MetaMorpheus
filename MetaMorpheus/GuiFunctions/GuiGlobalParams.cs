@@ -1,5 +1,6 @@
-﻿using System;
+﻿using GuiFunctions.Util;
 using Nett;
+using System;
 
 namespace GuiFunctions;
 
@@ -37,6 +38,11 @@ public class GuiGlobalParams  : IEquatable<GuiGlobalParams>
 
     // Rna Toggles
     public bool IsRnaMode { get; internal set; }
+    public bool AskAboutModeSwitch { get; internal set; } = true;
+    /// <summary>
+    /// Saved Result if user checked "Remember My Decisions" in the mode warning pop-up
+    /// </summary>
+    public ModeSwitchResult CachedModeSwitchResult { get; set; } = ModeSwitchResult.Cancel;
 
     // Deep equality check (can be improved for more complex types)
     public bool Equals(GuiGlobalParams obj)
@@ -61,8 +67,11 @@ public class GuiGlobalParams  : IEquatable<GuiGlobalParams>
             UseNonSpecificParams == other.UseNonSpecificParams &&
             UseSemiTrypsinParams == other.UseSemiTrypsinParams &&
             UseArgCParams == other.UseArgCParams &&
-            UseSpectralRecoveryParams == other.UseSpectralRecoveryParams
-            && IsRnaMode == other.IsRnaMode;
+            UseSpectralRecoveryParams == other.UseSpectralRecoveryParams &&
+            IsRnaMode == other.IsRnaMode &&
+            AskAboutModeSwitch == other.AskAboutModeSwitch &&
+            CachedModeSwitchResult == other.CachedModeSwitchResult;
+
     }
 
     // Helper for deep copy
@@ -87,7 +96,9 @@ public class GuiGlobalParams  : IEquatable<GuiGlobalParams>
             UseSemiTrypsinParams = UseSemiTrypsinParams,
             UseArgCParams = UseArgCParams,
             UseSpectralRecoveryParams = UseSpectralRecoveryParams,
-            IsRnaMode = IsRnaMode
+            IsRnaMode = IsRnaMode,
+            AskAboutModeSwitch = AskAboutModeSwitch,
+            CachedModeSwitchResult = CachedModeSwitchResult
         };
     }
 }

@@ -1,7 +1,11 @@
-﻿using System.IO;
+﻿#nullable enable
+using System;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Windows;
 using Easy.Common.Extensions;
 using EngineLayer;
-using GuiFunctions;
+using GuiFunctions.Util;
 using Nett;
 using TaskLayer;
 
@@ -109,6 +113,12 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         set { _current.AskAboutSpectralRecoveryParams = value; OnPropertyChanged(nameof(AskAboutSpectralRecoveryParams)); }
     }
 
+    public bool AskAboutModeSwitch
+    {
+        get => _current.AskAboutModeSwitch;
+        set { _current.AskAboutModeSwitch = value; OnPropertyChanged(nameof(AskAboutModeSwitch)); }
+    }
+
     public bool UseTopDownParams
     {
         get => _current.UseTopDownParams;
@@ -157,7 +167,28 @@ public class GuiGlobalParamsViewModel : BaseViewModel
     {
         get => _current.IsRnaMode;
         set
-        {
+        {   
+            // Invoke the event to check if the user wants to switch modes
+            var args = new ModeSwitchRequestEventArgs();
+
+            // Ask the GUI how to move forward
+            // - If we have a default saved and are told not to ask, it will skip the pop-up
+            // - if no files are loaded it will tell us to switch, otherwise it will trigger a pop-up
+            RequestModeSwitchConfirmation?.Invoke(this, args);
+
+            if (args.RememberMyDecision)
+            {
+                AskAboutModeSwitch = false;
+                CachedModeSwitchResult = args.Result;
+            }
+
+            // Do not switch - Force UI to refresh to original state
+            if (args.Result == ModeSwitchResult.Cancel)
+            {
+                OnPropertyChanged(nameof(IsRnaMode));
+                return;
+            }
+            
             _current.IsRnaMode = value;
             if (_current.IsRnaMode)
                 GlobalVariables.AnalyteType = AnalyteType.Oligo;
@@ -168,6 +199,15 @@ public class GuiGlobalParamsViewModel : BaseViewModel
             OnPropertyChanged(nameof(MainWindowTitle));
         }
     }
+
+    public ModeSwitchResult CachedModeSwitchResult
+    {
+        get => _current.CachedModeSwitchResult;
+        set {_current.CachedModeSwitchResult = value; OnPropertyChanged(nameof(CachedModeSwitchResult)); }
+    }
+
+    public ObservableCollection<ModeSwitchResult> AllModeSwitchValues { get; } = new(Enum.GetValues<ModeSwitchResult>());
+    public static EventHandler<ModeSwitchRequestEventArgs>? RequestModeSwitchConfirmation { get; set; }
 
     #endregion
 
