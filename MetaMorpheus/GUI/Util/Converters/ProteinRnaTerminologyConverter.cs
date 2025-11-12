@@ -43,21 +43,27 @@ namespace MetaMorpheusGUI
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
-            {
-                return parameter?.ToString() ?? string.Empty;
-            }
-
             string input = parameter as string ?? value?.ToString() ?? "";
-            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
+
+            // Try to get the ViewModel, but handle if it's not initialized yet
+            try
             {
-                // Replace all protein terms with their RNA counterparts
-                foreach (var kvp in ProteinToRna)
+                if (GuiGlobalParamsViewModel.Instance?.IsRnaMode ?? false)
                 {
-                    // Use word boundaries to avoid partial replacements
-                    input = Regex.Replace(input, $@"\b{Regex.Escape(kvp.Key)}\b", kvp.Value);
+                    // Replace all protein terms with their RNA counterparts
+                    foreach (var kvp in ProteinToRna)
+                    {
+                        // Use word boundaries to avoid partial replacements
+                        input = Regex.Replace(input, $@"\b{Regex.Escape(kvp.Key)}\b", kvp.Value);
+                    }
                 }
             }
+            catch
+            {
+                // If instance creation fails, just return the input unchanged
+                // This can happen during design time before everything is initialized
+            }
+
             return input;
         }
 

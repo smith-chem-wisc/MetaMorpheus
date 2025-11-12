@@ -16,8 +16,6 @@ public class GuiGlobalParamsViewModel : BaseViewModel
     private static GuiGlobalParamsViewModel _instance;
     private GuiGlobalParams _current;
     private GuiGlobalParams _loaded;
-    private static readonly string SettingsPath = Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml");
-    private static readonly string DefaultProteomePath = Path.Combine(GlobalVariables.DataDir, @"Proteomes");
 
     public static GuiGlobalParamsViewModel Instance
     {
@@ -212,6 +210,34 @@ public class GuiGlobalParamsViewModel : BaseViewModel
     #endregion
 
     #region IO
+
+    // Lazy-initialize these to avoid null reference during designer mode
+    private static string _settingsPath;
+    private static string _defaultProteomePath;
+
+    private static string SettingsPath
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_settingsPath))
+            {
+                _settingsPath = Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml");
+            }
+            return _settingsPath;
+        }
+    }
+
+    private static string DefaultProteomePath
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_defaultProteomePath))
+            {
+                _defaultProteomePath = Path.Combine(GlobalVariables.DataDir, @"Proteomes");
+            }
+            return _defaultProteomePath;
+        }
+    }
 
     // Load from disk
     public void Load()
