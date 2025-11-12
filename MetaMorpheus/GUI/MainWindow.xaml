@@ -382,11 +382,11 @@
             <TabItem Name="AboutTab" Header="About" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="60"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="60" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
@@ -394,97 +394,155 @@
 
                     <!--Text content-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Margin="14 0">
-                        MetaMorpheus is a search program for MS/MS proteomic and transcriptomic data. It takes a protein database (.xml or .fasta)
-                        as input,as well as spectra files in ms2.msalign, .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library 
-                        (.msp) can be used to improve search results.
-                        
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter="MetaMorpheus is a search program for MS/MS proteomic data. It takes a protein database (.xml or .fasta) as input, as well as spectra files in ms2.msalign, .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library (.msp) can be used to improve search results." />
+                            </Run.Text>
+                        </Run>
+
                         <LineBreak />
                         <LineBreak />
-                        
-                        After adding input files, the last step is to define a workflow by adding tasks for MetaMorpheus to perform.
-                        
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter="After adding input files, the last step is to define a workflow by adding tasks for MetaMorpheus to perform." />
+                            </Run.Text>
+                        </Run>
+
                         <LineBreak />
                         <LineBreak />
-                        ● The 
-                        
-                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873" RequestNavigate="Hyperlink_RequestNavigate">
+
+                        <Run Text="● The " />
+
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             calibration
-                        </Hyperlink> 
-                        
-                        task performs mass calibration; 
-                        
+                        </Hyperlink>
+
+                        <Run Text=" task performs mass calibration; " />
+
                         <LineBreak />
 
-                        ● The 
+                        <Run Text="● The " />
 
-                        <Hyperlink NavigateUri="https://pubmed.ncbi.nlm.nih.gov/38487981/" RequestNavigate="Hyperlink_RequestNavigate">
+                        <Hyperlink NavigateUri="https://pubmed.ncbi.nlm.nih.gov/38487981/"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             averaging
                         </Hyperlink>
-                        
-                        task averages spectra to refine isotopic distributions
+
+                        <Run Text=" task averages spectra to refine isotopic distributions" />
 
                         <LineBreak />
 
-                        ● The
-                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.6b00034" RequestNavigate="Hyperlink_RequestNavigate">
+                        <Run Text="● The " />
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.6b00034"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             GPTMD
                         </Hyperlink>
-                        
-                        task performs PTM discovery; 
-                        
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter=" task performs PTM discovery; " />
+                            </Run.Text>
+                        </Run>
+
                         <LineBreak />
-                        
-                        ● The search task performs a proteomics database search, with 
-                        
-                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608" RequestNavigate="Hyperlink_RequestNavigate">
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter="● The search task performs a proteomics database search, with " />
+                            </Run.Text>
+                        </Run>
+
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             quantification
                         </Hyperlink>
-                        ,
-                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.9b00330" RequestNavigate="Hyperlink_RequestNavigate">
-                            multi-protease
-                        </Hyperlink>                       
-                        , and 
-                        
-                        <Hyperlink NavigateUri="http://dx.doi.org/10.2174/1574893615999200429123334" RequestNavigate="Hyperlink_RequestNavigate">
+                        <Run Text=", " />
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.9b00330"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
+                            <Run>
+                                <Run.Text>
+                                    <Binding Path="IsRnaMode"
+                                             Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                             Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="multi-protease" />
+                                </Run.Text>
+                            </Run>
+                        </Hyperlink>
+                        <Run Text=", and " />
+
+                        <Hyperlink NavigateUri="http://dx.doi.org/10.2174/1574893615999200429123334"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             non-specific search
                         </Hyperlink>
-                        
-                        options;
+
+                        <Run Text=" options;" />
                     </TextBlock>
 
-                    <TextBlock Grid.Row="2" Style="{StaticResource TextBlockStyle}"  Margin="14 0"
-                               Visibility="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode,   Converter={StaticResource CollapseOnRnaModeConverter}}">
-                        ● The 
-                        
-                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141" RequestNavigate="Hyperlink_RequestNavigate">
+                    <TextBlock Grid.Row="2" Style="{StaticResource TextBlockStyle}" Margin="14 0"
+                               Visibility="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode, Converter={StaticResource CollapseOnRnaModeConverter}}">
+                        <Run Text="● The " />
+
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             XL search
                         </Hyperlink>
-                        
-                        performs a search for crosslinked peptides; and 
-                        
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter=" performs a search for crosslinked peptides; and " />
+                            </Run.Text>
+                        </Run>
+
                         <LineBreak />
-                        
-                        ● The 
-                        
-                        <Hyperlink NavigateUri="https://www.biorxiv.org/content/10.1101/2020.05.18.102327v1.abstract" RequestNavigate="Hyperlink_RequestNavigate">
+
+                        <Run Text="● The " />
+
+                        <Hyperlink NavigateUri="https://www.biorxiv.org/content/10.1101/2020.05.18.102327v1.abstract"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             glycopeptide
-                        </Hyperlink> 
-                        
-                        search detects O-linked glycopeptides.
-                        
+                        </Hyperlink>
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter=" search detects O-linked glycopeptides." />
+                            </Run.Text>
+                        </Run>
+
                         <LineBreak />
                         <LineBreak />
                     </TextBlock>
 
-                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}"  Margin="14">
-                        Visit the 
-                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
+                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}" Margin="14">
+                        <Run Text="Visit the " />
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             MetaMorpheus wiki
-                        </Hyperlink> 
-                        to learn more.
+                        </Hyperlink>
+                        <Run Text=" to learn more." />
                     </TextBlock>
 
-                    <TextBlock Grid.Row="4" Style="{StaticResource TextBlockStyle}" VerticalAlignment="Bottom" Margin="14">
+                    <TextBlock Grid.Row="4" Style="{StaticResource TextBlockStyle}" VerticalAlignment="Bottom"
+                               Margin="14">
                         MetaMorpheus uses Thermo's RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.
                     </TextBlock>
                 </Grid>
@@ -964,7 +1022,7 @@
 
                     <!-- Proteome Directory -->
                     <StackPanel Grid.Row="3"  Orientation="Horizontal" HorizontalAlignment="Stretch">
-                        <TextBlock  Text="Proteome Directory" Margin ="24 10"
+                        <TextBlock  Text="Database Directory" Margin ="24 10"
                                     VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
                         <TextBox  FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"
                             Text="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=ProteomeDirectory, Mode=TwoWay}" 
