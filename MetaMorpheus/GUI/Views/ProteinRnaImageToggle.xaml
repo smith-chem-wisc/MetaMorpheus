@@ -13,14 +13,14 @@
             <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
         </Style>
         <!-- Protein Border -->
         <Style x:Key="ProteinBorderStyle" TargetType="Border" BasedOn="{StaticResource BaseBorderStyle}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="False">
-                    <Setter Property="BorderBrush" Value="{DynamicResource LightAccentColor}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentColor}" />
                     <Setter Property="Background" Value="{DynamicResource LightAccentColor}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
@@ -32,8 +32,8 @@
         <Style x:Key="RnaBorderStyle" TargetType="Border" BasedOn="{StaticResource BaseBorderStyle}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
-                    <Setter Property="BorderBrush" Value="{DynamicResource LightRnaAccentColor}" />
-                    <Setter Property="Background" Value="{DynamicResource LightRnaAccentColor}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource RnaAccentColor}" />
+                    <Setter Property="Background" Value="{DynamicResource RnaLightAccentColor}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="False">
                     <Setter Property="Background" Value="{DynamicResource HighlightBackgroundColor}" />
@@ -43,37 +43,45 @@
         <Style x:Key="StackPanelStyle" TargetType="StackPanel">
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Top"/>
-            <Setter Property="Height" Value="60"/>
+            <Setter Property="Height" Value="50"/>
             <Setter Property="Margin" Value="0,0,0,0"/>
         </Style>
         <Style x:Key="TextBlockStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource BackgroundColor}"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="FontSize" Value="8"/>
-            <Setter Property="TextWrapping" Value="WrapWithOverflow" />
-            <Setter Property="Margin" Value="0,0,0,0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="TextWrapping" Value="NoWrap" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,1,0,0"/>
         </Style>
     </UserControl.Resources>
 
     <Grid HorizontalAlignment="Stretch" Background="Transparent" >
-        
+
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <!-- Protein Button -->
-        <Border Grid.Column="0" Style="{StaticResource ProteinBorderStyle}">
-            <StackPanel Style="{StaticResource StackPanelStyle}" MouseLeftButtonUp="Protein_Click">
-                <Image Source="{StaticResource ProteinIcon}" Margin="0 2 0 0"/>
-            </StackPanel>
-        </Border>
+        <DockPanel Grid.Column="0" LastChildFill="False">
+            <Border  Style="{StaticResource ProteinBorderStyle}" DockPanel.Dock="Top">
+                <StackPanel Style="{StaticResource StackPanelStyle}" MouseLeftButtonUp="Protein_Click">
+                    <Image Source="{StaticResource ProteinIcon}" Margin="0 2 0 0"/>
+                </StackPanel>
+            </Border>
+            <TextBlock Style="{StaticResource TextBlockStyle}" Text="Protein" DockPanel.Dock="Top" />
+        </DockPanel>
 
         <!-- RNA Button -->
-        <Border Grid.Column="1" Style="{StaticResource RnaBorderStyle}">
-            <StackPanel Style="{StaticResource StackPanelStyle}" MouseLeftButtonUp="Rna_Click">
-                <Image Source="{StaticResource RnaIcon}" Margin="0 2 0 0" />
-            </StackPanel>
-        </Border>
+        <DockPanel Grid.Column="1" LastChildFill="False">
+            <Border  Style="{StaticResource RnaBorderStyle}" DockPanel.Dock="Top">
+                <StackPanel Style="{StaticResource StackPanelStyle}" MouseLeftButtonUp="Rna_Click">
+                    <Image Source="{StaticResource RnaIcon}" Margin="0 2 0 0"/>
+                </StackPanel>
+            </Border>
+            <TextBlock Style="{StaticResource TextBlockStyle}" Text="RNA" DockPanel.Dock="Top"/>
+        </DockPanel>
     </Grid>
 </UserControl>

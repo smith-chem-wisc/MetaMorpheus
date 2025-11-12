@@ -44,7 +44,7 @@
                                  Background="Transparent">
 
                                     <!-- Protein/RNA Toggle Control -->
-                                    <local:ProteinRnaImageToggle Margin="0 5 0 5" Width="100" Height="50" />
+                                    <local:ProteinRnaImageToggle Margin="0 5 0 10" Width="100" Height="75" />
 
                                     <!-- Actual Tab Headers -->
                                     <TabPanel
