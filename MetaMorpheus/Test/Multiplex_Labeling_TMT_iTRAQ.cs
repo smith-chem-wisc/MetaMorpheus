@@ -95,60 +95,6 @@ namespace Test
             Assert.That(ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4), Is.EqualTo(totalMass));
         }
 
-        private static List<MatchedFragmentIon> GetIonsFromSpectrum(double[] ionMzs, double[] ionIntensities)
-        {
-            Product newProduct = new Product(ProductType.D, FragmentationTerminus.N, 1, 1, 1, 0);
-            List<MatchedFragmentIon> diagnosticIons = new();
-            for (int i = 0; i < ionMzs.Length; i++)
-            {
-                diagnosticIons.Add(new MatchedFragmentIon(newProduct,ionMzs[i], ionIntensities[i], 1));
-            }
-            return diagnosticIons;
-        }
-
-        [Test]
-        [TestCase(new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 8, 10 }, new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 8, 10 })] 
-        [TestCase(new double[] { 1, 2.5, 3, 4.5, 5 }, new double[] { 2, 4, 6, 8, 10 }, new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 0, 6, 0, 10 })]
-        [TestCase(new double[] { 1, 2, 3 }, new double[] { 2, 4, 6 }, new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 0, 0 })]
-        [TestCase(new double[] { 0.1, 1, 2, 3, 4, 5 }, new double[] { 10, 2, 4, 6, 8, 10 }, new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 8, 10 })]
-        [TestCase(new double[] { // These are actual m/z values taken from a TMT peptide spectrum
-                    117.131741292845, // 1
-                    117.134464401653,
-                    117.137487573882, // 2
-                    117.141610419051,
-                    117.143971287762, // 3
-                    117.146374792442,
-                    118.138548390966,
-                    118.140942895911, // 4
-                    118.147293426491, // 5
-                    118.153027983766, // 6
-                    118.177848927571
-                },
-            new double[] { 1, 0, 2, 0, 3, 0, 0, 4, 5, 6, 0 },
-            new double[] { 117.13147, 117.13731, 117.14363, 118.14067, 118.14699, 118.15283 },
-            new double[] { 1, 2, 3, 4, 5, 6 })]
-        public static void TestMultiplexIonIntensityDetection(double[] observedIonMzs, double[] observedIonIntensities, 
-            double[] diagnosticIonTheoreticalMzs, double[] expectedIntensities)
-        {
-            Tolerance tol = new PpmTolerance(10);
-
-            // Create a psm
-            MsDataScan scanNumberOne = new MsDataScan(new MzSpectrum(new double[] { 10 }, new double[] { 1 }, false), 1, 2, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", 10, 2, 100, double.NaN, null, DissociationType.AnyActivationType, 0, null);
-            Ms2ScanWithSpecificMass ms2ScanOneMzTen = new Ms2ScanWithSpecificMass(scanNumberOne, 10, 2, "File", new CommonParameters());
-            Dictionary<string, Modification> allKnownMods = new();
-            PeptideWithSetModifications pwsm = new("PEPTIDEK", allKnownMods, 0, new DigestionParams(), new Protein("PEPTIDEK", "ACCESSION"));  
-
-            PeptideSpectralMatch psm = new(pwsm, 0, 10, 0, ms2ScanOneMzTen, new CommonParameters(),
-                new List<MatchedFragmentIon>());
-
-            // Set the psm ionss
-            var matchedIonProperty = psm.GetType().GetProperty("MatchedFragmentIons",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            matchedIonProperty.SetValue(psm, GetIonsFromSpectrum(observedIonMzs, observedIonIntensities));
-
-            Assert.That(PostSearchAnalysisTask.GetMultiplexIonIntensities(psm, diagnosticIonTheoreticalMzs, tol), Is.EqualTo(expectedIntensities));
-        }
-
         [Test]
         public static void TestAbilityToIDTMTDiagnosticIons()
         {
@@ -311,7 +257,7 @@ namespace Test
                 var reportedIntensities = peaksResults[1].Split('\t')[^11..];
                 for (int i = 0; i < reportedIntensities.Length; i++)
                 {
-                    Assert.That(reportedIntensities[i], Is.EqualTo(tmtIntensities[i].ToString("F2", CultureInfo.InvariantCulture)), $"The intensity for TMT channel {ionLabelsInHeader[i]} was not reported correctly. Expected {tmtIntensities[i]}, but was reported as {reportedIntensities[i]}.");
+                    Assert.That(reportedIntensities[i], Is.EqualTo(tmtIntensities[i].ToString("F1", CultureInfo.InvariantCulture)), $"The intensity for TMT channel {ionLabelsInHeader[i]} was not reported correctly. Expected {tmtIntensities[i]}, but was reported as {reportedIntensities[i]}.");
                 }
                 Assert.That(reportedIntensities.All(i => Double.Parse(i) > 0), Is.True, "All TMT channels should have intensities reported.");
             }
@@ -351,45 +297,77 @@ namespace Test
             {
                 channelSum127N += Double.Parse(peaksResults[i].Trim().Split('\t')[^10]);
             }
-            Assert.That(channelSum127N, Is.EqualTo(577226.34).Within(0.01));
+            Assert.That(channelSum127N, Is.EqualTo(577226.34).Within(0.1));
 
             Directory.Delete(outputFolder, true);
         }
 
 
         [Test]
-        public static void TestMs3TmtQuantificationWithLocalData()
+        public static void TestMs3TmtQuantificationWith()
         {
             var searchTask = Toml.ReadFile<SearchTask>(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT11_LowCID_SearchTask.toml"),
                 MetaMorpheusTask.tomlConfig);
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
-            //string mzmlName = @"D:\TMT_MS3\a11223_TMT7_8.mzML";
-            string mzmlName = @"D:\TMT_MS3\a11223_TMT7_8.raw"; // MS2 and MS3  scan orders get confused, so a simple snip doesn't work
-            string fastaName = @"D:\TMT_MS3\MUS_canonical_isoform_190712.fasta";
+            string mzmlName = @"TMT_test\MS3_TMT11_Mouse_snip.mzML";
+            string fastaName = @"TMT_test\MUS_snip.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtOutput");
-            if (Directory.Exists(outputFolder))
-                Directory.Delete(outputFolder, true);
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
-            engine.Run();
 
-            string[] peaksResults = File.ReadAllLines(Path.Combine(outputFolder, "search", "AllPeptides.psmtsv")).ToArray();
-            Assert.That(peaksResults.Length == 5);
-
-            string[] header = peaksResults[0].Trim().Split('\t');
-            string[] ionLabelsInHeader = header[^11..]; // Last 11 columns should be the TMT labels
-            Assert.That(ionLabelsInHeader, Is.EquivalentTo(new string[]
-                { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" }));
-
-            double channelSum127N = 0;
-            for (int i = 1; i < peaksResults.Length; i++)
+            try
             {
-                channelSum127N += Double.Parse(peaksResults[i].Trim().Split('\t')[^10]);
-            }
-            Assert.That(channelSum127N, Is.EqualTo(577226.336).Within(0.001));
+                if(Directory.Exists(outputFolder))
+                    Directory.Delete(outputFolder, true);
 
-            Directory.Delete(outputFolder, true);
+                var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+                engine.Run();
+
+                var peptidePath = Path.Combine(outputFolder, "search", "AllPeptides.psmtsv");
+
+                string[] peaksResults = File.ReadAllLines(peptidePath).ToArray();
+                Assert.That(peaksResults.Length >= 5);
+
+                string[] header = peaksResults[0].Trim().Split('\t');
+                string[] ionLabelsInHeader = header[^11..]; // Last 11 columns should be the TMT labels
+                Assert.That(ionLabelsInHeader, Is.EquivalentTo(new string[]
+                    { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" }));
+
+                var baseSeqIndex = Array.IndexOf(header, "Base Sequence");
+                var scanNoIndex = Array.IndexOf(header, "Scan Number");
+
+                var baseSeqsToCheck = new List<string>
+                {
+                    "TDTLCLNNTEISENGSDLSQK",
+                    "LVQDVANNTNEEAGDGTTTATVLAR",
+                    "TERPVNSAALSPNYDHVVLGGGQEAMDVTTTSTR",
+                    "TDTLCLNNTEISENGSDLSQK",
+                    "PMQFLGDEETVR",
+                    "SLPGCQEIAEEFR"
+                };
+
+                bool checkedScan20 = false;
+                foreach (var line in peaksResults)
+                {
+                    var columns = line.Trim().Split('\t');
+                    if (baseSeqsToCheck.Contains(columns[baseSeqIndex]))
+                    {
+                        Assert.That(columns[^11..].All(i => Double.Parse(i) > 0), Is.True, $"Not all reporter ions have intensities > 0 for peptide {columns[baseSeqIndex]}");
+                        if (columns[scanNoIndex] == "20") // Note, the MS3 scan is number 22
+                        {
+                            Assert.That(columns[^11..], Is.EquivalentTo(new string[]
+                            {
+                                "27274.3", "25929.9", "2745.8", "38435.7","4142.3",
+                                "3555.4", "38433.3","31899.3", "34451.5", "27501.3", "25194.2"
+                            }), $"The reporter ion intensities for scan 28226 do not match the expected values.");
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
         }
 
         [Test]
@@ -681,6 +659,314 @@ namespace Test
             double score = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons);
 
             Assert.That((int)score, Is.EqualTo(0));
+        }
+
+        [Test]
+        public static void TestGetIsobaricMassTagWithModificationId()
+        {
+            // Test valid modification IDs
+            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag("TMT10 on K");
+            Assert.That(tmt10Tag, Is.Not.Null);
+            Assert.That(tmt10Tag.TagType, Is.EqualTo(IsobaricMassTagType.TMT10));
+            Assert.That(tmt10Tag.ReporterIonMzs.Length, Is.EqualTo(10));
+            Assert.That(tmt10Tag.Tolerance, Is.Not.Null);
+            Assert.That(tmt10Tag.Tolerance, Is.TypeOf<AbsoluteTolerance>());
+
+            var tmt11Tag = IsobaricMassTag.GetIsobaricMassTag("TMT11 on X");
+            Assert.That(tmt11Tag, Is.Not.Null);
+            Assert.That(tmt11Tag.TagType, Is.EqualTo(IsobaricMassTagType.TMT11));
+            Assert.That(tmt11Tag.ReporterIonMzs.Length, Is.EqualTo(11));
+
+            // Test null/invalid input
+            var nullTag = IsobaricMassTag.GetIsobaricMassTag((string)null);
+            Assert.That(nullTag, Is.Null);
+
+            var invalidTag = IsobaricMassTag.GetIsobaricMassTag("InvalidModification");
+            Assert.That(invalidTag, Is.Null);
+        }
+
+        [Test]
+        public static void TestGetIsobaricMassTagWithTagType()
+        {
+            // Test all valid tag types
+            var tmt6 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT6);
+            Assert.That(tmt6, Is.Not.Null);
+            Assert.That(tmt6.ReporterIonMzs.Length, Is.EqualTo(6));
+            Assert.That(tmt6.TagType, Is.EqualTo(IsobaricMassTagType.TMT6));
+
+            var tmt10 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+            Assert.That(tmt10, Is.Not.Null);
+            Assert.That(tmt10.ReporterIonMzs.Length, Is.EqualTo(10));
+
+            var tmt11 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            Assert.That(tmt11, Is.Not.Null);
+            Assert.That(tmt11.ReporterIonMzs.Length, Is.EqualTo(11));
+
+            var tmt18 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT18);
+            Assert.That(tmt18, Is.Not.Null);
+            Assert.That(tmt18.ReporterIonMzs.Length, Is.EqualTo(18));
+
+            var itraq4 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.iTRAQ4);
+            Assert.That(itraq4, Is.Not.Null);
+            Assert.That(itraq4.ReporterIonMzs.Length, Is.EqualTo(4));
+
+            var itraq8 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.iTRAQ8);
+            Assert.That(itraq8, Is.Not.Null);
+            Assert.That(itraq8.ReporterIonMzs.Length, Is.EqualTo(8));
+
+            var dileu4 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.diLeu4);
+            Assert.That(dileu4, Is.Not.Null);
+            Assert.That(dileu4.ReporterIonMzs.Length, Is.EqualTo(4));
+
+            var dileu12 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.diLeu12);
+            Assert.That(dileu12, Is.Not.Null);
+            Assert.That(dileu12.ReporterIonMzs.Length, Is.EqualTo(12));
+
+            // Test null input
+            var nullTag = IsobaricMassTag.GetIsobaricMassTag((IsobaricMassTagType?)null);
+            Assert.That(nullTag, Is.Null);
+        }
+
+        [Test]
+        public static void TestGetReporterIonIntensitiesWithMatchingPeaks()
+        {
+            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+
+            // Create a mock spectrum with peaks at reporter ion m/z values
+            double[] mzArray = tmt10Tag.ReporterIonMzs.ToArray();
+            double[] intensityArray = new double[] { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
+
+            var spectrum = new MzSpectrum(mzArray, intensityArray, false);
+
+            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
+
+            Assert.That(intensities, Is.Not.Null);
+            Assert.That(intensities.Length, Is.EqualTo(10));
+            Assert.That(intensities, Is.EqualTo(intensityArray));
+        }
+
+        [Test]
+        public static void TestGetReporterIonIntensitiesWithMissingPeaks()
+        {
+            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+
+            // Create a spectrum with only some reporter ions
+            double[] mzArray = new double[] { tmt10Tag.ReporterIonMzs[0], tmt10Tag.ReporterIonMzs[2], tmt10Tag.ReporterIonMzs[5] };
+            double[] intensityArray = new double[] { 100, 300, 600 };
+
+            var spectrum = new MzSpectrum(mzArray, intensityArray, false);
+
+            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
+
+            Assert.That(intensities, Is.Not.Null);
+            Assert.That(intensities.Length, Is.EqualTo(10));
+            Assert.That(intensities[0], Is.EqualTo(100));
+            Assert.That(intensities[1], Is.EqualTo(0)); // Missing
+            Assert.That(intensities[2], Is.EqualTo(300));
+            Assert.That(intensities[3], Is.EqualTo(0)); // Missing
+            Assert.That(intensities[4], Is.EqualTo(0)); // Missing
+            Assert.That(intensities[5], Is.EqualTo(600));
+        }
+
+        [Test]
+        public static void TestGetReporterIonIntensitiesWithEmptySpectrum()
+        {
+            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+
+            var emptySpectrum = new MzSpectrum(new double[0], new double[0], false);
+
+            var intensities = tmt10Tag.GetReporterIonIntensities(emptySpectrum);
+
+            Assert.That(intensities, Is.Null);
+        }
+
+        [Test]
+        public static void TestGetReporterIonIntensitiesWithSpectrumStartingAfterReporterIons()
+        {
+            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+
+            // Spectrum starts at m/z 200, well after reporter ions
+            double[] mzArray = new double[] { 200, 300, 400, 500 };
+            double[] intensityArray = new double[] { 100, 200, 300, 400 };
+
+            var spectrum = new MzSpectrum(mzArray, intensityArray, false);
+
+            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
+
+            Assert.That(intensities, Is.Not.Null);
+            Assert.That(intensities.Length, Is.EqualTo(10));
+            Assert.That(intensities.All(i => i == 0), Is.True);
+        }
+
+        [Test]
+        public static void TestGetReporterIonIntensitiesWithTolerance()
+        {
+            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+
+            // Create peaks slightly offset from theoretical values (within tolerance)
+            double[] mzArray = tmt10Tag.ReporterIonMzs.Select(mz => mz + 0.002).ToArray();
+            double[] intensityArray = new double[] { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
+
+            var spectrum = new MzSpectrum(mzArray, intensityArray, false);
+
+            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
+
+            Assert.That(intensities, Is.Not.Null);
+            Assert.That(intensities, Is.EqualTo(intensityArray));
+        }
+
+        [Test]
+        public static void TestGetReporterIonIntensitiesOutsideTolerance()
+        {
+            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+
+            // Create peaks outside tolerance (>0.003 Da)
+            double[] mzArray = tmt10Tag.ReporterIonMzs.Select(mz => mz + 0.00301).ToArray();
+            double[] intensityArray = new double[] { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
+
+            var spectrum = new MzSpectrum(mzArray, intensityArray, false);
+
+            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
+
+            Assert.That(intensities, Is.Not.Null);
+            Assert.That(intensities.All(i => i == 0), Is.True);
+        }
+
+        [Test]
+        public static void TestGetReporterIonLabelsWithModificationId()
+        {
+            var tmt10Labels = IsobaricMassTag.GetReporterIonLabels("TMT10 on K");
+            Assert.That(tmt10Labels, Is.Not.Null);
+            Assert.That(tmt10Labels.Count, Is.EqualTo(10));
+            Assert.That(tmt10Labels, Is.EqualTo(new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N" }));
+
+            var tmt11Labels = IsobaricMassTag.GetReporterIonLabels("TMT11 on X");
+            Assert.That(tmt11Labels.Count, Is.EqualTo(11));
+            Assert.That(tmt11Labels[10], Is.EqualTo("131C"));
+
+            var nullLabels = IsobaricMassTag.GetReporterIonLabels((string)null);
+            Assert.That(nullLabels, Is.Null);
+
+            var invalidLabels = IsobaricMassTag.GetReporterIonLabels("InvalidMod");
+            Assert.That(invalidLabels, Is.Null);
+        }
+
+        [Test]
+        public static void TestGetReporterIonLabelsWithTagType()
+        {
+            var tmt6Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT6);
+            Assert.That(tmt6Labels, Is.EqualTo(new List<string> { "126", "127", "128", "129", "130", "131" }));
+
+            var tmt10Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT10);
+            Assert.That(tmt10Labels, Is.EqualTo(new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N" }));
+
+            var tmt11Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT11);
+            Assert.That(tmt11Labels, Is.EqualTo(new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" }));
+
+            var tmt18Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT18);
+            Assert.That(tmt18Labels.Count, Is.EqualTo(18));
+
+            var itraq4Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.iTRAQ4);
+            Assert.That(itraq4Labels, Is.EqualTo(new List<string> { "114", "115", "116", "117" }));
+
+            var itraq8Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.iTRAQ8);
+            Assert.That(itraq8Labels, Is.EqualTo(new List<string> { "113", "114", "115", "116", "117", "118", "119", "120" }));
+
+            var dileu4Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.diLeu4);
+            Assert.That(dileu4Labels, Is.EqualTo(new List<string> { "115", "116", "117", "118" }));
+
+            var dileu12Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.diLeu12);
+            Assert.That(dileu12Labels, Is.EqualTo(new List<string> { "115a", "115b", "116a", "116b", "116c", "117a", "117b", "117c", "118a", "118b", "118c", "118d" }));
+        }
+
+        [Test]
+        public static void TestGetTagTypeFromModificationId()
+        {
+            // Test TMT variants
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("TMT6 on K"), Is.EqualTo(IsobaricMassTagType.TMT6));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("TMT10 on K"), Is.EqualTo(IsobaricMassTagType.TMT10));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("TMT11 on X"), Is.EqualTo(IsobaricMassTagType.TMT11));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("TMT18 on X"), Is.EqualTo(IsobaricMassTagType.TMT18));
+
+            // Test iTRAQ variants
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("iTRAQ-4plex on K"), Is.EqualTo(IsobaricMassTagType.iTRAQ4));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("iTRAQ-8plex on K"), Is.EqualTo(IsobaricMassTagType.iTRAQ8));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("iTRAQ4 on K"), Is.EqualTo(IsobaricMassTagType.iTRAQ4));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("iTRAQ8 on K"), Is.EqualTo(IsobaricMassTagType.iTRAQ8));
+
+            // Test DiLeu variants
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("DiLeu-4plex on K"), Is.EqualTo(IsobaricMassTagType.diLeu4));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("DiLeu-12plex on X"), Is.EqualTo(IsobaricMassTagType.diLeu12));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("DiLeu4 on K"), Is.EqualTo(IsobaricMassTagType.diLeu4));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("DiLeu12 on X"), Is.EqualTo(IsobaricMassTagType.diLeu12));
+
+            // Test case insensitivity
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("tmt10 on k"), Is.EqualTo(IsobaricMassTagType.TMT10));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("ITRAQ-4PLEX ON K"), Is.EqualTo(IsobaricMassTagType.iTRAQ4));
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("dileu-12plex on x"), Is.EqualTo(IsobaricMassTagType.diLeu12));
+
+            // Test null and invalid inputs
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId(null), Is.Null);
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId(""), Is.Null);
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("   "), Is.Null);
+            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("InvalidModification"), Is.Null);
+        }
+
+        [Test]
+        public static void TestAbsoluteToleranceValue()
+        {
+            Assert.That(IsobaricMassTag.AbsoluteToleranceValue, Is.EqualTo(0.003));
+        }
+
+        [Test]
+        public static void TestReporterIonMzsAreOrdered()
+        {
+            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+
+            for (int i = 0; i < tmt10Tag.ReporterIonMzs.Length - 1; i++)
+            {
+                Assert.That(tmt10Tag.ReporterIonMzs[i], Is.LessThan(tmt10Tag.ReporterIonMzs[i + 1]));
+            }
+        }
+
+        [Test]
+        public static void TestGetReporterIonIntensitiesWithComplexSpectrum()
+        {
+            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+
+            // Create a complex spectrum with reporter ions mixed with other peaks
+            var mzList = new List<double>();
+            var intensityList = new List<double>();
+
+            // Add some noise peaks before reporter ions
+            mzList.Add(tmt10Tag.ReporterIonMzs[0] - 0.002);
+            intensityList.Add(50);
+
+            // Add reporter ions with noise peaks between them
+            for (int i = 0; i < tmt10Tag.ReporterIonMzs.Length; i++)
+            {
+                mzList.Add(tmt10Tag.ReporterIonMzs[i]);
+                intensityList.Add((i + 1) * 100);
+
+                // Add noise peak after each reporter ion
+                mzList.Add(tmt10Tag.ReporterIonMzs[i] + 0.001);
+                intensityList.Add(25);
+            }
+
+            // Add some noise peaks after reporter ions
+            mzList.Add(tmt10Tag.ReporterIonMzs[^1] + 0.002);
+            intensityList.Add(75);
+
+            var spectrum = new MzSpectrum(mzList.ToArray(), intensityList.ToArray(), false);
+
+            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
+
+            Assert.That(intensities, Is.Not.Null);
+            Assert.That(intensities.Length, Is.EqualTo(10));
+            for (int i = 0; i < 10; i++)
+            {
+                Assert.That(intensities[i], Is.EqualTo((i + 1) * 100));
+            }
         }
     }
 }

@@ -13,7 +13,6 @@ namespace EngineLayer
         TMT6,
         TMT10,
         TMT11,
-        TMT16,
         TMT18,
         iTRAQ4,
         iTRAQ8,
@@ -107,13 +106,15 @@ namespace EngineLayer
 
             // Two-pointer search. The for loop iterates through the theoretical ions mzs (theoreticalIonIndex),
             // and the while loop advances through the spectrum peaks (spectrumIndex) until we find a match or surpass the theoretical mz.
+            // If there are multiple peaks that match the theoretical mz within tolerance, we take the one with the highest intensity.
             int spectrumIndex = 0;
             for (int theoreticalIonIndex = 0; theoreticalIonIndex < reporterIonIntensities.Length; theoreticalIonIndex++)
             {
                 double minMz = Tolerance.GetMinimumValue(ReporterIonMzs[theoreticalIonIndex]);
                 double maxMz = Tolerance.GetMaximumValue(ReporterIonMzs[theoreticalIonIndex]);
-                while (spectrumIndex < spectrum.Size &&
-                       spectrum.XArray[spectrumIndex] < minMz)
+                double maxIntensity = 0;
+                while (spectrumIndex < spectrum.Size 
+                    && spectrum.XArray[spectrumIndex] < minMz)
                 {
                     spectrumIndex++;
                 }
@@ -121,11 +122,17 @@ namespace EngineLayer
                 {
                     break;
                 }
-                if (minMz <= spectrum.XArray[spectrumIndex] && spectrum.XArray[spectrumIndex] <= maxMz)
+                while (spectrumIndex < spectrum.Size 
+                    && minMz <= spectrum.XArray[spectrumIndex] 
+                    && spectrum.XArray[spectrumIndex] <= maxMz)
                 {
-                    reporterIonIntensities[theoreticalIonIndex] = spectrum.YArray[spectrumIndex];
+                    if (spectrum.YArray[spectrumIndex] > maxIntensity)
+                    {
+                        maxIntensity = spectrum.YArray[spectrumIndex];
+                    }
                     spectrumIndex++;
                 }
+                reporterIonIntensities[theoreticalIonIndex] = maxIntensity;
             }
 
             return reporterIonIntensities;
@@ -141,7 +148,6 @@ namespace EngineLayer
                 IsobaricMassTagType.TMT6 => "TMT6", // Note, the full ID for TMT6 is "TMT6-plex". 
                 IsobaricMassTagType.TMT10 => "TMT10",
                 IsobaricMassTagType.TMT11 => "TMT11",
-                IsobaricMassTagType.TMT16 => "TMT16",
                 IsobaricMassTagType.TMT18 => "TMT18",
                 IsobaricMassTagType.iTRAQ4 => "iTRAQ-4plex",
                 IsobaricMassTagType.iTRAQ8 => "iTRAQ-8plex",
@@ -178,7 +184,6 @@ namespace EngineLayer
                 IsobaricMassTagType.TMT6 => new List<string> { "126", "127", "128", "129", "130", "131" },
                 IsobaricMassTagType.TMT10 => new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N" },
                 IsobaricMassTagType.TMT11 => new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" },
-                IsobaricMassTagType.TMT16 => new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C", "132N", "132C", "133N", "133C", "134N" },
                 IsobaricMassTagType.TMT18 => new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C", "132N", "132C", "133N", "133C", "134N", "134C", "135N" },
                 IsobaricMassTagType.iTRAQ4 => new List<string> { "114", "115", "116", "117" },
                 IsobaricMassTagType.iTRAQ8 => new List<string> { "113", "114", "115", "116", "117", "118", "119", "120" },
@@ -208,7 +213,6 @@ namespace EngineLayer
             return upperModId switch
             {
                 string s when s.Contains("TMT18") => IsobaricMassTagType.TMT18,
-                string s when s.Contains("TMT16") => IsobaricMassTagType.TMT16,
                 string s when s.Contains("TMT11") => IsobaricMassTagType.TMT11,
                 string s when s.Contains("TMT10") => IsobaricMassTagType.TMT10,
                 string s when s.Contains("TMT6") => IsobaricMassTagType.TMT6,

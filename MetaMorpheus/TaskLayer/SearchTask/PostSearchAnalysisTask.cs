@@ -1150,7 +1150,7 @@ namespace TaskLayer
                         for (int i = 0; i < psm.IsobaricMassTagReporterIonIntensities.Length; i++)
                         {
                             if (i > 0) sb.Append('\t');
-                            sb.Append(psm.IsobaricMassTagReporterIonIntensities[i].ToString("F2", CultureInfo.InvariantCulture));
+                            sb.Append(psm.IsobaricMassTagReporterIonIntensities[i].ToString("F1", CultureInfo.InvariantCulture));
                         }
                     }
                     else
@@ -1161,38 +1161,6 @@ namespace TaskLayer
                     output.WriteLine(sb.ToString());
                 }
             }
-        }
-
-        //TODO: Adapt the one test that references this method then delete it
-        public static double[] GetMultiplexIonIntensities(SpectralMatch psm, double[] theoreticalIonMzs, Tolerance tolerance)
-        {
-            var diagnosticIons = psm.MatchedFragmentIons
-                .Where(ion => ion.NeutralTheoreticalProduct.ProductType == Omics.Fragmentation.ProductType.D)
-                .OrderBy(ion => ion.Mz)
-                .ToArray();
-            double[] expIonMzs = diagnosticIons.Select(ion => ion.Mz).ToArray(); 
-            double[] ionIntensities = new double[theoreticalIonMzs.Length];
-
-            int expIonIndex = 0;
-            for (int theoreticalIonIndex = 0; theoreticalIonIndex < ionIntensities.Length; theoreticalIonIndex++)
-            {
-                while (expIonIndex < expIonMzs.Length &&
-                       expIonMzs[expIonIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[theoreticalIonIndex]))
-                {
-                    expIonIndex++;
-                }
-                if (expIonIndex >= expIonMzs.Length)
-                {
-                    break;
-                }
-                if (tolerance.Within(expIonMzs[expIonIndex], theoreticalIonMzs[theoreticalIonIndex]))
-                {
-                    ionIntensities[theoreticalIonIndex] = diagnosticIons[expIonIndex].Intensity;
-                    expIonIndex++;
-                }
-            }
-
-            return ionIntensities;
         }
 
         private void CompressIndividualFileResults()
