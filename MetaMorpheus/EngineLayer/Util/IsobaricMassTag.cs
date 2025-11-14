@@ -97,7 +97,7 @@ namespace EngineLayer
         /// </summary>
         public double[]? GetReporterIonIntensities(MzSpectrum spectrum)
         {
-            if (spectrum.Size < 1) return null;
+            if (spectrum == null || spectrum.Size < 1) return null;
             double[] reporterIonIntensities = new double[ReporterIonMzs.Length];
             if (spectrum.XArray[0] > Tolerance.GetMaximumValue(ReporterIonMzs[^1]))
             {

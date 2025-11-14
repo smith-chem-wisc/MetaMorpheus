@@ -238,7 +238,8 @@ namespace TaskLayer
                 // MS3 was used for reporter ion detection, and adjust the parameters accordingly
                 if (SearchParameters.DoMultiplexQuantification && myMsDataFile.Scans.Any(s => s.MsnOrder ==3))
                 {
-                    // Should we also set MS2ChildScanDissociationType to LowCID? That will usually be the case in these experiments.
+                    // In most experiments with MS3 scans for reporter ion detection, MS2ChildScanDissociationType is LowCID.
+                    // However, we do not set it here to allow for flexibility in dissociation type selection.
                     combinedParams.MS3ChildScanDissociationType = DissociationType.HCD;
                 }
 

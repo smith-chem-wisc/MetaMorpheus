@@ -96,7 +96,7 @@ namespace EngineLayer
         /// <param name="massTag"></param>
         public void SetIsobaricMassTagReporterIonIntensities(IsobaricMassTag massTag)
         {
-            if (UseChildScansForIsobaricQuant(massTag, out var mostIntenseChildScan))
+            if (UseChildScansForIsobaricQuant(out var mostIntenseChildScan))
             {
                 IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(mostIntenseChildScan.TheScan.MassSpectrum);
                 return;
@@ -109,7 +109,7 @@ namespace EngineLayer
         /// This determination is made based on heuristics like scan range and HCD energy
         /// </summary>
         /// <param name="mostIntenseChildScan">The child scan that has the highest ion current </param>
-        private bool UseChildScansForIsobaricQuant(IsobaricMassTag massTag, out Ms2ScanWithSpecificMass mostIntenseChildScan)
+        private bool UseChildScansForIsobaricQuant(out Ms2ScanWithSpecificMass mostIntenseChildScan)
         {
             mostIntenseChildScan = null;
             if (ChildScans.IsNullOrEmpty()) return false;

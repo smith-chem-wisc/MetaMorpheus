@@ -359,7 +359,7 @@ namespace Test
                             {
                                 "27274.3", "25929.9", "2745.8", "38435.7","4142.3",
                                 "3555.4", "38433.3","31899.3", "34451.5", "27501.3", "25194.2"
-                            }), $"The reporter ion intensities for scan 28226 do not match the expected values.");
+                            }), $"The reporter ion intensities for scan 20 do not match the expected values.");
                         }
                     }
                 }
