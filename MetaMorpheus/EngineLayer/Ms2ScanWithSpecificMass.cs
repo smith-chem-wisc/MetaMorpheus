@@ -106,7 +106,9 @@ namespace EngineLayer
 
         /// <summary>
         /// Helper method to determine if child scans contain isobaric mass tag (e.g., TMT) reporter ions
-        /// This determination is made based on heuristics like scan range and HCD energy
+        /// In most cases, if MS3 scans exist, there will only be one MS3 scan per MS2 scan, and the ChildScans list will contain that one MS3 scan
+        /// If there are methods that generate multiple child scans, then this method will return the most intense child scan
+        /// However, if we ever have multiple child scans with isobaric mass tag reporter ions, we should revisit this logic
         /// </summary>
         /// <param name="mostIntenseChildScan">The child scan that has the highest ion current </param>
         private bool UseChildScansForIsobaricQuant(out Ms2ScanWithSpecificMass mostIntenseChildScan)
