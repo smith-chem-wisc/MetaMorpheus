@@ -987,6 +987,36 @@ namespace MetaMorpheusGUI
 
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
             string outputFolder = OutputFolderTextBox.Text.Replace("$DATETIME", startTimeForAllFilenames);
+
+            bool rename = false;
+            bool exists = Directory.Exists(outputFolder);
+            if (exists && UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory)
+            {
+                (bool Overwrite, bool AskAgain) results = ProteaseSpecificMsgBox.Show($"Output directory '{outputFolder}' already exists!",
+                    $"\tOutput directory '{outputFolder}' already exists!\r\n\t\t\tWould you like to overwrite it?");
+
+                if (!results.Overwrite)
+                    rename = true;
+
+                if (!results.AskAgain)
+                    UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory = false;
+
+            }
+            else if (exists && !UpdateGUISettings.Params.OverwriteOutputDirectory)
+                rename = true;
+
+            if (rename)
+            {
+                int counter = 1;
+                string newOutputFolder;
+                do
+                {
+                    newOutputFolder = outputFolder + "_" + counter;
+                    counter++;
+                } while (Directory.Exists(newOutputFolder));
+                outputFolder = newOutputFolder;
+            }
+
             OutputFolderTextBox.Text = outputFolder;
 
             // everything is ready to run
