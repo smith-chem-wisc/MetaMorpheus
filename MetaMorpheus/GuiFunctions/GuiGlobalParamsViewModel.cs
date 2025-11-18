@@ -117,6 +117,12 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         set { _current.AskAboutModeSwitch = value; OnPropertyChanged(nameof(AskAboutModeSwitch)); }
     }
 
+    public bool AskAboutOverwritingOutputDirectory
+    {
+        get => _current.AskAboutOverwritingOutputDirectory;
+        set { _current.AskAboutOverwritingOutputDirectory = value; OnPropertyChanged(nameof(AskAboutOverwritingOutputDirectory)); }
+    }
+
     public bool UseTopDownParams
     {
         get => _current.UseTopDownParams;
@@ -157,6 +163,12 @@ public class GuiGlobalParamsViewModel : BaseViewModel
     {
         get => _current.UseSpectralRecoveryParams;
         set { _current.UseSpectralRecoveryParams = value; OnPropertyChanged(nameof(UseSpectralRecoveryParams)); }
+    }
+
+    public bool OverwriteOutputDirectory
+    {
+        get => _current.OverwriteOutputDirectory;
+        set { _current.OverwriteOutputDirectory = value; OnPropertyChanged(nameof(OverwriteOutputDirectory)); }
     }
 
 

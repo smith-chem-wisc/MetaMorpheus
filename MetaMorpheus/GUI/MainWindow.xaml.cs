@@ -990,7 +990,7 @@ namespace MetaMorpheusGUI
 
             bool rename = false;
             bool exists = Directory.Exists(outputFolder);
-            if (exists && UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory)
+            if (exists && GuiGlobalParamsViewModel.Instance.AskAboutOverwritingOutputDirectory)
             {
                 (bool Overwrite, bool AskAgain) results = ProteaseSpecificMsgBox.Show($"Output directory '{outputFolder}' already exists!",
                     $"\tOutput directory '{outputFolder}' already exists!\r\n\t\t\tWould you like to overwrite it?");
@@ -999,10 +999,10 @@ namespace MetaMorpheusGUI
                     rename = true;
 
                 if (!results.AskAgain)
-                    UpdateGUISettings.Params.AskAboutOverwritingOutputDirectory = false;
+                    GuiGlobalParamsViewModel.Instance.AskAboutOverwritingOutputDirectory = false;
 
             }
-            else if (exists && !UpdateGUISettings.Params.OverwriteOutputDirectory)
+            else if (exists && !GuiGlobalParamsViewModel.Instance.OverwriteOutputDirectory)
                 rename = true;
 
             if (rename)

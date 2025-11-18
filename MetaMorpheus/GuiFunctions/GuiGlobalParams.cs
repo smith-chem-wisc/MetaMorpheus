@@ -26,6 +26,7 @@ public class GuiGlobalParams  : IEquatable<GuiGlobalParams>
     public bool AskAboutSemiTrypsinParams { get; internal set; } = true;
     public bool AskAboutArgCParams { get; internal set; } = true;
     public bool AskAboutSpectralRecoveryParams { get; internal set; } = true;
+    public bool AskAboutOverwritingOutputDirectory { get; internal set; } = true;
 
     //Use protease-specific parameter recommendations
     public bool UseTopDownParams { get; internal set; } = true;
@@ -35,6 +36,7 @@ public class GuiGlobalParams  : IEquatable<GuiGlobalParams>
     public bool UseSemiTrypsinParams { get; internal set; } = true;
     public bool UseArgCParams { get; internal set; } = true;
     public bool UseSpectralRecoveryParams { get; internal set; } = true;
+    public bool OverwriteOutputDirectory { get; internal set; } = false;
 
     // Rna Toggles
     public bool IsRnaMode { get; internal set; }
@@ -70,7 +72,9 @@ public class GuiGlobalParams  : IEquatable<GuiGlobalParams>
             UseSpectralRecoveryParams == other.UseSpectralRecoveryParams &&
             IsRnaMode == other.IsRnaMode &&
             AskAboutModeSwitch == other.AskAboutModeSwitch &&
-            CachedModeSwitchResult == other.CachedModeSwitchResult;
+            CachedModeSwitchResult == other.CachedModeSwitchResult && 
+            AskAboutOverwritingOutputDirectory == other.AskAboutOverwritingOutputDirectory &&
+            OverwriteOutputDirectory == other.OverwriteOutputDirectory;
 
     }
 
@@ -98,7 +102,9 @@ public class GuiGlobalParams  : IEquatable<GuiGlobalParams>
             UseSpectralRecoveryParams = UseSpectralRecoveryParams,
             IsRnaMode = IsRnaMode,
             AskAboutModeSwitch = AskAboutModeSwitch,
-            CachedModeSwitchResult = CachedModeSwitchResult
+            CachedModeSwitchResult = CachedModeSwitchResult,
+            AskAboutOverwritingOutputDirectory = AskAboutOverwritingOutputDirectory,
+            OverwriteOutputDirectory = OverwriteOutputDirectory
         };
     }
 }

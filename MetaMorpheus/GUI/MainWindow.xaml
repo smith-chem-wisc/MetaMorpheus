@@ -1006,10 +1006,15 @@
                             <CheckBox Grid.Row="6" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutSpectralRecoveryParams, Mode=TwoWay}" VerticalAlignment="Center"/>
                             <CheckBox Grid.Row="6" Grid.Column="2" Content="Use" IsChecked="{Binding UseSpectralRecoveryParams, Mode=TwoWay}" VerticalAlignment="Center"/>
                             
-                            <TextBlock Grid.Row="7" Grid.Column="0" Text="Protein/RNA Mode Switching Prompt" 
+                            <TextBlock Grid.Row="7" Grid.Column="0" Text="Overwrite Output Directory" 
                                        VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
-                            <CheckBox Grid.Row="7" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutModeSwitch, Mode=TwoWay}" VerticalAlignment="Center"/>
-                            <ComboBox Grid.Row="7" Grid.Column="2" VerticalAlignment="Center" Width="154" HorizontalAlignment="Left"
+                            <CheckBox Grid.Row="7" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutOverwritingOutputDirectory, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="7" Grid.Column="2" Content="Overwrite" IsChecked="{Binding OverwriteOutputDirectory, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            
+                            <TextBlock Grid.Row="8" Grid.Column="0" Text="Protein/RNA Mode Switching Prompt" 
+                                       VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="8" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutModeSwitch, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="8" Grid.Column="2" VerticalAlignment="Center" Width="154" HorizontalAlignment="Left"
                                       ItemsSource="{Binding AllModeSwitchValues}"
                                       SelectedItem="{Binding CachedModeSwitchResult, Mode=TwoWay}" />
                         </Grid>
