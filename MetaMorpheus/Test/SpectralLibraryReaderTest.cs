@@ -66,7 +66,7 @@ namespace Test
             string spectraFile = Path.Combine(testDir, @"slicedMouse.raw");
 
             Directory.CreateDirectory(outputDir);
-            Tolerance t1 = Tolerance.ParseToleranceString("0.5 Absolute");     // AbsoluteTolerance(0.02)
+            Tolerance t1 = Tolerance.ParseToleranceString("0.5 Absolute");     // AbsoluteTolerance(0.5)
             CommonParameters cp = new CommonParameters(precursorMassTolerance: t1);
             var searchTask = new SearchTask();
             searchTask.CommonParameters = cp;
