@@ -67,7 +67,7 @@ namespace Test
 
             Directory.CreateDirectory(outputDir);
             Tolerance t1 = Tolerance.ParseToleranceString("0.5 Absolute");     // AbsoluteTolerance(0.5)
-            CommonParameters cp = new CommonParameters(precursorMassTolerance: t1);
+            CommonParameters cp = new CommonParameters(productMassTolerance: t1);
             var searchTask = new SearchTask();
             searchTask.CommonParameters = cp;
             searchTask.RunTask(outputDir,
