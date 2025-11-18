@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace EngineLayer
 {
@@ -45,19 +46,18 @@ namespace EngineLayer
                         lock (myLocks[i])
                         {
                             if (psms[i] != null)
-                            {
-                                double tolerance = commonParameters.ProductMassTolerance.Value;
+                            { 
                                 Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
+                                // If ppm, keep as-is; if Absolute (Da), convert to ppm using the scan's precursor m/z
+                                double tolerance = isPpm
+                                    ? commonParameters.ProductMassTolerance.Value
+                                    : commonParameters.ProductMassTolerance.Value / scan.PrecursorMonoisotopicPeakMz * 1e6;
                                 List<double> pwsmSpectralAngles = new();
                                 foreach (var bestMatch in psms[i].BestMatchingBioPolymersWithSetMods)
                                 {
                                     //if peptide is target, directly look for the target's spectrum in the spectral library
                                     if (!bestMatch.IsDecoy && spectralLibrary.TryGetSpectrum(bestMatch.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                     {
-                                        if (!isPpm)
-                                        {
-                                            tolerance = tolerance / scan.PrecursorMonoisotopicPeakMz * 1e6;
-                                        }
                                         SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
                                             SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, tolerance, false);
                                         if (s.SpectralContrastAngle().HasValue)
@@ -72,10 +72,6 @@ namespace EngineLayer
                                         var decoyPeptideTheorProducts = new List<Product>();
                                         bestMatch.SpecificBioPolymer.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
                                         var decoylibrarySpectrum = LibrarySpectrum.GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
-                                        if (!isPpm)
-                                        {
-                                            tolerance = tolerance / scan.PrecursorMonoisotopicPeakMz * 1e6;
-                                        }
                                         SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, decoylibrarySpectrum.Select(x => x.Mz).ToArray(),
                                             decoylibrarySpectrum.Select(x => x.Intensity).ToArray(), SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum,
                                             tolerance, false);
@@ -100,5 +96,6 @@ namespace EngineLayer
                 });
             }
         }
+
     }
 }
