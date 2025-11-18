@@ -1,17 +1,19 @@
 ﻿using Chemistry;
+using Easy.Common.Extensions;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
+using MassSpectrometry.MzSpectra;
+using MzLibUtil;
+using Omics;
 using Omics.Fragmentation;
+using Omics.SpectrumMatch;
+using Proteomics.ProteolyticDigestion;
+using Readers.SpectralLibrary;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
-using Proteomics.ProteolyticDigestion;
 using System.Threading.Tasks;
-using Easy.Common.Extensions;
-using MassSpectrometry.MzSpectra;
-using Omics;
-using Omics.SpectrumMatch;
-using EngineLayer.SpectrumMatch;
-using Readers.SpectralLibrary;
 
 namespace EngineLayer
 {
@@ -28,6 +30,9 @@ namespace EngineLayer
                 {
                     myLocks[i] = new object();
                 }
+                // Spectrum similarity calculations often use ppm tolerance for mass spectra
+                // If tolerance is Absolute, then we need to convert it to PpmTolerance.
+                var isPpm = commonParameters.ProductMassTolerance is PpmTolerance;
 
                 int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
                 int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
@@ -41,6 +46,7 @@ namespace EngineLayer
                         {
                             if (psms[i] != null)
                             {
+                                double tolerance = commonParameters.ProductMassTolerance.Value;
                                 Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
                                 List<double> pwsmSpectralAngles = new();
                                 foreach (var bestMatch in psms[i].BestMatchingBioPolymersWithSetMods)
@@ -48,8 +54,12 @@ namespace EngineLayer
                                     //if peptide is target, directly look for the target's spectrum in the spectral library
                                     if (!bestMatch.IsDecoy && spectralLibrary.TryGetSpectrum(bestMatch.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                     {
-                                        SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray, 
-                                            SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
+                                        if (!isPpm)
+                                        {
+                                            tolerance = tolerance / scan.PrecursorMonoisotopicPeakMz * 1e6;
+                                        }
+                                        SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
+                                            SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, tolerance, false);
                                         if (s.SpectralContrastAngle().HasValue)
                                         {
                                             pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
@@ -62,9 +72,13 @@ namespace EngineLayer
                                         var decoyPeptideTheorProducts = new List<Product>();
                                         bestMatch.SpecificBioPolymer.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
                                         var decoylibrarySpectrum = LibrarySpectrum.GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
+                                        if (!isPpm)
+                                        {
+                                            tolerance = tolerance / scan.PrecursorMonoisotopicPeakMz * 1e6;
+                                        }
                                         SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, decoylibrarySpectrum.Select(x => x.Mz).ToArray(),
                                             decoylibrarySpectrum.Select(x => x.Intensity).ToArray(), SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum,
-                                            commonParameters.ProductMassTolerance.Value, false);
+                                            tolerance, false);
                                         if (s.SpectralContrastAngle().HasValue)
                                         {
                                             pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
