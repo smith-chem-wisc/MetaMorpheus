@@ -58,7 +58,7 @@ namespace Test
         public static void DaltonToleranceSpectralLibrarySearchTest()
         {
             var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
-            var outputDir = Path.Combine(testDir, @"SpectralLibrarySearchTest");
+            var outputDir = Path.Combine(testDir, @"DaltonToleranceSpectralLibrarySearchTest");
 
             string library1 = Path.Combine(testDir, @"P16858_target.msp");
             string library2 = Path.Combine(testDir, @"P16858_decoy.msp");
