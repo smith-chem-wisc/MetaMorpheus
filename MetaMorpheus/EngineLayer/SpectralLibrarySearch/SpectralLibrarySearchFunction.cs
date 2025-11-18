@@ -46,7 +46,7 @@ namespace EngineLayer
                         lock (myLocks[i])
                         {
                             if (psms[i] != null)
-                            { 
+                            {
                                 Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
                                 // If ppm, keep as-is; if Absolute (Da), convert to ppm using the scan's precursor m/z
                                 double tolerance = isPpm
