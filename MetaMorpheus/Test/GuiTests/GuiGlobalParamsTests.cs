@@ -15,7 +15,7 @@ namespace Test.GuiTests
     public class GuiGlobalParamsTests
     {
         private static string SettingsPath => (string)typeof(GuiGlobalParamsViewModel)
-            .GetField("SettingsPath", BindingFlags.NonPublic | BindingFlags.Static)
+            .GetProperty("SettingsPath", BindingFlags.NonPublic | BindingFlags.Static)
             .GetValue(null);
 
         [SetUp]
