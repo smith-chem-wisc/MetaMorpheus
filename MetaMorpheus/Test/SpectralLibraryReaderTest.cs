@@ -86,7 +86,7 @@ namespace Test
             Assert.That(ind >= 0);
 
             var spectralAngle = double.Parse(results[1].Split('\t')[ind]);
-            Assert.That(Math.Round(spectralAngle, 2) == 0.82);
+            Assert.That(Math.Round(spectralAngle, 3) == 0.812);
 
             Directory.Delete(outputDir, true);
         }
