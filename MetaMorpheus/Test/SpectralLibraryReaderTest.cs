@@ -140,7 +140,7 @@ namespace Test
 
         }
         /// <summary>
-        /// Test ensures peptide FDR is calculated and that it doesn't output PSM FDR results
+        /// Test ensures spectral angle calculation works correctly for decoys when no decoy library spectrum is available (fallback to generated decoy spectrum)
         /// </summary>
         [Test]
         public static void AnotherSpectralLibrarySearchTestDecoyNoLibrarySpectrum()
