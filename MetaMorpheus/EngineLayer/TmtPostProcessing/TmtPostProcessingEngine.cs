@@ -9,9 +9,15 @@ namespace EngineLayer.TmtPostProcessing
 {
     public class TmtPostProcessingEngine : MetaMorpheusEngine
     {
+        private List<SpectralMatch> AllPsms;
+        private TmtProcessingParams Tmtparams;
         private readonly string AnalysisType;
-        public TmtPostProcessingEngine(CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public TmtPostProcessingEngine(List<SpectralMatch> psms, TmtProcessingParams tmtParams, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIdsstring, string analysisType = "PSM") : base(commonParameters, fileSpecificParameters, nestedIds)
         {
+            AllPsms = psms.OrderByDescending(p => p).ToList();
+            AnalysisType = analysisType;
+            Tmtparams = tmtParams;
+            if (fileSpecificParameters == null) throw new ArgumentNullException("file specific parameters cannot be null");
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -26,8 +32,12 @@ namespace EngineLayer.TmtPostProcessing
             return myAnalysisResults;
         }
 
-        private void ProcessTmtData(TmtPostProcessingResults myAnalysisResults)
+        private void ProcessTmtData(TmtPostProcessingResults myAnalysisResults) => ProcessTmtData(AllPsms, Tmtparams, myAnalysisResults);
+        internal static void ProcessTmtData(List<SpectralMatch> allPsms, TmtProcessingParams tmtParams, TmtPostProcessingResults myAnalysisResults)
         {
+            // Stop if canceled
+            if (GlobalVariables.StopLoops) { return; }
+            
             throw new NotImplementedException();
         }
     }
