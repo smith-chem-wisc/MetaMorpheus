@@ -277,12 +277,14 @@ namespace TaskLayer
                 if (SearchParameters.DoMultiplexQuantification)
                 {
                    IsobaricMassTag massTag = IsobaricMassTag.GetIsobaricMassTag(SearchParameters.MultiplexModId);
-                    if (massTag != null) // Should probably warn/update results if null
+                    if (massTag == null) // Should probably warn/update results if null
                     {
-                        foreach (var scan in arrayOfMs2ScansSortedByMass)
-                        {
-                            scan.SetIsobaricMassTagReporterIonIntensities(massTag);
-                        }
+                        throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + SearchParameters.MultiplexModId);
+                    }
+
+                    foreach (var scan in arrayOfMs2ScansSortedByMass)
+                    {
+                        scan.SetIsobaricMassTagReporterIonIntensities(massTag);
                     }
                 }
 

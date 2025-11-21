@@ -32,13 +32,13 @@ namespace EngineLayer
         /// Theoretical m/z values corresponding to each reporter ion for this isobaric mass tag type.
         /// </summary>
         public double[] ReporterIonMzs { get; private set; }
+        public DoubleRange[] ReporterIonMzRanges { get; private set; }
         public IsobaricMassTagType TagType { get; private set; }
         /// <summary>
         /// Hardcoded tolerance value in Daltons for isobaric mass tag reporter ions.
         /// Taken from https://doi.org/10.1021/acs.jproteome.1c00168
         /// </summary>
         public const double AbsoluteToleranceValue = 0.003; // 3 millidaltons. This is
-        public AbsoluteTolerance Tolerance { get; private set; }
 
         /// <summary>
         /// Returns an IsobaricMassTag that corresponds to the given modification ID.
@@ -83,11 +83,19 @@ namespace EngineLayer
                 .OrderBy(mz => mz)
                 .ToArray();
 
+            AbsoluteTolerance tolerance = new AbsoluteTolerance(AbsoluteToleranceValue);
+
+            DoubleRange[] reporterIonMzRanges = reporterIonMzs
+                .Select(mz => new DoubleRange(
+                    tolerance.GetMinimumValue(mz),
+                    tolerance.GetMaximumValue(mz)))
+                .ToArray();
+
             return new IsobaricMassTag
             {
                 TagType = (IsobaricMassTagType)tagType,
                 ReporterIonMzs = reporterIonMzs,
-                Tolerance = new AbsoluteTolerance(AbsoluteToleranceValue)
+                ReporterIonMzRanges = reporterIonMzRanges,
             };
         }
 
@@ -99,7 +107,7 @@ namespace EngineLayer
         {
             if (spectrum == null || spectrum.Size < 1) return null;
             double[] reporterIonIntensities = new double[ReporterIonMzs.Length];
-            if (spectrum.XArray[0] > Tolerance.GetMaximumValue(ReporterIonMzs[^1]))
+            if (spectrum.XArray[0] > ReporterIonMzRanges[^1].Maximum)
             {
                 return reporterIonIntensities; // If the spectrum starts after the last reporter ion, return all zeros.
             }
@@ -110,8 +118,8 @@ namespace EngineLayer
             int spectrumIndex = 0;
             for (int theoreticalIonIndex = 0; theoreticalIonIndex < reporterIonIntensities.Length; theoreticalIonIndex++)
             {
-                double minMz = Tolerance.GetMinimumValue(ReporterIonMzs[theoreticalIonIndex]);
-                double maxMz = Tolerance.GetMaximumValue(ReporterIonMzs[theoreticalIonIndex]);
+                double minMz = ReporterIonMzRanges[theoreticalIonIndex].Minimum;
+                double maxMz = ReporterIonMzRanges[theoreticalIonIndex].Maximum;
                 double maxIntensity = 0;
                 while (spectrumIndex < spectrum.Size 
                     && spectrum.XArray[spectrumIndex] < minMz)

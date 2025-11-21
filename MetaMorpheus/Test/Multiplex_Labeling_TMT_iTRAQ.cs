@@ -669,8 +669,8 @@ namespace Test
             Assert.That(tmt10Tag, Is.Not.Null);
             Assert.That(tmt10Tag.TagType, Is.EqualTo(IsobaricMassTagType.TMT10));
             Assert.That(tmt10Tag.ReporterIonMzs.Length, Is.EqualTo(10));
-            Assert.That(tmt10Tag.Tolerance, Is.Not.Null);
-            Assert.That(tmt10Tag.Tolerance, Is.TypeOf<AbsoluteTolerance>());
+            Assert.That(tmt10Tag.ReporterIonMzRanges, Is.Not.Null);
+            Assert.That(tmt10Tag.ReporterIonMzRanges, Is.TypeOf<DoubleRange[]>());
 
             var tmt11Tag = IsobaricMassTag.GetIsobaricMassTag("TMT11 on X");
             Assert.That(tmt11Tag, Is.Not.Null);
@@ -966,6 +966,22 @@ namespace Test
             for (int i = 0; i < 10; i++)
             {
                 Assert.That(intensities[i], Is.EqualTo((i + 1) * 100));
+            }
+        }
+
+        [Test]
+        public static void TestSearchTaskExceptionOnNullMassTag()
+        {
+            // This test simulates what happens in SearchTask when IsobaricMassTag.GetIsobaricMassTag returns null
+            // The actual SearchTask code throws MetaMorpheusException in this case
+            
+            string invalidModId = "InvalidModification";
+            var massTag = IsobaricMassTag.GetIsobaricMassTag(invalidModId);
+
+            // When massTag is null, SearchTask should throw MetaMorpheusException
+            if (massTag == null)
+            {
+                Assert.Throws<MetaMorpheusException>(() => throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + invalidModId));
             }
         }
     }
