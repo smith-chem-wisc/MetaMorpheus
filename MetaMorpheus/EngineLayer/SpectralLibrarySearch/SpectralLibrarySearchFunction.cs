@@ -45,7 +45,7 @@ namespace EngineLayer
                                 List<double> pwsmSpectralAngles = new();
                                 foreach (var bestMatch in psms[i].BestMatchingBioPolymersWithSetMods)
                                 {
-                                    if(spectralLibrary.TryGetSpectrum(bestMatch.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                                    if (spectralLibrary.TryGetSpectrum(bestMatch.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                     {
                                         SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
                                             SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
