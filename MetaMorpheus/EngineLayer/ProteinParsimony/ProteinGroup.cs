@@ -401,7 +401,6 @@ namespace EngineLayer
         {
             if (ModsInfo.IsNotNullOrEmpty())
             {
-                var modInfoString = new StringBuilder();
 
                 // Create a combined quantified protein group for all fraction/techrep
                 var groupedFilesQuantifiedProteinGroup = ModsInfo[spectraFiles.First()];
@@ -429,13 +428,63 @@ namespace EngineLayer
                 var proteinGroupOccupanciesPerProtein = groupedFilesQuantifiedProteinGroup.Proteins.Values.Select(x => new KeyValuePair<QuantifiedProtein, Dictionary<int, Dictionary<string, double>>>
                                                                                             (x, x.GetModStoichiometryFromProteinMods())).ToDictionary(x => x.Key, x => x.Value);
 
+                // Clean stoichiometry results by removing "Common Variable", "Common Fixed",
+                // and "PeptideTermMod" modification types.
+                // Also remove any modifications with NaN occupancies.
+
+                var modsToRemove = new List<(QuantifiedProtein proteinKey, int modposKey, string modnameKey)>();
+                foreach (var protein in proteinGroupOccupanciesPerProtein.Keys)
+                {
+                    var proteinModsDict = proteinGroupOccupanciesPerProtein[protein];
+                    foreach (var modpos in proteinModsDict.Keys)
+                    {
+                        var posMods = proteinModsDict[modpos];
+                        foreach (var mod in posMods.Keys)
+                        {
+                            if (mod.Contains("Common Variable")
+                                || mod.Contains("Common Fixed")
+                                || mod.Contains("PeptideTermMod")
+                                || !posMods[mod].IsFinite())
+                            {
+                                modsToRemove.Add((protein, modpos, mod));
+                            }
+                        }
+                    }
+                }
+                foreach (var modToIgnore in modsToRemove)
+                {
+                    proteinGroupOccupanciesPerProtein[modToIgnore.proteinKey][modToIgnore.modposKey].Remove(modToIgnore.modnameKey);
+                }
+                foreach (var modToIgnore in modsToRemove)
+                { 
+                var proteinToClean = proteinGroupOccupanciesPerProtein[modToIgnore.proteinKey];
+
+                    if (proteinToClean.ContainsKey(modToIgnore.modposKey)
+                        && proteinToClean[modToIgnore.modposKey].IsNullOrEmpty())
+                    {
+                        proteinToClean.Remove(modToIgnore.modposKey);
+                    }
+                }
+
+
+                // If mods not found for the proteins in protein group, do not write anything
+                // Since all proteins in the protein group would have the same mod info with
+                // different mod position key names but same number of keys, we only check
+                // that the first protein's mod dict is not empty.
+                if (proteinGroupOccupanciesPerProtein.First().Value.IsNullOrEmpty())
+                {
+                    return "";
+                }
+
+                // Else, build the mod info string for the protein group.
+                var modInfoString = new StringBuilder();
+
                 foreach (var protein in proteinGroupOccupanciesPerProtein.Keys)
                 {
                     if (proteinGroupOccupanciesPerProtein[protein].IsNullOrEmpty())
                     {
                         continue;
                     }
-
                     modInfoString.Append(protein.Accession + ":{");
 
                     foreach (var modpos in proteinGroupOccupanciesPerProtein[protein].Keys.Order())
