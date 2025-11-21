@@ -54,7 +54,7 @@ namespace EngineLayer
                                             pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
                                         }
                                     }
-                                    //if peptide is decoy, look for the decoy's corresponding target's spectrum in the spectral library and generate decoy spectrum by function GetDecoyLibrarySpectrumFromTargetByRevers
+                                    // Fallback: if peptide is decoy without library spectrum, look for the target's spectrum and generate decoy spectrum by reversing
                                     else if (bestMatch.IsDecoy && spectralLibrary.TryGetSpectrum(bestMatch.SpecificBioPolymer.Description, scan.PrecursorCharge, out var targetlibrarySpectrum))
                                     {
                                         var decoyPeptideTheorProducts = new List<Product>();
