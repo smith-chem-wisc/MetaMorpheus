@@ -155,7 +155,7 @@ namespace Test
             var fixedModifications = new List<Modification>();
             var proteinList = new List<Protein> { new Protein("QTATIAHVTTMLGEVIGFNDHIVK", "P16858") };
 
-            string targetSpectralLibrary = Path.Combine(testDir, @"P16858_decoy.msp"); //the filenames are messed up. This is the target spectrum
+            string targetSpectralLibrary = Path.Combine(testDir, @"P16858_decoy.msp"); // Using P16858_decoy.msp file which actually contains the target spectrum for this test case
 
             List<string> specLibs = new List<string> { targetSpectralLibrary };
 
