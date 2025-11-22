@@ -38,8 +38,9 @@ namespace EngineLayer
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = -1;
+            IsobaricMassTagReporterIonIntensities = scan.IsobaricMassTagReporterIonIntensities;
 
-            if(scan.TheScan is TimsDataScan timsScan)
+            if (scan.TheScan is TimsDataScan timsScan)
             {
                 ScanOneOverK0 = timsScan.OneOverK0;
             }
@@ -155,6 +156,12 @@ namespace EngineLayer
         public static BioPolymerNotchFragmentIonComparer BioPolymerNotchFragmentIonComparer = new();
 
         protected List<SpectralMatchHypothesis> _BestMatchingBioPolymersWithSetMods;
+
+        /// <summary>
+        /// An array containing the intensities of the reporter ions for isobaric mass tags. 
+        /// If multiplex quantification wasn't performed, this will be null
+        /// </summary>
+        public double[]? IsobaricMassTagReporterIonIntensities { get; private set; }
 
         public IEnumerable<SpectralMatchHypothesis> BestMatchingBioPolymersWithSetMods
         {

@@ -1,25 +1,27 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using EngineLayer.ClassicSearch;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
+using Omics;
+using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Omics.Digestion;
-using Omics.Modifications;
-using Omics;
-using Readers;
-using EngineLayer.DatabaseLoading;
+using Chemistry;
 
 namespace TaskLayer
 {
@@ -232,6 +234,15 @@ namespace TaskLayer
                     combinedParams.UseProvidedPrecursorInfo = true;
                 }
 
+                // If we're doing multiplex quantification, and there are MS3 scans, we assume that
+                // MS3 was used for reporter ion detection, and adjust the parameters accordingly
+                if (SearchParameters.DoMultiplexQuantification && myMsDataFile.Scans.Any(s => s.MsnOrder ==3))
+                {
+                    // In most experiments with MS3 scans for reporter ion detection, MS2ChildScanDissociationType is LowCID.
+                    // However, we do not set it here to allow for flexibility in dissociation type selection.
+                    combinedParams.MS3ChildScanDissociationType = DissociationType.HCD;
+                }
+
                 // if another file exists, then begin loading it in while the previous is being searched
                 if (origDataFile != currentRawFileList.Last())
                 {
@@ -261,6 +272,20 @@ namespace TaskLayer
                         bioPolymerList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
                         Status("Searching files...", new List<string> { taskId });
                         break;
+                }
+
+                if (SearchParameters.DoMultiplexQuantification)
+                {
+                   IsobaricMassTag massTag = IsobaricMassTag.GetIsobaricMassTag(SearchParameters.MultiplexModId);
+                    if (massTag == null) // Should probably warn/update results if null
+                    {
+                        throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + SearchParameters.MultiplexModId);
+                    }
+
+                    foreach (var scan in arrayOfMs2ScansSortedByMass)
+                    {
+                        scan.SetIsobaricMassTagReporterIonIntensities(massTag);
+                    }
                 }
 
                 // modern search
