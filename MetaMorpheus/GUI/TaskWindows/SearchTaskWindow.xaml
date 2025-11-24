@@ -386,7 +386,7 @@
                     <!-- Protein parsimony options -->
                     <GroupBox Header="Protein Parsimony" DockPanel.Dock="Top">
                         <StackPanel Margin="5">
-                            <CheckBox x:Name="CheckBoxParsimony" Content="Apply protein parsimony and construct protein groups" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
+                            <CheckBox x:Name="CheckBoxParsimony" Content="Apply protein parsimony and construct protein groups" IsEnabled="True">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
