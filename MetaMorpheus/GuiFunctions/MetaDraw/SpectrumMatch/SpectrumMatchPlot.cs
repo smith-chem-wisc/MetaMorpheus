@@ -99,7 +99,7 @@ namespace GuiFunctions
             OxyColor ionColor;
             if (ionColorNullable == null)
             {
-                if (SpectrumMatch.VariantCrossingIons.Contains(matchedIon))
+                if (SpectrumMatch.VariantCrossingIons is not null && SpectrumMatch.VariantCrossingIons.Contains(matchedIon))
                 {
                     ionColor = MetaDrawSettings.VariantCrossColor;
                 }
