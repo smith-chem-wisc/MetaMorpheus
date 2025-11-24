@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using Easy.Common.Extensions;
 using Readers;
 using GuiFunctions.MetaDraw;
 using OxyPlot.Wpf;
@@ -164,6 +165,8 @@ namespace GuiFunctions
             ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
             BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
             ModificationTypeToColor = GlobalVariables.AllModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
+            foreach (var rnaMod in GlobalVariables.AllRnaModsKnown)
+                ModificationTypeToColor.TryAdd(rnaMod.IdWithMotif, OxyColors.Orange);
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
             CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
             BioPolymerCoverageColors = Enum.GetValues<BioPolymerCoverageType>().ToDictionary(p => p, _ => Brushes.LightGray);
@@ -415,6 +418,33 @@ namespace GuiFunctions
             ModificationTypeToColor["Carbamidomethyl on C"] = OxyColors.Green;
             ModificationTypeToColor["Carbamidomethyl on U"] = OxyColors.Green;
             ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
+
+            GlobalVariables.AllRnaModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange)
+                .ForEach(p => ModificationTypeToColor.TryAdd(p.Key, p.Value));
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Biological").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Plum;
+            }
+
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Metal").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Maroon;
+            }
+
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Digestion Termini").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Teal;
+            }
+
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Standard").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.PowderBlue;
+            }
+
         }
 
         private static void SetDefaultDataVisualizationColors()
