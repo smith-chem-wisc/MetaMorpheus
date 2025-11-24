@@ -586,7 +586,15 @@ namespace MetaMorpheusGUI
             var dialog = new ExperimentalDesignWindow(SpectraFiles);
             dialog.ShowDialog();
         }
-
+        private void SetTmtExperimentalDesign_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new TmtExperimentalDesignWindow(SpectraFiles)
+            {
+                Owner = this,
+                Title = "TMT Experimental Design"
+            };
+            dialog.ShowDialog();
+        }
         /// <summary>
         /// Event fires when the "Add Protein Database" button is clicked.
         /// </summary>
@@ -2094,7 +2102,7 @@ namespace MetaMorpheusGUI
         {
             foreach (MenuItem item in ((ContextMenu)this.Resources["ProteinDatabaseContextMenu"]).Items)
             {
-                switch (item.Header.ToString())
+                switch ( item.Header.ToString())
                 {
                     case "Set as contaminant database": item.IsEnabled = enable; break;
                     case "Set as non-contaminant database": item.IsEnabled = enable; break;
@@ -2136,6 +2144,7 @@ namespace MetaMorpheusGUI
             AddDefaultContaminantsButton.IsEnabled = enable;
             AddSpectraButton.IsEnabled = enable;
             SetFileSpecificSettingsButton.IsEnabled = enable;
+            SetTmtExperimentalDesignButton.IsEnabled = enable;
             SetExperimentalDesignButton.IsEnabled = enable;
             AddSearchTaskButton.IsEnabled = enable;
             AddCalibTaskButton.IsEnabled = enable;
@@ -2174,5 +2183,7 @@ namespace MetaMorpheusGUI
             else
                 OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
         }
+
+
     }
 }
