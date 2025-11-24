@@ -3,12 +3,12 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using Proteomics.ProteolyticDigestion;
-using Proteomics.RetentionTimePrediction;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Globalization;
+using Chromatography.RetentionTimePrediction.SSRCalc;
 using Readers;
 
 namespace GuiFunctions
@@ -190,8 +190,7 @@ namespace GuiFunctions
                         var values = new List<double>();
                         foreach (var psm in psmsBySourceFile[key].Where(p => p is not OsmFromTsv))
                         {
-                            values.Add(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split("|")[0], null)));
-                           
+                            values.Add(sSRCalc3.ScoreSequence(psm.BaseSeq.Split("|")[0]));                           
                         }
                         numbersBySourceFile.Add(key, values);
                         var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
@@ -399,12 +398,12 @@ namespace GuiFunctions
                     {
                         if (psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
                         {
-                            xy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)),
+                            xy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(psm.BaseSeq.Split('|')[0]),
                             (double)psm.RetentionTime, psm.FullSequence));
                         }
                         else
                         {
-                            variantxy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)),
+                            variantxy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(psm.BaseSeq.Split('|')[0]),
                             (double)psm.RetentionTime, psm.FullSequence));
                         }
                     }

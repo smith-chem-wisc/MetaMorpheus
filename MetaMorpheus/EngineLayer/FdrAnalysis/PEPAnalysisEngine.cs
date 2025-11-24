@@ -6,7 +6,6 @@ using Microsoft.ML;
 using Microsoft.ML.Data;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using Proteomics.RetentionTimePrediction;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,7 +17,9 @@ using Omics.Modifications;
 using Omics;
 using Easy.Common.Extensions;
 using System.Threading;
+using Chromatography.RetentionTimePrediction.SSRCalc;
 using EngineLayer.SpectrumMatch;
+using Chromatography.RetentionTimePrediction;
 
 namespace EngineLayer
 {
@@ -722,7 +723,7 @@ namespace EngineLayer
                         }
                         fullSequences.Add(bestMatch.SpecificBioPolymer.FullSequence);
 
-                        double predictedHydrophobicity = bestMatch.SpecificBioPolymer is PeptideWithSetModifications pep ?  calc.ScoreSequence(pep) : 0;
+                        double predictedHydrophobicity = bestMatch.SpecificBioPolymer is IRetentionPredictable pep ?  calc.ScoreSequence(pep.BaseSequence) : 0;
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
@@ -922,7 +923,7 @@ namespace EngineLayer
                 int time = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                 if (d[Path.GetFileName(psm.FullFilePath)].Keys.Contains(time))
                 {
-                    double predictedHydrophobicity = Peptide is PeptideWithSetModifications pep ? calc.ScoreSequence(pep) : 0;
+                    double predictedHydrophobicity = Peptide is IRetentionPredictable pep ? calc.ScoreSequence(pep.BaseSequence) : 0;
 
                     hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedHydrophobicity) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
                 }
