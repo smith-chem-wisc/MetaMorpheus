@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -13,10 +15,9 @@ namespace MetaMorpheusGUI
     {
         private readonly ObservableCollection<TmtDesignRow> _rows = new();
         private readonly ObservableCollection<RawDataForDataGrid> _spectraFiles;
-
+        public record TmtDesignResult(string FilePath, int Fraction, int TechnicalReplicate, string Plex);
         private Point _dragStart;
         private TmtDesignRow _dragSource;
-
         private readonly System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<PlexAnnotation>> _plexAnnotations
             = new();
 
@@ -31,12 +32,21 @@ namespace MetaMorpheusGUI
                 AddFileIfNotExists(file);
             }
         }
-
+        // PUBLIC accessor for results after dialog closes (read-only snapshot)
+        public IReadOnlyList<TmtDesignResult> GetResults()
+        {
+            // Only meaningful if DialogResult == true
+            return _rows
+                .Select(r => new TmtDesignResult(r.FilePath, r.Fraction, r.TechnicalReplicate, r.Plex ?? string.Empty))
+                .ToList();
+        }
         #region Drag/drop add files
         private void Window_Drop(object sender, DragEventArgs e)
         {
             if (!e.Data.GetDataPresent(DataFormats.FileDrop))
                 return;
+
+            CommitPendingEdits();
 
             var files = (string[])e.Data.GetData(DataFormats.FileDrop);
             if (files == null) return;
@@ -60,8 +70,7 @@ namespace MetaMorpheusGUI
             if (_rows.Any(r => string.Equals(r.FilePath, path, StringComparison.OrdinalIgnoreCase)))
                 return;
 
-            int nextFraction = _rows.Any() ? _rows.Max(r => r.Fraction) : 0;
-            // Start at 1; user can later duplicate or edit.
+            int nextFraction = _rows.Any() ? _rows.Max(r => r.Fraction) : 0; // first becomes 1
             _rows.Add(new TmtDesignRow(path) { Fraction = nextFraction + 1 });
         }
         #endregion
@@ -72,20 +81,19 @@ namespace MetaMorpheusGUI
             if (!_rows.Any())
                 return "No files defined.";
 
-            // Fractions must start at 1 (if any rows exist) and cover 1..MaxFraction with no gaps when considering the DISTINCT set.
+            CommitPendingEdits();
+
             var distinctFractions = _rows.Select(r => r.Fraction).Distinct().OrderBy(i => i).ToList();
-            if (distinctFractions.First() < 1)
-                return "Fraction numbers must be >= 1.";
+            if (distinctFractions.First() != 1)
+                return "Fractions must start at 1.";
             int maxFraction = distinctFractions.Last();
             for (int i = 1; i <= maxFraction; i++)
                 if (!distinctFractions.Contains(i))
                     return $"Missing fraction number {i} in distinct set.";
 
-            // Technical replicates must be >=1
             if (_rows.Any(r => r.TechnicalReplicate < 1))
                 return "Technical Replicate values must be >= 1.";
 
-            // For each fraction: technical replicate set must start at 1 and have no gaps up to max replicate for that fraction
             foreach (var grp in _rows.GroupBy(r => r.Fraction))
             {
                 var techs = grp.Select(r => r.TechnicalReplicate).Distinct().OrderBy(t => t).ToList();
@@ -97,7 +105,6 @@ namespace MetaMorpheusGUI
                         return $"Fraction {grp.Key}: missing technical replicate {t}.";
             }
 
-            // No duplicate (Fraction, TechnicalReplicate) pairs
             var duplicatePair = _rows.GroupBy(r => (r.Fraction, r.TechnicalReplicate))
                                      .FirstOrDefault(g => g.Count() > 1);
             if (duplicatePair != null)
@@ -161,7 +168,6 @@ namespace MetaMorpheusGUI
             _rows.RemoveAt(sourceIndex);
             _rows.Insert(targetIndex, source);
 
-            // DO NOT renumber fractions on reorder (user-managed)
             DgTmt.SelectedItem = source;
             DgTmt.Items.Refresh();
         }
@@ -196,9 +202,12 @@ namespace MetaMorpheusGUI
             if (e.Row.Item is TmtDesignRow row)
             {
                 var colHeader = e.Column.Header?.ToString();
+                var tb = e.EditingElement as TextBox;
+                if (tb == null) return;
+
                 if (colHeader == "Fraction")
                 {
-                    if (!int.TryParse(((TextBox)e.EditingElement).Text, out var val) || val < 1)
+                    if (!int.TryParse(tb.Text, out var val) || val < 1)
                     {
                         MessageBox.Show("Fraction must be integer >= 1");
                         e.Cancel = true;
@@ -208,7 +217,7 @@ namespace MetaMorpheusGUI
                 }
                 else if (colHeader == "Technical Replicate")
                 {
-                    if (!int.TryParse(((TextBox)e.EditingElement).Text, out var val) || val < 1)
+                    if (!int.TryParse(tb.Text, out var val) || val < 1)
                     {
                         MessageBox.Show("Technical Replicate must be integer >= 1");
                         e.Cancel = true;
@@ -223,6 +232,8 @@ namespace MetaMorpheusGUI
         #region Annotate Plex
         private void AnnotatePlexButton_Click(object sender, RoutedEventArgs e)
         {
+            CommitPendingEdits();
+
             var plexNames = _rows
                 .Select(r => (r.Plex ?? string.Empty).Trim())
                 .Where(s => !string.IsNullOrEmpty(s))
@@ -240,9 +251,11 @@ namespace MetaMorpheusGUI
                 .Where(r => !string.IsNullOrWhiteSpace(r.Plex))
                 .GroupBy(r => r.Plex.Trim())
                 .ToDictionary(g => g.Key,
-                    g => g.OrderBy(x => x.Fraction)
-                          .Select(x => new PlexFileEntry(x.FilePath, x.Fraction, x.Plex.Trim(), x.TechnicalReplicate))
-                          .ToList());
+                    g => g
+                        .OrderBy(x => x.Fraction)
+                        .ThenBy(x => x.TechnicalReplicate)
+                        .Select(x => new PlexFileEntry(x.FilePath, x.Fraction, x.Plex.Trim(), x.TechnicalReplicate))
+                        .ToList());
 
             var dialog = new AnnotatePlexWindow(plexNames,
                 _plexAnnotations.ToDictionary(k => k.Key, v => v.Value.ToList()),
@@ -263,6 +276,7 @@ namespace MetaMorpheusGUI
         #region Buttons
         private void ValidateButton_Click(object sender, RoutedEventArgs e)
         {
+            CommitPendingEdits();
             var err = ValidateDesign();
             MessageBox.Show(err ?? "Validation passed.",
                 err == null ? "OK" : "Validation Error");
@@ -270,6 +284,7 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            CommitPendingEdits();
             var err = ValidateDesign();
             if (err != null)
             {
@@ -289,19 +304,65 @@ namespace MetaMorpheusGUI
         #endregion
 
         #region Row model
-        private class TmtDesignRow
+        private class TmtDesignRow : INotifyPropertyChanged
         {
+            private int _fraction;
+            private int _technicalReplicate;
+            private string _plex = "";
+
             public TmtDesignRow(string filePath)
             {
                 FilePath = filePath;
-                Fraction = 1;           // set when added
-                TechnicalReplicate = 1; // default
+                _fraction = 1;           // start at 1 per new requirement
+                _technicalReplicate = 1; // default
             }
 
             public string FilePath { get; }
-            public int Fraction { get; set; }
-            public int TechnicalReplicate { get; set; }
-            public string Plex { get; set; } = "";
+
+            public int Fraction
+            {
+                get => _fraction;
+                set
+                {
+                    if (_fraction == value) return;
+                    _fraction = value;
+                    OnPropertyChanged(nameof(Fraction));
+                }
+            }
+
+            public int TechnicalReplicate
+            {
+                get => _technicalReplicate;
+                set
+                {
+                    if (_technicalReplicate == value) return;
+                    _technicalReplicate = value;
+                    OnPropertyChanged(nameof(TechnicalReplicate));
+                }
+            }
+
+            public string Plex
+            {
+                get => _plex;
+                set
+                {
+                    if (_plex == value) return;
+                    _plex = value;
+                    OnPropertyChanged(nameof(Plex));
+                }
+            }
+
+            public event PropertyChangedEventHandler PropertyChanged;
+            private void OnPropertyChanged(string name) =>
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+        #endregion
+
+        #region Helpers
+        private void CommitPendingEdits()
+        {
+            DgTmt.CommitEdit(DataGridEditingUnit.Cell, true);
+            DgTmt.CommitEdit(DataGridEditingUnit.Row, true);
         }
         #endregion
     }

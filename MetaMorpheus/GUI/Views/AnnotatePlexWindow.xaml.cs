@@ -224,14 +224,15 @@ namespace MetaMorpheusGUI
                 using var writer = new StreamWriter(savePath, false);
                 writer.WriteLine("File\tPlex\tSample Name\tTMT Channel\tCondition\tBiological Replicate\tFraction\tTechnical Replicate");
 
-                for (int f = 0; f < fileEntries.Count; f++)
+                foreach (var fe in fileEntries)
                 {
-                    var fe = fileEntries[f];
-                    int fractionIndex = f;
+                    int fractionValue = fe.Fraction; // USE USER-DEFINED FRACTION
+                    int techRepValue = fe.TechnicalReplicate;
+
                     foreach (var ann in _currentRows)
                     {
                         writer.WriteLine(
-                            $"{fe.FilePath}\t{plex}\t{Escape(ann.SampleName)}\t{ann.Tag}\t{Escape(ann.Condition)}\t{ann.BiologicalReplicate}\t{fractionIndex}\t{fe.TechnicalReplicate}");
+                            $"{fe.FilePath}\t{plex}\t{Escape(ann.SampleName)}\t{ann.Tag}\t{Escape(ann.Condition)}\t{ann.BiologicalReplicate}\t{fractionValue}\t{techRepValue}");
                     }
                 }
             }

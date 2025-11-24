@@ -24,8 +24,12 @@
             <DataGrid.Columns>
                 <!-- Column order: File, Fraction, Technical Replicate, Plex (Plex last) -->
                 <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="*" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Fraction" Binding="{Binding Fraction}" Width="100" IsReadOnly="False"/>
-                <DataGridTextColumn Header="Technical Replicate" Binding="{Binding TechnicalReplicate}" Width="140" IsReadOnly="False"/>
+                <DataGridTextColumn Header="Fraction"
+                                    Binding="{Binding Fraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="100"/>
+                <DataGridTextColumn Header="Technical Replicate"
+                                    Binding="{Binding TechnicalReplicate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="140"/>
                 <DataGridTextColumn Header="Plex" Binding="{Binding Plex}" Width="140" IsReadOnly="False"/>
             </DataGrid.Columns>
             <DataGrid.RowStyle>

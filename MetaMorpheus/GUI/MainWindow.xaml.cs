@@ -593,7 +593,54 @@ namespace MetaMorpheusGUI
                 Owner = this,
                 Title = "TMT Experimental Design"
             };
-            dialog.ShowDialog();
+
+            if (dialog.ShowDialog() == true)
+            {
+                // Integrate files from design window into SpectraFiles list
+                foreach (var design in dialog.GetResults())
+                {
+                    // Add or update the spectra file entry
+                    var existing = SpectraFiles.FirstOrDefault(sf =>
+                        string.Equals(sf.FilePath, design.FilePath, StringComparison.OrdinalIgnoreCase));
+
+                    if (existing == null)
+                    {
+                        // RawDataForDataGrid assumed to have a constructor taking file path (adjust if different)
+                        var newRaw = new RawDataForDataGrid(design.FilePath)
+                        {
+                            Use = true // make available for tasks
+                        };
+                        SpectraFiles.Add(newRaw);
+                    }
+                    else
+                    {
+                        existing.Use = true;
+                    }
+
+                    // Detect file-specific parameter TOML in the same folder
+                    // Try both: replacing extension with .toml and appending .toml
+                    string toml1 = Path.ChangeExtension(design.FilePath, ".toml");
+                    string toml2 = design.FilePath + ".toml";
+                    string tomlToUse = null;
+
+                    if (File.Exists(toml1))
+                        tomlToUse = toml1;
+                    else if (File.Exists(toml2))
+                        tomlToUse = toml2;
+
+                    if (tomlToUse != null)
+                    {
+                        // Update display / internal state using existing logic
+                        UpdateFileSpecificParamsDisplay(tomlToUse);
+                    }
+                }
+
+                // Refresh UI bindings
+                dataGridSpectraFiles.Items.Refresh();
+
+                // If there is existing GUI state logic that needs to run when spectra set changes
+                UpdateGuiOnPreRunChange();
+            }
         }
         /// <summary>
         /// Event fires when the "Add Protein Database" button is clicked.
