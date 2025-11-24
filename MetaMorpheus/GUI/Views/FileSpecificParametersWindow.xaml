@@ -41,30 +41,60 @@
                 <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
                     <CheckBox x:Name="fileSpecificProteaseEnabled" Margin="10,0,0,0" VerticalAlignment="Center" IsChecked="False">
                         <ToolTipService.ToolTip>
-                            <ToolTip Content="Override task protease for the selected spectra files with the protease specified here" />
+                            <ToolTip>
+                                <ToolTip.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter="Override task protease for the selected spectra files with the protease specified here"/>
+                                </ToolTip.Content>
+                            </ToolTip>
                         </ToolTipService.ToolTip>
                     </CheckBox>
-                    <Label x:Name="fileSpecificProteaseLabel" Margin="20,0,0,0"  Content="Protease" IsEnabled="{Binding IsChecked, ElementName=fileSpecificProteaseEnabled}" />
+                    <Label Width="150"  Margin="20,0,0,0" IsEnabled="{Binding IsChecked, ElementName=fileSpecificProteaseEnabled}">
+                        <Label.Content>
+                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                     ConverterParameter="Protease"/>
+                        </Label.Content>
+                    </Label>
                     <ComboBox x:Name="fileSpecificProtease" IsEnabled="{Binding IsChecked, ElementName=fileSpecificProteaseEnabled}"/>
                 </StackPanel>
                 <!-- File-specific Min Peptide Length -->
                 <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
                     <CheckBox x:Name="fileSpecificMinPeptideLengthEnabled" Margin="10,0,0,0" VerticalAlignment="Center" IsChecked="False">
                         <ToolTipService.ToolTip>
-                            <ToolTip Content="Override task min peptide length for the selected spectra files with the min peptide length specified here" />
+                            <ToolTip>
+                                <ToolTip.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="Override task min peptide length for the selected spectra files with the min peptide length specified here"/>
+                                </ToolTip.Content>
+                            </ToolTip>
                         </ToolTipService.ToolTip>
                     </CheckBox>
-                    <Label x:Name="lblMinPeptideLength" Margin="20,0,0,0" Width="100" Content="Min Peptide Len" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMinPeptideLengthEnabled}" />
+                    <Label Width="150"  Margin="20,0,0,0" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMinPeptideLengthEnabled}">
+                        <Label.Content>
+                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                     ConverterParameter="Min Peptide Len"/>
+                        </Label.Content>
+                    </Label>
                     <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMinPeptideLengthEnabled}" />
                 </StackPanel>
                 <!-- File-specific Max Peptide Length -->
                 <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
                     <CheckBox x:Name="fileSpecificMaxPeptideLengthEnabled" Margin="10,0,0,0" VerticalAlignment="Center" IsChecked="False">
                         <ToolTipService.ToolTip>
-                            <ToolTip Content="Override task max peptide length for the selected spectra files with the max peptide length specified here" />
+                            <ToolTip>
+                                <ToolTip.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="Override task max peptide length for the selected spectra files with the max peptide length specified here"/>
+                                </ToolTip.Content>
+                            </ToolTip>
                         </ToolTipService.ToolTip>
                     </CheckBox>
-                    <Label x:Name="lblMaxPeptideLength" Margin="20,0,0,0" Width="100"  Content="Max Peptide Len" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxPeptideLengthEnabled}" />
+                    <Label Width="150"  Margin="20,0,0,0" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxPeptideLengthEnabled}">
+                        <Label.Content>
+                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                     ConverterParameter="Max Peptide Len"/>
+                        </Label.Content>
+                    </Label>
                     <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxPeptideLengthEnabled}" />
                 </StackPanel>
                 <!-- File-specific Max Missed Cleavages -->
@@ -74,17 +104,27 @@
                             <ToolTip Content="Override task max missed cleavages for the selected spectra files with the max missed cleavages specified here" />
                         </ToolTipService.ToolTip>
                     </CheckBox>
-                    <Label x:Name="maxMissedCleavagesLabel" Margin="20,0,0,0" Width="130" Content="Max Missed Cleavages" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMissedCleavagesEnabled}"  />
+                    <Label x:Name="maxMissedCleavagesLabel" Margin="20,0,0,0" Width="150" Content="Max Missed Cleavages" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMissedCleavagesEnabled}"  />
                     <local:IntegerTexBoxControl x:Name="missedCleavagesTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMissedCleavagesEnabled}" />
                 </StackPanel>
                 <!-- File-specific Max Mods per Peptide -->
                 <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
                     <CheckBox x:Name="fileSpecificMaxModNumEnabled" Margin="10,0,0,0" VerticalAlignment="Center" IsChecked="False">
                         <ToolTipService.ToolTip>
-                            <ToolTip Content="Override task max mods per peptide for the selected spectra files with the max mods per peptide specified here" />
+                            <ToolTip>
+                                <ToolTip.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="Override task max mods per peptide for the selected spectra files with the max mods per peptide specified here"/>
+                                </ToolTip.Content>
+                            </ToolTip>
                         </ToolTipService.ToolTip>
                     </CheckBox>
-                    <Label x:Name="lbMaxModNum" Margin="20,0,0,0" Width="130" Content="Max mods per peptide" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}" />
+                    <Label Width="150"  Margin="20,0,0,0" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}">
+                        <Label.Content>
+                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                     ConverterParameter="Max mods per peptide"/>
+                        </Label.Content>
+                    </Label>
                     <local:IntegerTexBoxControl x:Name="MaxModNumTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}" />
                 </StackPanel>
                 <!-- File-specific Dissociation Type -->
@@ -94,7 +134,7 @@
                             <ToolTip Content="Override task default dissociation type for the dissociation type specified here" />
                         </ToolTipService.ToolTip>
                     </CheckBox>
-                    <Label x:Name="fileSpecificDissociationTypeLabel" Margin="20,0,0,0"  Content="Dissociation Type" IsEnabled="{Binding IsChecked, ElementName=fileSpecificDissociationTypesEnabled}" />
+                    <Label x:Name="fileSpecificDissociationTypeLabel" Margin="20,0,0,0" Width="150" Content="Dissociation Type" IsEnabled="{Binding IsChecked, ElementName=fileSpecificDissociationTypesEnabled}" />
                     <ComboBox x:Name="fileSpecificDissociationType" IsEnabled="{Binding IsChecked, ElementName=fileSpecificDissociationTypesEnabled}"/>
                 </StackPanel>
                 <!-- File-specific Separation Type -->
@@ -104,7 +144,7 @@
                             <ToolTip Content="Override task default separation type for the separation type specified here - HPLC or CZE " />
                         </ToolTipService.ToolTip>
                     </CheckBox>
-                    <Label x:Name="fileSpecificSeparationTypeLabel" Margin="20,0,0,0"  Content="Separation Type" IsEnabled="{Binding IsChecked, ElementName=fileSpecificSeparationTypesEnabled}" />
+                    <Label x:Name="fileSpecificSeparationTypeLabel" Margin="20,0,0,0" Width="150" Content="Separation Type" IsEnabled="{Binding IsChecked, ElementName=fileSpecificSeparationTypesEnabled}" />
                     <ComboBox x:Name="fileSpecificSeparationType" IsEnabled="{Binding IsChecked, ElementName=fileSpecificSeparationTypesEnabled}"/>
                 </StackPanel>
             </StackPanel>
