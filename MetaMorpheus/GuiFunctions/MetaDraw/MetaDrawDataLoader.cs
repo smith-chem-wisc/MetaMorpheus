@@ -76,6 +76,7 @@ public class MetaDrawDataLoader
         allErrors.AddRange(results.SelectMany(e => e));
         if (token.IsCancellationRequested) return allErrors;
 
+        // Set output directory
         string outputDirectory = null!;
         if (_logic.SpectralMatchResultFilePaths.Count > 0)
         {
@@ -87,6 +88,9 @@ public class MetaDrawDataLoader
         }
         else
             outputDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+        // Set to RNA mode if relevant - Used in database loading 
+        GuiGlobalParamsViewModel.Instance.IsRnaMode = _logic.SpectralMatchResultFilePaths.Any(p => p.EndsWith(".osmtsv"));
 
         await proseAndTomlTask;
         // Tabs: run in background, post minimal changes to UI
