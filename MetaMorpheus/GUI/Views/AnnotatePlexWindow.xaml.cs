@@ -215,8 +215,9 @@ namespace MetaMorpheusGUI
             SavedPlexName = plex;
             SavedAnnotations = _currentRows.Select(a => a).ToList();
 
+            // ENSURE: fixed filename "TmtDesign.txt" is used for saving (overwrites if exists)
             var defaultDir = Path.GetDirectoryName(fileEntries.First().FilePath) ?? Environment.CurrentDirectory;
-            var defaultName = $"TmtDesign_{plex}.txt";
+            var defaultName = "TmtDesign.txt";
             var savePath = Path.Combine(defaultDir, defaultName);
 
             try

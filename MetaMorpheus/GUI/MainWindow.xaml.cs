@@ -209,6 +209,16 @@ namespace MetaMorpheusGUI
                 }
 
                 UpdateOutputFolderTextbox();
+
+                // After SpectraFiles updated, seed TMT design state from any design files next to the raw files
+                try
+                {
+                    var rawPaths = SpectraFiles.Select(sf => sf.FilePath).Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
+                    MetaMorpheusGUI.TmtExperimentalDesignWindow.SeedFromDesignFiles(rawPaths);
+                }
+                catch { /* ignore */ }
+
+                dataGridSpectraFiles.Items.Refresh();
             }
         }
 
@@ -527,6 +537,16 @@ namespace MetaMorpheusGUI
             {
                 AddPreRunFiles(openPicker.FileNames);
             }
+
+            // After SpectraFiles updated, seed TMT design state from any design files next to the raw files
+            try
+            {
+                var rawPaths = SpectraFiles.Select(sf => sf.FilePath).Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
+                MetaMorpheusGUI.TmtExperimentalDesignWindow.SeedFromDesignFiles(rawPaths);
+            }
+            catch { /* ignore */ }
+
+            dataGridSpectraFiles.Items.Refresh();
         }
 
         /// <summary>
@@ -1703,6 +1723,16 @@ namespace MetaMorpheusGUI
                     AddPreRunFile(path);
                 }
             }
+
+            // NEW: After all files are added, seed TMT design from TmtDesign.txt (if present next to raw files)
+            try
+            {
+                var rawPaths = SpectraFiles.Select(sf => sf.FilePath)
+                                           .Where(p => !string.IsNullOrWhiteSpace(p))
+                                           .ToList();
+                MetaMorpheusGUI.TmtExperimentalDesignWindow.SeedFromDesignFiles(rawPaths);
+            }
+            catch { /* ignore */ }
 
             UpdateGuiOnPreRunChange();
         }

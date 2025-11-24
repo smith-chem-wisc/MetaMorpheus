@@ -18,8 +18,15 @@ namespace MetaMorpheusGUI
         public record TmtDesignResult(string FilePath, int Fraction, int TechnicalReplicate, string Plex);
         private Point _dragStart;
         private TmtDesignRow _dragSource;
-        private readonly System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<PlexAnnotation>> _plexAnnotations
-            = new();
+        private readonly Dictionary<string, List<PlexAnnotation>> _plexAnnotations = new(StringComparer.OrdinalIgnoreCase);
+
+        // Persist design across dialog opens during app lifetime
+        private static readonly Dictionary<string, string> s_fileToPlex = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, List<PlexAnnotation>> s_plexAnnotations = new(StringComparer.OrdinalIgnoreCase);
+
+        // NEW: Per-file full state (fraction, tech rep, plex)
+        private record FileDesignState(int Fraction, int TechnicalReplicate, string Plex);
+        private static readonly Dictionary<string, FileDesignState> s_fileState = new(StringComparer.OrdinalIgnoreCase);
 
         public TmtExperimentalDesignWindow(ObservableCollection<RawDataForDataGrid> spectraFiles)
         {
@@ -27,19 +34,36 @@ namespace MetaMorpheusGUI
             _spectraFiles = spectraFiles;
             DgTmt.ItemsSource = _rows;
 
+            // seed rows with existing SpectraFiles.Use == true
             foreach (var file in _spectraFiles.Where(p => p.Use).Select(p => p.FilePath))
             {
-                AddFileIfNotExists(file);
+                var row = new TmtDesignRow(file);
+                // prefer full saved state if available
+                if (s_fileState.TryGetValue(file, out var st))
+                {
+                    row.Fraction = st.Fraction;
+                    row.TechnicalReplicate = st.TechnicalReplicate;
+                    row.Plex = st.Plex ?? "";
+                }
+                else if (s_fileToPlex.TryGetValue(file, out var savedPlex)) // legacy support if only Plex was saved
+                {
+                    row.Plex = savedPlex;
+                }
+                _rows.Add(row);
             }
+
+            // seed annotations cache for this window instance
+            foreach (var kv in s_plexAnnotations)
+                _plexAnnotations[kv.Key] = new List<PlexAnnotation>(kv.Value);
         }
-        // PUBLIC accessor for results after dialog closes (read-only snapshot)
+
         public IReadOnlyList<TmtDesignResult> GetResults()
         {
-            // Only meaningful if DialogResult == true
             return _rows
                 .Select(r => new TmtDesignResult(r.FilePath, r.Fraction, r.TechnicalReplicate, r.Plex ?? string.Empty))
                 .ToList();
         }
+
         #region Drag/drop add files
         private void Window_Drop(object sender, DragEventArgs e)
         {
@@ -70,8 +94,21 @@ namespace MetaMorpheusGUI
             if (_rows.Any(r => string.Equals(r.FilePath, path, StringComparison.OrdinalIgnoreCase)))
                 return;
 
-            int nextFraction = _rows.Any() ? _rows.Max(r => r.Fraction) : 0; // first becomes 1
-            _rows.Add(new TmtDesignRow(path) { Fraction = nextFraction + 1 });
+            var row = new TmtDesignRow(path);
+            if (s_fileState.TryGetValue(path, out var st))
+            {
+                row.Fraction = st.Fraction;
+                row.TechnicalReplicate = st.TechnicalReplicate;
+                row.Plex = st.Plex ?? "";
+            }
+            else
+            {
+                // initialize new: fraction increments from current max; techRep = 1; plex empty
+                int nextFraction = _rows.Any() ? _rows.Max(r => r.Fraction) : 0; // first becomes 1
+                row.Fraction = nextFraction + 1;
+                row.TechnicalReplicate = 1;
+            }
+            _rows.Add(row);
         }
         #endregion
 
@@ -254,7 +291,11 @@ namespace MetaMorpheusGUI
                     g => g
                         .OrderBy(x => x.Fraction)
                         .ThenBy(x => x.TechnicalReplicate)
-                        .Select(x => new PlexFileEntry(x.FilePath, x.Fraction, x.Plex.Trim(), x.TechnicalReplicate))
+                        .Select(x =>
+                        {
+                            _plexAnnotations.TryGetValue(x.Plex.Trim(), out var anns);
+                            return new PlexFileEntry(x.FilePath, x.Fraction, x.Plex.Trim(), x.TechnicalReplicate, anns);
+                        })
                         .ToList());
 
             var dialog = new AnnotatePlexWindow(plexNames,
@@ -269,6 +310,7 @@ namespace MetaMorpheusGUI
                 dialog.SavedAnnotations != null)
             {
                 _plexAnnotations[dialog.SavedPlexName] = dialog.SavedAnnotations;
+                s_plexAnnotations[dialog.SavedPlexName] = new List<PlexAnnotation>(dialog.SavedAnnotations);
             }
         }
         #endregion
@@ -292,6 +334,14 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            // persist per-file full state and plex choices for next open
+            foreach (var r in _rows)
+            {
+                s_fileState[r.FilePath] = new FileDesignState(r.Fraction, r.TechnicalReplicate, r.Plex?.Trim() ?? "");
+                if (!string.IsNullOrWhiteSpace(r.Plex))
+                    s_fileToPlex[r.FilePath] = r.Plex.Trim();
+            }
+
             DialogResult = true;
             Close();
         }
@@ -313,8 +363,8 @@ namespace MetaMorpheusGUI
             public TmtDesignRow(string filePath)
             {
                 FilePath = filePath;
-                _fraction = 1;           // start at 1 per new requirement
-                _technicalReplicate = 1; // default
+                _fraction = 1;
+                _technicalReplicate = 1;
             }
 
             public string FilePath { get; }
@@ -363,6 +413,122 @@ namespace MetaMorpheusGUI
         {
             DgTmt.CommitEdit(DataGridEditingUnit.Cell, true);
             DgTmt.CommitEdit(DataGridEditingUnit.Row, true);
+        }
+
+        // Load TMT design .txt files in same folders as the provided raw files and seed caches
+        public static void SeedFromDesignFiles(IEnumerable<string> rawFilePaths)
+        {
+            if (rawFilePaths == null) return;
+
+            var rawSet = new HashSet<string>(
+                rawFilePaths.Where(p => !string.IsNullOrWhiteSpace(p))
+                            .Select(p => Path.GetFullPath(p)),
+                StringComparer.OrdinalIgnoreCase);
+
+            var dirs = rawSet.Select(Path.GetDirectoryName)
+                             .Where(d => !string.IsNullOrEmpty(d))
+                             .Distinct(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var dir in dirs)
+            {
+                var designPath = Path.Combine(dir, "TmtDesign.txt");
+                if (!File.Exists(designPath))
+                    continue;
+
+                TryParseDesignFile(designPath, rawSet);
+            }
+        }
+
+        private static void TryParseDesignFile(string path, HashSet<string> interestedFiles)
+        {
+            try
+            {
+                using var sr = new StreamReader(path);
+                var header = sr.ReadLine();
+                if (header == null)
+                    return;
+
+                var headers = header.Split('\t');
+                int idxFile = Array.FindIndex(headers, h => string.Equals(h.Trim(), "File", StringComparison.OrdinalIgnoreCase));
+                int idxPlex = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Plex", StringComparison.OrdinalIgnoreCase));
+                int idxSample = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Sample Name", StringComparison.OrdinalIgnoreCase));
+                int idxChannel = Array.FindIndex(headers, h => string.Equals(h.Trim(), "TMT Channel", StringComparison.OrdinalIgnoreCase));
+                int idxCond = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Condition", StringComparison.OrdinalIgnoreCase));
+                int idxBio = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Biological Replicate", StringComparison.OrdinalIgnoreCase));
+                int idxFrac = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Fraction", StringComparison.OrdinalIgnoreCase));
+                int idxTech = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Technical Replicate", StringComparison.OrdinalIgnoreCase));
+
+                if (new[] { idxFile, idxPlex, idxSample, idxChannel, idxCond, idxBio, idxFrac, idxTech }.Any(i => i < 0))
+                    return; // not a valid design file
+
+                var fileState = new Dictionary<string, (int frac, int tech, string plex)>(StringComparer.OrdinalIgnoreCase);
+                var plexToAnnotations = new Dictionary<string, Dictionary<string, PlexAnnotation>>(StringComparer.OrdinalIgnoreCase);
+                var plexOrder = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+                string? line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    var cols = line.Split('\t');
+                    if (cols.Length < headers.Length) continue;
+
+                    var file = cols[idxFile].Trim();
+                    if (string.IsNullOrEmpty(file)) continue;
+
+                    var full = Path.GetFullPath(file);
+                    if (!interestedFiles.Contains(full)) continue;
+
+                    var plex = cols[idxPlex].Trim();
+                    var sample = cols[idxSample].Trim();
+                    var chan = cols[idxChannel].Trim();
+                    var cond = cols[idxCond].Trim();
+                    int.TryParse(cols[idxBio].Trim(), out var bio);
+                    int.TryParse(cols[idxFrac].Trim(), out var frac);
+                    int.TryParse(cols[idxTech].Trim(), out var tech);
+
+                    fileState[full] = (frac, tech, plex);
+
+                    if (!plexToAnnotations.TryGetValue(plex, out var byChannel))
+                    {
+                        byChannel = new Dictionary<string, PlexAnnotation>(StringComparer.OrdinalIgnoreCase);
+                        plexToAnnotations[plex] = byChannel;
+                        plexOrder[plex] = new List<string>();
+                    }
+
+                    if (!byChannel.ContainsKey(chan))
+                    {
+                        byChannel[chan] = new PlexAnnotation
+                        {
+                            Tag = chan,
+                            SampleName = sample,
+                            Condition = cond,
+                            BiologicalReplicate = bio
+                        };
+                        plexOrder[plex].Add(chan);
+                    }
+                }
+
+                // Persist parsed state to caches used by the TMT window
+                foreach (var kv in fileState)
+                {
+                    var (frac, tech, plex) = kv.Value;
+                    s_fileState[kv.Key] = new FileDesignState(frac, tech, plex ?? "");
+                    if (!string.IsNullOrWhiteSpace(plex))
+                        s_fileToPlex[kv.Key] = plex;
+                }
+
+                foreach (var kv in plexToAnnotations)
+                {
+                    var plex = kv.Key;
+                    var order = plexOrder.TryGetValue(plex, out var o) ? o : kv.Value.Keys.ToList();
+                    var list = order.Where(ch => kv.Value.ContainsKey(ch)).Select(ch => kv.Value[ch]).ToList();
+                    s_plexAnnotations[plex] = list;
+                }
+            }
+            catch
+            {
+                // ignore malformed files
+            }
         }
         #endregion
     }
