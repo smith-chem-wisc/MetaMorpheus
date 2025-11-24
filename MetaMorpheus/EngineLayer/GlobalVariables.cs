@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using TopDownProteomics;
@@ -89,8 +90,11 @@ namespace EngineLayer
             LoadAvailableProteomes();
         }
 
-        public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
+        public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml, bool isRna = false)
         {
+            var allMods = isRna ? _AllRnaModsKnown : _AllModsKnown;
+            var modTypes = isRna ? _AllRnaModTypesKnown : _AllModTypesKnown;
+
             foreach (var mod in modifications)
             {
                 if (string.IsNullOrEmpty(mod.ModificationType) || string.IsNullOrEmpty(mod.IdWithMotif))
@@ -98,13 +102,13 @@ namespace EngineLayer
                     ErrorsReadingMods.Add(mod.ToString() + Environment.NewLine + " has null or empty modification type");
                     continue;
                 }
-                if (AllModsKnown.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType) && !b.Equals(mod)))
+                if (allMods.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType) && !b.Equals(mod)))
                 {
                     if (modsAreFromTheTopOfProteinXml)
                     {
-                        _AllModsKnown.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && p.ModificationType.Equals(mod.ModificationType) && !p.Equals(mod));
-                        _AllModsKnown.Add(mod);
-                        _AllModTypesKnown.Add(mod.ModificationType);
+                        allMods.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && p.ModificationType.Equals(mod.ModificationType) && !p.Equals(mod));
+                        allMods.Add(mod);
+                        modTypes.Add(mod.ModificationType);
                     }
                     else
                     {
@@ -113,23 +117,23 @@ namespace EngineLayer
                     }
                     continue;
                 }
-                else if (AllModsKnown.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType)))
+                if (allMods.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType)))
                 {
                     // same ID, same mod type, and same mod properties; continue and don't output an error message
                     // this could result from reading in an XML database with mods annotated at the top
                     // that are already loaded in MetaMorpheus
                     continue;
                 }
-                else if (AllModsKnown.Any(m => m.IdWithMotif == mod.IdWithMotif))
+                if (allMods.Any(m => m.IdWithMotif == mod.IdWithMotif))
                 {
                     // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
                     // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
                     // so we don't know which mod to use, causing unnecessary ambiguity
                     if (modsAreFromTheTopOfProteinXml)
                     {
-                        _AllModsKnown.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && !p.Equals(mod));
-                        _AllModsKnown.Add(mod);
-                        _AllModTypesKnown.Add(mod.ModificationType);
+                        allMods.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && !p.Equals(mod));
+                        allMods.Add(mod);
+                        modTypes.Add(mod.ModificationType);
                     }
                     else if (!mod.ModificationType.Equals("Unimod"))
                     {
@@ -137,12 +141,10 @@ namespace EngineLayer
                     }
                     continue;
                 }
-                else
-                {
-                    // no errors! add the mod
-                    _AllModsKnown.Add(mod);
-                    _AllModTypesKnown.Add(mod.ModificationType);
-                }
+
+                // no errors! add the mod
+                allMods.Add(mod);
+                modTypes.Add(mod.ModificationType);
             }
         }
 
@@ -408,6 +410,8 @@ namespace EngineLayer
                     // Glycan modifications are handled separately in LoadGlycans()
                     continue;
                 }
+                if (modFile.Contains("Rna"))
+                    continue;
                 AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
@@ -441,10 +445,14 @@ namespace EngineLayer
             using (var reader = new StreamReader(stream))
             {
                 string fileContent = reader.ReadToEnd();
-                foreach (var mod in PtmListLoader.ReadModsFromString(fileContent, out var errors))
-                {
-                    _AllRnaModsKnown.Add(mod);
-                }
+                var mods = PtmListLoader.ReadModsFromString(fileContent, out var errors);
+                AddMods(mods, false, true);
+            }
+
+            var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
+            if (File.Exists(customModsPath))
+            {
+                AddMods(PtmListLoader.ReadModsFromFile(customModsPath, out var errorMods), false, true);
             }
 
             // populate mod types and dictionary
