@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using EngineLayer;
 
 namespace MetaMorpheusGUI
 {
@@ -431,103 +432,37 @@ namespace MetaMorpheusGUI
 
             foreach (var dir in dirs)
             {
-                var designPath = Path.Combine(dir, "TmtDesign.txt");
+                var designPath = Path.Combine(dir!, "TmtDesign.txt");
                 if (!File.Exists(designPath))
                     continue;
 
-                TryParseDesignFile(designPath, rawSet);
-            }
-        }
+                // Only pass files from this directory (to avoid cross-dir noise)
+                var filesInDir = rawSet.Where(f => string.Equals(Path.GetDirectoryName(f), dir, StringComparison.OrdinalIgnoreCase))
+                                       .ToList();
 
-        private static void TryParseDesignFile(string path, HashSet<string> interestedFiles)
-        {
-            try
-            {
-                using var sr = new StreamReader(path);
-                var header = sr.ReadLine();
-                if (header == null)
-                    return;
+                var (files, plexAnnotations) = TmtExperimentalDesign.Read(designPath, filesInDir, out var _);
 
-                var headers = header.Split('\t');
-                int idxFile = Array.FindIndex(headers, h => string.Equals(h.Trim(), "File", StringComparison.OrdinalIgnoreCase));
-                int idxPlex = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Plex", StringComparison.OrdinalIgnoreCase));
-                int idxSample = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Sample Name", StringComparison.OrdinalIgnoreCase));
-                int idxChannel = Array.FindIndex(headers, h => string.Equals(h.Trim(), "TMT Channel", StringComparison.OrdinalIgnoreCase));
-                int idxCond = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Condition", StringComparison.OrdinalIgnoreCase));
-                int idxBio = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Biological Replicate", StringComparison.OrdinalIgnoreCase));
-                int idxFrac = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Fraction", StringComparison.OrdinalIgnoreCase));
-                int idxTech = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Technical Replicate", StringComparison.OrdinalIgnoreCase));
-
-                if (new[] { idxFile, idxPlex, idxSample, idxChannel, idxCond, idxBio, idxFrac, idxTech }.Any(i => i < 0))
-                    return; // not a valid design file
-
-                var fileState = new Dictionary<string, (int frac, int tech, string plex)>(StringComparer.OrdinalIgnoreCase);
-                var plexToAnnotations = new Dictionary<string, Dictionary<string, PlexAnnotation>>(StringComparer.OrdinalIgnoreCase);
-                var plexOrder = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-
-                string? line;
-                while ((line = sr.ReadLine()) != null)
+                // Persist file state (Fraction, TechRep, Plex)
+                foreach (var fi in files)
                 {
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-                    var cols = line.Split('\t');
-                    if (cols.Length < headers.Length) continue;
+                    s_fileState[fi.FullFilePathWithExtension] = new FileDesignState(fi.Fraction, fi.TechnicalReplicate, fi.Plex ?? "");
+                    if (!string.IsNullOrWhiteSpace(fi.Plex))
+                        s_fileToPlex[fi.FullFilePathWithExtension] = fi.Plex.Trim();
+                }
 
-                    var file = cols[idxFile].Trim();
-                    if (string.IsNullOrEmpty(file)) continue;
-
-                    var full = Path.GetFullPath(file);
-                    if (!interestedFiles.Contains(full)) continue;
-
-                    var plex = cols[idxPlex].Trim();
-                    var sample = cols[idxSample].Trim();
-                    var chan = cols[idxChannel].Trim();
-                    var cond = cols[idxCond].Trim();
-                    int.TryParse(cols[idxBio].Trim(), out var bio);
-                    int.TryParse(cols[idxFrac].Trim(), out var frac);
-                    int.TryParse(cols[idxTech].Trim(), out var tech);
-
-                    fileState[full] = (frac, tech, plex);
-
-                    if (!plexToAnnotations.TryGetValue(plex, out var byChannel))
+                // Persist annotations by converting EngineLayer.TmtPlexAnnotation -> GUI PlexAnnotation
+                foreach (var kv in plexAnnotations)
+                {
+                    var list = kv.Value.Select(a => new PlexAnnotation
                     {
-                        byChannel = new Dictionary<string, PlexAnnotation>(StringComparer.OrdinalIgnoreCase);
-                        plexToAnnotations[plex] = byChannel;
-                        plexOrder[plex] = new List<string>();
-                    }
+                        Tag = a.Tag,
+                        SampleName = a.SampleName,
+                        Condition = a.Condition,
+                        BiologicalReplicate = a.BiologicalReplicate
+                    }).ToList();
 
-                    if (!byChannel.ContainsKey(chan))
-                    {
-                        byChannel[chan] = new PlexAnnotation
-                        {
-                            Tag = chan,
-                            SampleName = sample,
-                            Condition = cond,
-                            BiologicalReplicate = bio
-                        };
-                        plexOrder[plex].Add(chan);
-                    }
+                    s_plexAnnotations[kv.Key] = list;
                 }
-
-                // Persist parsed state to caches used by the TMT window
-                foreach (var kv in fileState)
-                {
-                    var (frac, tech, plex) = kv.Value;
-                    s_fileState[kv.Key] = new FileDesignState(frac, tech, plex ?? "");
-                    if (!string.IsNullOrWhiteSpace(plex))
-                        s_fileToPlex[kv.Key] = plex;
-                }
-
-                foreach (var kv in plexToAnnotations)
-                {
-                    var plex = kv.Key;
-                    var order = plexOrder.TryGetValue(plex, out var o) ? o : kv.Value.Keys.ToList();
-                    var list = order.Where(ch => kv.Value.ContainsKey(ch)).Select(ch => kv.Value[ch]).ToList();
-                    s_plexAnnotations[plex] = list;
-                }
-            }
-            catch
-            {
-                // ignore malformed files
             }
         }
         #endregion
