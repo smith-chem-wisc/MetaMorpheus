@@ -63,6 +63,7 @@ namespace EngineLayer
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get; private set; }
         public static string ExperimentalDesignFileName { get; private set; }
+        public static string TmtExperimentalDesignFileName { get; private set; } // NEW
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
         public static List<string> OGlycanDatabasePaths { get; private set; }
@@ -75,6 +76,7 @@ namespace EngineLayer
             AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
+            TmtExperimentalDesignFileName = "TmtDesign.txt"; // NEW default filename
             SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };
 
             SetMetaMorpheusVersion();

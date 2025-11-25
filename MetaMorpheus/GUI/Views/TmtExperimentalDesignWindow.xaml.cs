@@ -432,7 +432,7 @@ namespace MetaMorpheusGUI
 
             foreach (var dir in dirs)
             {
-                var designPath = Path.Combine(dir!, "TmtDesign.txt");
+                var designPath = Path.Combine(dir, GlobalVariables.TmtExperimentalDesignFileName);
                 if (!File.Exists(designPath))
                     continue;
 

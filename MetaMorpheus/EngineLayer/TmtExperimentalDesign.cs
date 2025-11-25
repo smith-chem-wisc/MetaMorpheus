@@ -5,8 +5,6 @@ using System.Linq;
 
 namespace EngineLayer
 {
-    // Mirrors ExperimentalDesign.cs style for TMT designs.
-    // Reads a fixed "TmtDesign.txt" file and returns per-file info plus per-plex channel annotations.
     public static class TmtExperimentalDesign
     {
         public const string Header = "File\tPlex\tSample Name\tTMT Channel\tCondition\tBiological Replicate\tFraction\tTechnical Replicate";
@@ -41,7 +39,6 @@ namespace EngineLayer
                 return (files, ConvertAnnotations(plexToAnnotations));
             }
 
-            // Parse header indices
             var headers = lines[0].Split('\t');
             int idxFile = Array.FindIndex(headers, h => string.Equals(h.Trim(), "File", StringComparison.OrdinalIgnoreCase));
             int idxPlex = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Plex", StringComparison.OrdinalIgnoreCase));
@@ -140,7 +137,7 @@ namespace EngineLayer
             // Report conflicts (if any)
             foreach (var kvp in fileStateConflicts)
             {
-                errors.Add($"File '{kvp.Key}' has inconsistent Plex/Fraction/TechRep assignments in TmtDesign.txt: {string.Join(", ", kvp.Value)}");
+                errors.Add($"File '{kvp.Key}' has inconsistent Plex/Fraction/TechRep assignments: {string.Join(", ", kvp.Value)}");
             }
 
             // Build return list for files
@@ -150,6 +147,43 @@ namespace EngineLayer
             }
 
             return (files, ConvertAnnotations(plexToAnnotations));
+        }
+
+        public static string Write(List<TmtFileInfo> files, Dictionary<string, List<TmtPlexAnnotation>> plexAnnotations)
+        {
+            if (files == null || files.Count == 0)
+                throw new InvalidOperationException("No TMT files to write.");
+
+            var dir = Directory.GetParent(files.First().FullFilePathWithExtension)!.FullName;
+            var path = Path.Combine(dir, GlobalVariables.TmtExperimentalDesignFileName);
+
+            using var sw = new StreamWriter(path);
+            sw.WriteLine(Header);
+
+            // Index plex annotations by plex for efficient access
+            var plexMap = plexAnnotations ?? new Dictionary<string, List<TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var file in files.OrderBy(f => f.Fraction).ThenBy(f => f.TechnicalReplicate))
+            {
+                var plex = file.Plex ?? "";
+                var anns = plexMap.TryGetValue(plex, out var list) ? list : new List<TmtPlexAnnotation>();
+
+                // If there are annotations for this plex, write a line per channel annotation
+                if (anns.Count > 0)
+                {
+                    foreach (var a in anns)
+                    {
+                        sw.WriteLine($"{file.FullFilePathWithExtension}\t{plex}\t{a.SampleName}\t{a.Tag}\t{a.Condition}\t{a.BiologicalReplicate}\t{file.Fraction}\t{file.TechnicalReplicate}");
+                    }
+                }
+                else
+                {
+                    // Still write a line so fraction/tech replicate are preserved
+                    sw.WriteLine($"{file.FullFilePathWithExtension}\t{plex}\t\t\t\t\t{file.Fraction}\t{file.TechnicalReplicate}");
+                }
+            }
+
+            return path;
         }
 
         private static Dictionary<string, List<TmtPlexAnnotation>> ConvertAnnotations(Dictionary<string, Dictionary<string, TmtPlexAnnotation>> src)

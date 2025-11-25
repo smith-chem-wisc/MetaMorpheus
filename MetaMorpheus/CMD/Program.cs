@@ -249,27 +249,43 @@ namespace MetaMorpheusCommandLine
             List<string> startingRawFilenameList = settings.Spectra.Select(b => Path.GetFullPath(b)).ToList();
             List<DbForTask> startingXmlDbFilenameList = settings.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
 
-            // check that experimental design is defined if normalization is enabled
+            // check that experimental or TMT experimental design is defined if normalization is enabled
             var searchTasks = taskList
                 .Where(p => p.Item2.TaskType == MyTask.Search)
                 .Select(p => (SearchTask)p.Item2);
 
-            string pathToExperDesign = Directory.GetParent(startingRawFilenameList.First()).FullName;
-            pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
+            string designDirectory = Directory.GetParent(startingRawFilenameList.First()).FullName;
+            string pathToExperDesign = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName); // existing experimental design
+            string pathToTmtDesign = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName); // fixed TMT experimental design filename
 
-            if (!File.Exists(pathToExperDesign))
+            bool hasClassicDesign = File.Exists(pathToExperDesign);
+            bool hasTmtDesign = File.Exists(pathToTmtDesign);
+
+            // Mutual exclusivity check
+            if (hasClassicDesign && hasTmtDesign)
             {
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    Console.WriteLine("Both ExperimentalDesign and TmtDesign.txt were found. Only one design file type may be present.");
+                }
+                return 5;
+            }
+
+            if (!hasClassicDesign && !hasTmtDesign)
+            {
+                // no design at all
                 if (searchTasks.Any(p => p.SearchParameters.Normalize))
                 {
                     if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                     {
-                        Console.WriteLine("Experimental design file was missing! This must be defined to do normalization. Download a template from https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Experimental-Design");
+                        Console.WriteLine("No experimental design file present. Normalization requires a design (ExperimentalDesign.tsv or TmtDesign.txt).");
                     }
                     return 5;
                 }
             }
-            else
+            else if (hasClassicDesign)
             {
+                // Original experimental design handling
                 ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, startingRawFilenameList, out var errors);
 
                 if (errors.Any())
@@ -287,15 +303,13 @@ namespace MetaMorpheusCommandLine
                     }
                     else
                     {
+                        // offer deletion (mirror existing logic)
                         if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                         {
-                            Console.WriteLine("An experimental design file was found, but an error " +
-                            "occurred reading it. Do you wish to continue with an empty experimental design? (This will delete your experimental design file) y/n" +
-                            "\nThe error was: " + errors.First());
-
+                            Console.WriteLine("An experimental design file was found, but an error occurred reading it. Delete and continue empty? y/n");
+                            Console.WriteLine("First error: " + errors.First());
                             var result = Console.ReadLine();
-
-                            if (result.ToLowerInvariant() == "y" || result.ToLowerInvariant() == "yes")
+                            if (result?.ToLowerInvariant() == "y" || result?.ToLowerInvariant() == "yes")
                             {
                                 File.Delete(pathToExperDesign);
                             }
@@ -306,7 +320,6 @@ namespace MetaMorpheusCommandLine
                         }
                         else
                         {
-                            // just continue on if verbosity is on "none"
                             File.Delete(pathToExperDesign);
                         }
                     }
@@ -317,6 +330,55 @@ namespace MetaMorpheusCommandLine
                     {
                         Console.WriteLine("Read ExperimentalDesign.tsv successfully");
                     }
+                }
+            }
+            else if (hasTmtDesign)
+            {
+                // TMT experimental design handling
+                var (tmtFiles, tmtPlexAnnotations) = TmtExperimentalDesign.Read(pathToTmtDesign, startingRawFilenameList, out var tmtErrors);
+
+                if (tmtErrors.Any())
+                {
+                    if (searchTasks.Any(p => p.SearchParameters.Normalize))
+                    {
+                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                        {
+                            foreach (var error in tmtErrors)
+                            {
+                                Console.WriteLine(error);
+                            }
+                        }
+                        return 5;
+                    }
+                    else
+                    {
+                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                        {
+                            Console.WriteLine("A TMT design file was found, but an error occurred reading it. Delete and continue empty? y/n");
+                            Console.WriteLine("First error: " + tmtErrors.First());
+                            var result = Console.ReadLine();
+                            if (result?.ToLowerInvariant() == "y" || result?.ToLowerInvariant() == "yes")
+                            {
+                                File.Delete(pathToTmtDesign);
+                            }
+                            else
+                            {
+                                return 5;
+                            }
+                        }
+                        else
+                        {
+                            File.Delete(pathToTmtDesign);
+                        }
+                    }
+                }
+                else
+                {
+                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                    {
+                        Console.WriteLine("Read TmtDesign.txt successfully");
+                    }
+                    // (Optional future step: propagate TMT fraction/techrep metadata to tasks if needed)
                 }
             }
 
