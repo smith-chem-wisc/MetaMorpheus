@@ -9,12 +9,32 @@ namespace EngineLayer
     {
         public const string Header = "File\tPlex\tSample Name\tTMT Channel\tCondition\tBiological Replicate\tFraction\tTechnical Replicate";
 
+        // New validation helper: every (SampleName, BioRep, Fraction, TechRep) must be unique
+        private static string ValidateUniqueSampleBioFracTech(IEnumerable<(string Sample, int Bio, int Fraction, int Tech)> tuples)
+        {
+            var duplicates = tuples
+                .GroupBy(t => t)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (duplicates.Count == 0)
+                return null;
+
+            var msgs = duplicates.Select(d =>
+                $"Duplicate combination detected: Sample \"{d.Sample}\" Biorep {d.Bio} Fraction {d.Fraction} Techrep {d.Tech}");
+            return string.Join(Environment.NewLine, msgs);
+        }
+
         public static (List<TmtFileInfo> Files, Dictionary<string, List<TmtPlexAnnotation>> PlexAnnotations)
             Read(string tmtDesignPath, List<string> fullFilePathsWithExtension, out List<string> errors)
         {
             errors = new List<string>();
             var files = new List<TmtFileInfo>();
             var plexToAnnotations = new Dictionary<string, Dictionary<string, TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase);
+
+            // Collect tuples for uniqueness validation
+            var uniqueTuples = new List<(string Sample, int Bio, int Fraction, int Tech)>();
 
             if (!File.Exists(tmtDesignPath))
             {
@@ -40,14 +60,14 @@ namespace EngineLayer
             }
 
             var headers = lines[0].Split('\t');
-            int idxFile = Array.FindIndex(headers, h => string.Equals(h.Trim(), "File", StringComparison.OrdinalIgnoreCase));
-            int idxPlex = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Plex", StringComparison.OrdinalIgnoreCase));
+            int idxFile   = Array.FindIndex(headers, h => string.Equals(h.Trim(), "File", StringComparison.OrdinalIgnoreCase));
+            int idxPlex   = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Plex", StringComparison.OrdinalIgnoreCase));
             int idxSample = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Sample Name", StringComparison.OrdinalIgnoreCase));
-            int idxChannel = Array.FindIndex(headers, h => string.Equals(h.Trim(), "TMT Channel", StringComparison.OrdinalIgnoreCase));
-            int idxCond = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Condition", StringComparison.OrdinalIgnoreCase));
-            int idxBio = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Biological Replicate", StringComparison.OrdinalIgnoreCase));
-            int idxFrac = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Fraction", StringComparison.OrdinalIgnoreCase));
-            int idxTech = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Technical Replicate", StringComparison.OrdinalIgnoreCase));
+            int idxChannel= Array.FindIndex(headers, h => string.Equals(h.Trim(), "TMT Channel", StringComparison.OrdinalIgnoreCase));
+            int idxCond   = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Condition", StringComparison.OrdinalIgnoreCase));
+            int idxBio    = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Biological Replicate", StringComparison.OrdinalIgnoreCase));
+            int idxFrac   = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Fraction", StringComparison.OrdinalIgnoreCase));
+            int idxTech   = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Technical Replicate", StringComparison.OrdinalIgnoreCase));
 
             var fileState = new Dictionary<string, (string Plex, int Fraction, int TechRep)>(StringComparer.OrdinalIgnoreCase);
             var fileStateConflicts = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
@@ -71,13 +91,14 @@ namespace EngineLayer
                 try { full = Path.GetFullPath(file); }
                 catch { full = file; }
 
-                // Only seed for files we currently care about (like ExperimentalDesign)
-                if (!fullFilePathsWithExtension.Any() || fullFilePathsWithExtension.Contains(full, StringComparer.OrdinalIgnoreCase))
+                // Only consider lines for files actually in this run (mirrors ExperimentalDesign behavior)
+                if (!fullFilePathsWithExtension.Any() ||
+                    fullFilePathsWithExtension.Contains(full, StringComparer.OrdinalIgnoreCase))
                 {
-                    var plex = cols[idxPlex].Trim();
-                    var sample = cols[idxSample].Trim();
-                    var tag = cols[idxChannel].Trim();
-                    var cond = cols[idxCond].Trim();
+                    var plex    = cols[idxPlex].Trim();
+                    var sample  = cols[idxSample].Trim();
+                    var tag     = cols[idxChannel].Trim();
+                    var cond    = cols[idxCond].Trim();
 
                     if (!int.TryParse(cols[idxBio].Trim(), out var bio))
                     {
@@ -95,7 +116,13 @@ namespace EngineLayer
                         continue;
                     }
 
-                    // Per-file: ensure consistent (Plex, Fraction, TechRep) for all rows referencing this file
+                    // Record tuple for uniqueness validation (ignore completely blank sample name)
+                    if (!string.IsNullOrWhiteSpace(sample))
+                    {
+                        uniqueTuples.Add((sample, bio, frac, tech));
+                    }
+
+                    // Per-file consistency
                     if (fileState.TryGetValue(full, out var state))
                     {
                         if (!string.Equals(state.Plex, plex, StringComparison.OrdinalIgnoreCase) ||
@@ -115,7 +142,7 @@ namespace EngineLayer
                         fileState[full] = (plex, frac, tech);
                     }
 
-                    // Per-plex annotations, dedupe by tag; first occurrence wins
+                    // Plex annotations
                     if (!plexToAnnotations.TryGetValue(plex, out var byTag))
                     {
                         byTag = new Dictionary<string, TmtPlexAnnotation>(StringComparer.OrdinalIgnoreCase);
@@ -134,13 +161,20 @@ namespace EngineLayer
                 }
             }
 
-            // Report conflicts (if any)
+            // Consistency errors
             foreach (var kvp in fileStateConflicts)
             {
                 errors.Add($"File '{kvp.Key}' has inconsistent Plex/Fraction/TechRep assignments: {string.Join(", ", kvp.Value)}");
             }
 
-            // Build return list for files
+            // Uniqueness validation of (Sample,Bio,Fraction,Tech)
+            var uniquenessError = ValidateUniqueSampleBioFracTech(uniqueTuples);
+            if (uniquenessError != null)
+            {
+                errors.Add(uniquenessError);
+            }
+
+            // Build file list
             foreach (var kv in fileState)
             {
                 files.Add(new TmtFileInfo(kv.Key, kv.Value.Plex, kv.Value.Fraction, kv.Value.TechRep));
@@ -160,7 +194,6 @@ namespace EngineLayer
             using var sw = new StreamWriter(path);
             sw.WriteLine(Header);
 
-            // Index plex annotations by plex for efficient access
             var plexMap = plexAnnotations ?? new Dictionary<string, List<TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var file in files.OrderBy(f => f.Fraction).ThenBy(f => f.TechnicalReplicate))
@@ -168,7 +201,6 @@ namespace EngineLayer
                 var plex = file.Plex ?? "";
                 var anns = plexMap.TryGetValue(plex, out var list) ? list : new List<TmtPlexAnnotation>();
 
-                // If there are annotations for this plex, write a line per channel annotation
                 if (anns.Count > 0)
                 {
                     foreach (var a in anns)
@@ -178,7 +210,6 @@ namespace EngineLayer
                 }
                 else
                 {
-                    // Still write a line so fraction/tech replicate are preserved
                     sw.WriteLine($"{file.FullFilePathWithExtension}\t{plex}\t\t\t\t\t{file.Fraction}\t{file.TechnicalReplicate}");
                 }
             }
@@ -191,7 +222,6 @@ namespace EngineLayer
             var result = new Dictionary<string, List<TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase);
             foreach (var (plex, tags) in src)
             {
-                // Keep insertion order by Tag alphabetically to be stable (could also leave as-is)
                 var list = tags.Values.OrderBy(a => a.Tag, StringComparer.OrdinalIgnoreCase).ToList();
                 result[plex] = list;
             }
@@ -200,7 +230,6 @@ namespace EngineLayer
 
         private static bool IsHeaderValid(string headerLine)
         {
-            // exact match or case-insensitive contains of all required headers
             if (string.Equals(headerLine, Header, StringComparison.Ordinal))
                 return true;
 
