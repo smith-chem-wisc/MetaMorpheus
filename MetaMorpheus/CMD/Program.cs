@@ -256,7 +256,7 @@ namespace MetaMorpheusCommandLine
 
             string designDirectory = Directory.GetParent(startingRawFilenameList.First()).FullName;
             string pathToExperDesign = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName); // existing experimental design
-            string pathToTmtDesign = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName); // fixed TMT experimental design filename
+            string pathToTmtDesign = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName); // fixed TMT filename
 
             bool hasClassicDesign = File.Exists(pathToExperDesign);
             bool hasTmtDesign = File.Exists(pathToTmtDesign);
@@ -335,7 +335,7 @@ namespace MetaMorpheusCommandLine
             else if (hasTmtDesign)
             {
                 // TMT experimental design handling
-                var (tmtFiles, tmtPlexAnnotations) = TmtExperimentalDesign.Read(pathToTmtDesign, startingRawFilenameList, out var tmtErrors);
+                var tmtFiles = TmtExperimentalDesign.Read(pathToTmtDesign, startingRawFilenameList, out var tmtErrors);
 
                 if (tmtErrors.Any())
                 {
@@ -344,9 +344,7 @@ namespace MetaMorpheusCommandLine
                         if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                         {
                             foreach (var error in tmtErrors)
-                            {
                                 Console.WriteLine(error);
-                            }
                         }
                         return 5;
                     }
@@ -375,10 +373,8 @@ namespace MetaMorpheusCommandLine
                 else
                 {
                     if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                    {
                         Console.WriteLine("Read TmtDesign.txt successfully");
-                    }
-                    // (Optional future step: propagate TMT fraction/techrep metadata to tasks if needed)
+                    // tmtFiles now carries annotations with each file if needed downstream
                 }
             }
 

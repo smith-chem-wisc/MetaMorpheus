@@ -432,28 +432,28 @@ namespace MetaMorpheusGUI
 
             foreach (var dir in dirs)
             {
-                var designPath = Path.Combine(dir, GlobalVariables.TmtExperimentalDesignFileName);
+                var designPath = Path.Combine(dir!, GlobalVariables.TmtExperimentalDesignFileName);
                 if (!File.Exists(designPath))
                     continue;
 
-                // Only pass files from this directory (to avoid cross-dir noise)
                 var filesInDir = rawSet.Where(f => string.Equals(Path.GetDirectoryName(f), dir, StringComparison.OrdinalIgnoreCase))
                                        .ToList();
 
-                var (files, plexAnnotations) = TmtExperimentalDesign.Read(designPath, filesInDir, out var _);
+                var tmtFiles = TmtExperimentalDesign.Read(designPath, filesInDir, out var _);
 
                 // Persist file state (Fraction, TechRep, Plex)
-                foreach (var fi in files)
+                foreach (var fi in tmtFiles)
                 {
                     s_fileState[fi.FullFilePathWithExtension] = new FileDesignState(fi.Fraction, fi.TechnicalReplicate, fi.Plex ?? "");
                     if (!string.IsNullOrWhiteSpace(fi.Plex))
                         s_fileToPlex[fi.FullFilePathWithExtension] = fi.Plex.Trim();
                 }
 
-                // Persist annotations by converting EngineLayer.TmtPlexAnnotation -> GUI PlexAnnotation
-                foreach (var kv in plexAnnotations)
+                // Persist annotations per plex using GUI model
+                foreach (var fi in tmtFiles)
                 {
-                    var list = kv.Value.Select(a => new PlexAnnotation
+                    if (string.IsNullOrWhiteSpace(fi.Plex)) continue;
+                    var list = fi.Annotations.Select(a => new PlexAnnotation
                     {
                         Tag = a.Tag,
                         SampleName = a.SampleName,
@@ -461,7 +461,7 @@ namespace MetaMorpheusGUI
                         BiologicalReplicate = a.BiologicalReplicate
                     }).ToList();
 
-                    s_plexAnnotations[kv.Key] = list;
+                    s_plexAnnotations[fi.Plex] = list; // overwrite with last occurrence for that plex
                 }
             }
         }

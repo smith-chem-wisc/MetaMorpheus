@@ -26,12 +26,16 @@ namespace EngineLayer
             return string.Join(Environment.NewLine, msgs);
         }
 
-        public static (List<TmtFileInfo> Files, Dictionary<string, List<TmtPlexAnnotation>> PlexAnnotations)
-            Read(string tmtDesignPath, List<string> fullFilePathsWithExtension, out List<string> errors)
+        // RETURN: files where each file carries its plex annotations
+        public static List<TmtFileInfo> Read(string tmtDesignPath, List<string> fullFilePathsWithExtension, out List<string> errors)
         {
             errors = new List<string>();
             var files = new List<TmtFileInfo>();
+
+            // Collect per-plex annotations (unique by tag) and per-file (plex, frac, tech)
             var plexToAnnotations = new Dictionary<string, Dictionary<string, TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase);
+            var fileState = new Dictionary<string, (string Plex, int Fraction, int TechRep)>(StringComparer.OrdinalIgnoreCase);
+            var fileStateConflicts = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
             // Collect tuples for uniqueness validation
             var uniqueTuples = new List<(string Sample, int Bio, int Fraction, int Tech)>();
@@ -39,7 +43,7 @@ namespace EngineLayer
             if (!File.Exists(tmtDesignPath))
             {
                 errors.Add("TMT design file not found!");
-                return (files, ConvertAnnotations(plexToAnnotations));
+                return files;
             }
 
             string[] lines;
@@ -50,13 +54,13 @@ namespace EngineLayer
             catch (Exception ex)
             {
                 errors.Add("Could not read TMT design file: " + ex.Message);
-                return (files, ConvertAnnotations(plexToAnnotations));
+                return files;
             }
 
             if (lines.Length == 0 || !IsHeaderValid(lines[0]))
             {
                 errors.Add("TMT design file header is invalid.");
-                return (files, ConvertAnnotations(plexToAnnotations));
+                return files;
             }
 
             var headers = lines[0].Split('\t');
@@ -68,9 +72,6 @@ namespace EngineLayer
             int idxBio    = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Biological Replicate", StringComparison.OrdinalIgnoreCase));
             int idxFrac   = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Fraction", StringComparison.OrdinalIgnoreCase));
             int idxTech   = Array.FindIndex(headers, h => string.Equals(h.Trim(), "Technical Replicate", StringComparison.OrdinalIgnoreCase));
-
-            var fileState = new Dictionary<string, (string Plex, int Fraction, int TechRep)>(StringComparer.OrdinalIgnoreCase);
-            var fileStateConflicts = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
             for (int i = 1; i < lines.Length; i++)
             {
@@ -118,9 +119,7 @@ namespace EngineLayer
 
                     // Record tuple for uniqueness validation (ignore completely blank sample name)
                     if (!string.IsNullOrWhiteSpace(sample))
-                    {
                         uniqueTuples.Add((sample, bio, frac, tech));
-                    }
 
                     // Per-file consistency
                     if (fileState.TryGetValue(full, out var state))
@@ -163,21 +162,22 @@ namespace EngineLayer
 
             // Consistency errors
             foreach (var kvp in fileStateConflicts)
-            {
                 errors.Add($"File '{kvp.Key}' has inconsistent Plex/Fraction/TechRep assignments: {string.Join(", ", kvp.Value)}");
-            }
 
             // Uniqueness validation of (Sample,Bio,Fraction,Tech)
             var uniquenessError = ValidateUniqueSampleBioFracTech(uniqueTuples);
             if (uniquenessError != null)
-            {
                 errors.Add(uniquenessError);
-            }
 
-            // Build file list
+            // Build file list with annotations embedded
             foreach (var kv in fileState)
             {
-                files.Add(new TmtFileInfo(kv.Key, kv.Value.Plex, kv.Value.Fraction, kv.Value.TechRep));
+                var plex = kv.Value.Plex ?? string.Empty;
+                var anns = plexToAnnotations.TryGetValue(plex, out var tags)
+                    ? tags.Values.OrderBy(a => a.Tag, StringComparer.OrdinalIgnoreCase).ToList()
+                    : new List<TmtPlexAnnotation>();
+
+                files.Add(new TmtFileInfo(kv.Key, plex, kv.Value.Fraction, kv.Value.TechRep, anns));
             }
 
             // Ensure all provided files are defined in the TMT design (mirrors ExperimentalDesign behavior)
@@ -185,17 +185,11 @@ namespace EngineLayer
             {
                 // normalize and compare case-insensitively using full paths
                 var provided = new HashSet<string>(
-                    fullFilePathsWithExtension.Select(p =>
-                    {
-                        try { return Path.GetFullPath(p); } catch { return p; }
-                    }),
+                    fullFilePathsWithExtension.Select(p => { try { return Path.GetFullPath(p); } catch { return p; } }),
                     StringComparer.OrdinalIgnoreCase);
 
                 var defined = new HashSet<string>(
-                    fileState.Keys.Select(p =>
-                    {
-                        try { return Path.GetFullPath(p); } catch { return p; }
-                    }),
+                    fileState.Keys.Select(p => { try { return Path.GetFullPath(p); } catch { return p; } }),
                     StringComparer.OrdinalIgnoreCase);
 
                 var notDefined = provided.Where(p => !defined.Contains(p)).ToList();
@@ -205,10 +199,10 @@ namespace EngineLayer
                 }
             }
 
-            return (files, ConvertAnnotations(plexToAnnotations));
+            return files;
         }
 
-        public static string Write(List<TmtFileInfo> files, Dictionary<string, List<TmtPlexAnnotation>> plexAnnotations)
+        public static string Write(List<TmtFileInfo> files)
         {
             if (files == null || files.Count == 0)
                 throw new InvalidOperationException("No TMT files to write.");
@@ -219,12 +213,10 @@ namespace EngineLayer
             using var sw = new StreamWriter(path);
             sw.WriteLine(Header);
 
-            var plexMap = plexAnnotations ?? new Dictionary<string, List<TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase);
-
             foreach (var file in files.OrderBy(f => f.Fraction).ThenBy(f => f.TechnicalReplicate))
             {
                 var plex = file.Plex ?? "";
-                var anns = plexMap.TryGetValue(plex, out var list) ? list : new List<TmtPlexAnnotation>();
+                var anns = file.Annotations ?? Array.Empty<TmtPlexAnnotation>();
 
                 if (anns.Count > 0)
                 {
@@ -242,17 +234,6 @@ namespace EngineLayer
             return path;
         }
 
-        private static Dictionary<string, List<TmtPlexAnnotation>> ConvertAnnotations(Dictionary<string, Dictionary<string, TmtPlexAnnotation>> src)
-        {
-            var result = new Dictionary<string, List<TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (plex, tags) in src)
-            {
-                var list = tags.Values.OrderBy(a => a.Tag, StringComparer.OrdinalIgnoreCase).ToList();
-                result[plex] = list;
-            }
-            return result;
-        }
-
         private static bool IsHeaderValid(string headerLine)
         {
             if (string.Equals(headerLine, Header, StringComparison.Ordinal))
@@ -266,18 +247,20 @@ namespace EngineLayer
 
     public sealed class TmtFileInfo
     {
-        public TmtFileInfo(string fullFilePathWithExtension, string plex, int fraction, int technicalReplicate)
+        public TmtFileInfo(string fullFilePathWithExtension, string plex, int fraction, int technicalReplicate, IReadOnlyList<TmtPlexAnnotation> annotations)
         {
             FullFilePathWithExtension = fullFilePathWithExtension;
             Plex = plex ?? string.Empty;
             Fraction = fraction;
             TechnicalReplicate = technicalReplicate;
+            Annotations = annotations ?? Array.Empty<TmtPlexAnnotation>();
         }
 
         public string FullFilePathWithExtension { get; }
         public string Plex { get; }
         public int Fraction { get; }             // 1-based
         public int TechnicalReplicate { get; }   // 1-based
+        public IReadOnlyList<TmtPlexAnnotation> Annotations { get; } // All tags for this file's plex
     }
 
     public sealed class TmtPlexAnnotation

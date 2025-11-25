@@ -19,34 +19,32 @@ namespace Test
             var file2 = Path.Combine(outputFolder, "file.2.raw");
             var file3 = Path.Combine(outputFolder, "file.3.raw");
 
-            // define simple per-file state
-            var files = new List<TmtFileInfo>
+            var anns = new List<TmtPlexAnnotation>
             {
-                new TmtFileInfo(file1, "PlexA", 1, 1),
-                new TmtFileInfo(file2, "PlexA", 2, 1),
-                new TmtFileInfo(file3, "PlexA", 3, 1)
+                new TmtPlexAnnotation { Tag="126", SampleName="S1", Condition="C1", BiologicalReplicate=1 }
             };
 
-            // minimal per-plex annotations (single tag)
-            var anns = new Dictionary<string, List<TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase)
+            // define simple per-file state (same plex and channel set for all)
+            var files = new List<TmtFileInfo>
             {
-                ["PlexA"] = new List<TmtPlexAnnotation>
-                {
-                    new TmtPlexAnnotation { Tag="126", SampleName="S1", Condition="C1", BiologicalReplicate=1 }
-                }
+                new TmtFileInfo(file1, "PlexA", 1, 1, anns),
+                new TmtFileInfo(file2, "PlexA", 2, 1, anns),
+                new TmtFileInfo(file3, "PlexA", 3, 1, anns)
             };
 
             // write and read back
-            _ = TmtExperimentalDesign.Write(files, anns);
+            _ = TmtExperimentalDesign.Write(files);
 
-            var (_, plexAnnotations) = TmtExperimentalDesign.Read(
+            var readFiles = TmtExperimentalDesign.Read(
                 Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName),
                 new List<string> { file1, file2, file3 },
                 out var errors);
 
             Assert.That(!errors.Any(), "No errors expected");
-            Assert.That(plexAnnotations.ContainsKey("PlexA"));
-            Assert.That(plexAnnotations["PlexA"].Count == 1);
+            Assert.That(readFiles.Count == 3);
+            Assert.That(readFiles.All(f => f.Plex.Equals("PlexA", StringComparison.OrdinalIgnoreCase)));
+            Assert.That(readFiles.All(f => f.Annotations.Count == 1));
+            Assert.That(readFiles.All(f => f.Annotations.First().Tag == "126"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -59,46 +57,37 @@ namespace Test
 
             var file1 = Path.Combine(outputFolder, "file.1.raw");
             var file2 = Path.Combine(outputFolder, "file.2.raw");
-            var file3 = Path.Combine(outputFolder, "file.3.raw");
-            string designPath = Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName);
+            var designPath = Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName);
+
+            // common annotations
+            var anns = new List<TmtPlexAnnotation>
+            {
+                new TmtPlexAnnotation { Tag="126", SampleName="SampleX", Condition="CondX", BiologicalReplicate=1 }
+            };
 
             // 1) Duplicate (Sample, Bio, Fraction, Tech) across files -> error
             {
                 var files = new List<TmtFileInfo>
                 {
-                    new TmtFileInfo(file1, "PlexA", 1, 1),
-                    new TmtFileInfo(file2, "PlexA", 1, 1)
-                };
-                var anns = new Dictionary<string, List<TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["PlexA"] = new List<TmtPlexAnnotation>
-                    {
-                        new TmtPlexAnnotation { Tag="126", SampleName="SampleX", Condition="CondX", BiologicalReplicate=1 }
-                    }
+                    new TmtFileInfo(file1, "PlexA", 1, 1, anns),
+                    new TmtFileInfo(file2, "PlexA", 1, 1, anns) // same Sample/Bio/Fraction/Tech
                 };
 
-                _ = TmtExperimentalDesign.Write(files, anns);
-
+                _ = TmtExperimentalDesign.Write(files);
                 _ = TmtExperimentalDesign.Read(designPath, new List<string> { file1, file2 }, out var errors);
                 Assert.That(errors.Any(), "Duplicate Sample/Bio/Fraction/Tech should error");
             }
 
             // 2) Conflicting per-file assignments -> error (same file appears with different fraction/tech)
             {
-                var files = new List<TmtFileInfo>
+                // write manually to simulate conflict
+                var lines = new List<string>
                 {
-                    new TmtFileInfo(file1, "PlexA", 1, 1),
-                    new TmtFileInfo(file1, "PlexA", 2, 1) // conflict for same file1
+                    TmtExperimentalDesign.Header,
+                    $"{file1}\tPlexA\tS1\t126\tC1\t1\t1\t1",
+                    $"{file1}\tPlexA\tS1\t127\tC1\t1\t2\t1"
                 };
-                var anns = new Dictionary<string, List<TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["PlexA"] = new List<TmtPlexAnnotation>
-                    {
-                        new TmtPlexAnnotation { Tag="126", SampleName="S1", Condition="C1", BiologicalReplicate=1 }
-                    }
-                };
-
-                _ = TmtExperimentalDesign.Write(files, anns);
+                File.WriteAllLines(designPath, lines);
 
                 _ = TmtExperimentalDesign.Read(designPath, new List<string> { file1 }, out var errors);
                 Assert.That(errors.Any(), "Conflicting per-file state should error");
@@ -108,17 +97,10 @@ namespace Test
             {
                 var files = new List<TmtFileInfo>
                 {
-                    new TmtFileInfo(file1, "PlexA", 1, 1)
-                };
-                var anns = new Dictionary<string, List<TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["PlexA"] = new List<TmtPlexAnnotation>
-                    {
-                        new TmtPlexAnnotation { Tag="126", SampleName="S1", Condition="C1", BiologicalReplicate=1 }
-                    }
+                    new TmtFileInfo(file1, "PlexA", 1, 1, anns)
                 };
 
-                _ = TmtExperimentalDesign.Write(files, anns);
+                _ = TmtExperimentalDesign.Write(files);
 
                 _ = TmtExperimentalDesign.Read(designPath, new List<string> { file1, file2 }, out var errors);
                 Assert.That(errors.Any(), "Missing file(s) in design should error");
