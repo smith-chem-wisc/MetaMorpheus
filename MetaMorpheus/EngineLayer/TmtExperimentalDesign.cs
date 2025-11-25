@@ -180,6 +180,31 @@ namespace EngineLayer
                 files.Add(new TmtFileInfo(kv.Key, kv.Value.Plex, kv.Value.Fraction, kv.Value.TechRep));
             }
 
+            // Ensure all provided files are defined in the TMT design (mirrors ExperimentalDesign behavior)
+            if (fullFilePathsWithExtension != null && fullFilePathsWithExtension.Count > 0)
+            {
+                // normalize and compare case-insensitively using full paths
+                var provided = new HashSet<string>(
+                    fullFilePathsWithExtension.Select(p =>
+                    {
+                        try { return Path.GetFullPath(p); } catch { return p; }
+                    }),
+                    StringComparer.OrdinalIgnoreCase);
+
+                var defined = new HashSet<string>(
+                    fileState.Keys.Select(p =>
+                    {
+                        try { return Path.GetFullPath(p); } catch { return p; }
+                    }),
+                    StringComparer.OrdinalIgnoreCase);
+
+                var notDefined = provided.Where(p => !defined.Contains(p)).ToList();
+                if (notDefined.Any())
+                {
+                    errors.Add("Error: The TMT design did not contain the file(s): " + string.Join(", ", notDefined));
+                }
+            }
+
             return (files, ConvertAnnotations(plexToAnnotations));
         }
 
