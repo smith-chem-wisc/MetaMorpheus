@@ -1,8 +1,10 @@
 ﻿using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -386,25 +388,19 @@ namespace EngineLayer.FdrAnalysis
 
         public static void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
         {
-            string searchType;
             // Currently, searches of mixed data (bottom-up + top-down) are not supported
             // PEP will be calculated based on the search type of the first file/PSM in the list, which isn't ideal
             // This will be addressed in a future release
-            switch(psms[0].DigestionParams.DigestionAgent.Name)
-            {
-               case "top-down":
-                    searchType = "top-down";
-                    break;
-                default:
-                    searchType = "standard";
-                    break;
-            }
-            if (psms[0] is CrosslinkSpectralMatch)
-            {
-                searchType = "crosslink";
-            }
-            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder).ComputePEPValuesForAllPSMs();
 
+            string searchType = psms[0] switch
+            {
+                OligoSpectralMatch => "RNA",
+                PeptideSpectralMatch psm when psm.DigestionParams.DigestionAgent is Protease { Name: "top-down" } => "top-down",
+                CrosslinkSpectralMatch => "crosslink",
+                _ => "standard"
+            };
+
+            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder).ComputePEPValuesForAllPSMs();
         }
 
         /// <summary>

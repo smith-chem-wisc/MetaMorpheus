@@ -124,8 +124,12 @@
             </TabControl.Resources>
 
             <!-- Psm Tab -->
-            <TabItem Header="PSM Annotation" Background="DarkGray">
-                <DockPanel>
+            <TabItem Background="DarkGray">
+                <TabItem.Header>
+                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="PSM Annotation"/>
+                </TabItem.Header>
+
+                    <DockPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="2*"/>
@@ -159,7 +163,11 @@
 
                             <!--Select MetaMorpheus output file (psmfromtsv) -->
                             <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="PSM files: " Width="95" />
+                                <Label  Width="95" >
+                                    <Label.Content>
+                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="PSM files:"/>
+                                    </Label.Content>
+                                </Label>
                                 <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
@@ -187,7 +195,10 @@
                             </Border>
 
                             <!--List of PSMs-->
-                            <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="4">
+                            <GroupBox Name="gbSpectra" Grid.Row="4">
+                                <GroupBox.Header>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Peptide Spectral Matches"/>
+                                </GroupBox.Header>
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="1*"/>
@@ -498,9 +509,7 @@
                             <StackPanel Grid.Row="2" >
                                 <Expander x:Name="NotificationExpander" Margin="3 0 0 0" >
                                     <Expander.Header>
-                                        <StackPanel>
-                                            <TextBlock>PSM Properties</TextBlock>
-                                        </StackPanel>
+                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="PSM Properties"/>
                                     </Expander.Header>
 
                                     <DataGrid x:Name="dataGridProperties" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
@@ -536,7 +545,11 @@
 
                             <!--Select MetaMorpheus output file-->
                             <DockPanel Grid.Row="0" LastChildFill="True">
-                                <Label Content="PSMTSV file: " Width="75" />
+                                <Label Width="75" >
+                                    <Label.Content>
+                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="PSM File:"/>
+                                    </Label.Content>
+                                </Label>
                                 <Button Name="resetPsmFileButtonStat" Content="Reset" DockPanel.Dock="Right" Click="resetFilesButton_Click" Width="45" IsEnabled="False"/>
                                 <Button Name="selectPsmFileButtonStat" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="45" />
                                 <Label BorderThickness="1">
@@ -545,7 +558,11 @@
                             </DockPanel>
 
                             <DockPanel Grid.Row="1" Margin="2">
-                                <Button Name="loadFilesStat" Content="Import Files From PSMTSV" Width="160" Click="loadFilesButton_Click"/>
+                                <Button Name="loadFilesStat" Width="160" Click="loadFilesButton_Click">
+                                    <Button.Content>
+                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Import Files From PSM"/>
+                                    </Button.Content>
+                                </Button>
                             </DockPanel>
 
                             <!--Select psms to display by source file-->
@@ -621,21 +638,24 @@
             </TabItem>
 
             <!-- BioPolymer Coverage tab-->
-            <TabItem Header="{Binding TabHeader}" IsEnabled="{Binding IsTabEnabled}" Background="DarkGray"
+            <TabItem Header="{Binding TabHeader,
+                Converter={StaticResource ProteinRnaTerminologyConverter}, 
+                ConverterParameter=Protein Coverage}" 
+                     IsEnabled="{Binding IsTabEnabled}" Background="DarkGray"
                      d:DataContext="{d:DesignInstance metaDraw:BioPolymerTabModel, IsDesignTimeCreatable=True}"
                      DataContext="{Binding BioPolymerTabViewModel, RelativeSource={RelativeSource AncestorType=Window}}">
                 <local:BioPolymerCoverageTabView x:Name="BioPolymerCoverageTabView" />
             </TabItem>
 
             <!-- Chimera Analysis tab -->
-            <TabItem Header="{Binding TabHeader}"  IsEnabled="{Binding IsTabEnabled}" Background="DarkGray" x:Name="ChimeraTab"
+            <TabItem Header="{Binding TabHeader}" IsEnabled="{Binding IsTabEnabled}" Background="DarkGray" x:Name="ChimeraTab"
                      d:DataContext="{d:DesignInstance metaDraw:ChimeraAnalysisTabViewModel, IsDesignTimeCreatable=True}"
                      DataContext="{Binding ChimeraAnalysisTabViewModel, RelativeSource={RelativeSource AncestorType=Window}}">
                 <local:ChimeraAnalysisTabView x:Name="ChimeraAnalysisTabView" />
             </TabItem>
 
             <!--Deconvolution Exploration tab-->
-            <TabItem Header="{Binding TabHeader}"  IsEnabled="{Binding IsTabEnabled}" Background="DarkGray"
+            <TabItem Header="{Binding TabHeader}" IsEnabled="{Binding IsTabEnabled}" Background="DarkGray"
                      d:DataContext="{d:DesignInstance guiFunctions:DeconExplorationTabViewModel, IsDesignTimeCreatable=True}"
                      DataContext="{Binding DeconExplorationViewModel, RelativeSource={RelativeSource AncestorType=Window}}">
                 <local:DeconExplorationTabView x:Name="DeconExplorationTabView"/>
