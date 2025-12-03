@@ -17,15 +17,12 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using TaskLayer.MbrAnalysis;
-using Chemistry;
 using EngineLayer.DatabaseLoading;
 using MzLibUtil;
 using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using Omics;
-using Readers.SpectralLibrary;
 using EngineLayer.SpectrumMatch;
 using ProteinGroup = FlashLFQ.ProteinGroup;
 
@@ -1303,7 +1300,7 @@ namespace TaskLayer
                 {
                     if (variantPWSM.IntersectsAndIdentifiesVariation(variant).identifies == true)
                     {
-                        if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
+                        if (culture.CompareInfo.IndexOf(variant.Description.ReferenceAlleleString, "missense_variant", CompareOptions.IgnoreCase) >= 0)
                         {
                             if (variant.Description.ReferenceAlleleString.Length == 1 && variant.Description.AlternateAlleleString.Length == 1)
                             {

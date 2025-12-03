@@ -14,6 +14,7 @@ using Proteomics.ProteolyticDigestion;
 using Readers;
 using ProteinGroup = EngineLayer.ProteinGroup;
 using Omics;
+using MassSpectrometry;
 
 namespace TaskLayer
 {
