@@ -1,6 +1,5 @@
-﻿using FlashLFQ;
+﻿using MassSpectrometry;
 using Proteomics;
-using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
