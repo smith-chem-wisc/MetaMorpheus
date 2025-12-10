@@ -433,6 +433,8 @@ namespace EngineLayer
                 // Also remove any modifications with NaN occupancies.
 
                 var modsToRemove = new List<(QuantifiedProtein proteinKey, int modposKey, string modnameKey)>();
+                bool filterByCommonMods = false;
+
                 foreach (var protein in proteinGroupOccupanciesPerProtein.Keys)
                 {
                     var proteinModsDict = proteinGroupOccupanciesPerProtein[protein];
@@ -442,10 +444,9 @@ namespace EngineLayer
                         foreach (var mod in posMods.Keys)
                         {
                             // Remove common mods, peptide terminus mods not in protein, and mods with 0 or NaN intensity to not be written.
-                            if (mod.Contains("Common Variable")
-                                || mod.Contains("Common Fixed")
+                            if (((mod.Contains("Common Variable") && filterByCommonMods) || (mod.Contains("Common Fixed")) && filterByCommonMods)
                                 || mod.Contains("PeptideTermMod")
-                                || !posMods[mod].IsFinite()
+                                || !posMods[mod].IsFinite() // When all peptides containing a localized residue have intensities of 0, it leads to 0/0=NaN occupancies.
                                 || posMods[mod]==0)
                             {
                                 modsToRemove.Add((protein, modpos, mod));
