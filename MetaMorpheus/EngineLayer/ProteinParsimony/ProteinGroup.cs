@@ -441,10 +441,12 @@ namespace EngineLayer
                         var posMods = proteinModsDict[modpos];
                         foreach (var mod in posMods.Keys)
                         {
+                            // Remove common mods, peptide terminus mods not in protein, and mods with 0 or NaN intensity to not be written.
                             if (mod.Contains("Common Variable")
                                 || mod.Contains("Common Fixed")
                                 || mod.Contains("PeptideTermMod")
-                                || !posMods[mod].IsFinite())
+                                || !posMods[mod].IsFinite()
+                                || posMods[mod]==0)
                             {
                                 modsToRemove.Add((protein, modpos, mod));
                             }
