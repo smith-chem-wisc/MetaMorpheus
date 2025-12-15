@@ -71,7 +71,6 @@ namespace EngineLayer.Calibration
                 ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors);
             }
             
-
             //calibrate the data
             int ms1Index = 0;
             int ms2Index = 0;
