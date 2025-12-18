@@ -71,8 +71,6 @@ namespace EngineLayer.Calibration
                     //skip if ambiguous
                     if (identification.FullSequence == null || identification.BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
                         continue;
-                    //if (identification.FullSequence == null)
-                    //    continue;
 
                     var representativeSinglePeptide = identification.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
