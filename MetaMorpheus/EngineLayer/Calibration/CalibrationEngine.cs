@@ -35,7 +35,7 @@ namespace EngineLayer.Calibration
                 {
                     ms1Scans.Add(scan);
                 }
-                else
+                else if (scan.MsnOrder == 2)
                 {
                     ms2Scans.Add(scan);
                 }

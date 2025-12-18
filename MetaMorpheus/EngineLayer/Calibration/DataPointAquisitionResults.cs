@@ -41,12 +41,17 @@ namespace EngineLayer.Calibration
             PsmPrecursorMedianPpmError = precursorErrors.Median();
 
             List<double> productErrors = new List<double>();
-            if (dataPointAcquisitionEngine.CommonParameters.ProductMassTolerance is PpmTolerance)
+
+            if (dataPointAcquisitionEngine != null)
             {
-                productErrors = psms.Where(p => p.MatchedFragmentIons != null).SelectMany(p => p.MatchedFragmentIons).Select(p => (p.Mz.ToMass(p.Charge) - p.NeutralTheoreticalProduct.NeutralMass) / p.NeutralTheoreticalProduct.NeutralMass * 1e6).ToList();
-            } else if (dataPointAcquisitionEngine.CommonParameters.ProductMassTolerance is AbsoluteTolerance)
-            {
-                productErrors = psms.Where(p => p.MatchedFragmentIons != null).SelectMany(p => p.MatchedFragmentIons).Select(p => p.Mz.ToMass(p.Charge) - p.NeutralTheoreticalProduct.NeutralMass).ToList();
+                if (dataPointAcquisitionEngine.CommonParameters.ProductMassTolerance is PpmTolerance)
+                {
+                    productErrors = psms.Where(p => p.MatchedFragmentIons != null).SelectMany(p => p.MatchedFragmentIons).Select(p => (p.Mz.ToMass(p.Charge) - p.NeutralTheoreticalProduct.NeutralMass) / p.NeutralTheoreticalProduct.NeutralMass * 1e6).ToList();
+                }
+                else if (dataPointAcquisitionEngine.CommonParameters.ProductMassTolerance is AbsoluteTolerance)
+                {
+                    productErrors = psms.Where(p => p.MatchedFragmentIons != null).SelectMany(p => p.MatchedFragmentIons).Select(p => p.Mz.ToMass(p.Charge) - p.NeutralTheoreticalProduct.NeutralMass).ToList();
+                }
             }
             
             PsmProductIqrPpmError = productErrors.InterquartileRange();
