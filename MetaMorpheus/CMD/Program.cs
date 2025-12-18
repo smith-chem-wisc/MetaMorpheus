@@ -144,6 +144,7 @@ namespace MetaMorpheusCommandLine
             MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
             MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
             MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
+            MetaMorpheusEngine.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
 
             MetaMorpheusTask.WarnHandler += WarnHandler;
             MetaMorpheusTask.LogHandler += LogHandler;

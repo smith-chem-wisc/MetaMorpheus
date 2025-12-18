@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using EngineLayer.SpectrumMatch;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Omics;

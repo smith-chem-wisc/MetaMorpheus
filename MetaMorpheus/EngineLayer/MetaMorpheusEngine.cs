@@ -39,6 +39,8 @@ namespace EngineLayer
 
         public static event EventHandler<SingleEngineFinishedEventArgs> FinishedSingleEngineHandler;
 
+        public static event EventHandler<SingleFileEventArgs> FinishedWritingFileHandler;
+
         public static event EventHandler<StringEventArgs> OutLabelStatusHandler;
 
         public static event EventHandler<StringEventArgs> WarnHandler;
@@ -346,6 +348,10 @@ namespace EngineLayer
         private void FinishedSingleEngine(MetaMorpheusEngineResults myResults)
         {
             FinishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
+        }
+        protected void FinishedWritingFile(string path, List<string> nestedIDs)
+        {
+            FinishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path, nestedIDs));
         }
 
         #endregion

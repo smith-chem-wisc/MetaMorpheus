@@ -77,6 +77,7 @@ namespace MetaMorpheusGUI
             MetaMorpheusEngine.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusEngine.WarnHandler += NotificationHandler;
+            MetaMorpheusEngine.FinishedWritingFileHandler += FinishedWritingFile;
 
             MyFileManager.WarnHandler += NotificationHandler;
             GuiGlobalParamsViewModel.RequestModeSwitchConfirmation += HandleModeSwitchConfirmation;
