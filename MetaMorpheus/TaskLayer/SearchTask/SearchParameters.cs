@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
 using Omics.Modifications;
-using EngineLayer.Quantification;
 
 namespace TaskLayer
 {
