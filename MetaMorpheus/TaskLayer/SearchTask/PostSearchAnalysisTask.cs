@@ -262,50 +262,56 @@ namespace TaskLayer
 
         private void QuantificationAnalysis()
         {
-
-            if (Parameters.SearchParameters.DoMultiplexQuantification)
+            try
             {
-                List<Modification> multiplexMods = Parameters.FixedModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
-                if (multiplexMods.IsNotNullOrEmpty())
+                if (Parameters.SearchParameters.DoMultiplexQuantification)
                 {
-                    Parameters.MultiplexModification = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
+                    List<Modification> multiplexMods = Parameters.FixedModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
+                    if (multiplexMods.IsNotNullOrEmpty())
+                    {
+                        Parameters.MultiplexModification = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
+                    }
+                    return;
                 }
-                return;
-            }
 
-            if (!Parameters.SearchParameters.DoLabelFreeQuantification)
-            {
-                return;
-            }
+                if (!Parameters.SearchParameters.DoLabelFreeQuantification)
+                {
+                    return;
+                }
 
-            // pass quantification parameters to FlashLFQ
-            Status("Quantifying...", Parameters.SearchTaskId);
-            var parameters = new QuantificationParameters
+                // pass quantification parameters to FlashLFQ
+                Status("Quantifying...", Parameters.SearchTaskId);
+                var parameters = new QuantificationParameters
+                {
+                    SearchTaskId = Parameters.SearchTaskId,
+                    OutputFolder = Parameters.OutputFolder,
+                    CurrentRawFileList = Parameters.CurrentRawFileList,
+                    ListOfDigestionParams = Parameters.ListOfDigestionParams,
+                    Normalize = Parameters.SearchParameters.Normalize,
+                    QuantifyPpmTol = Parameters.SearchParameters.QuantifyPpmTol,
+                    UseSharedPeptides = Parameters.SearchParameters.UseSharedPeptidesForLFQ,
+                    MatchBetweenRuns = Parameters.SearchParameters.MatchBetweenRuns,
+                    MbrFdrThreshold = Parameters.SearchParameters.MbrFdrThreshold,
+                    MultiplexMod = Parameters.MultiplexModification,
+                    SilacLabels = Parameters.SearchParameters.SilacLabels,
+                    StartTurnoverLabel = Parameters.SearchParameters.StartTurnoverLabel,
+                    EndTurnoverLabel = Parameters.SearchParameters.EndTurnoverLabel,
+                    ModsToWriteSelection = Parameters.SearchParameters.ModsToWriteSelection
+                };
+
+                var engine = new QuantificationEngine(parameters,
+                    Parameters.AllSpectralMatches,
+                    ProteinGroups,
+                    CommonParameters,
+                    this.FileSpecificParameters,
+                    new List<string> { Parameters.SearchTaskId });
+                var results = (QuantificationEngineResults)engine.Run();
+                Parameters.FlashLfqResults = results.FlashLfqResults;
+            }
+            catch (Exception e)
             {
-                SearchTaskId = Parameters.SearchTaskId,
-                OutputFolder = Parameters.OutputFolder,
-                CurrentRawFileList = Parameters.CurrentRawFileList,
-                ListOfDigestionParams = Parameters.ListOfDigestionParams,
-                Normalize = Parameters.SearchParameters.Normalize,
-                QuantifyPpmTol = Parameters.SearchParameters.QuantifyPpmTol,
-                UseSharedPeptides = Parameters.SearchParameters.UseSharedPeptidesForLFQ,
-                MatchBetweenRuns = Parameters.SearchParameters.MatchBetweenRuns,
-                MbrFdrThreshold = Parameters.SearchParameters.MbrFdrThreshold,
-                MultiplexMod = Parameters.MultiplexModification,
-                SilacLabels = Parameters.SearchParameters.SilacLabels,
-                StartTurnoverLabel = Parameters.SearchParameters.StartTurnoverLabel,
-                EndTurnoverLabel = Parameters.SearchParameters.EndTurnoverLabel,
-                ModsToWriteSelection = Parameters.SearchParameters.ModsToWriteSelection
-            };
-                
-            var engine = new QuantificationEngine(parameters, 
-                Parameters.AllSpectralMatches, 
-                ProteinGroups,
-                CommonParameters,
-                this.FileSpecificParameters,
-                new List<string> { Parameters.SearchTaskId });
-            var results = (QuantificationEngineResults)engine.Run();
-            Parameters.FlashLfqResults = results.FlashLfqResults;
+                EngineCrashed("Quantification", e);
+            }
         }
 
         private void HistogramAnalysis()
