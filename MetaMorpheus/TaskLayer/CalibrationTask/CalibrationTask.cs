@@ -86,7 +86,8 @@ namespace TaskLayer
                 
                 // load the file
                 Status("Loading spectra file...", new List<string> { _taskId, "Individual Spectra Files" });
-                MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams).LoadAllStaticData();
+                //MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams).LoadAllStaticData();
+                MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams);
 
                 // First round of calibration
                 Status("Acquiring calibration data points...", new List<string> { _taskId, "Individual Spectra Files" });
@@ -310,8 +311,23 @@ namespace TaskLayer
 
         public static void UpdateCombinedParameters(CommonParameters combinedParameters, double newPrecursorTolerance, double newProductTolerance)
         {
-            combinedParameters.PrecursorMassTolerance = new PpmTolerance(newPrecursorTolerance);
-            combinedParameters.ProductMassTolerance = new PpmTolerance(newProductTolerance);
+            if (combinedParameters.PrecursorMassTolerance is PpmTolerance)
+            {
+                combinedParameters.PrecursorMassTolerance = new PpmTolerance(newPrecursorTolerance);
+            }
+            if (combinedParameters.PrecursorMassTolerance is AbsoluteTolerance)
+            {
+                combinedParameters.PrecursorMassTolerance = new AbsoluteTolerance(newPrecursorTolerance);
+            }
+
+            if (combinedParameters.ProductMassTolerance is PpmTolerance)
+            {
+                combinedParameters.ProductMassTolerance = new PpmTolerance(newProductTolerance);
+            }
+            if (combinedParameters.ProductMassTolerance is AbsoluteTolerance)
+            {
+                combinedParameters.ProductMassTolerance = new AbsoluteTolerance(newProductTolerance);
+            }
         }
 
         private void WriteUncalibratedFile(string originalUncalibratedFilePath, string uncalibratedNewFullFilePath, List<string> unsuccessfullyCalibratedFilePaths,
