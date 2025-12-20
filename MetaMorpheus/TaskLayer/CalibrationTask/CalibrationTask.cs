@@ -129,21 +129,24 @@ namespace TaskLayer
                     continue;
                 }
 
-                myMsDataFile = engine.CalibratedDataFile; // Start with the calibrated data from round 2
-                UpdateCombinedParameters(combinedParams, acquisitionResultsSecond);
-
-                // generate calibration function and shift data points
-                Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-                engine = new(myMsDataFile, acquisitionResultsSecond, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                _ = engine.Run();
-
-                // Third round of calibration
-                DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile,  combinedParams, originalUncalibratedFilePath);
-
-                if (CalibrationHasValue(acquisitionResultsSecond, acquisitionResultsThird))
+                if (CalibrationHasValue(acquisitionResultsFirst, acquisitionResultsSecond))
                 {
                     myMsDataFile = engine.CalibratedDataFile;
-                    UpdateCombinedParameters(combinedParams, acquisitionResultsThird);
+                    UpdateCombinedParameters(combinedParams, acquisitionResultsSecond);
+
+                    // generate calibration function and shift data points
+                    Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
+                    engine = new(myMsDataFile, acquisitionResultsSecond, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                    _ = engine.Run();
+
+                    // Third round of calibration
+                    DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile, combinedParams, originalUncalibratedFilePath);
+
+                    if (CalibrationHasValue(acquisitionResultsSecond, acquisitionResultsThird))
+                    {
+                        myMsDataFile = engine.CalibratedDataFile;
+                        UpdateCombinedParameters(combinedParams, acquisitionResultsThird);
+                    }
                 }
 
                 // Update file specific params to reflect the new tolerances, then write them out
@@ -306,6 +309,14 @@ namespace TaskLayer
         {
             double newPrecursorPpmTolerance = Math.Round(PrecursorMultiplierForToml * acquisitionResults.PsmPrecursorIqrPpmError + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError), 1);
             double newProductPpmTolerance = Math.Round(ProductMultiplierForToml * acquisitionResults.PsmProductIqrPpmError + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1);
+
+            if (combinedParams.ProductMassTolerance is AbsoluteTolerance)
+            {
+                newProductPpmTolerance = Math.Round(2 * acquisitionResults.PsmProductIqrPpmError + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 2);
+            }
+
+            //double newPrecursorPpmTolerance = Math.Round(PrecursorMultiplierForToml * acquisitionResults.PsmPrecursorIqrPpmError, 1);
+            //double newProductPpmTolerance = Math.Round(PrecursorMultiplierForToml * acquisitionResults.PsmProductIqrPpmError, 1);
             UpdateCombinedParameters(combinedParams, newPrecursorPpmTolerance, newProductPpmTolerance);
         }
 
