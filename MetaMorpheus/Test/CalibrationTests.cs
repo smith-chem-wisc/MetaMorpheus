@@ -12,6 +12,9 @@ using EngineLayer.DatabaseLoading;
 using System.Diagnostics;
 using MzLibUtil;
 using Proteomics;
+using System.Data.Entity;
+using Org.BouncyCastle.Asn1.Cmp;
+using Omics.Modifications;
 
 
 namespace Test
@@ -407,7 +410,6 @@ namespace Test
             // run calibration
             CalibrationTask calibrationTask = new CalibrationTask();
 
-
             bool wasCalled = false;
             MetaMorpheusTask.WarnHandler += (o, e) => wasCalled = true;
             
@@ -416,10 +418,28 @@ namespace Test
             //The original experimental design file is bad so we expect Warn event in "WriteNewExperimentalDesignFile"
             Assert.That(wasCalled);
             
-
             // clean up
             Directory.Delete(unitTestFolder, true);
         }
 
+        [Test]
+        public static void CalibrationSkipMs3Scans()
+        {
+            //setup
+            string nonCalibratedFilePath = @"E:\Islets\PAW_pipeline\PAW_tests\MM_vs_PAW\z02091_MDP_liver_fusion_tmt8_cc_set3_01_RT46.04-46.65.mzML";
+            string myDatabase = @"E:\Islets\PAW_pipeline\PAW_tests\MM_vs_PAW\2025.01_UP000000589_10090_mouse_canonical_both_snip.fasta";
+            CalibrationTask calibrationTask = new CalibrationTask();
+            var fixedMods = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U"), ("Multiplex Label", "TMT11 on K"), ("Multiplex Label", "TMT11 on X") };
+            calibrationTask.CommonParameters = new CommonParameters(listOfModsFixed: fixedMods, precursorMassTolerance: new PpmTolerance(10), productMassTolerance: new AbsoluteTolerance(0.1));
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CalibrationSkipMs3ScansTest");
+            Directory.CreateDirectory(outputFolder);
+
+            //run calibration task
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"MS3_TMT11_Mouse_snip-calib.mzML")));
+
+            Directory.Delete(outputFolder, true);
+        }
     }
 }
