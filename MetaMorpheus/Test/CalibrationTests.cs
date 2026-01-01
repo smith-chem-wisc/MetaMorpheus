@@ -15,6 +15,7 @@ using Proteomics;
 using System.Data.Entity;
 using Org.BouncyCastle.Asn1.Cmp;
 using Omics.Modifications;
+using Readers;
 
 
 namespace Test
@@ -426,10 +427,10 @@ namespace Test
         public static void CalibrationSkipMs3Scans()
         {
             //setup
-            string nonCalibratedFilePath = @"E:\Islets\PAW_pipeline\PAW_tests\MM_vs_PAW\z02091_MDP_liver_fusion_tmt8_cc_set3_01_RT46.04-46.65.mzML";
-            string myDatabase = @"E:\Islets\PAW_pipeline\PAW_tests\MM_vs_PAW\2025.01_UP000000589_10090_mouse_canonical_both_snip.fasta";
+            string nonCalibratedFilePath = @"E:\Islets\Brian_data\First_data\11-24-25_SPS-TMT_Sam13chan_3uL_RT70.06-70.79.mzML";
+            string myDatabase = @"E:\Islets\Brian_data\First_data\calibration_debug\old_13chan_cali-better\Task2-SearchTask\snip.fasta";
             CalibrationTask calibrationTask = new CalibrationTask();
-            var fixedMods = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U"), ("Multiplex Label", "TMT11 on K"), ("Multiplex Label", "TMT11 on X") };
+            var fixedMods = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U"), ("Multiplex Label", "TMT18 on K"), ("Multiplex Label", "TMT18 on X") };
             calibrationTask.CommonParameters = new CommonParameters(listOfModsFixed: fixedMods, precursorMassTolerance: new PpmTolerance(10), productMassTolerance: new AbsoluteTolerance(0.1));
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CalibrationSkipMs3ScansTest");
             Directory.CreateDirectory(outputFolder);
@@ -437,7 +438,24 @@ namespace Test
             //run calibration task
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
 
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"MS3_TMT11_Mouse_snip-calib.mzML")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"11-24-25_SPS-TMT_Sam13chan_3uL_RT70.06-70.79-calib.mzML")));
+
+            //MS3 scans stay the same as uncalibrated file
+            var msDataFile = MsDataFileReader.GetDataFile(nonCalibratedFilePath);
+            var origMs3Scans = msDataFile.GetAllScansList().Where(b => b.MsnOrder == 3).ToArray();
+            var calibratedFile = MsDataFileReader.GetDataFile(Path.Combine(outputFolder, @"11-24-25_SPS-TMT_Sam13chan_3uL_RT70.06-70.79-calib.mzML"));
+            var Ms3ScansAfterCalibration = calibratedFile.GetAllScansList().Where(b => b.MsnOrder == 3).ToArray();
+            Assert.That(origMs3Scans.Length == Ms3ScansAfterCalibration.Length);
+            for (int i = 0; i < Ms3ScansAfterCalibration.Length; i++)
+            {
+                for (int j = 0; j < Ms3ScansAfterCalibration[i].MassSpectrum.XArray.Length; j++)
+                {
+                    //peak trimming seems to apply on MS3 scans so the spectra did change after calibration, but the reporter ion peaks should be retained
+                    //However, we should change peak filtering to not apply to MS3 scans
+                    Assert.That(origMs3Scans[i].MassSpectrum.XArray.Contains(Ms3ScansAfterCalibration[i].MassSpectrum.XArray[j]));
+                    Assert.That(origMs3Scans[i].MassSpectrum.YArray.Contains(Ms3ScansAfterCalibration[i].MassSpectrum.YArray[j]));
+                }
+            }
 
             Directory.Delete(outputFolder, true);
         }
