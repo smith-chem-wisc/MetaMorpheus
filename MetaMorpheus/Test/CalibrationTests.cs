@@ -427,8 +427,8 @@ namespace Test
         public static void CalibrationSkipMs3Scans()
         {
             //setup
-            string nonCalibratedFilePath = @"E:\Islets\Brian_data\First_data\11-24-25_SPS-TMT_Sam13chan_3uL_RT70.06-70.79.mzML";
-            string myDatabase = @"E:\Islets\Brian_data\First_data\calibration_debug\old_13chan_cali-better\Task2-SearchTask\snip.fasta";
+            string uncalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\11-24-25_SPS-TMT_Sam13chan_3uL_RT70.06-70.79.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\13chan_snip.fasta");
             CalibrationTask calibrationTask = new CalibrationTask();
             var fixedMods = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U"), ("Multiplex Label", "TMT18 on K"), ("Multiplex Label", "TMT18 on X") };
             calibrationTask.CommonParameters = new CommonParameters(listOfModsFixed: fixedMods, precursorMassTolerance: new PpmTolerance(10), productMassTolerance: new AbsoluteTolerance(0.1));
@@ -436,27 +436,27 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
 
             //run calibration task
-            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { uncalibratedFilePath }, "test");
 
             Assert.That(File.Exists(Path.Combine(outputFolder, @"11-24-25_SPS-TMT_Sam13chan_3uL_RT70.06-70.79-calib.mzML")));
 
             //MS3 scans stay the same as uncalibrated file
-            var msDataFile = MsDataFileReader.GetDataFile(nonCalibratedFilePath);
+            var myFileManager = new MyFileManager(true);
+            var msDataFile = myFileManager.LoadFile(uncalibratedFilePath, calibrationTask.CommonParameters);
             var origMs3Scans = msDataFile.GetAllScansList().Where(b => b.MsnOrder == 3).ToArray();
             var calibratedFile = MsDataFileReader.GetDataFile(Path.Combine(outputFolder, @"11-24-25_SPS-TMT_Sam13chan_3uL_RT70.06-70.79-calib.mzML"));
             var Ms3ScansAfterCalibration = calibratedFile.GetAllScansList().Where(b => b.MsnOrder == 3).ToArray();
             Assert.That(origMs3Scans.Length == Ms3ScansAfterCalibration.Length);
+
+            //make sure the ms3 scans are identical before and after calibration
             for (int i = 0; i < Ms3ScansAfterCalibration.Length; i++)
             {
                 for (int j = 0; j < Ms3ScansAfterCalibration[i].MassSpectrum.XArray.Length; j++)
                 {
-                    //peak trimming seems to apply on MS3 scans so the spectra did change after calibration, but the reporter ion peaks should be retained
-                    //However, we should change peak filtering to not apply to MS3 scans
-                    Assert.That(origMs3Scans[i].MassSpectrum.XArray.Contains(Ms3ScansAfterCalibration[i].MassSpectrum.XArray[j]));
-                    Assert.That(origMs3Scans[i].MassSpectrum.YArray.Contains(Ms3ScansAfterCalibration[i].MassSpectrum.YArray[j]));
+                    Assert.That(origMs3Scans[i].MassSpectrum.XArray[j] == Ms3ScansAfterCalibration[i].MassSpectrum.XArray[j]);
+                    Assert.That(origMs3Scans[i].MassSpectrum.YArray[j] == Ms3ScansAfterCalibration[i].MassSpectrum.YArray[j]);
                 }
             }
-
             Directory.Delete(outputFolder, true);
         }
     }

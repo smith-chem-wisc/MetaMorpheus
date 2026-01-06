@@ -86,8 +86,14 @@ namespace TaskLayer
                 
                 // load the file
                 Status("Loading spectra file...", new List<string> { _taskId, "Individual Spectra Files" });
-                //MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams).LoadAllStaticData();
-                MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams);
+                //We ususally use unfiltered file
+                MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams).LoadAllStaticData();
+                //Use filtered file for TMT calibration
+                if (combinedParams.ListOfModsFixed.Any(b => b.Item2.Contains("TMT")) || combinedParams.ListOfModsVariable.Any(b => b.Item2.Contains("TMT")))
+                {
+                    var newFileManager = new MyFileManager(true);
+                    myMsDataFile = newFileManager.LoadFile(originalUncalibratedFilePath, combinedParams);
+                }
 
                 // First round of calibration
                 Status("Acquiring calibration data points...", new List<string> { _taskId, "Individual Spectra Files" });
