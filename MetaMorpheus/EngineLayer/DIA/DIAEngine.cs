@@ -27,7 +27,7 @@ namespace EngineLayer.DIA
         public CommonParameters CommonParams { get; set; }
         public DIAparameters DIAparams => CommonParams.DIAparameters;
         public int OneBasedScanNumber { get; set; } 
-        public IEnumerable<Ms2ScanWithSpecificMass> GetPseudoMs2Scans()
+        public virtual IEnumerable<Ms2ScanWithSpecificMass> GetPseudoMs2Scans()
         {
             //read in scans
             var ms1Scans = DataFile.GetMS1Scans().ToArray();
