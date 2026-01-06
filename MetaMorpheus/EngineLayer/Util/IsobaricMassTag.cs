@@ -5,6 +5,8 @@ using Chemistry;
 using Omics.Modifications;
 using MassSpectrometry;
 using MzLibUtil;
+using System.IO;
+using System.Globalization;
 
 namespace EngineLayer
 {
@@ -230,6 +232,31 @@ namespace EngineLayer
                 string s when s.Contains("DILEU-4") || s.Contains("DILEU4") => IsobaricMassTagType.diLeu4,
                 _ => null
             };
+        }
+
+        public static void GenerateIntensityFile(IsobaricMassTagType tagType, MsDataFile tmtFile, string outPath)
+        {
+            var tag = GetIsobaricMassTag(tagType);
+            var ms3scans = tmtFile.GetAllScansList().Where(s => s.MsnOrder == 3).ToList();
+
+            var columnNames = new string[] { "lc_name", "ms2_scan", "ms3_scan" };
+            var reporterIonLabels = GetReporterIonLabels(tagType).Take(16).Select(l => $"height_{l}").ToList();
+            columnNames = columnNames.Concat(reporterIonLabels).ToArray();
+
+            using var writer = new StreamWriter(outPath);
+            writer.WriteLine(string.Join("\t", columnNames));
+
+            var fileName = Path.GetFileNameWithoutExtension(tmtFile.FilePath);
+            foreach (var ms3 in ms3scans)
+            {
+                var scanInfo = new[]{fileName, ms3.OneBasedPrecursorScanNumber.Value.ToString(CultureInfo.InvariantCulture), ms3.OneBasedScanNumber.ToString(CultureInfo.InvariantCulture)};
+
+                var reporterInfo = tag.GetReporterIonIntensities(ms3.MassSpectrum);
+                var reporterStrings = reporterInfo.Select(x =>
+                    x.ToString("G17", CultureInfo.InvariantCulture));
+                var row = scanInfo.Concat(reporterStrings);
+                writer.WriteLine(string.Join("\t", row));
+            }
         }
     }
 }
