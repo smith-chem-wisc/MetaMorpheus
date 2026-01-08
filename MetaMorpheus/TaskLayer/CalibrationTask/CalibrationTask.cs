@@ -152,6 +152,9 @@ namespace TaskLayer
                 fileSpecificParams.PrecursorMassTolerance = combinedParams.PrecursorMassTolerance;
                 fileSpecificParams.ProductMassTolerance = combinedParams.ProductMassTolerance;
 
+                //debug
+                DataPointAquisitionResults acquisitionResultsFourth = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
+
                 // write toml settings for the calibrated file
                 string calibratedTomlFilename = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
                 CalibrationOutput(myMsDataFile, calibratedNewFullFilePath, fileSpecificParams, calibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
