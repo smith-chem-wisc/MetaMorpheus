@@ -291,8 +291,13 @@ namespace TaskLayer
         private void GlycoProteinAnalysis(List<GlycoSpectralMatch> gsms, string outputFolder, string individualFileFolder = null, MyTaskResults myTaskResults = null )
         {
             // convert gsms to psms
-            List<SpectralMatch> psmsForProteinParsimony = gsms.Select(p => p as SpectralMatch).ToList();
 
+            List<SpectralMatch> psmsForProteinParsimony = FilteredPsms.Filter(gsms.Select(p => p as SpectralMatch).ToList(),
+                commonParams: CommonParameters,
+                includeDecoys: true,
+                includeContaminants: true,
+                includeAmbiguous: true,
+                includeHighQValuePsms: true).ToList();
             Status("Constructing protein groups...", Parameters.SearchTaskId);
 
             // run parsimony
