@@ -127,7 +127,6 @@ namespace TaskLayer
                 }
 
                 //only continue with the third round if the second round showed improvement
-                //!! this way writes out a toml with updated wider tolerance: is this what we want?
                 if (CalibrationHasValue(acquisitionResultsFirst, acquisitionResultsSecond))
                 {
                     myMsDataFile = engine.CalibratedDataFile;
@@ -147,13 +146,15 @@ namespace TaskLayer
                         UpdateCombinedParameters(combinedParams, acquisitionResultsThird);
                     }
                 }
+                // if calibration did not make things better, write uncalibrated file and update the tolerances
+                else
+                {
+                    WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, taskId);
+                }
 
                 // Update file specific params to reflect the new tolerances, then write them out
                 fileSpecificParams.PrecursorMassTolerance = combinedParams.PrecursorMassTolerance;
                 fileSpecificParams.ProductMassTolerance = combinedParams.ProductMassTolerance;
-
-                //debug
-                DataPointAquisitionResults acquisitionResultsFourth = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
 
                 // write toml settings for the calibrated file
                 string calibratedTomlFilename = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
