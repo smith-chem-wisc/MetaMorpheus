@@ -66,7 +66,28 @@ namespace EngineLayer
         public HashSet<IBioPolymerWithSetMods> AllPeptides { get; set; }
 
         public HashSet<IBioPolymerWithSetMods> UniquePeptides { get; set; }
-
+        /// <summary>
+        /// Contains all PSMs associated with this protein group that pass the 1% FDR threshold.
+        /// The specific filtering criteria depends on the <see cref="FilterType"/> used during protein scoring:
+        /// <list type="bullet">
+        ///   <item>
+        ///     <term><see cref="FilterType.QValue"/></term>
+        ///     <description>PSMs where QValue ≤ 0.01 AND QValueNotch ≤ 0.01</description>
+        ///   </item>
+        ///   <item>
+        ///     <term><see cref="FilterType.PepQValue"/></term>
+        ///     <description>PSMs where PEP_QValue ≤ 0.01</description>
+        ///   </item>
+        /// </list>
+        /// This collection is populated during <see cref="ProteinScoringAndFdrEngine.ScoreProteinGroups"/> 
+        /// and is used for:
+        /// <list type="bullet">
+        ///   <item>Calculating the <see cref="ProteinGroupScore"/> via the <see cref="Score"/> method</item>
+        ///   <item>Determining <see cref="BestPeptideScore"/>, <see cref="BestPeptideQValue"/>, and <see cref="BestPeptidePEP"/></item>
+        ///   <item>Computing sequence coverage in <see cref="CalculateSequenceCoverage"/></item>
+        ///   <item>Reporting the number of PSMs in protein group output</item>
+        /// </list>
+        /// </summary>
         public HashSet<SpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
 
         public List<double> SequenceCoverageFraction { get; private set; }
@@ -80,6 +101,8 @@ namespace EngineLayer
         public double QValue { get; set; }
 
         public double BestPeptideQValue { get; set; }
+        
+        public double BestPeptidePEP { get; set; }
 
         public double BestPeptideScore { get; set; }
 
@@ -204,7 +227,8 @@ namespace EngineLayer
             sb.Append("Protein Cumulative Decoy" + '\t');
             sb.Append("Protein QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
-            sb.Append("Best Peptide Notch QValue");
+            sb.Append("Best Peptide Notch QValue" + '\t');
+            sb.Append("Best Peptide PEP");
             return sb.ToString();
         }
 
@@ -378,17 +402,42 @@ namespace EngineLayer
 
             // best peptide q value
             sb.Append(BestPeptideQValue);
+            sb.Append("\t");
+
+            // best peptide PEP
+            sb.Append(BestPeptidePEP);
 
             return sb.ToString();
         }
 
-        // this method is only used internally, to make protein grouping faster
-        // this is NOT an output and is NOT used for protein FDR calculations
-        public void Score()
+        /// <summary>
+        /// Scores the protein group based on the filter type used.
+        /// When using Q-value filtering, the score is the best (highest) peptide score.
+        /// When using PEP Q-value filtering, the score is the best (lowest) peptide PEP.
+        /// </summary>
+        /// <param name="filterType">The filter type used for PSM filtering</param>
+        public void Score(FilterType filterType)
         {
             // sum the scores of the best PSM per base sequence
             ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.BaseSequence)
                 .Select(p => p.Select(x => x.Score).Max()).Sum();
+
+
+            //if (!AllPsmsBelowOnePercentFDR.Any())
+            //{
+            //    ProteinGroupScore = 0;
+            //    return;
+            //}
+
+            //ProteinGroupScore = filterType switch
+            //{
+            //    // For PEP filtering, use the minimum (best) PEP value
+            //    // Negate it so that lower PEP = higher score for sorting purposes
+            //    FilterType.PepQValue => -AllPsmsBelowOnePercentFDR.Min(x => x.FdrInfo.PEP),
+
+            //    // For Q-value filtering, use the maximum (best) score
+            //    _ => AllPsmsBelowOnePercentFDR.Max(x => x.Score)
+            //};
         }
 
         public void CalculateSequenceCoverage()

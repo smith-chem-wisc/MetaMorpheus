@@ -8,11 +8,6 @@ using System.Threading.Tasks;
 
 namespace TaskLayer
 {
-    public enum FilterType
-    {
-        QValue,
-        PepQValue
-    }
 
     /// <summary>
     /// Contains a filtered list of PSMs.

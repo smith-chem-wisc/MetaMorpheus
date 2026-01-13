@@ -13,8 +13,9 @@ namespace EngineLayer
         private readonly bool MergeIndistinguishableProteinGroups;
         private readonly List<ProteinGroup> ProteinGroups;
         private readonly HashSet<string> _decoyIdentifiers;
+        private readonly FilterType _filterType;
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<SpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<SpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, FilterType filterType = FilterType.QValue) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             NewPsms = newPsms;
             ProteinGroups = proteinGroups;
@@ -22,6 +23,7 @@ namespace EngineLayer
             TreatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
             MergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
             _decoyIdentifiers = proteinGroups.SelectMany(p => p.Proteins.Where(b => b.IsDecoy).Select(b => b.Accession.Split('_')[0])).ToHashSet();
+            _filterType = filterType;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -40,14 +42,27 @@ namespace EngineLayer
 
             return proteinGroupName;
         }
-
+        /// <summary>
+        /// Determines if a PSM passes the quality threshold based on the filter type.
+        /// For QValue: uses QValueNotch and QValue <= 0.01
+        /// For PepQValue: uses PEP_QValue <= 0.01
+        /// </summary>
+        private bool PsmPassesThreshold(SpectralMatch psm)
+        {
+            return _filterType switch
+            {
+                FilterType.PepQValue => psm.FdrInfo.PEP_QValue <= 0.01,
+                _ => psm.FdrInfo.QValueNotch <= 0.01 && psm.FdrInfo.QValue <= 0.01
+            };
+        }
         private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<SpectralMatch> psmList)
         {
             // add each protein groups PSMs
             var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
             foreach (var psm in psmList)
             {
-                if (psm.FdrInfo.QValueNotch <= 0.01 && psm.FdrInfo.QValue <= 0.01)
+                // Use filter-type-aware threshold check
+                if (PsmPassesThreshold(psm))
                 {
                     if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
@@ -81,7 +96,7 @@ namespace EngineLayer
             // score the group
             foreach (var proteinGroup in proteinGroups)
             {
-                proteinGroup.Score();
+                proteinGroup.Score(_filterType);
             }
 
             if (MergeIndistinguishableProteinGroups)
@@ -133,21 +148,21 @@ namespace EngineLayer
                 }
             }
 
-            //Do Classic protein FDR (all targets, all decoys)
-            // order protein groups by Notch-QValue
-            var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+            // Do Classic protein FDR (all targets, all decoys)
+            // order protein groups based on filter type
+            var sortedProteinGroups = SortProteinGroupsByFilterType(proteinGroups);
             AssignQValuesToProteins(sortedProteinGroups);
 
             // Do "Picked" protein FDR
             // adapted from "A Scalable Approach for Protein False Discovery Rate Estimation in Large Proteomic Data Sets" ~ MCP, 2015, Savitski
             // pair decoys and targets by accession
-            // then use the best peptide Notch-QValue as the score for the protein group
+            // then use the best peptide metric (QValue or PEP) as the score for the protein group
             Dictionary<string, List<ProteinGroup>> accessionToProteinGroup = new Dictionary<string, List<ProteinGroup>>();
             foreach (var pg in proteinGroups)
             {
                 foreach (var protein in pg.Proteins)
                 {
-                    string stippedAccession = StripDecoyIdentifier(protein.Accession, _decoyIdentifiers); //remove "DECOY_" from the accession
+                    string stippedAccession = StripDecoyIdentifier(protein.Accession, _decoyIdentifiers);
 
                     if (accessionToProteinGroup.TryGetValue(stippedAccession, out List<ProteinGroup> groups))
                     {
@@ -161,37 +176,57 @@ namespace EngineLayer
 
                 pg.BestPeptideScore = pg.AllPsmsBelowOnePercentFDR.Max(psm => psm.Score);
                 pg.BestPeptideQValue = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.QValueNotch);
+                pg.BestPeptidePEP = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.PEP);
             }
 
-            // pick the best Notch-QValue for each paired accession
-            // this compares target-decoy pairs for each protein and saves the highest scoring group
+            // pick the best for each paired accession based on filter type
+            // this compares target-decoy pairs for each protein and saves the best scoring group
             List<ProteinGroup> rescuedProteins = new List<ProteinGroup>();
             foreach (var accession in accessionToProteinGroup)
             {
                 if (accession.Value.Count > 1)
                 {
-                    var pgList = accession.Value.OrderBy(p => p.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
-                    var pgToUse = pgList.First(); // pick lowest Notch QValue and remove the rest
+                    var pgList = SortProteinGroupsByFilterType(accession.Value);
+                    var pgToUse = pgList.First(); // pick best (lowest QValue or lowest PEP) and remove the rest
                     pgList.Remove(pgToUse);
-                    rescuedProteins.AddRange(pgList); //save the remaining protein groups
-                    proteinGroups = proteinGroups.Except(pgList).ToList(); //remove the remaining protein groups
+                    rescuedProteins.AddRange(pgList); // save the remaining protein groups
+                    proteinGroups = proteinGroups.Except(pgList).ToList(); // remove the remaining protein groups
                 }
             }
 
-            sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+            sortedProteinGroups = SortProteinGroupsByFilterType(proteinGroups);
             AssignQValuesToProteins(sortedProteinGroups);
 
-            //Rescue the removed TARGET proteins that have the classic protein fdr.
-            //This isn't super transparent, but the "Picked" TDS (target-decoy strategy) does a good job of removing a lot of decoys from accumulating in large datasets.
-            //It sounds biased, but the Picked TDS is actually necessary to keep the chance of a random assignment being assigned as a target or a decoy at 50:50.
-            //The targets that we're re-adding have higher q-values (for their score) from the Classic TDS than the Picked TDS (the classic is conservative).
-            //If we add the decoys, it will raise questions on if the FDR is being calculated correctly, 
-            //because lots of decoys (which are out-competed in the Picked TDS) will be written with high(ish) scores
-            //so really, we're only outputting targets for a cleanliness of output (but the decoys are still there for the classic TDS)
-            //TL;DR 99% of the protein output is from the Picked TDS, but a small fraction is from the Classic TDS.
+            // Rescue the removed TARGET proteins that have the classic protein fdr.
+            // This isn't super transparent, but the "Picked" TDS (target-decoy strategy) does a good job of removing a lot of decoys from accumulating in large datasets.
+            // It sounds biased, but the Picked TDS is actually necessary to keep the chance of a random assignment being assigned as a target or a decoy at 50:50.
+            // The targets that we're re-adding have higher q-values (for their score) from the Classic TDS than the Picked TDS (the classic is conservative).
+            // If we add the decoys, it will raise questions on if the FDR is being calculated correctly, 
+            // because lots of decoys (which are out-competed in the Picked TDS) will be written with high(ish) scores
+            // so really, we're only outputting targets for a cleanliness of output (but the decoys are still there for the classic TDS)
+            // TL;DR 99% of the protein output is from the Picked TDS, but a small fraction is from the Classic TDS.
             sortedProteinGroups.AddRange(rescuedProteins.Where(x => !x.IsDecoy));
 
             return sortedProteinGroups.OrderBy(b => b.QValue).ToList();
+        }
+        /// <summary>
+        /// Sorts protein groups based on the filter type.
+        /// QValue: Sort by best peptide Q-value (ascending), then by best peptide score (descending) - higher scores are better
+        /// PepQValue: Sort by best peptide PEP (ascending) - lower PEP is better
+        /// </summary>
+        private List<ProteinGroup> SortProteinGroupsByFilterType(IEnumerable<ProteinGroup> proteinGroups)
+        {
+            return _filterType switch
+            {
+                FilterType.PepQValue => proteinGroups
+                    .OrderBy(p => p.BestPeptidePEP)
+                    .ThenByDescending(p => p.BestPeptideScore)
+                    .ToList(),
+                _ => proteinGroups
+                    .OrderBy(b => b.BestPeptideQValue)
+                    .ThenByDescending(p => p.BestPeptideScore)
+                    .ToList()
+            };
         }
 
         private void AssignQValuesToProteins(List<ProteinGroup> sortedProteinGroups)

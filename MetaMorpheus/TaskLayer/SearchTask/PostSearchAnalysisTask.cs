@@ -17,15 +17,12 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using TaskLayer.MbrAnalysis;
-using Chemistry;
 using EngineLayer.DatabaseLoading;
 using MzLibUtil;
 using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using Omics;
-using Readers.SpectralLibrary;
 using EngineLayer.SpectrumMatch;
 using ProteinGroup = FlashLFQ.ProteinGroup;
 
@@ -212,8 +209,17 @@ namespace TaskLayer
             ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmForParsimony.FilteredPsmsList, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
-            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmForParsimony.FilteredPsmsList,
-                Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent, true, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run();
+            // Pass the FilterType from the filtered PSMs to ensure consistent filtering criteria
+            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                proteinAnalysisResults.ProteinGroups,
+                psmForParsimony.FilteredPsmsList,
+                Parameters.SearchParameters.NoOneHitWonders,
+                Parameters.SearchParameters.ModPeptidesAreDifferent,
+                true,
+                CommonParameters,
+                this.FileSpecificParameters,
+                new List<string> { Parameters.SearchTaskId },
+                psmForParsimony.FilterType).Run();
 
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
@@ -942,16 +948,6 @@ namespace TaskLayer
 
         private void WriteProteinResults()
         {
-            if (!Parameters.SearchParameters.DoParsimony)
-            {
-                return;
-            }
-            else
-            {
-                string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with q-value <= 0.01 (1% FDR): " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
-                ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
-            }
-            
             string fileName = $"All{GlobalVariables.AnalyteType.GetBioPolymerLabel()}Groups.tsv";
             if (Parameters.SearchParameters.DoLabelFreeQuantification)
             {
@@ -960,16 +956,31 @@ namespace TaskLayer
 
             //set peptide output values
             ProteinGroups.ForEach(x => x.GetIdentifiedPeptidesOutput(Parameters.SearchParameters.SilacLabels));
-            // write protein groups to tsv
-            string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
-            WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId });
 
-            var psmsGroupedByFile = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+            // Get filtered PSMs to determine the filter type being used
+            var filteredPsms = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                 CommonParameters,
                 includeDecoys: true,
                 includeContaminants: true,
                 includeAmbiguous: true,
-                includeHighQValuePsms: false).FilteredPsmsList.GroupBy(f => f.FullFilePath);
+                includeHighQValuePsms: false);
+
+            // write protein groups to tsv, passing the filter type
+            string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
+            WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, filteredPsms.FilterType);
+
+            var psmsGroupedByFile = filteredPsms.GroupBy(p => p.FullFilePath).ToList();
+
+            if (!Parameters.SearchParameters.DoParsimony)
+            {
+                return;
+            }
+            else
+            {
+                string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + ": " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
+                ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
+            }
+
 
             //if we're writing individual files, we need to reprocess the psms
             //If doing a SILAC search and no "unlabeled" labels were specified (i.e. multiple labels are used for multiplexing and no conditions are "unlabeled"),
@@ -1012,9 +1023,17 @@ namespace TaskLayer
                 List<SpectralMatch> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
                 var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
 
-                ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
-                    Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent,
-                    false, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }).Run();
+                // Pass the FilterType from the filtered PSMs to ensure consistent filtering criteria
+                ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                    subsetProteinGroupsForThisFile,
+                    psmsForThisFile,
+                    Parameters.SearchParameters.NoOneHitWonders,
+                    Parameters.SearchParameters.ModPeptidesAreDifferent,
+                    false,
+                    CommonParameters,
+                    this.FileSpecificParameters,
+                    new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath },
+                    filteredPsms.FilterType).Run();
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
@@ -1026,7 +1045,7 @@ namespace TaskLayer
 
                     // write result files
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + $"_{GlobalVariables.AnalyteType.GetBioPolymerLabel()}Groups.tsv");
-                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, filteredPsms.FilterType);
                 }
 
                 psmsForThisFile = FilteredPsms.Filter(psmsForThisFile,
@@ -1531,11 +1550,17 @@ namespace TaskLayer
             }
         }
 
-        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds)
+        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, FilterType filterType = FilterType.QValue)
         {
             if (proteinGroups != null && proteinGroups.Any())
             {
-                double qValueThreshold = Math.Min(CommonParameters.QValueThreshold, CommonParameters.PepQValueThreshold);
+                // Set threshold based on the filter type being used
+                double qValueThreshold = filterType switch
+                {
+                    FilterType.PepQValue => CommonParameters.PepQValueThreshold,
+                    _ => CommonParameters.QValueThreshold
+                };
+
                 using (StreamWriter output = new StreamWriter(filePath))
                 {
                     output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
