@@ -14,8 +14,9 @@ namespace EngineLayer
         private readonly List<ProteinGroup> ProteinGroups;
         private readonly HashSet<string> _decoyIdentifiers;
         private readonly FilterType _filterType;
+        private readonly double _filterThreshold;
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<SpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, FilterType filterType = FilterType.QValue) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<SpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, FilterType filterType = FilterType.QValue, double filterThreshold = 0.01) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             NewPsms = newPsms;
             ProteinGroups = proteinGroups;
@@ -24,6 +25,7 @@ namespace EngineLayer
             MergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
             _decoyIdentifiers = proteinGroups.SelectMany(p => p.Proteins.Where(b => b.IsDecoy).Select(b => b.Accession.Split('_')[0])).ToHashSet();
             _filterType = filterType;
+            _filterThreshold = filterThreshold;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -43,16 +45,16 @@ namespace EngineLayer
             return proteinGroupName;
         }
         /// <summary>
-        /// Determines if a PSM passes the quality threshold based on the filter type.
-        /// For QValue: uses QValueNotch and QValue <= 0.01
-        /// For PepQValue: uses PEP_QValue <= 0.01
+        /// Determines if a PSM passes the quality threshold based on the filter type and threshold.
+        /// For QValue: uses QValueNotch and QValue <= threshold
+        /// For PepQValue: uses PEP_QValue <= threshold
         /// </summary>
         private bool PsmPassesThreshold(SpectralMatch psm)
         {
             return _filterType switch
             {
-                FilterType.PepQValue => psm.FdrInfo.PEP_QValue <= 0.01,
-                _ => psm.FdrInfo.QValueNotch <= 0.01 && psm.FdrInfo.QValue <= 0.01
+                FilterType.PepQValue => psm.FdrInfo.PEP_QValue <= _filterThreshold,
+                _ => psm.FdrInfo.QValueNotch <= _filterThreshold && psm.FdrInfo.QValue <= _filterThreshold
             };
         }
         private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<SpectralMatch> psmList)
