@@ -839,8 +839,7 @@ namespace TaskLayer
                     includeDecoys: false,
                     includeContaminants: false,
                     includeAmbiguous: false,
-                    includeHighQValuePsms: false
-                );
+                    includeHighQValuePsms: false);
 
 
                 //group psms by peptide and charge, then write highest scoring PSM to dictionary
@@ -976,7 +975,8 @@ namespace TaskLayer
 
             var psmsGroupedByFile = filteredPsms.GroupBy(p => p.FullFilePath).ToList();
 
-            string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + ": " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
+            string fdrSuffix = filteredPsms.FilterType == FilterType.QValue ? " (1% FDR)" : "";
+            string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + fdrSuffix + ": " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
 
 
@@ -1179,7 +1179,6 @@ namespace TaskLayer
                 }
             }
         }
-
         private void CompressIndividualFileResults()
         {
             if (Parameters.SearchParameters.CompressIndividualFiles && Directory.Exists(Parameters.IndividualResultsOutputFolder))
