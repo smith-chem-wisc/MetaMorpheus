@@ -975,7 +975,7 @@ namespace TaskLayer
 
             var psmsGroupedByFile = filteredPsms.GroupBy(p => p.FullFilePath).ToList();
 
-            string fdrSuffix = filteredPsms.FilterType == FilterType.QValue ? " (1% FDR)" : "";
+            string fdrSuffix = filteredPsms.FilterType == FilterType.QValue && filteredPsms.FilterThreshold == 0.01 ? " (1% FDR)" : "";
             string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + fdrSuffix + ": " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
 
