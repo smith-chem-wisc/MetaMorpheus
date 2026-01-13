@@ -96,7 +96,7 @@ namespace EngineLayer
             // score the group
             foreach (var proteinGroup in proteinGroups)
             {
-                proteinGroup.Score(_filterType);
+                proteinGroup.Score();
             }
 
             if (MergeIndistinguishableProteinGroups)

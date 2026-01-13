@@ -948,6 +948,11 @@ namespace TaskLayer
 
         private void WriteProteinResults()
         {
+            if (!Parameters.SearchParameters.DoParsimony)
+            {
+                return;
+            }
+
             string fileName = $"All{GlobalVariables.AnalyteType.GetBioPolymerLabel()}Groups.tsv";
             if (Parameters.SearchParameters.DoLabelFreeQuantification)
             {
@@ -971,15 +976,8 @@ namespace TaskLayer
 
             var psmsGroupedByFile = filteredPsms.GroupBy(p => p.FullFilePath).ToList();
 
-            if (!Parameters.SearchParameters.DoParsimony)
-            {
-                return;
-            }
-            else
-            {
-                string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + ": " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
-                ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
-            }
+            string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + ": " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
+            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
 
 
             //if we're writing individual files, we need to reprocess the psms
@@ -1040,8 +1038,8 @@ namespace TaskLayer
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                 {
                     // write summary text
-                    string proteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups within 1 % FDR: " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
-                    ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
+                    string fileProteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups within 1 % FDR: " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
+                    ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = fileProteinResultsText;
 
                     // write result files
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + $"_{GlobalVariables.AnalyteType.GetBioPolymerLabel()}Groups.tsv");

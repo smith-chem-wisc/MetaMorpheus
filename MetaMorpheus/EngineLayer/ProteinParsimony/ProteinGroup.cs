@@ -410,34 +410,11 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        /// <summary>
-        /// Scores the protein group based on the filter type used.
-        /// When using Q-value filtering, the score is the best (highest) peptide score.
-        /// When using PEP Q-value filtering, the score is the best (lowest) peptide PEP.
-        /// </summary>
-        /// <param name="filterType">The filter type used for PSM filtering</param>
-        public void Score(FilterType filterType)
+        public void Score()
         {
             // sum the scores of the best PSM per base sequence
             ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.BaseSequence)
                 .Select(p => p.Select(x => x.Score).Max()).Sum();
-
-
-            //if (!AllPsmsBelowOnePercentFDR.Any())
-            //{
-            //    ProteinGroupScore = 0;
-            //    return;
-            //}
-
-            //ProteinGroupScore = filterType switch
-            //{
-            //    // For PEP filtering, use the minimum (best) PEP value
-            //    // Negate it so that lower PEP = higher score for sorting purposes
-            //    FilterType.PepQValue => -AllPsmsBelowOnePercentFDR.Min(x => x.FdrInfo.PEP),
-
-            //    // For Q-value filtering, use the maximum (best) score
-            //    _ => AllPsmsBelowOnePercentFDR.Max(x => x.Score)
-            //};
         }
 
         public void CalculateSequenceCoverage()
