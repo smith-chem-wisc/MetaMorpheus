@@ -16,7 +16,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using TaskLayer.MbrAnalysis;
 using Chemistry;
 using EngineLayer.DatabaseLoading;
 using MzLibUtil;
@@ -36,7 +35,6 @@ namespace TaskLayer
     {
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
-        private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
 
         public override string OutputFolder => Parameters?.OutputFolder;
 
@@ -110,14 +108,9 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WritePrunedDatabase)
                 WritePrunedDatabase(Parameters.AllSpectralMatches, Parameters.BioPolymerList, Parameters.SearchParameters.ModsToWriteSelection, Parameters.DatabaseFilenameList, Parameters.OutputFolder, Parameters.SearchTaskId);
 
-            var k = CommonParameters;
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
                 SpectralLibraryGeneration();
-                if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
-                {
-                    SpectralRecoveryResults = SpectralRecoveryRunner.RunSpectralRecoveryAlgorithm(Parameters, CommonParameters, FileSpecificParameters);
-                }      
             }
 
             if(Parameters.SearchParameters.UpdateSpectralLibrary)
@@ -1092,25 +1085,11 @@ namespace TaskLayer
             if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
-                if (SpectralRecoveryResults != null)
-                {
-                    SpectralRecoveryResults.WritePeakQuantificationResultsToTsv(Parameters.OutputFolder, "AllQuantifiedPeaks");
-                }
-                else
-                {
-                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
-                }
+                WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
 
                 // write peptide quant results
                 string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
-                if (SpectralRecoveryResults != null)
-                {
-                    SpectralRecoveryResults.WritePeptideQuantificationResultsToTsv(Parameters.OutputFolder, filename);
-                }
-                else
-                {
-                    WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
-                }
+                WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
 
                 // write individual results
                 if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)

@@ -559,16 +559,10 @@ namespace TaskLayer
             if (Parameters.GlycoSearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
-                // once SpectralRecoveryResults is implemented, this will need to be updated with an if statement
-
                 WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
 
                 // write peptide quant results
                 string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
-
-                // write peptides
-                // once SpectralRecoveryResults is implemented, this will need to be updated with an if statement
-
                 WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
 
                 WriteProteinQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder,
