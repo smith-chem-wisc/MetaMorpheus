@@ -1,12 +1,9 @@
 ﻿using Easy.Common.Extensions;
-using EngineLayer;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace TaskLayer
+namespace EngineLayer.SpectrumMatch
 {
     public enum FilterType
     {
