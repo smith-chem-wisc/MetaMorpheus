@@ -355,8 +355,6 @@ namespace Test
                 hypothesis.CumulativeDecoyNotch = 3;
             }
             
-            psm.ResolveAllAmbiguities();
-            
             var dict = new Dictionary<string, string>();
             PsmTsvWriter.AddMatchScoreData(dict, psm, writePeptideLevelFdr: false);
 
@@ -395,7 +393,6 @@ namespace Test
                 CumulativeTarget = 80,
                 CumulativeDecoy = 4,
                 QValue = 0.04,
-                QValueNotch = 2.5,
                 PEP = 0.015,
                 PEP_QValue = 0.025
             };
@@ -407,8 +404,6 @@ namespace Test
                 hypothesis.PeptideCumulativeTargetNotch = 75;
                 hypothesis.PeptideCumulativeDecoyNotch = 2;
             }
-            
-            psm.ResolveAllAmbiguities();
             
             var dict = new Dictionary<string, string>();
             PsmTsvWriter.AddMatchScoreData(dict, psm, writePeptideLevelFdr: true);
