@@ -1039,7 +1039,7 @@ namespace TaskLayer
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                 {
                     // write summary text
-                    string fileProteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups within 1 % FDR: " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
+                    string fileProteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= filteredPsms.FilterThreshold && !b.IsDecoy);
                     ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = fileProteinResultsText;
 
                     // write result files

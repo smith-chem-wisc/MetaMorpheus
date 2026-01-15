@@ -637,14 +637,15 @@ namespace Test
         /// The test verifies:
         /// 1. Combined results across all files show correct counts with "q-value <= 1" format
         /// 2. Individual file results (mouseOne, mouseTwo) show correct per-file counts
-        /// 3. Protein groups are reported using the same filter threshold as PSMs and peptides
+        /// 3. Protein groups are reported using the same filter type and threshold as PSMs and peptides
+        ///    (both combined and per-file results should use consistent formatting)
         /// 4. Precursor and MS2 scan counts are accurately reported for each file and combined
         /// 
         /// Expected output format in results.txt:
         /// - "All target PSMs with q-value <= 1: [count]"
         /// - "All target peptides with q-value <= 1: [count]"  
         /// - "All target protein groups with q-value <= 1: [count]"
-        /// - "[fileName] - Target protein groups within 1 % FDR: [count]"
+        /// - "[fileName] - Target protein groups with q-value <= 1: [count]"
         /// </summary>
         [Test]
         public static void TestSearchTaskResultsTextContents()
@@ -685,13 +686,13 @@ namespace Test
 
             Assert.That(results[13], Is.EqualTo("mouseOne - Target PSMs with q-value <= 1: 22"));
             Assert.That(results[14], Is.EqualTo("mouseOne - Target peptides with q-value <= 1: 14"));
-            Assert.That(results[15], Is.EqualTo("mouseOne - Target protein groups within 1 % FDR: 14"));
+            Assert.That(results[15], Is.EqualTo("mouseOne - Target protein groups with q-value <= 1: 14"));
             Assert.That(results[16], Is.EqualTo("mouseOne - Precursors: 57"));
             Assert.That(results[17], Is.EqualTo("mouseOne - MS2 Scans: 20"));
 
             Assert.That(results[19], Is.EqualTo("mouseTwo - Target PSMs with q-value <= 1: 24"));
             Assert.That(results[20], Is.EqualTo("mouseTwo - Target peptides with q-value <= 1: 14"));
-            Assert.That(results[21], Is.EqualTo("mouseTwo - Target protein groups within 1 % FDR: 14"));
+            Assert.That(results[21], Is.EqualTo("mouseTwo - Target protein groups with q-value <= 1: 14"));
             Assert.That(results[22], Is.EqualTo("mouseTwo - Precursors: 66"));
             Assert.That(results[23], Is.EqualTo("mouseTwo - MS2 Scans: 22"));
 
