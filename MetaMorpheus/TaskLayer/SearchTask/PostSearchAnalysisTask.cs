@@ -1028,7 +1028,7 @@ namespace TaskLayer
                 List<SpectralMatch> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
                 var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
 
-                // Pass the FilterType from the filtered PSMs to ensure consistent filtering criteria
+                // Pass the FilterType and FilterThreshold from the filtered PSMs to ensure consistent filtering criteria
                 ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
                     subsetProteinGroupsForThisFile,
                     psmsForThisFile,
@@ -1038,7 +1038,8 @@ namespace TaskLayer
                     CommonParameters,
                     this.FileSpecificParameters,
                     new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath },
-                    filteredPsms.FilterType).Run();
+                    filteredPsms.FilterType,
+                    filteredPsms.FilterThreshold).Run();
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
