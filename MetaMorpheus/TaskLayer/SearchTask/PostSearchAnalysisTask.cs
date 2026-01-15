@@ -978,7 +978,7 @@ namespace TaskLayer
 
             // Build the protein results summary text
             // Add "(1% FDR)" suffix only when using q-value filtering with the standard 0.01 threshold for clarity
-            string fdrSuffix = filteredPsms.FilterType == FilterType.QValue && filteredPsms.FilterThreshold == 0.01 ? " (1% FDR)" : "";
+            string fdrSuffix = filteredPsms.FilterType == FilterType.QValue && Math.Abs(filteredPsms.FilterThreshold - 0.01) < 0.0001 ? " (1% FDR)" : "";
             
             // Count protein groups that pass the configured filter threshold
             // This uses the same threshold that was used for PSM and peptide filtering to ensure consistency
