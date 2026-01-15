@@ -67,18 +67,20 @@ namespace EngineLayer
 
         public HashSet<IBioPolymerWithSetMods> UniquePeptides { get; set; }
         /// <summary>
-        /// Contains all PSMs associated with this protein group that pass the 1% FDR threshold.
-        /// The specific filtering criteria depends on the <see cref="FilterType"/> used during protein scoring:
+        /// Contains all PSMs associated with this protein group that pass the configured quality threshold.
+        /// The specific filtering criteria depends on the <see cref="FilterType"/> and threshold passed to 
+        /// <see cref="ProteinScoringAndFdrEngine"/> during protein scoring:
         /// <list type="bullet">
         ///   <item>
         ///     <term><see cref="FilterType.QValue"/></term>
-        ///     <description>PSMs where QValue ≤ 0.01 AND QValueNotch ≤ 0.01</description>
+        ///     <description>PSMs where QValue ≤ threshold AND QValueNotch ≤ threshold</description>
         ///   </item>
         ///   <item>
         ///     <term><see cref="FilterType.PepQValue"/></term>
-        ///     <description>PSMs where PEP_QValue ≤ 0.01</description>
+        ///     <description>PSMs where PEP_QValue ≤ threshold</description>
         ///   </item>
         /// </list>
+        /// The default threshold is 0.01 (1% FDR), but this can vary based on the filter configuration.
         /// This collection is populated during <see cref="ProteinScoringAndFdrEngine.ScoreProteinGroups"/> 
         /// and is used for:
         /// <list type="bullet">
@@ -88,6 +90,10 @@ namespace EngineLayer
         ///   <item>Reporting the number of PSMs in protein group output</item>
         /// </list>
         /// </summary>
+        /// <remarks>
+        /// Note: The property name "AllPsmsBelowOnePercentFDR" is a legacy name. The actual threshold 
+        /// used is determined by the FilterThreshold parameter passed to ProteinScoringAndFdrEngine.
+        /// </remarks>
         public HashSet<SpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
 
         public List<double> SequenceCoverageFraction { get; private set; }
