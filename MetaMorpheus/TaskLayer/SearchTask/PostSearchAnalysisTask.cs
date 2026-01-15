@@ -976,8 +976,14 @@ namespace TaskLayer
 
             var psmsGroupedByFile = filteredPsms.GroupBy(p => p.FullFilePath).ToList();
 
+            // Build the protein results summary text
+            // Add "(1% FDR)" suffix only when using q-value filtering with the standard 0.01 threshold for clarity
             string fdrSuffix = filteredPsms.FilterType == FilterType.QValue && filteredPsms.FilterThreshold == 0.01 ? " (1% FDR)" : "";
-            string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + fdrSuffix + ": " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
+            
+            // Count protein groups that pass the configured filter threshold
+            // This uses the same threshold that was used for PSM and peptide filtering to ensure consistency
+            int proteinGroupCount = ProteinGroups.Count(b => b.QValue <= filteredPsms.FilterThreshold && !b.IsDecoy);
+            string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + fdrSuffix + ": " + proteinGroupCount;
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
 
 
