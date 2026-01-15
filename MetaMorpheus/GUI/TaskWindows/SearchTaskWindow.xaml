@@ -417,7 +417,7 @@
                                      ConverterParameter="Protein Parsimony"/>
                         </GroupBox.Header>
                         <StackPanel Margin="5">
-                            <CheckBox x:Name="CheckBoxParsimony" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
+                            <CheckBox x:Name="CheckBoxParsimony" IsEnabled="True">
                                 <CheckBox.Content>
                                     <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
                                              ConverterParameter="Apply protein parsimony and construct protein groups"/>
