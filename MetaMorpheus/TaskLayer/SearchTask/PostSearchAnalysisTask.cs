@@ -974,7 +974,7 @@ namespace TaskLayer
             string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
             WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, filteredPsms.FilterType);
 
-            var psmsGroupedByFile = filteredPsms.GroupBy(p => p.FullFilePath).ToList();
+            var psmsGroupedByFile = filteredPsms.FilteredPsmsList.GroupBy(p => p.FullFilePath).ToList();
 
             // Build the protein results summary text
             // Add "(1% FDR)" suffix only when using q-value filtering with the standard 0.01 threshold for clarity

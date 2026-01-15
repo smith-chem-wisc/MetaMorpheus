@@ -107,7 +107,13 @@ namespace EngineLayer
         public double QValue { get; set; }
 
         public double BestPeptideQValue { get; set; }
-        
+
+        /// <summary>
+        /// The minimum Posterior Error Probability (PEP) among all PSMs in <see cref="AllPsmsBelowOnePercentFDR"/>.
+        /// Lower values indicate higher confidence that the best peptide identification is correct.
+        /// This value is populated during <see cref="ProteinScoringAndFdrEngine.DoProteinFdr"/> and is used
+        /// for protein group ranking when using PEP-based filtering (<see cref="FilterType.PepQValue"/>).
+        /// </summary>
         public double BestPeptidePEP { get; set; }
 
         public double BestPeptideScore { get; set; }

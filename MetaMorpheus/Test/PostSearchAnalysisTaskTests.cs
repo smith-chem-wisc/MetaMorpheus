@@ -98,6 +98,9 @@ namespace Test
         public static void AllResultsAndResultsTxtContainsCorrectValues_PepQValue_BottomUp()
         {
             //First test that AllResults and Results display correct numbers of peptides and psms with pep q-value filter on
+            // Note: PEP Q-value filtering typically yields fewer PSMs, peptides, and protein groups than Q-value filtering
+            // (e.g., 145 protein groups here vs. 165 with Q-value filtering) because PEP is a more stringent per-PSM
+            // confidence metric that considers additional features beyond just target-decoy competition.
             EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue, out var testCase);
             string outputFolder = testCase.OutputDirectory;
             var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
