@@ -365,8 +365,8 @@ namespace EngineLayer
 
                     if (min != null && (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch).HasValue)
                     {
-                        cumulativeTargetNotch = (writePeptideLevelFdr ? min.PeptideCumulativeTargetNotch : min.CumulativeTargetNotch)!.Value.ToString(CultureInfo.InvariantCulture);
-                        cumulativeDecoyNotch = (writePeptideLevelFdr ? min.PeptideCumulativeDecoyNotch : min.CumulativeDecoyNotch)!.Value.ToString(CultureInfo.InvariantCulture);
+                        cumulativeTargetNotch = (writePeptideLevelFdr ? min.PeptideCumulativeTargetNotch : min.CumulativeTargetNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
+                        cumulativeDecoyNotch = (writePeptideLevelFdr ? min.PeptideCumulativeDecoyNotch : min.CumulativeDecoyNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
                         qValueNotch = (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
                     }
                     // else: leave values as " " (already initialized at line 336-338)
