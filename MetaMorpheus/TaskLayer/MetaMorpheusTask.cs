@@ -25,11 +25,11 @@ using System.Threading.Tasks;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.SpectrumMatch;
 using UsefulProteomicsDatabases;
-using UsefulProteomicsDatabases.Transcriptomics;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
+using EngineLayer.SpectrumMatch;
 
 namespace TaskLayer
 {

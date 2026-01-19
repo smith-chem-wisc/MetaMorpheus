@@ -970,11 +970,11 @@ namespace Test
             string spectraFile1 = Path.Combine(outputFolder, "171025_06subset_1.mzML");
             string spectraFile2 = Path.Combine(outputFolder, "171025_06subset_2.mzML");
 
-            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+            List<SpectraFileInfo> spectraFiles = new List<SpectraFileInfo>();
 
             //These conditions are such that the experimental design file is bad.
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 9, 0));
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 5, 0, 4));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 9, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition2", 5, 0, 4));
 
             ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
 
@@ -1331,10 +1331,10 @@ namespace Test
             string spectraFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML");
             string spectraFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML");
 
-            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+            List<SpectraFileInfo> spectraFiles = new List<SpectraFileInfo>();
 
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
 
             ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
 
@@ -1408,10 +1408,10 @@ namespace Test
             string spectraFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML");
             string spectraFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML");
 
-            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+            List<SpectraFileInfo> spectraFiles = new List<SpectraFileInfo>();
 
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
 
             ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
 
@@ -1482,10 +1482,10 @@ namespace Test
             string spectraFile1 = Path.Combine(outputFolder, "171025_06subset_1.mzML");
             string spectraFile2 = Path.Combine(outputFolder, "171025_06subset_2.mzML");
 
-            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+            List<SpectraFileInfo> spectraFiles = new List<SpectraFileInfo>();
 
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
 
             ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
 
