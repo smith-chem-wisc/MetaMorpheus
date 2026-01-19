@@ -58,8 +58,8 @@ namespace Test
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.That(output.Length, Is.EqualTo(2));
-            Assert.That(output[0].Contains("Modification Info List\tIntensity_silac(R+3.988)\tIntensity_silac(R+10.008)")); //test that two files were made and no light file
-            Assert.That(output[1].Contains("875000.0000000009\t437500.00000000047")); //test the heavier intensity is half that of the heavy (per the raw file)
+            Assert.That(output[0].Contains("Mods_silac(R+3.988)\tIntensity_silac(R+3.988)\tMods_silac(R+10.008)\tIntensity_silac(R+10.008)")); //test that two files were made and no light file
+            Assert.That(output[1].Contains("875000.0000000009\t\t437500.00000000047")); //test the heavier intensity is half that of the heavy (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -132,8 +132,8 @@ namespace Test
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.That(output.Length, Is.EqualTo(2));
-            Assert.That(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014 & R+6.020)")); //test that two files were made
-            Assert.That(output[1].Contains("1374999.999999999\t687499.9999999995")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.That(output[0].Contains("Mods_silac\tIntensity_silac\tMods_silac(K+8.014 & R+6.020)\tIntensity_silac(K+8.014 & R+6.020)")); //test that two files were made
+            Assert.That(output[1].Contains("1374999.999999999\t\t687499.9999999995")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -223,8 +223,11 @@ namespace Test
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"\TestSilac\AllQuantifiedProteinGroups.tsv");
             Assert.That(output.Length, Is.EqualTo(2));
-            Assert.That(output[0].Contains("Intensity_silac\tIntensity_silacPart2\tIntensity_silac(K+8.014)\tIntensity_silacPart2(K+8.014)")); //test that two files were made
-            Assert.That(output[1].Contains("875000.0000000009\t875000.0000000009\t437500.00000000047\t437500.00000000047")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.That(output[0].Contains("Mods_silac\tIntensity_silac\t"+
+                "Mods_silacPart2\tIntensity_silacPart2\t"+
+                "Mods_silac(K+8.014)\tIntensity_silac(K+8.014)\t"+
+                "Mods_silacPart2(K+8.014)\tIntensity_silacPart2(K+8.014)")); //test that two files were made
+            Assert.That(output[1].Contains("875000.0000000009\t\t875000.0000000009\t\t437500.00000000047\t\t437500.00000000047")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"\TestSilac\AllQuantifiedPeptides.tsv");

@@ -8,6 +8,9 @@ using Omics.Modifications;
 using ThermoFisher.CommonCore.Data;
 using Omics;
 using Transcriptomics.Digestion;
+using MzLibUtil;
+using MzLibUtil.PositionFrequencyAnalysis;
+using Easy.Common.Extensions;
 
 namespace EngineLayer
 {
@@ -31,7 +34,6 @@ namespace EngineLayer
             QValue = 0;
             IsDecoy = false;
             IsContaminant = false;
-            ModsInfo = new List<string>();
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
             foreach (var protein in proteins)
@@ -88,8 +90,7 @@ namespace EngineLayer
 
         public bool DisplayModsOnPeptides { get; set; }
 
-        public List<string> ModsInfo { get; private set; }
-
+        public Dictionary<SpectraFileInfo, QuantifiedProteinGroup> ModsInfo { get; set; }
         public Dictionary<SpectraFileInfo, double> IntensitiesByFile { get; set; }
 
         private List<IBioPolymer> ListOfProteinsOrderedByAccession;
@@ -164,8 +165,9 @@ namespace EngineLayer
             sb.Append("Sequence Coverage" + '\t');
             sb.Append("Sequence Coverage with Mods" + '\t');
             sb.Append("Fragment Sequence Coverage" + '\t');
-            sb.Append("Modification Info List" + "\t");
-            if (FilesForQuantification != null)
+            //sb.Append("Modification Info List" + "\t");
+
+            if (IntensitiesByFile != null && FilesForQuantification != null)
             {
                 bool unfractionated = FilesForQuantification.Select(p => p.Fraction).Distinct().Count() == 1;
                 bool conditionsUndefined = FilesForQuantification.All(p => string.IsNullOrEmpty(p.Condition));
@@ -185,19 +187,26 @@ namespace EngineLayer
                         if ((conditionsUndefined && unfractionated) || silacExperimentalDesign)
                         {
                             // if the data is unfractionated and the conditions haven't been defined, just use the file name as the intensity header
+                            sb.Append("Mods_" + sample.First().FilenameWithoutExtension + "\t");
                             sb.Append("Intensity_" + sample.First().FilenameWithoutExtension + "\t");
                         }
                         else
                         {
                             // if the data is fractionated and/or the conditions have been defined, label the header w/ the condition and biorep number
+                            sb.Append("Mods_" + sample.First().Condition + "_" +
+                                      (sample.First().BiologicalReplicate + 1) + "\t");
                             sb.Append("Intensity_" + sample.First().Condition + "_" +
                                       (sample.First().BiologicalReplicate + 1) + "\t");
                         }
                     }
                 }
             }
+            else
+            {
+                sb.Append("\t");
+            }
 
-            sb.Append("Number of PSMs" + '\t');
+                sb.Append("Number of PSMs" + '\t');
             sb.Append("Protein Decoy/Contaminant/Target" + '\t');
             sb.Append("Protein Cumulative Target" + '\t');
             sb.Append("Protein Cumulative Decoy" + '\t');
@@ -314,16 +323,19 @@ namespace EngineLayer
             sb.Append("\t");
 
             //Detailed mods information list
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ModsInfo)));
-            sb.Append("\t");
+            //sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ModsInfo)));
+            //sb.Append("\t");
 
-            // MS1 intensity (retrieved from FlashLFQ in the SearchTask)
+            // MS1 intensity and mod stoichiometry (retrieved from FlashLFQ in the SearchTask)
             if (IntensitiesByFile != null && FilesForQuantification != null)
             {
                 foreach (var sampleGroup in FilesForQuantification.GroupBy(p => p.Condition))
                 {
                     foreach (var sample in sampleGroup.GroupBy(p => p.BiologicalReplicate).OrderBy(p => p.Key))
                     {
+                        sb.Append(ModInfoStringFromGroupedFiles(sample.ToList()));
+                        sb.Append("\t");
+
                         // if the samples are fractionated, the protein will only have 1 intensity in the first fraction
                         // and the other fractions will be zero. we could find the first/only fraction with an intensity,
                         // but simply summing the fractions is easier than finding the single non-zero value
@@ -338,9 +350,13 @@ namespace EngineLayer
                     }
                 }
             }
+            else
+            {
+                sb.Append("\t");
+            }
 
-            // number of PSMs for listed peptides
-            sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
+                // number of PSMs for listed peptides
+                sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
 
             // isDecoy
@@ -379,6 +395,138 @@ namespace EngineLayer
             sb.Append(BestPeptideQValue);
 
             return sb.ToString();
+        }
+
+        // internal method for grouping ModsInfo by file
+        public string ModInfoStringFromGroupedFiles(List<SpectraFileInfo> spectraFiles)
+        {
+            if (ModsInfo.IsNotNullOrEmpty())
+            {
+
+                // Create a combined quantified protein group for all fraction/techrep
+                var groupedFilesQuantifiedProteinGroup = ModsInfo[spectraFiles.First()];
+                foreach (var spectraFile in spectraFiles.Skip(1))
+                {
+                    foreach (var protein in ModsInfo[spectraFile].Proteins.Values)
+                    {
+                        foreach (var peptide in protein.Peptides.Values)
+                        {
+                            // TODO: If all flashlfq quantified peptides have the same spectrafiles, I can get rid of this condition.
+                            // Need to also double check that merging of peptides is properly updating total position intensity. If so, 
+                            // only write mods with finite, >0 intensities.
+                            if (groupedFilesQuantifiedProteinGroup.Proteins[protein.Accession].Peptides.ContainsKey(peptide.BaseSequence))
+                            {
+                                groupedFilesQuantifiedProteinGroup.Proteins[protein.Accession].Peptides[peptide.BaseSequence].MergePeptide(peptide);
+                            }
+                            else
+                            {
+                                groupedFilesQuantifiedProteinGroup.Proteins[protein.Accession].Peptides[peptide.BaseSequence] = peptide;
+                            }
+                        }
+                    }
+                }
+
+                var proteinGroupOccupanciesPerProtein = groupedFilesQuantifiedProteinGroup.Proteins.Values.Select(x => new KeyValuePair<QuantifiedProtein, Dictionary<int, Dictionary<string, double>>>
+                                                                                            (x, x.GetModStoichiometryFromProteinMods())).ToDictionary(x => x.Key, x => x.Value);
+
+                // Clean stoichiometry results by removing "Common Variable", "Common Fixed",
+                // and "PeptideTermMod" modification types.
+                // Also remove any modifications with NaN occupancies.
+
+                var modsToRemove = new List<(QuantifiedProtein proteinKey, int modposKey, string modnameKey)>();
+                bool filterByCommonMods = false;
+
+                foreach (var protein in proteinGroupOccupanciesPerProtein.Keys)
+                {
+                    var proteinModsDict = proteinGroupOccupanciesPerProtein[protein];
+                    foreach (var modpos in proteinModsDict.Keys)
+                    {
+                        var posMods = proteinModsDict[modpos];
+                        foreach (var mod in posMods.Keys)
+                        {
+                            // Remove common mods, peptide terminus mods not in protein, and mods with 0 or NaN intensity to not be written.
+                            if (((mod.Contains("Common Variable") && filterByCommonMods) || (mod.Contains("Common Fixed")) && filterByCommonMods)
+                                || mod.Contains("PeptideTermMod")
+                                || !posMods[mod].IsFinite() // When all peptides containing a localized residue have intensities of 0, it leads to 0/0=NaN occupancies.
+                                || posMods[mod]==0)
+                            {
+                                modsToRemove.Add((protein, modpos, mod));
+                            }
+                        }
+                    }
+                }
+                foreach (var modToIgnore in modsToRemove)
+                {
+                    proteinGroupOccupanciesPerProtein[modToIgnore.proteinKey][modToIgnore.modposKey].Remove(modToIgnore.modnameKey);
+                }
+                foreach (var modToIgnore in modsToRemove)
+                { 
+                var proteinToClean = proteinGroupOccupanciesPerProtein[modToIgnore.proteinKey];
+
+                    if (proteinToClean.ContainsKey(modToIgnore.modposKey)
+                        && proteinToClean[modToIgnore.modposKey].IsNullOrEmpty())
+                    {
+                        proteinToClean.Remove(modToIgnore.modposKey);
+                    }
+                }
+
+
+                // If mods not found for the proteins in protein group, do not write anything
+                // Since all proteins in the protein group would have the same mod info with
+                // different mod position key names but same number of keys, we only check
+                // that the first protein's mod dict is not empty.
+                if (proteinGroupOccupanciesPerProtein.First().Value.IsNullOrEmpty())
+                {
+                    return "";
+                }
+
+                // Else, build the mod info string for the protein group.
+                var modInfoString = new StringBuilder();
+
+                foreach (var protein in proteinGroupOccupanciesPerProtein.Keys)
+                {
+                    if (proteinGroupOccupanciesPerProtein[protein].IsNullOrEmpty())
+                    {
+                        continue;
+                    }
+                    modInfoString.Append(protein.Accession + ":{");
+
+                    foreach (var modpos in proteinGroupOccupanciesPerProtein[protein].Keys.Order())
+                    {
+                        var modposTotalIntensity = protein.Peptides.Values.Where(x => protein.PeptidesByProteinPosition[modpos].Contains(x.BaseSequence)).Sum(x => x.Intensity);
+
+                        bool writeModPos = proteinGroupOccupanciesPerProtein[protein][modpos].Values.Any(x => x > 0);
+
+                        // Need to check if is finite because quantified peptides can have an intensity of Zero, leading to NaN occupancies.
+                        // Also, only write mod positions with nonzero total intensity.
+                        if (double.IsFinite(modposTotalIntensity) && modposTotalIntensity > 0 && writeModPos)
+                        {
+                            var loc = modpos == 0 ? "N-terminal" : modpos == protein.Sequence.Length + 1 ? "C-terminal" : $"{protein.Sequence[modpos - 1]}#" + modpos.ToString();
+                            modInfoString.Append(loc);
+
+                            var modStrings = new List<string>();
+
+                            foreach (var mod in proteinGroupOccupanciesPerProtein[protein][modpos])
+                            {
+                                modStrings.Add($"{mod.Key}, info: occupancy={mod.Value.ToString("N4")}({modposTotalIntensity})");
+                            }
+
+                            // If mods with nonzero fractions found, append them
+                            if (modStrings.Count > 0)
+                            {
+                                modInfoString.Append("[" + string.Join(";", modStrings) + "]");
+                            }
+                        }
+                    }
+                    modInfoString.Append("}");
+                }
+                return modInfoString.ToString();
+            }
+
+            else
+            {
+                return "";
+            }
         }
 
         // this method is only used internally, to make protein grouping faster
@@ -550,85 +698,91 @@ namespace EngineLayer
                     continue;
                 }
 
+                // PREVIOUS OCCUPANCY CODE
+                // modInfo will be updated by the PostSearchAnalysisTask. However, leaving this code
+                // here for now in case we want to use it in the future.
                 // calculate spectral count % of modified observations
-                var pepModTotals = new List<int>(); // count of modified peptides for each mod/index
-                var pepTotals = new List<int>(); // count of all peptides for each mod/index
-                var modIndex = new List<(int index, string modName)>(); // index and name of the modified position
-
-                foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
-                {
-                    foreach (var mod in pep.AllModsOneIsNterminus)
-                    {
-                        int pepNumTotal = 0; //For one mod, The total Pep Num
-
-                        if (mod.Value.ModificationType.Contains("Common Variable")
-                            || mod.Value.ModificationType.Contains("Common Fixed")
-                            || mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.PepC)
-                            || mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.NPep))
-                        {
-                            continue;
-                        }
-
-                        int indexInProtein;
-                        if (mod.Value.LocationRestriction.Equals("N-terminal."))
-                        {
-                            indexInProtein = 1;
-                        }
-                        else if (mod.Value.LocationRestriction.Equals("Anywhere."))
-                        {
-                            indexInProtein = pep.OneBasedStartResidue + mod.Key - 2;
-                        }
-                        else if (mod.Value.LocationRestriction.Equals("C-terminal."))
-                        {
-                            indexInProtein = protein.Length;
-                        }
-                        else
-                        {
-                            // In case it's a peptide terminal mod, skip!
-                            // we don't want this annotated in the protein's modifications
-                            continue;
-                        }
-
-                        var modKey = (indexInProtein, mod.Value.IdWithMotif);
-                        if (modIndex.Contains(modKey))
-                        {
-                            pepModTotals[modIndex.IndexOf(modKey)] += 1;
-                        }
-                        else
-                        {
-                            modIndex.Add(modKey);
-                            foreach (var pept in proteinsWithPsmsWithLocalizedMods[protein])
-                            {
-                                if (indexInProtein >= pept.OneBasedStartResidue - (indexInProtein == 1 ? 1 : 0)
-                                    && indexInProtein <= pept.OneBasedEndResidue)
-                                {
-                                    pepNumTotal += 1;
-                                }
-                            }
-
-                            pepTotals.Add(pepNumTotal);
-                            pepModTotals.Add(1);
-                        }
-                    }
-                }
-
-                var modStrings = new List<(int aaNum, string part)>();
-                for (int i = 0; i < pepModTotals.Count; i++)
-                {
-                    string aa = modIndex[i].index.ToString();
-                    string modName = modIndex[i].modName.ToString();
-                    string occupancy = ((double)pepModTotals[i] / (double)pepTotals[i]).ToString("F2");
-                    string fractOccupancy = $"{pepModTotals[i].ToString()}/{pepTotals[i].ToString()}";
-                    string tempString = ($"#aa{aa}[{modName},info:occupancy={occupancy}({fractOccupancy})]");
-                    modStrings.Add((modIndex[i].index, tempString));
-                }
-
-                var modInfoString = string.Join(";", modStrings.OrderBy(x => x.aaNum).Select(x => x.part));
-
-                if (!string.IsNullOrEmpty(modInfoString))
-                {
-                    ModsInfo.Add(modInfoString);
-                }
+                //var pepModTotals = new List<int>(); // count of modified peptides for each mod/index
+                //var pepTotals = new List<int>(); // count of all peptides for each mod/index
+                //var modIndex = new List<(int index, string modName)>(); // index and name of the modified position
+                //
+                //foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
+                //{
+                //    foreach (var mod in pep.AllModsOneIsNterminus)
+                //    {
+                //        int pepNumTotal = 0; //For one mod, The total Pep Num
+                //
+                //        if (mod.Value.ModificationType.Contains("Common Variable")
+                //            || mod.Value.ModificationType.Contains("Common Fixed")
+                //            || mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.PepC)
+                //            || mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.NPep))
+                //        {
+                //            continue;
+                //        }
+                //
+                //        int indexInProtein;
+                //        if (mod.Value.LocationRestriction.Equals("N-terminal."))
+                //        {
+                //            indexInProtein = 1;
+                //        }
+                //        else if (mod.Value.LocationRestriction.Equals("Anywhere."))
+                //        {
+                //            indexInProtein = pep.OneBasedStartResidue + mod.Key - 2;
+                //        }
+                //        else if (mod.Value.LocationRestriction.Equals("C-terminal."))
+                //        {
+                //            indexInProtein = protein.Length;
+                //        }
+                //        else
+                //        {
+                //            // In case it's a peptide terminal mod, skip!
+                //            // we don't want this annotated in the protein's modifications
+                //            continue;
+                //        }
+                //
+                //        var modKey = (indexInProtein, mod.Value.IdWithMotif);
+                //        if (modIndex.Contains(modKey))
+                //        {
+                //            pepModTotals[modIndex.IndexOf(modKey)] += 1;
+                //        }
+                //        else
+                //        {
+                //            modIndex.Add(modKey);
+                //            foreach (var pept in proteinsWithPsmsWithLocalizedMods[protein])
+                //            {
+                //                if (indexInProtein >= pept.OneBasedStartResidue - (indexInProtein == 1 ? 1 : 0)
+                //                    && indexInProtein <= pept.OneBasedEndResidue)
+                //                {
+                //                    pepNumTotal += 1;
+                //                }
+                //            }
+                //
+                //            pepTotals.Add(pepNumTotal);
+                //            pepModTotals.Add(1);
+                //        }
+                //    }
+                //}
+                //bool quantifyModsByPSM = false;
+                //if (quantifyModsByPSM)
+                //{
+                //    var modStrings = new List<(int aaNum, string part)>();
+                //    for (int i = 0; i < pepModTotals.Count; i++)
+                //    {
+                //        string aa = modIndex[i].index.ToString();
+                //        string modName = modIndex[i].modName.ToString();
+                //        string occupancy = ((double)pepModTotals[i] / (double)pepTotals[i]).ToString("F2");
+                //        string fractOccupancy = $"{pepModTotals[i].ToString()}/{pepTotals[i].ToString()}";
+                //        string tempString = ($"#aa{aa}[{modName},info:occupancy={occupancy}({fractOccupancy})]");
+                //        modStrings.Add((modIndex[i].index, tempString));
+                //    }
+                //
+                //    var modInfoString = string.Join(";", modStrings.OrderBy(x => x.aaNum).Select(x => x.part)); 
+                //
+                //    if (!string.IsNullOrEmpty(modInfoString))
+                //    {
+                //        ModsInfo.Add(modInfoString);
+                //    }
+                //}
             }
         }
 
@@ -668,7 +822,7 @@ namespace EngineLayer
                 spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath)
                     .FirstOrDefault();
                 //check that file name wasn't changed (can occur in SILAC searches)
-                if (!silacLabels.IsNullOrEmpty() && spectraFileInfo == null)
+                if (!MzLibUtil.ClassExtensions.IsNullOrEmpty(silacLabels) && spectraFileInfo == null)
                 {
                     foreach (SilacLabel label in silacLabels)
                     {
