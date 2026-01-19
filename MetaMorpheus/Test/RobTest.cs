@@ -116,13 +116,15 @@ namespace Test
                 psm.ResolveAllAmbiguities();
                 psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             }
-            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters, includeContaminants: false);
+
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
+
             // run parsimony
             ProteinParsimonyEngine parsimonyEngine = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, new List<string>());
             var parsimonyResults = (ProteinParsimonyResults)parsimonyEngine.Run();
             var proteinGroups = parsimonyResults.ProteinGroups;
 
-            ProteinScoringAndFdrEngine proteinScoringAndFdrEngine = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringAndFdrEngine = new ProteinScoringAndFdrEngine(proteinGroups, filteredPsms.FilteredPsmsList, true, false, true, new CommonParameters(), null, new List<string>());
             var proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)proteinScoringAndFdrEngine.Run();
             proteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
@@ -154,7 +156,6 @@ namespace Test
             Assert.That(proteinGroups.First().AllPsmsBelowOnePercentFDR.Count, Is.EqualTo(2));
             Assert.That(proteinGroups.First().ProteinGroupScore, Is.EqualTo(2));
         }
-
         [Test]
         public static void TestPTMOutput()
         {
