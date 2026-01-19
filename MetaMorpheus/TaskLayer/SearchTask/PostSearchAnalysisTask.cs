@@ -1047,7 +1047,7 @@ namespace TaskLayer
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                 {
                     // write summary text
-                    string proteinResultsText = strippedFileName + " - Target protein groups within 1 % FDR: " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
+                    string proteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups within 1 % FDR: " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
                     ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
 
                     // write result files
@@ -1152,102 +1152,41 @@ namespace TaskLayer
 
         private void WritePsmPlusMultiplexIons(IEnumerable<SpectralMatch> psms, string filePath, bool writePeptideLevelResults = false)
         {
-            PpmTolerance ionTolerance = new PpmTolerance(10);
-            double[] reporterIonMzs = Parameters.MultiplexModification.DiagnosticIons.First().Value
-                .Select(x => x.ToMz(1))
-                .OrderBy(x => x)
-                .ToArray();
-
             using (StreamWriter output = new StreamWriter(filePath))
             {
+                var reporterIonLabels = IsobaricMassTag.GetReporterIonLabels(Parameters.SearchParameters.MultiplexModId);
                 string headerWithReporterIons = SpectralMatch.GetTabSeparatedHeader().Trim() + '\t' +
-                                          GetMultiplexHeader();
+                                                string.Join('\t', reporterIonLabels);
                 output.WriteLine(headerWithReporterIons);
+
+                // Pre-allocate StringBuilder for reuse
+                var sb = new StringBuilder(256);
+
+                // pre-allocate zero array for efficiency
+                var zeroIntensityString = String.Join('\t', Enumerable.Repeat("0", reporterIonLabels.Count));
+
                 foreach (var psm in psms)
                 {
-                    IEnumerable<string> labelIonIntensities =
-                        GetMultiplexIonIntensities(psm, reporterIonMzs, ionTolerance)
-                            .Select(d => d.ToString(CultureInfo.CurrentCulture));
+                    sb.Clear();
+                    sb.Append(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults).Trim());
+                    sb.Append('\t');
 
-                    output.Write(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults).Trim());
-                    output.Write('\t');
-                    output.WriteLine(String.Join('\t', labelIonIntensities));
-                }
-            }
-        }
-
-        private string GetMultiplexHeader()
-        {
-            List<string> ionLabels = new();
-            var labelGroups = Parameters.MultiplexModification.DiagnosticIons.First().Value
-                .Select(x => x.ToMz(1))
-                .OrderBy(x => x)
-                .GroupBy(x => (int)Math.Floor(x));
-
-            if (Parameters.MultiplexModification.IdWithMotif.Contains("TMT"))
-            {
-                // TMT 126 contains no heavy isotopes. TMT 127N has one N15, TMT127C has one C15.
-                // The "N" labels are slightly lighter than the "C" labels. 
-                // Labels for the diagnostic ions are created accordingly
-                foreach (var group in labelGroups)
-                {
-                    if (group.Count() == 1)
+                    if (psm.IsobaricMassTagReporterIonIntensities != null && psm.IsobaricMassTagReporterIonIntensities.Length > 0)
                     {
-                        ionLabels.Add(group.Key.ToString());
-                    }
-                    else if (group.Count() == 2)
-                    {
-                        ionLabels.Add(group.Key + "N");
-                        ionLabels.Add(group.Key + "C");
-                    }
-                }
-            }
-            else
-            {
-                foreach (var group in labelGroups)
-                {
-                    if (group.Count() == 1)
-                    {
-                        ionLabels.Add(group.Key.ToString());
+                        for (int i = 0; i < psm.IsobaricMassTagReporterIonIntensities.Length; i++)
+                        {
+                            if (i > 0) sb.Append('\t');
+                            sb.Append(psm.IsobaricMassTagReporterIonIntensities[i].ToString("F1", CultureInfo.InvariantCulture));
+                        }
                     }
                     else
                     {
-                        ionLabels.AddRange(group.Select(mz => Math.Round(mz, 3).ToString(CultureInfo.CurrentCulture)));
+                        sb.Append(zeroIntensityString);
                     }
+
+                    output.WriteLine(sb.ToString());
                 }
             }
-            return String.Join('\t', ionLabels);
-        }
-
-        public static double[] GetMultiplexIonIntensities(SpectralMatch psm, double[] theoreticalIonMzs, Tolerance tolerance)
-        {
-            var diagnosticIons = psm.MatchedFragmentIons
-                .Where(ion => ion.NeutralTheoreticalProduct.ProductType == Omics.Fragmentation.ProductType.D)
-                .OrderBy(ion => ion.Mz)
-                .ToArray();
-            double[] expIonMzs = diagnosticIons.Select(ion => ion.Mz).ToArray();
-            double[] ionIntensities = new double[theoreticalIonMzs.Length];
-
-            int expIonIndex = 0;
-            for (int theoreticalIonIndex = 0; theoreticalIonIndex < ionIntensities.Length; theoreticalIonIndex++)
-            {
-                while (expIonIndex < expIonMzs.Length &&
-                       expIonMzs[expIonIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[theoreticalIonIndex]))
-                {
-                    expIonIndex++;
-                }
-                if (expIonIndex >= expIonMzs.Length)
-                {
-                    break;
-                }
-                if (tolerance.Within(expIonMzs[expIonIndex], theoreticalIonMzs[theoreticalIonIndex]))
-                {
-                    ionIntensities[theoreticalIonIndex] = diagnosticIons[expIonIndex].Intensity;
-                    expIonIndex++;
-                }
-            }
-
-            return ionIntensities;
         }
 
         private void CompressIndividualFileResults()

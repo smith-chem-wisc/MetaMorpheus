@@ -304,7 +304,7 @@ namespace MetaMorpheusGUI
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
+            e.Handled = TaskValidator.CheckIsPositiveInteger(e.Text);
         }
 
         private void SaveSilacLabelsButton_Click(object sender, RoutedEventArgs e)

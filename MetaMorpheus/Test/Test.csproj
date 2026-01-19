@@ -253,6 +253,9 @@
     <None Update="TestData\DbForPrunedDb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\DbForPrunedDb_Reversed.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\DIA\18300_REP2_500ng_HumanLysate_SWATH_1_RT25.63-25.81.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -628,6 +631,9 @@
     <None Update="tinySemiBroken.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TMT_test\MS3_TMT11_Mouse_snip.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TMT_test\DiLeu-12plex-Task1-SearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -646,8 +652,17 @@
     <None Update="TMT_test\mouseTmt.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TMT_test\MUS_snip.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\PEPTIDEK.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TMT_test\TMT-Task1-SearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\TMT11_LowCID_SearchTask.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TMT_test\VA084TQ_6.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

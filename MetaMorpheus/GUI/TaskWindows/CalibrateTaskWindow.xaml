@@ -108,34 +108,55 @@
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="proteaseLabel" Content="Protease" />
+                                        <Label x:Name="proteaseLabel" Width="150" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Protease:"/>
+                                            </Label.Content>
+                                        </Label>
                                         <ComboBox x:Name="ProteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="ProteaseSpecificUpdate">
-                                            <ComboBox.ToolTip>
-                                                <TextBlock>
-                                                        Protease used for digestion.
-                                                        <LineBreak/>
-                                                        Proteases can be added/modified by the user at "Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv"
-                                                </TextBlock>
-                                            </ComboBox.ToolTip>
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                                 ConverterParameter="Protease used for digestion.&#x0a;* Proteases can be added/modified by the user at &quot;Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv&quot;&#x0a;* For semi-specific digestions, select &quot;Semi-Specific Search&quot; in &quot;Search Mode&quot;."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
+                                            </ToolTipService.ToolTip>
                                         </ComboBox>
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                        <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox"  Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="3">
+                                        <Label x:Name="lblMinPeptideLength" Width="150" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                         ConverterParameter="Min Peptide Length:"/>
+                                            </Label.Content>
+                                        </Label>
+                                        <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
-                                                <TextBlock>
-                                                        The minimum allowed peptide length. Must be a positive, non-zero integer.
-                                                </TextBlock>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The minimum allowed peptide length. Must be a positive, non-zero integer."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
                                             </TextBox.ToolTip>
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
+                                    <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="4">
+                                        <Label x:Name="lblMaxPeptideLength" Width="150" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                         ConverterParameter="Max Peptide Length:"/>
+                                            </Label.Content>
+                                        </Label>
                                         <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
                                             <TextBox.ToolTip>
-                                                <TextBlock>
-                                                        The maximum allowed peptide length. Leave empty for no limitation.
-                                                </TextBlock>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The maximum allowed peptide length. Leave empty for no limitation."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
                                             </TextBox.ToolTip>
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
@@ -164,42 +185,63 @@
                                         <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
-                                                    The minimum MetaMorpheus score allowed for a PSM to be reportable.
-                                                    <LineBreak/>
-                                                    Decreasing this number increases search time.
+                                                    <Run>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The minimum MetaMorpheus score allowed for a PSM to be reportable." Mode="OneWay"/>
+                                                    </Run>
+                                                    <LineBreak />
+                                                    <Run>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="Decreasing this number increases search time." Mode="OneWay"/>
+                                                    </Run>
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                    <StackPanel Orientation="Horizontal" Margin="5"
+                                                Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                                         <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine" />
-                                        <ComboBox x:Name="InitiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ComboBox x:Name="InitiatorMethionineBehaviorComboBox"
+                                                  ToolTipService.ShowDuration="999999"
+                                                  ToolTipService.InitialShowDelay="500">
                                             <ComboBox.ToolTip>
                                                 <TextBlock>
-                                                        Assumed cleavage of the initiator Methionine present at the beginning of most proteins (start codon).
+                                                    Assumed cleavage of the initiator Methionine present at the beginning of most proteins (start codon).
                                                 </TextBlock>
                                             </ComboBox.ToolTip>
                                         </ComboBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="separationType" Content="Separation Type" />
-                                        <ComboBox x:Name="SeparationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ComboBox x:Name="SeparationTypeComboBox" ToolTipService.ShowDuration="999999"
+                                                  ToolTipService.InitialShowDelay="500">
                                             <ComboBox.ToolTip>
                                                 <TextBlock>
-                                                        Specify is separation for prior to the mass-spec analysis was one with HPLC or with CZE.
+                                                    Specify is separation for prior to the mass-spec analysis was one with HPLC or with CZE.
                                                 </TextBlock>
                                             </ComboBox.ToolTip>
                                         </ComboBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="MaxModsPerPeptideLabel" Content="Max Mods Per Peptide" />
-                                        <local:IntegerTexBoxControl x:Name="MaxModsPerPeptideTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <Label x:Name="MaxModsPerPeptideLabel" Width="150">
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                         ConverterParameter="Max Mods Per Peptide:" />
+                                            </Label.Content>
+                                        </Label>
+                                        <local:IntegerTexBoxControl x:Name="MaxModsPerPeptideTextBox" Width="45"
+                                                                    ToolTipService.ShowDuration="999999"
+                                                                    ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
-                                                <TextBlock>
-                                                    The maximum number of modifications allowed on a single isoform.
-                                                </TextBlock>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding
+                                                            Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                            ConverterParameter="The maximum number of modifications allowed on a single isoform." />
+                                                    </ToolTip.Content>
+                                                </ToolTip>
                                             </TextBox.ToolTip>
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
@@ -239,11 +281,6 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
-                            <!--<CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />-->
-                            <!--<StackPanel Orientation="Horizontal" Margin="5">
-                                <Label x:Name="ff" Content="Files to analyze in parallel" />
-                                <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
-                            </StackPanel>-->
                         </StackPanel>
                     </Expander>
                 </GroupBox>
@@ -417,13 +454,6 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <!--<GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
-                    <Expander x:Name="CalibrationExpander">
-                        <StackPanel>
-                            <CheckBox x:Name="writeIntermediateFilesCheckBox" Content="Write Intermediate Files" />
-                        </StackPanel>
-                    </Expander>
-                </GroupBox>-->
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">

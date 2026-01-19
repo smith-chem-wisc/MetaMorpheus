@@ -6,8 +6,6 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
         KeyDown="KeyPressed"
         Title="GPTMD Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
 
@@ -138,34 +136,55 @@
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="proteaseLabel" Content="Protease" />
+                                        <Label x:Name="proteaseLabel" Width="150" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Protease:"/>
+                                            </Label.Content>
+                                        </Label>
                                         <ComboBox x:Name="ProteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="ProteaseSpecificUpdate">
-                                            <ComboBox.ToolTip>
-                                                <TextBlock>
-                                                        Protease used for digestion.
-                                                        <LineBreak/>
-                                                        Proteases can be added/modified by the user at "Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv"
-                                                </TextBlock>
-                                            </ComboBox.ToolTip>
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                                 ConverterParameter="Protease used for digestion.&#x0a;* Proteases can be added/modified by the user at &quot;Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv&quot;&#x0a;* For semi-specific digestions, select &quot;Semi-Specific Search&quot; in &quot;Search Mode&quot;."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
+                                            </ToolTipService.ToolTip>
                                         </ComboBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
+                                        <Label x:Name="lblMinPeptideLength" Width="150" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                         ConverterParameter="Min Peptide Length:"/>
+                                            </Label.Content>
+                                        </Label>
                                         <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
-                                                <TextBlock>
-                                                        The minimum allowed peptide length. Must be a positive, non-zero integer.
-                                                </TextBlock>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The minimum allowed peptide length. Must be a positive, non-zero integer."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
                                             </TextBox.ToolTip>
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
+                                        <Label x:Name="lblMaxPeptideLength" Width="150" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                         ConverterParameter="Max Peptide Length:"/>
+                                            </Label.Content>
+                                        </Label>
                                         <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
                                             <TextBox.ToolTip>
-                                                <TextBlock>
-                                                        The maximum allowed peptide length. Leave empty for no limitation.
-                                                </TextBlock>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The maximum allowed peptide length. Leave empty for no limitation."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
                                             </TextBox.ToolTip>
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
@@ -194,16 +213,23 @@
                                         <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
-                                                    The minimum MetaMorpheus score allowed for a PSM to be reportable.
-                                                    <LineBreak/>
-                                                    Decreasing this number increases search time.
+                                                    <Run>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The minimum MetaMorpheus score allowed for a PSM to be reportable." Mode="OneWay"/>
+                                                    </Run>
+                                                    <LineBreak />
+                                                    <Run>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="Decreasing this number increases search time." Mode="OneWay"/>
+                                                    </Run>
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                    <StackPanel Orientation="Horizontal" Margin="5" 
+                                                Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                                         <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine" />
                                         <ComboBox x:Name="InitiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ComboBox.ToolTip>
@@ -226,21 +252,20 @@
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="MaxModsPerPeptideLabel" Content="Max Mods Per Peptide Before GPTMD" />
+                                        <Label x:Name="MaxModsPerPeptideLabel" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                         ConverterParameter="Max Mods Per Peptide Before GPTMD:"/>
+                                            </Label.Content>
+                                        </Label>
                                         <local:IntegerTexBoxControl x:Name="MaxModsPerPeptideTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
-                                                <TextBlock>
-                                                        The maximum number of modifications allowed on a single iteration of a given peptide sequence. 
-                                                        <LineBreak/>
-                                                        This parameters influences how many mods can exist on a peptide BEFORE GPTMD.
-                                                     <LineBreak/>
-                                                     <LineBreak/>
-                                                        MAX MODS ASSINGED BY GPTMD:
-                                                     <LineBreak/>
-                                                        The current implementation does not allow more than one modification to be discovered in a single identification EXCEPT for those with mass differences annotated in "...\\MetaMorpheus\\Data\\combos.txt".
-                                                    <LineBreak/>
-                                                        In MetaMorpheus near the top left, click "Data", select "Open folder with mods/data files", and open the "Data" folder.
-                                                </TextBlock>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The maximum number of modifications allowed on a single iteration of a given peptide sequence.&#x0a;This parameter influences how many mods can exist on a peptide BEFORE GPTMD.&#x0a;&#x0a;MAX MODS ASSIGNED BY GPTMD:&#x0a;The current implementation does not allow more than one modification to be discovered in a single identification EXCEPT for those with mass differences annotated in &quot;...\\MetaMorpheus\\Data\\combos.txt&quot;.&#x0a;In MetaMorpheus near the top left, click &quot;Data&quot;, select &quot;Open folder with mods/data files&quot;, and open the &quot;Data&quot; folder."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
                                             </TextBox.ToolTip>
                                         </local:IntegerTexBoxControl>
                                     </StackPanel>
@@ -481,6 +506,21 @@
                         </Grid>
                     </Expander>
                 </GroupBox>
+                <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                    <Expander>
+                        <CheckBox x:Name="WriteDecoysCheckBox" Margin="20 0 0 0"
+                                  Content="Write decoys with discovered mods">
+                            <ToolTipService.ToolTip>
+                                <TextBlock>
+                                    Write out decoys to the database if and only if they contain discovered modifications.
+                                    <LineBreak/>
+                                    This is to ensure proper false discovery rate calculations in subsequent searches, particularly for top-down
+                                </TextBlock>
+                            </ToolTipService.ToolTip>
+                        </CheckBox>
+                    </Expander>
+                </GroupBox>
+
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">

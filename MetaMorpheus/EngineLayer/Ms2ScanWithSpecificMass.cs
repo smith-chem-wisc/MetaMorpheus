@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ namespace EngineLayer
 {
     public class Ms2ScanWithSpecificMass
     {
-        public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam, 
+        public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam,
             IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null)
         {
             PrecursorMonoisotopicPeakMz = precursorMonoisotopicPeakMz;
@@ -48,17 +49,17 @@ namespace EngineLayer
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
         private double[] DeconvolutedMonoisotopicMasses;
-        public string NativeId { get; } 
-
+        public string NativeId { get; }
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
-
         public int? OneBasedPrecursorScanNumber => TheScan.OneBasedPrecursorScanNumber;
-
         public double RetentionTime => TheScan.RetentionTime;
-
         public int NumPeaks => TheScan.MassSpectrum.Size;
-
         public double TotalIonCurrent => TheScan.TotalIonCurrent;
+        /// <summary>
+        /// An array containing the intensities of the reporter ions for isobaric mass tags. 
+        /// If multiplex quantification wasn't performed, this will be null
+        /// </summary>
+        public double[]? IsobaricMassTagReporterIonIntensities { get; private set; }
 
         public static IsotopicEnvelope[] GetNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
         {
@@ -88,6 +89,40 @@ namespace EngineLayer
             return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
         }
 
+        /// <summary>
+        /// Writes the reporter ion intensities into the IsobaricMassTagReporterIonIntensities property
+        /// If the scan has
+        /// </summary>
+        /// <param name="massTag"></param>
+        public void SetIsobaricMassTagReporterIonIntensities(IsobaricMassTag massTag)
+        {
+            if (UseChildScansForIsobaricQuant(out var mostIntenseChildScan))
+            {
+                IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(mostIntenseChildScan.TheScan.MassSpectrum);
+                return;
+            }
+            IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(TheScan.MassSpectrum);
+        }
+
+        /// <summary>
+        /// Helper method to determine if child scans contain isobaric mass tag (e.g., TMT) reporter ions
+        /// In most cases, if MS3 scans exist, there will only be one MS3 scan per MS2 scan, and the ChildScans list will contain that one MS3 scan
+        /// If there are methods that generate multiple child scans, then this method will return the most intense child scan
+        /// However, if we ever have multiple child scans with isobaric mass tag reporter ions, we should revisit this logic
+        /// </summary>
+        /// <param name="mostIntenseChildScan">The child scan that has the highest ion current </param>
+        private bool UseChildScansForIsobaricQuant(out Ms2ScanWithSpecificMass mostIntenseChildScan)
+        {
+            mostIntenseChildScan = null;
+            if (ChildScans.IsNullOrEmpty()) return false;
+            mostIntenseChildScan = ChildScans.MaxBy(s => s.TotalIonCurrent);
+            if(mostIntenseChildScan != null)
+            {
+                return true;
+            }
+            return false;
+        }
+       
         public IsotopicEnvelope GetClosestExperimentalIsotopicEnvelope(double theoreticalNeutralMass)
         {
             if (DeconvolutedMonoisotopicMasses.Length == 0)

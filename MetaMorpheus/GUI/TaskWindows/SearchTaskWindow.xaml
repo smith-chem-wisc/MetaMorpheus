@@ -11,7 +11,7 @@
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
-
+        
         <!-- used in Quantifications -->
         <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
         <local:BooleanOrConverter x:Key="boolOrConverter"/>
@@ -161,22 +161,25 @@
 
                                 <!-- Protease -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="0">
-                                    <Label x:Name="proteaseLabel" Content="Protease:" Width="150" />
+                                    <Label x:Name="proteaseLabel" Width="150" >
+                                        <Label.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Protease:"/>
+                                        </Label.Content>
+                                    </Label>
                                     <ComboBox x:Name="ProteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="ProteaseSpecificUpdate">
-                                        <ComboBox.ToolTip>
-                                            <TextBlock>
-                                        Protease used for digestion.
-                                        <LineBreak />
-                                        Proteases can be added/modified by the user at "Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv"
-                                        <LineBreak />
-                                        For semi-specific digestions, select "Semi-Specific Search" in "Search Mode".
-                                            </TextBlock>
-                                        </ComboBox.ToolTip>
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip>
+                                                <ToolTip.Content>
+                                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                                          ConverterParameter="Protease used for digestion.&#x0a;* Proteases can be added/modified by the user at &quot;Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv&quot;&#x0a;* For semi-specific digestions, select &quot;Semi-Specific Search&quot; in &quot;Search Mode&quot;."/>
+                                                </ToolTip.Content>
+                                            </ToolTip>
+                                        </ToolTipService.ToolTip>
                                     </ComboBox>
                                 </StackPanel>
 
                                 <!-- Initiator methionine behavior -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="3">
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="3" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                                     <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine:" Width="150" />
                                     <ComboBox x:Name="InitiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ComboBox.ToolTip>
@@ -202,36 +205,60 @@
 
                                 <!-- Min peptide lengths -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="3">
-                                    <Label x:Name="lblMinPeptideLength" Content="Min Peptide Length:" Width="150" />
+                                    <Label x:Name="lblMinPeptideLength" Width="150" >
+                                        <Label.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                     ConverterParameter="Min Peptide Length:"/>
+                                        </Label.Content>
+                                    </Label>
                                     <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
-                                            <TextBlock>
-                                                    The minimum allowed peptide length. Must be a positive, non-zero integer.
-                                            </TextBlock>
+                                            <ToolTip>
+                                                <ToolTip.Content>
+                                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                             ConverterParameter="The minimum allowed peptide length. Must be a positive, non-zero integer."/>
+                                                </ToolTip.Content>
+                                            </ToolTip>
                                         </TextBox.ToolTip>
                                     </local:IntegerTexBoxControl>
                                 </StackPanel>
 
                                 <!-- Max peptide lengths -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="4">
-                                    <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Length:" Width="150" />
+                                    <Label x:Name="lblMaxPeptideLength" Width="150" >
+                                        <Label.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                     ConverterParameter="Max Peptide Length:"/>
+                                        </Label.Content>
+                                    </Label>
                                     <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
                                         <TextBox.ToolTip>
-                                            <TextBlock>
-                                                    The maximum allowed peptide length. Leave empty for no limitation.
-                                            </TextBlock>
+                                            <ToolTip>
+                                                <ToolTip.Content>
+                                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                             ConverterParameter="The maximum allowed peptide length. Leave empty for no limitation."/>
+                                                </ToolTip.Content>
+                                            </ToolTip>
                                         </TextBox.ToolTip>
                                     </local:IntegerTexBoxControl>
                                 </StackPanel>
 
                                 <!-- Max mods per peptide -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="2">
-                                    <Label x:Name="lbMaxModNum" Content="Max Mods Per Peptide:" Width="150" />
+                                    <Label x:Name="lbMaxModNum" Width="150" >
+                                        <Label.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                     ConverterParameter="Max Mods Per Peptide:"/>
+                                        </Label.Content>
+                                    </Label>
                                     <local:IntegerTexBoxControl x:Name="MaxModNumTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
-                                            <TextBlock>
-                                                    The maximum number of modifications allowed on a single isoform.
-                                            </TextBlock>
+                                            <ToolTip>
+                                                <ToolTip.Content>
+                                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                             ConverterParameter="The maximum number of modifications allowed on a single isoform."/>
+                                                </ToolTip.Content>
+                                            </ToolTip>
                                         </TextBox.ToolTip>
                                     </local:IntegerTexBoxControl>
                                 </StackPanel>
@@ -276,7 +303,7 @@
 
                     <!-- Modifications (Fixed/Variable/GPTMD) -->
                     <GroupBox Header="Modifications" DockPanel.Dock="Top">
-                        <StackPanel Height="115">
+                        <StackPanel Height="145">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1*" />
@@ -285,7 +312,7 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Margin="5 0 5 0">
                                     <Label Content="Fixed:" />
-                                    <TreeView x:Name="FixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="85">
+                                    <TreeView x:Name="FixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="118">
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
@@ -314,7 +341,7 @@
                                             </TextBlock>
                                         </Label.ToolTip>
                                     </Label>
-                                    <TreeView x:Name="VariableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="85">
+                                    <TreeView x:Name="VariableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="118">
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
@@ -384,65 +411,135 @@
                     </GroupBox>
 
                     <!-- Protein parsimony options -->
-                    <GroupBox Header="Protein Parsimony" DockPanel.Dock="Top">
+                    <GroupBox DockPanel.Dock="Top">
+                        <GroupBox.Header>
+                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                     ConverterParameter="Protein Parsimony"/>
+                        </GroupBox.Header>
                         <StackPanel Margin="5">
-                            <CheckBox x:Name="CheckBoxParsimony" Content="Apply protein parsimony and construct protein groups" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
+                            <CheckBox x:Name="CheckBoxParsimony" IsEnabled="True">
+                                <CheckBox.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                             ConverterParameter="Apply protein parsimony and construct protein groups"/>
+                                </CheckBox.Content>
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    <ToolTip>
+                                        <ToolTip.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                     ConverterParameter="Constructs protein groups according to the rule of maximum parsimony (Occam's razor). The minimum set of proteins/transcripts that can explain all observed peptides is reported as a group."/>
+                                        </ToolTip.Content>
+                                    </ToolTip>
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <CheckBox x:Name="CheckBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
+                            <CheckBox x:Name="CheckBoxNoOneHitWonders" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
+                                <CheckBox.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                             ConverterParameter="Require at least two peptides to identify protein"/>
+                                </CheckBox.Content>
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="At least 2 peptides below 1% FDR are required to construct a target/contaminant protein group" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    <ToolTip>
+                                        <ToolTip.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                     ConverterParameter="At least 2 peptides below 1% FDR are required to construct a target/contaminant protein group"/>
+                                        </ToolTip.Content>
+                                    </ToolTip>
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <CheckBox x:Name="ModPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
+                            <CheckBox x:Name="ModPepsAreUnique" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
+                                <CheckBox.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                             ConverterParameter="Treat modified peptides as different peptides"/>
+                                </CheckBox.Content>
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="Modified forms of a peptide base sequence are treated as different for the purposes of parsimony, protein group displays, peptide counts, etc"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    <ToolTip>
+                                        <ToolTip.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                     ConverterParameter="Modified forms of a peptide base sequence are treated as different for the purposes of parsimony, protein group displays, peptide counts, etc"/>
+                                        </ToolTip.Content>
+                                    </ToolTip>
                                 </ToolTipService.ToolTip>
                             </CheckBox>
                         </StackPanel>
                     </GroupBox>
 
                     <!-- Quantification options -->
-                    <GroupBox Header="Quantification" DockPanel.Dock="Top">
+                    <GroupBox Header="Quantification" DockPanel.Dock="Top" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                         <!-- Radio Buttons for Quant Method -->
                         <StackPanel Margin="5">
                             <RadioButton x:Name="CheckBoxNoQuant" Content="No quantification" GroupName="QuantType">
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="Saves a little time if PSM counting is good enough" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                                    <ToolTip>
+                                        <ToolTip.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                     ConverterParameter="Saves a little time if PSM counting is good enough" />
+                                        </ToolTip.Content>
+                                    </ToolTip>
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <RadioButton x:Name="CheckBoxLFQ" Content="LFQ: Quantify peptides/proteins with FlashLFQ" GroupName="QuantType">
+                            <RadioButton x:Name="CheckBoxLFQ" GroupName="QuantType">
+                                <RadioButton.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="LFQ: Quantify peptides/proteins with FlashLFQ" />
+                                </RadioButton.Content>
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    <ToolTip>
+                                        <ToolTip.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                     ConverterParameter="Label-free quantification is performed with FlashLFQ" />
+                                        </ToolTip.Content>
+                                    </ToolTip>
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <RadioButton x:Name="CheckBoxSILAC" Content="SILAC/SILAM: Quantify peptides/proteins with stable isotope labels" GroupName="QuantType" Click="CheckBoxSILAC_Checked">
+                            <RadioButton x:Name="CheckBoxSILAC" GroupName="QuantType" Click="CheckBoxSILAC_Checked">
+                                <RadioButton.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="SILAC/SILAM: Quantify peptides/proteins with stable isotope labels" />
+                                </RadioButton.Content>
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="SILAC quantification is performed using FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                                    <ToolTip>
+                                        <ToolTip.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                     ConverterParameter="SILAC quantification is performed using FlashLFQ" />
+                                        </ToolTip.Content>
+                                    </ToolTip>
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <RadioButton x:Name="CheckBoxMultiplex" Content="Multiplex Quantification: Quantify peptides labeled with isobaric tags" GroupName="QuantType" Unchecked="MultiplexUpdate" Checked="MultiplexUpdate">
+                            <RadioButton x:Name="CheckBoxMultiplex" GroupName="QuantType" Unchecked="MultiplexUpdate"
+                                         Checked="MultiplexUpdate">
+                                <RadioButton.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="Multiplex Quantification: Quantify peptides labeled with isobaric tags" />
+                                </RadioButton.Content>
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="Intensity of reporter ions are reported as additional columns in AllPeptides.psmtsv and AllPSMs.psmtsv" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                                    <ToolTip>
+                                        <ToolTip.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                     ConverterParameter="Intensity of reporter ions are reported as additional columns in AllPeptides.psmtsv and AllPSMs.psmtsv" />
+                                        </ToolTip.Content>
+                                    </ToolTip>
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <RadioButton x:Name="CheckBoxLFQwSpectralRecovery" Content="LFQ + Spectral Recovery: Spectral recovery finds missed MS/MS spectra common in single-cell proteomics data" 
+                            <RadioButton x:Name="CheckBoxLFQwSpectralRecovery"
+                                         Content="LFQ + Spectral Recovery: Spectral recovery finds missed MS/MS spectra common in single-cell proteomics data"
                                          GroupName="QuantType" Click="SpectralRecoveryUpdate">
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="Re-analyzes MS/MS spectra based on the results of MBR to find spectra that may have been missed during the inital search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    <ToolTip
+                                        Content="Re-analyzes MS/MS spectra based on the results of MBR to find spectra that may have been missed during the inital search"
+                                        ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
 
                             <!-- SILAC Options -->
-                            <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac" 
-                                      Content="Quantify unlabeled peptides/proteins" 
+                            <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac"
                                       IsEnabled="{Binding IsChecked, ElementName=CheckBoxSILAC}"
                                       Visibility="{Binding IsChecked, ElementName=CheckBoxSILAC, Converter={StaticResource bool2VisConverter}}"
-                                      Margin="20,0,0,0" 
-                                      Click="CheckBoxQuantifyUnlabeledForSilac_Checked"
-                                      />
+                                      Margin="20,0,0,0"
+                                      Click="CheckBoxQuantifyUnlabeledForSilac_Checked">
+                                <CheckBox.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="Quantify unlabeled peptides/proteins"/>
+                                </CheckBox.Content>
+                            </CheckBox>
                             <Grid Visibility="{Binding IsChecked, ElementName=CheckBoxSILAC, Converter={StaticResource bool2VisConverter}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="0" />
@@ -508,7 +605,12 @@
                                     </MultiBinding>
                                 </CheckBox.Visibility>
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    <ToolTip ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" >
+                                        <ToolTip.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                     ConverterParameter="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" />
+                                        </ToolTip.Content>
+                                    </ToolTip>
                                 </ToolTipService.ToolTip>
                             </CheckBox>
                             <CheckBox x:Name="CheckBoxNormalize" Content="Normalize quantification results">
@@ -528,7 +630,7 @@
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <CheckBox x:Name="CheckBoxUseSharedPeptidesForQuant" Content="Use shared peptides for protein quantification" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                            <CheckBox x:Name="CheckBoxUseSharedPeptidesForQuant" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                 <CheckBox.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">
                                         <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
@@ -541,8 +643,17 @@
                                         <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                     </MultiBinding>
                                 </CheckBox.Visibility>
+                                <CheckBox.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="Use shared peptides for protein quantification"/>
+                                </CheckBox.Content>
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="Use peptide sequences shared between proteins for protein quantification" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    <ToolTip>
+                                        <ToolTip.Content>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                     ConverterParameter="Use peptide sequences shared between proteins for protein quantification"/>
+                                        </ToolTip.Content>
+                                    </ToolTip>
                                 </ToolTipService.ToolTip>
                             </CheckBox>
                             <StackPanel Orientation="Horizontal">
@@ -605,17 +716,27 @@
                             <!-- writing options -->
                             <StackPanel Orientation="Vertical" Margin="5" Grid.Column="0">
                                 <CheckBox x:Name="CkbMzId" Content="Write .mzID" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}" ToolTipService.ShowOnDisabled="True">
-                                    <ToolTipService.ToolTip>
-                                        Output of .mzID requires protein parsimony. Please check "Apply protein parsimony and construct protein groups".
-                                    </ToolTipService.ToolTip>
+                                    <CheckBox.ToolTip>
+                                        <ToolTip>
+                                            <ToolTip.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                         ConverterParameter="Output of .mzID requires protein parsimony. Please check Apply protein parsimony and construct protein groups"/>
+                                            </ToolTip.Content>
+                                        </ToolTip>
+                                    </CheckBox.ToolTip>
                                 </CheckBox>
                                 <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
                                 <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                                 <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
-                                <CheckBox x:Name="WriteHighQPsmsCheckBox" Content="Write PSMs &amp; peptides with q-value above threshold"/>
+                                <CheckBox x:Name="WriteHighQPsmsCheckBox" >
+                                    <CheckBox.Content>
+                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                 ConverterParameter="Write PSMs &amp; peptides with q-value above threshold"/>
+                                    </CheckBox.Content>
+                                </CheckBox>
                                 <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" IsEnabled="{Binding IsChecked, Converter={local:BooleanInverter}, ElementName=CheckBoxLFQwSpectralRecovery }"/>
-                                <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" />
+                                <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
                                 
                             </StackPanel>
@@ -631,12 +752,18 @@
                                     </Grid.ColumnDefinitions>
 
                                     <Label x:Name="minScoreAllowedLabel" Content="    Minimum score allowed:" HorizontalContentAlignment="Left"/>
-                                    <local:IntegerTexBoxControl x:Name="MinScoreAllowed"  Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
                                             <TextBlock>
-                                            The minimum MetaMorpheus score allowed for a PSM to be reportable.
-                                            <LineBreak />
-                                            Decreasing this number increases search time.
+                                                            <Run>
+                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                         ConverterParameter="The minimum MetaMorpheus score allowed for a PSM to be reportable." Mode="OneWay"/>
+                                                            </Run>
+                                                            <LineBreak />
+                                                            <Run>
+                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                         ConverterParameter="Decreasing this number increases search time." Mode="OneWay"/>
+                                                            </Run>
                                             </TextBlock>
                                         </TextBox.ToolTip>
                                     </local:IntegerTexBoxControl>
@@ -652,7 +779,7 @@
                 <!-- END BASIC SETTINGS -->
 
                 <!-- ADVANCED SETTINGS -->
-                <Expander Header="Advanced Options" DockPanel.Dock="Top" Margin="10,0,10,10">
+                <Expander Header="Advanced Options" DockPanel.Dock="Top" Margin="10,0,10,10" >
                     <StackPanel>
                         <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                             <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
@@ -669,14 +796,25 @@
                                     </Style>
                                 </Expander.Style>
                                 <StackPanel>
-                                    <GroupBox Header="Add Protein Truncation and Proteolysis Products">
+                                    <GroupBox Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
+                                        <GroupBox.Header>
+                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                     ConverterParameter="Add Protein Truncation and Proteolysis Products"/>
+                                        </GroupBox.Header>
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                                                <CheckBox x:Name="AddTruncationsCheckBox" Content="Add Protein Truncation and Proteolysis Products. Automatically sets initiator methionine to retain." IsChecked="False" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="AddTruncationsCheckBox_Checked">
+                                                <CheckBox x:Name="AddTruncationsCheckBox" IsChecked="False" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="AddTruncationsCheckBox_Checked">
+                                                    <CheckBox.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                                 ConverterParameter="Add Protein Truncation and Proteolysis Products. Automatically sets initiator methionine to retain."/>
+                                                    </CheckBox.Content>
                                                     <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                                Enables search of protein and proteolysis products with terminal degration from either terminus of up to 5 amino acids including any PTMs.
-                                                        </TextBlock>
+                                                        <ToolTip>
+                                                            <ToolTip.Content>
+                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                                         ConverterParameter="Enables search of protein and proteolysis products with terminal degration from either terminus of up to 5 amino acids including any PTMs."/>
+                                                            </ToolTip.Content>
+                                                        </ToolTip>
                                                     </CheckBox.ToolTip>
                                                 </CheckBox>
                                             </StackPanel>
@@ -747,7 +885,7 @@
                         </GroupBox>
 
                         <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
-                            <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed">
+                            <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed" >
                                 <Expander.Style>
                                     <Style TargetType="Expander">
                                         <Setter Property="Header" Value="{Binding SearchModeExpanderTitle}" />
@@ -759,7 +897,7 @@
                                     </Style>
                                 </Expander.Style>
                                 <StackPanel>
-                                    <GroupBox Header="Search Mode">
+                                    <GroupBox Header="Search Mode" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                                         <Grid>
                                             <StackPanel>
                                                 <StackPanel Margin="5">
@@ -847,21 +985,30 @@
                                     </GroupBox>
                                     <GroupBox Header="In-Silico Digestion Parameters">
                                         <StackPanel Margin="2">
-                                            <CheckBox x:Name="CheckBoxTarget" Content="Generate target proteins" Margin="5 1 1 1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox x:Name="CheckBoxTarget" Margin="5 1 1 1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox.Content>
+                                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                             ConverterParameter="Generate target proteins"/>
+                                                </CheckBox.Content>
                                                 <CheckBox.ToolTip>
                                                     <TextBlock>
                                                     Search the forward sequences present in the database. Uncheck this to allow for separate target/decoy searching.
                                                     </TextBlock>
                                                 </CheckBox.ToolTip>
                                             </CheckBox>
-                                            <CheckBox x:Name="CheckBoxDecoy" Content="Generate decoy proteins" Margin="5 1 1 1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox x:Name="CheckBoxDecoy" Margin="5 1 1 1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox.Content>
+                                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                             ConverterParameter="Generate decoy proteins"/>
+                                                </CheckBox.Content>
                                                 <CheckBox.ToolTip>
                                                     <TextBlock>
                                                     Search decoy sequences by transformation of the database. Uncheck this to allow for separate target/decoy searching.
                                                     </TextBlock>
                                                 </CheckBox.ToolTip>
                                             </CheckBox>
-                                            <RadioButton x:Name="RadioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=CheckBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <RadioButton x:Name="RadioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=CheckBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
+                                                         Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                                                 <RadioButton.ToolTip>
                                                     <TextBlock>
                                                     Generate decoy sequences by reversing the original sequences.
@@ -870,7 +1017,8 @@
                                                     </TextBlock>
                                                 </RadioButton.ToolTip>
                                             </RadioButton>
-                                            <RadioButton x:Name="RadioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=CheckBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <RadioButton x:Name="RadioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=CheckBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
+                                                         Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                                                 <RadioButton.ToolTip>
                                                     <TextBlock>
                                                     Generate decoy sequences via a non-random shuffle of the original sequences.
@@ -927,27 +1075,37 @@
                                                 </CheckBox>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                                                <CheckBox x:Name="NTerminalIons" Content="N-Terminal Ions" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
+                                                <CheckBox x:Name="NTerminalIons" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
+                                                    <CheckBox.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="N-Terminal Ions"/>
+                                                    </CheckBox.Content>
                                                     <CheckBox.ToolTip>
                                                         <TextBlock>
-                                                Search for theoretical ions from the N-Terminus. The specific ion series are specified through the dissociation type.
+                                                            <TextBlock.Text>
+                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Search for theoretical ions from the N-Terminus. &#x0a;The specific ion series are specified through the dissociation type."/>
+                                                            </TextBlock.Text>
                                                         </TextBlock>
                                                     </CheckBox.ToolTip>
                                                 </CheckBox>
-                                                <CheckBox x:Name="CTerminalIons" Content="C-Terminal Ions" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
+                                                <CheckBox x:Name="CTerminalIons" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
+                                                    <CheckBox.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="C-Terminal Ions"/>
+                                                    </CheckBox.Content>
                                                     <CheckBox.ToolTip>
                                                         <TextBlock>
-                                                Search for theoretical ions from the C-Terminus. The specific ion series are specified through the dissociation type.
+                                                            <TextBlock.Text>
+                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Search for theoretical ions from the C-Terminus. &#x0a;The specific ion series are specified through the dissociation type."/>
+                                                            </TextBlock.Text>
                                                         </TextBlock>
                                                     </CheckBox.ToolTip>
                                                 </CheckBox>
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5,0,0,5">
+                                            <StackPanel Orientation="Horizontal" Margin="5,0,0,5" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                                                 <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" 
-                                                          ToolTipService.InitialShowDelay="500" IsChecked="False" Checked="InternalIonsCheckBox_Checked" >
+                                                          ToolTipService.InitialShowDelay="500" IsChecked="False" Checked="InternalIonsCheckBox_Checked">
                                                     <CheckBox.ToolTip>
                                                         <TextBlock>
-                                                Search for theoretical internal fragment ions AFTER scoring. These ions are useful for localizing PTMs, but are not used during scoring.
+                                                    Search for theoretical internal fragment ions AFTER scoring. These ions are useful for localizing PTMs, but are not used during scoring.
                                                         </TextBlock>
                                                     </CheckBox.ToolTip>
                                                 </CheckBox>
@@ -956,9 +1114,9 @@
                                                                             ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                     <TextBox.ToolTip>
                                                         <TextBlock>
-                                                        Minimum length (number of amino acids) allowed for an internal fragment ion. 
-                                                            <LineBreak/>
-                                                            Small internal fragments can be uninformative and computationally expensive.
+                                                            <TextBlock.Text>
+                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Minimum length (number of amino acids) allowed for an internal fragment ion. &#x0a;Small internal fragments can be uninformative and computationally expensive."/>
+                                                            </TextBlock.Text>
                                                         </TextBlock>
                                                     </TextBox.ToolTip>
                                                 </local:IntegerTexBoxControl>
@@ -1054,19 +1212,17 @@
                                     </GroupBox>
                                     <GroupBox Header="Pruned Database Writing">
                                         <StackPanel Margin="5">
-                                            <CheckBox Margin="0 0 0 5" x:Name="WritePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox Margin="0 0 0 5" x:Name="WritePrunedDBCheckBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox.Content>
+                                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Write Two Pruned Databases (Mod and Mod+Protein pruned)"/>
+                                                </CheckBox.Content>
                                                 <ToolTipService.ToolTip>
-                                                    <TextBlock>
-                                                This is very uncommon and not recommended for the typical user.
-                                                <LineBreak />
-                                                This option writes two databases:
-                                                <LineBreak />
-                                                1) Retain all proteins but only keeps modifications found at a 1% FDR.
-                                                <LineBreak />
-                                                2) Retain only proteins and modifications found at a 1% FDR.
-                                                <LineBreak />
-                                                This is intended for further analysis, such as importing into Proteoform Suite to analyse top-down and intact-mass data.
-                                                    </TextBlock>
+                                                    <ToolTip>
+                                                        <ToolTip.Content>
+                                                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                                     ConverterParameter="This is very uncommon and not recommended for the typical user.&#x0a;This option writes two databases:&#x0a;  1) Retain all proteins but only keeps modifications found at a 1% FDR.&#x0a;  2) Retain only proteins and modifications found at a 1% FDR.&#x0a;This is intended for further analysis, such as importing into Proteoform Suite to analyse top-down and intact-mass data."/>
+                                                        </ToolTip.Content>
+                                                    </ToolTip>
                                                 </ToolTipService.ToolTip>
                                             </CheckBox>
                                             <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
