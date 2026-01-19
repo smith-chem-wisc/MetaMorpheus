@@ -840,7 +840,8 @@ namespace TaskLayer
                     includeDecoys: false,
                     includeContaminants: false,
                     includeAmbiguous: false,
-                    includeHighQValuePsms: false);
+                    includeHighQValuePsms: false
+                    );
 
 
                 //group psms by peptide and charge, then write highest scoring PSM to dictionary
