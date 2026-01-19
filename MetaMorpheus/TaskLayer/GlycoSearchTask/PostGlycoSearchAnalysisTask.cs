@@ -296,8 +296,8 @@ namespace TaskLayer
                 commonParams: CommonParameters,
                 includeDecoys: true,
                 includeContaminants: true,
-                includeAmbiguous: true,
-                includeHighQValuePsms: true);
+                includeAmbiguous: false,
+                includeHighQValuePsms: false);
             Status("Constructing protein groups...", Parameters.SearchTaskId);
 
             // run parsimony
