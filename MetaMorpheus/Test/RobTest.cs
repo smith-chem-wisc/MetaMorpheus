@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -115,9 +116,9 @@ namespace Test
                 psm.ResolveAllAmbiguities();
                 psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             }
-
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters, includeContaminants: false);
             // run parsimony
-            ProteinParsimonyEngine parsimonyEngine = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine parsimonyEngine = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, new List<string>());
             var parsimonyResults = (ProteinParsimonyResults)parsimonyEngine.Run();
             var proteinGroups = parsimonyResults.ProteinGroups;
 
@@ -246,8 +247,8 @@ namespace Test
             };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
-
-            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(psms, true, new CommonParameters(), null, new List<string> { "ff" });
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters, includeContaminants: false);
+            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(filteredPsms, true, new CommonParameters(), null, new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 

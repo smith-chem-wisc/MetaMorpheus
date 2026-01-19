@@ -198,7 +198,7 @@ namespace TaskLayer
                 }
             }
 
-            var psmForParsimony = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+            var filteredPsmsForParsimony = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                 commonParams: CommonParameters,
                 includeDecoys: true,
                 includeContaminants: true,
@@ -206,21 +206,21 @@ namespace TaskLayer
                 includeHighQValuePsms: false);
 
             // run parsimony
-            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmForParsimony.FilteredPsmsList, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(filteredPsmsForParsimony, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
             // Pass the FilterType and FilterThreshold from the filtered PSMs to ensure consistent filtering criteria
             ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
                 proteinAnalysisResults.ProteinGroups,
-                psmForParsimony.FilteredPsmsList,
+                filteredPsmsForParsimony.FilteredPsmsList,
                 Parameters.SearchParameters.NoOneHitWonders,
                 Parameters.SearchParameters.ModPeptidesAreDifferent,
                 true,
                 CommonParameters,
                 this.FileSpecificParameters,
                 new List<string> { Parameters.SearchTaskId },
-                psmForParsimony.FilterType,
-                psmForParsimony.FilterThreshold).Run();
+                filteredPsmsForParsimony.FilterType,
+                filteredPsmsForParsimony.FilterThreshold).Run();
 
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
@@ -840,8 +840,7 @@ namespace TaskLayer
                     includeDecoys: false,
                     includeContaminants: false,
                     includeAmbiguous: false,
-                    includeHighQValuePsms: false
-                    );
+                    includeHighQValuePsms: false);
 
 
                 //group psms by peptide and charge, then write highest scoring PSM to dictionary

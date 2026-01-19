@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
@@ -62,14 +63,16 @@ namespace Test
             psmsForParsimony.Add(psm1);
             psmsForParsimony.Add(psm2);
 
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psmsForParsimony, new CommonParameters());
+
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psmsForParsimony, modPeptidesAreUnique, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(filteredPsms, modPeptidesAreUnique, new CommonParameters(), null, new List<string>());
 
             // because the two chosen peptides are the same, we should end up with both protein accessions still in the list
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, psmsForParsimony, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
@@ -128,15 +131,15 @@ namespace Test
             
             psmsForParsimony.Add(psm1);
             psmsForParsimony.Add(psm2);
-
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psmsForParsimony, new CommonParameters());
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psmsForParsimony, modPeptidesAreUnique, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(filteredPsms, modPeptidesAreUnique, new CommonParameters(), null, new List<string>());
 
             // because the two chosen peptides are the same, we should end up with both protein accessions still in the list
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, psmsForParsimony, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
@@ -183,15 +186,15 @@ namespace Test
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));
-
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, new CommonParameters(), includeHighQValuePsms: true);
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, new List<string>());
 
             // because the two chosen peptides are the same, we should end up with both protein accessions still in the list
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
@@ -231,11 +234,11 @@ namespace Test
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));
-
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, new CommonParameters(), includeHighQValuePsms: true);
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             ProteinScoringAndFdrResults results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             Assert.That(results.SortedAndScoredProteinGroups.Count == 3);

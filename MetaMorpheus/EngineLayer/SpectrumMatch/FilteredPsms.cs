@@ -63,11 +63,19 @@ namespace EngineLayer.SpectrumMatch
         /// <summary>
         /// Returns a FilteredPsms object that holds every psm that passed the filtering criteria.
         /// Q-Value and PEP Q-Value thresholds are read from common parameters by default, but can be overridden
-        /// Q-Value and PEP Q-Value filtering are mutually exculsive.
+        /// Q-Value and PEP Q-Value filtering are mutually exclusive.
         /// In cases where PEP filtering was selected but PEP wasn't performed due to insufficient PSMs, 
         /// filtering defaults to Q and Q_Notch.
+        /// 
+        /// NOTE: In multiprotease searches, each protease may have its own CommonParameters with different 
+        /// filtering thresholds. However, this method only accepts a single CommonParameters instance, 
+        /// so filtering may not be optimal for all proteases when generating a combined filtered PSM list.
+        /// Consider passing explicit qValueThreshold and pepQValueThreshold parameters to ensure consistent 
+        /// filtering across all proteases.
         /// </summary>
         /// <param name="psms"> List of spectral match objects to be filtered</param>
+        /// <param name="commonParams">Common parameters containing default filter thresholds. In multiprotease scenarios, 
+        /// consider using explicit threshold parameters instead.</param>
         /// <param name="filterAtPeptideLevel">Filter results at the peptide level (defaults to false) </param>
         /// <returns> A FilteredPsms object</returns>
         public static FilteredPsms Filter(IEnumerable<SpectralMatch> psms,
