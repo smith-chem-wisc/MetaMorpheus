@@ -72,7 +72,7 @@ namespace Test
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
@@ -139,7 +139,7 @@ namespace Test
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
@@ -194,7 +194,7 @@ namespace Test
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
@@ -238,7 +238,7 @@ namespace Test
             // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             ProteinScoringAndFdrResults results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             Assert.That(results.SortedAndScoredProteinGroups.Count == 3);

@@ -304,18 +304,16 @@ namespace TaskLayer
             ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(filteredPsms, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
-            // Pass the FilterType and FilterThreshold from the filtered PSMs to ensure consistent filtering criteria
+            // FilterType and FilterThreshold are obtained from the FilteredPsms object
             ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
                 proteinAnalysisResults.ProteinGroups,
-                filteredPsms.FilteredPsmsList,
+                filteredPsms,
                 Parameters.GlycoSearchParameters.NoOneHitWonders,
                 Parameters.GlycoSearchParameters.ModPeptidesAreDifferent,
                 true,
                 CommonParameters,
                 this.FileSpecificParameters,
-                new List<string> { Parameters.SearchTaskId },
-                filteredPsms.FilterType,
-                filteredPsms.FilterThreshold).Run();
+                new List<string> { Parameters.SearchTaskId }).Run();
 
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 

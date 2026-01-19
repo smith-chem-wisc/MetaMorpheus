@@ -89,7 +89,7 @@ namespace Test
             ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, true, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
-            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, filteredPsms.FilteredPsmsList, true, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, filteredPsms, true, true, true, new CommonParameters(), null, new List<string>());
 
             psafe.Run();
 
@@ -160,7 +160,7 @@ namespace Test
             ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, true, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
-            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, filteredPsms.FilteredPsmsList, true, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, filteredPsms, true, true, true, new CommonParameters(), null, new List<string>());
             psafe.Run();
 
             fjkd.ProteinGroups.ForEach(g => g.CalculateSequenceCoverage());

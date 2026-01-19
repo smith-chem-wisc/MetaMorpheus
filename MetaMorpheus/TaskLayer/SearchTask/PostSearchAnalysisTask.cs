@@ -212,15 +212,14 @@ namespace TaskLayer
             // Pass the FilterType and FilterThreshold from the filtered PSMs to ensure consistent filtering criteria
             ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
                 proteinAnalysisResults.ProteinGroups,
-                filteredPsmsForParsimony.FilteredPsmsList,
+                filteredPsmsForParsimony,
                 Parameters.SearchParameters.NoOneHitWonders,
                 Parameters.SearchParameters.ModPeptidesAreDifferent,
-                true,
+                mergeIndistinguishableProteinGroups: true,
                 CommonParameters,
                 this.FileSpecificParameters,
-                new List<string> { Parameters.SearchTaskId },
-                filteredPsmsForParsimony.FilterType,
-                filteredPsmsForParsimony.FilterThreshold).Run();
+                new List<string> { Parameters.SearchTaskId }
+                ).Run();
 
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
@@ -840,7 +839,8 @@ namespace TaskLayer
                     includeDecoys: false,
                     includeContaminants: false,
                     includeAmbiguous: false,
-                    includeHighQValuePsms: false);
+                    includeHighQValuePsms: false
+                    );
 
 
                 //group psms by peptide and charge, then write highest scoring PSM to dictionary
@@ -974,7 +974,10 @@ namespace TaskLayer
             string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
             WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, filteredPsms.FilterType);
 
-            var psmsGroupedByFile = filteredPsms.FilteredPsmsList.GroupBy(p => p.FullFilePath).ToList();
+
+
+            var psmsGroupedByFile = Parameters.AllSpectralMatches.GroupBy(p => p.FullFilePath).ToList();
+
 
             // Build the protein results summary text
             // Add "(1% FDR)" suffix only when using q-value filtering with the standard 0.01 threshold for clarity
@@ -1023,43 +1026,43 @@ namespace TaskLayer
             //write the individual result files for each datafile
             foreach (var fullFilePath in psmsGroupedByFile.Select(v => v.Key))
             {
+                
                 string strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                 List<SpectralMatch> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
+                FilteredPsms filteredPsmsByFile = FilteredPsms.Filter(psmsForThisFile,
+                    CommonParameters,
+                    includeDecoys: true,
+                    includeContaminants: true,
+                    includeAmbiguous: true,
+                    includeHighQValuePsms: false);
                 var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
 
                 // Pass the FilterType and FilterThreshold from the filtered PSMs to ensure consistent filtering criteria
                 ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
                     subsetProteinGroupsForThisFile,
-                    psmsForThisFile,
+                    filteredPsmsByFile,
                     Parameters.SearchParameters.NoOneHitWonders,
                     Parameters.SearchParameters.ModPeptidesAreDifferent,
                     false,
                     CommonParameters,
                     this.FileSpecificParameters,
-                    new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath },
-                    filteredPsms.FilterType,
-                    filteredPsms.FilterThreshold).Run();
+                    new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }
+                    ).Run();
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                 {
                     // write summary text
-                    string fileProteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= filteredPsms.FilterThreshold && !b.IsDecoy);
+                    string fileProteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsmsByFile.GetFilterTypeString() + " <= " 
+                        + Math.Round(filteredPsmsByFile.FilterThreshold, 2) + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= filteredPsmsByFile.FilterThreshold && !b.IsDecoy);
                     ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = fileProteinResultsText;
 
                     // write result files
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + $"_{GlobalVariables.AnalyteType.GetBioPolymerLabel()}Groups.tsv");
-                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, filteredPsms.FilterType);
+                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, filteredPsmsByFile.FilterType);
                 }
-
-                psmsForThisFile = FilteredPsms.Filter(psmsForThisFile,
-                    CommonParameters,
-                    includeDecoys: Parameters.SearchParameters.WriteDecoys,
-                    includeContaminants: Parameters.SearchParameters.WriteContaminants,
-                    includeAmbiguous: true,
-                    includeHighQValuePsms: true).FilteredPsmsList;
 
                 // Filter psms in place before writing mzID
                 if (Parameters.SearchParameters.WriteMzId)
@@ -1073,7 +1076,7 @@ namespace TaskLayer
                     }
 
                     MzIdentMLWriter.WriteMzIdentMl(
-                        psmsForThisFile,
+                        filteredPsmsByFile.FilteredPsmsList,
                         subsetProteinGroupsForThisFile, 
                         Parameters.VariableModifications, 
                         Parameters.FixedModifications, 
@@ -1099,7 +1102,7 @@ namespace TaskLayer
                         pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
                     }
 
-                    PepXMLWriter.WritePepXml(psmsForThisFile,
+                    PepXMLWriter.WritePepXml(filteredPsmsByFile.FilteredPsmsList,
                         Parameters.DatabaseFilenameList,
                         Parameters.VariableModifications,
                         Parameters.FixedModifications,
