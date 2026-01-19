@@ -1,4 +1,4 @@
-﻿namespace EngineLayer
+namespace EngineLayer.SpectrumMatch
 {
     /// <summary>
     /// Specifies the type of filtering used for PSM/peptide/protein FDR calculations.
