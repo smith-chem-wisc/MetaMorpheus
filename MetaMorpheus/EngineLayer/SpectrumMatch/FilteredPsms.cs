@@ -1,14 +1,10 @@
-﻿using Easy.Common.Extensions;
-using EngineLayer;
+using Easy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace TaskLayer
+namespace EngineLayer.SpectrumMatch
 {
-
     /// <summary>
     /// Contains a filtered list of PSMs.
     /// All properties within this class are read-only, and should only be set on object construction
