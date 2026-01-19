@@ -19,7 +19,7 @@ namespace EngineLayer.SpectrumMatch
         public double FilterThreshold { get; init; }
         public bool FilteringNotPerformed { get; init; }
         public bool PeptideLevelFiltering { get; init; }
-        public FilteredPsms(List<SpectralMatch> filteredPsms, FilterType filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
+        private FilteredPsms(List<SpectralMatch> filteredPsms, FilterType filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
         {
             FilteredPsmsList = filteredPsms;
             FilterType = filterType;
@@ -126,9 +126,9 @@ namespace EngineLayer.SpectrumMatch
         }
     }
 
-    public static class FilteredPsmsExtensions
+    internal static class FilteredPsmsExtensions
     {
-        public static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
+        internal static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
         {
             if (!filterAtPeptideLevel)
             {
@@ -145,7 +145,7 @@ namespace EngineLayer.SpectrumMatch
             }
         }
 
-        public static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType)
+        internal static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType)
         {
             foreach (var psm in psms)
             {
