@@ -7,7 +7,7 @@ on:
     branches: [ "master" ]
 
 env:
-  DOTNET_VERSION: 8.0.204
+  DOTNET_VERSION: 8.0.417
   DOTNET_FRAMEWORK: net8.0
 
 jobs:
