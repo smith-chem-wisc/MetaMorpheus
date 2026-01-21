@@ -421,6 +421,8 @@ namespace EngineLayer
             return sb.ToString();
         }
 
+        // Score() method is only used internally, to make protein grouping faster
+        // this is NOT an output and is NOT used for protein FDR calculations
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
