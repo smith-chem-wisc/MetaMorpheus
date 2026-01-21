@@ -612,7 +612,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="366" />
                             <DataGridTextColumn Header="File Path" Binding="{Binding FilePath, Mode=OneWay}" Width="160" />
-                            <DataGridCheckBoxColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=TwoWay}" MinWidth="90" />
+                            <DataGridCheckBoxColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=TwoWay}" MinWidth="90"/>
                             <DataGridCheckBoxColumn Header="Use?" Binding="{Binding Use, Mode=TwoWay}" MinWidth="80"/>
                             <DataGridTextColumn Header="Decoy Identifier" Binding="{Binding DecoyIdentifier, Mode=TwoWay}" Width="160"/>
                         </DataGrid.Columns>
@@ -644,7 +644,10 @@
 
                     <Button Name="SetFileSpecificSettingsButton" Grid.Row="2" Content="SET FILE-SPECIFIC SETTINGS" Click="SetFileSpecificParameters_Click" 
                             HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
-                        Margin="0,0,211,0"/>
+                            Margin="0,0,211,0"/>
+
+                    <Button x:Name="SetTmtExperimentalDesignButton" Grid.Row="2" Content="SET TMT EXPERIMENTAL DESIGN" Click="SetTmtExperimentalDesign_Click"
+                            HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,613,0"/>
 
                     <Button Name="SetExperimentalDesignButton" Grid.Row="2" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" 
                             HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
@@ -662,7 +665,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="250" />
                             <DataGridTextColumn Header="File Path" Binding="{Binding FilePath, Mode=OneWay}" Width="200" />
-                            <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters, Mode=OneWay}" Width="250" />
+                            <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters, Mode=OneWay}" Width="170" />
                             <DataGridCheckBoxColumn Header="Use?" Binding="{Binding Use, Mode=TwoWay}"/>
                         </DataGrid.Columns>
                     </DataGrid>

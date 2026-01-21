@@ -269,6 +269,7 @@ namespace TaskLayer
                     if (multiplexMods.IsNotNullOrEmpty())
                     {
                         Parameters.MultiplexModification = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
+                        IsobaricQuantification();
                     }
                     return;
                 }
@@ -632,6 +633,208 @@ namespace TaskLayer
             }
         }
 
+        private void IsobaricQuantification()
+        {
+            // construct file info for FlashLFQ
+            List<TmtFileInfo> tmtFileInfo;
+
+            // get experimental design info
+            string pathToFirstSpectraFile = Directory.GetParent(Parameters.CurrentRawFileList.First()).FullName;
+            string assumedTmtDesignPath = Path.Combine(pathToFirstSpectraFile, GlobalVariables.TmtExperimentalDesignFileName);
+
+            if (File.Exists(assumedTmtDesignPath))
+            {
+                // copy experimental design file to output folder
+                string writtenFile = Path.Combine(Parameters.OutputFolder, Path.GetFileName(assumedTmtDesignPath));
+                try
+                {
+                    File.Copy(assumedTmtDesignPath, writtenFile, overwrite: true);
+                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
+                }
+                catch
+                {
+                    Warn("Could not copy Experimental Design file to search task output. That's ok, the search will continue");
+                }
+
+                tmtFileInfo = TmtExperimentalDesign.Read(assumedTmtDesignPath, Parameters.CurrentRawFileList, out var errors);
+
+                if (errors.Any())
+                {
+                    Warn("Error reading TMT experimental design file: " + errors.First() + ". Skipping quantification");
+                    return;
+                }
+            }
+            else
+            {
+                tmtFileInfo = new List<TmtFileInfo>();
+
+                for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
+                {
+                    var file = Parameters.CurrentRawFileList[i];
+
+                    // experimental design info passed in here for each spectra file
+                    tmtFileInfo.Add(new TmtFileInfo(fullFilePathWithExtension: file, plex: "", fraction: 0, technicalReplicate: 0, annotations: Array.Empty<TmtPlexAnnotation>()));
+                }
+            }
+
+            // get PSMs to pass to FlashLFQ
+            var psmsForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+                CommonParameters,
+                includeDecoys: false, // Decoys are required for PIP-ECHO, but are not written to the output file
+                includeContaminants: true,
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
+                includeHighQValuePsms: false);
+
+            // Only these peptides will be written to the AllQuantifiedPeptides.tsv output file
+            var peptideSequencesForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+                CommonParameters,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
+                includeHighQValuePsms: false,
+                filterAtPeptideLevel: true).Select(p => p.FullSequence).ToList();
+
+            // pass protein group info for each PSM
+            var psmToProteinGroups = new Dictionary<SpectralMatch, List<ProteinGroup>>();
+            if (ProteinGroups != null && ProteinGroups.Count != 0) //ProteinGroups can be null if parsimony wasn't done, and it can be empty if you're doing the two peptide rule
+            {
+                foreach (var proteinGroup in ProteinGroups)
+                {
+                    var proteinsOrderedByAccession = proteinGroup.Proteins.OrderBy(p => p.Accession);
+
+                    var flashLfqProteinGroup = new ProteinGroup(proteinGroup.ProteinGroupName,
+                        string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
+                        string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
+
+                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(v => v.FullSequence != null))
+                    {
+                        if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
+                        {
+                            flashLfqProteinGroups.Add(flashLfqProteinGroup);
+                        }
+                        else
+                        {
+                            psmToProteinGroups.Add(psm, new List<ProteinGroup> { flashLfqProteinGroup });
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // if protein groups were not constructed, just use accession numbers
+                var accessionToPg = new Dictionary<string, ProteinGroup>();
+                foreach (var psm in psmsForQuantification)
+                {
+                    var proteins = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent).Distinct();
+
+                    foreach (var protein in proteins)
+                    {
+                        if (!accessionToPg.ContainsKey(protein.Accession))
+                        {
+                            accessionToPg.Add(protein.Accession, new ProteinGroup(protein.Accession, string.Join("|", protein.GeneNames.Select(p => p.Item2).Distinct()), protein.Organism));
+                        }
+
+                        if (psmToProteinGroups.TryGetValue(psm, out var proteinGroups))
+                        {
+                            proteinGroups.Add(accessionToPg[protein.Accession]);
+                        }
+                        else
+                        {
+                            psmToProteinGroups.Add(psm, new List<ProteinGroup> { accessionToPg[protein.Accession] });
+                        }
+                    }
+                }
+            }
+            //group psms by file
+            var psmsGroupedByFile = psmsForQuantification.GroupBy(p => p.FullFilePath);
+            // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
+            // the peptides should still be quantified but not considered for protein quantification
+            var undefinedPg = new ProteinGroup("UNDEFINED", "", "");
+            //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
+            Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
+            Dictionary<DigestionAgent, IsobaricQuantResults> proteaseSortedIsobaricQuantResults = new Dictionary<DigestionAgent, IsobaricQuantResults>();
+
+            foreach (IDigestionParams dp in Parameters.ListOfDigestionParams)
+            {
+                if (!proteaseSortedPsms.ContainsKey(dp.DigestionAgent))
+                {
+                    proteaseSortedPsms.Add(dp.DigestionAgent, new List<SpectralMatch>());
+                }
+            }
+            foreach (var psm in psmsForQuantification)
+            {
+                if (!psmToProteinGroups.ContainsKey(psm))
+                {
+                    psmToProteinGroups.Add(psm, new List<ProteinGroup> { undefinedPg });
+                }
+
+                proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
+            }
+            // pass PSM info to FlashLFQ
+            var isobaricQuantIdentifications = new List<Identification>();
+            foreach (var spectraFile in psmsGroupedByFile)
+            {
+                var rawfileinfo = tmtFileInfo.First(p => p.FullFilePathWithExtension.Equals(spectraFile.Key));
+
+                foreach (var psm in spectraFile)
+                {
+                    isobaricQuantIdentifications.Add(
+                        new Identification(
+                            fileInfo: rawfileinfo,
+                            psm.BaseSequence,
+                            psm.FullSequence,
+                            psm.BioPolymerWithSetModsMonoisotopicMass.Value,
+                            psm.ScanRetentionTime,
+                            psm.ScanPrecursorCharge,
+                            psmToProteinGroups[psm],
+                            psmScore: psm.Score,
+                            qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
+                            decoy: psm.IsDecoy));
+                }
+            }
+
+            // run FlashLFQ
+            var isobaricQuantEngine = new IsobaricQuantEngine(
+                allIdentifications: isobaricQuantIdentifications,
+                normalize: Parameters.SearchParameters.Normalize,
+                ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
+                matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
+                matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
+                matchBetweenRunsFdrThreshold: Parameters.SearchParameters.MbrFdrThreshold,
+                useSharedPeptidesForProteinQuant: Parameters.SearchParameters.UseSharedPeptidesForLFQ,
+                peptideSequencesToQuantify: Parameters.SearchParameters.SilacLabels == null ? peptideSequencesForQuantification : null, // Silac is doing it's own thing, no need to pass in peptide sequences
+                silent: true,
+                maxThreads: CommonParameters.MaxThreadsToUsePerFile);
+
+            if (isobaricQuantIdentifications.Any())
+            {
+                Parameters.FlashLfqResults = isobaricQuantEngine.Run();
+            }
+
+            // get protein intensity back from FlashLFQ
+            if (ProteinGroups != null && Parameters.FlashLfqResults != null)
+            {
+                foreach (var proteinGroup in ProteinGroups)
+                {
+                    proteinGroup.FilesForQuantification = tmtFileInfo;
+                    proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
+
+                    foreach (var spectraFile in proteinGroup.FilesForQuantification)
+                    {
+                        if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
+                        {
+                            proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
+                        }
+                        else
+                        {
+                            proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
+                        }
+                    }
+                }
+            }
+        }
         private void HistogramAnalysis()
         {
             try
