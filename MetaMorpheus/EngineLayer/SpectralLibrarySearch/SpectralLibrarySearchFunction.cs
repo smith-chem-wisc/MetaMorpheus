@@ -1,15 +1,8 @@
-﻿using Chemistry;
-using Easy.Common.Extensions;
-using EngineLayer.SpectrumMatch;
-using MassSpectrometry;
-using MassSpectrometry.MzSpectra;
+﻿using MassSpectrometry.MzSpectra;
 using MzLibUtil;
-using Omics;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
-using Proteomics.ProteolyticDigestion;
 using Readers.SpectralLibrary;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -55,9 +48,9 @@ namespace EngineLayer
                                     if (spectralLibrary.TryGetSpectrum(bestMatch.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                     {
                                         SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
+
                                             SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, tolerance, false);
-                                            SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
->>>>>>>>> Temporary merge branch 2
+
                                         if (s.SpectralContrastAngle().HasValue)
                                         {
                                             pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
