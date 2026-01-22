@@ -24,11 +24,11 @@ using System.Text;
 using System.Threading.Tasks;
 using EngineLayer.DatabaseLoading;
 using UsefulProteomicsDatabases;
-using UsefulProteomicsDatabases.Transcriptomics;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
+using EngineLayer.SpectrumMatch;
 
 namespace TaskLayer
 {
@@ -379,6 +379,9 @@ namespace TaskLayer
                     case DIAanalysisType.DIA:
                         var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
                         return diaEngine.GetPseudoMs2Scans();
+                    case DIAanalysisType.ISD:
+                        var isdEngine = new ISDEngine(myMSDataFile, commonParameters);
+                        return isdEngine.GetPseudoMs2Scans();
                     default:
                         throw new NotImplementedException("DIA analysis type not implemented.");
                 }
