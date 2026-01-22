@@ -150,6 +150,7 @@ namespace TaskLayer
                 else
                 {
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, taskId);
+                    continue;
                 }
 
                 // Update file specific params to reflect the new tolerances, then write them out

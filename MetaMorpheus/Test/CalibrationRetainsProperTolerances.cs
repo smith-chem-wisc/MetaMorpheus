@@ -33,9 +33,9 @@ namespace Test
 
             // define expected values
             int expectedCalibrationCount = 1;
-            int expectedClassicSearchCount = 3;
-            int expectedDataPointAcquisitionCount = 3;
-            int expectedFdrAnalysisEngineCount = 3;
+            int expectedClassicSearchCount = 2;
+            int expectedDataPointAcquisitionCount = 2;
+            int expectedFdrAnalysisEngineCount = 2;
 
             double[] expectedPrecursorTolerances = [10, 8.6, 7.3];
             double[] expectedProductTolerances = [30, 14.4, 13.9];
