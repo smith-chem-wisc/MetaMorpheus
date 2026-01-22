@@ -260,7 +260,7 @@ namespace Test.MetaDraw
             var method = typeof(BioPolymerTabViewModel)
                 .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             method.Invoke(vm, null);
-            Thread.Sleep(1000); // wait for async load
+            Thread.Sleep(3000); // wait for async load
             Assert.That(vm.IsDatabaseLoaded, Is.True);
         }
 

@@ -322,7 +322,7 @@ namespace Test.GuiTests
         public void PredefinedNotches_Defaults_AreCorrect()
         {
             var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
-            Assert.That(vm.PredefinedNotches.Count, Is.EqualTo(1));
+            Assert.That(vm.PredefinedNotches.Count, Is.EqualTo(3));
             var notch = vm.PredefinedNotches[0];
             Assert.That(notch.Name, Is.EqualTo("Missed Mono"));
             Assert.That(notch.MonoisotopicMass, Is.EqualTo(Chemistry.Constants.C13MinusC12));
@@ -356,7 +356,7 @@ namespace Test.GuiTests
             // Add a second notch for more complex combinations
             vm.PredefinedNotches.Add(new SelectableNotchViewModel("Other", 2.0));
             var missedMono = vm.PredefinedNotches[0];
-            var other = vm.PredefinedNotches[1];
+            var other = vm.PredefinedNotches.First(p => p.Name == "Other");
 
             missedMono.IsSelected = true;
             missedMono.MaxPositiveFrequency = 1;
@@ -394,7 +394,7 @@ namespace Test.GuiTests
             // Add a second notch
             vm.PredefinedNotches.Add(new SelectableNotchViewModel("Other", 2.0));
             var missedMono = vm.PredefinedNotches[0];
-            var other = vm.PredefinedNotches[1];
+            var other = vm.PredefinedNotches.First(p => p.Name == "Other");
 
             missedMono.IsSelected = true;
             missedMono.MaxPositiveFrequency = 1;

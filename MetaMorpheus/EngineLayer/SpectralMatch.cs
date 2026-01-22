@@ -38,8 +38,9 @@ namespace EngineLayer
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = -1;
+            IsobaricMassTagReporterIonIntensities = scan.IsobaricMassTagReporterIonIntensities;
 
-            if(scan.TheScan is TimsDataScan timsScan)
+            if (scan.TheScan is TimsDataScan timsScan)
             {
                 ScanOneOverK0 = timsScan.OneOverK0;
             }
@@ -155,6 +156,12 @@ namespace EngineLayer
         public static BioPolymerNotchFragmentIonComparer BioPolymerNotchFragmentIonComparer = new();
 
         protected List<SpectralMatchHypothesis> _BestMatchingBioPolymersWithSetMods;
+
+        /// <summary>
+        /// An array containing the intensities of the reporter ions for isobaric mass tags. 
+        /// If multiplex quantification wasn't performed, this will be null
+        /// </summary>
+        public double[]? IsobaricMassTagReporterIonIntensities { get; private set; }
 
         public IEnumerable<SpectralMatchHypothesis> BestMatchingBioPolymersWithSetMods
         {
@@ -314,7 +321,7 @@ namespace EngineLayer
 
         public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column).Values);
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column).Values.Select(v => v?.Trim() ?? string.Empty));
         }
 
         public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false)

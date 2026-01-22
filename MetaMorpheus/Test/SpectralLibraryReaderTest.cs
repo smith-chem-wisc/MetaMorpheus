@@ -172,10 +172,50 @@ namespace Test
             Assert.That(allPsmsArray[5].IsDecoy);
 
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
+            Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));
+
+        }
+        /// <summary>
+        /// Test ensures spectral angle calculation works correctly for decoys when no decoy library spectrum is available (fallback to generated decoy spectrum)
+        /// </summary>
+        [Test]
+        public static void AnotherSpectralLibrarySearchTestDecoyNoLibrarySpectrum()
+        {
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
+            string myFile = Path.Combine(testDir, @"slicedMouse.raw");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters commonParameters = new CommonParameters(maxThreadsToUsePerFile: 1, scoreCutoff: 1);
+            MsDataFile myMsDataFile = myFileManager.LoadFile(myFile, commonParameters);
+
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var proteinList = new List<Protein> { new Protein("QTATIAHVTTMLGEVIGFNDHIVK", "P16858") };
+
+            string targetSpectralLibrary = Path.Combine(testDir, @"P16858_decoy.msp"); // Using P16858_decoy.msp file which actually contains the target spectrum for this test case
+
+            List<string> specLibs = new List<string> { targetSpectralLibrary };
+
+            SpectralLibrary sl = new SpectralLibrary(specLibs);
+
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            bool writeSpectralLibrary = false;
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchModes, commonParameters, null, sl, new List<string>(), writeSpectralLibrary).Run();
+
+            // Single search mode
+            Assert.That(allPsmsArray.Length, Is.EqualTo(7));
+            Assert.That(allPsmsArray[5].Score > 38);
+            Assert.That(allPsmsArray[5].BaseSequence, Is.EqualTo("VIHDNFGIVEGLMTTVHAITATQK")); //this is the decoy sequence
+            Assert.That(allPsmsArray[5].IsDecoy);
+
+            SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.69).Within(0.01));
 
         }
-
 
     }
     

@@ -149,6 +149,7 @@ namespace EngineLayer
                         continue;
                     }
 
+                    // Magic number represents mzbinning space. 
                     double theoreticalFragmentMz = Math.Round(product.NeutralMass.ToMz(1) / 1.0005079, 0) * 1.0005079;
                     var closestMzIndex = scan.TheScan.MassSpectrum.GetClosestPeakIndex(theoreticalFragmentMz);
 
@@ -168,7 +169,6 @@ namespace EngineLayer
             }
 
             // search for ions in the spectrum
-            //foreach (Product product in theoreticalProducts)
             for (int i = 0; i < theoreticalProducts.Count; i++)
             {
                 var product = theoreticalProducts[i];

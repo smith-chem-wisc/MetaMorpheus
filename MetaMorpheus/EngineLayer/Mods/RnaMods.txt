@@ -28,13 +28,6 @@ MT   Biological
 CF   C2 H4
 DR   Unimod; 34.
 //
-ID   DeoxyFluoronation
-TG   A or C or G or U
-PP   Anywhere.
-MT   Biological
-CF   O-1 H-1 F1
-DR   Unimod; 34.
-//
 ID   MethoxyEthoxylation
 TG   A or C or G or U
 PP   Anywhere.
@@ -57,12 +50,12 @@ CF   N-1H-1O-1
 DR   Unimod; 34.
 //
 ################################## Common Artificial
-ID   2' Fluronation 
-TG   X
+ID   DeoxyFluoronation
+TG   A or C or G or U
 PP   Anywhere.
-MT   Artificial
-CF   H-1 O-1 F1
-DR   Unimod; 280.
+MT   Common Artificial
+CF   O-1 H-1 F1
+DR   Unimod; 34.
 //
 ################################## Terminal Shifts
 ID   Cyclic Phosphate

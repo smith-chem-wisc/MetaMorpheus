@@ -24,7 +24,7 @@
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
-    <PackageReference Include="mzLib" Version="1.0.571" />
+    <PackageReference Include="mzLib" Version="1.0.572" />
     <PackageReference Include="NUnit" Version="4.1.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
@@ -631,6 +631,9 @@
     <None Update="tinySemiBroken.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TMT_test\MS3_TMT11_Mouse_snip.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TMT_test\DiLeu-12plex-Task1-SearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -649,8 +652,17 @@
     <None Update="TMT_test\mouseTmt.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TMT_test\MUS_snip.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\PEPTIDEK.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TMT_test\TMT-Task1-SearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\TMT11_LowCID_SearchTask.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TMT_test\VA084TQ_6.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

@@ -4,10 +4,15 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
+        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
-        Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
+        Drop="Window_Drop" AllowDrop="true" 
+        Background="{StaticResource BackgroundColor}" 
+        WindowStartupLocation="CenterScreen" MinHeight="460" 
         MinWidth="800" Height="550" Width="1000"
         Loaded="MyWindow_Loaded"
+        Title="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=MainWindowTitle}"
+        Closing="MainWindow_Closing"
         PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.Resources>
@@ -17,21 +22,107 @@
             <!--Allows use of "not" (i.e., inverse of true boolean) in binding properties-->
             <local:BooleanInverter x:Key="InvertedBooleanConverter" />
 
+            <!--Styling for the context menu to add tasks-->
+            <Style x:Key="ContextMenuStyle" TargetType="ContextMenu">
+                <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
+                <Setter Property="OverridesDefaultStyle" Value="True" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ContextMenu}">
+                            <Border BorderThickness="1" BorderBrush="{StaticResource BorderColor}" x:Name="Border" 
+                                    Background="{StaticResource BackgroundColor}">
+                                <StackPanel ClipToBounds="True" Orientation="Vertical" IsItemsHost="True" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="true">
+                                    <Setter TargetName="Border" Property="Background" Value="{StaticResource BackgroundColor}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            
+            <!--Defines the context menu to remove sections of the pre-run setup-->
+            <ContextMenu x:Key="BigDeleteContextMenu" Style="{StaticResource ContextMenuStyle}">
+                <MenuItem Header="Remove All" Click="DeleteAll" />
+                <MenuItem Header="Remove Spectra" Click="DeleteAll_Spectra" />
+                <MenuItem Header="Remove Databases" Click="DeleteAll_Databases" />
+                <MenuItem Header="Remove Tasks" Click="DeleteAll_Tasks" />
+            </ContextMenu>
+            
+            <Style TargetType="TabControl" x:Key="TabControlStyle">
+                <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabControl">
+                            <Grid ClipToBounds="true">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- For tab headers -->
+                                    <ColumnDefinition Width="*"/>
+                                    <!-- For content -->
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Actual Tab Headers -->
+                                <TabPanel Grid.Row="0" Grid.Column="0"
+                                          Name="HeaderPanel"
+                                          IsItemsHost="True"
+                                          Margin="0"
+                                          KeyboardNavigation.TabIndex="1"
+                                          Panel.ZIndex="1"
+                                          Background="Transparent"/>
+
+                                <!-- Protein/RNA Toggle Control -->
+                                <local:ProteinRnaImageToggle Grid.Row="1" Grid.Column="0" Width="100"/>
+
+                                <!-- Content Panel -->
+                                <ContentPresenter
+                                    Name="PART_SelectedContentHost"
+                                    Margin="4 0 0 0 "
+                                    Grid.Row="0"
+                                    Grid.RowSpan="2"
+                                    Grid.Column="1"
+                                    ContentSource="SelectedContent"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
+                        <Setter Property="Background" Value="{StaticResource RnaSideBarMainColor}"/>
+                        <Setter Property="BorderBrush" Value="{StaticResource RnaSideBarMainColor}"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
             <!--Styling for the tab items on the left side-->
             <Style x:Key="TabItemStyle" TargetType="TabItem">
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Background" Value="{StaticResource SideBarMainColor}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                <Setter Property="Margin" Value="0,0,2,0" />
+                <Setter Property="Padding" Value="0" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabItem">
-                            <Grid Height="35" Width="105" Background="{StaticResource SideBarMainColor}">
+                            <Grid Height="35" Width="105" Background="{TemplateBinding Background}">
                                 <Border Name="Border" Margin="0,0,0,0" Background="Transparent"
-                                                BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" >
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}">
                                     <ContentPresenter 
-                                                x:Name="ContentSite" 
-                                                VerticalAlignment="Center"
-                                                HorizontalAlignment="Left"
-                                                ContentSource="Header" Margin="5,2,10,2"
-                                                RecognizesAccessKey="True">
-                                    </ContentPresenter>
+                                        x:Name="ContentSite" 
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Left"
+                                        ContentSource="Header" Margin="5,2,10,2"
+                                        RecognizesAccessKey="True"/>
                                 </Border>
                             </Grid>
 
@@ -39,24 +130,22 @@
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter Property="BorderThickness" Value="0,0,7,0"/>
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <!--Color of tab item text (when selected)-->
                                     <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
-                                    <!--Color of tab item right side (when selected)-->
-                                    <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
                                 </Trigger>
 
                                 <Trigger Property="IsSelected" Value="False">
-                                    <!--Color of tab item text (when deselected)-->
                                     <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
-                <Setter Property="FontSize" Value="14" />
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Margin" Value="0,0,2,0" />
-                <Setter Property="Padding" Value="0" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource RnaSideBarMainColor}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource RnaAccentColor}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <!--Styling for the grid that defines each page-->
@@ -72,6 +161,21 @@
                 <Setter Property="Background" Value="{StaticResource AccentColor}"/>
                 <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
                 <Setter Property="FontSize" Value="12"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
+                        <Setter Property="Background" Value="{StaticResource RnaAccentColor}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!--Styling for the "important" buttons that should disappear in RNA mode-->
+            <Style x:Key="ImportantButtonStyleNotForRna" TargetType="Button" BasedOn="{StaticResource ImportantButtonStyle}">
+                <Setter Property="Visibility" Value="Visible" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <!--Styling for borders-->
@@ -97,37 +201,36 @@
                 <Setter Property="Margin" Value="15,0,10,0"/>
             </Style>
 
-            <!--Styling for the context menu to add tasks-->
-            <Style x:Key="ContextMenuStyle" TargetType="ContextMenu">
-                <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
-                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
-                <Setter Property="OverridesDefaultStyle" Value="True" />
-                <Setter Property="SnapsToDevicePixels" Value="True" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type ContextMenu}">
-                            <Border BorderThickness="1" BorderBrush="{StaticResource BorderColor}" x:Name="Border" 
-                                    Background="{StaticResource BackgroundColor}">
-                                <StackPanel ClipToBounds="True" Orientation="Vertical" IsItemsHost="True" />
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="true">
-                                    <Setter TargetName="Border" Property="Background" Value="{StaticResource BackgroundColor}" />
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-
             <!--Defines the context menu when "add task" button is clicked-->
             <ContextMenu x:Key="AddTaskMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Add new calibration task" Click="AddCalibrateTaskButton_Click" />
                 <MenuItem Header="Add new averaging task" Click="AddAveragingTaskButton_OnClick" />
                 <MenuItem Header="Add new GPTMD task" Click="AddGPTMDTaskButton_Click" />
                 <MenuItem Header="Add new search task" Click="AddSearchTaskButton_Click" />
-                <MenuItem Header="Add new crosslink task" Click="AddCrosslinkTask_Click" />
-                <MenuItem Header="Add new glycopeptide task" Click="AddGlycoSearchTask_Click" />
+                <MenuItem Header="Add new crosslink task" Click="AddCrosslinkTask_Click" >
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
+                <MenuItem Header="Add new glycopeptide task" Click="AddGlycoSearchTask_Click" >
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="Load task from .toml file" Click="LoadTask_Click" />
             </ContextMenu>
@@ -248,22 +351,25 @@
             </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
-
     <!--Window content-->
-    <Grid>
+    <Grid ContextMenu="{StaticResource BigDeleteContextMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-
         <!--Pages-->
         <TabControl x:Name="MainWindowTabControl" Grid.Row="0" TabStripPlacement="Left" Margin="0" SelectionChanged="TabControl_SelectionChanged" 
-                    BorderThickness="0" BorderBrush="{StaticResource BorderColor}">
+                    BorderThickness="0" BorderBrush="{StaticResource BorderColor}" Style="{StaticResource TabControlStyle}">
             <TabControl.Resources>
                 <Style TargetType="Grid">
                     <!--This defines the *default* style for *all grids in the entire tab control*-->
                     <!--This is not great but seems necessary to have a proper background on the tab items...-->
                     <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
+                            <Setter Property="Background" Value="{StaticResource RnaSideBarMainColor}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
                 </Style>
             </TabControl.Resources>
 
@@ -271,112 +377,167 @@
             <TabItem Name="AboutTab" Header="About" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition/>
+                        <RowDefinition Height="60" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
                     <Label Content="About" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
                     <!--Text content-->
-                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
-                        MetaMorpheus is a search program for MS/MS proteomics data. It takes a protein database (.xml or .fasta)
-                        as input,as well as spectra files in ms2.msalign, .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library 
-                        (.msp) can be used to improve search results.
-                        
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Margin="14 0">
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter="MetaMorpheus is a search program for MS/MS proteomic data. It takes a protein database (.xml or .fasta) as input, as well as spectra files in ms2.msalign, .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library (.msp) can be used to improve search results." />
+                            </Run.Text>
+                        </Run>
+
                         <LineBreak />
                         <LineBreak />
-                        
-                        After adding input files, the last step is to define a workflow by adding tasks for MetaMorpheus to perform.
-                        
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter="After adding input files, the last step is to define a workflow by adding tasks for MetaMorpheus to perform." />
+                            </Run.Text>
+                        </Run>
+
                         <LineBreak />
                         <LineBreak />
-                        ● The 
-                        
-                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873" RequestNavigate="Hyperlink_RequestNavigate">
+
+                        <Run Text="● The " />
+
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             calibration
-                        </Hyperlink> 
-                        
-                        task performs mass calibration; 
-                        
-                        <!-- TODO: Change link to averaging paper once published -->
+                        </Hyperlink>
+
+                        <Run Text=" task performs mass calibration; " />
+
                         <LineBreak />
 
-                        ● The 
+                        <Run Text="● The " />
 
-                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Averaging-Task" RequestNavigate="Hyperlink_RequestNavigate">
+                        <Hyperlink NavigateUri="https://pubmed.ncbi.nlm.nih.gov/38487981/"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             averaging
                         </Hyperlink>
-                        
-                        task averages spectra to refine isotopic distributions
+
+                        <Run Text=" task averages spectra to refine isotopic distributions" />
 
                         <LineBreak />
 
-                        ● The
-                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.6b00034" RequestNavigate="Hyperlink_RequestNavigate">
+                        <Run Text="● The " />
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.6b00034"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             GPTMD
                         </Hyperlink>
-                        
-                        task performs PTM discovery; 
-                        
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter=" task performs PTM discovery; " />
+                            </Run.Text>
+                        </Run>
+
                         <LineBreak />
-                        
-                        ● The search task performs a proteomics database search, with 
-                        
-                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608" RequestNavigate="Hyperlink_RequestNavigate">
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter="● The search task performs a proteomics database search, with " />
+                            </Run.Text>
+                        </Run>
+
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             quantification
                         </Hyperlink>
-                        ,
-                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.9b00330" RequestNavigate="Hyperlink_RequestNavigate">
-                            multi-protease
-                        </Hyperlink>                       
-                        , and 
-                        
-                        <Hyperlink NavigateUri="http://dx.doi.org/10.2174/1574893615999200429123334" RequestNavigate="Hyperlink_RequestNavigate">
+                        <Run Text=", " />
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.9b00330"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
+                            <Run>
+                                <Run.Text>
+                                    <Binding Path="IsRnaMode"
+                                             Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                             Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="multi-protease" />
+                                </Run.Text>
+                            </Run>
+                        </Hyperlink>
+                        <Run Text=", and " />
+
+                        <Hyperlink NavigateUri="http://dx.doi.org/10.2174/1574893615999200429123334"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             non-specific search
                         </Hyperlink>
-                        
-                        options;
-                        
-                        <LineBreak />
-                        
-                        ● The 
-                        
-                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141" RequestNavigate="Hyperlink_RequestNavigate">
+
+                        <Run Text=" options;" />
+                    </TextBlock>
+
+                    <TextBlock Grid.Row="2" Style="{StaticResource TextBlockStyle}" Margin="14 0"
+                               Visibility="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode, Converter={StaticResource CollapseOnRnaModeConverter}}">
+                        <Run Text="● The " />
+
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             XL search
                         </Hyperlink>
-                        
-                        performs a search for crosslinked peptides; and 
-                        
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter=" performs a search for crosslinked peptides; and " />
+                            </Run.Text>
+                        </Run>
+
                         <LineBreak />
-                        
-                        ● The 
-                        
-                        <Hyperlink NavigateUri="https://www.biorxiv.org/content/10.1101/2020.05.18.102327v1.abstract" RequestNavigate="Hyperlink_RequestNavigate">
+
+                        <Run Text="● The " />
+
+                        <Hyperlink NavigateUri="https://www.biorxiv.org/content/10.1101/2020.05.18.102327v1.abstract"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             glycopeptide
-                        </Hyperlink> 
-                        
-                        search detects O-linked glycopeptides.
-                        
+                        </Hyperlink>
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter=" search detects O-linked glycopeptides." />
+                            </Run.Text>
+                        </Run>
+
                         <LineBreak />
                         <LineBreak />
-                        
-                        Visit the 
-                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
+                    </TextBlock>
+
+                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}" Margin="14">
+                        <Run Text="Visit the " />
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki"
+                                   RequestNavigate="Hyperlink_RequestNavigate">
                             MetaMorpheus wiki
-                        </Hyperlink> 
-                        to learn more.
-                        
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        
+                        </Hyperlink>
+                        <Run Text=" to learn more." />
+                    </TextBlock>
+
+                    <TextBlock Grid.Row="4" Style="{StaticResource TextBlockStyle}" VerticalAlignment="Bottom"
+                               Margin="14">
                         MetaMorpheus uses Thermo's RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.
                     </TextBlock>
                 </Grid>
@@ -386,25 +547,38 @@
             <TabItem Name="DatabasesTab" Header="Databases" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="60"/>
                         <RowDefinition Height="60"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
-                    <Label Content="Protein Databases and Spectral Libraries" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4"/>
+                    <Label Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4" Grid.Row="0"  >
+                        <Label.Content>
+                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Protein Databases and Spectral Libraries"/>
+                        </Label.Content>
+                    </Label>
 
                     <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Grid.ColumnSpan="4">
-                        Add 
+                        <Run>
+                            Add 
+                        </Run>
                         
                         <Hyperlink NavigateUri="https://www.uniprot.org/" RequestNavigate="Hyperlink_RequestNavigate">
                             reference proteome(s)
                         </Hyperlink> 
                         
-                        in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations,
-                        whereas .fasta format only contains amino acid sequences.
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter="in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations, whereas .fasta format only contains amino acid sequences."/>
+                            </Run.Text>
+                        </Run>
+
                        <Hyperlink NavigateUri="https://chemdata.nist.gov/dokuwiki/doku.php?id=peptidew:start" RequestNavigate="Hyperlink_RequestNavigate">
                             Spectral libraries
                        </Hyperlink>
@@ -416,14 +590,15 @@
                     <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="DOWNLOAD PROTEOME" Visibility="Collapsed"
                         Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="10,0,0,0" HorizontalAlignment="Left" />
 
-                    <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN PROTEOMES FOLDER" 
-                        Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="211,0,0,0" HorizontalAlignment="Left"/>
+                    <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN DATABASE FOLDER"
+                        Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="211,0,0,0" HorizontalAlignment="Left" />
 
-                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD PROTEOME" 
+                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD DATABASE" 
                         Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" HorizontalAlignment="Right"/>
 
                     <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="+ADD DEFAULT CONTAMINANTS" 
-                        Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,211,0" HorizontalAlignment="Right"/>
+                        Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,211,0" HorizontalAlignment="Right">
+                    </Button>
 
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" Grid.ColumnSpan="4" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
@@ -532,9 +707,9 @@
                         <Button Name="AddSearchTaskButton" Grid.Column="3" Content="+ADD SEARCH" HorizontalAlignment="Right" Click="AddSearchTaskButton_Click" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
                         <Button Name="AddXlTaskButton" Grid.Column="4" Content="+ADD XL SEARCH" HorizontalAlignment="Right" Click="AddCrosslinkTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                            Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,1,0" Width="140"/>
                         <Button Name="AddGlycoTaskButton" Grid.Column="5" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="140"/>
+                            Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,0,0" Width="140"/>
                     </Grid>
 
                     <!--List of tasks-->
@@ -704,50 +879,156 @@
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
                     <Label Content="Settings" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
                     <Grid Grid.Row="2" Style="{StaticResource PageGridStyle}" Margin="5,0,0,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                            <RowDefinition Height="22"/>
-                        </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="20"/>
-                            <ColumnDefinition Width="270"/>
+                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                        <Button Grid.Row="0" Grid.Column="1" Content="Create new modification" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomMod_Click" />
+                        <!-- Left: Existing buttons -->
+                        <Grid Grid.Column="0" Style="{StaticResource PageGridStyle}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="22"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                        <Button Grid.Row="1" Grid.Column="1" Content="Create new amino acid" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomAminoAcid_Click" />
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="270"/>
+                            </Grid.ColumnDefinitions>
 
-                        <Button Grid.Row="2" Grid.Column="1" Content="Create new crosslinker" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomCrosslinker_Click" />
+                            <Button Grid.Row="0" Grid.Column="1" Content="Create new modification" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomMod_Click" />
 
-                        <Button Grid.Row="4" Grid.Column="1" Content="Close program and open global settings" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenSettings_Click" />
+                            <Button Grid.Row="1" Grid.Column="1" Content="Create new amino acid" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomAminoAcid_Click" />
 
-                        <Button Grid.Row="5" Grid.Column="1" Content="Close program and open GUI settings" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_GuiSettings_Click" />
+                            <Button Grid.Row="2" Grid.Column="1" Content="Create new crosslinker" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomCrosslinker_Click" />
 
-                        <Button Grid.Row="6" Grid.Column="1" Content="Open mods/data folder" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenDataDir_Click" />
+                            <Button Grid.Row="4" Grid.Column="1" Content="Close program and open global settings" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenSettings_Click" />
 
-                        <Button Grid.Row="7" Grid.Column="1" Content="Reset to factory defaults" 
-                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ResetDefaults_Click"
-                                ToolTip="Reset saved tasks and MetaDraw Settings to default values"/>
+                            <Button Grid.Row="5" Grid.Column="1" Content="Open mods/data folder" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenDataDir_Click" />
+
+                            <Button Grid.Row="6" Grid.Column="1" Content="Reset to factory defaults" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ResetDefaults_Click"
+                                    ToolTip="Reset saved tasks and MetaDraw Settings to default values"/>
+
+                            <CheckBox Grid.Row="8" Grid.Column="1" Content="Ask About Updating" 
+                                     FontSize="13" VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                     IsChecked="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=AskAboutUpdating, Mode=TwoWay}" />
+
+                            <CheckBox Grid.Row="9" Grid.Column="1" Content="Ask Before Exiting MetaMorpheus" 
+                                     FontSize="13" VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                     IsChecked="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=AskBeforeExitingMetaMorpheus, Mode=TwoWay}" />
+                            <CheckBox Grid.Row="10" Grid.Column="1" Content="Rna Mode" 
+                                         FontSize="13" VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                         IsChecked="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode, Mode=TwoWay}" />
+                        </Grid>
+
+                        <!-- Right: New settings controls -->
+                        <Grid Grid.Column="1" Style="{StaticResource PageGridStyle}"
+                                  DataContext="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                  Margin="20,-10,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24"/>
+                                <RowDefinition Height="24"/>
+                                <RowDefinition Height="24"/>
+                                <RowDefinition Height="24"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="280"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="160"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Ask/Use pairs -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Top-Down Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="0" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutTopDownParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="0" Grid.Column="2" Content="Use" IsChecked="{Binding UseTopDownParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Chymotrypsin Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="1" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutChymotrypsinParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="1" Grid.Column="2" Content="Use" IsChecked="{Binding UseChymotrypsinParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Elastase Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="2" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutElastaseParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="2" Grid.Column="2" Content="Use" IsChecked="{Binding UseElastaseParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Non-Specific Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="3" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutNonSpecificParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="3" Grid.Column="2" Content="Use" IsChecked="{Binding UseNonSpecificParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Semi-Trypsin Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="4" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutSemiTrypsinParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="4" Grid.Column="2" Content="Use" IsChecked="{Binding UseSemiTrypsinParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Arg-C Recommendations"
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="5" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutArgCParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="5" Grid.Column="2" Content="Use" IsChecked="{Binding UseArgCParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="6" Grid.Column="0" Text="Spectral Recovery Recommendations" 
+                                           VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="6" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutSpectralRecoveryParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="6" Grid.Column="2" Content="Use" IsChecked="{Binding UseSpectralRecoveryParams, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            
+                            <TextBlock Grid.Row="7" Grid.Column="0" Text="Overwrite Output Directory" 
+                                       VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="7" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutOverwritingOutputDirectory, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="7" Grid.Column="2" Content="Overwrite" IsChecked="{Binding OverwriteOutputDirectory, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            
+                            <TextBlock Grid.Row="8" Grid.Column="0" Text="Protein/RNA Mode Switching Prompt" 
+                                       VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                            <CheckBox Grid.Row="8" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutModeSwitch, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="8" Grid.Column="2" VerticalAlignment="Center" Width="154" HorizontalAlignment="Left"
+                                      ItemsSource="{Binding AllModeSwitchValues}"
+                                      SelectedItem="{Binding CachedModeSwitchResult, Mode=TwoWay}" />
+                        </Grid>
                     </Grid>
+
+                    <!-- Proteome Directory -->
+                    <StackPanel Grid.Row="3"  Orientation="Horizontal" HorizontalAlignment="Stretch">
+                        <TextBlock  Text="Database Directory" Margin ="24 10"
+                                    VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
+                        <TextBox  FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"
+                            Text="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=ProteomeDirectory, Mode=TwoWay}" 
+                            VerticalAlignment="Center" HorizontalContentAlignment="Left"
+                            MinWidth="600" MaxWidth="700"/>
+                </StackPanel>
                 </Grid>
             </TabItem>
 
@@ -865,7 +1146,18 @@
         </TabControl>
 
         <!--Notifications-->
-        <Grid Grid.Row="2" Background="{StaticResource SideBarMainColor}" Margin="0,-1,0,0" >
+        <Grid Grid.Row="1" Margin="0,-1,0,0" >
+            <Grid.Resources>
+                <Style TargetType="Grid">
+                    <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
+                            <Setter Property="Background" Value="{StaticResource RnaSideBarMainColor}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Resources>
+            
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="105" />
                 <ColumnDefinition Width="*" />

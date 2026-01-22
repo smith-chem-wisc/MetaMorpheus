@@ -1,42 +1,15 @@
-﻿using EngineLayer;
-using Nett;
-using System.Collections.Generic;
-using System.IO;
-using TaskLayer;
+﻿using System.Collections.Generic;
+using GuiFunctions;
 
 namespace MetaMorpheusGUI
 {
     public static class UpdateGUISettings
     {
-        public static GuiGlobalParams Params { get; internal set; }
-
-        public static bool LoadGUISettings()
-        {
-            bool fileExists = File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
-            try //catches toml read errors
-            {
-                Params = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
-            }
-            catch
-            {
-                Params = new GuiGlobalParams(); //create an instance
-                Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
-            }
-
-            GlobalVariables.DecoyIdentifier = Params.DecoyIdentifier ??= "DECOY";
-            if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
-            {
-                Params.AskAboutUpdating = false;
-            }
-            return fileExists;
-        }
-
-
         public static bool UseNonSpecificRecommendedSettings()
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutNonSpecificParams)
+            if (GuiGlobalParamsViewModel.Instance.AskAboutNonSpecificParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Non-Specific Recommendations?",
                     "We recommend using the following parameters for non-specific searches:\n" +
@@ -53,13 +26,11 @@ namespace MetaMorpheusGUI
                 //if they don't want to see this again, save the answer
                 if (!results.AskAgain)
                 {
-                    Params.AskAboutNonSpecificParams = false;
-                    Params.UseNonSpecificParams = results.UseSettings;
-
-                    Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    GuiGlobalParamsViewModel.Instance.AskAboutNonSpecificParams = false;
+                    GuiGlobalParamsViewModel.Instance.UseNonSpecificParams = results.UseSettings;
                 }
             }
-            else if (Params.UseNonSpecificParams) //user didn't want to check in, but wanted to update last time
+            else if (GuiGlobalParamsViewModel.Instance.UseNonSpecificParams) //user didn't want to check in, but wanted to update last time
             {
                 useRecommendedSettings = true;
             }
@@ -71,7 +42,7 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutTopDownParams)
+            if (GuiGlobalParamsViewModel.Instance.AskAboutTopDownParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Top-Down Recommendations?",
                     "We recommend using the following parameters for top-down searches:\n" +
@@ -94,13 +65,11 @@ namespace MetaMorpheusGUI
                 //if they don't want to see this again, save the answer
                 if (!results.AskAgain)
                 {
-                    Params.AskAboutTopDownParams = false;
-                    Params.UseTopDownParams = results.UseSettings;
-
-                    Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    GuiGlobalParamsViewModel.Instance.AskAboutTopDownParams = false;
+                    GuiGlobalParamsViewModel.Instance.UseTopDownParams = results.UseSettings;
                 }
             }
-            else if (Params.UseTopDownParams) //user didn't want to check in, but wanted to update last time
+            else if (GuiGlobalParamsViewModel.Instance.UseTopDownParams) //user didn't want to check in, but wanted to update last time
             {
                 useRecommendedSettings = true;
             }
@@ -112,7 +81,7 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutArgCParams)
+            if (GuiGlobalParamsViewModel.Instance.AskAboutArgCParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Arg-C Recommendations?",
                     "We recommend using the following parameters for Arg-C searches:\n" +
@@ -129,13 +98,11 @@ namespace MetaMorpheusGUI
                 //if they don't want to see this again, save the answer
                 if (!results.AskAgain)
                 {
-                    Params.AskAboutArgCParams = false;
-                    Params.UseArgCParams = results.UseSettings;
-
-                    Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    GuiGlobalParamsViewModel.Instance.AskAboutArgCParams = false;
+                    GuiGlobalParamsViewModel.Instance.UseArgCParams = results.UseSettings;
                 }
             }
-            else if (Params.UseArgCParams) //user didn't want to check in, but wanted to update last time
+            else if (GuiGlobalParamsViewModel.Instance.UseArgCParams) //user didn't want to check in, but wanted to update last time
             {
                 useRecommendedSettings = true;
             }
@@ -147,7 +114,7 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutChymotrypsinParams)
+            if (GuiGlobalParamsViewModel.Instance.AskAboutChymotrypsinParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Chymotrypsin Recommendations?",
                     "We recommend using the following parameters for chymotrypsin searches:\n" +
@@ -165,13 +132,11 @@ namespace MetaMorpheusGUI
                 //if they don't want to see this again, save the answer
                 if (!results.AskAgain)
                 {
-                    Params.AskAboutChymotrypsinParams = false;
-                    Params.UseChymotrypsinParams = results.UseSettings;
-
-                    Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    GuiGlobalParamsViewModel.Instance.AskAboutChymotrypsinParams = false;
+                    GuiGlobalParamsViewModel.Instance.UseChymotrypsinParams = results.UseSettings;
                 }
             }
-            else if (Params.UseChymotrypsinParams) //user didn't want to check in, but wanted to update last time
+            else if (GuiGlobalParamsViewModel.Instance.UseChymotrypsinParams) //user didn't want to check in, but wanted to update last time
             {
                 useRecommendedSettings = true;
             }
@@ -183,7 +148,7 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutElastaseParams)
+            if (GuiGlobalParamsViewModel.Instance.AskAboutElastaseParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Elastase Recommendations?",
                     "We recommend using the following parameters for elastase searches:\n" +
@@ -201,13 +166,11 @@ namespace MetaMorpheusGUI
                 //if they don't want to see this again, save the answer
                 if (!results.AskAgain)
                 {
-                    Params.AskAboutElastaseParams = false;
-                    Params.UseElastaseParams = results.UseSettings;
-
-                    Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    GuiGlobalParamsViewModel.Instance.AskAboutElastaseParams = false;
+                    GuiGlobalParamsViewModel.Instance.UseElastaseParams = results.UseSettings;
                 }
             }
-            else if (Params.UseElastaseParams) //user didn't want to check in, but wanted to update last time
+            else if (GuiGlobalParamsViewModel.Instance.UseElastaseParams) //user didn't want to check in, but wanted to update last time
             {
                 useRecommendedSettings = true;
             }
@@ -219,7 +182,7 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutSemiTrypsinParams)
+            if (GuiGlobalParamsViewModel.Instance.AskAboutSemiTrypsinParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Semi-Trypsin Recommendations?",
                     "We recommend using the following parameters for semi-trypsin searches:\n" +
@@ -236,13 +199,11 @@ namespace MetaMorpheusGUI
                 //if they don't want to see this again, save the answer
                 if (!results.AskAgain)
                 {
-                    Params.AskAboutSemiTrypsinParams = false;
-                    Params.UseSemiTrypsinParams = results.UseSettings;
-
-                    Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    GuiGlobalParamsViewModel.Instance.AskAboutSemiTrypsinParams = false;
+                    GuiGlobalParamsViewModel.Instance.UseSemiTrypsinParams = results.UseSettings;
                 }
             }
-            else if (Params.UseSemiTrypsinParams) //user didn't want to check in, but wanted to update last time
+            else if (GuiGlobalParamsViewModel.Instance.UseSemiTrypsinParams) //user didn't want to check in, but wanted to update last time
             {
                 useRecommendedSettings = true;
             }
@@ -254,7 +215,7 @@ namespace MetaMorpheusGUI
         {
             bool useMandatorySettings = false;
             //check with the user to update params
-            if (Params.AskAboutSpectralRecoveryParams)
+            if (GuiGlobalParamsViewModel.Instance.AskAboutSpectralRecoveryParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Spectral Recovery Settings?",
                     "The following parameters are necessary for the Spectral Recovery algorithm:\n" +
@@ -272,13 +233,11 @@ namespace MetaMorpheusGUI
                 //if they don't want to see this again, save the answer
                 if (!results.AskAgain)
                 {
-                    Params.AskAboutSpectralRecoveryParams = false;
-                    Params.UseSpectralRecoveryParams = results.UseSettings;
-
-                    Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    GuiGlobalParamsViewModel.Instance.AskAboutSpectralRecoveryParams = false;
+                    GuiGlobalParamsViewModel.Instance.UseSpectralRecoveryParams = results.UseSettings;
                 }
             }
-            else if (Params.UseSpectralRecoveryParams) //user didn't want to check in, but wanted to update last time
+            else if (GuiGlobalParamsViewModel.Instance.UseSpectralRecoveryParams) //user didn't want to check in, but wanted to update last time
             {
                 useMandatorySettings = true;
             }

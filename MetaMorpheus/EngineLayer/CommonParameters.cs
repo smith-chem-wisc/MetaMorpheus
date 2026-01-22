@@ -194,8 +194,8 @@ namespace EngineLayer
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }
 
-        public DissociationType MS2ChildScanDissociationType { get; private set; }
-        public DissociationType MS3ChildScanDissociationType { get; private set; }
+        public DissociationType MS2ChildScanDissociationType { get; set; }
+        public DissociationType MS3ChildScanDissociationType { get; set; }
 
         public bool UseMostAbundantPrecursorIntensity { get; set; }
         public DIAparameters? DIAparameters { get; set; } //only for DIA analysis involving pseudo ms2 scan generation
