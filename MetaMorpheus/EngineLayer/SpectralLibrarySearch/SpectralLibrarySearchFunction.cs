@@ -56,6 +56,8 @@ namespace EngineLayer
                                     {
                                         SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
                                             SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, tolerance, false);
+                                            SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
+>>>>>>>>> Temporary merge branch 2
                                         if (s.SpectralContrastAngle().HasValue)
                                         {
                                             pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
