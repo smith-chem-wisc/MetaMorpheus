@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using Proteomics;
 using System.Collections.Generic;
 using System.IO;
@@ -291,17 +292,29 @@ namespace TaskLayer
         }
         private void GlycoProteinAnalysis(List<GlycoSpectralMatch> gsms, string outputFolder, string individualFileFolder = null, MyTaskResults myTaskResults = null )
         {
-            // convert gsms to psms
-            List<SpectralMatch> psmsForProteinParsimony = gsms.Select(p => p as SpectralMatch).ToList();
-
+            // convert gsms to psms and filter
+            var filteredPsms = FilteredPsms.Filter(gsms.Select(p => p as SpectralMatch).ToList(),
+                commonParams: CommonParameters,
+                includeDecoys: true,
+                includeContaminants: true,
+                includeAmbiguous: false,
+                includeHighQValuePsms: false);
             Status("Constructing protein groups...", Parameters.SearchTaskId);
 
             // run parsimony
-            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmsForProteinParsimony, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(filteredPsms, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
-            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsForProteinParsimony,
-                Parameters.GlycoSearchParameters.NoOneHitWonders, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent, true, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run();
+            // FilterType and FilterThreshold are obtained from the FilteredPsms object
+            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                proteinAnalysisResults.ProteinGroups,
+                filteredPsms,
+                Parameters.GlycoSearchParameters.NoOneHitWonders,
+                Parameters.GlycoSearchParameters.ModPeptidesAreDifferent,
+                true,
+                CommonParameters,
+                this.FileSpecificParameters,
+                new List<string> { Parameters.SearchTaskId }).Run();
 
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
