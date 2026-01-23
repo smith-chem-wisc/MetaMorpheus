@@ -1,5 +1,6 @@
 ﻿using System;
 using EngineLayer;
+using EngineLayer.SpectrumMatch;
 using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
@@ -82,11 +83,13 @@ namespace Test
             };
 
             newPsms.ForEach(p => p.ResolveAllAmbiguities());
+            FilteredPsms filteredPsms = FilteredPsms.Filter(newPsms, new CommonParameters(), includeDecoys: false, includeContaminants: false, includeAmbiguous: true, includeAmbiguousMods: true, includeHighQValuePsms: true);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, new CommonParameters(), null, new List<string>());
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, true, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
-            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, filteredPsms, true, true, true, new CommonParameters(), null, new List<string>());
 
             psafe.Run();
 
@@ -152,11 +155,12 @@ namespace Test
 
             newPsms.ForEach(p => p.ResolveAllAmbiguities());
             newPsms.ForEach(p => p.GetAminoAcidCoverage());
+            FilteredPsms filteredPsms = FilteredPsms.Filter(newPsms, new CommonParameters(), includeDecoys: false, includeContaminants: false, includeAmbiguous: true, includeAmbiguousMods: true, includeHighQValuePsms: true);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, true, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
-            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, filteredPsms, true, true, true, new CommonParameters(), null, new List<string>());
             psafe.Run();
 
             fjkd.ProteinGroups.ForEach(g => g.CalculateSequenceCoverage());
