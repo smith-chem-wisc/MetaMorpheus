@@ -19,7 +19,6 @@ DoLabelFreeQuantification = false
 UseSharedPeptidesForLFQ = false
 DoMultiplexQuantification = false
 MultiplexModId = "TMT10"
-DoSpectralRecovery = false
 SearchType = "NonSpecific"
 LocalFdrCategories = ["FullySpecific", "SemiSpecific", "NonSpecific"]
 MaxFragmentSize = 10800.0
