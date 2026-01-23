@@ -14,14 +14,16 @@ namespace EngineLayer.DIA
         public XicConstructor Ms2XicConstructor { get; set; } 
         public PfGroupingEngine PfGroupingEngine { get; set; }
         public PseudoMs2ConstructionType PseudoMs2ConstructionType { get; set; }
+        public bool CombineFragments { get; set; } //If true, combine fragment XICs from different groups into one prior to PF grouping.
 
-        public DIAparameters(DIAanalysisType analysisType, XicConstructor ms1XicConstructor, XicConstructor ms2XicConstructor, PfGroupingEngine pfGroupingEngine, PseudoMs2ConstructionType pseudoMs2ConstructionType)
+        public DIAparameters(DIAanalysisType analysisType, XicConstructor ms1XicConstructor, XicConstructor ms2XicConstructor, PfGroupingEngine pfGroupingEngine, PseudoMs2ConstructionType pseudoMs2ConstructionType, bool combineFragments = false)
         {
             AanalysisType = analysisType;
             Ms1XicConstructor = ms1XicConstructor;
             Ms2XicConstructor = ms2XicConstructor;
             PfGroupingEngine = pfGroupingEngine;
             PseudoMs2ConstructionType = pseudoMs2ConstructionType;
+            CombineFragments = combineFragments;
         }
     }
 }
