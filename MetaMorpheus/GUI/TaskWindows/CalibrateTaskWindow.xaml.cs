@@ -101,6 +101,10 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             writeIndexMzmlCheckbox.IsChecked = task.CalibrationParameters.WriteIndexedMzml;
 
+            // Set Search Type radio buttons
+            ClassicSearchRadioButton.IsChecked = task.CalibrationParameters.SearchType == SearchType.Classic;
+            ModernSearchRadioButton.IsChecked = task.CalibrationParameters.SearchType == SearchType.Modern;
+
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
@@ -363,6 +367,7 @@ namespace MetaMorpheusGUI
             }
 
             TheTask.CalibrationParameters.WriteIndexedMzml = writeIndexMzmlCheckbox.IsChecked.Value;
+            TheTask.CalibrationParameters.SearchType = ModernSearchRadioButton.IsChecked == true ? SearchType.Modern : SearchType.Classic;
             DialogResult = true;
         }
 

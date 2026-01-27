@@ -443,6 +443,64 @@
                                     </Style>
                                 </Expander.Style>
                                 <StackPanel>
+                                    <GroupBox Header="Search Mode" Visibility="{Binding Converter={StaticResource CollapseOnRnaModeConverter}}">
+                                        <Grid>
+                                            <StackPanel>
+                                                <StackPanel Margin="5">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="1*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0">
+                                                            <RadioButton x:Name="ClassicSearchRadioButton" Content="Classic Search" GroupName="SearchType" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                                <RadioButton.ToolTip>
+                                                                    <TextBlock>
+                                                                        Basic search designed for standard search spaces (tight precursor mass tolerance, strict enzyme specificity)
+                                                                        <LineBreak />
+                                                                        Ideal for low RAM machines.
+                                                                    </TextBlock>
+                                                                </RadioButton.ToolTip>
+                                                            </RadioButton>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="1">
+                                                            <RadioButton x:Name="ModernSearchRadioButton" Content="Modern Search" GroupName="SearchType" IsEnabled="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                                <RadioButton.ToolTip>
+                                                                    <TextBlock>
+                                                                        Indexed search designed for massive search spaces (wide/open precursor mass tolerance).
+                                                                        <LineBreak />
+                                                                        This search generates an indexed database that is saved to the folder of the original database.
+                                                                    </TextBlock>
+                                                                </RadioButton.ToolTip>
+                                                            </RadioButton>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </StackPanel>
+                                                <StackPanel Margin="5">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="3*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                            <Label x:Name="numberOfDatabaseSearchesLabel" Content="Number of Database Partitions:" />
+                                                            <local:IntegerTexBoxControl x:Name="NumberOfDatabaseSearchesTextBox" Width="45" IsEnabled="False" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                                <TextBox.ToolTip>
+                                                                    <TextBlock>
+                                                                        Splits indexed search modes (Modern) into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
+                                                                        <LineBreak />
+                                                                        There is no correlation between the number of partitions and the resulting search speed.
+                                                                        <LineBreak />
+                                                                        (Not yet implemented for calibration)
+                                                                    </TextBlock>
+                                                                </TextBox.ToolTip>
+                                                            </local:IntegerTexBoxControl>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                    </GroupBox>
                                     <GroupBox Header="In-Silico Digestion Parameters">
                                         <StackPanel Margin="2">
                                             <StackPanel Orientation="Horizontal" Margin="2">
