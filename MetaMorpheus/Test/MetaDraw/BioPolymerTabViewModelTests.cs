@@ -55,16 +55,15 @@ namespace Test.MetaDraw
         public void DatabasePath_And_DatabaseName_PropertyChanged()
         {
             var vm = new BioPolymerTabViewModel(new DummyMetaDrawLogic());
-            bool pathChanged = false, nameChanged = false;
+            bool nameChanged = false;
             vm.PropertyChanged += (s, e) =>
             {
-                if (e.PropertyName == "DatabasePath") pathChanged = true;
                 if (e.PropertyName == "DatabaseName") nameChanged = true;
             };
-            vm.DatabasePath = "C:\\db.fasta";
-            Assert.That(vm.DatabasePath, Is.EqualTo("C:\\db.fasta"));
+            vm.DatabasePaths.Add("C:\\db.fasta");
+            vm.OnPropertyChanged(nameof(vm.DatabaseName));
+            Assert.That(vm.DatabasePaths.Count, Is.EqualTo(1));
             Assert.That(vm.DatabaseName, Is.Not.Null.And.Not.Empty);
-            Assert.That(pathChanged, Is.True);
             Assert.That(nameChanged, Is.True);
         }
 
@@ -113,16 +112,16 @@ namespace Test.MetaDraw
         {
             var logic = new DummyMetaDrawLogic();
             var vm = new BioPolymerTabViewModel(logic);
-            vm.DatabasePath = "C:\\db.fasta";
-            vm.DatabaseName = "db";
+            vm.DatabasePaths.Add("C:\\db.fasta");
+            vm.OnPropertyChanged(nameof(vm.DatabaseName));
             vm.AllGroups.Add(new BioPolymerGroupViewModel("A1", "Alpha", "ABC", new BioPolymerCoverageResultModel[0]));
             vm.FilteredGroups.Add(new BioPolymerGroupViewModel("B2", "Beta", "DEF", new BioPolymerCoverageResultModel[0]));
 
             vm.GetType().GetMethod("ResetDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 .Invoke(vm, null);
 
-            Assert.That(vm.DatabasePath, Is.Empty);
-            Assert.That(vm.DatabaseName, Is.Empty);
+            Assert.That(vm.DatabasePaths.Count, Is.EqualTo(0));
+            Assert.That(vm.DatabaseName, Is.EqualTo("Add Database Files..."));
             Assert.That(vm.AllGroups.Count, Is.EqualTo(0));
             Assert.That(vm.FilteredGroups.Count, Is.EqualTo(0));
         }
@@ -191,7 +190,7 @@ namespace Test.MetaDraw
             var logic = new DummyMetaDrawLogic();
             var vm = new BioPolymerTabViewModel(logic);
             // Set an invalid path to force exception
-            vm.DatabasePath = "Z:\\this\\does\\not\\exist.fasta";
+            vm.DatabasePaths.Add("Z:\\this\\does\\not\\exist.fasta");
             var method = typeof(BioPolymerTabViewModel)
                 .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             Assert.DoesNotThrow(() => method.Invoke(vm, null));
@@ -209,7 +208,7 @@ namespace Test.MetaDraw
             };
             var vm = new BioPolymerTabViewModel(logic);
 
-            vm.DatabasePath = "C:\\db.fasta";
+            vm.DatabasePaths.Add("C:\\db.fasta");
             var method = typeof(BioPolymerTabViewModel)
                 .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             method.Invoke(vm, null);
@@ -231,7 +230,7 @@ namespace Test.MetaDraw
             var dbPath = Path.Combine(Path.GetTempPath(), "empty.fasta");
             File.WriteAllText(dbPath, string.Empty);
 
-            vm.DatabasePath = dbPath;
+            vm.DatabasePaths.Add(dbPath);
             var method = typeof(BioPolymerTabViewModel)
                 .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             method.Invoke(vm, null);
@@ -256,7 +255,7 @@ namespace Test.MetaDraw
             var vm = new BioPolymerTabViewModel(logic);
 
             // Test
-            vm.DatabasePath = dbPath;
+            vm.DatabasePaths.Add(dbPath);
             var method = typeof(BioPolymerTabViewModel)
                 .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             method.Invoke(vm, null);
@@ -425,7 +424,7 @@ namespace Test.MetaDraw
             logic.AllSpectralMatches = matches;
             var vm = new BioPolymerTabViewModel(logic);
 
-            vm.DatabasePath = dbPath;
+            vm.DatabasePaths.Add(dbPath);
             var method = typeof(BioPolymerTabViewModel)
                 .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
                 .Invoke(vm, null);
@@ -438,8 +437,8 @@ namespace Test.MetaDraw
                 .Invoke(vm, null);
 
             // Assert all cleared
-            Assert.That(vm.DatabasePath, Is.Empty);
-            Assert.That(vm.DatabaseName, Is.Empty);
+            Assert.That(vm.DatabasePaths.Count, Is.EqualTo(0));
+            Assert.That(vm.DatabaseName, Is.EqualTo("Add Database Files..."));
             Assert.That(vm.AllGroups.Count, Is.EqualTo(0));
             Assert.That(vm.FilteredGroups.Count, Is.EqualTo(0));
             var clearedDict = allBioPolymersField.GetValue(vm) as Dictionary<string, IBioPolymer>;
