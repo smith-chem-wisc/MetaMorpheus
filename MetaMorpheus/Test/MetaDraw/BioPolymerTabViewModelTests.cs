@@ -38,6 +38,8 @@ namespace Test.MetaDraw
             Assert.That(vm.LoadDatabaseCommand, Is.Not.Null);
             Assert.That(vm.ResetDatabaseCommand, Is.Not.Null);
             Assert.That(vm.ExportImageCommand, Is.Not.Null);
+            Assert.That(vm.DatabaseName, Is.EqualTo("Add Database Files..."));
+            Assert.That(vm.DatabasePathsTooltip, Is.Null);
         }
 
         [Test]
@@ -63,8 +65,15 @@ namespace Test.MetaDraw
             vm.DatabasePaths.Add("C:\\db.fasta");
             vm.OnPropertyChanged(nameof(vm.DatabaseName));
             Assert.That(vm.DatabasePaths.Count, Is.EqualTo(1));
-            Assert.That(vm.DatabaseName, Is.Not.Null.And.Not.Empty);
+            Assert.That(vm.DatabaseName, Is.EqualTo("db"));
+            Assert.That(vm.DatabasePathsTooltip, Is.EqualTo("C:\\db.fasta"));
             Assert.That(nameChanged, Is.True);
+
+            vm.DatabasePaths.Add("D:\\db2.fasta");
+            vm.OnPropertyChanged(nameof(vm.DatabaseName));
+            Assert.That(vm.DatabasePaths.Count, Is.EqualTo(2));
+            Assert.That(vm.DatabaseName, Is.EqualTo("2 databases selected"));
+            Assert.That(vm.DatabasePathsTooltip, Is.EqualTo("C:\\db.fasta\nD:\\db2.fasta"));
         }
 
         [Test]
