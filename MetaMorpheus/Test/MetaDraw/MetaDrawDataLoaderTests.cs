@@ -92,8 +92,8 @@ public class MetaDrawDataLoaderTests
     public void ProcessBioPolymerTab_LoadsDatabase()
     {
         var bioPolymerTab = new BioPolymerTabViewModel(logic, "C:\\Export");
-        bioPolymerTab.DatabasePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
-            @"TestData\TaGe_SA_A549_3_snip.fasta");
+        bioPolymerTab.DatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory,
+            @"TestData\TaGe_SA_A549_3_snip.fasta"));
         logic.AllSpectralMatches.Add(new DummySpectralmatch());
         loader.GetType().GetMethod("ProcessBioPolymerTab", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             ?.Invoke(loader, new object[] { bioPolymerTab, "C:\\Export", CancellationToken.None });
@@ -223,7 +223,7 @@ public class MetaDrawDataLoaderTests
         logic.SpectraFilePaths.Add(specFile2);
         logic.SpectralMatchResultFilePaths.Add(smPath);
         var bioTab = new BioPolymerTabViewModel(logic, "C:\\Export");
-        bioTab.DatabasePath = dbPath;
+        bioTab.DatabasePaths.Add(dbPath);
         var deconTab = new DeconExplorationTabViewModel(logic);
         var chimeraTab = new ChimeraAnalysisTabViewModel("C:\\Export");
 

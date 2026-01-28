@@ -383,10 +383,10 @@ public class MetaDrawDataLoader
 
         string[] acceptableDbTypes = new[] { ".fasta", ".fa", ".xml" };
 
-        // Try to find databases from the prose files. 
+        // Try to find databases from the prose files and collect ALL unique databases
         try
         {
-            List<string> databases = new();
+            HashSet<string> databases = new(StringComparer.OrdinalIgnoreCase);
             foreach (var searchDir in searchDirectories)
             {
                 if (searchDir == null) 
@@ -394,19 +394,28 @@ public class MetaDrawDataLoader
                 var proseFile = MetaMorpheusProseFile.LocateInDirectory(searchDir);
                 if (proseFile == null) 
                     continue;
-                databases.AddRange(proseFile.DatabasePaths);
+                
+                // Add all databases from this prose file
+                foreach (var dbPath in proseFile.DatabasePaths)
+                {
+                    if (File.Exists(dbPath) && acceptableDbTypes.Any(dbPath.Contains))
+                    {
+                        databases.Add(dbPath);
+                    }
+                }
             }
 
-            // Db tab only supports one database at a time currently, pick the one which occurs the most, then first in order
-            foreach (var dbGroup in databases
-                .Where(p => File.Exists(p) && acceptableDbTypes.Any(p.Contains))
-                            .GroupBy(db => db, StringComparer.OrdinalIgnoreCase)
-                            .OrderByDescending(g => g.Count())
-                            .ThenBy(g => databases.IndexOf(g.Key)))
+            // Add all found databases to the BioPolymer tab
+            if (databases.Any())
             {
-                bpTabVm.DatabasePath = dbGroup.Key;
+                bpTabVm.DatabasePaths.Clear();
+                foreach (var db in databases.OrderBy(p => p))
+                {
+                    bpTabVm.DatabasePaths.Add(db);
+                }
+                bpTabVm.OnPropertyChanged(nameof(bpTabVm.DatabaseName));
+                bpTabVm.OnPropertyChanged(nameof(bpTabVm.DatabasePathsTooltip));
                 loadedDb = true;
-                break;
             }
         }
         catch (Exception) { loadedDb = false; }
@@ -424,7 +433,7 @@ public class MetaDrawDataLoader
         if (token.IsCancellationRequested) return;
 
         // Load DB if present but not loaded
-        if (!tab.IsDatabaseLoaded && !string.IsNullOrEmpty(tab.DatabasePath))
+        if (!tab.IsDatabaseLoaded && tab.DatabasePaths.Count > 0)
         {
             tab.LoadDatabaseCommand.Execute(null);
         }
