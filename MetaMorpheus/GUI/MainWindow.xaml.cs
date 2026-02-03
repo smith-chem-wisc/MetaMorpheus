@@ -1921,34 +1921,40 @@ namespace MetaMorpheusGUI
 
         private void AddTaskToCollection(MetaMorpheusTask taskToAdd)
         {
-            var taskAnalyteType = taskToAdd.CommonParameters.DetermineAnalyteType();
+            var preRunTask = new PreRunTask(taskToAdd);
 
-            // Ensure we do not have RNA and Protein tasks in the same MetaMorpheus run and that the mode represents the task data type. 
-            if (PreRunTasks.Any())
+            if (!preRunTask.IsModeAgnosticTask)
             {
-                // Tasks Loaded - Incoming task is RNA - existing task is protein -> Abort task addition
-                if (taskAnalyteType == AnalyteType.Oligo && PreRunTasks.Any(p => !p.IsModeAgnosticTask && !p.IsRnaTask))
-                {
-                    NotificationHandler(this, new("Cannot add RNA task with protein task currently loaded", []));
-                    return;
-                }
+                var taskAnalyteType = taskToAdd.CommonParameters.DetermineAnalyteType();
+                var tasksToConsider = PreRunTasks.Where(p => !p.IsModeAgnosticTask).ToList();
 
-                // Tasks Loaded - Incoming task is Protein - existing task is protein -> Abort task addition
-                if (taskAnalyteType != AnalyteType.Oligo && PreRunTasks.Any(p => !p.IsModeAgnosticTask && p.IsRnaTask))
+                // Ensure we do not have RNA and Protein tasks in the same MetaMorpheus run and that the mode represents the task data type. 
+                if (tasksToConsider.Any())
                 {
-                    NotificationHandler(this, new("Cannot add protein task with RNA task currently loaded", []));
-                    return;
+                    // Tasks Loaded - Incoming task is RNA - existing task is protein -> Abort task addition
+                    if (taskAnalyteType == AnalyteType.Oligo && tasksToConsider.Any(p => !p.IsRnaTask))
+                    {
+                        NotificationHandler(this, new("Cannot add RNA task with protein task currently loaded", []));
+                        return;
+                    }
+
+                    // Tasks Loaded - Incoming task is Protein - existing task is protein -> Abort task addition
+                    if (taskAnalyteType != AnalyteType.Oligo && tasksToConsider.Any(p => p.IsRnaTask))
+                    {
+                        NotificationHandler(this, new("Cannot add protein task with RNA task currently loaded", []));
+                        return;
+                    }
                 }
+                // No Tasks Loaded - Incoming task is RNA - Mode is Protein -> Switch to RNA mode
+                else if (taskAnalyteType == AnalyteType.Oligo && !GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                    GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+
+                // No Tasks Loaded - Incoming task is Protein - Mode is Rna -> Switch to Protein Mode
+                else if (taskAnalyteType != AnalyteType.Oligo && GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                    GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
             }
-            // No Tasks Loaded - Incoming task is RNA - Mode is Protein -> Switch to RNA mode
-            else if (taskAnalyteType == AnalyteType.Oligo && !GuiGlobalParamsViewModel.Instance.IsRnaMode)
-                GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
 
-            // No Tasks Loaded - Incoming task is Protein - Mode is Rna -> Switch to Protein Mode
-            else if (taskAnalyteType != AnalyteType.Oligo && GuiGlobalParamsViewModel.Instance.IsRnaMode)
-                GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
-
-            PreRunTasks.Add(new PreRunTask(taskToAdd));
+            PreRunTasks.Add(preRunTask);
             UpdateGuiOnPreRunChange();
         }
 
