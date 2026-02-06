@@ -13,6 +13,7 @@ using EngineLayer.DatabaseLoading;
 using Omics.Modifications;
 using Readers.SpectralLibrary;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 
 namespace Test
 {
@@ -215,6 +216,73 @@ namespace Test
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.69).Within(0.01));
 
+        }
+
+        /// <summary>
+        /// Tests that spectral library search works correctly with non-specific enzyme search.
+        /// This is critical because non-specific search stores PSMs in a different data structure
+        /// (fileSpecificPsmsSeparatedByFdrCategory) and spectral angles must be calculated before
+        /// FDR analysis since they are used in PEP calculation.
+        /// </summary>
+        [Test]
+        public static void SpectralLibrarySearchWithNonSpecificSearchTest()
+        {
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
+            var outputDir = Path.Combine(testDir, @"SpectralLibraryNonSpecificSearchTest");
+
+            string library1 = Path.Combine(testDir, @"P16858_target.msp");
+            string library2 = Path.Combine(testDir, @"P16858_decoy.msp");
+            string fastaDb = Path.Combine(testDir, @"P16858.fasta");
+            string spectraFile = Path.Combine(testDir, @"slicedMouse.raw");
+
+            Directory.CreateDirectory(outputDir);
+
+            // Configure search task for non-specific search with spectral library
+            var searchTask = new SearchTask();
+            searchTask.SearchParameters.SearchType = SearchType.NonSpecific;
+            
+            // Configure digestion parameters for non-specific search
+
+            DigestionParams d = new DigestionParams(protease: "non-specific", maxMissedCleavages:20, minPeptideLength:5, searchModeType: Omics.Digestion.CleavageSpecificity.None);
+
+            searchTask.CommonParameters = new CommonParameters(
+                digestionParams: d);
+            searchTask.SearchParameters = new SearchParameters
+            {
+                SearchType = SearchType.NonSpecific,
+            };
+
+            searchTask.RunTask(outputDir,
+                new List<DbForTask>
+                {
+                    new DbForTask(library1, false),
+                    new DbForTask(library2, false),
+                    new DbForTask(fastaDb, false)
+                },
+                new List<string> { spectraFile },
+                "");
+
+            var results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
+            var split = results[0].Split('\t');
+            
+            // Verify spectral angle column exists
+            int spectralAngleIndex = Array.IndexOf(split, "Normalized Spectral Angle");
+            Assert.That(spectralAngleIndex >= 0, "Normalized Spectral Angle column should exist in output");
+
+            // Verify at least one PSM has a spectral angle calculated
+            bool hasSpectralAngle = false;
+            for (int i = 1; i < results.Length; i++)
+            {
+                var columns = results[i].Split('\t');
+                if (double.TryParse(columns[spectralAngleIndex], out double spectralAngle) && spectralAngle > 0)
+                {
+                    hasSpectralAngle = true;
+                    break;
+                }
+            }
+            Assert.That(hasSpectralAngle, Is.True, "At least one PSM should have a spectral angle calculated for non-specific search");
+
+            Directory.Delete(outputDir, true);
         }
 
     }
