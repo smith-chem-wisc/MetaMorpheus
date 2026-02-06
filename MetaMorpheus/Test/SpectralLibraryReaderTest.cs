@@ -1,18 +1,21 @@
-﻿using NUnit.Framework;
-using System.IO;
-using System;
-using System.Linq;
-using EngineLayer;
-using TaskLayer;
-using System.Collections.Generic;
-using Omics.Fragmentation;
-using Proteomics;
-using MassSpectrometry;
+﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.DatabaseLoading;
-using Omics.Modifications;
-using Readers.SpectralLibrary;
+using MassSpectrometry;
 using MzLibUtil;
+using Nett;
+using NUnit.Framework;
+using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
+using Readers;
+using Readers.SpectralLibrary;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -215,6 +218,56 @@ namespace Test
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.69).Within(0.01));
 
+        }
+
+        /// <summary>
+        /// Tests that spectral angles are calculated correctly when using a spectral library with non-specific enzyme search.
+        /// This is critical because non-specific search stores PSMs in a different data structure (fileSpecificPsmsSeparatedByFdrCategory)
+        /// rather than the standard fileSpecificPsms array used by Classic and Modern search.
+        /// Spectral angles must be calculated before FDR analysis since they are used in PEP (posterior error probability) calculation.
+        /// This test verifies:
+        /// 1. The output TSV file is properly formatted (no warnings when reading)
+        /// 2. The expected number of PSMs are found
+        /// 3. The "Normalized Spectral Angle" column exists in the output
+        /// 4. At least one PSM has a valid spectral angle calculated (value >= 0, not -1 which indicates no calculation)
+        /// </summary>
+        [Test]
+        public static void SpectralLibrarySearchWithNonSpecificSearchTest()
+        {
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchToml.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"SpectralLibraryNonSpecificSearchTest");
+            Directory.CreateDirectory(outputFolder);
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\bosTaurusEnamPruned.xml");
+            string mySpectralLibrary = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\bosTaurusSpectralLibrary.msp");
+
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(mySpectralLibrary, false) }, outputFolder);
+            engineToml.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
+
+            // Verify the output file can be read without warnings
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            Assert.That(warnings, Is.Empty, "TSV file should be readable without warnings");
+
+            // Verify PSMs were found
+            Assert.That(parsedPsms.Count, Is.EqualTo(38), "Expected 38 total PSMs");
+
+            // Verify the Normalized Spectral Angle column exists in the output file
+            var headerLine = File.ReadLines(psmFile).First();
+            var headers = headerLine.Split('\t');
+            int spectralAngleIndex = Array.IndexOf(headers, "Normalized Spectral Angle");
+            Assert.That(spectralAngleIndex, Is.GreaterThanOrEqualTo(0), 
+                "Normalized Spectral Angle column should exist in the output TSV");
+
+            // Verify at least one PSM has a spectral angle calculated (not -1 which indicates no spectral angle)
+            // This confirms the fix for non-specific search spectral angle calculation is working
+            bool hasValidSpectralAngle = parsedPsms.Any(psm => psm.SpectralAngle.HasValue && psm.SpectralAngle.Value >= 0);
+            Assert.That(hasValidSpectralAngle, Is.True, 
+                "At least one PSM should have a valid spectral angle calculated for non-specific search with spectral library");
+
+            Directory.Delete(outputFolder, true);
         }
 
     }
