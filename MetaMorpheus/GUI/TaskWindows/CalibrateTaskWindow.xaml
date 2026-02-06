@@ -11,6 +11,23 @@
         KeyDown="KeyPressed"
         Title="Calibrate Task" Width="750" Height="750"  WindowStartupLocation="CenterScreen">
 
+    <Window.Resources>
+        <Style TargetType="GroupBox">
+            <Setter Property="BorderThickness" Value="3 1 1 1"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="BorderBrush" Value="DarkSlateGray"/>
+            <Setter Property="Margin" Value="5 0"/>
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Foreground="Black" FontWeight="Bold"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -45,7 +62,7 @@
                         </TextBox.Style>
                     </TextBox>
                 </StackPanel>
-                <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
+                <GroupBox Header="Search Parameters" DockPanel.Dock="Top" >
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -237,180 +254,164 @@
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="Modifications" DockPanel.Dock="Top">
-                    <Expander x:Name="ModExpander">
-                        <Expander.Style>
-                            <Style TargetType="Expander">
-                                <Setter Property="Header" Value="{Binding ModExpanderTitle}" />
-                                <Style.Triggers>
-                                    <Trigger Property="IsExpanded" Value="True">
-                                        <Setter Property="Header" Value="Hide" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Expander.Style>
-                        <StackPanel>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="1*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <Label Content="Fixed" />
-                                    <TreeView x:Name="FixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400">
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
-                                            <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </TreeView.Resources>
-                                        <TreeView.ItemContainerStyle>
-                                            <Style TargetType="TreeViewItem">
-                                                <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
-                                            </Style>
-                                        </TreeView.ItemContainerStyle>
-                                    </TreeView>
-                                    
-                                </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <Label Content="Variable" />
-                                    <TreeView x:Name="VariableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400">
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
-                                            <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </TreeView.Resources>
-                                        <TreeView.ItemContainerStyle>
-                                            <Style TargetType="TreeViewItem">
-                                                <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
-                                            </Style>
-                                        </TreeView.ItemContainerStyle>
-                                    </TreeView>
-                                </StackPanel>
-                                <TextBox x:Name="SearchFixMod" TextChanged="TextChanged_Fixed" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
-                                    <TextBox.Style>
-                                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
-                                            <Style.Resources>
-                                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
-                                                    <VisualBrush.Visual>
-                                                        <Label Content="Search..." Foreground="Gray" />
-                                                    </VisualBrush.Visual>
-                                                </VisualBrush>
-                                            </Style.Resources>
-                                            <Style.Triggers>
-                                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
-                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                                </Trigger>
-                                                <Trigger Property="Text" Value="{x:Null}">
-                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                                </Trigger>
-                                                <Trigger Property="IsKeyboardFocused" Value="True">
-                                                    <Setter Property="Background" Value="White" />
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBox.Style>
-                                </TextBox>
-                                <TextBox x:Name="SearchVarMod" TextChanged="TextChanged_Var" Grid.Column="1" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
-                                    <TextBox.Style>
-                                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
-                                            <Style.Resources>
-                                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
-                                                    <VisualBrush.Visual>
-                                                        <Label Content="Search..." Foreground="Gray" />
-                                                    </VisualBrush.Visual>
-                                                </VisualBrush>
-                                            </Style.Resources>
-                                            <Style.Triggers>
-                                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
-                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                                </Trigger>
-                                                <Trigger Property="Text" Value="{x:Null}">
-                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                                </Trigger>
-                                                <Trigger Property="IsKeyboardFocused" Value="True">
-                                                    <Setter Property="Background" Value="White" />
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBox.Style>
-                                </TextBox>
-                                
-                                <!--<StackPanel Grid.Column="2">
-                                    <Label Content="Database Localized" />
-                                    <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
-                                    <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
-                                        <TreeView.Style>
-                                            <Style TargetType="{x:Type TreeView}">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
-                                                        <Setter Property="Visibility" Value="Hidden" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TreeView.Style>
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForLoc}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
-                                        </TreeView.Resources>
-                                    </TreeView>
-                                </StackPanel>-->
-                            </Grid>
-                        </StackPanel>
-                    </Expander>
+                    <StackPanel Height="145">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="5 0 5 0">
+                                <Label Content="Fixed:" />
+                                <TreeView x:Name="FixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="118">
+                                    <TreeView.Resources>
+                                        <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
+                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                                <CheckBox IsChecked="{Binding Use}" />
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </StackPanel>
+                                        </HierarchicalDataTemplate>
+                                        <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
+                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
+                                                <CheckBox IsChecked="{Binding Use}" />
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </TreeView.Resources>
+                                </TreeView>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="5 0 3 0">
+                                <Label Content="Variable:"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <Label.ToolTip>
+                                        <TextBlock>
+                                Only use this for highly prevelant modifications (>10% of peptides).
+                                <LineBreak />
+                                All PTMs that are annotated in the database (e.g. with G-PTM-D) will be automatically searched even without these boxes checked.
+                                <LineBreak />
+                                Do not check annotated PTMs here.
+                                        </TextBlock>
+                                    </Label.ToolTip>
+                                </Label>
+                                <TreeView x:Name="VariableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="118">
+                                    <TreeView.Resources>
+                                        <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
+                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                                <CheckBox IsChecked="{Binding Use}" />
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </StackPanel>
+                                        </HierarchicalDataTemplate>
+                                        <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
+                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
+                                                <CheckBox IsChecked="{Binding Use}" />
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </TreeView.Resources>
+                                </TreeView>
+                            </StackPanel>
+                            <TextBox x:Name="SearchFixMod" TextChanged="TextChanged_Fixed" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                        <Style.Resources>
+                                            <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                                <VisualBrush.Visual>
+                                                    <Label Content="Search..." Foreground="Gray" />
+                                                </VisualBrush.Visual>
+                                            </VisualBrush>
+                                        </Style.Resources>
+                                        <Style.Triggers>
+                                            <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="Text" Value="{x:Null}">
+                                                <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter Property="Background" Value="White" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <TextBox x:Name="SearchVarMod" TextChanged="TextChanged_Var" Grid.Column="1" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                        <Style.Resources>
+                                            <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                                <VisualBrush.Visual>
+                                                    <Label Content="Search..." Foreground="Gray" />
+                                                </VisualBrush.Visual>
+                                            </VisualBrush>
+                                        </Style.Resources>
+                                        <Style.Triggers>
+                                            <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="Text" Value="{x:Null}">
+                                                <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter Property="Background" Value="White" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                        </Grid>
+                    </StackPanel>
                 </GroupBox>
+
                 <GroupBox Header="Output Options" DockPanel.Dock="Top">
-                    <Expander x:Name="outputOptionsExpander">
-                        <StackPanel>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="1*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <StackPanel Orientation="Horizontal" Margin="5">
-                                        <CheckBox x:Name="writeIndexMzmlCheckbox" Content="Write indexed .mzML" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                            <CheckBox.ToolTip>
-                                                <TextBlock>
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <CheckBox x:Name="writeIndexMzmlCheckbox" Content="Write indexed .mzML" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <CheckBox.ToolTip>
+                                            <TextBlock>
                                                     Enabling this setting will write an index of scans to the end of the calibrated .mzML file written by this task. 
                                                     <LineBreak/>
                                                     This enables fast lookup of particular scans instead of having to load the entire file. Useful for visualizing search results.
-                                                </TextBlock>
-                                            </CheckBox.ToolTip>
-                                        </CheckBox>
-                                    </StackPanel>
+                                            </TextBlock>
+                                        </CheckBox.ToolTip>
+                                    </CheckBox>
                                 </StackPanel>
+                            </StackPanel>
+
+                            <Grid Grid.Column="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200" />
+                                    <ColumnDefinition Width="50" />
+                                </Grid.ColumnDefinitions>
+                                <Label x:Name="MinimumScoreLabel" Content="Minimum score allowed:" HorizontalContentAlignment="Left"/>
+                                <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Grid.Column="1" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <TextBox.ToolTip>
+                                        <TextBlock>
+                                                <Run>
+                                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                             ConverterParameter="The minimum MetaMorpheus score allowed for a PSM to be reportable." Mode="OneWay"/>
+                                                </Run>
+                                                <LineBreak />
+                                                <Run>
+                                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                             ConverterParameter="Decreasing this number increases search time." Mode="OneWay"/>
+                                                </Run>
+                                        </TextBlock>
+                                    </TextBox.ToolTip>
+                                </local:IntegerTexBoxControl>
                             </Grid>
-                        </StackPanel>
-                    </Expander>
+                        </Grid>
+                    </StackPanel>
                 </GroupBox>
 
                 <!-- ADVANCED SETTINGS -->
-                <Expander Header="Advanced Options" DockPanel.Dock="Top" Margin="10,0,10,10">
+                <Expander Header="Advanced Options" DockPanel.Dock="Top" Margin="8 4">
                     <StackPanel>
-                        <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
+                        <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top" Margin="-4, 4">
                             <Expander x:Name="FileLoadExpander">
                                 <Expander.Style>
                                     <Style TargetType="Expander">
@@ -430,7 +431,7 @@
                             </Expander>
                         </GroupBox>
 
-                        <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
+                        <GroupBox Header="Search Parameters" DockPanel.Dock="Top"  Margin="-4, 4">
                             <Expander x:Name="SearchModeExpander">
                                 <Expander.Style>
                                     <Style TargetType="Expander">
@@ -439,69 +440,14 @@
                                             <Trigger Property="IsExpanded" Value="True">
                                                 <Setter Property="Header" Value="Hide" />
                                             </Trigger>
+                                            <Trigger Property="IsExpanded" Value="False">
+                                                <Setter Property="Header" Value="Some search properties..." />
+                                            </Trigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Expander.Style>
                                 <StackPanel>
-                                    <GroupBox Header="Search Mode" Visibility="{Binding Converter={StaticResource CollapseOnRnaModeConverter}}">
-                                        <Grid>
-                                            <StackPanel>
-                                                <StackPanel Margin="5">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="1*" />
-                                                            <ColumnDefinition Width="1*" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <StackPanel Grid.Column="0">
-                                                            <RadioButton x:Name="ClassicSearchRadioButton" Content="Classic Search" GroupName="SearchType" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                                <RadioButton.ToolTip>
-                                                                    <TextBlock>
-                                                                        Basic search designed for standard search spaces (tight precursor mass tolerance, strict enzyme specificity)
-                                                                        <LineBreak />
-                                                                        Ideal for low RAM machines.
-                                                                    </TextBlock>
-                                                                </RadioButton.ToolTip>
-                                                            </RadioButton>
-                                                        </StackPanel>
-                                                        <StackPanel Grid.Column="1">
-                                                            <RadioButton x:Name="ModernSearchRadioButton" Content="Modern Search" GroupName="SearchType" IsEnabled="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                                <RadioButton.ToolTip>
-                                                                    <TextBlock>
-                                                                        Indexed search designed for massive search spaces (wide/open precursor mass tolerance).
-                                                                        <LineBreak />
-                                                                        This search generates an indexed database that is saved to the folder of the original database.
-                                                                    </TextBlock>
-                                                                </RadioButton.ToolTip>
-                                                            </RadioButton>
-                                                        </StackPanel>
-                                                    </Grid>
-                                                </StackPanel>
-                                                <StackPanel Margin="5">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="1*" />
-                                                            <ColumnDefinition Width="3*" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                                            <Label x:Name="numberOfDatabaseSearchesLabel" Content="Number of Database Partitions:" />
-                                                            <local:IntegerTexBoxControl x:Name="NumberOfDatabaseSearchesTextBox" Width="45" IsEnabled="False" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                                <TextBox.ToolTip>
-                                                                    <TextBlock>
-                                                                        Splits indexed search modes (Modern) into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
-                                                                        <LineBreak />
-                                                                        There is no correlation between the number of partitions and the resulting search speed.
-                                                                        <LineBreak />
-                                                                        (Not yet implemented for calibration)
-                                                                    </TextBlock>
-                                                                </TextBox.ToolTip>
-                                                            </local:IntegerTexBoxControl>
-                                                        </StackPanel>
-                                                    </Grid>
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Grid>
-                                    </GroupBox>
-                                    <GroupBox Header="In-Silico Digestion Parameters">
+                                    <GroupBox Header="In-Silico Digestion Parameters" >
                                         <StackPanel Margin="2">
                                             <StackPanel Orientation="Horizontal" Margin="2">
                                                 <Label x:Name="MaxModificationIsoformsLabel" Content="Max Modification Isoforms:" Width="250" />
@@ -553,47 +499,6 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
-                                </StackPanel>
-                            </Expander>
-                        </GroupBox>
-
-                        <GroupBox Header="Output Options" DockPanel.Dock="Top">
-                            <Expander x:Name="AdvancedOutputExpander">
-                                <Expander.Style>
-                                    <Style TargetType="Expander">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsExpanded" Value="True">
-                                                <Setter Property="Header" Value="Hide" />
-                                            </Trigger>
-                                            <Trigger Property="IsExpanded" Value="False">
-                                                <Setter Property="Header" Value="Some output properties..." />
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Expander.Style>
-                                <StackPanel Orientation="Vertical" Margin="5">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="200" />
-                                            <ColumnDefinition Width="50" />
-                                        </Grid.ColumnDefinitions>
-                                        <Label x:Name="MinimumScoreLabel" Content="Minimum score allowed:" HorizontalContentAlignment="Left"/>
-                                        <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Grid.Column="1" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                            <TextBox.ToolTip>
-                                                <TextBlock>
-                                                    <Run>
-                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
-                                                                 ConverterParameter="The minimum MetaMorpheus score allowed for a PSM to be reportable." Mode="OneWay"/>
-                                                    </Run>
-                                                    <LineBreak />
-                                                    <Run>
-                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
-                                                                 ConverterParameter="Decreasing this number increases search time." Mode="OneWay"/>
-                                                    </Run>
-                                                </TextBlock>
-                                            </TextBox.ToolTip>
-                                        </local:IntegerTexBoxControl>
-                                    </Grid>
                                 </StackPanel>
                             </Expander>
                         </GroupBox>

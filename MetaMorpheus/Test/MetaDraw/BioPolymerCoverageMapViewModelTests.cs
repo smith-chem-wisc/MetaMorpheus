@@ -243,7 +243,7 @@ public class BioPolymerCoverageMapViewModelTests
         logic.FilterPsms();
 
         var tabVm = new BioPolymerTabViewModel(logic);
-        tabVm.DatabasePath = dbPath;
+        tabVm.DatabasePaths.Add(dbPath);
         var method = typeof(BioPolymerTabViewModel)
             .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         method.Invoke(tabVm, null);
