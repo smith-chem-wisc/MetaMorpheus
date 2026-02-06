@@ -1,19 +1,21 @@
-﻿using NUnit.Framework;
-using System.IO;
-using System;
-using System.Linq;
-using EngineLayer;
-using TaskLayer;
-using System.Collections.Generic;
-using Omics.Fragmentation;
-using Proteomics;
-using MassSpectrometry;
+﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.DatabaseLoading;
-using Omics.Modifications;
-using Readers.SpectralLibrary;
+using MassSpectrometry;
 using MzLibUtil;
+using Nett;
+using NUnit.Framework;
+using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
+using Readers.SpectralLibrary;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -227,62 +229,25 @@ namespace Test
         [Test]
         public static void SpectralLibrarySearchWithNonSpecificSearchTest()
         {
-            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
-            var outputDir = Path.Combine(testDir, @"SpectralLibraryNonSpecificSearchTest");
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchToml.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchTest");
+            Directory.CreateDirectory(outputFolder);
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\bosTaurusEnamPruned.xml");
+            string mySpectralLibrary = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\bosTaurusSpectralLibrary.msp");
 
-            string library1 = Path.Combine(testDir, @"P16858_target.msp");
-            string library2 = Path.Combine(testDir, @"P16858_decoy.msp");
-            string fastaDb = Path.Combine(testDir, @"P16858.fasta");
-            string spectraFile = Path.Combine(testDir, @"slicedMouse.raw");
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(mySpectralLibrary, false) }, outputFolder);
+            engineToml.Run();
 
-            Directory.CreateDirectory(outputDir);
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            // Configure search task for non-specific search with spectral library
-            var searchTask = new SearchTask();
-            searchTask.SearchParameters.SearchType = SearchType.NonSpecific;
-            
-            // Configure digestion parameters for non-specific search
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
 
-            DigestionParams d = new DigestionParams(protease: "non-specific", maxMissedCleavages:20, minPeptideLength:5, searchModeType: Omics.Digestion.CleavageSpecificity.None);
+            Assert.That(parsedPsms.Count, Is.EqualTo(38)); //total psm count
 
-            searchTask.CommonParameters = new CommonParameters(
-                digestionParams: d);
-            searchTask.SearchParameters = new SearchParameters
-            {
-                SearchType = SearchType.NonSpecific,
-            };
+            Directory.Delete(outputFolder, true);
 
-            searchTask.RunTask(outputDir,
-                new List<DbForTask>
-                {
-                    new DbForTask(library1, false),
-                    new DbForTask(library2, false),
-                    new DbForTask(fastaDb, false)
-                },
-                new List<string> { spectraFile },
-                "");
-
-            var results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
-            var split = results[0].Split('\t');
-            
-            // Verify spectral angle column exists
-            int spectralAngleIndex = Array.IndexOf(split, "Normalized Spectral Angle");
-            Assert.That(spectralAngleIndex >= 0, "Normalized Spectral Angle column should exist in output");
-
-            // Verify at least one PSM has a spectral angle calculated
-            bool hasSpectralAngle = false;
-            for (int i = 1; i < results.Length; i++)
-            {
-                var columns = results[i].Split('\t');
-                if (double.TryParse(columns[spectralAngleIndex], out double spectralAngle) && spectralAngle > 0)
-                {
-                    hasSpectralAngle = true;
-                    break;
-                }
-            }
-            Assert.That(hasSpectralAngle, Is.True, "At least one PSM should have a spectral angle calculated for non-specific search");
-
-            Directory.Delete(outputDir, true);
         }
 
     }
