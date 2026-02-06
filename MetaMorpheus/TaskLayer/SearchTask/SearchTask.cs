@@ -397,21 +397,23 @@ namespace TaskLayer
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
                             if (GlobalVariables.StopLoops) { break; }
                         }
-                    }
 
-                    // Calculate spectral angles for non-specific search before adding to allCategorySpecificPsms
-                    // This must happen before FDR analysis since spectral angles are used in PEP calculation
-                    if (spectralLibrary != null)
-                    {
-                        Status("Calculating spectral library similarity...", thisId);
-                        foreach (var categoryPsms in fileSpecificPsmsSeparatedByFdrCategory)
+                        // Calculate spectral angles for non-specific search after each terminus iteration
+                        // This must happen before FDR analysis since spectral angles are used in PEP calculation
+                        // We use paramToUse (not combinedParams) because the FragmentationTerminus is used when 
+                        // generating theoretical fragments for decoy spectra fallback in CalculateSpectralAngles
+                        if (spectralLibrary != null)
                         {
-                            if (categoryPsms != null)
+                            Status("Calculating spectral library similarity...", thisId);
+                            foreach (var categoryPsms in fileSpecificPsmsSeparatedByFdrCategory)
                             {
-                                SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, categoryPsms, arrayOfMs2ScansSortedByMass, combinedParams);
+                                if (categoryPsms != null)
+                                {
+                                    SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, categoryPsms, arrayOfMs2ScansSortedByMass, paramToUse);
+                                }
                             }
+                            ReportProgress(new ProgressEventArgs(100, "Done with spectral library similarity!", thisId));
                         }
-                        ReportProgress(new ProgressEventArgs(100, "Done with spectral library similarity!", thisId));
                     }
 
                     lock (psmLock)
