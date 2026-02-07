@@ -161,6 +161,13 @@ public class GuiGlobalParamsViewModel : BaseViewModel
 
 
     private AnalyteType? _previous;
+
+    /// <summary>
+    /// Controls the RNA vs Protein mode in the GUI.
+    /// This is the GUI's source of truth for mode - it immediately synchronizes GlobalVariables.AnalyteType.
+    /// Note: MetaMorpheusEngine.DetermineAnalyteType() will recalculate the analyte type at runtime 
+    /// based on CommonParameters (e.g., for file-specific params or top-down detection).
+    /// </summary>
     public bool IsRnaMode
     {
         get => _current.IsRnaMode;
@@ -188,10 +195,18 @@ public class GuiGlobalParamsViewModel : BaseViewModel
             }
             
             _current.IsRnaMode = value;
+            
+            // Immediately synchronize GlobalVariables.AnalyteType - this is the GUI's source of truth
             if (_current.IsRnaMode)
+            {
                 GlobalVariables.AnalyteType = AnalyteType.Oligo;
+                _previous = null; // Reset when entering RNA mode
+            }
             else
+            {
+                // When exiting RNA mode, restore to Peptide (or previously saved protein mode type)
                 GlobalVariables.AnalyteType = _previous ??= AnalyteType.Peptide;
+            }
 
             OnPropertyChanged(nameof(IsRnaMode));
             OnPropertyChanged(nameof(MainWindowTitle));
