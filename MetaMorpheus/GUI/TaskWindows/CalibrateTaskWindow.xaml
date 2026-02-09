@@ -380,6 +380,15 @@
                                         </CheckBox.ToolTip>
                                     </CheckBox>
                                 </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <CheckBox x:Name="writeIntermediateFilesCheckBox" Content="Write intermediate files" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <CheckBox.ToolTip>
+                                            <TextBlock>
+                                                Write intermediate search result files during calibration.
+                                            </TextBlock>
+                                        </CheckBox.ToolTip>
+                                    </CheckBox>
+                                </StackPanel>
                             </StackPanel>
 
                             <Grid Grid.Column="1">
@@ -435,7 +444,6 @@
                             <Expander x:Name="SearchModeExpander">
                                 <Expander.Style>
                                     <Style TargetType="Expander">
-                                        <Setter Property="Header" Value="{Binding SearchModeExpanderTitle}" />
                                         <Style.Triggers>
                                             <Trigger Property="IsExpanded" Value="True">
                                                 <Setter Property="Header" Value="Hide" />
@@ -447,6 +455,42 @@
                                     </Style>
                                 </Expander.Style>
                                 <StackPanel>
+                                    <GroupBox Header="Search Mode">
+                                        <StackPanel Margin="5">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="1*" />
+                                                    <ColumnDefinition Width="1*" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <RadioButton x:Name="ClassicSearchRadioButton" Content="Classic Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                        <RadioButton.ToolTip>
+                                                            <TextBlock>
+                                                                Basic search designed for standard search spaces (tight precursor mass tolerance, strict enzyme specificity)
+                                                                <LineBreak />
+                                                                Ideal for low RAM machines.
+                                                            </TextBlock>
+                                                        </RadioButton.ToolTip>
+                                                    </RadioButton>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1">
+                                                    <RadioButton x:Name="ModernSearchRadioButton" Content="Modern Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                        <RadioButton.ToolTip>
+                                                            <TextBlock>
+                                                                Indexed search designed for massive search spaces (wide/open precursor mass tolerance).
+                                                                <LineBreak />
+                                                                This search generates an indexed database that is saved to the folder of the original database.
+                                                                <LineBreak />
+                                                                Subsequent "Modern Searches" are much faster after the creation of the indexed database.
+                                                                <LineBreak />
+                                                                This search has potentially high RAM requirements, requiring database partitions.
+                                                            </TextBlock>
+                                                        </RadioButton.ToolTip>
+                                                    </RadioButton>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </GroupBox>
                                     <GroupBox Header="In-Silico Digestion Parameters" >
                                         <StackPanel Margin="2">
                                             <StackPanel Orientation="Horizontal" Margin="2">
