@@ -446,6 +446,9 @@
       <Component Id="MetaMorpheusGUI.dll.config" Guid="84f9e2f4-79d4-47c0-a2c9-aa7dbcb2b0fd">
         <File Id="MetaMorpheusGUI.dll.config" Name="MetaMorpheusGUI.dll.config" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.dll.config" />
       </Component>
+		<Component Id="src_PredictionClients.dll" Guid="C6398A43-F845-47C2-9F35-0BB2435AFE16">
+			<File Id="src_PredictionClients.dll" Name="src_PredictionClients.dll" Source="$(var.GUI_TargetDir)PredictionClients.dll" />
+		</Component>
 
       <!--Commandline Components-->
       <Component Id="src_CMD.deps.json" Guid="92190CCF-0138-4F0B-9356-02C914D5A439">
