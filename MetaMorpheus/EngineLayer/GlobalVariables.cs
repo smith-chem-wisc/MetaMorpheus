@@ -392,7 +392,7 @@ namespace EngineLayer
             }
         }
 
-        private static void LoadModifications()
+        private static void LoadModifications() 
         {
             _AllModsKnown = new List<Modification>();
             _AllModTypesKnown = new HashSet<string>();
