@@ -574,20 +574,16 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Loads protease and RNase digestion agents from mzLib embedded resources.
-        /// Files are extracted to the DataDir on first run, allowing users to view and customize them.
-        /// Subsequent runs load from the extracted files to preserve any user modifications.
+        /// Loads protease and RNase digestion agents.
+        /// Proteases are auto-loaded from mzLib's embedded resources.
+        /// Files are extracted to DataDir for user visibility and customization.
         /// </summary>
         private static void LoadDigestionAgents()
         {
-            // Load protease modification definitions (e.g., pyroglutamate formation)
-            // These are applied when loading the protease dictionary
-            ProteaseMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(
-                Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
+            // Get the embedded ProteaseMods from mzLib
+            ProteaseMods = ProteaseDictionary.LoadEmbeddedProteaseMods();
 
-            // --- Proteases (for protein digestion) ---
-            // Extract proteases.tsv from mzLib's Proteomics.dll embedded resource to DataDir
-            // This allows users to view/edit the file while keeping it in sync with mzLib updates
+            // Extract proteases.tsv to DataDir for user visibility/customization
             string proteasesPath = Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv");
             string proteasesDir = Path.GetDirectoryName(proteasesPath);
             if (!Directory.Exists(proteasesDir))
@@ -597,17 +593,26 @@ namespace EngineLayer
             if (!File.Exists(proteasesPath))
             {
                 var proteomicsAssembly = typeof(ProteaseDictionary).Assembly;
-                using var stream = proteomicsAssembly.GetManifestResourceStream("Proteomics.ProteolyticDigestion.proteases.tsv");
-                if (stream != null)
+                var resourceNames = proteomicsAssembly.GetManifestResourceNames();
+                var resourceName = resourceNames.FirstOrDefault(r => r.EndsWith("proteases.tsv"));
+                if (resourceName != null)
                 {
-                    using var fileStream = File.Create(proteasesPath);
-                    stream.CopyTo(fileStream);
+                    using var stream = proteomicsAssembly.GetManifestResourceStream(resourceName);
+                    if (stream != null)
+                    {
+                        using var fileStream = File.Create(proteasesPath);
+                        stream.CopyTo(fileStream);
+                    }
                 }
             }
-            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(proteasesPath, ProteaseMods);
 
-            // --- RNases (for RNA/oligonucleotide digestion) ---
-            // Extract rnases.tsv from mzLib's Transcriptomics.dll embedded resource to DataDir
+            // Load from local file to support user customizations
+            if (File.Exists(proteasesPath))
+            {
+                ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(proteasesPath, ProteaseMods);
+            }
+
+            // --- RNases ---
             string rnasesPath = Path.Combine(DataDir, @"Digestion", @"rnases.tsv");
             string rnasesDir = Path.GetDirectoryName(rnasesPath);
             if (!Directory.Exists(rnasesDir))
@@ -617,14 +622,22 @@ namespace EngineLayer
             if (!File.Exists(rnasesPath))
             {
                 var transcriptomicsAssembly = typeof(RnaseDictionary).Assembly;
-                using var stream = transcriptomicsAssembly.GetManifestResourceStream("Transcriptomics.Digestion.rnases.tsv");
-                if (stream != null)
+                var resourceNames = transcriptomicsAssembly.GetManifestResourceNames();
+                var resourceName = resourceNames.FirstOrDefault(r => r.EndsWith("rnases.tsv"));
+                if (resourceName != null)
                 {
-                    using var fileStream = File.Create(rnasesPath);
-                    stream.CopyTo(fileStream);
+                    using var stream = transcriptomicsAssembly.GetManifestResourceStream(resourceName);
+                    if (stream != null)
+                    {
+                        using var fileStream = File.Create(rnasesPath);
+                        stream.CopyTo(fileStream);
+                    }
                 }
             }
-            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(rnasesPath);
+            if (File.Exists(rnasesPath))
+            {
+                RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(rnasesPath);
+            }
         }
     }
 }
