@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using TopDownProteomics;
@@ -88,6 +87,7 @@ namespace EngineLayer
             SetUpGlobalSettings();
             LoadDissociationTypes();
             LoadAvailableProteomes();
+            LoadDigestionAgents();
         }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml, bool isRna = false)
@@ -417,7 +417,6 @@ namespace EngineLayer
 
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
             AddMods(UnimodDeserialized.OfType<Modification>(), false);
-            
             foreach (Modification mod in AllModsKnown)
             {
                 if (!AllModsKnownDictionary.ContainsKey(mod.IdWithMotif))
@@ -426,9 +425,7 @@ namespace EngineLayer
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
-            ProteaseMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
-            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
-            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
+            // Note: Protease and RNase dictionaries are now loaded separately in LoadDigestionAgents()
         }
 
         private static void LoadRnaModifications()
@@ -574,6 +571,60 @@ namespace EngineLayer
                 }
                 _AllModsKnown.Add(glycan);
             }
+        }
+
+        /// <summary>
+        /// Loads protease and RNase digestion agents from mzLib embedded resources.
+        /// Files are extracted to the DataDir on first run, allowing users to view and customize them.
+        /// Subsequent runs load from the extracted files to preserve any user modifications.
+        /// </summary>
+        private static void LoadDigestionAgents()
+        {
+            // Load protease modification definitions (e.g., pyroglutamate formation)
+            // These are applied when loading the protease dictionary
+            ProteaseMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(
+                Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
+
+            // --- Proteases (for protein digestion) ---
+            // Extract proteases.tsv from mzLib's Proteomics.dll embedded resource to DataDir
+            // This allows users to view/edit the file while keeping it in sync with mzLib updates
+            string proteasesPath = Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv");
+            string proteasesDir = Path.GetDirectoryName(proteasesPath);
+            if (!Directory.Exists(proteasesDir))
+            {
+                Directory.CreateDirectory(proteasesDir);
+            }
+            if (!File.Exists(proteasesPath))
+            {
+                var proteomicsAssembly = typeof(ProteaseDictionary).Assembly;
+                using var stream = proteomicsAssembly.GetManifestResourceStream("Proteomics.ProteolyticDigestion.proteases.tsv");
+                if (stream != null)
+                {
+                    using var fileStream = File.Create(proteasesPath);
+                    stream.CopyTo(fileStream);
+                }
+            }
+            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(proteasesPath, ProteaseMods);
+
+            // --- RNases (for RNA/oligonucleotide digestion) ---
+            // Extract rnases.tsv from mzLib's Transcriptomics.dll embedded resource to DataDir
+            string rnasesPath = Path.Combine(DataDir, @"Digestion", @"rnases.tsv");
+            string rnasesDir = Path.GetDirectoryName(rnasesPath);
+            if (!Directory.Exists(rnasesDir))
+            {
+                Directory.CreateDirectory(rnasesDir);
+            }
+            if (!File.Exists(rnasesPath))
+            {
+                var transcriptomicsAssembly = typeof(RnaseDictionary).Assembly;
+                using var stream = transcriptomicsAssembly.GetManifestResourceStream("Transcriptomics.Digestion.rnases.tsv");
+                if (stream != null)
+                {
+                    using var fileStream = File.Create(rnasesPath);
+                    stream.CopyTo(fileStream);
+                }
+            }
+            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(rnasesPath);
         }
     }
 }

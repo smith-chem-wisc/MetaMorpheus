@@ -687,15 +687,12 @@
   </Fragment>
 
   <!--Builds the App ProteolyticDigestion folder-->
+  <!--Note: proteases.tsv is extracted from mzLib at runtime by GlobalVariables.LoadDigestionAgents()-->
   <Fragment>
     <ComponentGroup Id="Appsrc_ProteolyticDigestion_files" Directory="MetaAppProteolyticDigestionFolder">
       <Component Id="RemoveProteolyticDigestion" Condition="OVERWRITEAPPDATA" Guid="C0E85E53-4245-44ED-A3CB-BD5C241FC302">
         <RemoveFolder Id="MetaAppProteolyticDigestionFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-      <Component Id="Appsrc_ProteolyticDigestion_proteases.tsv" Guid="A3AF0FEB-59EE-4207-9BDB-3B285D1E720E" Condition="OVERWRITEAPPDATA">
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-        <File ReadOnly="no" Id="Appsrc_ProteolyticDigestion_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)ProteolyticDigestion\proteases.tsv" />
       </Component>
     </ComponentGroup>
   </Fragment>
