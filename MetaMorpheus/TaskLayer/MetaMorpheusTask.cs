@@ -30,6 +30,7 @@ using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
 using EngineLayer.SpectrumMatch;
+using Omics.Fragmentation;
 
 namespace TaskLayer
 {
@@ -153,15 +154,17 @@ namespace TaskLayer
                     )
                 )
             )
-            // Switch on FragmentationParams (base class for reading, derived classes for writing)
-            .ConfigureType<Omics.Fragmentation.FragmentationParams>(type => type
+            
+            .ConfigureType<IFragmentationParams>(type => type
                 .WithConversionFor<TomlTable>(c => c
                     .FromToml(tmlTable => 
                         tmlTable.ContainsKey("ModificationsCanSuppressBaseLossIons")
                             ? tmlTable.Get<RnaFragmentationParams>()
-                            : tmlTable.Get<Omics.Fragmentation.FragmentationParams>())))
+                            : tmlTable.Get<FragmentationParams>())))
             .ConfigureType<RnaFragmentationParams>(type => type
                 .CreateInstance(() => RnaFragmentationParams.Default))
+            .ConfigureType<FragmentationParams>(type => type
+                .CreateInstance(() => new()))
         );
        
 

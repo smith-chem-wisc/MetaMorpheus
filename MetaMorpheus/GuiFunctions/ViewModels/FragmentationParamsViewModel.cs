@@ -148,7 +148,7 @@ public class FragmentationParamsViewModel : BaseViewModel
     /// <summary>
     /// Converts the view model to FragmentationParams object
     /// </summary>
-    public FragmentationParams ToFragmentationParams()
+    public IFragmentationParams ToFragmentationParams()
     {
         if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
         {

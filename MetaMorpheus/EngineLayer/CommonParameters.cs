@@ -62,7 +62,7 @@ namespace EngineLayer
             DeconvolutionParameters productDeconParams = null,
             bool useMostAbundantPrecursorIntensity = true,
             DIAparameters diaParameters = null,
-            FragmentationParams fragmentationParams = null)
+            IFragmentationParams fragmentationParams = null)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -203,7 +203,7 @@ namespace EngineLayer
 
         public bool UseMostAbundantPrecursorIntensity { get; set; }
         public DIAparameters? DIAparameters { get; set; } //only for DIA analysis involving pseudo ms2 scan generation
-        public FragmentationParams FragmentationParameters { get; set; }
+        public IFragmentationParams FragmentationParameters { get; set; }
 
         public CommonParameters Clone()
         {
