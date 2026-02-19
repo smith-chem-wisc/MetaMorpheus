@@ -996,78 +996,12 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
+                                    
+                                    <local:FragmentationParamsControl x:Name="FragmentationParametersControl" DataContext="{Binding}"/>
+                                    
                                     <GroupBox Header="Fragment Ion Search Parameters">
                                         <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                                                <CheckBox x:Name="AddCompIonCheckBox" Content="Generate Complementary Ions" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                                    Generates experimental (not theoretical) complementary ions for each MS2.
-                                                    <LineBreak />
-                                                    Useful for localization of modifications.
-                                                        </TextBlock>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                                                <CheckBox x:Name="NTerminalIons" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
-                                                    <CheckBox.Content>
-                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="N-Terminal Ions"/>
-                                                    </CheckBox.Content>
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                                            <TextBlock.Text>
-                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Search for theoretical ions from the N-Terminus. &#x0a;The specific ion series are specified through the dissociation type."/>
-                                                            </TextBlock.Text>
-                                                        </TextBlock>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                                <CheckBox x:Name="CTerminalIons" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
-                                                    <CheckBox.Content>
-                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="C-Terminal Ions"/>
-                                                    </CheckBox.Content>
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                                            <TextBlock.Text>
-                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Search for theoretical ions from the C-Terminus. &#x0a;The specific ion series are specified through the dissociation type."/>
-                                                            </TextBlock.Text>
-                                                        </TextBlock>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5,0,0,5" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
-                                                <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" 
-                                                          ToolTipService.InitialShowDelay="500" IsChecked="False" Checked="InternalIonsCheckBox_Checked">
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                                    Search for theoretical internal fragment ions AFTER scoring. These ions are useful for localizing PTMs, but are not used during scoring.
-                                                        </TextBlock>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                                <Label x:Name="minInternalFragmentLengthLabel" Content="Min Internal Length:" Margin="18,-6,0,0" />
-                                                <local:IntegerTexBoxControl x:Name="MinInternalFragmentLengthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=InternalIonsCheckBox}" 
-                                                                            ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <TextBox.ToolTip>
-                                                        <TextBlock>
-                                                            <TextBlock.Text>
-                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Minimum length (number of amino acids) allowed for an internal fragment ion. &#x0a;Small internal fragments can be uninformative and computationally expensive."/>
-                                                            </TextBlock.Text>
-                                                        </TextBlock>
-                                                    </TextBox.ToolTip>
-                                                </local:IntegerTexBoxControl>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5">
-                                                <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="146" />
-                                                <local:DoubleTextBoxControl x:Name="MaxFragmentMassTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=ClassicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <TextBox.ToolTip>
-                                                        <TextBlock>
-                                                        Indexed Search Only: Limits the maximum MS2 fragment mass to avoid rare crashes.
-                                                        <LineBreak />
-                                                        A very high value (e.g. 30000) does not impact performance.
-                                                        </TextBlock>
-                                                    </TextBox.ToolTip>
-                                                </local:DoubleTextBoxControl>
-                                            </StackPanel>
+                                            
                                             <StackPanel Orientation="Horizontal" Margin="5">
                                                 <Label Content="Max Threads:" Width="146" />
                                                 <local:IntegerTexBoxControl x:Name="MaxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
