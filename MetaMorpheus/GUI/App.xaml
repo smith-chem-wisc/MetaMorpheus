@@ -113,5 +113,6 @@
         <!-- Converters -->
         <local:ProteinRnaTerminologyConverter x:Key="ProteinRnaTerminologyConverter"/>
         <local:CollapseOnRnaModeConverter x:Key="CollapseOnRnaModeConverter"/>
+        <local:CollapseOnProteinModeConverter x:Key="CollapseOnProteinModeConverter"/>
     </Application.Resources>
 </Application>
