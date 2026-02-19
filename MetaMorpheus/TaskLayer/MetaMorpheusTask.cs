@@ -153,6 +153,15 @@ namespace TaskLayer
                     )
                 )
             )
+            // Switch on FragmentationParams (base class for reading, derived classes for writing)
+            .ConfigureType<Omics.Fragmentation.FragmentationParams>(type => type
+                .WithConversionFor<TomlTable>(c => c
+                    .FromToml(tmlTable => 
+                        tmlTable.ContainsKey("ModificationsCanSuppressBaseLossIons")
+                            ? tmlTable.Get<RnaFragmentationParams>()
+                            : tmlTable.Get<Omics.Fragmentation.FragmentationParams>())))
+            .ConfigureType<RnaFragmentationParams>(type => type
+                .CreateInstance(() => RnaFragmentationParams.Default))
         );
        
 
@@ -559,7 +568,8 @@ namespace TaskLayer
                 addTruncations: commonParams.AddTruncations,
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
                 productDeconParams: commonParams.ProductDeconvolutionParameters,
-                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity);
+                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
+                fragmentationParams: commonParams.FragmentationParameters);
 
             return returnParams;
         }
