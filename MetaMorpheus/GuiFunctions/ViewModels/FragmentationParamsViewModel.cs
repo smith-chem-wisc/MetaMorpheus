@@ -38,20 +38,15 @@ public class FragmentationParamsViewModel : BaseViewModel
         _rightSideFragmentIons = terminus == FragmentationTerminus.ThreePrime || terminus == FragmentationTerminus.C || terminus == FragmentationTerminus.Both;
 
         // Initialize available M-ion losses from the static collection
-        if (initialParams.FragmentationParameters is RnaFragmentationParams rnaParams)
+        if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
         {
+            _ = new RnaFragmentationParams(); // Ensure static constructor has run to populate MIonLoss.AllMIonLosses
             AvailableMIonLosses = new ObservableCollection<MIonLossViewModel>(
-                MIonLoss.AllMIonLosses.Values.Select(m => new MIonLossViewModel(m, rnaParams.MIonLosses.Contains(m))));
+                MIonLoss.AllMIonLosses.Values.Select(m => new MIonLossViewModel(m, (initialParams.FragmentationParameters as RnaFragmentationParams)!.MIonLosses.Contains(m))));
         }
-        else if (initialParams.FragmentationParameters != null)
+        else 
         {
-            AvailableMIonLosses = new ObservableCollection<MIonLossViewModel>(
-                MIonLoss.AllMIonLosses.Values.Select(m => new MIonLossViewModel(m, initialParams.FragmentationParameters.MIonLosses.Contains(m))));
-        }
-        else
-        {
-            AvailableMIonLosses = new ObservableCollection<MIonLossViewModel>(
-                MIonLoss.AllMIonLosses.Values.Select(m => new MIonLossViewModel(m, false)));
+            AvailableMIonLosses = new ObservableCollection<MIonLossViewModel>();
         }
     }
 

@@ -18,6 +18,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
+using Transcriptomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
@@ -54,7 +55,7 @@ namespace MetaMorpheusGUI
                 {
                     Title = "RNA Search Task";
                     TheTask.SearchParameters = new RnaSearchParameters();
-                    TheTask.CommonParameters = new CommonParameters("RnaSearchTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20, precursorMassTolerance: new PpmTolerance(15));
+                    TheTask.CommonParameters = new CommonParameters("RnaSearchTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20, precursorMassTolerance: new PpmTolerance(15), fragmentationParams: new RnaFragmentationParams());
                 }
                 else
                 {
