@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using Nett;
 using Omics.Digestion;
-using Omics.Fragmentation.Peptide;
 using Transcriptomics.Digestion;
 using EngineLayer.DIA;
 using Transcriptomics;
