@@ -154,10 +154,20 @@ namespace TaskLayer
                     )
                 )
             )
-            
+            .ConfigureType<List<MIonLoss>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => string.Join("\t", custom.Select(f => f.Annotation)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(typeName => MIonLoss.AllMIonLosses.GetValueOrDefault(typeName, null))
+                        .Where(t => t != null)
+                        .ToList()
+                    )
+                )
+            )
             .ConfigureType<IFragmentationParams>(type => type
                 .WithConversionFor<TomlTable>(c => c
-                    .FromToml(tmlTable => 
+                    .FromToml(tmlTable =>
                         tmlTable.ContainsKey("ModificationsCanSuppressBaseLossIons")
                             ? tmlTable.Get<RnaFragmentationParams>()
                             : tmlTable.Get<FragmentationParams>())))
