@@ -215,7 +215,7 @@ namespace GuiFunctions
             PossibleProducts.ForEach(product => product.Use = dissociationTypeProducts.Contains(product.ProductType));
         }
 
-        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv smToRematch)
+        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv smToRematch, bool concatOldIonsOfType = true)
         {
             if (smToRematch.FullSequence.Contains('|'))
                 return smToRematch.MatchedIons;
@@ -250,8 +250,11 @@ namespace GuiFunctions
                 smToRematch.PrecursorCharge, smToRematch.FileNameWithoutExtension, commonParams);
 
             var newMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, MatchAllCharges);
-            var uniqueMatches = newMatches.Concat(smToRematch.MatchedIons)
-                .Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType))
+            IEnumerable<MatchedFragmentIon> uniqueMatches = concatOldIonsOfType 
+                ? newMatches.Concat(smToRematch.MatchedIons) 
+                : newMatches;
+
+            uniqueMatches = uniqueMatches.Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType))
                 .Where(p => Math.Abs(p.MassErrorPpm) <= ProductIonMassTolerance);
 
             // retain only internal ions

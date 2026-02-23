@@ -1006,6 +1006,7 @@ namespace MetaMorpheusGUI
             }
 
             wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
+            List<MatchedFragmentIon> oldMatchedIons = null;
             SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
             if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
             {
@@ -1021,6 +1022,13 @@ namespace MetaMorpheusGUI
                 {
                     MetaDrawSettings.DrawMatchedIons = false;
                 }
+                
+                // Apply refragmentation if persist is enabled
+                if (FragmentationReanalysisViewModel.Persist)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm, false);
+                }
             }
             SetSequenceDrawingPositionSettings(true);
             object obj = new object();
@@ -1034,6 +1042,10 @@ namespace MetaMorpheusGUI
             {
                 AmbiguousSequenceOptionBox.Visibility = Visibility.Hidden;
             }
+
+            // put the original ions back in place if they were altered
+            if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                psm.MatchedIons = oldMatchedIons;
         }
 
         #region Sequence Annotaiton Chunk Controls
@@ -1238,10 +1250,10 @@ namespace MetaMorpheusGUI
         /// Replaces matched fragment ions on a psm with new ion types after a quick search
         /// </summary>
         /// <param name="psm"></param>
-        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm)
+        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm, bool concatOldIonsOfType = true)
         {
             var scan = MetaDrawLogic.GetMs2ScanFromPsm(psm);
-            var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm);
+            var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm, concatOldIonsOfType);
             psm.MatchedIons = newIons;
         }
 
