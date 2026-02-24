@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Omics.Modifications.IO;
 using TopDownProteomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
@@ -412,7 +413,7 @@ namespace EngineLayer
                 }
                 if (modFile.Contains("Rna"))
                     continue;
-                AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
+                AddMods(ModificationLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
@@ -426,7 +427,7 @@ namespace EngineLayer
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
-            ProteaseMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
+            ProteaseMods = ModificationLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
             ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
             RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
         }
@@ -445,14 +446,14 @@ namespace EngineLayer
             using (var reader = new StreamReader(stream))
             {
                 string fileContent = reader.ReadToEnd();
-                var mods = PtmListLoader.ReadModsFromString(fileContent, out var errors);
+                var mods = ModificationLoader.ReadModsFromString(fileContent, out var errors);
                 AddMods(mods, false, true);
             }
 
             var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
             if (File.Exists(customModsPath))
             {
-                AddMods(PtmListLoader.ReadModsFromFile(customModsPath, out var errorMods), false, true);
+                AddMods(ModificationLoader.ReadModsFromFile(customModsPath, out var errorMods), false, true);
             }
 
             // populate mod types and dictionary
@@ -549,7 +550,7 @@ namespace EngineLayer
         private static void LoadTxtGlycan()
         {
             string glycoFile = Path.Combine(DataDir, @"Mods", "glyco.txt");
-            var glycoMods = PtmListLoader.ReadModsFromFile(glycoFile, out var errorMods);
+            var glycoMods = ModificationLoader.ReadModsFromFile(glycoFile, out var errorMods);
             foreach (var glycoMod in glycoMods)
             {
                 var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
