@@ -222,4 +222,27 @@ public class DeconExplorationTabViewModelTests
         Assert.That(actualScanNumbers, Is.EquivalentTo(expectedScanNumbers));
         Assert.That(vm.Scans.All(s => s.MsnOrder == 2));
     }
+
+    [Test, Apartment(System.Threading.ApartmentState.STA)]
+    public void RunDeconvolutionCommand_FullSpectrumMode_LimitsCharges()
+    {
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+        vm.Mode = DeconvolutionMode.FullSpectrum;
+        vm.SelectedMsDataFile = msDataFile;
+        vm.SelectedMsDataScan = msDataFile.GetMsDataScans().FirstOrDefault();
+        vm.RunDeconvolutionCommand.Execute(new PlotView());
+
+        int min = vm.DeconvolutedSpecies.Min(s => s.Charge);
+        int max = vm.DeconvolutedSpecies.Max(s => s.Charge);
+        Assert.That(vm.MinChargeToAnnotate, Is.LessThanOrEqualTo(min));
+        Assert.That(vm.MaxChargeToAnnotate, Is.GreaterThanOrEqualTo(max));
+
+        vm.MinChargeToAnnotate = 2;
+        vm.RunDeconvolutionCommand.Execute(new PlotView());
+        Assert.That(vm.DeconvolutedSpecies.All(s => s.Charge >= 2));
+
+        vm.MaxChargeToAnnotate = 3;
+        vm.RunDeconvolutionCommand.Execute(new PlotView());
+        Assert.That(vm.DeconvolutedSpecies.All(s => s.Charge <= 3));
+    }
 }

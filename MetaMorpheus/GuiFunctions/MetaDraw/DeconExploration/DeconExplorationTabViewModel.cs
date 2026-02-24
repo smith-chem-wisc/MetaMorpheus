@@ -123,6 +123,40 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         }
     }
 
+    private int _minChargeToAnnotate;
+    public int MinChargeToAnnotate
+    {
+        get
+        {
+            if (_minChargeToAnnotate.IsDefaultOrNull())
+                _minChargeToAnnotate = GuiGlobalParamsViewModel.Instance.IsRnaMode
+                    ? 100 : -1;
+            return _minChargeToAnnotate;
+        }
+        set
+        {
+            _minChargeToAnnotate = value;
+            OnPropertyChanged(nameof(MinChargeToAnnotate));
+        }
+    }
+
+    private int _maxChargeToAnnotate;
+    public int MaxChargeToAnnotate
+    {
+        get
+        {
+            if (_maxChargeToAnnotate.IsDefaultOrNull())
+                _maxChargeToAnnotate = GuiGlobalParamsViewModel.Instance.IsRnaMode
+                    ? -1 : 100;
+            return _maxChargeToAnnotate;
+        }
+        set
+        {
+            _maxChargeToAnnotate = value;
+            OnPropertyChanged(nameof(MaxChargeToAnnotate));
+        }
+    }
+
     public ICommand RunDeconvolutionCommand { get; }
 
     public DeconExplorationTabViewModel(MetaDrawLogic? metaDrawLogic)
@@ -160,7 +194,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         }
 
         var sortedSpecies = results
-            .Where(p => isolationRange is null || p.Envelope.Peaks.Any(peak => isolationRange.Contains(peak.mz)))
+            .Where(p => isolationRange is null || p.Envelope.Peaks.Any(peak => isolationRange.Contains(peak.mz)) && p.Envelope.Charge >= MinChargeToAnnotate && p.Envelope.Charge <= MaxChargeToAnnotate)
             .OrderByDescending(p => p.MonoisotopicMass.Round(2))
             .ThenByDescending(p => p.Charge)
             .ToList();
