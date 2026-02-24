@@ -413,7 +413,7 @@ namespace EngineLayer
                 }
                 if (modFile.Contains("Rna"))
                     continue;
-                AddMods(ModificationLoader.ReadModsFromFile(modFile, formalChargesDictionary, out var errorMods), false);
+                AddMods(ModificationLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
@@ -427,7 +427,7 @@ namespace EngineLayer
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
-            ProteaseMods = ModificationLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), formalChargesDictionary, out var errors).ToList();
+            ProteaseMods = ModificationLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
             ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
             RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
         }
