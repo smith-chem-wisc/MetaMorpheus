@@ -101,6 +101,7 @@
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
+                                    <RowDefinition Height="1*"/>
                                 </Grid.RowDefinitions>
 
                                 <!-- Precursor Mass Tolerance -->
@@ -264,7 +265,7 @@
                                 </StackPanel>
 
                                 <!-- Q-Value Filter -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="6">
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="5">
                                     <Label x:Name="QValueThreshold" Content="Q-Value Threshold:" Width="150" />
                                     <local:DoubleTextBoxControl x:Name="QValueThresholdTextBox"  Width="45" 
                                              ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
@@ -280,10 +281,10 @@
                                 </StackPanel>
 
                                 <!-- PEP Q-Value Filter -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="6">
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="5">
                                     <!-- pep 1-value button -->
                                     <CheckBox x:Name="PepQValueThresholdCheckbox" Content="PEP Q-Value Threshold:" 
-                                                 IsChecked="False" Margin="5,5,5,0" />
+                                                 IsChecked="False" Margin="5,5,2,0" />
                                     <local:DoubleTextBoxControl x:Name="PepQValueThresholdTextBox"
                                              IsEnabled="{Binding IsChecked, ElementName=PepQValueThresholdCheckbox}" Width="45"
                                              Height="23" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -297,6 +298,39 @@
                                     </local:DoubleTextBoxControl>
                                 </StackPanel>
 
+                                <!-- Max Threads -->
+                                <StackPanel Grid.Column="1" Grid.Row="6" Margin="5 5 5 0" Orientation="Horizontal">
+                                    <Label Content="Max Threads:" Width="150" />
+                                    <local:IntegerTexBoxControl x:Name="MaxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox.ToolTip>
+                                            <TextBlock>
+                                                By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
+                                                <LineBreak />
+                                                Enter a lower number to limit CPU usage.
+                                            </TextBlock>
+                                        </TextBox.ToolTip>
+                                    </local:IntegerTexBoxControl>
+                                </StackPanel>
+                                
+                                <!-- Min Score -->
+                                <StackPanel Grid.Column="0" Grid.Row="6"  Orientation="Horizontal"  Margin="5 5 5 0">
+                                    <Label x:Name="minScoreAllowedLabel" Width="150" Content="Minimum score allowed:" HorizontalContentAlignment="Left"/>
+                                    <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox.ToolTip>
+                                            <TextBlock>
+                                                            <Run>
+                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                         ConverterParameter="The minimum MetaMorpheus score allowed for a PSM to be reportable." Mode="OneWay"/>
+                                                            </Run>
+                                                            <LineBreak />
+                                                            <Run>
+                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                         ConverterParameter="Decreasing this number increases search time." Mode="OneWay"/>
+                                                            </Run>
+                                            </TextBlock>
+                                        </TextBox.ToolTip>
+                                    </local:IntegerTexBoxControl>
+                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </GroupBox>
@@ -642,10 +676,7 @@
 
                                 <!-- Writing Options  -->
                                 <ColumnDefinition Width="*" />
-
-                                <!-- Filtering options -->
-                                <ColumnDefinition Width="*" />
-
+                                
                             </Grid.ColumnDefinitions>
                             
                             <!-- writing options -->
@@ -673,38 +704,8 @@
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
-                                
-                            </StackPanel>
-                            
-                            <!-- filtering options -->
-                            <StackPanel Orientation="Vertical" Margin="5" Grid.Column="1">
 
-                                <!-- min score allowed box -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="410" />
-                                        <ColumnDefinition Width="50" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <Label x:Name="minScoreAllowedLabel" Content="    Minimum score allowed:" HorizontalContentAlignment="Left"/>
-                                    <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                        <TextBox.ToolTip>
-                                            <TextBlock>
-                                                            <Run>
-                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
-                                                                         ConverterParameter="The minimum MetaMorpheus score allowed for a PSM to be reportable." Mode="OneWay"/>
-                                                            </Run>
-                                                            <LineBreak />
-                                                            <Run>
-                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
-                                                                         ConverterParameter="Decreasing this number increases search time." Mode="OneWay"/>
-                                                            </Run>
-                                            </TextBlock>
-                                        </TextBox.ToolTip>
-                                    </local:IntegerTexBoxControl>
-                                </Grid>
                             </StackPanel>
-                            
                         </Grid>
                         
                         
@@ -996,26 +997,8 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
-                                    
+
                                     <local:FragmentationParamsControl x:Name="FragmentationParametersControl" DataContext="{Binding}"/>
-                                    
-                                    <GroupBox Header="Fragment Ion Search Parameters">
-                                        <StackPanel>
-                                            
-                                            <StackPanel Orientation="Horizontal" Margin="5">
-                                                <Label Content="Max Threads:" Width="146" />
-                                                <local:IntegerTexBoxControl x:Name="MaxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <TextBox.ToolTip>
-                                                        <TextBlock>
-                                                        By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
-                                                        <LineBreak />
-                                                        Enter a lower number to limit CPU usage.
-                                                        </TextBlock>
-                                                    </TextBox.ToolTip>
-                                                </local:IntegerTexBoxControl>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </GroupBox>
 
                                     <local:MassDifferenceAcceptorControl x:Name="MassDifferenceAcceptorControl" d:DataContext="{x:Static guiFunctions:MassDifferenceAcceptorSelectionModel.Instance}" />
 

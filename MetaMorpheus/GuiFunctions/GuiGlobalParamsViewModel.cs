@@ -177,13 +177,13 @@ public class GuiGlobalParamsViewModel : BaseViewModel
             var args = new ModeSwitchRequestEventArgs();
 
             // Sent from Test or other sources without UI initialization. 
-            if (RequestModeSwitchConfirmation is null)
+            if (RequestModeSwitchConfirmation is null) 
                 args.Result = ModeSwitchResult.SwitchKeepFiles;
             // Ask the GUI how to move forward
             // - If we have a default saved and are told not to ask, it will skip the pop-up
             // - if no files are loaded it will tell us to switch, otherwise it will trigger a pop-up
             else
-                RequestModeSwitchConfirmation.Invoke(this, args);
+                RequestModeSwitchConfirmation?.Invoke(this, args);
 
             if (args.RememberMyDecision)
             {
