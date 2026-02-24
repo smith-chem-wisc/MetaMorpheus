@@ -6,7 +6,9 @@
              xmlns:local="clr-namespace:MetaMorpheusGUI"
              xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="600"
+             d:DesignHeight="400" d:DesignWidth="600"
+             MaxHeight="300"
+
              d:DataContext="{x:Static guiFunctions:FragmentationParamsDesignModel.Instance}">
 
     <UserControl.Resources>
@@ -32,8 +34,29 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Left Side -->
+            <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Top">
+                <StackPanel Orientation="Horizontal" Margin="6 2 0 2">
+                    <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="146" />
+                    <local:DoubleTextBoxControl x:Name="MaxFragmentMassTextBox" Width="45"
+                                                Text="{Binding MaxFragmentMassDa}" ToolTipService.ShowDuration="999999"
+                                                ToolTipService.InitialShowDelay="500">
+                        <TextBox.ToolTip>
+                            <TextBlock>
+                                Indexed Search Only: Limits the maximum MS2 fragment mass to avoid rare crashes.
+                                <LineBreak />
+                                A very high value (e.g. 30000) does not impact performance.
+                            </TextBlock>
+                        </TextBox.ToolTip>
+                    </local:DoubleTextBoxControl>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="10 2 0 2">
                     <CheckBox x:Name="AddCompIonCheckBox" Content="Generate Complementary Ions"
                           ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                           IsChecked="{Binding GenerateComplementaryIons}">
@@ -46,8 +69,8 @@
                         </CheckBox.ToolTip>
                     </CheckBox>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                    <CheckBox x:Name="NTerminalIons" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999"
+                <StackPanel Orientation="Horizontal" Margin="10 2 0 2">
+                    <CheckBox x:Name="NTerminalIons" ToolTipService.ShowDuration="999999"
                           ToolTipService.InitialShowDelay="500" IsChecked="{Binding RightSideFragmentIons}">
                         <CheckBox.Content>
                             <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
@@ -62,7 +85,7 @@
                             </TextBlock>
                         </CheckBox.ToolTip>
                     </CheckBox>
-                    <CheckBox x:Name="CTerminalIons" Margin="5,0,0,5" DockPanel.Dock="Top"
+                    <CheckBox x:Name="CTerminalIons" Margin="10 0 0 0"
                           ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                           IsChecked="{Binding LeftSideFragmentIons}">
                         <CheckBox.Content>
@@ -79,9 +102,9 @@
                         </CheckBox.ToolTip>
                     </CheckBox>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="5,0,0,5"
+                <StackPanel Orientation="Horizontal" Margin="10 2 0 2"
                         Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
-                    <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions" Margin="5,0,0,5" DockPanel.Dock="Top"
+                    <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions"
                           ToolTipService.ShowDuration="999999" IsChecked="{Binding GenerateInternalIons}"
                           ToolTipService.InitialShowDelay="500">
                         <CheckBox.ToolTip>
@@ -90,7 +113,7 @@
                             </TextBlock>
                         </CheckBox.ToolTip>
                     </CheckBox>
-                    <Label x:Name="minInternalFragmentLengthLabel" Content="Min Internal Length:" Margin="18,-6,0,0" />
+                    <Label x:Name="minInternalFragmentLengthLabel" Content="Min Internal Length:" Margin="24,-6,0,0" />
                     <local:IntegerTexBoxControl x:Name="MinInternalFragmentLengthTextBox" Width="45"
                                             IsEnabled="{Binding IsChecked, ElementName=InternalIonsCheckBox}"
                                             Text="{Binding MinInternalIonLength}"
@@ -105,78 +128,107 @@
                         </TextBox.ToolTip>
                     </local:IntegerTexBoxControl>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="5">
-                    <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="146" />
-                    <local:DoubleTextBoxControl x:Name="MaxFragmentMassTextBox" Width="45"
-                                            Text="{Binding MaxFragmentMassDa}" ToolTipService.ShowDuration="999999"
-                                            ToolTipService.InitialShowDelay="500">
-                        <TextBox.ToolTip>
-                            <TextBlock>
-                            Indexed Search Only: Limits the maximum MS2 fragment mass to avoid rare crashes.
-                            <LineBreak />
-                            A very high value (e.g. 30000) does not impact performance.
-                            </TextBlock>
-                        </TextBox.ToolTip>
-                    </local:DoubleTextBoxControl>
-                </StackPanel>
 
-            </StackPanel>
-
-            <StackPanel Grid.Column="1">
                 <!-- Generate M Ions checkbox -->
-                <CheckBox Margin="10,5,5,5"
-                          IsChecked="{Binding GenerateMIon}"
-                          ToolTipService.ShowDuration="999999"
-                          ToolTipService.InitialShowDelay="500">
-                    <CheckBox.Content>
-                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
-                                 ConverterParameter="Generate M Ions" />
-                    </CheckBox.Content>
-                    <CheckBox.ToolTip>
-                        <ToolTip>
-                            <ToolTip.Content>
-                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
-                                         ConverterParameter="Generate fragment ions with mass losses (M ions). For RNA, this includes base losses, water losses, and phospho losses." />
-                            </ToolTip.Content>
-                        </ToolTip>
-                    </CheckBox.ToolTip>
-                </CheckBox>
-                
-                <!-- RNA-specific options (only visible in RNA mode) -->
-                <StackPanel Visibility="{Binding 
-				Converter={StaticResource CollapseOnProteinModeConverter}}">
-
-                    <!-- M-Ion Losses Selection -->
-                    <Expander Header="M-Ion Loss Selection" Margin="10,5,5,5" IsExpanded="False">
-                        <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="5" Padding="5">
-                            <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding AvailableMIonLosses}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <CheckBox Margin="5,2"
-                                                      IsChecked="{Binding IsSelected}"
-                                                      IsEnabled="{Binding DataContext.GenerateMIon, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                      ToolTip="{Binding Annotation}">
-                                                <TextBlock Text="{Binding Name}" />
-                                            </CheckBox>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-                        </Border>
-                    </Expander>
+                <StackPanel Orientation="Horizontal" Margin="10 2 0 10">
+                    <CheckBox IsChecked="{Binding GenerateMIon}"
+                              ToolTipService.ShowDuration="999999"
+                              ToolTipService.InitialShowDelay="500">
+                        <CheckBox.Content>
+                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                     ConverterParameter="Generate M Ion(s)" />
+                        </CheckBox.Content>
+                        <CheckBox.ToolTip>
+                            <ToolTip>
+                                <ToolTip.Content>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                             ConverterParameter="Generate fragment ions with mass losses (M ions). For RNA, this includes base losses, water losses, and phospho losses." />
+                                </ToolTip.Content>
+                            </ToolTip>
+                        </CheckBox.ToolTip>
+                    </CheckBox>
                 </StackPanel>
-
-                <!-- Note about M-Ion losses for peptides -->
-                <TextBlock Margin="10,5,5,5"
-                           TextWrapping="Wrap"
-                           Foreground="Gray"
-                           FontStyle="Italic" Visibility="{Binding 
-				Converter={StaticResource CollapseOnProteinModeConverter}}">
-                    Note: M-ion losses for peptides include common losses like water (-H2O) and phospho losses (-HPO3).
-                </TextBlock>
             </StackPanel>
-        
+
+            <!-- M-Ion Loss Management Buttons -->
+            <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Horizontal" Margin="10,5,5,5" VerticalAlignment="Bottom">
+                <Button Content="Add All Losses" 
+                        Width="90" 
+                        Height="23" 
+                        FontWeight="Bold"
+                        Margin="0,0,5,0"
+                        Style="{StaticResource ImportantButtonStyle}"
+                        Command="{Binding AddAllLossesCommand}"
+                        IsEnabled="{Binding GenerateMIon}"
+                        ToolTip="Select all available M-Ion losses"/>
+                <Button Content="Remove All" 
+                        Width="90" 
+                        Height="23" 
+                        FontWeight="Bold"
+                        Margin="0,0,5,0"
+                        Style="{StaticResource ImportantButtonStyle}"
+                        Command="{Binding RemoveAllLossesCommand}"
+                        IsEnabled="{Binding GenerateMIon}"
+                        ToolTip="Deselect all M-Ion losses"/>
+                <Button x:Name="AddCustomLossButton"
+                        Content="New Custom Loss" 
+                        Width="110" 
+                        Height="23"
+                        FontWeight="Bold"
+                        Style="{StaticResource ImportantButtonStyle}"
+                        IsEnabled="{Binding GenerateMIon}"
+                        Click="AddCustomMIonLoss_Click"
+                        ToolTip="Create a new custom M-Ion loss"/>
+            </StackPanel>
+
+            <!-- M-Ion Losses DataGrid -->
+            <GroupBox Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Header="M-Ion Neutral Losses"
+                    BorderBrush="{StaticResource BorderColor}" 
+                    BorderThickness="1" 
+                    Padding="5" 
+                    Margin="10,5,5,0">
+                    <DataGrid ItemsSource="{Binding AvailableMIonLosses}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              CanUserResizeRows="False"
+                              CanUserSortColumns="True"
+                              HeadersVisibility="Column"
+                              SelectionMode="Single"
+                              GridLinesVisibility="Horizontal"
+                              IsEnabled="{Binding GenerateMIon}"
+                              VerticalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="Use" 
+                                                    Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" 
+                                                    Width="Auto"/>
+                        <DataGridTextColumn Header="Annotation" 
+                                            Binding="{Binding Annotation}" 
+                                            Width="Auto" 
+                                            IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Mass Shift (Da)" 
+                                                Binding="{Binding MassShift, StringFormat=F4}" 
+                                                Width="Auto" 
+                                                IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Name" 
+                                                Binding="{Binding Name}" 
+                                                Width="Auto" 
+                                                IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </GroupBox>
+
+                <!-- Note about M-Ion losses -->
+            <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"  Margin="10,5,5,5"
+                       TextWrapping="Wrap"
+                       Foreground="Gray"
+                       FontStyle="Italic"
+                       FontSize="10">
+                <TextBlock.Text>
+                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                             ConverterParameter="M-ion losses include common losses like water (-H2O) and ammonia (-NH3). For RNA, additional losses include base losses and phosphate losses." />
+                </TextBlock.Text>
+            </TextBlock>
 
         </Grid>
         
