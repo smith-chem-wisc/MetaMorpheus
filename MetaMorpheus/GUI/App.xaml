@@ -129,5 +129,6 @@
         <local:ProteinRnaTerminologyConverter x:Key="ProteinRnaTerminologyConverter"/>
         <local:CollapseOnRnaModeConverter x:Key="CollapseOnRnaModeConverter"/>
         <local:CollapseOnProteinModeConverter x:Key="CollapseOnProteinModeConverter"/>
+        <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
     </Application.Resources>
 </Application>
