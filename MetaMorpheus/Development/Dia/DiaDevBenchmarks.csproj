@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Development.Dia</RootNamespace>
+    <AssemblyName>DiaDevBenchmarks</AssemblyName>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- DiaEngine lives in EngineLayer -->
+    <ProjectReference Include="..\..\EngineLayer\EngineLayer.csproj" />
+    <!-- Core DIA engine (DiaScanIndex, extractors, scorers, orchestrator) -->
+    <ProjectReference Include="..\..\..\..\mzLib\MassSpectrometry\MassSpectrometry.csproj" />
+    <!-- LibrarySpectrum, MatchedFragmentIon, Product -->
+    <ProjectReference Include="..\..\..\..\mzLib\Omics\Omics.csproj" />
+    <!-- Mzml reader -->
+    <ProjectReference Include="..\..\..\..\mzLib\Readers\Readers.csproj" />
+    <!-- MzRange -->
+    <ProjectReference Include="..\..\..\..\mzLib\MzLibUtil\MzLibUtil.csproj" />
+  </ItemGroup>
+
+</Project>
