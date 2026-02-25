@@ -3,12 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using MassSpectrometry;
 using MassSpectrometry.Dia;
-using Omics.Fragmentation;
 using Omics.SpectrumMatch;
 
 namespace EngineLayer.DiaSearch
@@ -21,7 +18,8 @@ namespace EngineLayer.DiaSearch
     /// 
     /// Bridges the Omics layer (LibrarySpectrum, MatchedFragmentIon) with the mzLib DIA
     /// extraction engine (DiaScanIndex, DiaLibraryQueryGenerator, DiaExtractionOrchestrator,
-    /// Scorers).
+    /// Scorers). The bridge is the ConvertLibrarySpectra() method which converts
+    /// LibrarySpectrum → LibraryPrecursorInput (dependency-free struct in mzLib).
     /// 
     /// Pipeline (executed in RunSpecific):
     ///   1. Convert LibrarySpectrum list → LibraryPrecursorInput[]
@@ -29,6 +27,7 @@ namespace EngineLayer.DiaSearch
     ///   3. Generate FragmentQuery[] via DiaLibraryQueryGenerator
     ///   4. Extract via DiaExtractionOrchestrator (parallel, CPU or GPU)
     ///   5. Score and assemble DiaSearchResult list
+    ///   6. Return DiaEngineResults
     /// </summary>
     public sealed class DiaEngine : MetaMorpheusEngine, IDisposable
     {
@@ -67,6 +66,7 @@ namespace EngineLayer.DiaSearch
         /// </summary>
         protected override MetaMorpheusEngineResults RunSpecific()
         {
+            // ── Convert library ─────────────────────────────────────────────
             Status("Converting spectral library...");
             var precursorInputs = ConvertLibrarySpectra(_librarySpectra);
 
@@ -74,10 +74,13 @@ namespace EngineLayer.DiaSearch
             int decoyCount = 0;
             for (int i = 0; i < precursorInputs.Length; i++)
             {
-                if (precursorInputs[i].IsDecoy) decoyCount++;
-                else targetCount++;
+                if (precursorInputs[i].IsDecoy)
+                    decoyCount++;
+                else
+                    targetCount++;
             }
 
+            // Early exit: empty library
             if (precursorInputs.Length == 0)
             {
                 return new DiaEngineResults(this,
@@ -86,14 +89,14 @@ namespace EngineLayer.DiaSearch
                     decoyLibraryCount: 0);
             }
 
-            // ── Step 1: Build SoA index ─────────────────────────────────────
+            // ── Step 1: Build SoA scan index ────────────────────────────────
             Status("Building DIA scan index...");
             _index = DiaScanIndexBuilder.Build(_scans);
 
             Status($"Indexed {_index.ScanCount} MS2 scans across {_index.WindowCount} windows " +
                    $"({_index.TotalPeakCount:N0} peaks)");
 
-            // ── Step 2: Generate queries ────────────────────────────────────
+            // ── Step 2: Generate fragment queries ───────────────────────────
             Status("Generating fragment queries...");
             var generationResult = DiaLibraryQueryGenerator.Generate(
                 precursorInputs, _index, _diaParameters);
@@ -101,19 +104,22 @@ namespace EngineLayer.DiaSearch
             Status($"Generated {generationResult.Queries.Length:N0} queries " +
                    $"({generationResult.SkippedNoWindow} precursors outside windows)");
 
+            // Early exit: no valid queries (all precursors outside windows)
             if (generationResult.Queries.Length == 0)
             {
                 _index.Dispose();
+                _index = null;
                 return new DiaEngineResults(this,
                     new List<DiaSearchResult>(),
                     targetLibraryCount: targetCount,
                     decoyLibraryCount: decoyCount);
             }
 
-            // ── Step 3: Extract fragment XICs ───────────────────────────────
+            // ── Step 3: Extract fragment XICs (parallel) ────────────────────
             Status("Extracting fragment ion chromatograms...");
             var extractorFactory = FragmentExtractorFactory.CreateFactory(
                 preferCpu: !_diaParameters.PreferGpu);
+
             using var orchestrator = new DiaExtractionOrchestrator(_index, extractorFactory);
             var extractionResult = orchestrator.ExtractAll(
                 generationResult.Queries,
@@ -125,6 +131,7 @@ namespace EngineLayer.DiaSearch
             Status("Scoring precursor matches...");
             var dotProductScorer = new NormalizedDotProductScorer();
             var spectralAngleScorer = new SpectralAngleScorer();
+
             var results = DiaLibraryQueryGenerator.AssembleResults(
                 precursorInputs,
                 generationResult,
@@ -133,10 +140,23 @@ namespace EngineLayer.DiaSearch
                 dotProductScorer,
                 spectralAngleScorer);
 
-            Status($"DIA search complete: {results.Count:N0} precursor matches " +
-                   $"({results.Count(r => !r.IsDecoy)} targets, {results.Count(r => r.IsDecoy)} decoys)");
+            // Report summary
+            int targetHits = 0;
+            int decoyHits = 0;
+            for (int i = 0; i < results.Count; i++)
+            {
+                if (results[i].IsDecoy)
+                    decoyHits++;
+                else
+                    targetHits++;
+            }
 
+            Status($"DIA search complete: {results.Count:N0} precursor matches " +
+                   $"({targetHits} targets, {decoyHits} decoys)");
+
+            // Clean up index
             _index.Dispose();
+            _index = null;
 
             return new DiaEngineResults(this, results,
                 targetLibraryCount: targetCount,
@@ -145,9 +165,16 @@ namespace EngineLayer.DiaSearch
 
         /// <summary>
         /// Converts Omics LibrarySpectrum objects into mzLib-native LibraryPrecursorInput
-        /// structs that have no Omics dependency.
+        /// structs. This is the bridge between MetaMorpheus (which has access to Omics types)
+        /// and the mzLib DIA engine (which is Omics-independent).
+        /// 
+        /// Key conversions:
+        ///   - PrecursorMz: kept as double (precision matters for window matching)
+        ///   - RetentionTime: kept as double? (precision matters for RT windowing)
+        ///   - FragmentMzs/Intensities: converted to float[] (sufficient for MS2 fragments)
+        ///   - Skips entries with no MatchedFragmentIons
         /// </summary>
-        /// <returns>Array of LibraryPrecursorInput (skips entries with no fragments).</returns>
+        /// <returns>Array of LibraryPrecursorInput.</returns>
         public static LibraryPrecursorInput[] ConvertLibrarySpectra(
             List<LibrarySpectrum> librarySpectra)
         {
@@ -159,6 +186,8 @@ namespace EngineLayer.DiaSearch
             for (int i = 0; i < librarySpectra.Count; i++)
             {
                 var lib = librarySpectra[i];
+
+                // Skip entries with no fragment ions
                 if (lib.MatchedFragmentIons == null || lib.MatchedFragmentIons.Count == 0)
                     continue;
 
@@ -174,76 +203,30 @@ namespace EngineLayer.DiaSearch
 
                 inputs.Add(new LibraryPrecursorInput(
                     sequence: lib.Sequence,
-                    precursorMz: lib.PrecursorMz,
+                    precursorMz: lib.PrecursorMz,           // double — precision preserved
                     chargeState: lib.ChargeState,
-                    retentionTime: lib.RetentionTime,
+                    retentionTime: lib.RetentionTime,        // double? — precision preserved
                     isDecoy: lib.IsDecoy,
-                    fragmentMzs: fragMzs,
-                    fragmentIntensities: fragIntensities));
+                    fragmentMzs: fragMzs,                    // float[] — converted from double
+                    fragmentIntensities: fragIntensities));   // float[] — converted from double
             }
 
             return inputs.ToArray();
         }
 
+        /// <summary>
+        /// Disposes the DIA scan index if still held.
+        /// Normally cleaned up at the end of RunSpecific(), but this provides
+        /// safety in case of early termination.
+        /// </summary>
         public void Dispose()
         {
             if (!_disposed)
             {
                 _index?.Dispose();
+                _index = null;
                 _disposed = true;
             }
-        }
-    }
-
-    /// <summary>
-    /// Results container for DiaEngine, extending MetaMorpheusEngineResults
-    /// for integration with the standard MetaMorpheus reporting pipeline.
-    /// </summary>
-    public sealed class DiaEngineResults : MetaMorpheusEngineResults
-    {
-        /// <summary>DIA precursor match results (targets + decoys that passed filters).</summary>
-        public List<DiaSearchResult> DiaResults { get; }
-
-        /// <summary>Number of target (non-decoy) library entries provided as input.</summary>
-        public int TargetLibraryCount { get; }
-
-        /// <summary>Number of decoy library entries provided as input.</summary>
-        public int DecoyLibraryCount { get; }
-
-        public DiaEngineResults(
-            DiaEngine engine,
-            List<DiaSearchResult> diaResults,
-            int targetLibraryCount,
-            int decoyLibraryCount)
-            : base(engine)
-        {
-            DiaResults = diaResults ?? new List<DiaSearchResult>();
-            TargetLibraryCount = targetLibraryCount;
-            DecoyLibraryCount = decoyLibraryCount;
-        }
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(base.ToString());
-            sb.AppendLine($"Library: {TargetLibraryCount} targets, {DecoyLibraryCount} decoys");
-            sb.AppendLine($"DIA matches: {DiaResults.Count}");
-
-            if (DiaResults.Count > 0)
-            {
-                int targetHits = DiaResults.Count(r => !r.IsDecoy);
-                int decoyHits = DiaResults.Count(r => r.IsDecoy);
-                sb.AppendLine($"  Target hits: {targetHits}, Decoy hits: {decoyHits}");
-
-                var scored = DiaResults.Where(r => !float.IsNaN(r.DotProductScore)).ToList();
-                if (scored.Count > 0)
-                {
-                    sb.AppendLine($"  Avg dot product: {scored.Average(r => r.DotProductScore):F4}");
-                    sb.AppendLine($"  Best dot product: {scored.Max(r => r.DotProductScore):F4}");
-                }
-            }
-
-            return sb.ToString();
         }
     }
 }
