@@ -73,15 +73,17 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Label Grid.Column="1"  Grid.Row="0" Content="Min"  FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                <Label Grid.Column="3"  Grid.Row="0" Content="Max"  FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <Label Grid.Column="1"  Grid.Row="0" Content="Min"  FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                <Label Grid.Column="3"  Grid.Row="0" Content="Max"  FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" />
 
-                <Label Grid.Column="0"  Grid.Row="1" Content="m/z:"  FontWeight="Bold" VerticalAlignment="Center"/>
-                <local:DoubleTextBoxControl Grid.Column="1"  Grid.Row="1" Width="36" VerticalContentAlignment="Center" HorizontalAlignment="Center"
+                <Label Grid.Column="0"  Grid.Row="1" Content="m/z:"  FontWeight="Bold" VerticalAlignment="Center" Visibility="{Binding Mode, Converter={local:DeconModeToVisibilityConverter}}"/>
+                <local:DoubleTextBoxControl Grid.Column="1"  Grid.Row="1" Width="36" VerticalContentAlignment="Center" HorizontalAlignment="Center" 
+                                            Visibility="{Binding Mode, Converter={local:DeconModeToVisibilityConverter}}" 
                                             Text="{Binding MinMzToPlot}" LowerBound="0"/>
 
-                <Label Grid.Column="2"  Grid.Row="1" Content="m/z:"  FontWeight="Bold" VerticalAlignment="Center"/>
-                <local:DoubleTextBoxControl Grid.Column="3"  Grid.Row="1" Width="36" VerticalContentAlignment="Center"
+                <Label Grid.Column="2"  Grid.Row="1" Content="m/z:"  FontWeight="Bold" VerticalAlignment="Center" Visibility="{Binding Mode, Converter={local:DeconModeToVisibilityConverter}}"/>
+                <local:DoubleTextBoxControl Grid.Column="3"  Grid.Row="1" Width="36" VerticalContentAlignment="Center" 
+                                            Visibility="{Binding Mode, Converter={local:DeconModeToVisibilityConverter}}"
                                             Text="{Binding MaxMzToPlot}" LowerBound="0"/>
 
                 <Label Grid.Column="0"  Grid.Row="2" Content="Charge:"  FontWeight="Bold" VerticalAlignment="Center"/>
