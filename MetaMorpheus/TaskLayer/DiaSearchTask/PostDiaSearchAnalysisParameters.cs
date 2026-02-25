@@ -2,6 +2,7 @@
 // Licensed under the MIT License
 
 using EngineLayer;
+using EngineLayer.FdrAnalysisDia;
 using MassSpectrometry.Dia;
 using System.Collections.Generic;
 

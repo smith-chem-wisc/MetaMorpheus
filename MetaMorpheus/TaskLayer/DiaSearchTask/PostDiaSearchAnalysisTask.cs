@@ -2,6 +2,7 @@
 // Licensed under the MIT License
 
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.FdrAnalysisDia;
 using MassSpectrometry.Dia;
 using System;
@@ -90,12 +91,7 @@ namespace TaskLayer
         /// <summary>
         /// Not used — DIA post-search is invoked via Run() directly.
         /// </summary>
-        protected override MyTaskResults RunSpecific(
-            string outputFolder,
-            List<DbForTask> dbFilenameList,
-            List<string> currentRawFileList,
-            string taskId,
-            FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
             return null;

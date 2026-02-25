@@ -13,6 +13,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="mzLib" Version="9.9.997" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<!-- EngineLayer transitively brings in the mzLib NuGet (MassSpectrometry, Omics, MzLibUtil, Readers, etc.) -->
 		<ProjectReference Include="..\..\EngineLayer\EngineLayer.csproj" />
 	</ItemGroup>
