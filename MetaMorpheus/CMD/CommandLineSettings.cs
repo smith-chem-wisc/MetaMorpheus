@@ -181,6 +181,9 @@ namespace MetaMorpheusCommandLine
 
                 GlycoSearchTask glyco = new GlycoSearchTask();
                 Toml.WriteFile(glyco, Path.Combine(folderLocation, @"GlycoSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                DiaSearchTask dia = new DiaSearchTask();
+                Toml.WriteFile(dia, Path.Combine(folderLocation, @"DiaSearchTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {

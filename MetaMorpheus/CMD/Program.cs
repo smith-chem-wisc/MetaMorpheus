@@ -237,6 +237,11 @@ namespace MetaMorpheusCommandLine
                         taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
                         break;
 
+                    case "DiaSearch":
+                        var diaTask = Toml.ReadFile<DiaSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        taskList.Add(("Task" + (i + 1) + "DiaSearchTask", diaTask));
+                        break;
+
                     default:
                         if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                         {
