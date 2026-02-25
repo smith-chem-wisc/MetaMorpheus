@@ -33,12 +33,21 @@ namespace Development.Dia
 
         private static string FindMzmlPath()
         {
+            // Layout:  E:\GitClones\MetaMorpheus\MetaMorpheus\Development\Dia\bin\Debug\net8.0\  (CWD)
+            //          E:\GitClones\mzLib\mzLib\Test\DataFiles\E24484_Mag_1_4_50_3.mzML
+            // So from bin\Debug\net8.0: ..\..\..\..\..\..\..\ = E:\GitClones\
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             string[] candidatePaths =
             {
-                Path.Combine("..", "..", "..", "..", "..", "mzLib", "Test", "DataFiles", "E24484_Mag_1_4_50_3.mzML"),
-                Path.Combine("..", "mzLib", "Test", "DataFiles", "E24484_Mag_1_4_50_3.mzML"),
-                Path.Combine("mzLib", "Test", "DataFiles", "E24484_Mag_1_4_50_3.mzML"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "mzLib", "Test", "DataFiles", "E24484_Mag_1_4_50_3.mzML"),
+                // From bin output: up 7 levels to GitClones root, then into mzLib\mzLib\Test\DataFiles
+                Path.Combine(baseDir, "..", "..", "..", "..", "..", "..", "..", "mzLib", "mzLib", "Test", "DataFiles", "E24484_Mag_1_4_50_3.mzML"),
+                // From bin output: up 7 levels, mzLib without nested mzLib (flat clone)
+                Path.Combine(baseDir, "..", "..", "..", "..", "..", "..", "..", "mzLib", "Test", "DataFiles", "E24484_Mag_1_4_50_3.mzML"),
+                // From project dir (dotnet run): up 4 levels to GitClones root
+                Path.Combine(baseDir, "..", "..", "..", "..", "mzLib", "mzLib", "Test", "DataFiles", "E24484_Mag_1_4_50_3.mzML"),
+                Path.Combine(baseDir, "..", "..", "..", "..", "mzLib", "Test", "DataFiles", "E24484_Mag_1_4_50_3.mzML"),
+                // Direct environment variable override
+                Path.Combine(Environment.GetEnvironmentVariable("MZLIB_TEST_DATA") ?? "", "E24484_Mag_1_4_50_3.mzML"),
             };
 
             foreach (var path in candidatePaths)
@@ -65,7 +74,8 @@ namespace Development.Dia
             if (mzmlPath == null)
             {
                 Console.WriteLine("  ERROR: Could not find E24484_Mag_1_4_50_3.mzML");
-                Console.WriteLine("  Searched relative paths from: " + Directory.GetCurrentDirectory());
+                Console.WriteLine("  Base directory: " + AppDomain.CurrentDomain.BaseDirectory);
+                Console.WriteLine("  Tip: set MZLIB_TEST_DATA env var to the mzLib Test/DataFiles folder");
                 Console.WriteLine();
                 Console.WriteLine("  Falling back to synthetic-only benchmarks...");
                 Console.WriteLine();
