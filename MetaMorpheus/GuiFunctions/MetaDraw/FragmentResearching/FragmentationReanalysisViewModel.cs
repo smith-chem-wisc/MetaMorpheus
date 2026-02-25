@@ -215,7 +215,7 @@ namespace GuiFunctions
             PossibleProducts.ForEach(product => product.Use = dissociationTypeProducts.Contains(product.ProductType));
         }
 
-        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv smToRematch, bool concatOldIonsOfType = true)
+        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv smToRematch, bool concatOldIonsOfType)
         {
             if (smToRematch.FullSequence.Contains('|'))
                 return smToRematch.MatchedIons;
