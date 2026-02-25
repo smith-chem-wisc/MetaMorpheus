@@ -56,7 +56,7 @@ namespace MetaMorpheusGUI
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
-            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
+            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel(!GuiGlobalParamsViewModel.Instance.IsRnaMode);
             AdditionalFragmentIonControl.LinkMetaDraw(this);
 
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
@@ -550,7 +550,8 @@ namespace MetaMorpheusGUI
                 loadLibraries: true,
                 chimeraTabViewModel: ChimeraAnalysisTabViewModel,
                 bioPolymerTabViewModel: BioPolymerTabViewModel,
-                deconExplorationTabViewModel: DeconExplorationViewModel);
+                deconExplorationTabViewModel: DeconExplorationViewModel,
+                fragmentationReanalysisViewModel: FragmentationReanalysisViewModel);
             dataGridScanNums.IsEnabled = true;
 
             if (errors.Any())
@@ -571,8 +572,6 @@ namespace MetaMorpheusGUI
                 plotTypes.Remove("Histogram of Hydrophobicity scores");
                 plotTypes.Remove("Predicted RT vs. Observed RT");
             }
-            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel = new FragmentationReanalysisViewModel(!isRna);
-
 
             ToggleButtonsEnabled(true);
         }
@@ -1250,7 +1249,7 @@ namespace MetaMorpheusGUI
         /// Replaces matched fragment ions on a psm with new ion types after a quick search
         /// </summary>
         /// <param name="psm"></param>
-        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm, bool concatOldIonsOfType = true)
+        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm, bool concatOldIonsOfType = false)
         {
             var scan = MetaDrawLogic.GetMs2ScanFromPsm(psm);
             var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm, concatOldIonsOfType);

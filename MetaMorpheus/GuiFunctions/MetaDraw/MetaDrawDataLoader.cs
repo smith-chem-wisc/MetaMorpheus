@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using EngineLayer;
+using Omics.Fragmentation;
 using Readers.SpectralLibrary;
 using Readers;
 using System;
@@ -35,7 +36,8 @@ public class MetaDrawDataLoader
         bool loadLibraries,
         ChimeraAnalysisTabViewModel? chimeraTabViewModel = null,
         BioPolymerTabViewModel? bioPolymerTabViewModel = null,
-        DeconExplorationTabViewModel? deconExplorationTabViewModel = null)
+        DeconExplorationTabViewModel? deconExplorationTabViewModel = null,
+        FragmentationReanalysisViewModel? fragmentationReanalysisViewModel = null)
     {
         // Cancel any previous run
         _cancellationTokenSource?.Cancel();
@@ -63,8 +65,8 @@ public class MetaDrawDataLoader
             ? LoadLibrariesAsync(token) 
             : Task.FromResult(new List<string>());
         var proseAndTomlTask = _logic.SpectralMatchResultFilePaths.Any()
-            ? TryLoadProseAndSearchToml(bioPolymerTabViewModel, deconExplorationTabViewModel)
-            : Task.FromResult((false, false));
+            ? TryLoadProseAndSearchToml(bioPolymerTabViewModel, deconExplorationTabViewModel, fragmentationReanalysisViewModel)
+            : Task.FromResult((false, false, false));
 
         List<string>[] results;
         try 
@@ -306,10 +308,11 @@ public class MetaDrawDataLoader
         return errors;
     }
 
-    public async Task<(bool Database, bool SearchParams)> TryLoadProseAndSearchToml(BioPolymerTabViewModel? bpTabVm, DeconExplorationTabViewModel? deconTabVm)
+    public async Task<(bool Database, bool SearchParams, bool FragmentationParams)> TryLoadProseAndSearchToml(BioPolymerTabViewModel? bpTabVm, DeconExplorationTabViewModel? deconTabVm, FragmentationReanalysisViewModel? fragmentationReanalysisVm)
     {
         bool loadedDb = false;
         bool loadedSearchParams = false;
+        bool loadedFragmentationParams = false;
 
         var searchDirectories = _logic.SpectralMatchResultFilePaths
             .Select(Path.GetDirectoryName)
@@ -327,7 +330,7 @@ public class MetaDrawDataLoader
             .Distinct()
             .ToArray();
 
-        // Try to find search tomls to load decon parameters. 
+        // Try to find search tomls to load decon and fragmentation parameters. 
         try
         {
             HashSet<string?> distinctSearchTomls = new();
@@ -353,12 +356,16 @@ public class MetaDrawDataLoader
 
             List<DeconvolutionParameters> precursorParameters = new();
             List<DeconvolutionParameters> productParameters = new();
+            List<CommonParameters> commonParameters = new();
+            List<SearchParameters> searchParameters = new();
 
             foreach (var searchToml in distinctSearchTomls.Where(p => p != null))
             {
                 var task = Toml.ReadFile<SearchTask>(searchToml, MetaMorpheusTask.tomlConfig);
                 precursorParameters.Add(task.CommonParameters.PrecursorDeconvolutionParameters);
                 productParameters.Add(task.CommonParameters.ProductDeconvolutionParameters);
+                commonParameters.Add(task.CommonParameters);
+                searchParameters.Add(task.SearchParameters);
             }
 
             // IF we find params, and have multiple, take the last. 
@@ -375,11 +382,24 @@ public class MetaDrawDataLoader
                     deconTabVm.DeconHostViewModel = new(precursor, product);
                 }
             }
+
+            // Load fragmentation parameters if found
+            if (commonParameters.Any() && searchParameters.Any() && fragmentationReanalysisVm != null)
+            {
+                var commonParam = commonParameters.Last();
+                var searchParam = searchParameters.Last();
+                fragmentationReanalysisVm.LoadFragmentationParameters(commonParam, searchParam);
+                loadedFragmentationParams = true;
+            }
         }
-        catch (Exception) { loadedSearchParams = false; }
+        catch (Exception) 
+        { 
+            loadedSearchParams = false; 
+            loadedFragmentationParams = false;
+        }
 
         if (bpTabVm is null)
-            return (loadedDb, loadedSearchParams);
+            return (loadedDb, loadedSearchParams, loadedFragmentationParams);
 
         string[] acceptableDbTypes = new[] { ".fasta", ".fa", ".xml" };
 
@@ -412,7 +432,7 @@ public class MetaDrawDataLoader
         catch (Exception) { loadedDb = false; }
 
 
-        return (loadedDb, loadedSearchParams);
+        return (loadedDb, loadedSearchParams, loadedFragmentationParams);
     }
 
     #endregion

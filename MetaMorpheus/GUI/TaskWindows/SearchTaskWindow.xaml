@@ -13,7 +13,6 @@
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
         
         <!-- used in Quantifications -->
-        <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
         <local:BooleanOrConverter x:Key="boolOrConverter"/>
         <local:BooleanOrToVisibilityConverter x:Key="boolOr2VisConverter"/>
 
