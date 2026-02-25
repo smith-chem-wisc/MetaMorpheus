@@ -29,7 +29,7 @@ namespace Development.Dia
 
             if (runEngine) DiaEngineBenchmark.RunAll();
             if (runBridge) LibraryBridgeBenchmark.RunAll();
-
+            DiaEndToEndBenchmark.RunAll();
             Console.WriteLine("All benchmarks complete.");
         }
     }

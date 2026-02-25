@@ -4,7 +4,9 @@
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.DiaSearch;
+using EngineLayer.FdrAnalysisDia;
 using MassSpectrometry;
+using MassSpectrometry.Dia;
 using Omics.SpectrumMatch;
 using Readers.SpectralLibrary;
 using System;
@@ -21,7 +23,7 @@ namespace TaskLayer
     /// <summary>
     /// MetaMorpheus task for DIA (Data-Independent Acquisition) spectral library search.
     /// 
-    /// Orchestrates: load raw file → load spectral library → DiaEngine search → TSV output.
+    /// Orchestrates: load raw file → load spectral library → DiaEngine search → FDR → TSV output.
     /// Follows the same pattern as <see cref="SearchTask"/> for file loading, status reporting,
     /// and result writing.
     /// 
@@ -80,7 +82,7 @@ namespace TaskLayer
             nextFileLoadingTask.Start();
 
             // ── Aggregate results across all files ─────────────────────────
-            var allResults = new List<(string FileName, List<MassSpectrometry.Dia.DiaSearchResult> Results)>();
+            var allResults = new List<(string FileName, List<DiaSearchResult> Results)>();
             var diagnosticLines = new List<string>();
 
             for (int fileIndex = 0; fileIndex < currentRawFileList.Count; fileIndex++)
@@ -148,12 +150,12 @@ namespace TaskLayer
                         $"{targetCount}\t{decoyCount}\t{fileStopwatch.Elapsed.TotalSeconds:F2}");
                 }
 
-                // ── Per-file TSV ───────────────────────────────────────────
+                // ── Per-file pre-FDR TSV (diagnostic output) ───────────────
                 string perFileFolder = Path.Combine(OutputFolder, "Individual File Results");
                 if (!Directory.Exists(perFileFolder))
                     Directory.CreateDirectory(perFileFolder);
 
-                string perFileTsvPath = Path.Combine(perFileFolder, rawFileName + "_DiaResults.tsv");
+                string perFileTsvPath = Path.Combine(perFileFolder, rawFileName + "_DiaResults_PreFDR.tsv");
                 WriteDiaResultsTsv(perFileTsvPath, rawFileName, engineResults.DiaResults,
                     DiaSearchParameters.WriteDecoyResults);
 
@@ -163,14 +165,6 @@ namespace TaskLayer
                     "DIA search complete!", thisId));
             }
 
-            // ── Write aggregate TSV ────────────────────────────────────────
-            if (allResults.Count > 0)
-            {
-                string aggregatePath = Path.Combine(OutputFolder, "AllDiaResults.tsv");
-                WriteAggregateTsv(aggregatePath, allResults, DiaSearchParameters.WriteDecoyResults);
-                ProseCreatedWhileRunning.AppendLine($"Aggregate DIA results written to {aggregatePath}");
-            }
-
             // ── Write diagnostics ──────────────────────────────────────────
             if (DiaSearchParameters.WriteDiagnostics && diagnosticLines.Count > 0)
             {
@@ -178,21 +172,54 @@ namespace TaskLayer
                 WriteDiagnostics(diagPath, diagnosticLines, overallStopwatch.Elapsed);
             }
 
+            // ── FDR Analysis via PostDiaSearchAnalysisTask ─────────────────
+            if (allResults.Count > 0 && !GlobalVariables.StopLoops)
+            {
+                // Flatten all per-file results into a single list for FDR
+                var allDiaResults = new List<DiaSearchResult>();
+                foreach (var (fileName, results) in allResults)
+                {
+                    allDiaResults.AddRange(results);
+                }
+
+                Status($"Running FDR on {allDiaResults.Count:N0} total results " +
+                       $"({allDiaResults.Count(r => !r.IsDecoy):N0} targets, " +
+                       $"{allDiaResults.Count(r => r.IsDecoy):N0} decoys)...",
+                    new List<string> { taskId });
+
+                var postParameters = new PostDiaSearchAnalysisParameters
+                {
+                    SearchTaskResults = MyTaskResults,
+                    SearchTaskId = taskId,
+                    DiaSearchParameters = mzLibParams,
+                    AllDiaResults = allDiaResults,
+                    OutputFolder = OutputFolder,
+                    IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results"),
+                    CurrentRawFileList = currentRawFileList,
+                    FdrScoreType = DiaFdrScoreType.SpectralAngle,
+                    QValueThreshold = 0.01,
+                    WriteIndividualFiles = currentRawFileList.Count > 1,
+                    WriteDecoys = DiaSearchParameters.WriteDecoyResults,
+                    WriteHighQValueResults = false
+                };
+
+                var postProcessing = new PostDiaSearchAnalysisTask
+                {
+                    Parameters = postParameters,
+                    FileSpecificParameters = this.FileSpecificParameters,
+                    CommonParameters = CommonParameters
+                };
+
+                return postProcessing.Run();
+            }
+
             overallStopwatch.Stop();
-
-            int totalTargets = allResults.Sum(r => r.Results.Count(x => !x.IsDecoy));
-            int totalDecoys = allResults.Sum(r => r.Results.Count(x => x.IsDecoy));
-            ProseCreatedWhileRunning.AppendLine(
-                $"DIA search complete: {totalTargets:N0} target identifications" +
-                $" across {currentRawFileList.Count} file(s)" +
-                $" in {overallStopwatch.Elapsed.TotalSeconds:F1}s");
-
             return MyTaskResults;
         }
 
-        #region TSV Output
+        #region TSV Output (Pre-FDR diagnostic output)
 
-        /// <summary>Header row for DIA results TSV files.</summary>
+        /// <summary>Header row for pre-FDR DIA results TSV files.</summary>
         private static readonly string TsvHeader = string.Join("\t", new[]
         {
             "File Name",
@@ -214,12 +241,13 @@ namespace TaskLayer
         });
 
         /// <summary>
-        /// Writes DIA search results to a tab-separated file.
+        /// Writes pre-FDR DIA search results to a tab-separated file.
+        /// These are diagnostic outputs; the FDR-filtered results come from PostDiaSearchAnalysisTask.
         /// </summary>
         private static void WriteDiaResultsTsv(
             string filePath,
             string rawFileName,
-            List<MassSpectrometry.Dia.DiaSearchResult> results,
+            List<DiaSearchResult> results,
             bool writeDecoys)
         {
             using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
@@ -235,32 +263,9 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Writes aggregate results from multiple files into one TSV.
+        /// Formats a single DiaSearchResult as a TSV row (pre-FDR format).
         /// </summary>
-        private static void WriteAggregateTsv(
-            string filePath,
-            List<(string FileName, List<MassSpectrometry.Dia.DiaSearchResult> Results)> allResults,
-            bool writeDecoys)
-        {
-            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
-            writer.WriteLine(TsvHeader);
-
-            foreach (var (fileName, results) in allResults)
-            {
-                foreach (var result in results)
-                {
-                    if (!writeDecoys && result.IsDecoy)
-                        continue;
-
-                    writer.WriteLine(FormatResultRow(fileName, result));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Formats a single DiaSearchResult as a TSV row.
-        /// </summary>
-        private static string FormatResultRow(string fileName, MassSpectrometry.Dia.DiaSearchResult r)
+        private static string FormatResultRow(string fileName, DiaSearchResult r)
         {
             string xicCounts = r.XicPointCounts != null
                 ? string.Join(";", r.XicPointCounts)
