@@ -1,66 +1,49 @@
-﻿// Copyright 2026 MetaMorpheus Contributors
+// Copyright 2026 MetaMorpheus Contributors
 // Licensed under the MIT License
 
+using MassSpectrometry.Dia;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MassSpectrometry.Dia;
 
 namespace EngineLayer.DiaSearch
 {
     /// <summary>
-    /// Results container for DiaEngine, extending MetaMorpheusEngineResults
-    /// for integration with the standard MetaMorpheus reporting pipeline.
+    /// Contains the results of a DIA engine search for a single raw file.
+    /// Wraps a list of <see cref="DiaSearchResult"/> objects from the mzLib DIA engine.
     /// </summary>
-    public sealed class DiaEngineResults : MetaMorpheusEngineResults
+    public class DiaEngineResults : MetaMorpheusEngineResults
     {
-        /// <summary>DIA precursor match results (targets + decoys that passed filters).</summary>
+        /// <summary>
+        /// All DIA identifications (targets + decoys) that passed the minimum
+        /// fragment and score thresholds during result assembly.
+        /// </summary>
         public List<DiaSearchResult> DiaResults { get; }
 
-        /// <summary>Number of target (non-decoy) library entries provided as input.</summary>
-        public int TargetLibraryCount { get; }
+        /// <summary>Number of target (non-decoy) identifications.</summary>
+        public int TargetCount => DiaResults.Count(r => !r.IsDecoy);
 
-        /// <summary>Number of decoy library entries provided as input.</summary>
-        public int DecoyLibraryCount { get; }
+        /// <summary>Number of decoy identifications.</summary>
+        public int DecoyCount => DiaResults.Count(r => r.IsDecoy);
 
-        public DiaEngineResults(
-            DiaEngine engine,
-            List<DiaSearchResult> diaResults,
-            int targetLibraryCount,
-            int decoyLibraryCount)
+        /// <summary>Number of target library entries that produced results. Alias for TargetCount.</summary>
+        public int TargetLibraryCount => TargetCount;
+
+        /// <summary>Number of decoy library entries that produced results. Alias for DecoyCount.</summary>
+        public int DecoyLibraryCount => DecoyCount;
+
+        public DiaEngineResults(MetaMorpheusEngine engine, List<DiaSearchResult> diaResults)
             : base(engine)
         {
             DiaResults = diaResults ?? new List<DiaSearchResult>();
-            TargetLibraryCount = targetLibraryCount;
-            DecoyLibraryCount = decoyLibraryCount;
         }
 
         public override string ToString()
         {
-            var sb = new StringBuilder();
-            sb.AppendLine(base.ToString());
-            sb.AppendLine($"Library: {TargetLibraryCount} targets, {DecoyLibraryCount} decoys");
-            sb.AppendLine($"DIA matches: {DiaResults.Count}");
-
-            if (DiaResults.Count > 0)
-            {
-                int targetHits = 0;
-                int decoyHits = 0;
-                for (int i = 0; i < DiaResults.Count; i++)
-                {
-                    if (DiaResults[i].IsDecoy) decoyHits++;
-                    else targetHits++;
-                }
-                sb.AppendLine($"  Target hits: {targetHits}, Decoy hits: {decoyHits}");
-
-                var scored = DiaResults.Where(r => !float.IsNaN(r.DotProductScore)).ToList();
-                if (scored.Count > 0)
-                {
-                    sb.AppendLine($"  Avg dot product: {scored.Average(r => r.DotProductScore):F4}");
-                    sb.AppendLine($"  Best dot product: {scored.Max(r => r.DotProductScore):F4}");
-                }
-            }
-
+            var sb = new StringBuilder(base.ToString());
+            sb.AppendLine();
+            sb.Append($"DIA results: {TargetCount:N0} targets, {DecoyCount:N0} decoys " +
+                       $"({DiaResults.Count:N0} total)");
             return sb.ToString();
         }
     }
