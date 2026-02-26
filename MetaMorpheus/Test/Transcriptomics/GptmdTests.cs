@@ -31,7 +31,7 @@ public class GptmdTests
         IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>()
                     { new Tuple<double, double>(14.015650, 14.015650) };
         Tolerance precursorMassTolerance = new PpmTolerance(10);
-        var gptmdMods = GlobalVariables.AllRnaModsKnown.Where(p => p.IdWithMotif.Contains("Methyl"))
+        var gptmdMods = GlobalVariables.AllRnaModsKnown.Where(p => p.IdWithMotif.Contains("Methylation"))
             .ToList();
 
         List<Modification> variableModifications = new List<Modification>();

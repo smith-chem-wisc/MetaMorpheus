@@ -36,7 +36,10 @@ public class DeconvolutionPlot : MassSpectrumPlot
 
         double maxIntensity;
         if (isolationRange != null)
-            maxIntensity = scan.MassSpectrum.Extract(isolationRange).Max(p => p.Intensity);
+        {
+            var peaksInRange = scan.MassSpectrum.Extract(isolationRange);
+            maxIntensity = peaksInRange?.Max(p => p.Intensity) ?? 0;
+        }
         else
             maxIntensity = scan.MassSpectrum.YofPeakWithHighestY ?? 0;
 
