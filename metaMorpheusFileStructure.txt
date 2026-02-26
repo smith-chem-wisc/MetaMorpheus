@@ -19,6 +19,11 @@ MetaMorpheus/CMD/CMD.csproj
 MetaMorpheus/CMD/CommandLineSettings.cs
 MetaMorpheus/CMD/Program.cs
 MetaMorpheus/CMD/app1.manifest
+MetaMorpheus/Development/Dia/DiaDevBenchmarks.csproj
+MetaMorpheus/Development/Dia/DiaEndToEndBenchmark.cs
+MetaMorpheus/Development/Dia/DiaEngineBenchmark.cs
+MetaMorpheus/Development/Dia/LibraryBridgeBenchmark.cs
+MetaMorpheus/Development/Dia/Program.cs
 MetaMorpheus/Dockerfile
 MetaMorpheus/Dockerfile_WindowsInstaller
 MetaMorpheus/EngineLayer/Calibration/CalibrationEngine.cs
@@ -57,6 +62,9 @@ MetaMorpheus/EngineLayer/Data/rnaCombos.txt
 MetaMorpheus/EngineLayer/Data/unimod.xml
 MetaMorpheus/EngineLayer/DatabaseLoading/DatabaseLoadingEngine.cs
 MetaMorpheus/EngineLayer/DatabaseLoading/DbForTask.cs
+MetaMorpheus/EngineLayer/DiaSearch/DiaEngine.cs
+MetaMorpheus/EngineLayer/DiaSearch/DiaEngineResults.cs
+MetaMorpheus/EngineLayer/DiaSearch/MetaMorpheusDiaSearchParameters.cs
 MetaMorpheus/EngineLayer/Digestion/rnases.tsv
 MetaMorpheus/EngineLayer/EngineLayer.csproj
 MetaMorpheus/EngineLayer/EventArgs/MyRecursiveEventArgs.cs
@@ -67,8 +75,11 @@ MetaMorpheus/EngineLayer/EventArgs/SingleFileEventArgs.cs
 MetaMorpheus/EngineLayer/EventArgs/StringEventArgs.cs
 MetaMorpheus/EngineLayer/EventArgs/StringListEventArgs.cs
 MetaMorpheus/EngineLayer/ExperimentalDesign.cs
+MetaMorpheus/EngineLayer/FdrAnalysis/DiaFdrScoreType.cs
 MetaMorpheus/EngineLayer/FdrAnalysis/FdrAnalysisEngine.cs
+MetaMorpheus/EngineLayer/FdrAnalysis/FdrAnalysisEngineDia.cs
 MetaMorpheus/EngineLayer/FdrAnalysis/FdrAnalysisResults.cs
+MetaMorpheus/EngineLayer/FdrAnalysis/FdrAnalysisResultsDia.cs
 MetaMorpheus/EngineLayer/FdrAnalysis/FdrInfo.cs
 MetaMorpheus/EngineLayer/FdrAnalysis/PEPAnalysisEngine.cs
 MetaMorpheus/EngineLayer/FdrAnalysis/PsmData.cs
@@ -366,13 +377,18 @@ MetaMorpheus/GuiFunctions/ViewModels/ModTypeForTreeViewModel.cs
 MetaMorpheus/GuiFunctions/ViewModels/SpectralAveragingParametersViewModel.cs
 MetaMorpheus/MetaMorpheus.sln
 MetaMorpheus/MetaMorpheus.sln.DotSettings
+MetaMorpheus/MetaMorpheusFileStructure.txt
 MetaMorpheus/MetaMorpheusSetup/Maintenance.wxs
 MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj
 MetaMorpheus/MetaMorpheusSetup/MetaSCDlg.wxs
 MetaMorpheus/MetaMorpheusSetup/Product.wxs
+MetaMorpheus/Program.cs
 MetaMorpheus/TaskLayer/AveragingTask/SpectralAveragingTask.cs
 MetaMorpheus/TaskLayer/CalibrationTask/CalibrationParameters.cs
 MetaMorpheus/TaskLayer/CalibrationTask/CalibrationTask.cs
+MetaMorpheus/TaskLayer/DiaSearchTask/DiaSearchTask.cs
+MetaMorpheus/TaskLayer/DiaSearchTask/PostDiaSearchAnalysisParameters.cs
+MetaMorpheus/TaskLayer/DiaSearchTask/PostDiaSearchAnalysisTask.cs
 MetaMorpheus/TaskLayer/EventArgs/SingleTaskEventArgs.cs
 MetaMorpheus/TaskLayer/EventArgs/XmlForTaskListEventArgs.cs
 MetaMorpheus/TaskLayer/EverythingRunnerEngine.cs
@@ -420,7 +436,6 @@ MetaMorpheus/Test/CompressionTest/tinySemi.mgf
 MetaMorpheus/Test/CompressionTest/tinySemiBroken.mgf
 MetaMorpheus/Test/CustomAminoAcidsTest.cs
 MetaMorpheus/Test/CustomFragmentationTest.cs
-MetaMorpheus/Test/DIATests/DIAEngineTest.cs
 MetaMorpheus/Test/DIATests/TestPfPairAndPfGroup.cs
 MetaMorpheus/Test/DIATests/TestXicGrouping.cs
 MetaMorpheus/Test/DatabaseTests/LowResSnip_B6_mouse_11700_117500.xml
@@ -429,6 +444,8 @@ MetaMorpheus/Test/DatabaseTests/Q9UHB6.FASTA
 MetaMorpheus/Test/DatabaseTests/Q9UHB6_Chym_snip.mzML
 MetaMorpheus/Test/DatabaseTests/Task1-SearchTaskconfig.toml
 MetaMorpheus/Test/DatabaseTests/sliced_b6.mzML
+MetaMorpheus/Test/DiaSearch/DiaEngineTests.cs
+MetaMorpheus/Test/DiaSearch/DiaSearchTaskTests.cs
 MetaMorpheus/Test/DictionaryExtensionsTests.cs
 MetaMorpheus/Test/DigestionModificationTests.cs
 MetaMorpheus/Test/EventArgsTest.cs
@@ -750,3 +767,4 @@ README.md
 SECURITY.md
 _config.yml
 global.json
+metaMorpheusFileStructure.txt

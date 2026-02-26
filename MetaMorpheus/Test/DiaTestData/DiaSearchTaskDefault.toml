@@ -1,0 +1,51 @@
+TaskType = "Search"
+
+[DiaSearchParameters]
+# Fragment m/z tolerance in ppm for XIC extraction (typical for Orbitrap MS2)
+PpmTolerance = 20.0
+
+# Half-width of RT window around library/predicted retention time (minutes)
+RtToleranceMinutes = 5.0
+
+# Minimum fragment ions with XIC data points to report a match
+MinFragmentsRequired = 3
+
+# Minimum score threshold (0.0 = no pre-FDR filtering, leave to FDR)
+MinScoreThreshold = 0.0
+
+# Maximum threads for window-level parallelism (-1 = all processors)
+MaxThreads = -1
+
+# Prefer GPU extraction when compatible device is detected
+PreferGpu = false
+
+# Include decoy results in output files
+WriteDecoyResults = true
+
+# Write per-file diagnostic TSV and timing summary
+WriteDiagnostics = true
+
+[CommonParameters]
+TaskDescriptor = "DiaSearchTask"
+MaxThreadsToUsePerFile = 1
+ListOfModsFixed = "Common Fixed\tCarbamidomethyl on C"
+ListOfModsVariable = "Common Variable\tOxidation on M"
+DoPrecursorDeconvolution = true
+UseProvidedPrecursorInfo = true
+DeconvolutionIntensityRatio = 3.0
+DeconvolutionMaxAssumedChargeState = 12
+DeconvolutionMassTolerance = "±4.0000 PPM"
+TotalPartitions = 1
+ProductMassTolerance = "±20.0000 PPM"
+PrecursorMassTolerance = "±5.0000 PPM"
+AddCompIons = false
+ScoreCutoff = 5.0
+ReportAllAmbiguity = true
+NumberOfPeaksToKeepPerWindow = 200
+MinimumAllowedIntensityRatioToBasePeak = 0.01
+TrimMs1Peaks = false
+TrimMsMsPeaks = true
+UseDeltaScore = false
+CalculateEValue = false
+DissociationType = "HCD"
+SeparationType = "HPLC"

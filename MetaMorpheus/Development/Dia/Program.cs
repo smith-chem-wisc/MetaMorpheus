@@ -30,6 +30,8 @@ namespace Development.Dia
             if (runEngine) DiaEngineBenchmark.RunAll();
             if (runBridge) LibraryBridgeBenchmark.RunAll();
             DiaEndToEndBenchmark.RunAll();
+            // Real-data end-to-end benchmark with .msp libraries + mzML
+            DiaRealDataBenchmark.RunAll();
             Console.WriteLine("All benchmarks complete.");
         }
     }
