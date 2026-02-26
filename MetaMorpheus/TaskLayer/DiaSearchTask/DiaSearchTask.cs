@@ -52,9 +52,6 @@ namespace TaskLayer
 
             // ── Load spectral library ──────────────────────────────────────
             Status("Loading spectral library...", new List<string> { taskId });
-
-            // Use the inherited LoadSpectralLibraries method (handles .msp files in dbFilenameList)
-            // The user provides .msp files via the -d flag, same as SearchTask
             var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
 
             if (spectralLibrary == null || spectralLibrary.Results == null || spectralLibrary.Results.Count == 0)
@@ -64,8 +61,48 @@ namespace TaskLayer
                 return MyTaskResults;
             }
 
+            // ── Mark decoys by source filename ─────────────────────────────
+            // LoadSpectralLibraries merges all .msp files but does not set IsDecoy.
+            // Identify decoy entries by checking which source files have "decoy" in the filename.
+            var decoyDbPaths = dbFilenameList
+                .Where(db => db.IsSpectralLibrary &&
+                       Path.GetFileNameWithoutExtension(db.FilePath)
+                           .IndexOf("decoy", StringComparison.OrdinalIgnoreCase) >= 0)
+                .Select(db => db.FilePath)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (decoyDbPaths.Count > 0)
+            {
+                // LibrarySpectrum.Name is "SEQUENCE/CHARGE" — we need to match by source file.
+                // Since LoadSpectralLibraries doesn't track source, we re-read decoy names from the files.
+                var decoyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var decoyPath in decoyDbPaths)
+                {
+                    foreach (var line in File.ReadLines(decoyPath))
+                    {
+                        if (line.StartsWith("Name:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            decoyNames.Add(line.Substring(5).Trim());
+                        }
+                    }
+                }
+
+                int marked = 0;
+                foreach (var spectrum in spectralLibrary.Results)
+                {
+                    if (decoyNames.Contains(spectrum.Name))
+                    {
+                        spectrum.IsDecoy = true;
+                        marked++;
+                    }
+                }
+
+                Status($"Marked {marked:N0} decoy spectra from {decoyDbPaths.Count} decoy library file(s)",
+                    new List<string> { taskId });
+            }
+
             List<LibrarySpectrum> librarySpectra = spectralLibrary.Results;
-            Status($"Loaded {librarySpectra.Count:N0} library spectra",
+            Status($"Loaded {librarySpectra.Count:N0} library spectra ({librarySpectra.Count(s => !s.IsDecoy):N0} targets, {librarySpectra.Count(s => s.IsDecoy):N0} decoys)",
                 new List<string> { taskId });
 
             // ── Convert mzLib parameters ───────────────────────────────────
