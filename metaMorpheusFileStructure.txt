@@ -22,7 +22,9 @@ MetaMorpheus/CMD/app1.manifest
 MetaMorpheus/Development/Dia/DiaDevBenchmarks.csproj
 MetaMorpheus/Development/Dia/DiaEndToEndBenchmark.cs
 MetaMorpheus/Development/Dia/DiaEngineBenchmark.cs
+MetaMorpheus/Development/Dia/DiaRealDataBenchmark.cs
 MetaMorpheus/Development/Dia/LibraryBridgeBenchmark.cs
+MetaMorpheus/Development/Dia/MspParser.cs
 MetaMorpheus/Development/Dia/Program.cs
 MetaMorpheus/Dockerfile
 MetaMorpheus/Dockerfile_WindowsInstaller
@@ -446,6 +448,10 @@ MetaMorpheus/Test/DatabaseTests/Task1-SearchTaskconfig.toml
 MetaMorpheus/Test/DatabaseTests/sliced_b6.mzML
 MetaMorpheus/Test/DiaSearch/DiaEngineTests.cs
 MetaMorpheus/Test/DiaSearch/DiaSearchTaskTests.cs
+MetaMorpheus/Test/DiaTestData/DiaSearchTaskDefault.toml
+MetaMorpheus/Test/DiaTestData/E24484_Mag_1_4_50_3.mzML
+MetaMorpheus/Test/DiaTestData/decoy.msp
+MetaMorpheus/Test/DiaTestData/target.msp
 MetaMorpheus/Test/DictionaryExtensionsTests.cs
 MetaMorpheus/Test/DigestionModificationTests.cs
 MetaMorpheus/Test/EventArgsTest.cs
