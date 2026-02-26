@@ -1938,7 +1938,7 @@ namespace MetaMorpheusGUI
                         return;
                     }
 
-                    // Tasks Loaded - Incoming task is Protein - existing task is protein -> Abort task addition
+                    // Tasks Loaded - Incoming task is Protein - existing task is RNA -> Abort task addition
                     if (taskAnalyteType != AnalyteType.Oligo && tasksToConsider.Any(p => p.IsRnaTask))
                     {
                         NotificationHandler(this, new("Cannot add protein task with RNA task currently loaded", []));
