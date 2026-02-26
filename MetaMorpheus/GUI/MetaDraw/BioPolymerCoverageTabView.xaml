@@ -30,19 +30,18 @@
 
                 <!--Select database file-->
                 <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="5 2">
-                    <Label Content="Database File: " Width="95" />
+                    <Label Content="Database Files: " Width="95" />
 
                     <Button Content="Reset" HorizontalAlignment="Right" DockPanel.Dock="Right"
                         VerticalAlignment="Center" Width="40" Height="26"
-                        IsEnabled="{Binding DatabasePath,  Converter={local:StringIsNotNullOrEmptyToBoolConverter}}"
+                        IsEnabled="{Binding DatabasePaths.Count, Converter={local:IntegerGreaterThanZeroToBoolConverter}}"
                         Command="{Binding ResetDatabaseCommand}" />
 
-                    <Button Name="SelectDatabaseButton"  Content="Select" HorizontalAlignment="Right" DockPanel.Dock="Right"
+                    <Button Name="SelectDatabaseButton"  Content="Add" HorizontalAlignment="Right" DockPanel.Dock="Right"
                         VerticalAlignment="Center" Width="40" Height="26" Margin="5 0"
-                        IsEnabled="{Binding DatabasePath, Converter={local:StringIsNullOrEmptyToBoolConverter}}"
                         Click="SelectDatabaseButton_OnClick" />
 
-                    <Label BorderThickness="1">
+                    <Label BorderThickness="1" ToolTip="{Binding DatabasePathsTooltip}">
                         <TextBlock TextTrimming="CharacterEllipsis">
                             <TextBlock.Text>
                                 <Binding Path="DatabaseName" FallbackValue="None Selected" />
@@ -98,6 +97,8 @@
                                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
                                 <DataGridTextColumn Header="Length" Binding="{Binding Length}" Width="52" 
                                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                                <DataGridTextColumn Header="Database" Binding="{Binding DatabaseName}" Width="100" 
+                                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
