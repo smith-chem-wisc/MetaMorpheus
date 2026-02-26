@@ -1921,7 +1921,40 @@ namespace MetaMorpheusGUI
 
         private void AddTaskToCollection(MetaMorpheusTask taskToAdd)
         {
-            PreRunTasks.Add(new PreRunTask(taskToAdd));
+            var preRunTask = new PreRunTask(taskToAdd);
+
+            if (!preRunTask.IsModeAgnosticTask)
+            {
+                var taskAnalyteType = taskToAdd.CommonParameters.DetermineAnalyteType();
+                var tasksToConsider = PreRunTasks.Where(p => !p.IsModeAgnosticTask).ToList();
+
+                // Ensure we do not have RNA and Protein tasks in the same MetaMorpheus run and that the mode represents the task data type. 
+                if (tasksToConsider.Any())
+                {
+                    // Tasks Loaded - Incoming task is RNA - existing task is protein -> Abort task addition
+                    if (taskAnalyteType == AnalyteType.Oligo && tasksToConsider.Any(p => !p.IsRnaTask))
+                    {
+                        NotificationHandler(this, new("Cannot add RNA task with protein task currently loaded", []));
+                        return;
+                    }
+
+                    // Tasks Loaded - Incoming task is Protein - existing task is RNA -> Abort task addition
+                    if (taskAnalyteType != AnalyteType.Oligo && tasksToConsider.Any(p => p.IsRnaTask))
+                    {
+                        NotificationHandler(this, new("Cannot add protein task with RNA task currently loaded", []));
+                        return;
+                    }
+                }
+                // No Tasks Loaded - Incoming task is RNA - Mode is Protein -> Switch to RNA mode
+                else if (taskAnalyteType == AnalyteType.Oligo && !GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                    GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+
+                // No Tasks Loaded - Incoming task is Protein - Mode is Rna -> Switch to Protein Mode
+                else if (taskAnalyteType != AnalyteType.Oligo && GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                    GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+            }
+
+            PreRunTasks.Add(preRunTask);
             UpdateGuiOnPreRunChange();
         }
 

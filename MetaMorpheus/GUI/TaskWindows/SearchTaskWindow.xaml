@@ -1160,7 +1160,7 @@
                                                     </ToolTip>
                                                 </ToolTipService.ToolTip>
                                             </CheckBox>
-                                            <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+                                            <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
                                                 <DataGrid.Columns>
                                                     <DataGridTextColumn Header="Mod Type"  Width="1*" Binding="{Binding ModName}" />
                                                     <DataGridTemplateColumn  Header=" Do not Write"  Width ="1*" IsReadOnly="False">

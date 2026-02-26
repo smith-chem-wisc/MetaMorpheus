@@ -121,7 +121,6 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
-            MetaMorpheusEngine.DetermineAnalyteType(TheTask.CommonParameters);
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbAddCompIon.IsChecked = task.CommonParameters.AddCompIons;

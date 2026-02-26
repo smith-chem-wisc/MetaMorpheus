@@ -122,7 +122,6 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GlycoSearchTask task)
         {
-            MetaMorpheusEngine.DetermineAnalyteType(TheTask.CommonParameters);
             RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.OGlycanSearch;
             RbtNGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
