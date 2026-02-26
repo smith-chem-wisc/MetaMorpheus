@@ -1041,7 +1041,7 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
 
-            Assert.That(parsedPsms.Count, Is.EqualTo(38)); //total psm count
+            Assert.That(parsedPsms.Count, Is.EqualTo(39)); //total psm count
 
             Directory.Delete(outputFolder, true);
 
