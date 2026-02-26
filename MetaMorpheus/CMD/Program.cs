@@ -196,152 +196,157 @@ namespace MetaMorpheusCommandLine
                 }
             }
 
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
+                List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
 
-            var tasks = settings.Tasks.ToList();
-            for (int i = 0; i < tasks.Count; i++)
-            {
-                var filePath = tasks[i];
-
-                var toml = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
-
-                switch (toml.Get<string>("TaskType"))
+                var tasks = settings.Tasks.ToList();
+                for (int i = 0; i < tasks.Count; i++)
                 {
-                    case "Search":
-                        var searchTask = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "SearchTask", searchTask));
-                        break;
+                    var filePath = tasks[i];
 
-                    case "Calibrate":
-                        var calibrationTask = Toml.ReadFile<CalibrationTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "CalibrationTask", calibrationTask));
-                        break;
+                    var toml = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
 
-                    case "Gptmd":
-                        var GptmdTask = Toml.ReadFile<GptmdTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "GptmdTask", GptmdTask));
-                        break;
-
-                    case "XLSearch":
-                        var XlTask = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "XLSearchTask", XlTask));
-                        break;
-
-                    case "GlycoSearch":
-                        var GlycoTask = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
-                        break;
-
-                    case "Average":
-                        var AveragingTask = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
-                        break;
-
-                    default:
-                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                        {
-                            Console.WriteLine(toml.Get<string>("TaskType") + " is not a known task type! Skipping.");
-                        }
-                        break;
-                }
-            }
-
-            List<string> startingRawFilenameList = settings.Spectra.Select(b => Path.GetFullPath(b)).ToList();
-            List<DbForTask> startingXmlDbFilenameList = settings.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
-
-            // check that experimental design is defined if normalization is enabled
-            var searchTasks = taskList
-                .Where(p => p.Item2.TaskType == MyTask.Search)
-                .Select(p => (SearchTask)p.Item2);
-
-            string pathToExperDesign = Directory.GetParent(startingRawFilenameList.First()).FullName;
-            pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
-
-            if (!File.Exists(pathToExperDesign))
-            {
-                if (searchTasks.Any(p => p.SearchParameters.Normalize))
-                {
-                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                    switch (toml.Get<string>("TaskType"))
                     {
-                        Console.WriteLine("Experimental design file was missing! This must be defined to do normalization. Download a template from https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Experimental-Design");
-                    }
-                    return 5;
-                }
-            }
-            else
-            {
-                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, startingRawFilenameList, out var errors);
+                        case "Search":
+                            var searchTask = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "SearchTask", searchTask));
+                            break;
 
-                if (errors.Any())
+                        case "Calibrate":
+                            var calibrationTask = Toml.ReadFile<CalibrationTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "CalibrationTask", calibrationTask));
+                            break;
+
+                        case "Gptmd":
+                            var GptmdTask = Toml.ReadFile<GptmdTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "GptmdTask", GptmdTask));
+                            break;
+
+                        case "XLSearch":
+                            var XlTask = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "XLSearchTask", XlTask));
+                            break;
+
+                        case "GlycoSearch":
+                            var GlycoTask = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
+                            break;
+
+                        case "Average":
+                            var AveragingTask = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
+                            break;
+
+                        case "DiaSearch":
+                            var diaTask = Toml.ReadFile<DiaSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "DiaSearchTask", diaTask));
+                            break;
+
+                        default:
+                            if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                            {
+                                Console.WriteLine(toml.Get<string>("TaskType") + " is not a known task type! Skipping.");
+                            }
+                            break;
+                    }
+                }
+
+                List<string> startingRawFilenameList = settings.Spectra.Select(b => Path.GetFullPath(b)).ToList();
+                List<DbForTask> startingXmlDbFilenameList = settings.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
+
+                // check that experimental design is defined if normalization is enabled
+                var searchTasks = taskList
+                    .Where(p => p.Item2.TaskType == MyTask.Search)
+                    .Select(p => (SearchTask)p.Item2);
+
+                string pathToExperDesign = Directory.GetParent(startingRawFilenameList.First()).FullName;
+                pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
+
+                if (!File.Exists(pathToExperDesign))
                 {
                     if (searchTasks.Any(p => p.SearchParameters.Normalize))
                     {
                         if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                         {
-                            foreach (var error in errors)
-                            {
-                                Console.WriteLine(error);
-                            }
+                            Console.WriteLine("Experimental design file was missing! This must be defined to do normalization. Download a template from https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Experimental-Design");
                         }
                         return 5;
+                    }
+                }
+                else
+                {
+                    ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, startingRawFilenameList, out var errors);
+
+                    if (errors.Any())
+                    {
+                        if (searchTasks.Any(p => p.SearchParameters.Normalize))
+                        {
+                            if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                            {
+                                foreach (var error in errors)
+                                {
+                                    Console.WriteLine(error);
+                                }
+                            }
+                            return 5;
+                        }
+                        else
+                        {
+                            if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                            {
+                                Console.WriteLine("An experimental design file was found, but an error " +
+                                "occurred reading it. Do you wish to continue with an empty experimental design? (This will delete your experimental design file) y/n" +
+                                "\nThe error was: " + errors.First());
+
+                                var result = Console.ReadLine();
+
+                                if (result.ToLowerInvariant() == "y" || result.ToLowerInvariant() == "yes")
+                                {
+                                    File.Delete(pathToExperDesign);
+                                }
+                                else
+                                {
+                                    return 5;
+                                }
+                            }
+                            else
+                            {
+                                // just continue on if verbosity is on "none"
+                                File.Delete(pathToExperDesign);
+                            }
+                        }
                     }
                     else
                     {
                         if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                         {
-                            Console.WriteLine("An experimental design file was found, but an error " +
-                            "occurred reading it. Do you wish to continue with an empty experimental design? (This will delete your experimental design file) y/n" +
-                            "\nThe error was: " + errors.First());
-
-                            var result = Console.ReadLine();
-
-                            if (result.ToLowerInvariant() == "y" || result.ToLowerInvariant() == "yes")
-                            {
-                                File.Delete(pathToExperDesign);
-                            }
-                            else
-                            {
-                                return 5;
-                            }
-                        }
-                        else
-                        {
-                            // just continue on if verbosity is on "none"
-                            File.Delete(pathToExperDesign);
+                            Console.WriteLine("Read ExperimentalDesign.tsv successfully");
                         }
                     }
                 }
-                else
+
+                EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
+
+                try
                 {
-                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                    a.Run();
+                }
+                catch (Exception e)
+                {
+                    while (e.InnerException != null)
                     {
-                        Console.WriteLine("Read ExperimentalDesign.tsv successfully");
+                        e = e.InnerException;
                     }
-                }
-            }
-
-            EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
-
-            try
-            {
-                a.Run();
-            }
-            catch (Exception e)
-            {
-                while (e.InnerException != null)
-                {
-                    e = e.InnerException;
-                }
 
                 var message = "Run failed, Exception: " + e.Message;
 
                 if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                {
+            {
                     Console.WriteLine(message);
                 }
                 errorCode = 4;
             }
-
+            
             return errorCode;
         }
 

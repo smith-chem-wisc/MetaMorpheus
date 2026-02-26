@@ -24,7 +24,7 @@
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
-    <PackageReference Include="mzLib" Version="1.0.573" />
+    <PackageReference Include="mzLib" Version="9.9.997" />
     <PackageReference Include="NUnit" Version="4.1.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
@@ -72,6 +72,18 @@
     </None>
     <None Update="DatabaseTests\Task1-SearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="DiaTestData\decoy.msp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="DiaTestData\DiaSearchTaskDefault.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="DiaTestData\E24484_Mag_1_4_50_3.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="DiaTestData\target.msp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\11901_AIETD.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

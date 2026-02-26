@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.1.32228.430
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CMD", "CMD\CMD.csproj", "{FD20EBBA-F4C5-40D6-AD61-48A7EB255DAE}"
 EndProject
@@ -21,6 +21,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", "{7EE028A9-75A2-450F-A9A7-76559ED15419}"
 EndProject
 Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "Bootstrapper", "Bootstrapper\Bootstrapper.wixproj", "{E0EA5AC4-24A9-43DC-8FBC-CCEB3B9935B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiaDevBenchmarks", "Development\Dia\DiaDevBenchmarks.csproj", "{C8CD3B88-6958-C9A3-D0DE-2D2427D8DB6E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -74,6 +76,12 @@ Global
 		{E0EA5AC4-24A9-43DC-8FBC-CCEB3B9935B6}.Release|Any CPU.ActiveCfg = Release|x64
 		{E0EA5AC4-24A9-43DC-8FBC-CCEB3B9935B6}.Release|Any CPU.Build.0 = Release|x64
 		{E0EA5AC4-24A9-43DC-8FBC-CCEB3B9935B6}.UbuntuMac|Any CPU.ActiveCfg = Release|x64
+		{C8CD3B88-6958-C9A3-D0DE-2D2427D8DB6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8CD3B88-6958-C9A3-D0DE-2D2427D8DB6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8CD3B88-6958-C9A3-D0DE-2D2427D8DB6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8CD3B88-6958-C9A3-D0DE-2D2427D8DB6E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8CD3B88-6958-C9A3-D0DE-2D2427D8DB6E}.UbuntuMac|Any CPU.ActiveCfg = Release|Any CPU
+		{C8CD3B88-6958-C9A3-D0DE-2D2427D8DB6E}.UbuntuMac|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

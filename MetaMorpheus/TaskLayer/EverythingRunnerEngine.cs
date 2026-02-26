@@ -71,14 +71,17 @@ namespace TaskLayer
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
-                if (!CurrentXmlDbFilenameList.Any() && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask))
+                if (!CurrentXmlDbFilenameList.Any()
+                    && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask)
+                    && !TaskList.Any(t => t.Item2 is DiaSearchTask))
                 {
                     Warn("Cannot proceed. No protein database files selected.");
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
                 else if (CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary).ToList().Count == CurrentXmlDbFilenameList.Count
-                             && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask))
+                     && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask)
+                     && !TaskList.Any(t => t.Item2 is DiaSearchTask))
                 {
                     Warn("Cannot proceed. No protein database files selected.");
                     FinishedAllTasks(OutputFolder);
