@@ -1,15 +1,16 @@
 ﻿using EngineLayer;
+using Omics.Fragmentation;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
+using Readers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Globalization;
-using Readers;
+using System.Linq;
 
 namespace GuiFunctions
 {
@@ -218,7 +219,7 @@ namespace GuiFunctions
                     foreach (var fileName in psmsBySourceFile.Keys)
                     {
                         var result = psmsBySourceFile[fileName].SelectMany(p => p.MatchedIons)
-                            .GroupBy(p => p.NeutralTheoreticalProduct.ProductType)
+                            .GroupBy(p => p.NeutralTheoreticalProduct is CustomMProduct cmp ? cmp.Annotation : p.NeutralTheoreticalProduct.ProductType.ToString())
                             .ToDictionary(p => p.Key.ToString(), p => p.Count());
                         dictsBySourceFile.Add(fileName, result);
                     }
@@ -230,7 +231,7 @@ namespace GuiFunctions
                     foreach (var fileName in psmsBySourceFile.Keys)
                     {
                         var result = psmsBySourceFile[fileName].SelectMany(p => p.MatchedIons)
-                            .GroupBy(p => p.NeutralTheoreticalProduct.ProductType)
+                            .GroupBy(p => p.NeutralTheoreticalProduct is CustomMProduct cmp ? cmp.Annotation : p.NeutralTheoreticalProduct.ProductType.ToString())
                             .ToDictionary(p => p.Key.ToString(), p => (int)p.Sum(m => m.Intensity));
                         dictsBySourceFile.Add(fileName, result);
                     }
