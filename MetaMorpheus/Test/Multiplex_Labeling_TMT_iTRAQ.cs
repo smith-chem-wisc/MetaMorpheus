@@ -984,5 +984,34 @@ namespace Test
                 Assert.Throws<MetaMorpheusException>(() => throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + invalidModId));
             }
         }
+
+        [Test]
+        public static void GenerateFile()
+        {
+            var folder = @"E:\Islets\Brian_data\Fractionation_test\Sam13TMT-Fractionated\12-18-25_UPLC_Frxn\MM_cali-search\Task1-CalibrateTask";
+            var files = Directory.GetFiles(folder, "*.mzML");
+            var outFolder = @"E:\Islets\Brian_data\Fractionation_test\Sam13TMT-Fractionated\PAW\try_mzML\calied_files";
+
+            foreach(var file in files)
+            {
+                var outPath = Path.Combine(outFolder, Path.GetFileNameWithoutExtension(file) + ".PAW_tmt.txt");
+                var msDataFile = MsDataFileReader.GetDataFile(file);
+                IsobaricMassTag.GenerateIntensityFile(IsobaricMassTagType.TMT18, msDataFile, outPath);
+            }
+        }
+
+        [Test]
+        public static void ChangeFileNames()
+        {
+            var folder = @"E:\Islets\Brian_data\Fractionation_test\Sam13TMT-Fractionated\PAW\try_mzML\calied_files";
+            var files = Directory.GetFiles(folder, "*.ms2");
+            foreach (var file in files)
+            {
+                string fileName = Path.GetFileName(file);
+                string newFileName = fileName.Substring(3);
+                string newFilePath = Path.Combine(folder, newFileName);
+                File.Move(file, newFilePath);
+            }
+        }
     }
 }

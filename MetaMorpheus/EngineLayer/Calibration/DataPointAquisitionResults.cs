@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using MathNet.Numerics.Statistics;
 using System.IO;
+using MzLibUtil;
 
 namespace EngineLayer.Calibration
 {
@@ -39,7 +40,20 @@ namespace EngineLayer.Calibration
             PsmPrecursorIqrPpmError = precursorErrors.InterquartileRange();
             PsmPrecursorMedianPpmError = precursorErrors.Median();
 
-            var productErrors = psms.Where(p => p.MatchedFragmentIons != null).SelectMany(p => p.MatchedFragmentIons).Select(p => (p.Mz.ToMass(p.Charge) - p.NeutralTheoreticalProduct.NeutralMass) / p.NeutralTheoreticalProduct.NeutralMass * 1e6).ToList();
+            List<double> productErrors = new List<double>();
+
+            if (dataPointAcquisitionEngine != null)
+            {
+                if (dataPointAcquisitionEngine.CommonParameters.ProductMassTolerance is PpmTolerance)
+                {
+                    productErrors = psms.Where(p => p.MatchedFragmentIons != null).SelectMany(p => p.MatchedFragmentIons).Select(p => (p.Mz.ToMass(p.Charge) - p.NeutralTheoreticalProduct.NeutralMass) / p.NeutralTheoreticalProduct.NeutralMass * 1e6).ToList();
+                }
+                else if (dataPointAcquisitionEngine.CommonParameters.ProductMassTolerance is AbsoluteTolerance)
+                {
+                    productErrors = psms.Where(p => p.MatchedFragmentIons != null).SelectMany(p => p.MatchedFragmentIons).Select(p => p.Mz.ToMass(p.Charge) - p.NeutralTheoreticalProduct.NeutralMass).ToList();
+                }
+            }
+            
             PsmProductIqrPpmError = productErrors.InterquartileRange();
             PsmProductMedianPpmError = productErrors.Median();
         }

@@ -35,7 +35,7 @@ namespace EngineLayer.Calibration
                 {
                     ms1Scans.Add(scan);
                 }
-                else
+                else if (scan.MsnOrder == 2)
                 {
                     ms2Scans.Add(scan);
                 }
@@ -71,7 +71,6 @@ namespace EngineLayer.Calibration
                 ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors);
             }
             
-
             //calibrate the data
             int ms1Index = 0;
             int ms2Index = 0;
@@ -79,6 +78,11 @@ namespace EngineLayer.Calibration
             for (int scanIndex = 0; scanIndex < calibratedScans.Length; scanIndex++) //foreach scan
             {
                 MsDataScan originalScan = originalScans[scanIndex]; //get original scan
+                if (originalScan.MsnOrder == 3)
+                {
+                    calibratedScans[scanIndex] = originalScan; //no calibration for MS3
+                    continue;
+                }
                 if (originalScan.MsnOrder == 1) //if ms1
                 {
                     mostRecentMS1SmoothedError = ms1SmoothedErrors[ms1Index]; //update the mass error
