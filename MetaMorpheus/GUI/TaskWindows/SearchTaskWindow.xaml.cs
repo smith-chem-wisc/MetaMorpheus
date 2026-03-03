@@ -192,7 +192,6 @@ namespace MetaMorpheusGUI
         /// <param name="task"></param>
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            MetaMorpheusEngine.DetermineAnalyteType(TheTask.CommonParameters);
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
                 ProteaseComboBox.SelectedItem = digestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary

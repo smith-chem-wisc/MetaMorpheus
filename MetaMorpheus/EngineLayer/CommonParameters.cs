@@ -274,5 +274,16 @@ namespace EngineLayer
         {
             DigestionParams.ProductsFromDissociationType()[MassSpectrometry.DissociationType.Custom] = CustomIons;
         }
+
+        public AnalyteType DetermineAnalyteType()
+        {
+            return DigestionParams switch
+            {
+                RnaDigestionParams => AnalyteType.Oligo,
+                DigestionParams { Protease: not null } when DigestionParams.DigestionAgent.Name == "top-down"
+                    => AnalyteType.Proteoform,
+                _ => AnalyteType.Peptide
+            };
+        }
     }
 }
