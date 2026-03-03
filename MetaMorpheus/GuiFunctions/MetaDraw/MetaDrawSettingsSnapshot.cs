@@ -46,6 +46,10 @@ namespace GuiFunctions
         public bool DisplayFilteredOnly { get; set; } = true;
         public bool NormalizeHistogramToFile { get; set; } = false;
         public List<string> DataVisualizationColorOrder { get; set; }
+        public bool UseLogScaleYAxis { get; set; } = false;
+        public string GroupingProperty { get; set; } = "None";
+        public double MinRelativeCutoff { get; set; } = 0.0;
+        public double MaxRelativeCutoff { get; set; } = 100.0;
 
 
         // filter settings

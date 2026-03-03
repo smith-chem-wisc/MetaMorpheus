@@ -844,7 +844,8 @@ namespace MetaMorpheusGUI
             PlotModelStat plot = null;
             try
             {
-                plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF));
+                plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF, 
+                    PlotModelStatParametersViewModel.Instance.GetParameters()));
             }
             catch (Exception ex)
             {
