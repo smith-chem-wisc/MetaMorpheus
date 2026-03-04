@@ -4,7 +4,6 @@
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.DiaSearch;
-using EngineLayer.FdrAnalysisDia;
 using MassSpectrometry;
 using MassSpectrometry.Dia;
 using Omics.SpectrumMatch;
@@ -119,7 +118,7 @@ namespace TaskLayer
             nextFileLoadingTask.Start();
 
             // ── Aggregate results across all files ─────────────────────────
-            var allResults = new List<(string FileName, List<DiaSearchResult> Results)>();
+            var allResults = new List<(string FileName, List<DiaSearchResult> Results, DiaScanIndex ScanIndex)>();
             var diagnosticLines = new List<string>();
 
             for (int fileIndex = 0; fileIndex < currentRawFileList.Count; fileIndex++)
@@ -161,9 +160,11 @@ namespace TaskLayer
                     scans,
                     librarySpectra,
                     mzLibParams,
-                    combinedParams,
-                    this.FileSpecificParameters,
-                    thisId);
+                    useCalibration: DiaSearchParameters.UseIrtCalibration,
+                    commonParameters: combinedParams,
+                    fileSpecificParameters: new List<(string, CommonParameters)>(),
+                    nestedIds: thisId,
+                    fileName: rawFileName);
 
                 var engineResults = (DiaEngineResults)diaEngine.Run();
                 fileStopwatch.Stop();
@@ -171,7 +172,7 @@ namespace TaskLayer
                 myFileManager.DoneWithFile(rawFilePath);
 
                 // ── Collect results ────────────────────────────────────────
-                allResults.Add((rawFileName, engineResults.DiaResults));
+                allResults.Add((rawFileName, engineResults.DiaResults, engineResults.ScanIndex));
 
                 int targetCount = engineResults.TargetCount;
                 int decoyCount = engineResults.DecoyCount;
@@ -214,9 +215,11 @@ namespace TaskLayer
             {
                 // Flatten all per-file results into a single list for FDR
                 var allDiaResults = new List<DiaSearchResult>();
-                foreach (var (fileName, results) in allResults)
+                DiaScanIndex lastScanIndex = null;
+                foreach (var (fileName, results, scanIndex) in allResults)
                 {
                     allDiaResults.AddRange(results);
+                    lastScanIndex = scanIndex; // for multi-file: last file's index (single-file: correct)
                 }
 
                 Status($"Running FDR on {allDiaResults.Count:N0} total results " +
@@ -230,13 +233,15 @@ namespace TaskLayer
                     SearchTaskId = taskId,
                     DiaSearchParameters = mzLibParams,
                     AllDiaResults = allDiaResults,
+                    DiaScanIndex = lastScanIndex,
                     OutputFolder = OutputFolder,
                     IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results"),
                     CurrentRawFileList = currentRawFileList,
-                    FdrScoreType = DiaFdrScoreType.SpectralAngle,
+                    ClassifierType = DiaClassifierType.NeuralNetwork,
                     QValueThreshold = 0.01,
                     WriteIndividualFiles = currentRawFileList.Count > 1,
                     WriteDecoys = DiaSearchParameters.WriteDecoyResults,
+                    WritePsmTsv = DiaSearchParameters.WritePsmTsv,
                     WriteHighQValueResults = false
                 };
 
@@ -247,7 +252,13 @@ namespace TaskLayer
                     CommonParameters = CommonParameters
                 };
 
-                return postProcessing.Run();
+                var result = postProcessing.Run();
+
+                // Dispose scan indices now that FDR and feature computation are complete
+                foreach (var (_, _, scanIndex) in allResults)
+                    (scanIndex as IDisposable)?.Dispose();
+
+                return result;
             }
 
             overallStopwatch.Stop();

@@ -2,7 +2,6 @@
 // Licensed under the MIT License
 
 using EngineLayer;
-using EngineLayer.FdrAnalysisDia;
 using MassSpectrometry.Dia;
 using System.Collections.Generic;
 
@@ -41,10 +40,11 @@ namespace TaskLayer
         public List<string> CurrentRawFileList { get; set; }
 
         /// <summary>
-        /// Which score type to use for FDR ranking.
-        /// Default: SpectralAngle (generally better discriminative power than dot product).
+        /// Which classifier to use for iterative FDR.
+        /// Default: NeuralNetwork (production default, 29,157 IDs at 1% FDR on benchmark).
+        /// LinearDiscriminant is the fast fallback (slightly fewer IDs, ~4x faster).
         /// </summary>
-        public DiaFdrScoreType FdrScoreType { get; set; } = DiaFdrScoreType.SpectralAngle;
+        public DiaClassifierType ClassifierType { get; set; } = DiaClassifierType.NeuralNetwork;
 
         /// <summary>
         /// Q-value threshold for reporting "passing" results.
@@ -57,8 +57,22 @@ namespace TaskLayer
 
         /// <summary>Whether to include decoy results in output files</summary>
         public bool WriteDecoys { get; set; } = false;
-
+        /// <summary>
+        /// Whether to write .psmtsv output files compatible with MetaDraw and
+        /// downstream MetaMorpheus tools. Default: true.
+        /// </summary>
+        public bool WritePsmTsv { get; set; } = true;
         /// <summary>Whether to include results above the q-value threshold in output</summary>
         public bool WriteHighQValueResults { get; set; } = false;
+
+        /// <summary>
+        /// The scan index built during DiaEngine execution.
+        /// Required by DiaFeatureExtractor for MS1 feature computation (isotope scores,
+        /// MS1-MS2 correlation, precursor XIC intensity, precursor elution score).
+        /// Set by DiaSearchTask after DiaEngine.Run() returns — the index must remain
+        /// alive until PostDiaSearchAnalysisTask.Run() completes.
+        /// Null if MS1 features are not available (feature computation will skip MS1 features).
+        /// </summary>
+        public DiaScanIndex DiaScanIndex { get; set; } = null;
     }
 }

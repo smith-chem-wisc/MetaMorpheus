@@ -174,8 +174,11 @@ namespace Test.DiaSearch
                 CreateLibrarySpectrum("PEPTIDE", 500.0, 2, new[] { 300.0, 400.0, 500.0 }, new[] { 1000.0, 800.0, 500.0 }, rt: 12.0)
             };
             var diaParams = new DiaSearchParameters { PpmTolerance = 20f, RtToleranceMinutes = 5.0f, MinFragmentsRequired = 1, MaxThreads = 1 };
-            var engine = new DiaEngine(scans, library, diaParams, new CommonParameters(),
-                new List<(string, CommonParameters)>(), new List<string> { "TestTask", "DiaEngine" });
+            var engine = new DiaEngine(scans, library, diaParams,
+                useCalibration: false,
+                commonParameters: new CommonParameters(),
+                fileSpecificParameters: new List<(string, CommonParameters)>(),
+                nestedIds: new List<string> { "TestTask", "DiaEngine" });
 
             var results = (DiaEngineResults)engine.Run();
 
@@ -192,8 +195,11 @@ namespace Test.DiaSearch
                 CreateLibrarySpectrum("PEPTIDE", 500.0, 2, new[] { 300.0, 400.0, 500.0 }, new[] { 1000.0, 800.0, 500.0 }, rt: 12.0)
             };
             var diaParams = new DiaSearchParameters { PpmTolerance = 20f, RtToleranceMinutes = 5.0f, MinFragmentsRequired = 1, MaxThreads = 1 };
-            var engine = new DiaEngine(scans, library, diaParams, new CommonParameters(),
-                new List<(string, CommonParameters)>(), new List<string> { "TestTask" });
+            var engine = new DiaEngine(scans, library, diaParams,
+                useCalibration: false,
+                commonParameters: new CommonParameters(),
+                fileSpecificParameters: new List<(string, CommonParameters)>(),
+                nestedIds: new List<string> { "TestTask" });
 
             var results = (DiaEngineResults)engine.Run();
 
@@ -206,8 +212,11 @@ namespace Test.DiaSearch
         {
             var scans = CreateSimpleDiaScans();
             var diaParams = new DiaSearchParameters { MaxThreads = 1 };
-            var engine = new DiaEngine(scans, new List<LibrarySpectrum>(), diaParams, new CommonParameters(),
-                new List<(string, CommonParameters)>(), new List<string> { "TestTask" });
+            var engine = new DiaEngine(scans, new List<LibrarySpectrum>(), diaParams,
+                useCalibration: false,
+                commonParameters: new CommonParameters(),
+                fileSpecificParameters: new List<(string, CommonParameters)>(),
+                nestedIds: new List<string> { "TestTask" });
 
             var results = (DiaEngineResults)engine.Run();
 
@@ -223,8 +232,11 @@ namespace Test.DiaSearch
                 CreateLibrarySpectrum("OUTSIDE", 800.0, 2, new[] { 300.0, 400.0, 500.0 }, new[] { 1000.0, 800.0, 500.0 }, rt: 12.0)
             };
             var diaParams = new DiaSearchParameters { MaxThreads = 1, MinFragmentsRequired = 1 };
-            var engine = new DiaEngine(scans, library, diaParams, new CommonParameters(),
-                new List<(string, CommonParameters)>(), new List<string> { "TestTask" });
+            var engine = new DiaEngine(scans, library, diaParams,
+                useCalibration: false,
+                commonParameters: new CommonParameters(),
+                fileSpecificParameters: new List<(string, CommonParameters)>(),
+                nestedIds: new List<string> { "TestTask" });
 
             var results = (DiaEngineResults)engine.Run();
 
@@ -237,7 +249,10 @@ namespace Test.DiaSearch
         {
             Assert.Throws<ArgumentNullException>(() =>
                 new DiaEngine(null, new List<LibrarySpectrum>(), new DiaSearchParameters(),
-                    new CommonParameters(), new List<(string, CommonParameters)>(), new List<string>()));
+                    useCalibration: false,
+                    commonParameters: new CommonParameters(),
+                    fileSpecificParameters: new List<(string, CommonParameters)>(),
+                    nestedIds: new List<string>()));
         }
 
         [Test]
@@ -245,7 +260,10 @@ namespace Test.DiaSearch
         {
             Assert.Throws<ArgumentNullException>(() =>
                 new DiaEngine(new MsDataScan[0], null, new DiaSearchParameters(),
-                    new CommonParameters(), new List<(string, CommonParameters)>(), new List<string>()));
+                    useCalibration: false,
+                    commonParameters: new CommonParameters(),
+                    fileSpecificParameters: new List<(string, CommonParameters)>(),
+                    nestedIds: new List<string>()));
         }
 
         #endregion
@@ -262,8 +280,11 @@ namespace Test.DiaSearch
                 CreateLibrarySpectrum("DECOY", 500.0, 2, new[] { 300.0, 400.0, 500.0 }, new[] { 1000.0, 800.0, 500.0 }, rt: 12.0, isDecoy: true)
             };
             var diaParams = new DiaSearchParameters { MinFragmentsRequired = 1, MaxThreads = 1 };
-            var engine = new DiaEngine(scans, library, diaParams, new CommonParameters(),
-                new List<(string, CommonParameters)>(), new List<string> { "TestTask" });
+            var engine = new DiaEngine(scans, library, diaParams,
+                useCalibration: false,
+                commonParameters: new CommonParameters(),
+                fileSpecificParameters: new List<(string, CommonParameters)>(),
+                nestedIds: new List<string> { "TestTask" });
 
             var results = (DiaEngineResults)engine.Run();
 

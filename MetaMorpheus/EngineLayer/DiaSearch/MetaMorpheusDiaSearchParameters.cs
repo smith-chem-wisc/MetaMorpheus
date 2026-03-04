@@ -6,13 +6,16 @@ using MassSpectrometry.Dia;
 namespace EngineLayer.DiaSearch
 {
     /// <summary>
-    /// MetaMorpheus-side wrapper for DIA search parameters.
-    /// Exposes settings for TOML serialization and provides a factory
-    /// method to create the mzLib DiaSearchParameters used by the engine.
-    /// 
-    /// This class exists because DiaSearchParameters lives in mzLib (MassSpectrometry.Dia)
-    /// which has no knowledge of MetaMorpheus's TOML config system. This wrapper adds
-    /// the serialization layer and any MetaMorpheus-specific defaults.
+    /// MetaMorpheus-side configuration for DIA search.
+    ///
+    /// Exposes settings for TOML serialization and GUI binding, and provides
+    /// ToMzLibParameters() to create the mzLib DiaSearchParameters used by DiaEngine.
+    ///
+    /// Design note: DiaSearchParameters (mzLib) intentionally has no RT calibration
+    /// fields — calibration is fully automatic and controlled by IterativeRtCalibrator
+    /// inside DiaCalibrationPipeline. The only RT parameter exposed here is
+    /// RtToleranceMinutes, which sets the initial broad-window half-width for the
+    /// bootstrap pass (iteration 0). After iteration 0, adaptive windows are used.
     /// </summary>
     public class MetaMorpheusDiaSearchParameters
     {
@@ -22,7 +25,8 @@ namespace EngineLayer.DiaSearch
         public float PpmTolerance { get; set; } = 20f;
 
         /// <summary>
-        /// Fallback RT window half-width in minutes (used when iRT calibration is disabled or fails).
+        /// Initial RT window half-width in minutes used for the calibration bootstrap pass.
+        /// After calibration converges, adaptive windows (k×σ) are used automatically.
         /// Default: 5.0.
         /// </summary>
         public float RtToleranceMinutes { get; set; } = 5.0f;
@@ -30,106 +34,58 @@ namespace EngineLayer.DiaSearch
         /// <summary>Minimum detected fragments for a result to be reported. Default: 3.</summary>
         public int MinFragmentsRequired { get; set; } = 3;
 
-        /// <summary>Minimum score threshold (pre-FDR). Default: 0.0.</summary>
+        /// <summary>Minimum score threshold (pre-FDR filter). Default: 0.0 (no pre-filtering).</summary>
         public float MinScoreThreshold { get; set; } = 0.0f;
 
-        // ── Parallelism ─────────────────────────────────────────────────────
+        // ── Parallelism ──────────────────────────────────────────────────────
 
-        /// <summary>Max threads for extraction. -1 = all cores. Default: -1.</summary>
+        /// <summary>Max extraction threads. -1 = all cores. Default: -1.</summary>
         public int MaxThreads { get; set; } = -1;
 
         /// <summary>Whether to attempt GPU acceleration. Default: false.</summary>
         public bool PreferGpu { get; set; } = false;
 
-        // ── iRT Calibration ─────────────────────────────────────────────────
+        // ── Calibration ──────────────────────────────────────────────────────
 
         /// <summary>
-        /// Enable iRT-based retention time calibration and scoring.
-        /// When true, LibrarySpectrum.RetentionTime is treated as iRT.
+        /// Enable iterative RT calibration (DiaCalibrationPipeline).
+        /// When true, produces substantially more IDs (benchmark: 29,157 vs ~16,000 without).
+        /// Disable only for debugging or when the library has no meaningful RT values.
         /// Default: true.
         /// </summary>
         public bool UseIrtCalibration { get; set; } = true;
 
-        /// <summary>
-        /// Broad window half-width in iRT units for Phase 1 (before calibration).
-        /// Default: 20.
-        /// </summary>
-        public double InitialIrtWindow { get; set; } = 40.0;
+        // ── Output Control ───────────────────────────────────────────────────
+        // These are MetaMorpheus-specific and are NOT passed to mzLib.
 
-        /// <summary>
-        /// Number of σ for calibrated RT window: window = k · σ_iRT.
-        /// Default: 3.0.
-        /// </summary>
-        public double CalibratedWindowSigmaMultiplier { get; set; } = 3.0;
-
-        /// <summary>
-        /// Minimum spectral score to qualify as a calibration anchor.
-        /// Default: 0.5.
-        /// </summary>
-        public float CalibrationAnchorMinScore { get; set; } = 0.3f;
-
-        /// <summary>
-        /// Weight (λ) for RT score in combined score: finalScore = spectral + λ · rtScore.
-        /// 0 disables RT scoring. Default: 0.5.
-        /// </summary>
-        public double RtScoreLambda { get; set; } = 0.5;
-
-        /// <summary>
-        /// Maximum calibration refinement iterations. Default: 3.
-        /// </summary>
-        public int MaxCalibrationIterations { get; set; } = 3;
-
-        /// <summary>
-        /// Slope convergence threshold for stopping iteration. Default: 0.001.
-        /// </summary>
-        public double CalibrationConvergenceEpsilon { get; set; } = 0.001;
-
-        // ── Output Control ──────────────────────────────────────────────────
-        // These are MetaMorpheus-specific (not passed to mzLib). They control
-        // what gets written to disk by DiaSearchTask after the engine runs.
-        // Follows the same pattern as SearchParameters.WriteDecoys, etc.
-
-        /// <summary>
-        /// Write diagnostic output files (calibration plots, per-window statistics,
-        /// anchor lists, score distributions). Useful for debugging and method development.
-        /// Default: false.
-        /// </summary>
+        /// <summary>Write per-file and summary diagnostic files. Default: true.</summary>
         public bool WriteDiagnostics { get; set; } = true;
 
-        /// <summary>
-        /// Include decoy results in the output TSV files.
-        /// When false, only target identifications are written.
-        /// Decoys are always used internally for FDR estimation regardless of this setting.
-        /// Default: true (matching SearchParameters.WriteDecoys convention).
-        /// </summary>
+        /// <summary>Include decoy results in output TSV files. Default: false.</summary>
         public bool WriteDecoyResults { get; set; } = false;
 
-        /// <summary>
-        /// Include contaminant results in the output TSV files.
-        /// Default: true (matching SearchParameters.WriteContaminants convention).
-        /// </summary>
+        /// <summary>Include contaminant results in output TSV files. Default: true.</summary>
         public bool WriteContaminantResults { get; set; } = true;
 
-        /// <summary>
-        /// Write per-file result files in addition to the combined results.
-        /// Default: true (matching SearchParameters.WriteIndividualFiles convention).
-        /// </summary>
+        /// <summary>Write per-file result files in addition to the combined results. Default: true.</summary>
         public bool WriteIndividualFiles { get; set; } = true;
 
-        /// <summary>
-        /// Write results that exceed the q-value threshold (high q-value results).
-        /// Useful for inspection but typically filtered out in final analysis.
-        /// Default: true (matching SearchParameters.WriteHighQValuePsms convention).
-        /// </summary>
+        /// <summary>Include results above the q-value threshold in output. Default: true.</summary>
         public bool WriteHighQValueResults { get; set; } = true;
+        public bool WritePsmTsv { get; set; } = true;
         /// <summary>
         /// Path to a spectral library file (.msp) to use for DIA searching.
-        /// When null/empty, library spectra are generated from Koina/Prosit predictions.
+        /// When empty, library spectra are expected to be generated from Koina/Prosit predictions.
         /// </summary>
         public string SpectralLibraryPath { get; set; } = "";
+
+        // ── Factory ──────────────────────────────────────────────────────────
+
         /// <summary>
         /// Creates the mzLib DiaSearchParameters from this configuration.
-        /// Only passes engine-relevant parameters; output control flags stay in MetaMorpheus.
+        /// Only passes parameters that DiaSearchParameters actually exposes.
+        /// Calibration settings (UseIrtCalibration) are handled at the DiaEngine level,
+        /// not inside DiaSearchParameters.
         /// </summary>
         public DiaSearchParameters ToMzLibParameters()
         {
@@ -140,14 +96,7 @@ namespace EngineLayer.DiaSearch
                 MinFragmentsRequired = MinFragmentsRequired,
                 MinScoreThreshold = MinScoreThreshold,
                 MaxThreads = MaxThreads,
-                PreferGpu = PreferGpu,
-                UseIrtCalibration = UseIrtCalibration,
-                InitialIrtWindow = InitialIrtWindow,
-                CalibratedWindowSigmaMultiplier = CalibratedWindowSigmaMultiplier,
-                CalibrationAnchorMinScore = CalibrationAnchorMinScore,
-                RtScoreLambda = RtScoreLambda,
-                MaxCalibrationIterations = MaxCalibrationIterations,
-                CalibrationConvergenceEpsilon = CalibrationConvergenceEpsilon
+                PreferGpu = PreferGpu
             };
         }
     }

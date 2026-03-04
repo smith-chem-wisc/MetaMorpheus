@@ -257,9 +257,10 @@ namespace Test.DiaSearch
 
             using var engine = new DiaEngine(
                 scans, library, mzLibParams,
-                new CommonParameters(),
-                new List<(string, CommonParameters)>(),
-                new List<string> { "TestTask" });
+                useCalibration: false,
+                commonParameters: new CommonParameters(),
+                fileSpecificParameters: new List<(string, CommonParameters)>(),
+                nestedIds: new List<string> { "TestTask" });
 
             var results = (DiaEngineResults)engine.Run();
 
@@ -278,9 +279,10 @@ namespace Test.DiaSearch
 
             using var engine = new DiaEngine(
                 scans, emptyLibrary, mzLibParams,
-                new CommonParameters(),
-                new List<(string, CommonParameters)>(),
-                new List<string> { "TestTask" });
+                useCalibration: false,
+                commonParameters: new CommonParameters(),
+                fileSpecificParameters: new List<(string, CommonParameters)>(),
+                nestedIds: new List<string> { "TestTask" });
 
             var results = (DiaEngineResults)engine.Run();
 
@@ -309,9 +311,10 @@ namespace Test.DiaSearch
 
             using var engine = new DiaEngine(
                 scans, library, mzLibParams,
-                new CommonParameters(),
-                new List<(string, CommonParameters)>(),
-                new List<string> { "TestTask" });
+                useCalibration: false,
+                commonParameters: new CommonParameters(),
+                fileSpecificParameters: new List<(string, CommonParameters)>(),
+                nestedIds: new List<string> { "TestTask" });
 
             var results = (DiaEngineResults)engine.Run();
 
@@ -327,9 +330,10 @@ namespace Test.DiaSearch
                     null,
                     new List<LibrarySpectrum>(),
                     new MassSpectrometry.Dia.DiaSearchParameters(),
-                    new CommonParameters(),
-                    new List<(string, CommonParameters)>(),
-                    new List<string>());
+                    useCalibration: false,
+                    commonParameters: new CommonParameters(),
+                    fileSpecificParameters: new List<(string, CommonParameters)>(),
+                    nestedIds: new List<string>());
             });
         }
 
@@ -342,9 +346,10 @@ namespace Test.DiaSearch
                     CreateSyntheticDiaScans(),
                     null,
                     new MassSpectrometry.Dia.DiaSearchParameters(),
-                    new CommonParameters(),
-                    new List<(string, CommonParameters)>(),
-                    new List<string>());
+                    useCalibration: false,
+                    commonParameters: new CommonParameters(),
+                    fileSpecificParameters: new List<(string, CommonParameters)>(),
+                    nestedIds: new List<string>());
             });
         }
 
@@ -357,9 +362,10 @@ namespace Test.DiaSearch
                     CreateSyntheticDiaScans(),
                     new List<LibrarySpectrum>(),
                     null,
-                    new CommonParameters(),
-                    new List<(string, CommonParameters)>(),
-                    new List<string>());
+                    useCalibration: false,
+                    commonParameters: new CommonParameters(),
+                    fileSpecificParameters: new List<(string, CommonParameters)>(),
+                    nestedIds: new List<string>());
             });
         }
 
@@ -376,9 +382,10 @@ namespace Test.DiaSearch
 
             using var engine = new DiaEngine(
                 scans, library, mzLibParams,
-                new CommonParameters(),
-                new List<(string, CommonParameters)>(),
-                new List<string> { "TestTask" });
+                useCalibration: false,
+                commonParameters: new CommonParameters(),
+                fileSpecificParameters: new List<(string, CommonParameters)>(),
+                nestedIds: new List<string> { "TestTask" });
 
             var results = (DiaEngineResults)engine.Run();
 
@@ -496,9 +503,10 @@ namespace Test.DiaSearch
 
             using var engine = new DiaEngine(
                 scans, library, mzLibParams,
-                new CommonParameters(),
-                new List<(string, CommonParameters)>(),
-                new List<string> { "TestTask" });
+                useCalibration: false,
+                commonParameters: new CommonParameters(),
+                fileSpecificParameters: new List<(string, CommonParameters)>(),
+                nestedIds: new List<string> { "TestTask" });
 
             var results = (DiaEngineResults)engine.Run();
 

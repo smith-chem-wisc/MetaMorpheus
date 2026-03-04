@@ -111,7 +111,7 @@ namespace Development.Dia
             var dotScorer = new NormalizedDotProductScorer();
             var saScorer = new SpectralAngleScorer();
             var diaResults = DiaLibraryQueryGenerator.AssembleResults(
-                allPrecursors, genResult, extraction, parameters,
+                allPrecursors, genResult, extraction.Results, parameters,
                 dotProductScorer: dotScorer, spectralAngleScorer: saScorer);
             sw.Stop();
 
@@ -285,7 +285,7 @@ namespace Development.Dia
 
             sw.Restart();
             var diaResults = DiaLibraryQueryGenerator.AssembleResults(
-                allPrecursors, genResult, extraction, parameters,
+                allPrecursors, genResult, extraction.Results, parameters,
                 new NormalizedDotProductScorer(), new SpectralAngleScorer());
             sw.Stop();
             Console.WriteLine($"  Score+assemble:  {sw.ElapsedMilliseconds,6} ms  ({diaResults.Count} results)");

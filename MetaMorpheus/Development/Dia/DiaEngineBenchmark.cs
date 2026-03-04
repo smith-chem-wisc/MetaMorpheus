@@ -263,7 +263,10 @@ namespace Development.Dia
                 MaxThreads = maxThreads
             };
             var engine = new DiaEngine(scans, library, diaParams,
-                DefaultCommonParameters, NoFileSpecificParams, BenchmarkNestedIds);
+                useCalibration: false,
+                commonParameters: DefaultCommonParameters,
+                fileSpecificParameters: NoFileSpecificParams,
+                nestedIds: BenchmarkNestedIds);
             return (DiaEngineResults)engine.Run();
         }
 

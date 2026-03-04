@@ -146,7 +146,11 @@ namespace Development.Dia
             var totalSw = Stopwatch.StartNew();
 
             using var diaEngine = new DiaEngine(
-                scans, librarySpectra, mzLibParams, commonParams, null, nestedIds);
+                scans, librarySpectra, mzLibParams,
+                useCalibration: true,
+                commonParameters: commonParams,
+                fileSpecificParameters: null,
+                nestedIds: nestedIds);
 
             var engineResults = (DiaEngineResults)diaEngine.Run();
             totalSw.Stop();
@@ -242,7 +246,7 @@ namespace Development.Dia
             var dotScorer = new NormalizedDotProductScorer();
             var saScorer = new SpectralAngleScorer();
             var results = DiaLibraryQueryGenerator.AssembleResults(
-                precursors, genResult, extraction, parameters,
+                precursors, genResult, extraction.Results, parameters,
                 dotProductScorer: dotScorer, spectralAngleScorer: saScorer);
             sw.Stop();
 
@@ -333,7 +337,11 @@ namespace Development.Dia
             var nestedIds = new List<string> { "Validation" };
 
             using var diaEngine = new DiaEngine(
-                scans, librarySpectra, mzLibParams, commonParams, null, nestedIds);
+                scans, librarySpectra, mzLibParams,
+                useCalibration: true,
+                commonParameters: commonParams,
+                fileSpecificParameters: null,
+                nestedIds: nestedIds);
             var engineResults = (DiaEngineResults)diaEngine.Run();
             var results = engineResults.DiaResults;
 

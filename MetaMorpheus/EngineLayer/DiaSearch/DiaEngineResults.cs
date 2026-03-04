@@ -14,6 +14,12 @@ namespace EngineLayer.DiaSearch
         /// <summary>All DIA search results passing the minimum fragment and score thresholds.</summary>
         public List<DiaSearchResult> DiaResults { get; }
         /// <summary>
+        /// The scan index built during this search. Kept alive so PostDiaSearchAnalysisTask
+        /// can pass it to DiaFeatureExtractor for MS1 feature computation.
+        /// Caller is responsible for disposal after FDR is complete.
+        /// </summary>
+        public DiaScanIndex ScanIndex { get; }
+        /// <summary>
         /// The final iRT calibration model from the iterative fitting process.
         /// Null if calibration was disabled, failed, or insufficient anchors were found.
         /// </summary>
@@ -28,11 +34,13 @@ namespace EngineLayer.DiaSearch
         public int DecoyLibraryCount { get; }
 
         public DiaEngineResults(DiaEngine engine, List<DiaSearchResult> results,
-            RtCalibrationModel calibration, int targetLibraryCount = 0, int decoyLibraryCount = 0)
+            RtCalibrationModel calibration, DiaScanIndex scanIndex = null,
+            int targetLibraryCount = 0, int decoyLibraryCount = 0)
             : base(engine)
         {
             DiaResults = results ?? new List<DiaSearchResult>();
             Calibration = calibration;
+            ScanIndex = scanIndex;
             TargetLibraryCount = targetLibraryCount;
             DecoyLibraryCount = decoyLibraryCount;
             int targets = 0, decoys = 0;
