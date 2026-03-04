@@ -207,6 +207,7 @@
                 <MenuItem Header="Add new averaging task" Click="AddAveragingTaskButton_OnClick" />
                 <MenuItem Header="Add new GPTMD task" Click="AddGPTMDTaskButton_Click" />
                 <MenuItem Header="Add new search task" Click="AddSearchTaskButton_Click" />
+                <MenuItem Header="Add new DIA search task" Click="AddDiaSearchTaskButton_Click" />
                 <MenuItem Header="Add new crosslink task" Click="AddCrosslinkTask_Click" >
                     <MenuItem.Style>
                         <Style TargetType="MenuItem">
@@ -696,6 +697,7 @@
                             <ColumnDefinition Width="140"/>
                             <ColumnDefinition Width="140"/>
                             <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
                         </Grid.ColumnDefinitions>
 
                         <Button Name="AddCalibTaskButton" Grid.Column="0" Content="+ADD CALIBRATION" HorizontalAlignment="Right" Click="AddCalibrateTaskButton_Click" 
@@ -710,6 +712,9 @@
                             Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,1,0" Width="140"/>
                         <Button Name="AddGlycoTaskButton" Grid.Column="5" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
                             Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,0,0" Width="140"/>
+                        <Button Name="AddDiaSearchTaskButton" Grid.Column="6" Content="+ADD DIA SEARCH"
+                            HorizontalAlignment="Right" Click="AddDiaSearchTaskButton_Click"
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="140"/>
                     </Grid>
 
                     <!--List of tasks-->

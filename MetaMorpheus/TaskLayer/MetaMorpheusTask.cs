@@ -29,7 +29,6 @@ using Transcriptomics;
 using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
-using EngineLayer.SpectrumMatch;
 
 namespace TaskLayer
 {
@@ -39,8 +38,8 @@ namespace TaskLayer
         Gptmd,
         Calibrate,
         XLSearch,
-        GlycoSearch,
         Average,
+        GlycoSearch,
         DiaSearch
     }
 

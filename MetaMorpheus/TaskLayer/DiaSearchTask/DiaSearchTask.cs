@@ -7,7 +7,6 @@ using EngineLayer.DiaSearch;
 using MassSpectrometry;
 using MassSpectrometry.Dia;
 using Omics.SpectrumMatch;
-using Readers.SpectralLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -33,7 +32,7 @@ namespace TaskLayer
     {
         public MetaMorpheusDiaSearchParameters DiaSearchParameters { get; set; }
 
-        public DiaSearchTask() : base(MyTask.Search) // reuse Search task type for now
+        public DiaSearchTask() : base(MyTask.DiaSearch) // reuse Search task type for now
         {
             CommonParameters = new CommonParameters();
             DiaSearchParameters = new MetaMorpheusDiaSearchParameters();

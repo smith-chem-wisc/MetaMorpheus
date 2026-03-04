@@ -720,7 +720,10 @@ namespace MetaMorpheusGUI
         {
             OpenNewTaskWindow(MyTask.Average);
         }
-
+        private void AddDiaSearchTaskButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenNewTaskWindow(MyTask.DiaSearch);
+        }
         /// <summary>
         /// Event fires when the "Add Task" button is clicked on the RunPage
         /// </summary>
@@ -1954,6 +1957,7 @@ namespace MetaMorpheusGUI
                 case MyTask.XLSearch: defaultTomlName = $"XLSearchTaskDefault.toml"; break;
                 case MyTask.GlycoSearch: defaultTomlName = $"GlycoSearchTaskDefault.toml"; break;
                 case MyTask.Average: defaultTomlName = "SpectralAverageTaskDefault.toml"; break;
+                case MyTask.DiaSearch: defaultTomlName = "DiaSearchTaskDefault.toml"; break;
             }
 
             string defaultTomlFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", defaultTomlName);
@@ -1970,6 +1974,7 @@ namespace MetaMorpheusGUI
                         case MyTask.XLSearch: task = Toml.ReadFile<XLSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                         case MyTask.GlycoSearch: task = Toml.ReadFile<GlycoSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                         case MyTask.Average: task = Toml.ReadFile<SpectralAveragingTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
+                        case MyTask.DiaSearch: task = Toml.ReadFile<DiaSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                     }
                 }
                 catch (Exception)
@@ -1987,6 +1992,7 @@ namespace MetaMorpheusGUI
                 case MyTask.XLSearch: dialog = new XLSearchTaskWindow((XLSearchTask)task); break;
                 case MyTask.GlycoSearch: dialog = new GlycoSearchTaskWindow((GlycoSearchTask)task); break;
                 case MyTask.Average: dialog = new SpectralAveragingTaskWindow((SpectralAveragingTask)task); break;
+                case MyTask.DiaSearch: dialog = new DiaSearchTaskWindow((DiaSearchTask)task); break;
             }
 
             // save the task to the task collection
@@ -2001,6 +2007,7 @@ namespace MetaMorpheusGUI
                     case MyTask.XLSearch: AddTaskToCollection(((XLSearchTaskWindow)dialog).TheTask); break;
                     case MyTask.GlycoSearch: AddTaskToCollection(((GlycoSearchTaskWindow)dialog).TheTask); break; 
                     case MyTask.Average: AddTaskToCollection(((SpectralAveragingTaskWindow)dialog).TheTask); break;
+                    case MyTask.DiaSearch: AddTaskToCollection(((DiaSearchTaskWindow)dialog).TheTask); break;
                 }
 
                 UpdateGuiOnPreRunChange();
@@ -2124,6 +2131,10 @@ namespace MetaMorpheusGUI
                         new SpectralAveragingTaskWindow(preRunTask.metaMorpheusTask as SpectralAveragingTask);
                     averagingDialog.ShowDialog();
                     break;
+                case MyTask.DiaSearch:
+                    var diaDialog = new DiaSearchTaskWindow(preRunTask.metaMorpheusTask as DiaSearchTask);
+                    diaDialog.ShowDialog();
+                    break;
             }
 
             UpdateGuiOnPreRunChange();
@@ -2181,6 +2192,7 @@ namespace MetaMorpheusGUI
             AddGptmdTaskButton.IsEnabled = enable;
             AddXlTaskButton.IsEnabled = enable;
             AddGlycoTaskButton.IsEnabled = enable;
+            AddDiaSearchTaskButton.IsEnabled = enable;
             MiniAddProteinDbButton.IsEnabled = enable;
             MiniAddSpectraButton.IsEnabled = enable;
             MiniAddTaskButton.IsEnabled = enable;
