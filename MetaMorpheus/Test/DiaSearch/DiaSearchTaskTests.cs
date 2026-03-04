@@ -399,7 +399,7 @@ namespace Test.DiaSearch
         {
             var library = CreateSyntheticLibrary(count: 3, includeDecoys: false);
             var inputs = DiaEngine.ConvertLibrarySpectra(library);
-            Assert.That(inputs.Length, Is.EqualTo(library.Count));
+            Assert.That(inputs.Count, Is.EqualTo(library.Count));
         }
 
         [Test]
@@ -473,14 +473,14 @@ namespace Test.DiaSearch
         public void ConvertLibrarySpectra_EmptyList()
         {
             var inputs = DiaEngine.ConvertLibrarySpectra(new List<LibrarySpectrum>());
-            Assert.That(inputs.Length, Is.EqualTo(0));
+            Assert.That(inputs.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void ConvertLibrarySpectra_NullList()
         {
             var inputs = DiaEngine.ConvertLibrarySpectra(null);
-            Assert.That(inputs.Length, Is.EqualTo(0));
+            Assert.That(inputs.Count, Is.EqualTo(0));
         }
 
         #endregion

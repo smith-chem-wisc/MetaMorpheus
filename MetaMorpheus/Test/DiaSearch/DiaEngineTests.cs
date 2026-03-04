@@ -91,7 +91,7 @@ namespace Test.DiaSearch
                 CreateLibrarySpectrum("ANOTHER", 510.0, 2, new[] { 350.0, 450.0 }, new[] { 900.0, 700.0 }, rt: 13.0)
             };
             var inputs = DiaEngine.ConvertLibrarySpectra(spectra);
-            Assert.That(inputs.Length, Is.EqualTo(2));
+            Assert.That(inputs.Count, Is.EqualTo(2));
         }
 
         [Test]
@@ -158,7 +158,7 @@ namespace Test.DiaSearch
         public void ConvertLibrarySpectra_EmptyList_ReturnsEmptyArray()
         {
             var inputs = DiaEngine.ConvertLibrarySpectra(new List<LibrarySpectrum>());
-            Assert.That(inputs.Length, Is.EqualTo(0));
+            Assert.That(inputs.Count, Is.EqualTo(0));
         }
 
         #endregion
@@ -267,8 +267,8 @@ namespace Test.DiaSearch
 
             var results = (DiaEngineResults)engine.Run();
 
-            Assert.That(results.TargetLibraryCount, Is.EqualTo(1));
-            Assert.That(results.DecoyLibraryCount, Is.EqualTo(1));
+            Assert.That(results.TargetCount, Is.EqualTo(1));
+            Assert.That(results.DecoyCount, Is.EqualTo(1));
         }
 
         #endregion

@@ -242,7 +242,7 @@ namespace Development.Dia
             var dotScorer = new NormalizedDotProductScorer();
             var saScorer = new SpectralAngleScorer();
             var results = DiaLibraryQueryGenerator.AssembleResults(
-                precursors, genResult, extraction.Results, parameters,
+                precursors, genResult, extraction, parameters,
                 dotProductScorer: dotScorer, spectralAngleScorer: saScorer);
             sw.Stop();
 
