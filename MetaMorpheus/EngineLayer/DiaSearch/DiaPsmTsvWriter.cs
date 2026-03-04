@@ -105,7 +105,7 @@ namespace EngineLayer.DiaSearch
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
 
-            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+            using var writer = new StreamWriter(filePath, false, new System.Text.UTF8Encoding(false)) { NewLine = "\n" };
             WriteHeader(writer);
 
             foreach (var adapter in adapters)
@@ -139,7 +139,7 @@ namespace EngineLayer.DiaSearch
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
 
-            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+            using var writer = new StreamWriter(filePath, false, new System.Text.UTF8Encoding(false)) { NewLine = "\n" };
             WriteHeader(writer);
 
             foreach (var adapter in merged)

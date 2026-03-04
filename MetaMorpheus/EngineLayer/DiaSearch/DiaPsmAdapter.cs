@@ -92,7 +92,7 @@ namespace EngineLayer.DiaSearch
 
         /// <summary>
         /// Primary ranking score. Uses <see cref="DiaSearchResult.ClassifierScore"/>
-        /// when available (post-FDR); falls back to <see cref="DiaSearchResult.SpectralAngleScore"/>.
+        /// when available (post-FDR); falls back to <see cref="DiaSearchResult.SpectralAngle"/>.
         /// </summary>
         public double Score
         {
@@ -100,7 +100,7 @@ namespace EngineLayer.DiaSearch
             {
                 float cs = _result.ClassifierScore;
                 if (!float.IsNaN(cs)) return cs;
-                return _result.SpectralAngleScore;
+                return _result.SpectralAngle;
             }
         }
 
@@ -138,11 +138,36 @@ namespace EngineLayer.DiaSearch
 
         // ── DIA-specific scores ───────────────────────────────────────────────
 
-        /// <summary>Spectral angle score (normalised dot product variant).</summary>
-        public float SpectralAngleScore => _result.SpectralAngleScore;
+        /// <summary>
+        /// Spectral angle score. Coalesces the two storage properties:
+        /// <see cref="DiaSearchResult.SpectralAngle"/> (temporal scoring path) and
+        /// <see cref="DiaSearchResult.SpectralAngleScore"/> (simple assembler path).
+        /// Returns NaN only when neither path populated the value.
+        /// </summary>
+        public float SpectralAngleScore
+        {
+            get
+            {
+                float sa = _result.SpectralAngle;
+                if (!float.IsNaN(sa)) return sa;
+                return _result.SpectralAngleScore;
+            }
+        }
 
-        /// <summary>Raw dot product score.</summary>
-        public float DotProductScore => _result.DotProductScore;
+        /// <summary>
+        /// Dot product / temporal score. Coalesces
+        /// <see cref="DiaSearchResult.TemporalScore"/> (temporal path) and
+        /// <see cref="DiaSearchResult.DotProductScore"/> (simple assembler path).
+        /// </summary>
+        public float DotProductScore
+        {
+            get
+            {
+                float ts = _result.TemporalScore;
+                if (!float.IsNaN(ts)) return ts;
+                return _result.DotProductScore;
+            }
+        }
 
         /// <summary>Apex temporal correlation score.</summary>
         public float ApexScore => _result.ApexScore;

@@ -7,6 +7,7 @@ using EngineLayer.DiaSearch;
 using MassSpectrometry;
 using MassSpectrometry.Dia;
 using Omics.SpectrumMatch;
+using Readers.SpectralLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -297,7 +298,7 @@ namespace TaskLayer
             List<DiaSearchResult> results,
             bool writeDecoys)
         {
-            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+            using var writer = new StreamWriter(filePath, false, new System.Text.UTF8Encoding(false)) { NewLine = "\n" };
             writer.WriteLine(TsvHeader);
 
             foreach (var result in results)
@@ -351,7 +352,7 @@ namespace TaskLayer
             List<string> diagnosticLines,
             TimeSpan totalElapsed)
         {
-            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+            using var writer = new StreamWriter(filePath, false, new System.Text.UTF8Encoding(false)) { NewLine = "\n" };
             writer.WriteLine("File\tScans\tLibrary Spectra\tTargets\tDecoys\tTime (s)");
             foreach (var line in diagnosticLines)
                 writer.WriteLine(line);

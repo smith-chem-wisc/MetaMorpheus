@@ -1865,6 +1865,10 @@ namespace MetaMorpheusGUI
                                     var average = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
                                     AddTaskToCollection(average);
                                     break;
+                                case "DiaSearch":
+                                    var dia = Toml.ReadFile<DiaSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(dia);
+                                    break;
                             }
                         }
                         catch (Exception e)
