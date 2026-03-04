@@ -366,6 +366,112 @@ namespace Test.DiaSearch
         }
 
         // ════════════════════════════════════════════════════════════════════
+        // Test 9 — AllDiaPSMs.psmtsv produced with correct 27-column schema
+        // ════════════════════════════════════════════════════════════════════
+
+        [Test]
+        public void Integration_PsmTsv_ProducedWithCorrectSchema()
+        {
+            var task = BuildTask();
+            task.DiaSearchParameters.WritePsmTsv = true;
+            RunTask(task, BuildDbList(includeDecoys: true));
+
+            string psmTsvPath = Path.Combine(_outputFolder, "AllDiaPSMs.psmtsv");
+            Assert.That(File.Exists(psmTsvPath), Is.True,
+                "AllDiaPSMs.psmtsv should be written by PostDiaSearchAnalysisTask when WritePsmTsv=true");
+
+            string[] lines = File.ReadAllLines(psmTsvPath);
+            Assert.That(lines.Length, Is.GreaterThan(0),
+                "AllDiaPSMs.psmtsv must contain at least a header line");
+
+            // Validate column count
+            string[] header = lines[0].Split('\t');
+            Assert.That(header.Length, Is.EqualTo(DiaPsmTsvWriter.ColumnHeaders.Count),
+                $"Header should have {DiaPsmTsvWriter.ColumnHeaders.Count} columns, got {header.Length}");
+
+            // Validate column names match exactly
+            for (int i = 0; i < DiaPsmTsvWriter.ColumnHeaders.Count; i++)
+            {
+                Assert.That(header[i], Is.EqualTo(DiaPsmTsvWriter.ColumnHeaders[i]),
+                    $"Column {i} should be '{DiaPsmTsvWriter.ColumnHeaders[i]}', got '{header[i]}'");
+            }
+
+            // Validate standard MetaMorpheus columns in the correct positions
+            Assert.That(header[0], Is.EqualTo("File Name"));
+            Assert.That(header[1], Is.EqualTo("Scan Number"));
+            Assert.That(header[5], Is.EqualTo("Full Sequence"));
+            Assert.That(header[7], Is.EqualTo("Score"));
+            Assert.That(header[8], Is.EqualTo("QValue"));
+
+            // Data rows (if any) must have the same column count as the header
+            foreach (string line in lines.Skip(1))
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                string[] cols = line.Split('\t');
+                Assert.That(cols.Length, Is.EqualTo(header.Length),
+                    $"Data row has {cols.Length} columns, expected {header.Length}: [{line}]");
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // Test 10 — Per-file _DiaResults.psmtsv produced, all rows pass FDR filter
+        // ════════════════════════════════════════════════════════════════════
+
+        [Test]
+        public void Integration_PerFilePsmTsv_ProducedAndFdrFiltered()
+        {
+            var task = BuildTask();
+            task.DiaSearchParameters.WritePsmTsv = true;
+            RunTask(task, BuildDbList(includeDecoys: true));
+
+            string perFileFolder = Path.Combine(_outputFolder, "Individual File Results");
+            Assert.That(Directory.Exists(perFileFolder), Is.True,
+                "Individual File Results folder must exist");
+
+            // Per-file FDR-filtered psmtsv
+            string[] filteredFiles = Directory.GetFiles(perFileFolder, "*_DiaResults.psmtsv");
+            Assert.That(filteredFiles.Length, Is.GreaterThan(0),
+                "At least one per-file _DiaResults.psmtsv should be written");
+
+            // Per-file pre-FDR diagnostic psmtsv (written regardless of FDR outcome)
+            string[] preFdrFiles = Directory.GetFiles(perFileFolder, "*_PreFDR.psmtsv");
+            Assert.That(preFdrFiles.Length, Is.GreaterThan(0),
+                "At least one per-file _PreFDR.psmtsv should be written");
+
+            // Validate schema of the pre-FDR file.
+            // The file confirms the pipeline ran. With synthetic data (4 targets + 4 decoys)
+            // q-values are ≥ 0.25, so the pre-FDR file may also be header-only if
+            // PostDiaSearchAnalysisTask applies FDR filtering before writing it.
+            // We assert the file exists and has a valid 27-column header; data rows are optional.
+            string[] preFdrLines = File.ReadAllLines(preFdrFiles[0]);
+            Assert.That(preFdrLines.Length, Is.GreaterThan(0),
+                "Pre-FDR psmtsv must contain at least a header line");
+
+            string[] preFdrHeader = preFdrLines[0].Split('\t');
+            Assert.That(preFdrHeader.Length, Is.EqualTo(DiaPsmTsvWriter.ColumnHeaders.Count),
+                "Pre-FDR psmtsv must have the same 27-column schema");
+
+            // Validate FDR-filtered file: every data row must have QValue <= 0.01
+            // (file may be header-only if no results pass 1% FDR with synthetic data)
+            string[] filteredLines = File.ReadAllLines(filteredFiles[0]);
+            string[] filteredHeader = filteredLines[0].Split('\t');
+            int qValueCol = Array.IndexOf(filteredHeader, "QValue");
+            Assert.That(qValueCol, Is.GreaterThanOrEqualTo(0),
+                "QValue column must be present in per-file psmtsv");
+
+            foreach (string line in filteredLines.Skip(1))
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                string[] cols = line.Split('\t');
+                if (string.IsNullOrWhiteSpace(cols[qValueCol])) continue;
+                double qValue = double.Parse(cols[qValueCol],
+                    NumberStyles.Float, CultureInfo.InvariantCulture);
+                Assert.That(qValue, Is.LessThanOrEqualTo(0.01),
+                    $"Per-file psmtsv row has QValue={qValue} > 0.01 FDR threshold");
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
         // Helper: build and run the task
         // ════════════════════════════════════════════════════════════════════
 
