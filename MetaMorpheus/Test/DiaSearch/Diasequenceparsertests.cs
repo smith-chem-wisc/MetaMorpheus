@@ -47,8 +47,8 @@ namespace Test.Dia
 
             Assert.That(baseSeq, Is.EqualTo("PEPTMIDEK"));
             Assert.That(mods, Has.Count.EqualTo(1));
-            Assert.That(mods[0].OneBasedResidueIndex, Is.EqualTo(5));
-            Assert.That(mods[0].ModificationName, Is.EqualTo("Oxidation"));
+            Assert.That(mods[0].Position, Is.EqualTo(5));
+            Assert.That(mods[0].Name, Is.EqualTo("Oxidation"));
         }
 
         [Test]
@@ -60,8 +60,8 @@ namespace Test.Dia
 
             Assert.That(baseSeq, Is.EqualTo("PEPTIDE"));
             Assert.That(mods, Has.Count.EqualTo(1));
-            Assert.That(mods[0].OneBasedResidueIndex, Is.EqualTo(0));
-            Assert.That(mods[0].ModificationName, Is.EqualTo("Acetyl"));
+            Assert.That(mods[0].Position, Is.EqualTo(0));
+            Assert.That(mods[0].Name, Is.EqualTo("Acetyl"));
         }
 
         [Test]

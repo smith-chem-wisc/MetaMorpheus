@@ -45,6 +45,7 @@ namespace TaskLayer
             FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
+            System.Diagnostics.Debug.WriteLine("[DIA DEBUG] RunSpecific entered");
             var overallStopwatch = Stopwatch.StartNew();
 
             // ── Load spectral library ──────────────────────────────────────
@@ -58,9 +59,17 @@ namespace TaskLayer
                 return MyTaskResults;
             }
 
-            // ── Mark decoys by source filename ─────────────────────────────
-            // LoadSpectralLibraries merges all .msp files but does not set IsDecoy.
-            // Identify decoy entries by checking which source files have "decoy" in the filename.
+            // ── Mark decoys by source file position ────────────────────────────
+            // LoadSpectralLibraries merges all .msp files in dbFilenameList order.
+            // Targets are loaded first, decoys second. Count target entries by
+            // scanning target files, then mark all remaining spectra as decoys.
+            var targetPaths = dbFilenameList
+                .Where(db => db.IsSpectralLibrary &&
+                       Path.GetFileNameWithoutExtension(db.FilePath)
+                           .IndexOf("decoy", StringComparison.OrdinalIgnoreCase) < 0)
+                .Select(db => db.FilePath)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             var decoyDbPaths = dbFilenameList
                 .Where(db => db.IsSpectralLibrary &&
                        Path.GetFileNameWithoutExtension(db.FilePath)
@@ -70,31 +79,19 @@ namespace TaskLayer
 
             if (decoyDbPaths.Count > 0)
             {
-                // LibrarySpectrum.Name is "SEQUENCE/CHARGE" — we need to match by source file.
-                // Since LoadSpectralLibraries doesn't track source, we re-read decoy names from the files.
-                var decoyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var decoyPath in decoyDbPaths)
-                {
-                    foreach (var line in File.ReadLines(decoyPath))
-                    {
+                int targetEntryCount = 0;
+                foreach (var path in targetPaths)
+                    foreach (var line in File.ReadLines(path))
                         if (line.StartsWith("Name:", StringComparison.OrdinalIgnoreCase))
-                        {
-                            decoyNames.Add(line.Substring(5).Trim());
-                        }
-                    }
-                }
+                            targetEntryCount++;
 
-                int marked = 0;
-                foreach (var spectrum in spectralLibrary.Results)
-                {
-                    if (decoyNames.Contains(spectrum.Name))
-                    {
-                        spectrum.IsDecoy = true;
-                        marked++;
-                    }
-                }
+                var allSpectra = spectralLibrary.Results;
+                for (int i = targetEntryCount; i < allSpectra.Count; i++)
+                    allSpectra[i].IsDecoy = true;
 
-                Status($"Marked {marked:N0} decoy spectra from {decoyDbPaths.Count} decoy library file(s)",
+                int marked = allSpectra.Count(s => s.IsDecoy);
+                System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] targetEntryCount={targetEntryCount}, marked={marked}, total={allSpectra.Count}");
+                Status($"Marked {marked:N0} decoy spectra (entries {targetEntryCount}–{allSpectra.Count - 1})",
                     new List<string> { taskId });
             }
 
@@ -104,6 +101,13 @@ namespace TaskLayer
 
             // ── Convert mzLib parameters ───────────────────────────────────
             var mzLibParams = DiaSearchParameters.ToMzLibParameters();
+
+            // ── DEBUG: confirm parameters are reaching mzLib correctly ──────────
+            System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] PpmTol={mzLibParams.PpmTolerance} " +
+                $"RtTol={mzLibParams.RtToleranceMinutes} " +
+                $"SigmaMult={mzLibParams.CalibratedWindowSigmaMultiplier} " +
+                $"Strategy={mzLibParams.ScoringStrategy} " +
+                $"Power={mzLibParams.NonlinearPower}");
 
             // ── Prepare file manager ───────────────────────────────────────
             MyFileManager myFileManager = new MyFileManager(true); // dispose files after use
@@ -166,6 +170,9 @@ namespace TaskLayer
 
                 var engineResults = (DiaEngineResults)diaEngine.Run();
                 fileStopwatch.Stop();
+
+                System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Results={engineResults.DiaResults?.Count ?? -1} " +
+                    $"Targets={engineResults.TargetCount} Decoys={engineResults.DecoyCount}");
 
                 myFileManager.DoneWithFile(rawFilePath);
 

@@ -100,7 +100,9 @@ namespace EngineLayer.DiaSearch
             {
                 float cs = _result.ClassifierScore;
                 if (!float.IsNaN(cs)) return cs;
-                return _result.SpectralAngle;
+                float sa = _result.SpectralAngle;           // temporal scoring path
+                if (!float.IsNaN(sa)) return sa;
+                return _result.SpectralAngleScore;           // simple assembler path fallback
             }
         }
 

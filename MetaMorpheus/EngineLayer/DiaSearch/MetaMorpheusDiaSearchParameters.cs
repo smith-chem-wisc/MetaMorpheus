@@ -74,6 +74,21 @@ namespace EngineLayer.DiaSearch
         public bool WriteHighQValueResults { get; set; } = true;
         public bool WritePsmTsv { get; set; } = true;
         /// <summary>
+        /// Sigma multiplier for adaptive RT windows after calibration.
+        /// Window half-width = sigma × multiplier. Default: 4.0 (matches benchmark).
+        /// </summary>
+        public float CalibratedWindowSigmaMultiplier { get; set; } = 4.0f;
+
+        /// <summary>
+        /// Scoring strategy for temporal cosine scoring. Default: WeightedTemporalCosineWithTransform.
+        /// </summary>
+        public ScoringStrategy ScoringStrategy { get; set; } = ScoringStrategy.WeightedTemporalCosineWithTransform;
+
+        /// <summary>
+        /// Nonlinear power for WeightedTemporalCosineWithTransform scoring. Default: 0.5.
+        /// </summary>
+        public float NonlinearPower { get; set; } = 0.5f;
+        /// <summary>
         /// Path to a spectral library file (.msp) to use for DIA searching.
         /// When empty, library spectra are expected to be generated from Koina/Prosit predictions.
         /// </summary>
@@ -96,7 +111,10 @@ namespace EngineLayer.DiaSearch
                 MinFragmentsRequired = MinFragmentsRequired,
                 MinScoreThreshold = MinScoreThreshold,
                 MaxThreads = MaxThreads,
-                PreferGpu = PreferGpu
+                PreferGpu = PreferGpu,
+                CalibratedWindowSigmaMultiplier = CalibratedWindowSigmaMultiplier,  
+                ScoringStrategy = ScoringStrategy,                                   
+                NonlinearPower = NonlinearPower                                      
             };
         }
     }

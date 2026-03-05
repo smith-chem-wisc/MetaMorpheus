@@ -109,7 +109,7 @@ namespace EngineLayer.DiaSearch
             {
                 if (_useCalibration)
                 {
-                    Status("Running calibrated DIA search (iterative RT calibration)...");
+                    System.Diagnostics.Debug.WriteLine("Running calibrated DIA search (iterative RT calibration)...");
 
                     var pipelineResult = DiaCalibrationPipeline.RunWithAutomaticCalibration(
                         precursors, scanIndex, _diaParameters, orchestrator);
@@ -117,16 +117,19 @@ namespace EngineLayer.DiaSearch
                     results = pipelineResult.Results;
                     calibration = pipelineResult.Calibration;
 
-                    if (pipelineResult.CalibrationLog?.Count > 0)
+                    // ── DEBUG: confirm calibration ran and what it produced ─────────────
+                    if (pipelineResult.CalibrationLog != null)
                     {
-                        var last = pipelineResult.CalibrationLog[pipelineResult.CalibrationLog.Count - 1];
-                        Status($"Calibration: {pipelineResult.CalibrationLog.Count} iterations, " +
-                               $"σ={last.SigmaMinutes:F3} min, R²={last.RSquared:F4}");
+                        System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Calibration log entries: {pipelineResult.CalibrationLog.Count}");
+                        foreach (var entry in pipelineResult.CalibrationLog)
+                            System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Iter: sigma={entry.SigmaMinutes:F4} R2={entry.RSquared:F4} window={entry.WindowHalfWidthMinutes:F4}");
                     }
-
-                    Status($"Pipeline time: {pipelineResult.TotalTime.TotalSeconds:F1}s " +
-                           $"(calib={pipelineResult.CalibrationTime.TotalSeconds:F1}s, " +
-                           $"extract={pipelineResult.FinalExtractionTime.TotalSeconds:F1}s)");
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("[DIA DEBUG] CalibrationLog is NULL");
+                    }
+                    System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Calibration model null={pipelineResult.Calibration == null}");
+                    System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Results count={pipelineResult.Results?.Count ?? -1}");
                 }
                 else
                 {

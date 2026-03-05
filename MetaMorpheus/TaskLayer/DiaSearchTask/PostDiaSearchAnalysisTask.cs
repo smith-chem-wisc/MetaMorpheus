@@ -137,13 +137,38 @@ namespace TaskLayer
                     for (int k = 0; k < library.Count; k++)
                     {
                         var lib = library[k];
-                        var key = (lib.Name, lib.PrecursorCharge, lib.IsDecoy);
+                        var key = (lib.Name, lib.ChargeState, lib.IsDecoy);
                         if (!combinedIndexMap.ContainsKey(key))
                             combinedIndexMap[key] = k;
                     }
                 }
 
                 features = new DiaFeatureVector[results.Count];
+                System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Features computed: {features?.Length ?? -1}");
+                if (results.Count > 0)
+                {
+                    var r0 = results[0];
+                    System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Result[0]: ApexScore={r0.ApexScore:F4} TemporalScore={r0.TemporalScore:F4} SpectralAngle={r0.SpectralAngle:F4} ObservedApexRt={r0.ObservedApexRt:F4} IsDecoy={r0.IsDecoy}");
+                    var r1 = results.FirstOrDefault(r => r.IsDecoy);
+                    if (r1 != null)
+                        System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Decoy[0]: ApexScore={r1.ApexScore:F4} TemporalScore={r1.TemporalScore:F4} SpectralAngle={r1.SpectralAngle:F4} ObservedApexRt={r1.ObservedApexRt:F4}");
+
+                    var targets = results.Where(r => !r.IsDecoy).ToList();
+                    var decoys = results.Where(r => r.IsDecoy).ToList();
+                    float tApex = targets.Average(r => float.IsNaN(r.ApexScore) ? 0 : r.ApexScore);
+                    float dApex = decoys.Average(r => float.IsNaN(r.ApexScore) ? 0 : r.ApexScore);
+                    float tTemporal = targets.Average(r => float.IsNaN(r.TemporalScore) ? 0 : r.TemporalScore);
+                    float dTemporal = decoys.Average(r => float.IsNaN(r.TemporalScore) ? 0 : r.TemporalScore);
+                    System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Target ApexScore mean={tApex:F4} TemporalScore mean={tTemporal:F4}");
+                    System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Decoy  ApexScore mean={dApex:F4} TemporalScore mean={dTemporal:F4}");
+
+                    int markedDecoys = results.Count(r => r.IsDecoy);
+                    int markedTargets = results.Count(r => !r.IsDecoy);
+                    int highApexDecoys = results.Count(r => r.IsDecoy && r.ApexScore > 0.9f);
+                    int highApexTargets = results.Count(r => !r.IsDecoy && r.ApexScore > 0.9f);
+                    System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] Marked: {markedTargets} targets, {markedDecoys} decoys");
+                    System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] HighApex(>0.9): {highApexTargets} targets, {highApexDecoys} decoys");
+                }
                 for (int i = 0; i < results.Count; i++)
                 {
                     var result = results[i];
@@ -164,7 +189,7 @@ namespace TaskLayer
 
                         if (libIdx >= 0)
                         {
-                            var peaks = library[libIdx].Peaks;
+                            var peaks = library[libIdx].MatchedFragmentIons;
                             if (peaks != null && result.BestFragIndex < peaks.Count)
                             {
                                 float fragMz = (float)peaks[result.BestFragIndex].Mz;
@@ -218,7 +243,11 @@ namespace TaskLayer
                            $"({fdrResult.IterationsCompleted} iterations, " +
                            $"classifier: {fdrResult.ClassifierType})",
                         Parameters.SearchTaskId);
-
+                    System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] FDR result: {fdrResult.IdentificationsAt1PctFdr} IDs, " +
+                        $"{fdrResult.IterationsCompleted} iters, classifier={fdrResult.ClassifierType}");
+                    if (fdrResult.Diagnostics != null)
+                        foreach (var d in fdrResult.Diagnostics)
+                            System.Diagnostics.Debug.WriteLine($"[DIA DEBUG] FDR iter {d.Iteration}: sep={d.Separation:F4} AUC={d.Auc:F4} IDs={d.IdentificationsAt1Pct} tMean={d.TargetScoreMean:F4} dMean={d.DecoyScoreMean:F4}");
                     return; // FdrInfo already set on each result by RunIterativeFdr
                 }
                 catch (Exception ex)
@@ -251,6 +280,7 @@ namespace TaskLayer
 
             // ── Last resort: score-sort TDC without feature-based classifier ───
             Status("Running score-sort target-decoy FDR (last resort)...", Parameters.SearchTaskId);
+            System.Diagnostics.Debug.WriteLine("[DIA DEBUG] Falling through to score-sort FDR (last resort)");
             RunScoreSortFdr(results);
             Status("Score-sort FDR complete.", Parameters.SearchTaskId);
         }

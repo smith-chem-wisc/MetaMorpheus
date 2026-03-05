@@ -11,7 +11,7 @@
 		<PlatformTarget>x64</PlatformTarget>
 	</PropertyGroup>
 	<ItemGroup>
-	  <PackageReference Include="mzLib" Version="9.9.997" />
+	  <PackageReference Include="mzLib" Version="9.9.980" />
 	</ItemGroup>
 	<ItemGroup>
 		<!-- From Development/Dia/ up 2 levels to MetaMorpheus/ -->
