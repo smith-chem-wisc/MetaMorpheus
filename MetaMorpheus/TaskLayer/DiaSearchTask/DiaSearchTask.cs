@@ -7,15 +7,13 @@ using EngineLayer.DiaSearch;
 using MassSpectrometry;
 using MassSpectrometry.Dia;
 using Omics.SpectrumMatch;
-using Readers.SpectralLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace TaskLayer
 {
@@ -234,6 +232,7 @@ namespace TaskLayer
                     DiaSearchParameters = mzLibParams,
                     AllDiaResults = allDiaResults,
                     DiaScanIndex = lastScanIndex,
+                    LibrarySpectra = librarySpectra,
                     OutputFolder = OutputFolder,
                     IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results"),
                     CurrentRawFileList = currentRawFileList,

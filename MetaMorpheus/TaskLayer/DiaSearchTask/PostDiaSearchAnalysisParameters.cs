@@ -3,6 +3,7 @@
 
 using EngineLayer;
 using MassSpectrometry.Dia;
+using Omics.SpectrumMatch;
 using System.Collections.Generic;
 
 namespace TaskLayer
@@ -74,5 +75,14 @@ namespace TaskLayer
         /// Null if MS1 features are not available (feature computation will skip MS1 features).
         /// </summary>
         public DiaScanIndex DiaScanIndex { get; set; } = null;
+
+        /// <summary>
+        /// The combined target+decoy library used during extraction.
+        /// Required by feature computation to extract the best-fragment XIC
+        /// for Ms1Ms2Correlation (feature slot [31]). Accepts List<LibrarySpectrum>
+        /// (the merged target+decoy list from DiaSearchTask before DiaEngine conversion).
+        /// Null = Ms1Ms2Correlation will be NaN (still valid; 3 other MS1 features remain active).
+        /// </summary>
+        public IReadOnlyList<LibrarySpectrum> LibrarySpectra { get; set; } = null;
     }
 }

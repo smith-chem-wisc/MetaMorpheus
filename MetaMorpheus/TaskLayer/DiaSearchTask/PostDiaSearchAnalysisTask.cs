@@ -116,13 +116,80 @@ namespace TaskLayer
         {
             Status("Computing feature vectors for iterative FDR...", Parameters.SearchTaskId);
 
-            // ── Compute the 33-feature vectors ─────────────────────────────────
+            // ── Compute feature vectors (DiaFeatureVector.ClassifierFeatureCount features) ─────
+            //
+            // Ms1Ms2Correlation [31] requires the best-fragment XIC per result.
+            // We mirror the benchmark Step 7 pattern: build a reverse lookup map
+            // from (Sequence, ChargeState, IsDecoy) → library index, then extract
+            // the fragment XIC for each result that has a valid BestFragIndex.
             DiaFeatureVector[] features = null;
             try
             {
+                var library = Parameters.LibrarySpectra;  // List<LibrarySpectrum>
+                var index = Parameters.DiaScanIndex;
+
+                // Build reverse map: (Name, PrecursorCharge, IsDecoy) → library index
+                // LibrarySpectrum.Name = "SEQUENCE/CHARGE" string; use Name+charge as key.
+                Dictionary<(string, int, bool), int> combinedIndexMap = null;
+                if (library != null && index != null)
+                {
+                    combinedIndexMap = new Dictionary<(string, int, bool), int>(library.Count);
+                    for (int k = 0; k < library.Count; k++)
+                    {
+                        var lib = library[k];
+                        var key = (lib.Name, lib.PrecursorCharge, lib.IsDecoy);
+                        if (!combinedIndexMap.ContainsKey(key))
+                            combinedIndexMap[key] = k;
+                    }
+                }
+
                 features = new DiaFeatureVector[results.Count];
                 for (int i = 0; i < results.Count; i++)
-                    features[i] = DiaFeatureExtractor.ComputeFeatures(results[i], i);
+                {
+                    var result = results[i];
+                    System.ReadOnlySpan<float> bestFragXic = default;
+                    System.ReadOnlySpan<float> bestFragXicRts = default;
+
+                    // Wire Ms1Ms2Correlation when library + index + BestFragIndex are available
+                    if (combinedIndexMap != null &&
+                        index.Ms1ScanCount > 0 &&
+                        result.BestFragIndex >= 0 &&
+                        result.BestFragIndex < result.FragmentsQueried)
+                    {
+                        // LibrarySpectrum.Name matches DiaSearchResult.Sequence
+                        var libKey = (result.Sequence, result.ChargeState, result.IsDecoy);
+                        int libIdx = -1;
+                        if (combinedIndexMap.TryGetValue(libKey, out int mapIdx))
+                            libIdx = mapIdx;
+
+                        if (libIdx >= 0)
+                        {
+                            var peaks = library[libIdx].Peaks;
+                            if (peaks != null && result.BestFragIndex < peaks.Count)
+                            {
+                                float fragMz = (float)peaks[result.BestFragIndex].Mz;
+                                DiaFeatureExtractor.ExtractBestFragmentXic(
+                                    index, fragMz, result.WindowId,
+                                    result.RtWindowStart, result.RtWindowEnd,
+                                    ppmTolerance: (float)Parameters.DiaSearchParameters.PpmTolerance,
+                                    out float[] fragXicIntensities,
+                                    out float[] fragXicRts);
+
+                                if (fragXicIntensities.Length >= 3)
+                                {
+                                    bestFragXic = fragXicIntensities.AsSpan();
+                                    bestFragXicRts = fragXicRts.AsSpan();
+                                }
+                            }
+                        }
+                    }
+
+                    features[i] = DiaFeatureExtractor.ComputeFeatures(
+                        result, i,
+                        index: index,
+                        bestFragXic: bestFragXic,
+                        bestFragXicRts: bestFragXicRts);
+                }
             }
             catch (Exception ex)
             {
