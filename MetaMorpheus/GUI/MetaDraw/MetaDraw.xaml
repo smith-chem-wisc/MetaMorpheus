@@ -652,8 +652,9 @@
                                 <ListView x:Name="plotsListBox" ItemsSource="{Binding}" SelectionChanged ="PlotSelected" MaxHeight="400"/>
                             </GroupBox>
 
-                            <DockPanel Grid.Row="5" Margin="2">
-                                <Button Content="Export to PDF" Width="100" Click="CreatePlotPdf_Click" />
+                            <DockPanel Grid.Row="5" Margin="2" HorizontalAlignment="Center">
+                                <Button Content="Export to PDF" Width="100" Click="CreatePlotPdf_Click" Margin="5 0" />
+                                <Button Content="Export to Text" Width="100" Click="CreatePlotText_Click" Margin="5 0" />
                             </DockPanel>
                         </Grid>
 

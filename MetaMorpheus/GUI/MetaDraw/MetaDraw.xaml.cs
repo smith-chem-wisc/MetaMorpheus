@@ -804,6 +804,39 @@ namespace MetaMorpheusGUI
             MessageBoxHelper.Show(MetaDrawSettings.ExportType + " Created at " + Path.Combine(fileDirectory, fileName) + "!");
         }
 
+        private void CreatePlotText_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItem = plotsListBox.SelectedItem;
+            if (selectedItem == null) { MessageBox.Show("Select a plot type to export!"); return; }
+            if (!MetaDrawLogic.SpectralMatchResultFilePaths.Any()) { MessageBox.Show("No PSMs are loaded!"); return; }
+            if (selectSourceFileListBox.SelectedItems.Count == 0) { MessageBox.Show("Please select a source file."); return; }
+
+            var plot = plotViewStat.DataContext as PlotModelStat;
+            if (plot == null || plot.PlotData == null || plot.PlotData.Count == 0)
+            {
+                MessageBox.Show("No plot data available to export.");
+                return;
+            }
+
+            var plotName = selectedItem as string;
+            var fileDirectory = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
+                    DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            var fileName = plotName;
+            if (PlotModelStatParametersViewModel.Instance.DisplayFilteredOnly)
+                fileName += "_filtered";
+            if (PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile)
+                fileName += "_normalizedToFile";
+            if (PlotModelStatParametersViewModel.Instance.GroupingProperty != "None")
+                fileName += $"_by{PlotModelStatParametersViewModel.Instance.GroupingProperty}";
+            fileName += ".tsv";
+
+            if (!Directory.Exists(fileDirectory)) Directory.CreateDirectory(fileDirectory);
+
+            var fullPath = Path.Combine(fileDirectory, fileName);
+            plot.ExportToText(fullPath);
+            MessageBoxHelper.Show("Text file created at " + fullPath);
+        }
+
         private async void PlotSelected(object sender, SelectionChangedEventArgs e)
         {
             var listview = sender as ListView;

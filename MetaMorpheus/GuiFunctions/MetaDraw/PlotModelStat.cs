@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using GuiFunctions.MetaDraw;
 using Omics.Fragmentation;
 using OxyPlot;
@@ -11,7 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace GuiFunctions
 {
@@ -21,6 +23,11 @@ namespace GuiFunctions
         private readonly ObservableCollection<SpectrumMatchFromTsv> allSpectralMatches;
         private readonly Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> psmsBySourceFile;
         private readonly PlotModelStatParameters parameters;
+
+        /// <summary>
+        /// Stores the tabular data for text export. Each row is a dictionary of column name to value.
+        /// </summary>
+        public List<Dictionary<string, string>> PlotData { get; private set; } = new();
 
         public readonly static List<string> PlotNames = new List<string> {
             "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
@@ -52,6 +59,25 @@ namespace GuiFunctions
             createPlot(plotName);
             privateModel.DefaultColors = MetaDrawSettings.DataVisualizationColorOrder;
         }
+
+        /// <summary>
+        /// Exports the plot data to a tab-separated text file.
+        /// </summary>
+        public void ExportToText(string filePath)
+        {
+            if (PlotData == null || PlotData.Count == 0)
+                return;
+
+            var columns = PlotData.SelectMany(r => r.Keys).Distinct().ToList();
+            var sb = new StringBuilder();
+            sb.AppendLine(string.Join("\t", columns));
+            foreach (var row in PlotData)
+            {
+                sb.AppendLine(string.Join("\t", columns.Select(c => row.ContainsKey(c) ? row[c] : "")));
+            }
+            File.WriteAllText(filePath, sb.ToString());
+        }
+
         private void createPlot(string plotType)
         {
             switch (plotType)
@@ -133,7 +159,7 @@ namespace GuiFunctions
                     break;
                 case 2: // Histogram of Fragment PPM Errors 
                     xAxisTitle = "Fragment error (ppm)";
-                    binSize = 1;
+                    binSize = 2;
                     foreach (string key in psmsBySourceFile.Keys)
                     {
                         numbersBySourceFile.Add(key, psmsBySourceFile[key].SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm)));
@@ -238,6 +264,8 @@ namespace GuiFunctions
                             .ToDictionary(p => p.Key.ToString(), p => p.Count());
                         dictsBySourceFile.Add(fileName, result);
                     }
+                    if (dictsBySourceFile.Sum(p => p.Value.Keys.Count) >= 40)
+                        labelAngle = -50;
                     break;
                 case 11: // Histogram of Fragment Ion Types by intensity
                     xAxisTitle = "Fragment Types";
@@ -252,6 +280,9 @@ namespace GuiFunctions
                             .ToDictionary(p => p.Key.ToString(), p => (int)p.Sum(m => m.Intensity));
                         dictsBySourceFile.Add(fileName, result);
                     }
+                    if (dictsBySourceFile.Sum(p => p.Value.Keys.Count) >= 40)
+                        labelAngle = -50;
+
                     break;
                 case 12: // Histogram of Ids by Retention Time
                     xAxisTitle = "Retention Time";
@@ -270,6 +301,8 @@ namespace GuiFunctions
 
             String[] category;
             int[] totalCounts;
+            int categoriesPerGroup = 0; // track for group annotation positioning
+            List<string> allGroupKeys = null;
             
             if (plotType == 5 || plotType == 10 || plotType == 11)  // category histogram
             {
@@ -318,13 +351,14 @@ namespace GuiFunctions
                 category = filteredCategory.ToArray();
                 totalCounts = filteredTotalCounts.ToArray();
                 categoryIDs = filteredCategoryIDs;
+                categoriesPerGroup = filteredCategoryIDs.Count;
             
                 if (isGroupingEnabled)
                 {
-                    var allGroupKeys = groupedPsmsBySourceFile.Values
-                        .SelectMany(d => d.Keys)
-                        .Distinct()
-                        .OrderBy(k => k)
+                    allGroupKeys = OrderByNaturalKey(
+                        groupedPsmsBySourceFile.Values
+                            .SelectMany(d => d.Keys)
+                            .Distinct())
                         .ToList();
 
                     var nestedCategories = new List<string>();
@@ -409,44 +443,19 @@ namespace GuiFunctions
                                     value = 0.1;
                                     
                                 column.Items.Add(new HistItem(value, categoryToIndex[lookupKey], cat, totalCounts[catId], groupKey));
+
+                                PlotData.Add(new Dictionary<string, string>
+                                {
+                                    { "Source File", sourceFile }, { parameters.GroupingProperty, groupKey }, { "Category", cat },
+                                    { "Value", (groupDict.ContainsKey(cat) ? groupDict[cat] : 0).ToString() },
+                                    { "Total", totalCounts[catId].ToString() }
+                                });
                             }
                         }
                         privateModel.Series.Add(column);
                     }
 
                     category = nestedCategories.ToArray();
-                    
-                    // Create group axis labels with proper spacing for category histograms
-                    var groupAxisLabels = new List<string>();
-                    for (int i = 0; i < allGroupKeys.Count; i++)
-                    {
-                        for (int j = 0; j < filteredCategoryIDs.Count; j++)
-                        {
-                            if (j == filteredCategoryIDs.Count / 2)
-                            {
-                                groupAxisLabels.Add(allGroupKeys[i]);
-                            }
-                            else
-                            {
-                                groupAxisLabels.Add("");
-                            }
-                        }
-                    }
-                    
-                    var groupAxis = new CategoryAxis
-                    {
-                        Position = AxisPosition.Bottom,
-                        Title = parameters.GroupingProperty,
-                        Key = "GroupAxis",
-                        StartPosition = 1,
-                        EndPosition = 0,
-                        IsAxisVisible = true,
-                        ItemsSource = groupAxisLabels.ToArray(),
-                        FontSize = 12,
-                        AxisTickToLabelDistance = 5,
-                        MajorTickSize = 10
-                    };
-                    privateModel.Axes.Add(groupAxis);
                 }
                 else
                 {
@@ -478,6 +487,12 @@ namespace GuiFunctions
                                 value = 0.1;
                                 
                             column.Items.Add(new HistItem(value, id, d.Key, totalCounts[id]));
+
+                            PlotData.Add(new Dictionary<string, string>
+                            {
+                                { "Source File", key }, { "Category", d.Key },
+                                { "Value", d.Value.ToString() }, { "Total", totalCounts[id].ToString() }
+                            });
                         }
                         privateModel.Series.Add(column);
                     }
@@ -538,13 +553,14 @@ namespace GuiFunctions
 
                 category = filteredCategories.ToArray();
                 totalCounts = filteredTotalCounts.ToArray();
+                categoriesPerGroup = binToFilteredIndex.Count;
 
                 if (isGroupingEnabled)
                 {
-                    var allGroupKeys = groupedPsmsBySourceFile.Values
-                        .SelectMany(d => d.Keys)
-                        .Distinct()
-                        .OrderBy(k => k)
+                    allGroupKeys = OrderByNaturalKey(
+                        groupedPsmsBySourceFile.Values
+                            .SelectMany(d => d.Keys)
+                            .Distinct())
                         .ToList();
 
                     var nestedCategories = new List<string>();
@@ -605,57 +621,33 @@ namespace GuiFunctions
                                     total = groupDict.Values.Sum();
                                 }
                                 
-                                double value = groupDict.ContainsKey(binKey.ToString()) ? groupDict[binKey.ToString()] / total : 0;
+                                int rawValue = groupDict.ContainsKey(binKey.ToString()) ? groupDict[binKey.ToString()] : 0;
+                                double value = rawValue / total;
                                 
                                 if (parameters.UseLogScaleYAxis && value > 0 && value < 0.1)
                                     value = 0.1;
                                 
                                 column.Items.Add(new HistItem(value, categoryToIndex[lookupKey], 
                                     (binKey * binSize).ToString(CultureInfo.InvariantCulture), totalCounts[binToFilteredIndex[binKey]], groupKey));
+
+                                PlotData.Add(new Dictionary<string, string>
+                                {
+                                    { "Source File", sourceFile }, { parameters.GroupingProperty, groupKey },
+                                    { "Bin", (binKey * binSize).ToString(CultureInfo.InvariantCulture) },
+                                    { "Value", rawValue.ToString() }, { "Total", totalCounts[binToFilteredIndex[binKey]].ToString() }
+                                });
                             }
                         }
                         privateModel.Series.Add(column);
                     }
 
                     category = nestedCategories.ToArray();
-                    
-                    // Create group axis labels with proper spacing
-                    var groupAxisLabels = new List<string>();
-                    for (int i = 0; i < allGroupKeys.Count; i++)
-                    {
-                        for (int j = 0; j < binToFilteredIndex.Count; j++)
-                        {
-                            if (j == binToFilteredIndex.Count / 2)
-                            {
-                                groupAxisLabels.Add(allGroupKeys[i]);
-                            }
-                            else
-                            {
-                                groupAxisLabels.Add("");
-                            }
-                        }
-                    }
-                    
-                    var groupAxis = new CategoryAxis
-                    {
-                        Position = AxisPosition.Bottom,
-                        Title = parameters.GroupingProperty,
-                        Key = "GroupAxis",
-                        StartPosition = 1,
-                        EndPosition = 0,
-                        IsAxisVisible = true,
-                        ItemsSource = groupAxisLabels.ToArray(),
-                        FontSize = 12,
-                        AxisTickToLabelDistance = 5,
-                        MajorTickSize = 10
-                    };
-                    privateModel.Axes.Add(groupAxis);
                 }
                 else
                 {
                     foreach (string key in dictsBySourceFile.Keys)
                     {
-                        ColumnSeries column = new ColumnSeries { 
+                        var column = new ColumnSeries { 
                             ColumnWidth = 200, 
                             IsStacked = true, 
                             Title = key, 
@@ -684,6 +676,13 @@ namespace GuiFunctions
                         
                             column.Items.Add(new HistItem(value, filteredIdx, 
                                 (bin * binSize).ToString(CultureInfo.InvariantCulture), totalCounts[filteredIdx]));
+
+                            PlotData.Add(new Dictionary<string, string>
+                            {
+                                { "Source File", key },
+                                { "Bin", (bin * binSize).ToString(CultureInfo.InvariantCulture) },
+                                { "Value", d.Value.ToString() }, { "Total", totalCounts[filteredIdx].ToString() }
+                            });
                         }
                         privateModel.Series.Add(column);
                     }
@@ -693,34 +692,29 @@ namespace GuiFunctions
             // add axes
             if (parameters.NormalizeHistogramToFile)
                 xAxisTitle = $"File Normalized {xAxisTitle}";
+
+            // When grouping, add extra padding at the bottom for the group label row
+            double bottomPadding = isGroupingEnabled ? 20 : 0;
+            privateModel.Padding = new OxyThickness(privateModel.Padding.Left, privateModel.Padding.Top,
+                privateModel.Padding.Right, privateModel.Padding.Bottom + bottomPadding);
             
             var mainAxis = new CategoryAxis
             {
                 Position = AxisPosition.Bottom,
                 ItemsSource = category,
-                Title = xAxisTitle,
+                Title = isGroupingEnabled ? null : xAxisTitle,
                 GapWidth = 0.3,
                 Angle = labelAngle,
-                Key = "MainAxis"
             };
             
             // Add spacing between groups when grouping is enabled
-            if (isGroupingEnabled)
+            if (isGroupingEnabled && allGroupKeys != null && allGroupKeys.Count > 0 && categoriesPerGroup > 0)
             {
-                mainAxis.GapWidth = 0.1;  // Tighter spacing within groups
-                
-                // Calculate positions for group separators
-                var allGroupKeys = groupedPsmsBySourceFile?.Values
-                    .SelectMany(d => d.Keys)
-                    .Distinct()
-                    .OrderBy(k => k)
-                    .ToList();
-                
-                if (allGroupKeys != null && allGroupKeys.Count > 1)
+                mainAxis.GapWidth = 0.1;
+
+                // Add gridlines between groups
+                if (allGroupKeys.Count > 1)
                 {
-                    int categoriesPerGroup = category.Length / allGroupKeys.Count;
-                    
-                    // Add extra gap positions between groups
                     mainAxis.ExtraGridlines = new double[allGroupKeys.Count - 1];
                     for (int i = 1; i < allGroupKeys.Count; i++)
                     {
@@ -730,6 +724,59 @@ namespace GuiFunctions
                     mainAxis.ExtraGridlineColor = OxyColors.LightGray;
                     mainAxis.ExtraGridlineThickness = 2;
                 }
+
+                // Build category labels: show category names only (no group labels inline)
+                // Group labels are added on a separate secondary axis below
+                var labelledCategories = new string[category.Length];
+                for (int g = 0; g < allGroupKeys.Count; g++)
+                {
+                    int startIdx = g * categoriesPerGroup;
+
+                    for (int j = 0; j < categoriesPerGroup; j++)
+                    {
+                        int idx = startIdx + j;
+                        if (idx >= category.Length) break;
+                        labelledCategories[idx] = category[idx];
+                    }
+                }
+                mainAxis.ItemsSource = labelledCategories;
+                mainAxis.Title = xAxisTitle;
+
+                // Create a second category axis for group labels
+                var groupLabels = new string[category.Length];
+                for (int g = 0; g < allGroupKeys.Count; g++)
+                {
+                    int startIdx = g * categoriesPerGroup;
+                    int midIdx = startIdx + categoriesPerGroup / 2;
+
+                    for (int j = 0; j < categoriesPerGroup; j++)
+                    {
+                        int idx = startIdx + j;
+                        if (idx >= groupLabels.Length) break;
+                        groupLabels[idx] = idx == midIdx ? allGroupKeys[g] : "";
+                    }
+                }
+
+                var groupAxis = new CategoryAxis
+                {
+                    Position = AxisPosition.Bottom,
+                    Key = "GroupAxis",
+                    ItemsSource = groupLabels,
+                    GapWidth = 0.1,
+                    Angle = 0,
+                    Title = parameters.GroupingProperty,
+                    TitleFontWeight = FontWeights.Normal,
+                    TitleFontSize = privateModel.DefaultFontSize + 2,
+                    FontSize = privateModel.DefaultFontSize + 2,
+                    FontWeight = FontWeights.Bold,
+                    TickStyle = TickStyle.None,
+                    IsAxisVisible = true,
+                    AxislineStyle = LineStyle.None,
+                    MajorGridlineStyle = LineStyle.None,
+                    MinorGridlineStyle = LineStyle.None,
+                    PositionTier = 1,
+                };
+                privateModel.Axes.Add(groupAxis);
             }
             
             privateModel.Axes.Add(mainAxis);
@@ -742,7 +789,8 @@ namespace GuiFunctions
                     Position = AxisPosition.Left,
                     AbsoluteMinimum = 0.1,
                     Minimum = 0.1,
-                    Base = 10
+                    Base = 10,
+                    Key = "Primary"
                 });
             }
             else
@@ -752,7 +800,8 @@ namespace GuiFunctions
                     Title = yAxisTitle,
                     Position = AxisPosition.Left,
                     AbsoluteMinimum = 0,
-                    Minimum = 0
+                    Minimum = 0,
+                    Key = "Primary"
                 });
             }
         }
@@ -793,6 +842,14 @@ namespace GuiFunctions
                         {
                             variantxy.Add(new Tuple<double, double, string>(double.Parse(psm.MassDiffPpm, CultureInfo.InvariantCulture), (double)psm.RetentionTime, psm.FullSequence));
                         }
+
+                        PlotData.Add(new Dictionary<string, string>
+                        {
+                            { "Retention Time", psm.RetentionTime.ToString(CultureInfo.InvariantCulture) },
+                            { "Precursor Error Ppm", psm.MassDiffPpm },
+                            { "Full Sequence", psm.FullSequence },
+                            { "Is Variant", (psm.IdentifiedSequenceVariations != null && !psm.IdentifiedSequenceVariations.Equals("")).ToString() }
+                        });
                     }
                     break;
                 case 3: // Predicted RT vs. Observed RT
@@ -801,44 +858,45 @@ namespace GuiFunctions
                     SSRCalc3 sSRCalc3 = new SSRCalc3("A100", SSRCalc3.Column.A100);
                     foreach (var psm in allSpectralMatches)
                     {
+                        double predicted = sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null));
                         if (psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
                         {
-                            xy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)),
-                            (double)psm.RetentionTime, psm.FullSequence));
+                            xy.Add(new Tuple<double, double, string>(predicted, (double)psm.RetentionTime, psm.FullSequence));
                         }
                         else
                         {
-                            variantxy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)),
-                            (double)psm.RetentionTime, psm.FullSequence));
+                            variantxy.Add(new Tuple<double, double, string>(predicted, (double)psm.RetentionTime, psm.FullSequence));
                         }
+
+                        PlotData.Add(new Dictionary<string, string>
+                        {
+                            { "Retention Time", psm.RetentionTime.ToString(CultureInfo.InvariantCulture) },
+                            { "Predicted Hydrophobicity", predicted.ToString(CultureInfo.InvariantCulture) },
+                            { "Full Sequence", psm.FullSequence },
+                            { "Is Variant", (psm.IdentifiedSequenceVariations != null && !psm.IdentifiedSequenceVariations.Equals("")).ToString() }
+                        });
                     }
                     break;
             }
             if (xy.Count != 0)
             {
-                // plot each peptide
                 IOrderedEnumerable<Tuple<double, double, string>> sorted = xy.OrderBy(x => x.Item1);
                 foreach (var val in sorted)
                 {
                     series.Points.Add(new ScatterPoint(val.Item2, val.Item1, tag: val.Item3));
                 }
                 privateModel.Series.Add(series);
-
-                // add series displayed in legend, the real series will show up with a tiny dot for the symbol
                 privateModel.Series.Add(new ScatterSeries { Title = "non-variant PSMs", MarkerFill = OxyColors.Blue });
             }
 
             if (variantxy.Count != 0)
             {
-                // plot each variant peptide
                 IOrderedEnumerable<Tuple<double, double, string>> variantSorted = variantxy.OrderBy(x => x.Item1);
                 foreach (var val in variantSorted)
                 {
                     variantSeries.Points.Add(new ScatterPoint(val.Item2, val.Item1, tag: val.Item3));
                 }
                 privateModel.Series.Add(variantSeries);
-
-                // add series displayed in legend, the real series will show up with a tiny dot for the symbol
                 privateModel.Series.Add(new ScatterSeries { Title = "variant PSMs", MarkerFill = OxyColors.DarkRed });
             }
             privateModel.Axes.Add(new LinearAxis { Title = xAxisTitle, Position = AxisPosition.Bottom });
@@ -944,6 +1002,17 @@ namespace GuiFunctions
                 this.bin = bin;
                 this.group = group;
             }
+        }
+
+        /// <summary>
+        /// Orders strings numerically if all values are numeric, otherwise alphabetically.
+        /// </summary>
+        private static IOrderedEnumerable<string> OrderByNaturalKey(IEnumerable<string> keys)
+        {
+            bool allNumeric = keys.All(k => double.TryParse(k, NumberStyles.Any, CultureInfo.InvariantCulture, out _));
+            return allNumeric
+                ? keys.OrderBy(k => double.Parse(k, CultureInfo.InvariantCulture))
+                : keys.OrderBy(k => k);
         }
     }
 }

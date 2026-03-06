@@ -234,5 +234,5 @@ _Pvt_Extensions
 
 # Macintosh files
 **/.DS_Store
-/.opencode/*
+/.opencode/
 /AGENTS.md
