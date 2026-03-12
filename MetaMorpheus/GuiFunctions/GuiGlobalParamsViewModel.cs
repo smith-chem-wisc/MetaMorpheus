@@ -105,12 +105,6 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         set { _current.AskAboutArgCParams = value; OnPropertyChanged(nameof(AskAboutArgCParams)); }
     }
 
-    public bool AskAboutSpectralRecoveryParams
-    {
-        get => _current.AskAboutSpectralRecoveryParams;
-        set { _current.AskAboutSpectralRecoveryParams = value; OnPropertyChanged(nameof(AskAboutSpectralRecoveryParams)); }
-    }
-
     public bool AskAboutModeSwitch
     {
         get => _current.AskAboutModeSwitch;
@@ -157,12 +151,6 @@ public class GuiGlobalParamsViewModel : BaseViewModel
     {
         get => _current.UseArgCParams;
         set { _current.UseArgCParams = value; OnPropertyChanged(nameof(UseArgCParams)); }
-    }
-
-    public bool UseSpectralRecoveryParams
-    {
-        get => _current.UseSpectralRecoveryParams;
-        set { _current.UseSpectralRecoveryParams = value; OnPropertyChanged(nameof(UseSpectralRecoveryParams)); }
     }
 
     public bool OverwriteOutputDirectory

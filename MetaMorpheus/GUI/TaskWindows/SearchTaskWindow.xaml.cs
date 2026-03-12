@@ -294,12 +294,6 @@ namespace MetaMorpheusGUI
             CheckBoxUseSharedPeptidesForQuant.IsChecked = task.SearchParameters.UseSharedPeptidesForLFQ;
             CheckBoxMultiplex.IsChecked = task.SearchParameters.DoMultiplexQuantification;
             MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId ?? _defaultMultiplexType;
-            // If Spectral Recovery is enabled
-            if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
-            {
-                CheckBoxLFQwSpectralRecovery.IsChecked = task.SearchParameters.DoSpectralRecovery;
-            }
-            
             PeakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
             MbrFdrThresholdTextBox.Text = task.SearchParameters.MbrFdrThreshold.ToString(CultureInfo.InvariantCulture);
@@ -679,7 +673,6 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoLabelFreeQuantification = !CheckBoxNoQuant.IsChecked.Value;
             TheTask.SearchParameters.UseSharedPeptidesForLFQ = CheckBoxUseSharedPeptidesForQuant.IsChecked.Value;
-            TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
             TheTask.SearchParameters.DoMultiplexQuantification = CheckBoxMultiplex.IsChecked.Value;
             TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
@@ -1035,18 +1028,6 @@ namespace MetaMorpheusGUI
             {
                 NTerminalIons.IsChecked = true;
                 CTerminalIons.IsChecked = true;
-            }
-        }
-
-        private void SpectralRecoveryUpdate(object sender, RoutedEventArgs e)
-        {
-            if (CheckBoxLFQwSpectralRecovery.IsChecked.Value)
-            {
-                if (UpdateGUISettings.UseSpectralRecoveryMandatorySettings())
-                {
-                    CheckBoxMatchBetweenRuns.IsChecked = true;
-                    WriteSpectralLibraryCheckBox.IsChecked = true;
-                }
             }
         }
 

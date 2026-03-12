@@ -11,6 +11,9 @@ using Omics.Modifications;
 using Easy.Common.Extensions;
 using EngineLayer.SpectrumMatch;
 using Readers;
+using EngineLayer.FdrAnalysis;
+using System.Linq;
+using System.Reflection;
 
 namespace Test
 {
@@ -101,6 +104,418 @@ namespace Test
             ppmErrorString = myPsmStringSplit[ppmErrorIndex];
 
             Assert.That(ppmErrorString, Is.EqualTo("0"));
+        }
+
+        /// <summary>
+        /// Test Case 1: Verifies that when peptide is null, all output fields are empty strings
+        /// </summary>
+        [Test]
+        public static void TestAddMatchScoreData_PeptideNull()
+        {
+            var dict = new Dictionary<string, string>();
+            PsmTsvWriter.AddMatchScoreData(dict, null, writePeptideLevelFdr: false);
+            
+            Assert.That(dict[SpectrumMatchFromTsvHeader.SpectralAngle], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.LocalizedScores], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.ImprovementPossible], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeTarget], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeDecoy], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.QValue], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeTargetNotch], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeDecoyNotch], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.QValueNotch], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.PEP], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.PEP_QValue], Is.EqualTo(" "));
+        }
+
+        /// <summary>
+        /// Test Case 2: Tests localized scores handling when null
+        /// </summary>
+        [Test]
+        public static void TestAddMatchScoreData_LocalizedScoresNull()
+        {
+            var protein = new Protein("PEPTIDESEQUENCE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+            psm.LocalizedScores = null;
+            
+            var dict = new Dictionary<string, string>();
+            PsmTsvWriter.AddMatchScoreData(dict, psm, writePeptideLevelFdr: false);
+            
+            Assert.That(dict[SpectrumMatchFromTsvHeader.LocalizedScores], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.ImprovementPossible], Is.EqualTo(" "));
+        }
+
+        /// <summary>
+        /// Test Case 3: Tests localized scores calculation when present
+        /// </summary>
+        [Test]
+        public static void TestAddMatchScoreData_LocalizedScoresPresent()
+        {
+            var protein = new Protein("PEPTIDESEQUENCE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+            psm.LocalizedScores = new List<double> { 8.5, 9.0, 10.5 };
+            
+            var dict = new Dictionary<string, string>();
+            PsmTsvWriter.AddMatchScoreData(dict, psm, writePeptideLevelFdr: false);
+            
+            Assert.That(dict[SpectrumMatchFromTsvHeader.LocalizedScores], Is.Not.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.ImprovementPossible], Is.EqualTo("0.500"));
+        }
+
+        /// <summary>
+        /// Test Case 4: Verifies FDR fields are empty when FdrInfo is null
+        /// </summary>
+        [Test]
+        public static void TestAddMatchScoreData_FdrInfoNull()
+        {
+            var protein = new Protein("PEPTIDESEQUENCE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+            psm.PsmFdrInfo = null;
+            psm.PeptideFdrInfo = null;
+            
+            var dict = new Dictionary<string, string>();
+            PsmTsvWriter.AddMatchScoreData(dict, psm, writePeptideLevelFdr: false);
+            
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeTarget], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeDecoy], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.QValue], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeTargetNotch], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeDecoyNotch], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.QValueNotch], Is.EqualTo(" "));
+        }
+
+        /// <summary>
+        /// Test Case 5: Notch ambiguous with QValueNotch > 1, PSM level FDR, min == null
+        /// Tests the case where BestMatchingBioPolymersWithSetMods returns null from MinBy
+        /// </summary>
+        [Test]
+        public static void TestAddMatchScoreData_NotchAmbiguous_PsmLevel_MinNull()
+        {
+            var protein = new Protein("PEPTIDESEQUENCE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+            psm.PsmFdrInfo = new FdrInfo
+            {
+                CumulativeTarget = 100,
+                CumulativeDecoy = 5,
+                QValue = 0.05,
+                QValueNotch = 2.0,
+                CumulativeTargetNotch = 0,
+                CumulativeDecoyNotch = 0,
+                PEP = 0.01,
+                PEP_QValue = 0.02
+            };
+            psm.ResolveAllAmbiguities();
+
+            // Use reflection to set _BestMatchingBioPolymersWithSetMods to an empty collection
+            var fieldInfo = typeof(SpectralMatch).GetField("_BestMatchingBioPolymersWithSetMods",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            fieldInfo.SetValue(psm, new List<SpectralMatchHypothesis>());
+            var notchFieldInfo = typeof(SpectralMatch).GetProperty("Notch",
+                BindingFlags.Public | BindingFlags.Instance);
+            notchFieldInfo.SetValue(psm, null);
+
+            var dict = new Dictionary<string, string>();
+            PsmTsvWriter.AddMatchScoreData(dict, psm, writePeptideLevelFdr: false);
+
+            // When min == null (no BestMatchingBioPolymersWithSetMods), values stay as " "
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeTargetNotch], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeDecoyNotch], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.QValueNotch], Is.EqualTo(" "));
+        }
+
+        /// <summary>
+        /// Test Case 6: Notch ambiguous with QValueNotch > 1, PSM level FDR, min != null but QValueNotch.HasValue == false
+        /// Tests when hypothesis exists but QValueNotch is null
+        /// </summary>
+        [Test]
+        public static void TestAddMatchScoreData_NotchAmbiguous_PsmLevel_QValueNotchNull()
+        {
+            var protein = new Protein("PEPTIDESEQUENCE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var peptide2 = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+            psm.AddOrReplace(peptide2, 10, 1, true, mfi);
+            
+            psm.PsmFdrInfo = new FdrInfo
+            {
+                CumulativeTarget = 100,
+                CumulativeDecoy = 5,
+                QValue = 0.05,
+                QValueNotch = 2.0,
+                PEP = 0.01,
+                PEP_QValue = 0.02
+            };
+            
+            // Don't set QValueNotch on hypotheses - they should be null
+            psm.ResolveAllAmbiguities();
+            
+            var dict = new Dictionary<string, string>();
+            PsmTsvWriter.AddMatchScoreData(dict, psm, writePeptideLevelFdr: false);
+            
+            // When min.QValueNotch.HasValue == false, values stay as " "
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeTargetNotch], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeDecoyNotch], Is.EqualTo(" "));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.QValueNotch], Is.EqualTo(" "));
+        }
+
+        /// <summary>
+        /// Test Case 7: Notch ambiguous with QValueNotch > 1, PSM level FDR, successful resolution
+        /// Tests when min != null and QValueNotch.HasValue == true
+        /// </summary>
+        [Test]
+        public static void TestAddMatchScoreData_NotchAmbiguous_PsmLevel_SuccessfulResolution()
+        {
+            var protein = new Protein("PEPTIDESEQUENCE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var peptide2 = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+            psm.AddOrReplace(peptide2, 10, 1, true, mfi);
+            
+            psm.PsmFdrInfo = new FdrInfo
+            {
+                CumulativeTarget = 100,
+                CumulativeDecoy = 5,
+                QValue = 0.05,
+                QValueNotch = 2.0,
+                PEP = 0.01,
+                PEP_QValue = 0.02
+            };
+            
+            // Set QValueNotch on hypotheses
+            foreach (var hypothesis in psm.BestMatchingBioPolymersWithSetMods)
+            {
+                hypothesis.QValueNotch = 0.03;
+                hypothesis.CumulativeTargetNotch = 95;
+                hypothesis.CumulativeDecoyNotch = 3;
+            }
+            
+            var dict = new Dictionary<string, string>();
+            PsmTsvWriter.AddMatchScoreData(dict, psm, writePeptideLevelFdr: false);
+
+            // Values should be populated from the hypothesis with minimum QValueNotch
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeTargetNotch], Is.EqualTo("95.000000"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeDecoyNotch], Is.EqualTo("3.000000"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.QValueNotch], Is.EqualTo("0.030000"));
+        }
+
+        /// <summary>
+        /// Test Case 8: Notch ambiguous with QValueNotch > 1, PEPTIDE level FDR, successful resolution
+        /// Tests when min != null and PeptideQValueNotch.HasValue == true
+        /// </summary>
+        [Test]
+        public static void TestAddMatchScoreData_NotchAmbiguous_PeptideLevel_SuccessfulResolution()
+        {
+            var protein = new Protein("PEPTIDESEQUENCE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var peptide2 = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+            psm.AddOrReplace(peptide2, 10, 1, true, mfi);
+            
+            psm.PeptideFdrInfo = new FdrInfo
+            {
+                CumulativeTarget = 80,
+                CumulativeDecoy = 4,
+                QValue = 0.04,
+                PEP = 0.015,
+                PEP_QValue = 0.025
+            };
+            
+            // Set PeptideQValueNotch on hypotheses
+            foreach (var hypothesis in psm.BestMatchingBioPolymersWithSetMods)
+            {
+                hypothesis.PeptideQValueNotch = 0.025;
+                hypothesis.PeptideCumulativeTargetNotch = 75;
+                hypothesis.PeptideCumulativeDecoyNotch = 2;
+            }
+            
+            var dict = new Dictionary<string, string>();
+            PsmTsvWriter.AddMatchScoreData(dict, psm, writePeptideLevelFdr: true);
+            
+            // Values should be populated from the hypothesis with minimum PeptideQValueNotch
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeTargetNotch], Is.EqualTo("75.000000"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeDecoyNotch], Is.EqualTo("2.000000"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.QValueNotch], Is.EqualTo("0.025000"));
+        }
+
+        /// <summary>
+        /// Test Case 9: Tests the else branch when Notch is NOT ambiguous
+        /// </summary>
+        [Test]
+        public static void TestAddMatchScoreData_NotchNotAmbiguous()
+        {
+            var protein = new Protein("PEPTIDESEQUENCE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+            psm.PsmFdrInfo = new FdrInfo
+            {
+                CumulativeTarget = 100,
+                CumulativeDecoy = 5,
+                QValue = 0.05,
+                QValueNotch = 0.06,
+                CumulativeTargetNotch = 98,
+                CumulativeDecoyNotch = 4,
+                PEP = 0.01,
+                PEP_QValue = 0.02
+            };
+            psm.ResolveAllAmbiguities();
+            
+            var dict = new Dictionary<string, string>();
+            PsmTsvWriter.AddMatchScoreData(dict, psm, writePeptideLevelFdr: false);
+            
+            // Values should come directly from FdrInfo
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeTarget], Is.EqualTo("100"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeDecoy], Is.EqualTo("5"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.QValue], Is.EqualTo("0.050000"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeTargetNotch], Is.EqualTo("98.000000"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.CumulativeDecoyNotch], Is.EqualTo("4.000000"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.QValueNotch], Is.EqualTo("0.060000"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.PEP], Is.EqualTo("0.01"));
+            Assert.That(dict[SpectrumMatchFromTsvHeader.PEP_QValue], Is.EqualTo("0.02"));
+        }
+
+        /// <summary>
+        /// Test Case 10: Complete end-to-end integration test with ToString method
+        /// Tests notch ambiguity resolution through the full ToString pipeline
+        /// </summary>
+        [Test]
+        public static void TestAddMatchScoreData_ToStringIntegration_NotchAmbiguity()
+        {
+            var protein = new Protein("PEPTIDESEQUENCE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var peptide2 = new PeptideWithSetModifications(protein, digestionParams, 1, 7, 
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+            psm.AddOrReplace(peptide2, 10, 1, true, mfi);
+            psm.LocalizedScores = new List<double> { 8.0, 9.5 };
+            
+            psm.PsmFdrInfo = new FdrInfo
+            {
+                CumulativeTarget = 100,
+                CumulativeDecoy = 5,
+                QValue = 0.05,
+                QValueNotch = 2.0,
+                PEP = 0.01,
+                PEP_QValue = 0.02
+            };
+            
+            foreach (var hypothesis in psm.BestMatchingBioPolymersWithSetMods)
+            {
+                hypothesis.QValueNotch = 0.04;
+                hypothesis.CumulativeTargetNotch = 90;
+                hypothesis.CumulativeDecoyNotch = 3;
+            }
+            
+            psm.ResolveAllAmbiguities();
+            
+            var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+            string psmString = psm.ToString(new Dictionary<string, int>(), writePeptideLevelFdr: false);
+            string[] psmStringSplit = psmString.Split('\t');
+            
+            var cumulativeTargetNotchIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.CumulativeTargetNotch);
+            var qValueNotchIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.QValueNotch);
+            var localizedScoresIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.LocalizedScores);
+            
+            Assert.That(psmStringSplit[cumulativeTargetNotchIndex], Is.EqualTo("90.000000"));
+            Assert.That(psmStringSplit[qValueNotchIndex], Is.EqualTo("0.040000"));
+            Assert.That(psmStringSplit[localizedScoresIndex], Contains.Substring("8.000"));
+            Assert.That(psmStringSplit[localizedScoresIndex], Contains.Substring("9.500"));
         }
     }
 }

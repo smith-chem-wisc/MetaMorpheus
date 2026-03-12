@@ -3,7 +3,6 @@ using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.Util;
-using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;

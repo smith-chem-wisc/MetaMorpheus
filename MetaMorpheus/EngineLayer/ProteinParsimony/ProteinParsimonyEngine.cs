@@ -24,18 +24,17 @@ namespace EngineLayer
 
         private readonly List<SpectralMatch> _fdrFilteredPsms;
         private readonly List<SpectralMatch> _allPsms;
-        private const double FdrCutoffForParsimony = 0.01;
 
         /// <summary>
         /// User-selectable option that treats differently-modified forms of a peptide as different peptides for the purposes of parsimony
         /// </summary>
         private readonly bool _treatModPeptidesAsDifferentPeptides;
 
-        public ProteinParsimonyEngine(List<SpectralMatch> allPsms, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public ProteinParsimonyEngine(FilteredPsms filteredPsmsForParsimony, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             _treatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
 
-            if (!allPsms.Any())
+            if (!filteredPsmsForParsimony.FilteredPsmsList.Any())
             {
                 _fdrFilteredPsms = new List<SpectralMatch>();
             }
@@ -44,11 +43,11 @@ namespace EngineLayer
             // KEEP contaminants for use in parsimony!
             if (modPeptidesAreDifferent)
             {
-                _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.PsmFdrInfo.QValue <= FdrCutoffForParsimony && p.PsmFdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                _fdrFilteredPsms = filteredPsmsForParsimony.FilteredPsmsList.Where(p => p.FullSequence != null).ToList();
             }
             else
             {
-                _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.PsmFdrInfo.QValue <= FdrCutoffForParsimony && p.PsmFdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                _fdrFilteredPsms = filteredPsmsForParsimony.FilteredPsmsList.Where(p => p.BaseSequence != null).ToList();
             }
 
             // peptides to use in parsimony = peptides observed in high-confidence PSMs (including decoys)
@@ -63,7 +62,7 @@ namespace EngineLayer
 
             // we're storing all PSMs (not just FDR-filtered ones) here because we will remove some protein associations
             // from low-confidence PSMs if they can be explained by a parsimonious protein
-            _allPsms = allPsms;
+            _allPsms = filteredPsmsForParsimony.FilteredPsmsList;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()

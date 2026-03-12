@@ -199,6 +199,21 @@
       <Component Id="src_MzLibUtil.dll" Guid="9475fcb2-63bd-490c-8441-17a1760869ac">
         <File Id="src_MzLibUtil.dll" Name="MzLibUtil.dll" Source="$(var.GUI_TargetDir)MzLibUtil.dll" />
       </Component>
+	  <Component Id="src_Chromatography.dll" Guid="e6316c7b-2cf7-4d42-9472-de4ac10fe988">
+		<File Id="src_Chromatography.dll" Name="Chromatography.dll" Source="$(var.GUI_TargetDir)Chromatography.dll" />
+	  </Component>			
+	  <Component Id="src_Google.Protobuf.dll" Guid="432636b6-b59d-4ac6-8095-8bb6d5f0372d">
+		<File Id="src_Google.Protobuf.dll" Name="Google.Protobuf.dll" Source="$(var.GUI_TargetDir)Google.Protobuf.dll" />
+	  </Component>			
+	  <Component Id="src_ICSharpCode.SharpZipLib.dll" Guid="cc1e1397-c950-4f18-ac97-951f5d2c4678">
+		<File Id="src_ICSharpCode.SharpZipLib.dll" Name="ICSharpCode.SharpZipLib.dll" Source="$(var.GUI_TargetDir)ICSharpCode.SharpZipLib.dll" />
+	  </Component>
+	  <Component Id="src_SkiaSharp.dll" Guid="fafc53a6-83b1-4823-addc-64f1cb7ca21c">
+		<File Id="src_SkiaSharp.dll" Name="SkiaSharp.dll" Source="$(var.GUI_TargetDir)SkiaSharp.dll" />
+	  </Component>	
+	  <Component Id="src_TorchSharp.dll" Guid="eaaac4c4-8912-4914-acac-127ab77216d7">
+		<File Id="src_TorchSharp.dll" Name="TorchSharp.dll" Source="$(var.GUI_TargetDir)TorchSharp.dll" />
+	  </Component>	
       <Component Id="src_NetSerializer.dll" Guid="9eddc340-0dcb-415a-85f4-322f0eaeee4b">
         <File Id="src_NetSerializer.dll" Name="NetSerializer.dll" Source="$(var.GUI_TargetDir)NetSerializer.dll" />
       </Component>

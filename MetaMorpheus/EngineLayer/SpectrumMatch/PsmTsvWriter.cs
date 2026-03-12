@@ -350,28 +350,33 @@ namespace EngineLayer
             string PEP = " ";
             string PEP_Qvalue = " ";
 
-            if (peptide != null && peptide.GetFdrInfo(writePeptideLevelFdr) != null)
+            var fdrInfo = peptide?.GetFdrInfo(writePeptideLevelFdr) ?? null;
+            if (peptide != null && fdrInfo != null)
             {
-                cumulativeTarget = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeTarget.ToString(CultureInfo.InvariantCulture);
-                cumulativeDecoy = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeDecoy.ToString(CultureInfo.InvariantCulture);
-                qValue = peptide.GetFdrInfo(writePeptideLevelFdr).QValue.ToString("F6", CultureInfo.InvariantCulture);
-                PEP = peptide.GetFdrInfo(writePeptideLevelFdr).PEP.ToString();
-                PEP_Qvalue = peptide.GetFdrInfo(writePeptideLevelFdr).PEP_QValue.ToString();
+                cumulativeTarget = fdrInfo.CumulativeTarget.ToString(CultureInfo.InvariantCulture);
+                cumulativeDecoy = fdrInfo.CumulativeDecoy.ToString(CultureInfo.InvariantCulture);
+                qValue = fdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture);
+                PEP = fdrInfo.PEP.ToString();
+                PEP_Qvalue = fdrInfo.PEP_QValue.ToString();
 
                 // ambiguous notch, has never been resolved by our disambiguation, so take the best of the notches for the fdr columns. 
-                if (peptide.Notch == null && peptide.GetFdrInfo(writePeptideLevelFdr).QValueNotch > 1)
+                if (peptide.Notch == null && fdrInfo.QValueNotch > 1)
                 {
                     var min = peptide.BestMatchingBioPolymersWithSetMods.MinBy(b => writePeptideLevelFdr ? b.PeptideQValueNotch : b.QValueNotch);
 
-                    cumulativeTargetNotch = (writePeptideLevelFdr ? min.PeptideCumulativeTargetNotch : min.CumulativeTargetNotch)!.Value.ToString(CultureInfo.InvariantCulture);
-                    cumulativeDecoyNotch = (writePeptideLevelFdr ? min.PeptideCumulativeDecoyNotch : min.CumulativeDecoyNotch)!.Value.ToString(CultureInfo.InvariantCulture);
-                    qValueNotch = (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
+                    if (min != null && (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch).HasValue)
+                    {
+                        cumulativeTargetNotch = (writePeptideLevelFdr ? min.PeptideCumulativeTargetNotch : min.CumulativeTargetNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
+                        cumulativeDecoyNotch = (writePeptideLevelFdr ? min.PeptideCumulativeDecoyNotch : min.CumulativeDecoyNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
+                        qValueNotch = (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
+                    }
+                    // else: leave values as " " (already initialized at line 336-338)
                 }
                 else
                 {
-                    cumulativeTargetNotch = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeTargetNotch.ToString("F6", CultureInfo.InvariantCulture);
-                    cumulativeDecoyNotch = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeDecoyNotch.ToString("F6", CultureInfo.InvariantCulture);
-                    qValueNotch = peptide.GetFdrInfo(writePeptideLevelFdr).QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
+                    cumulativeTargetNotch = fdrInfo.CumulativeTargetNotch.ToString("F6", CultureInfo.InvariantCulture);
+                    cumulativeDecoyNotch = fdrInfo.CumulativeDecoyNotch.ToString("F6", CultureInfo.InvariantCulture);
+                    qValueNotch = fdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
                 }
             }
 

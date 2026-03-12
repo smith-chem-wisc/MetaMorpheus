@@ -6,12 +6,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Omics.Modifications;
-using Omics;
 using Omics.Digestion;
 using EngineLayer.SpectrumMatch;
 using MzLibUtil.PositionFrequencyAnalysis;
 using Easy.Common.Extensions;
 using MzLibUtil;
+using MassSpectrometry;
 
 namespace EngineLayer
 {
