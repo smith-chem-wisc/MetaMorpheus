@@ -42,6 +42,16 @@ namespace GuiFunctions.MetaDraw
             }
         }
 
+        public bool AllowAmbiguousGroups
+        {
+            get => _current.AllowAmbiguousGroups;
+            set
+            {
+                _current.AllowAmbiguousGroups = value;
+                OnPropertyChanged(nameof(AllowAmbiguousGroups));
+            }
+        }
+
         public double MinRelativeCutoff
         {
             get => _current.MinRelativeCutoff;
@@ -108,6 +118,7 @@ namespace GuiFunctions.MetaDraw
             OnPropertyChanged(nameof(MaxRelativeCutoff));
             OnPropertyChanged(nameof(NormalizeHistogramToFile));
             OnPropertyChanged(nameof(DisplayFilteredOnly));
+            OnPropertyChanged(nameof(AllowAmbiguousGroups));
         }
     }
 }

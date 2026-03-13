@@ -48,8 +48,8 @@ namespace GuiFunctions
 
         public PlotModel Model => privateModel;
 
-        public PlotModelStat(string plotName, ObservableCollection<SpectrumMatchFromTsv> sms, 
-            Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> smsBySourceFile, 
+        public PlotModelStat(string plotName, ObservableCollection<SpectrumMatchFromTsv> sms,
+            Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> smsBySourceFile,
             PlotModelStatParameters parameters = null)
         {
             privateModel = new PlotModel { Title = plotName, DefaultFontSize = 14 };
@@ -85,7 +85,7 @@ namespace GuiFunctions
                 case "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)":
                     histogramPlot(1);
                     break;
-                case "Histogram of Fragment PPM Errors": 
+                case "Histogram of Fragment PPM Errors":
                     histogramPlot(2);
                     break;
                 case "Histogram of Precursor Charges":
@@ -126,17 +126,11 @@ namespace GuiFunctions
                     break;
             }
         }
+
         private void histogramPlot(int plotType)
         {
             privateModel.LegendTitle = "Source file(s)";
-            string yAxisTitle = "Count";
-            string xAxisTitle = "";
-            double binSize = -1;
-            double labelAngle = 0;
-            SortedList<double, double> numCategory = new SortedList<double, double>();
-            Dictionary<string, IEnumerable<double>> numbersBySourceFile = new Dictionary<string, IEnumerable<double>>();
-            Dictionary<string, Dictionary<string, int>> dictsBySourceFile = new Dictionary<string, Dictionary<string, int>>();
-            
+
             bool isGroupingEnabled = parameters.GroupingProperty != "None";
             Dictionary<string, Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>> groupedPsmsBySourceFile = null;
 
@@ -144,6 +138,54 @@ namespace GuiFunctions
             {
                 groupedPsmsBySourceFile = GroupPsmsByProperty(psmsBySourceFile, parameters.GroupingProperty);
             }
+
+            // Gather histogram data from PSMs
+            var histData = GetHistogramData(plotType);
+            string xAxisTitle = histData.XAxisTitle;
+            string yAxisTitle = histData.YAxisTitle;
+            double binSize = histData.BinSize;
+            double labelAngle = histData.LabelAngle;
+            var numbersBySourceFile = histData.NumbersBySourceFile;
+            var dictsBySourceFile = histData.DictsBySourceFile;
+
+            // Build series and categories
+            string[] category;
+            int[] totalCounts;
+            int categoriesPerGroup = 0;
+            List<string> allGroupKeys = null;
+            bool isCategoryHistogram = plotType == 5 || plotType == 10 || plotType == 11;
+
+            if (isCategoryHistogram)
+            {
+                (category, totalCounts, categoriesPerGroup, allGroupKeys) = BuildCategoryHistogramSeries(
+                    plotType, dictsBySourceFile, groupedPsmsBySourceFile, isGroupingEnabled);
+            }
+            else
+            {
+                (category, totalCounts, categoriesPerGroup, allGroupKeys) = BuildNumericalHistogramSeries(
+                    plotType, binSize, dictsBySourceFile, numbersBySourceFile, groupedPsmsBySourceFile, isGroupingEnabled);
+            }
+
+            // Configure axes
+            ConfigureHistogramAxes(xAxisTitle, yAxisTitle, labelAngle, category,
+                isGroupingEnabled, allGroupKeys, categoriesPerGroup);
+        }
+
+        #region Histogram Data Gathering
+
+        private record HistogramRawData(
+            string XAxisTitle, string YAxisTitle, double BinSize, double LabelAngle,
+            Dictionary<string, IEnumerable<double>> NumbersBySourceFile,
+            Dictionary<string, Dictionary<string, int>> DictsBySourceFile);
+
+        private HistogramRawData GetHistogramData(int plotType)
+        {
+            string xAxisTitle = "";
+            string yAxisTitle = "Count";
+            double binSize = -1;
+            double labelAngle = 0;
+            var numbersBySourceFile = new Dictionary<string, IEnumerable<double>>();
+            var dictsBySourceFile = new Dictionary<string, Dictionary<string, int>>();
 
             switch (plotType)
             {
@@ -231,7 +273,7 @@ namespace GuiFunctions
                         foreach (var psm in psmsBySourceFile[key].Where(p => p is not OsmFromTsv))
                         {
                             values.Add(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split("|")[0], null)));
-                           
+
                         }
                         numbersBySourceFile.Add(key, values);
                         var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
@@ -258,7 +300,7 @@ namespace GuiFunctions
                     foreach (var fileName in psmsBySourceFile.Keys)
                     {
                         var allMatchedIons = psmsBySourceFile[fileName].SelectMany(p => p.MatchedIons).ToList();
-                        
+
                         var result = allMatchedIons
                             .GroupBy(p => p.NeutralTheoreticalProduct is CustomMProduct cmp ? cmp.Annotation : p.NeutralTheoreticalProduct.ProductType.ToString())
                             .ToDictionary(p => p.Key.ToString(), p => p.Count());
@@ -274,7 +316,6 @@ namespace GuiFunctions
                     foreach (var fileName in psmsBySourceFile.Keys)
                     {
                         var allMatchedIons = psmsBySourceFile[fileName].SelectMany(p => p.MatchedIons).ToList();
-                        
                         var result = allMatchedIons
                             .GroupBy(p => p.NeutralTheoreticalProduct is CustomMProduct cmp ? cmp.Annotation : p.NeutralTheoreticalProduct.ProductType.ToString())
                             .ToDictionary(p => p.Key.ToString(), p => (int)p.Sum(m => m.Intensity));
@@ -282,13 +323,11 @@ namespace GuiFunctions
                     }
                     if (dictsBySourceFile.Sum(p => p.Value.Keys.Count) >= 40)
                         labelAngle = -50;
-
                     break;
                 case 12: // Histogram of Ids by Retention Time
                     xAxisTitle = "Retention Time";
                     binSize = 1;
                     labelAngle = 0;
-
                     foreach (var fileName in psmsBySourceFile.Keys)
                     {
                         var result = psmsBySourceFile[fileName]
@@ -299,405 +338,390 @@ namespace GuiFunctions
                     break;
             }
 
-            String[] category;
-            int[] totalCounts;
-            int categoriesPerGroup = 0; // track for group annotation positioning
-            List<string> allGroupKeys = null;
-            
-            if (plotType == 5 || plotType == 10 || plotType == 11)  // category histogram
+            return new HistogramRawData(xAxisTitle, yAxisTitle, binSize, labelAngle, numbersBySourceFile, dictsBySourceFile);
+        }
+
+        #endregion
+
+        #region Category Histogram Series
+
+        private (string[] category, int[] totalCounts, int categoriesPerGroup, List<string> allGroupKeys)
+            BuildCategoryHistogramSeries(int plotType,
+                Dictionary<string, Dictionary<string, int>> dictsBySourceFile,
+                Dictionary<string, Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>> groupedPsmsBySourceFile,
+                bool isGroupingEnabled)
+        {
+            IEnumerable<string> allCategories = dictsBySourceFile.Values.Select(p => p.Keys).SelectMany(p => p);
+            Dictionary<string, int> categoryIDs = new Dictionary<string, int>();
+            int counter = 0;
+            foreach (string s in allCategories)
             {
-                IEnumerable<string> allCategories = dictsBySourceFile.Values.Select(p => p.Keys).SelectMany(p => p);
-                Dictionary<string, int> categoryIDs = new Dictionary<string, int>();
-                int counter = 0;
-                foreach (string s in allCategories)
+                if (!categoryIDs.ContainsKey(s))
+                    categoryIDs.Add(s, counter++);
+            }
+            var totalCounts = new int[counter];
+
+            foreach (string cat in categoryIDs.Keys)
+            {
+                foreach (Dictionary<string, int> dict in dictsBySourceFile.Values)
+                    totalCounts[categoryIDs[cat]] += dict.ContainsKey(cat) ? dict[cat] : 0;
+            }
+
+            int maxCount = totalCounts.Max();
+            double minThreshold = maxCount * (parameters.MinRelativeCutoff / 100.0);
+            double maxThreshold = maxCount * (parameters.MaxRelativeCutoff / 100.0);
+
+            var filteredCategoryIDs = new Dictionary<string, int>();
+            var filteredCategory = new List<string>();
+            var filteredTotalCounts = new List<int>();
+            int newIndex = 0;
+
+            foreach (var cat in categoryIDs.Keys.OrderBy(k => k))
+            {
+                int oldId = categoryIDs[cat];
+                if (totalCounts[oldId] >= minThreshold && totalCounts[oldId] <= maxThreshold)
                 {
-                    if (!categoryIDs.ContainsKey(s))
+                    filteredCategoryIDs[cat] = newIndex;
+                    filteredCategory.Add(cat);
+                    filteredTotalCounts.Add(totalCounts[oldId]);
+                    newIndex++;
+                }
+            }
+
+            var category = filteredCategory.ToArray();
+            var filteredCounts = filteredTotalCounts.ToArray();
+            int categoriesPerGroup = filteredCategoryIDs.Count;
+            List<string> allGroupKeys = null;
+
+            if (isGroupingEnabled)
+            {
+                allGroupKeys = OrderByNaturalKey(
+                    groupedPsmsBySourceFile.Values
+                        .SelectMany(d => d.Keys)
+                        .Distinct())
+                    .ToList();
+
+                var nestedCategories = new List<string>();
+                var categoryToIndex = new Dictionary<string, int>();
+                int categoryIndex = 0;
+
+                foreach (var groupKey in allGroupKeys)
+                {
+                    foreach (var cat in filteredCategoryIDs.Keys.OrderBy(k => k))
                     {
-                        categoryIDs.Add(s, counter++);
+                        nestedCategories.Add(cat);
+                        categoryToIndex[cat + "|" + groupKey] = categoryIndex++;
                     }
                 }
-                category = new string[counter];
-                totalCounts = new int[counter];
 
-                foreach (string cat in categoryIDs.Keys)
+                foreach (string sourceFile in psmsBySourceFile.Keys)
                 {
-                    foreach (Dictionary<string, int> dict in dictsBySourceFile.Values)
+                    ColumnSeries column = new ColumnSeries
                     {
-                        totalCounts[categoryIDs[cat]] += dict.ContainsKey(cat) ? dict[cat] : 0;
-                    }
-                }
+                        ColumnWidth = 200,
+                        IsStacked = true,
+                        Title = sourceFile,
+                        TrackerFormatString = "Category: {bin}\n{0}: {2}\nGroup: {group}\nTotal: {total}",
+                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                    };
 
-                int maxCount = totalCounts.Max();
-                double minThreshold = maxCount * (parameters.MinRelativeCutoff / 100.0);
-                double maxThreshold = maxCount * (parameters.MaxRelativeCutoff / 100.0);
-
-                var filteredCategoryIDs = new Dictionary<string, int>();
-                var filteredCategory = new List<string>();
-                var filteredTotalCounts = new List<int>();
-                int newIndex = 0;
-
-                foreach (var cat in categoryIDs.Keys.OrderBy(k => k))
-                {
-                    int oldId = categoryIDs[cat];
-                    if (totalCounts[oldId] >= minThreshold && totalCounts[oldId] <= maxThreshold)
+                    foreach (string groupKey in allGroupKeys)
                     {
-                        filteredCategoryIDs[cat] = newIndex;
-                        filteredCategory.Add(cat);
-                        filteredTotalCounts.Add(totalCounts[oldId]);
-                        newIndex++;
-                    }
-                }
-
-                category = filteredCategory.ToArray();
-                totalCounts = filteredTotalCounts.ToArray();
-                categoryIDs = filteredCategoryIDs;
-                categoriesPerGroup = filteredCategoryIDs.Count;
-            
-                if (isGroupingEnabled)
-                {
-                    allGroupKeys = OrderByNaturalKey(
-                        groupedPsmsBySourceFile.Values
-                            .SelectMany(d => d.Keys)
-                            .Distinct())
-                        .ToList();
-
-                    var nestedCategories = new List<string>();
-                    var categoryToIndex = new Dictionary<string, int>();
-                    int categoryIndex = 0;
-
-                    foreach (var groupKey in allGroupKeys)
-                    {
-                        foreach (var cat in filteredCategoryIDs.Keys.OrderBy(k => k))
+                        if (!groupedPsmsBySourceFile[sourceFile].ContainsKey(groupKey))
                         {
-                            nestedCategories.Add(cat);
-                            categoryToIndex[cat + "|" + groupKey] = categoryIndex++;
-                        }
-                    }
-
-                    foreach (string sourceFile in psmsBySourceFile.Keys)
-                    {
-                        ColumnSeries column = new ColumnSeries
-                        {
-                            ColumnWidth = 200,
-                            IsStacked = true,
-                            Title = sourceFile,
-                            TrackerFormatString = "Category: {bin}\n{0}: {2}\nGroup: {group}\nTotal: {total}",
-                            BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
-                        };
-
-                        foreach (string groupKey in allGroupKeys)
-                        {
-                            if (!groupedPsmsBySourceFile[sourceFile].ContainsKey(groupKey))
-                            {
-                                foreach (var cat in filteredCategoryIDs.Keys.OrderBy(k => k))
-                                {
-                                    string lookupKey = cat + "|" + groupKey;
-                                    if (categoryToIndex.ContainsKey(lookupKey))
-                                    {
-                                        column.Items.Add(new HistItem(0, categoryToIndex[lookupKey], cat, totalCounts[filteredCategoryIDs[cat]], groupKey));
-                                    }
-                                }
-                                continue;
-                            }
-
-                            var groupPsms = groupedPsmsBySourceFile[sourceFile][groupKey];
-                            var allMatchedIons = groupPsms.SelectMany(p => p.MatchedIons).ToList();
-
-                            Dictionary<string, int> groupDict;
-                            if (plotType == 5)
-                            {
-                                var psmsWithMods = groupPsms.Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
-                                var mods = psmsWithMods.Select(p => p.ToBioPolymerWithSetMods()).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
-                                var groupedMods = mods.GroupBy(p => p.IdWithMotif).ToList();
-                                groupDict = groupedMods.ToDictionary(p => p.Key, v => v.Count());
-                            }
-                            else if (plotType == 10)
-                            {
-                                groupDict = allMatchedIons
-                                    .GroupBy(p => p.NeutralTheoreticalProduct is CustomMProduct cmp ? cmp.Annotation : p.NeutralTheoreticalProduct.ProductType.ToString())
-                                    .ToDictionary(p => p.Key.ToString(), p => p.Count());
-                            }
-                            else
-                            {
-                                groupDict = allMatchedIons
-                                    .GroupBy(p => p.NeutralTheoreticalProduct is CustomMProduct cmp ? cmp.Annotation : p.NeutralTheoreticalProduct.ProductType.ToString())
-                                    .ToDictionary(p => p.Key.ToString(), p => (int)p.Sum(m => m.Intensity));
-                            }
-
                             foreach (var cat in filteredCategoryIDs.Keys.OrderBy(k => k))
                             {
                                 string lookupKey = cat + "|" + groupKey;
-                                if (!categoryToIndex.ContainsKey(lookupKey))
-                                    continue;
-
-                                double total = 1.0;
-                                if (parameters.NormalizeHistogramToFile)
-                                {
-                                    total = groupDict.Values.Sum();
-                                }
-                                
-                                int catId = filteredCategoryIDs[cat];
-                                double value = groupDict.ContainsKey(cat) ? groupDict[cat] / total : 0;
-                                
-                                if (parameters.UseLogScaleYAxis && value > 0 && value < 0.1)
-                                    value = 0.1;
-                                    
-                                column.Items.Add(new HistItem(value, categoryToIndex[lookupKey], cat, totalCounts[catId], groupKey));
-
-                                PlotData.Add(new Dictionary<string, string>
-                                {
-                                    { "Source File", sourceFile }, { parameters.GroupingProperty, groupKey }, { "Category", cat },
-                                    { "Value", (groupDict.ContainsKey(cat) ? groupDict[cat] : 0).ToString() },
-                                    { "Total", totalCounts[catId].ToString() }
-                                });
+                                if (categoryToIndex.ContainsKey(lookupKey))
+                                    column.Items.Add(new HistItem(0, categoryToIndex[lookupKey], cat, filteredCounts[filteredCategoryIDs[cat]], groupKey));
                             }
+                            continue;
                         }
-                        privateModel.Series.Add(column);
-                    }
 
-                    category = nestedCategories.ToArray();
-                }
-                else
-                {
-                    foreach (string key in dictsBySourceFile.Keys)
-                    {
-                        ColumnSeries column = new ColumnSeries { 
-                            ColumnWidth = 200, 
-                            IsStacked = true, 
-                            Title = key, 
-                            TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}",
-                            BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
-                        };
-                        
-                        foreach (var d in dictsBySourceFile[key])
+                        var groupDict = GetCategoryDictForGroup(plotType, groupedPsmsBySourceFile[sourceFile][groupKey]);
+
+                        foreach (var cat in filteredCategoryIDs.Keys.OrderBy(k => k))
                         {
-                            if (!filteredCategoryIDs.ContainsKey(d.Key))
+                            string lookupKey = cat + "|" + groupKey;
+                            if (!categoryToIndex.ContainsKey(lookupKey))
                                 continue;
 
-                            int id = filteredCategoryIDs[d.Key];
-                            double total = 1.0;
-                            if (parameters.NormalizeHistogramToFile)
-                            {
-                                total = dictsBySourceFile[key].Values.Sum();
-                            }
-                            
-                            double value = d.Value / total;
-                            
-                            if (parameters.UseLogScaleYAxis && value < 0.1)
+                            double total = parameters.NormalizeHistogramToFile ? groupDict.Values.Sum() : 1.0;
+                            int catId = filteredCategoryIDs[cat];
+                            double value = groupDict.ContainsKey(cat) ? groupDict[cat] / total : 0;
+                            if (parameters.UseLogScaleYAxis && value > 0 && value < 0.1)
                                 value = 0.1;
-                                
-                            column.Items.Add(new HistItem(value, id, d.Key, totalCounts[id]));
+
+                            column.Items.Add(new HistItem(value, categoryToIndex[lookupKey], cat, filteredCounts[catId], groupKey));
 
                             PlotData.Add(new Dictionary<string, string>
                             {
-                                { "Source File", key }, { "Category", d.Key },
-                                { "Value", d.Value.ToString() }, { "Total", totalCounts[id].ToString() }
+                                { "Source File", sourceFile }, { parameters.GroupingProperty, groupKey }, { "Category", cat },
+                                { "Value", (groupDict.ContainsKey(cat) ? groupDict[cat] : 0).ToString() },
+                                { "Total", filteredCounts[catId].ToString() }
                             });
                         }
-                        privateModel.Series.Add(column);
                     }
+                    privateModel.Series.Add(column);
+                }
+
+                category = nestedCategories.ToArray();
+            }
+            else
+            {
+                foreach (string key in dictsBySourceFile.Keys)
+                {
+                    ColumnSeries column = new ColumnSeries
+                    {
+                        ColumnWidth = 200,
+                        IsStacked = true,
+                        Title = key,
+                        TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}",
+                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                    };
+
+                    foreach (var d in dictsBySourceFile[key])
+                    {
+                        if (!filteredCategoryIDs.ContainsKey(d.Key))
+                            continue;
+
+                        int id = filteredCategoryIDs[d.Key];
+                        double total = parameters.NormalizeHistogramToFile ? dictsBySourceFile[key].Values.Sum() : 1.0;
+                        double value = d.Value / total;
+                        if (parameters.UseLogScaleYAxis && value < 0.1)
+                            value = 0.1;
+
+                        column.Items.Add(new HistItem(value, id, d.Key, filteredCounts[id]));
+
+                        PlotData.Add(new Dictionary<string, string>
+                        {
+                            { "Source File", key }, { "Category", d.Key },
+                            { "Value", d.Value.ToString() }, { "Total", filteredCounts[id].ToString() }
+                        });
+                    }
+                    privateModel.Series.Add(column);
                 }
             }
-            else    // numerical histogram
+
+            return (category, filteredCounts, categoriesPerGroup, allGroupKeys);
+        }
+
+        private Dictionary<string, int> GetCategoryDictForGroup(int plotType, ObservableCollection<SpectrumMatchFromTsv> groupPsms)
+        {
+            if (plotType == 5)
             {
-                IEnumerable<double> allNumbers = numbersBySourceFile.Values.SelectMany(x => x);
+                var psmsWithMods = groupPsms.Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
+                var mods = psmsWithMods.Select(p => p.ToBioPolymerWithSetMods()).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
+                return mods.GroupBy(p => p.IdWithMotif).ToDictionary(p => p.Key, v => v.Count());
+            }
 
-                int end = dictsBySourceFile.Values.Max(p => p.Max(v => int.Parse(v.Key)));
-                int start = dictsBySourceFile.Values.Min(p => p.Min(v => int.Parse(v.Key)));
-                int numBins = end - start + 1;
-                int minBinLabels = 22;
-                int skipBinLabel = numBins < minBinLabels ? 1 : numBins / minBinLabels;
+            var allMatchedIons = groupPsms.SelectMany(p => p.MatchedIons).ToList();
+            if (plotType == 10)
+            {
+                return allMatchedIons
+                    .GroupBy(p => p.NeutralTheoreticalProduct is CustomMProduct cmp ? cmp.Annotation : p.NeutralTheoreticalProduct.ProductType.ToString())
+                    .ToDictionary(p => p.Key.ToString(), p => p.Count());
+            }
 
-                category = new string[numBins];
-                totalCounts = new int[numBins];
-                
-                int maxCount = 0;
-                foreach (Dictionary<string, int> dict in dictsBySourceFile.Values)
+            return allMatchedIons
+                .GroupBy(p => p.NeutralTheoreticalProduct is CustomMProduct cmp ? cmp.Annotation : p.NeutralTheoreticalProduct.ProductType.ToString())
+                .ToDictionary(p => p.Key.ToString(), p => (int)p.Sum(m => m.Intensity));
+        }
+
+        #endregion
+
+        #region Numerical Histogram Series
+
+        private (string[] category, int[] totalCounts, int categoriesPerGroup, List<string> allGroupKeys)
+            BuildNumericalHistogramSeries(int plotType, double binSize,
+                Dictionary<string, Dictionary<string, int>> dictsBySourceFile,
+                Dictionary<string, IEnumerable<double>> numbersBySourceFile,
+                Dictionary<string, Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>> groupedPsmsBySourceFile,
+                bool isGroupingEnabled)
+        {
+            int end = dictsBySourceFile.Values.Max(p => p.Max(v => int.Parse(v.Key)));
+            int start = dictsBySourceFile.Values.Min(p => p.Min(v => int.Parse(v.Key)));
+            int numBins = end - start + 1;
+            int minBinLabels = 22;
+            int skipBinLabel = numBins < minBinLabels ? 1 : numBins / minBinLabels;
+
+            var totalCounts = new int[numBins];
+            int maxCount = 0;
+            foreach (Dictionary<string, int> dict in dictsBySourceFile.Values)
+            {
+                foreach (var kvp in dict)
                 {
-                    foreach (var kvp in dict)
+                    int idx = int.Parse(kvp.Key) - start;
+                    if (idx >= 0 && idx < totalCounts.Length)
+                        totalCounts[idx] += kvp.Value;
+                    if (totalCounts[idx] > maxCount)
+                        maxCount = totalCounts[idx];
+                }
+            }
+
+            double minThreshold = maxCount * (parameters.MinRelativeCutoff / 100.0);
+            double maxThreshold = maxCount * (parameters.MaxRelativeCutoff / 100.0);
+
+            var filteredCategories = new List<string>();
+            var filteredTotalCounts = new List<int>();
+            var binToFilteredIndex = new Dictionary<int, int>();
+            int filteredIndex = 0;
+
+            for (int i = start; i <= end; i++)
+            {
+                int binIdx = i - start;
+                if (totalCounts[binIdx] >= minThreshold && totalCounts[binIdx] <= maxThreshold)
+                {
+                    binToFilteredIndex[i] = filteredIndex;
+                    filteredCategories.Add(i % skipBinLabel == 0
+                        ? Math.Round((i * binSize), 2).ToString(CultureInfo.InvariantCulture)
+                        : "");
+                    filteredTotalCounts.Add(totalCounts[binIdx]);
+                    filteredIndex++;
+                }
+            }
+
+            var category = filteredCategories.ToArray();
+            var filteredCounts = filteredTotalCounts.ToArray();
+            int categoriesPerGroup = binToFilteredIndex.Count;
+            List<string> allGroupKeys = null;
+
+            if (isGroupingEnabled)
+            {
+                allGroupKeys = OrderByNaturalKey(
+                    groupedPsmsBySourceFile.Values
+                        .SelectMany(d => d.Keys)
+                        .Distinct())
+                    .ToList();
+
+                var nestedCategories = new List<string>();
+                var categoryToIndex = new Dictionary<string, int>();
+                int categoryIndex = 0;
+
+                foreach (var groupKey in allGroupKeys)
+                {
+                    foreach (var binKey in binToFilteredIndex.Keys.OrderBy(k => k))
                     {
-                        int idx = int.Parse(kvp.Key) - start;
-                        if (idx >= 0 && idx < totalCounts.Length)
-                            totalCounts[idx] += kvp.Value;
-                        if (totalCounts[idx] > maxCount)
-                            maxCount = totalCounts[idx];
+                        string binLabel = Math.Round((binKey * binSize), 2).ToString(CultureInfo.InvariantCulture);
+                        nestedCategories.Add(binLabel);
+                        categoryToIndex[binKey.ToString() + "|" + groupKey] = categoryIndex++;
                     }
                 }
 
-                double minThreshold = maxCount * (parameters.MinRelativeCutoff / 100.0);
-                double maxThreshold = maxCount * (parameters.MaxRelativeCutoff / 100.0);
-
-                var filteredCategories = new List<string>();
-                var filteredTotalCounts = new List<int>();
-                var binToFilteredIndex = new Dictionary<int, int>();
-                int filteredIndex = 0;
-
-                for (int i = start; i <= end; i++)
+                foreach (string sourceFile in psmsBySourceFile.Keys)
                 {
-                    int binIdx = i - start;
-                    if (totalCounts[binIdx] >= minThreshold && totalCounts[binIdx] <= maxThreshold)
+                    var column = new ColumnSeries
                     {
-                        binToFilteredIndex[i] = filteredIndex;
-                        if (i % skipBinLabel == 0)
-                        {
-                            filteredCategories.Add(Math.Round((i * binSize), 2).ToString(CultureInfo.InvariantCulture));
-                        }
-                        else
-                        {
-                            filteredCategories.Add("");
-                        }
-                        filteredTotalCounts.Add(totalCounts[binIdx]);
-                        filteredIndex++;
-                    }
-                }
+                        ColumnWidth = 200,
+                        IsStacked = true,
+                        Title = sourceFile,
+                        TrackerFormatString = "Bin: {bin}\n{0}: {2}\nGroup: {group}\nTotal: {total}",
+                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                    };
 
-                category = filteredCategories.ToArray();
-                totalCounts = filteredTotalCounts.ToArray();
-                categoriesPerGroup = binToFilteredIndex.Count;
-
-                if (isGroupingEnabled)
-                {
-                    allGroupKeys = OrderByNaturalKey(
-                        groupedPsmsBySourceFile.Values
-                            .SelectMany(d => d.Keys)
-                            .Distinct())
-                        .ToList();
-
-                    var nestedCategories = new List<string>();
-                    var categoryToIndex = new Dictionary<string, int>();
-                    int categoryIndex = 0;
-
-                    foreach (var groupKey in allGroupKeys)
+                    foreach (string groupKey in allGroupKeys)
                     {
-                        foreach (var binKey in binToFilteredIndex.Keys.OrderBy(k => k))
+                        if (!groupedPsmsBySourceFile[sourceFile].ContainsKey(groupKey))
                         {
-                            string binLabel = Math.Round((binKey * binSize), 2).ToString(CultureInfo.InvariantCulture);
-                            nestedCategories.Add(binLabel);
-                            categoryToIndex[binKey.ToString() + "|" + groupKey] = categoryIndex++;
-                        }
-                    }
-
-                    foreach (string sourceFile in psmsBySourceFile.Keys)
-                    {
-                        var column = new ColumnSeries
-                        {
-                            ColumnWidth = 200,
-                            IsStacked = true,
-                            Title = sourceFile,
-                            TrackerFormatString = "Bin: {bin}\n{0}: {2}\nGroup: {group}\nTotal: {total}",
-                            BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
-                        };
-
-                        foreach (string groupKey in allGroupKeys)
-                        {
-                            if (!groupedPsmsBySourceFile[sourceFile].ContainsKey(groupKey))
-                            {
-                                foreach (var binKey in binToFilteredIndex.Keys.OrderBy(k => k))
-                                {
-                                    string lookupKey = binKey.ToString() + "|" + groupKey;
-                                    if (categoryToIndex.ContainsKey(lookupKey))
-                                    {
-                                        column.Items.Add(new HistItem(0, categoryToIndex[lookupKey], 
-                                            (binKey * binSize).ToString(CultureInfo.InvariantCulture), totalCounts[binToFilteredIndex[binKey]], groupKey));
-                                    }
-                                }
-                                continue;
-                            }
-
-                            var groupPsms = groupedPsmsBySourceFile[sourceFile][groupKey];
-                            var groupNumbers = GetNumbersFromPsms(groupPsms, plotType);
-                            var groupResults = groupNumbers.GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key);
-                            var groupDict = groupResults.ToDictionary(p => p.Key.ToString(), v => v.Count());
-
                             foreach (var binKey in binToFilteredIndex.Keys.OrderBy(k => k))
                             {
                                 string lookupKey = binKey.ToString() + "|" + groupKey;
-                                if (!categoryToIndex.ContainsKey(lookupKey))
-                                    continue;
-
-                                double total = 1.0;
-                                if (parameters.NormalizeHistogramToFile)
-                                {
-                                    total = groupDict.Values.Sum();
-                                }
-                                
-                                int rawValue = groupDict.ContainsKey(binKey.ToString()) ? groupDict[binKey.ToString()] : 0;
-                                double value = rawValue / total;
-                                
-                                if (parameters.UseLogScaleYAxis && value > 0 && value < 0.1)
-                                    value = 0.1;
-                                
-                                column.Items.Add(new HistItem(value, categoryToIndex[lookupKey], 
-                                    (binKey * binSize).ToString(CultureInfo.InvariantCulture), totalCounts[binToFilteredIndex[binKey]], groupKey));
-
-                                PlotData.Add(new Dictionary<string, string>
-                                {
-                                    { "Source File", sourceFile }, { parameters.GroupingProperty, groupKey },
-                                    { "Bin", (binKey * binSize).ToString(CultureInfo.InvariantCulture) },
-                                    { "Value", rawValue.ToString() }, { "Total", totalCounts[binToFilteredIndex[binKey]].ToString() }
-                                });
+                                if (categoryToIndex.ContainsKey(lookupKey))
+                                    column.Items.Add(new HistItem(0, categoryToIndex[lookupKey],
+                                        (binKey * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[binToFilteredIndex[binKey]], groupKey));
                             }
+                            continue;
                         }
-                        privateModel.Series.Add(column);
-                    }
 
-                    category = nestedCategories.ToArray();
-                }
-                else
-                {
-                    foreach (string key in dictsBySourceFile.Keys)
-                    {
-                        var column = new ColumnSeries { 
-                            ColumnWidth = 200, 
-                            IsStacked = true, 
-                            Title = key, 
-                            TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}",
-                            BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
-                        };
-                        
-                        foreach (var d in dictsBySourceFile[key])
+                        var groupPsms = groupedPsmsBySourceFile[sourceFile][groupKey];
+                        var groupNumbers = GetNumbersFromPsms(groupPsms, plotType);
+                        var groupDict = groupNumbers.GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key)
+                            .ToDictionary(p => p.Key.ToString(), v => v.Count());
+
+                        foreach (var binKey in binToFilteredIndex.Keys.OrderBy(k => k))
                         {
-                            int bin = int.Parse(d.Key);
-                            
-                            if (!binToFilteredIndex.ContainsKey(bin))
+                            string lookupKey = binKey.ToString() + "|" + groupKey;
+                            if (!categoryToIndex.ContainsKey(lookupKey))
                                 continue;
 
-                            int filteredIdx = binToFilteredIndex[bin];
-                            double total = 1.0;
-                            if (parameters.NormalizeHistogramToFile)
-                            {
-                                total = dictsBySourceFile[key].Values.Sum();
-                            }
-                            
-                            double value = d.Value / total;
-                            
-                            if (parameters.UseLogScaleYAxis && value < 0.1)
+                            double total = parameters.NormalizeHistogramToFile ? groupDict.Values.Sum() : 1.0;
+                            int rawValue = groupDict.ContainsKey(binKey.ToString()) ? groupDict[binKey.ToString()] : 0;
+                            double value = rawValue / total;
+                            if (parameters.UseLogScaleYAxis && value > 0 && value < 0.1)
                                 value = 0.1;
-                        
-                            column.Items.Add(new HistItem(value, filteredIdx, 
-                                (bin * binSize).ToString(CultureInfo.InvariantCulture), totalCounts[filteredIdx]));
+
+                            column.Items.Add(new HistItem(value, categoryToIndex[lookupKey],
+                                (binKey * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[binToFilteredIndex[binKey]], groupKey));
 
                             PlotData.Add(new Dictionary<string, string>
                             {
-                                { "Source File", key },
-                                { "Bin", (bin * binSize).ToString(CultureInfo.InvariantCulture) },
-                                { "Value", d.Value.ToString() }, { "Total", totalCounts[filteredIdx].ToString() }
+                                { "Source File", sourceFile }, { parameters.GroupingProperty, groupKey },
+                                { "Bin", (binKey * binSize).ToString(CultureInfo.InvariantCulture) },
+                                { "Value", rawValue.ToString() }, { "Total", filteredCounts[binToFilteredIndex[binKey]].ToString() }
                             });
                         }
-                        privateModel.Series.Add(column);
                     }
+                    privateModel.Series.Add(column);
+                }
+
+                category = nestedCategories.ToArray();
+            }
+            else
+            {
+                foreach (string key in dictsBySourceFile.Keys)
+                {
+                    var column = new ColumnSeries
+                    {
+                        ColumnWidth = 200,
+                        IsStacked = true,
+                        Title = key,
+                        TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}",
+                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                    };
+
+                    foreach (var d in dictsBySourceFile[key])
+                    {
+                        int bin = int.Parse(d.Key);
+                        if (!binToFilteredIndex.ContainsKey(bin))
+                            continue;
+
+                        int filteredIdx = binToFilteredIndex[bin];
+                        double total = parameters.NormalizeHistogramToFile ? dictsBySourceFile[key].Values.Sum() : 1.0;
+                        double value = d.Value / total;
+                        if (parameters.UseLogScaleYAxis && value < 0.1)
+                            value = 0.1;
+
+                        column.Items.Add(new HistItem(value, filteredIdx,
+                            (bin * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[filteredIdx]));
+
+                        PlotData.Add(new Dictionary<string, string>
+                        {
+                            { "Source File", key },
+                            { "Bin", (bin * binSize).ToString(CultureInfo.InvariantCulture) },
+                            { "Value", d.Value.ToString() }, { "Total", filteredCounts[filteredIdx].ToString() }
+                        });
+                    }
+                    privateModel.Series.Add(column);
                 }
             }
 
-            // add axes
+            return (category, filteredCounts, categoriesPerGroup, allGroupKeys);
+        }
+
+        #endregion
+
+        #region Axis Configuration
+
+        private void ConfigureHistogramAxes(string xAxisTitle, string yAxisTitle, double labelAngle,
+            string[] category, bool isGroupingEnabled, List<string> allGroupKeys, int categoriesPerGroup)
+        {
             if (parameters.NormalizeHistogramToFile)
                 xAxisTitle = $"File Normalized {xAxisTitle}";
 
-            // When grouping, add extra padding at the bottom for the group label row
             double bottomPadding = isGroupingEnabled ? 20 : 0;
             privateModel.Padding = new OxyThickness(privateModel.Padding.Left, privateModel.Padding.Top,
                 privateModel.Padding.Right, privateModel.Padding.Bottom + bottomPadding);
-            
+
             var mainAxis = new CategoryAxis
             {
                 Position = AxisPosition.Bottom,
@@ -706,32 +730,25 @@ namespace GuiFunctions
                 GapWidth = 0.3,
                 Angle = labelAngle,
             };
-            
-            // Add spacing between groups when grouping is enabled
+
             if (isGroupingEnabled && allGroupKeys != null && allGroupKeys.Count > 0 && categoriesPerGroup > 0)
             {
                 mainAxis.GapWidth = 0.1;
 
-                // Add gridlines between groups
                 if (allGroupKeys.Count > 1)
                 {
                     mainAxis.ExtraGridlines = new double[allGroupKeys.Count - 1];
                     for (int i = 1; i < allGroupKeys.Count; i++)
-                    {
                         mainAxis.ExtraGridlines[i - 1] = i * categoriesPerGroup - 0.5;
-                    }
                     mainAxis.ExtraGridlineStyle = LineStyle.Solid;
                     mainAxis.ExtraGridlineColor = OxyColors.LightGray;
                     mainAxis.ExtraGridlineThickness = 2;
                 }
 
-                // Build category labels: show category names only (no group labels inline)
-                // Group labels are added on a separate secondary axis below
                 var labelledCategories = new string[category.Length];
                 for (int g = 0; g < allGroupKeys.Count; g++)
                 {
                     int startIdx = g * categoriesPerGroup;
-
                     for (int j = 0; j < categoriesPerGroup; j++)
                     {
                         int idx = startIdx + j;
@@ -742,13 +759,11 @@ namespace GuiFunctions
                 mainAxis.ItemsSource = labelledCategories;
                 mainAxis.Title = xAxisTitle;
 
-                // Create a second category axis for group labels
                 var groupLabels = new string[category.Length];
                 for (int g = 0; g < allGroupKeys.Count; g++)
                 {
                     int startIdx = g * categoriesPerGroup;
                     int midIdx = startIdx + categoriesPerGroup / 2;
-
                     for (int j = 0; j < categoriesPerGroup; j++)
                     {
                         int idx = startIdx + j;
@@ -778,7 +793,7 @@ namespace GuiFunctions
                 };
                 privateModel.Axes.Add(groupAxis);
             }
-            
+
             privateModel.Axes.Add(mainAxis);
 
             if (parameters.UseLogScaleYAxis)
@@ -805,6 +820,8 @@ namespace GuiFunctions
                 });
             }
         }
+
+        #endregion
 
         private void linePlot(int plotType)
         {
@@ -914,7 +931,9 @@ namespace GuiFunctions
         }
 
         /// <summary>
-        /// Groups PSMs by the specified property for side-by-side plotting
+        /// Groups PSMs by the specified property for side-by-side plotting.
+        /// Excludes ambiguous PSMs (those with "|" in FullSequence) since they cannot be
+        /// cleanly assigned to a single group.
         /// </summary>
         private Dictionary<string, Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>> GroupPsmsByProperty(
             Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> psmsByFile, string propertyName)
@@ -928,10 +947,21 @@ namespace GuiFunctions
                 foreach (var psm in psmsByFile[sourceFile])
                 {
                     string groupKey = GetGroupKeyFromPsm(psm, propertyName);
-                    
+
+                    if (groupKey.Contains('|'))
+                    {
+                        if (MetaDrawSettings.AmbiguityFilter == "1")
+                            continue;
+
+                        if (!parameters.AllowAmbiguousGroups)
+                            continue;
+
+                        groupKey = NormalizeAmbiguousGroupKey(groupKey);
+                    }
+
                     if (!groupedPsms.ContainsKey(groupKey))
                         groupedPsms[groupKey] = new ObservableCollection<SpectrumMatchFromTsv>();
-                    
+
                     groupedPsms[groupKey].Add(psm);
                 }
 
@@ -942,8 +972,16 @@ namespace GuiFunctions
         }
 
         /// <summary>
-        /// Extracts the grouping property value from a PSM
+        /// Normalizes an ambiguous group key by sorting its pipe-delimited parts into a canonical order.
+        /// This ensures that keys like "0|2|1" and "1|0|2" map to the same group ("0|1|2").
+        /// Uses natural (numeric) sorting when all parts are numeric.
         /// </summary>
+        private static string NormalizeAmbiguousGroupKey(string groupKey)
+        {
+            var parts = groupKey.Split('|');
+            return string.Join("|", OrderByNaturalKey(parts));
+        }
+
         private string GetGroupKeyFromPsm(SpectrumMatchFromTsv psm, string propertyName)
         {
             return propertyName switch
@@ -953,13 +991,18 @@ namespace GuiFunctions
                 "File Name" => psm.FileNameWithoutExtension,
                 "Ambiguity Level" => psm.AmbiguityLevel ?? "1",
                 "Missed Cleavages" => psm.MissedCleavage ?? "0",
+                "SpectralAngle" => psm.SpectralAngle?.ToString() ?? "N/A",
+                "PrecursorIntensity" => psm.PrecursorIntensity?.ToString() ?? "0",
+                "QValue" => psm.QValue.ToString(),
+                "PEP_QValue" => psm.PEP_QValue.ToString(),
+                "TotalIonCurrent" => psm.TotalIonCurrent?.ToString() ?? "0",
+                "OrganismName" => psm.OrganismName,
+                "DecoyContamTarget" => psm.DecoyContamTarget,
+
                 _ => "All"
             };
         }
 
-        /// <summary>
-        /// Extracts numerical values from PSMs based on plot type
-        /// </summary>
         private IEnumerable<double> GetNumbersFromPsms(ObservableCollection<SpectrumMatchFromTsv> psms, int plotType)
         {
             return plotType switch
@@ -989,7 +1032,6 @@ namespace GuiFunctions
             return values;
         }
 
-        // used by histogram plots, gives additional properies for the tracker to display
         private class HistItem : ColumnItem
         {
             public int total { get; set; }

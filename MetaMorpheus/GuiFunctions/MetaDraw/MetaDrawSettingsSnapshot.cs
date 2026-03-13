@@ -50,6 +50,7 @@ namespace GuiFunctions
         public string GroupingProperty { get; set; } = "None";
         public double MinRelativeCutoff { get; set; } = 0.0;
         public double MaxRelativeCutoff { get; set; } = 100.0;
+        public bool AllowAmbiguousGroups { get; set; } = false;
 
 
         // filter settings

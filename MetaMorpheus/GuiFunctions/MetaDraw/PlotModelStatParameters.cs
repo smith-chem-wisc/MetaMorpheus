@@ -15,6 +15,7 @@ namespace GuiFunctions.MetaDraw
         /// Options: "None", "Notch", "Precursor Charge", "File Name", "Ambiguity Level", "Missed Cleavages"
         /// </summary>
         public string GroupingProperty { get; set; } = "None";
+        public bool AllowAmbiguousGroups { get; set; } = false;
 
         /// <summary>
         /// Minimum percentage of total for data points to be displayed (0-100)
@@ -47,7 +48,8 @@ namespace GuiFunctions.MetaDraw
                 MinRelativeCutoff = this.MinRelativeCutoff,
                 MaxRelativeCutoff = this.MaxRelativeCutoff,
                 NormalizeHistogramToFile = this.NormalizeHistogramToFile,
-                DisplayFilteredOnly = this.DisplayFilteredOnly
+                DisplayFilteredOnly = this.DisplayFilteredOnly,
+                AllowAmbiguousGroups = this.AllowAmbiguousGroups
             };
         }
 
@@ -59,7 +61,8 @@ namespace GuiFunctions.MetaDraw
                    && System.Math.Abs(MinRelativeCutoff - other.MinRelativeCutoff) < 0.0001
                    && System.Math.Abs(MaxRelativeCutoff - other.MaxRelativeCutoff) < 0.0001
                    && NormalizeHistogramToFile == other.NormalizeHistogramToFile
-                   && DisplayFilteredOnly == other.DisplayFilteredOnly;
+                   && DisplayFilteredOnly == other.DisplayFilteredOnly
+                   && AllowAmbiguousGroups == other.AllowAmbiguousGroups;
         }
     }
 }

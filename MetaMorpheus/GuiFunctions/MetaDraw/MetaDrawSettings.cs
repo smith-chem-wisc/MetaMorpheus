@@ -558,7 +558,8 @@ namespace GuiFunctions
                 UseLogScaleYAxis = PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis,
                 GroupingProperty = PlotModelStatParametersViewModel.Instance.GroupingProperty,
                 MinRelativeCutoff = PlotModelStatParametersViewModel.Instance.MinRelativeCutoff,
-                MaxRelativeCutoff = PlotModelStatParametersViewModel.Instance.MaxRelativeCutoff
+                MaxRelativeCutoff = PlotModelStatParametersViewModel.Instance.MaxRelativeCutoff,
+                AllowAmbiguousGroups = PlotModelStatParametersViewModel.Instance.AllowAmbiguousGroups
             };
         }
 
@@ -611,7 +612,8 @@ namespace GuiFunctions
                 MinRelativeCutoff = settings.MinRelativeCutoff,
                 MaxRelativeCutoff = settings.MaxRelativeCutoff,
                 NormalizeHistogramToFile = settings.NormalizeHistogramToFile,
-                DisplayFilteredOnly = settings.DisplayFilteredOnly
+                DisplayFilteredOnly = settings.DisplayFilteredOnly,
+                AllowAmbiguousGroups = settings.AllowAmbiguousGroups
             };
             PlotModelStatParametersViewModel.Instance.LoadFromSnapshot(plotParams);
 
