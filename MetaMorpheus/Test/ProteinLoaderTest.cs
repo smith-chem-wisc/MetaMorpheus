@@ -1,7 +1,8 @@
-﻿using EngineLayer;
+using EngineLayer;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using EngineLayer.DatabaseLoading;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -30,6 +31,194 @@ namespace Test
             new ProteinLoaderTask("").Run(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fa"));
             new ProteinLoaderTask("").Run(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fasta.gz"));
             new ProteinLoaderTask("").Run(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fa.gz"));
+        }
+
+        [Test]
+        public void WriteTargetDecoyFasta_WhenEnabled_CreatesFastaFile()
+        {
+            // Arrange
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestTargetDecoyOutput");
+            Directory.CreateDirectory(outputFolder);
+
+            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fasta");
+            var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
+            var commonParameters = new CommonParameters();
+
+            // Act
+            var loader = new DatabaseLoadingEngine(
+                commonParameters,
+                [],
+                [],
+                dbForTask,
+                "TestTask",
+                DecoyType.Reverse,
+                true,
+                null,
+                TargetContaminantAmbiguity.RemoveContaminant,
+                writeTargetDecoyFasta: true,
+                outputFolder: outputFolder
+            );
+            var results = (DatabaseLoadingEngineResults)loader.Run()!;
+
+            // Assert
+            string fastaPath = Path.Combine(outputFolder, "TargetDecoy.fasta");
+            Assert.That(File.Exists(fastaPath), Is.True, "TargetDecoy.fasta should be created");
+            var fileContent = File.ReadAllText(fastaPath);
+            Assert.That(fileContent, Is.Not.Empty, "FASTA file should not be empty");
+
+            // Cleanup
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public void WriteTargetDecoyFasta_WhenDisabled_DoesNotCreateFile()
+        {
+            // Arrange
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestNoOutput");
+            Directory.CreateDirectory(outputFolder);
+
+            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fasta");
+            var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
+
+            // Act
+            var loader = new DatabaseLoadingEngine(
+                new CommonParameters(),
+                [],
+                [],
+                dbForTask,
+                "TestTask",
+                DecoyType.Reverse,
+                true,
+                null,
+                TargetContaminantAmbiguity.RemoveContaminant,
+                writeTargetDecoyFasta: false,
+                outputFolder: outputFolder
+            );
+            loader.Run();
+
+            // Assert
+            string fastaPath = Path.Combine(outputFolder, "TargetDecoy.fasta");
+            Assert.That(File.Exists(fastaPath), Is.False, "TargetDecoy.fasta should NOT be created when disabled");
+
+            // Cleanup
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public void WriteTargetDecoyFasta_WithNullOutputFolder_DoesNotThrow()
+        {
+            // Arrange
+            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fasta");
+            var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
+
+            // Act & Assert - Should not throw
+            Assert.DoesNotThrow(() =>
+            {
+                var loader = new DatabaseLoadingEngine(
+                    new CommonParameters(),
+                    [],
+                    [],
+                    dbForTask,
+                    "TestTask",
+                    DecoyType.Reverse,
+                    true,
+                    null,
+                    TargetContaminantAmbiguity.RemoveContaminant,
+                    writeTargetDecoyFasta: true,
+                    outputFolder: null
+                );
+                loader.Run();
+            });
+        }
+
+        [Test]
+        public void WriteTargetDecoyFasta_ContainsBothTargetsAndDecoys()
+        {
+            // Arrange
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestTargetDecoyContent");
+            Directory.CreateDirectory(outputFolder);
+
+            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fasta");
+            var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
+
+            // Act
+            var loader = new DatabaseLoadingEngine(
+                new CommonParameters(),
+                [],
+                [],
+                dbForTask,
+                "TestTask",
+                DecoyType.Reverse,
+                true,
+                null,
+                TargetContaminantAmbiguity.RemoveContaminant,
+                writeTargetDecoyFasta: true,
+                outputFolder: outputFolder
+            );
+            var results = (DatabaseLoadingEngineResults)loader.Run()!;
+
+            // Assert
+            string fastaPath = Path.Combine(outputFolder, "TargetDecoy.fasta");
+            var lines = File.ReadAllLines(fastaPath);
+
+            // Count headers (lines starting with >)
+            int headerCount = lines.Count(l => l.StartsWith(">"));
+            Assert.That(headerCount, Is.EqualTo(results.BioPolymers.Count),
+                "FASTA should contain all loaded biopolymers");
+
+            // Verify at least some decoys exist (lines containing "DECOY" or similar pattern)
+            bool hasDecoys = lines.Any(l => l.Contains("DECOY"));
+            Assert.That(hasDecoys, Is.True, "FASTA should contain decoy sequences");
+
+            // Cleanup
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public void WriteTargetDecoyFasta_WithRNA_WritesCorrectFormat()
+        {
+            // Arrange
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestRNAOutput");
+            Directory.CreateDirectory(outputFolder);
+
+            // Need to set up RNA mode first
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+
+            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "20mer1.fasta");
+            var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
+
+            try
+            {
+                // Act
+                var loader = new DatabaseLoadingEngine(
+                    new CommonParameters(),
+                    [],
+                    [],
+                    dbForTask,
+                    "TestTask",
+                    DecoyType.Reverse,
+                    true,
+                    null,
+                    TargetContaminantAmbiguity.RemoveContaminant,
+                    writeTargetDecoyFasta: true,
+                    outputFolder: outputFolder
+                );
+                var results = (DatabaseLoadingEngineResults)loader.Run()!;
+
+                // Assert
+                string fastaPath = Path.Combine(outputFolder, "TargetDecoy.fasta");
+                Assert.That(File.Exists(fastaPath), Is.True, "TargetDecoy.fasta should be created for RNA");
+                var fileContent = File.ReadAllText(fastaPath);
+                Assert.That(fileContent, Is.Not.Empty, "RNA FASTA file should not be empty");
+            }
+            finally
+            {
+                // Reset to peptide mode
+                GlobalVariables.AnalyteType = AnalyteType.Peptide;
+                // Cleanup
+                if (Directory.Exists(outputFolder))
+                    Directory.Delete(outputFolder, true);
+            }
         }
 
         public class ProteinLoaderTask : MetaMorpheusTask
