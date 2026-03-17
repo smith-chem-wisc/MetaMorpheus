@@ -15,7 +15,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
-using ThermoFisher.CommonCore.Data.Business;
 
 namespace GuiFunctions;
 
@@ -120,6 +119,23 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         {
             maxMzToPlot = value;
             OnPropertyChanged(nameof(MaxMzToPlot));
+        }
+    }
+
+    private int _minChargeToAnnotate;
+    public int MinChargeToAnnotate
+    {
+        get
+        {
+            if (_minChargeToAnnotate.IsDefaultOrNull())
+                _minChargeToAnnotate = GuiGlobalParamsViewModel.Instance.IsRnaMode
+                    ? -100 : 1;
+            return _minChargeToAnnotate;
+        }
+        set
+        {
+            _minChargeToAnnotate = value;
+            OnPropertyChanged(nameof(MinChargeToAnnotate));
         }
     }
 

@@ -245,4 +245,25 @@ public class DeconExplorationTabViewModelTests
         vm.RunDeconvolutionCommand.Execute(new PlotView());
         Assert.That(vm.DeconvolutedSpecies.All(s => s.Charge <= 3));
     }
+
+    [Test, Apartment(System.Threading.ApartmentState.STA)]
+    [NonParallelizable]
+    public void ChargesToAnnotate_InitializesCorrectly_Protein()
+    {
+        GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+
+        Assert.That(vm.MinChargeToAnnotate, Is.EqualTo(1));
+        Assert.That(vm.MaxChargeToAnnotate, Is.EqualTo(100));
+    }
+
+    [Test, Apartment(System.Threading.ApartmentState.STA)]
+    [NonParallelizable]
+    public void ChargesToAnnotate_InitializesCorrectly_Rna()
+    {
+        GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+        Assert.That(vm.MinChargeToAnnotate, Is.EqualTo(-100));
+        Assert.That(vm.MaxChargeToAnnotate, Is.EqualTo(-1));
+    }
 }
