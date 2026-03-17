@@ -55,7 +55,7 @@ namespace GuiFunctions
             privateModel = new PlotModel { Title = plotName, DefaultFontSize = 14 };
             allSpectralMatches = sms;
             this.psmsBySourceFile = smsBySourceFile;
-            this.parameters = parameters ?? new PlotModelStatParameters();
+            this.parameters = parameters ?? PlotModelStatParametersViewModel.Instance.GetParameters();
             createPlot(plotName);
             privateModel.DefaultColors = MetaDrawSettings.DataVisualizationColorOrder;
         }

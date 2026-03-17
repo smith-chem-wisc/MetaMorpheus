@@ -1729,7 +1729,7 @@ namespace Test.MetaDraw
             var series9 = plot9.Model.Series.ToList()[0];
             var items9 = (List<OxyPlot.Series.ColumnItem>)series9.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series9);
-            Assert.That(items9[11].Value, Is.EqualTo(18));
+            Assert.That(items9[11].Value, Is.EqualTo(2));
 
             var plot10 = new PlotModelStat("Histogram of Hydrophobicity scores",
                 psms, psmDict);
@@ -1800,14 +1800,14 @@ namespace Test.MetaDraw
             Assert.That(items14.Sum(i => i.Value), Is.GreaterThanOrEqualTo(0)); // Non-negative count
 
             // Test normalization for missed cleavages
-            MetaDrawSettings.NormalizeHistogramToFile = false;
+            PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = false;
             var plotMissedNormOff = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
             var seriesMissedNormOff = plotMissedNormOff.Model.Series.ToList()[0];
             var itemsMissedNormOff = (List<OxyPlot.Series.ColumnItem>)seriesMissedNormOff.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesMissedNormOff);
             double sumMissedNormOff = itemsMissedNormOff.Sum(i => i.Value);
 
-            MetaDrawSettings.NormalizeHistogramToFile = true;
+            PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = true;
             var plotMissedNormOn = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
             var seriesMissedNormOn = plotMissedNormOn.Model.Series.ToList()[0];
             var itemsMissedNormOn = (List<OxyPlot.Series.ColumnItem>)seriesMissedNormOn.GetType()
@@ -1818,10 +1818,10 @@ namespace Test.MetaDraw
             Assert.That(sumMissedNormOff, Is.GreaterThanOrEqualTo(sumMissedNormOn));
 
             // Reset normalization for other tests
-            MetaDrawSettings.NormalizeHistogramToFile = false;
+            PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = false;
 
             // Test normalization OFF
-            MetaDrawSettings.NormalizeHistogramToFile = false;
+            PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = false;
             var plotNormOff = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
             var seriesNormOff = plotNormOff.Model.Series.ToList()[0];
             var itemsNormOff = (List<OxyPlot.Series.ColumnItem>)seriesNormOff.GetType()
@@ -1829,7 +1829,7 @@ namespace Test.MetaDraw
             double sumNormOff = itemsNormOff.Sum(i => i.Value);
 
             // Test normalization ON
-            MetaDrawSettings.NormalizeHistogramToFile = true;
+            PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = true;
             var plotNormOn = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
             var seriesNormOn = plotNormOn.Model.Series.ToList()[0];
             var itemsNormOn = (List<OxyPlot.Series.ColumnItem>)seriesNormOn.GetType()
