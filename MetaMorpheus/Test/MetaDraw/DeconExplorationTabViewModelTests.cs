@@ -222,4 +222,48 @@ public class DeconExplorationTabViewModelTests
         Assert.That(actualScanNumbers, Is.EquivalentTo(expectedScanNumbers));
         Assert.That(vm.Scans.All(s => s.MsnOrder == 2));
     }
+
+    [Test, Apartment(System.Threading.ApartmentState.STA)]
+    public void RunDeconvolutionCommand_FullSpectrumMode_LimitsCharges()
+    {
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+        vm.Mode = DeconvolutionMode.FullSpectrum;
+        vm.SelectedMsDataFile = msDataFile;
+        vm.SelectedMsDataScan = msDataFile.GetMsDataScans().FirstOrDefault();
+        vm.RunDeconvolutionCommand.Execute(new PlotView());
+
+        int min = vm.DeconvolutedSpecies.Min(s => s.Charge);
+        int max = vm.DeconvolutedSpecies.Max(s => s.Charge);
+        Assert.That(vm.MinChargeToAnnotate, Is.LessThanOrEqualTo(min));
+        Assert.That(vm.MaxChargeToAnnotate, Is.GreaterThanOrEqualTo(max));
+
+        vm.MinChargeToAnnotate = 2;
+        vm.RunDeconvolutionCommand.Execute(new PlotView());
+        Assert.That(vm.DeconvolutedSpecies.All(s => s.Charge >= 2));
+
+        vm.MaxChargeToAnnotate = 3;
+        vm.RunDeconvolutionCommand.Execute(new PlotView());
+        Assert.That(vm.DeconvolutedSpecies.All(s => s.Charge <= 3));
+    }
+
+    [Test, Apartment(System.Threading.ApartmentState.STA)]
+    [NonParallelizable]
+    public void ChargesToAnnotate_InitializesCorrectly_Protein()
+    {
+        GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+
+        Assert.That(vm.MinChargeToAnnotate, Is.EqualTo(1));
+        Assert.That(vm.MaxChargeToAnnotate, Is.EqualTo(100));
+    }
+
+    [Test, Apartment(System.Threading.ApartmentState.STA)]
+    [NonParallelizable]
+    public void ChargesToAnnotate_InitializesCorrectly_Rna()
+    {
+        GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+        Assert.That(vm.MinChargeToAnnotate, Is.EqualTo(-100));
+        Assert.That(vm.MaxChargeToAnnotate, Is.EqualTo(-1));
+    }
 }
