@@ -139,23 +139,6 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         }
     }
 
-    private int _minChargeToAnnotate;
-    public int MinChargeToAnnotate
-    {
-        get
-        {
-            if (_minChargeToAnnotate.IsDefaultOrNull())
-                _minChargeToAnnotate = GuiGlobalParamsViewModel.Instance.IsRnaMode
-                    ? -100 : 1;
-            return _minChargeToAnnotate;
-        }
-        set
-        {
-            _minChargeToAnnotate = value;
-            OnPropertyChanged(nameof(MinChargeToAnnotate));
-        }
-    }
-
     private int _maxChargeToAnnotate;
     public int MaxChargeToAnnotate
     {
