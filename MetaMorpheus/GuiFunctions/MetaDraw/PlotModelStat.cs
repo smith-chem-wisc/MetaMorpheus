@@ -991,11 +991,6 @@ namespace GuiFunctions
                 "File Name" => psm.FileNameWithoutExtension,
                 "Ambiguity Level" => psm.AmbiguityLevel ?? "1",
                 "Missed Cleavages" => psm.MissedCleavage ?? "0",
-                "SpectralAngle" => psm.SpectralAngle?.ToString() ?? "N/A",
-                "PrecursorIntensity" => psm.PrecursorIntensity?.ToString() ?? "0",
-                "QValue" => psm.QValue.ToString(),
-                "PEP_QValue" => psm.PEP_QValue.ToString(),
-                "TotalIonCurrent" => psm.TotalIonCurrent?.ToString() ?? "0",
                 "OrganismName" => psm.OrganismName,
                 "DecoyContamTarget" => psm.DecoyContamTarget,
 
