@@ -19,6 +19,8 @@ using MassSpectrometry;
 using NUnit.Framework;
 using Omics.Fragmentation;
 using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using TaskLayer;
@@ -27,6 +29,8 @@ using LineSeries = OxyPlot.Series.LineSeries;
 using Path = System.IO.Path;
 using Polyline = System.Windows.Shapes.Polyline;
 using Omics;
+using PlotColumnSeries = OxyPlot.Series.ColumnSeries;
+using PlotCategoryAxis = OxyPlot.Axes.CategoryAxis;
 
 namespace Test.MetaDraw
 {
@@ -38,6 +42,75 @@ namespace Test.MetaDraw
         public static void SetUp()
         {
             MetaDrawSettings.ResetSettings();
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_CategoryHistogramGrouping()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "Missed Cleavages",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Fragment Ion Types by Count",
+                parameters,
+                out var psmsBySourceFile);
+
+            Assert.That(plot.Model.Series.Count, Is.EqualTo(psmsBySourceFile.Count));
+            Assert.That(plot.Model.Series.All(s => s is PlotColumnSeries));
+            Assert.That(plot.Model.Axes.OfType<PlotCategoryAxis>()
+                .Any(axis => axis.Key == "GroupAxis" && axis.Title == parameters.GroupingProperty));
+
+            var groupingValues = plot.PlotData
+                .Where(row => row.ContainsKey(parameters.GroupingProperty))
+                .Select(row => row[parameters.GroupingProperty])
+                .Distinct()
+                .ToList();
+
+            Assert.That(groupingValues.Count, Is.GreaterThan(1));
+            Assert.That(plot.PlotData.All(row => row.ContainsKey("Source File")));
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_NumericalHistogramGrouping()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "Precursor Charge",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = true,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
+                parameters,
+                out _);
+
+            Assert.That(plot.Model.Axes.OfType<PlotCategoryAxis>()
+                .Any(axis => axis.Key == "GroupAxis" && axis.Title == parameters.GroupingProperty));
+
+            var normalizedValues = plot.Model.Series
+                .OfType<PlotColumnSeries>()
+                .SelectMany(series => series.Items)
+                .Select(item => item.Value)
+                .ToList();
+
+            Assert.That(normalizedValues.All(value => value <= 1.0 + 1e-6));
+            Assert.That(plot.PlotData.Any(row => row.ContainsKey("Bin")));
+            Assert.That(plot.PlotData.Any(row => row.ContainsKey(parameters.GroupingProperty)));
         }
 
         [Test]
@@ -1954,6 +2027,45 @@ namespace Test.MetaDraw
         {
             var plotNames = PlotModelStat.PlotNames;
             Assert.That(plotNames.Count, Is.EqualTo(14));
+        }
+
+        private static PlotModelStat BuildPlotModelStatForGrouping(
+            string plotName,
+            PlotModelStatParameters parameters,
+            out Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> psmsBySourceFile,
+            int takeCount = 24)
+        {
+            string psmPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                @"TestData\XCorrSearchTest_AllPSMs.psmtsv");
+
+            var parsedPsms = SpectrumMatchTsvReader.ReadTsv(psmPath, out _);
+
+            var selected = parsedPsms.Take(takeCount).ToList();
+            Assert.That(selected.Count, Is.GreaterThanOrEqualTo(4));
+
+            int half = Math.Max(1, selected.Count / 2);
+            var firstGroup = new ObservableCollection<SpectrumMatchFromTsv>(selected.Take(half).ToList());
+            var secondGroup = new ObservableCollection<SpectrumMatchFromTsv>(selected.Skip(half).ToList());
+
+            if (secondGroup.Count == 0)
+            {
+                secondGroup = new ObservableCollection<SpectrumMatchFromTsv>(selected.Skip(1).ToList());
+            }
+
+            Assert.That(firstGroup.Count, Is.GreaterThan(0));
+            Assert.That(secondGroup.Count, Is.GreaterThan(0));
+
+            psmsBySourceFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+            {
+                { "FileA", firstGroup },
+                { "FileB", secondGroup }
+            };
+
+            return new PlotModelStat(
+                plotName,
+                new ObservableCollection<SpectrumMatchFromTsv>(selected),
+                psmsBySourceFile,
+                parameters);
         }
     }
 }
