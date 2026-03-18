@@ -7,9 +7,11 @@ using EngineLayer;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
 using OxyPlot.Wpf;
 using Readers;
+using Test;
 
 namespace Test.MetaDraw;
 
@@ -123,11 +125,11 @@ public class DeconExplorationTabViewModelTests
     }
 
     [Test, Apartment(System.Threading.ApartmentState.STA)]
-    public void RunDeconvolutionCommand_FullSpectrumMode_LimitsAxis()
-    {
-        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
-        vm.Mode = DeconvolutionMode.FullSpectrum;
-        vm.SelectedMsDataFile = msDataFile;
+        public void RunDeconvolutionCommand_FullSpectrumMode_LimitsAxis()
+        {
+            var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+            vm.Mode = DeconvolutionMode.FullSpectrum;
+            vm.SelectedMsDataFile = msDataFile;
         vm.SelectedMsDataScan = msDataFile.GetMsDataScans().FirstOrDefault();
         vm.RunDeconvolutionCommand.Execute(new PlotView());
 
@@ -149,7 +151,61 @@ public class DeconExplorationTabViewModelTests
         xAxis = vm.Plot!.Model.Axes[0];
         Assert.That(xAxis.ActualMinimum, Is.EqualTo(800).Within(5));
         Assert.That(xAxis.ActualMaximum, Is.EqualTo(1200).Within(5));
-    }
+        }
+
+        [Test, Apartment(System.Threading.ApartmentState.STA)]
+        public void RunDeconvolutionCommand_FullSpectrumMode_UsesCustomMzRange()
+        {
+            var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+            vm.Mode = DeconvolutionMode.FullSpectrum;
+            vm.SelectedMsDataFile = msDataFile;
+            vm.SelectedMsDataScan = msDataFile.GetMsDataScans().First();
+
+            vm.MinMzToPlot = 500;
+            vm.MaxMzToPlot = 700;
+            vm.RunDeconvolutionCommand.Execute(new PlotView());
+
+            var xAxis = vm.Plot!.Model.Axes[0];
+            Assert.That(xAxis.ActualMinimum, Is.EqualTo(500).Within(0.1));
+            Assert.That(xAxis.ActualMaximum, Is.EqualTo(700).Within(0.1));
+        }
+
+        [Test, Apartment(System.Threading.ApartmentState.STA)]
+        public void RunDeconvolutionCommand_IsolationRegionMode_UsesCustomMzRange()
+        {
+            var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+            vm.Mode = DeconvolutionMode.IsolationRegion;
+            vm.SelectedMsDataFile = msDataFile;
+            var ms2 = msDataFile.GetMsDataScans().FirstOrDefault(s => s.MsnOrder == 2);
+            if (ms2 == null)
+            {
+                Assert.Inconclusive("No MS2 scan in test file.");
+                return;
+            }
+
+            vm.SelectedMsDataScan = ms2;
+            vm.MinMzToPlot = 200;
+            vm.MaxMzToPlot = 400;
+            vm.RunDeconvolutionCommand.Execute(new PlotView());
+
+            var xAxis = vm.Plot!.Model.Axes[0];
+            Assert.That(xAxis.ActualMinimum, Is.EqualTo(200).Within(0.1));
+            Assert.That(xAxis.ActualMaximum, Is.EqualTo(400).Within(0.1));
+        }
+
+        [Test, Apartment(System.Threading.ApartmentState.STA)]
+        public void DeconvolutionPlot_SetsZeroMaxIntensityWhenNoPeaksInRange()
+        {
+            var testFile = new TestDataFile();
+            var scan = testFile.GetMsDataScans().First(s => s.MsnOrder == 2);
+            var isolationRange = new MzRange(10000, 10010);
+
+            var plot = new DeconvolutionPlot(new PlotView(), scan,
+                new List<DeconvolutedSpeciesViewModel>(), DeconvolutionMode.IsolationRegion, isolationRange);
+
+            var yAxis = plot.Model.Axes[1];
+            Assert.That(yAxis.ActualMaximum, Is.EqualTo(0).Within(0.001));
+        }
 
     [Test]
     public void DeconvolutionModes_ContainsAllModes()
