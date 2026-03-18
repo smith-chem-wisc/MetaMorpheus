@@ -29,12 +29,12 @@ public class DatabaseLoadingEngine(
     string? outputFolder = null)
     : MetaMorpheusEngine(commonParameters, fileSpecificParameters, nestedIds)
 {
-    private static readonly ListPool<string> _sequencePool = new();
+    private static readonly ListPool<string> SequencePool = new();
 
     public string TaskId { get; } = taskId;
     public bool GenerateTargets { get; } = generateTargets;
     public bool WriteTargetDecoyFasta { get; } = writeTargetDecoyFasta;
-    public string OutputFolder { get; } = outputFolder;
+    public string? OutputFolder { get; } = outputFolder;
     public DecoyType DecoyType { get; } = decoyType;
     public TargetContaminantAmbiguity TcAmbiguity { get; } = tcAmbiguity;
     public List<string> LocalizableMods { get; } = localizableMods ?? [];
@@ -312,7 +312,7 @@ public class DatabaseLoadingEngine(
             {
                 if (targetPeptideSequences.Contains(peptide.BaseSequence))
                 {
-                    peptidesToReplace ??= _sequencePool.Get();
+                    peptidesToReplace ??= SequencePool.Get();
                     peptidesToReplace.Add(peptide.BaseSequence);
                 }
             }
@@ -324,7 +324,7 @@ public class DatabaseLoadingEngine(
                     digestionParams,
                     forbiddenSequences: targetPeptideSequences,
                     peptidesToReplace);
-                _sequencePool.Return(peptidesToReplace);
+                SequencePool.Return(peptidesToReplace);
                 scrambled++;
             }
         }
