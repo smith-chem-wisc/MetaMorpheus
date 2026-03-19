@@ -65,7 +65,7 @@ namespace EngineLayer.Localization
                             var peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
 
                             // this is the list of theoretical products for this peptide with mass-difference on this residue
-                            peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, productsWithLocalizedMassDiff);
+                            peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, productsWithLocalizedMassDiff, CommonParameters.FragmentationParameters);
 
                             var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, CommonParameters);
 

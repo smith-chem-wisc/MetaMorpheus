@@ -13,6 +13,7 @@ using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Readers;
+using TaskLayer;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 
@@ -28,12 +29,12 @@ namespace GuiFunctions
         public FragmentationReanalysisViewModel(bool isProtein = true)
         {
             _isProtein = isProtein;
-            UseInternalIons = false;
-            MinInternalIonLength = 10;
             ProductIonMassTolerance = 20;
             PossibleProducts = [.. GetPossibleProducts()];
 
             IEnumerable<DissociationType> values;
+            CommonParameters common;
+            SearchParameters search;
             if (isProtein)
             {
                 values = Enum.GetValues<DissociationType>()
@@ -41,6 +42,12 @@ namespace GuiFunctions
                     && Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod) 
                     && prod.Count != 0);
                 SelectedDissociationType = DissociationType.HCD;
+                common = new CommonParameters(digestionParams: new RnaDigestionParams(), fragmentationParams: new RnaFragmentationParams());
+                search = new RnaSearchParameters()
+                {
+                    MinAllowedInternalFragmentLength = 0,
+                    MaxFragmentSize = 30000
+                };
             }
             else
             {
@@ -49,9 +56,24 @@ namespace GuiFunctions
                                 && Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod)
                                 && prod.Count != 0);
                 SelectedDissociationType = DissociationType.CID;
+                common = new CommonParameters(digestionParams: new DigestionParams(), fragmentationParams: new FragmentationParams());
+                search = new SearchParameters()
+                {
+                    MinAllowedInternalFragmentLength = 0,
+                    MaxFragmentSize = 30000
+                };
             }
             DissociationTypes = [.. values];
 
+            LoadFragmentationParameters(common, search);
+        }
+
+        /// <summary>
+        /// Updates the FragmentationParamsViewModel with parameters loaded from a search TOML
+        /// </summary>
+        public void LoadFragmentationParameters(CommonParameters common, SearchParameters search)
+        {
+            FragmentationParamsViewModel = new(common, search);
         }
 
         private ObservableCollection<FragmentViewModel> _possibleProducts;
@@ -89,22 +111,7 @@ namespace GuiFunctions
             }
         }
 
-        private int _minInternalIonLength;
-        public int MinInternalIonLength
-        {
-            get => _minInternalIonLength;
-            set { _minInternalIonLength = value; OnPropertyChanged(nameof(MinInternalIonLength)); }
-        }
-
-        private bool _useInternalIons;
-        public bool UseInternalIons
-        {
-            get => _useInternalIons; 
-            set { _useInternalIons = value; OnPropertyChanged(nameof(UseInternalIons)); }
-        }
-
         private double _productIonMassTolerance;
-
         public double ProductIonMassTolerance
         {
             get => _productIonMassTolerance;
@@ -116,6 +123,20 @@ namespace GuiFunctions
         {
             get => _matchAllCharges;
             set { _matchAllCharges = value; OnPropertyChanged(nameof(MatchAllCharges)); }
+        }
+
+        private FragmentationParamsViewModel _fragmentationParamsViewModel;
+        /// <summary>
+        /// View model containing fragmentation parameters including M-Ion losses
+        /// </summary>
+        public FragmentationParamsViewModel FragmentationParamsViewModel
+        {
+            get => _fragmentationParamsViewModel;
+            set
+            {
+                _fragmentationParamsViewModel = value;
+                OnPropertyChanged(nameof(FragmentationParamsViewModel));
+            }
         }
 
         private IEnumerable<FragmentViewModel> GetPossibleProducts()
@@ -215,22 +236,24 @@ namespace GuiFunctions
             PossibleProducts.ForEach(product => product.Use = dissociationTypeProducts.Contains(product.ProductType));
         }
 
-        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv smToRematch, bool concatOldIonsOfType)
+        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv smToRematch, bool concatOldIonsOfType = true)
         {
             if (smToRematch.FullSequence.Contains('|'))
                 return smToRematch.MatchedIons;
 
             IBioPolymerWithSetMods bioPolymer = smToRematch.ToBioPolymerWithSetMods();
+            IFragmentationParams fragmentationParams = FragmentationParamsViewModel.ToFragmentationParams();
 
             List<Product> terminalProducts = new List<Product>();
             smToRematch.ProductsFromDissociationType()[DissociationType.Custom] = _productsToUse.ToList(); 
-            bioPolymer.Fragment(DissociationType.Custom, FragmentationTerminus.Both, terminalProducts);
+            bioPolymer.Fragment(DissociationType.Custom, FragmentationTerminus.Both, terminalProducts, fragmentationParams);
+
 
             List<Product> internalProducts = new List<Product>();
-            if (UseInternalIons && bioPolymer is PeptideWithSetModifications) // internal ions are not currently implemented for RNA
+            if (FragmentationParamsViewModel.GenerateInternalIons && bioPolymer is PeptideWithSetModifications) // internal ions are not currently implemented for RNA
             {
                 Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList();
-                bioPolymer.FragmentInternally(DissociationType.Custom, MinInternalIonLength, internalProducts);
+                bioPolymer.FragmentInternally(DissociationType.Custom, FragmentationParamsViewModel.MinInternalIonLength, internalProducts, fragmentationParams);
             }
             var allProducts = terminalProducts.Concat(internalProducts).ToList();
 
@@ -239,7 +262,8 @@ namespace GuiFunctions
                 precursorDeconParams: MetaDrawSettingsViewModel.Instance.DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters,
                 productDeconParams: MetaDrawSettingsViewModel.Instance.DeconHostViewModel.ProductDeconvolutionParameters.Parameters,
                 deconvolutionMaxAssumedChargeState: _isProtein ? 60 : -60,
-                digestionParams: _isProtein ? new DigestionParams() : new RnaDigestionParams() // no digestion occurs, just used to set values.
+                digestionParams: _isProtein ? new DigestionParams() : new RnaDigestionParams(), // no digestion occurs, just used to set values.
+                fragmentationParams: fragmentationParams
                 );
 
 
@@ -258,12 +282,11 @@ namespace GuiFunctions
                 .Where(p => Math.Abs(p.MassErrorPpm) <= ProductIonMassTolerance);
 
             // retain only internal ions
-            if (!UseInternalIons)
+            if (!FragmentationParamsViewModel.GenerateInternalIons)
                 uniqueMatches = uniqueMatches.Where(p => !p.IsInternalFragment);
             // retain terminal and internals greater than min length
             else
-                uniqueMatches = uniqueMatches.Where(p => !p.IsInternalFragment || Math.Abs(p.NeutralTheoreticalProduct.FragmentNumber - p.NeutralTheoreticalProduct.SecondaryFragmentNumber) >= MinInternalIonLength);
-
+                uniqueMatches = uniqueMatches.Where(p => !p.IsInternalFragment || Math.Abs(p.NeutralTheoreticalProduct.FragmentNumber - p.NeutralTheoreticalProduct.SecondaryFragmentNumber) >= FragmentationParamsViewModel.MinInternalIonLength);
             return uniqueMatches.Distinct(MatchedFragmentIonComparer)
                 .ToList();
         }

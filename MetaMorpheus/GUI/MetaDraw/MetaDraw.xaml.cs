@@ -56,7 +56,7 @@ namespace MetaMorpheusGUI
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
-            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
+            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel(!GuiGlobalParamsViewModel.Instance.IsRnaMode);
             AdditionalFragmentIonControl.LinkMetaDraw(this);
 
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
@@ -555,7 +555,8 @@ namespace MetaMorpheusGUI
                 loadLibraries: true,
                 chimeraTabViewModel: ChimeraAnalysisTabViewModel,
                 bioPolymerTabViewModel: BioPolymerTabViewModel,
-                deconExplorationTabViewModel: DeconExplorationViewModel);
+                deconExplorationTabViewModel: DeconExplorationViewModel,
+                fragmentationReanalysisViewModel: FragmentationReanalysisViewModel);
             dataGridScanNums.IsEnabled = true;
 
             if (errors.Any())
@@ -576,8 +577,6 @@ namespace MetaMorpheusGUI
                 plotTypes.Remove("Histogram of Hydrophobicity scores");
                 plotTypes.Remove("Predicted RT vs. Observed RT");
             }
-            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel = new FragmentationReanalysisViewModel(!isRna);
-
 
             ToggleButtonsEnabled(true);
         }
@@ -805,6 +804,39 @@ namespace MetaMorpheusGUI
             MessageBoxHelper.Show(MetaDrawSettings.ExportType + " Created at " + Path.Combine(fileDirectory, fileName) + "!");
         }
 
+        private void CreatePlotText_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItem = plotsListBox.SelectedItem;
+            if (selectedItem == null) { MessageBox.Show("Select a plot type to export!"); return; }
+            if (!MetaDrawLogic.SpectralMatchResultFilePaths.Any()) { MessageBox.Show("No PSMs are loaded!"); return; }
+            if (selectSourceFileListBox.SelectedItems.Count == 0) { MessageBox.Show("Please select a source file."); return; }
+
+            var plot = plotViewStat.DataContext as PlotModelStat;
+            if (plot == null || plot.PlotData == null || plot.PlotData.Count == 0)
+            {
+                MessageBox.Show("No plot data available to export.");
+                return;
+            }
+
+            var plotName = selectedItem as string;
+            var fileDirectory = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
+                    DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            var fileName = plotName;
+            if (PlotModelStatParametersViewModel.Instance.DisplayFilteredOnly)
+                fileName += "_filtered";
+            if (PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile)
+                fileName += "_normalizedToFile";
+            if (PlotModelStatParametersViewModel.Instance.GroupingProperty != "None")
+                fileName += $"_by{PlotModelStatParametersViewModel.Instance.GroupingProperty}";
+            fileName += ".tsv";
+
+            if (!Directory.Exists(fileDirectory)) Directory.CreateDirectory(fileDirectory);
+
+            var fullPath = Path.Combine(fileDirectory, fileName);
+            plot.ExportToText(fullPath);
+            MessageBoxHelper.Show("Text file created at " + fullPath);
+        }
+
         private async void PlotSelected(object sender, SelectionChangedEventArgs e)
         {
             var listview = sender as ListView;
@@ -845,7 +877,8 @@ namespace MetaMorpheusGUI
             PlotModelStat plot = null;
             try
             {
-                plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF));
+                plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF, 
+                    PlotModelStatParametersViewModel.Instance.GetParameters()));
             }
             catch (Exception ex)
             {
@@ -1255,7 +1288,7 @@ namespace MetaMorpheusGUI
         /// Replaces matched fragment ions on a psm with new ion types after a quick search
         /// </summary>
         /// <param name="psm"></param>
-        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm, bool concatOldIonsOfType = true)
+        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm, bool concatOldIonsOfType = false)
         {
             var scan = MetaDrawLogic.GetMs2ScanFromPsm(psm);
             var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm, concatOldIonsOfType);
