@@ -1,5 +1,6 @@
 using Chemistry;
 using EngineLayer;
+using GuiFunctions;
 using GuiFunctions.Models;
 using GuiFunctions.Util;
 using NUnit.Framework;
@@ -184,6 +185,84 @@ public class CustomMIonLossTests
         // Arrange
         var formula = ChemicalFormula.ParseFormula("H2O1");
         var loss = new CustomMIonLoss("Water Loss", "-H2O", formula, AnalyteType.Peptide);
+        
+        // Act
+        var isApplicable = loss.IsApplicableToCurrentMode(AnalyteType.Oligo);
+        
+        // Assert
+        Assert.That(isApplicable, Is.False);
+    }
+
+    [Test]
+    public void CustomMIonLoss_IsApplicableToCurrentMode_ProteoformExplicitMode_ReturnsTrue()
+    {
+        // Arrange
+        var formula = ChemicalFormula.ParseFormula("H2O1");
+        var loss = new CustomMIonLoss("Water Loss", "-H2O", formula, AnalyteType.Proteoform);
+        
+        // Act
+        var isApplicable = loss.IsApplicableToCurrentMode(AnalyteType.Proteoform);
+        
+        // Assert
+        Assert.That(isApplicable, Is.True);
+    }
+
+    [Test]
+    public void CustomMIonLoss_IsApplicableToCurrentMode_ProteoformInferredFromNull_ReturnsTrue_WhenNotRnaMode()
+    {
+        // Arrange
+        var formula = ChemicalFormula.ParseFormula("H2O1");
+        var loss = new CustomMIonLoss("Water Loss", "-H2O", formula, AnalyteType.Proteoform);
+        
+        // Ensure IsRnaMode is false (proteoform mode)
+        bool originalIsRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+        try
+        {
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+            
+            // Act - pass null currentAnalyteType
+            var isApplicable = loss.IsApplicableToCurrentMode(null);
+            
+            // Assert
+            Assert.That(isApplicable, Is.True);
+        }
+        finally
+        {
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = originalIsRnaMode;
+        }
+    }
+
+    [Test]
+    public void CustomMIonLoss_IsApplicableToCurrentMode_ProteoformInferredFromNull_ReturnsFalse_WhenRnaMode()
+    {
+        // Arrange
+        var formula = ChemicalFormula.ParseFormula("H2O1");
+        var loss = new CustomMIonLoss("Water Loss", "-H2O", formula, AnalyteType.Proteoform);
+        
+        // Ensure IsRnaMode is true (RNA mode)
+        bool originalIsRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+        try
+        {
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+            
+            // Act - pass null currentAnalyteType
+            var isApplicable = loss.IsApplicableToCurrentMode(null);
+            
+            // Assert - should return false when in RNA mode
+            Assert.That(isApplicable, Is.False);
+        }
+        finally
+        {
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = originalIsRnaMode;
+        }
+    }
+
+    [Test]
+    public void CustomMIonLoss_IsApplicableToCurrentMode_ProteoformExplicitMode_WithOligo_ReturnsFalse()
+    {
+        // Arrange
+        var formula = ChemicalFormula.ParseFormula("H2O1");
+        var loss = new CustomMIonLoss("Water Loss", "-H2O", formula, AnalyteType.Proteoform);
         
         // Act
         var isApplicable = loss.IsApplicableToCurrentMode(AnalyteType.Oligo);

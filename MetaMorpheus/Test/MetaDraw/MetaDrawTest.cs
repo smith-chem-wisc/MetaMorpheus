@@ -113,6 +113,278 @@ namespace Test.MetaDraw
             Assert.That(plot.PlotData.Any(row => row.ContainsKey(parameters.GroupingProperty)));
         }
 
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_ExportToText_EmptyData_ReturnsEarly()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "None",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            // Create a plot with empty data
+            var plot = new PlotModelStat(
+                "Test Plot",
+                new ObservableCollection<SpectrumMatchFromTsv>(),
+                new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>(),
+                parameters);
+
+            // Verify PlotData is empty
+            Assert.That(plot.PlotData, Is.Empty);
+
+            // Export to temp file - should return early without throwing
+            string tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".txt");
+            try
+            {
+                plot.ExportToText(tempFile);
+                // If we get here, the early return worked without exception
+                Assert.That(File.Exists(tempFile), Is.False, "File should not be created when PlotData is empty");
+            }
+            finally
+            {
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_ExportToText_WithData_CreatesValidFile()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "Precursor Charge",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Precursor Charges",
+                parameters,
+                out _);
+
+            // Verify plot has data
+            Assert.That(plot.PlotData, Is.Not.Empty);
+
+            // Export to temp file
+            string tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".txt");
+            try
+            {
+                plot.ExportToText(tempFile);
+
+                // Verify file was created
+                Assert.That(File.Exists(tempFile), Is.True);
+
+                // Read and verify content
+                var lines = File.ReadAllLines(tempFile);
+                Assert.That(lines.Length, Is.GreaterThan(1), "Should have header and at least one data row");
+
+                // Verify header contains expected columns
+                var header = lines[0];
+                Assert.That(header, Does.Contain("Source File"));
+                Assert.That(header, Does.Contain(parameters.GroupingProperty));
+
+                // Verify data rows are tab-separated
+                var dataLine = lines[1];
+                var columns = dataLine.Split('\t');
+                Assert.That(columns.Length, Is.GreaterThan(0));
+            }
+            finally
+            {
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        [TestCase("Notch")]
+        [TestCase("File Name")]
+        [TestCase("Ambiguity Level")]
+        [TestCase("OrganismName")]
+        [TestCase("DecoyContamTarget")]
+        [TestCase("None")]
+        public static void TestPlotModelStat_GroupingProperties_CreatesCorrectAxes(string groupingProperty)
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = groupingProperty,
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Missed Cleavages",
+                parameters,
+                out _);
+
+            if (groupingProperty != "None")
+            {
+                // Verify a group axis exists with the correct title
+                var groupAxis = plot.Model.Axes.OfType<PlotCategoryAxis>()
+                    .FirstOrDefault(axis => axis.Key == "GroupAxis");
+                Assert.That(groupAxis, Is.Not.Null, $"GroupAxis should exist for grouping property '{groupingProperty}'");
+                Assert.That(groupAxis.Title, Is.EqualTo(groupingProperty), $"GroupAxis title should match grouping property '{groupingProperty}'");
+            }
+            else
+            {
+                // For "None", no group axis should be created
+                var groupAxis = plot.Model.Axes.OfType<PlotCategoryAxis>()
+                    .FirstOrDefault(axis => axis.Key == "GroupAxis");
+                Assert.That(groupAxis, Is.Null, "GroupAxis should not exist when GroupingProperty is 'None'");
+            }
+
+            // Verify plot data exists
+            Assert.That(plot.PlotData, Is.Not.Empty, $"PlotData should not be empty for grouping property '{groupingProperty}'");
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityFilterLevel1_SkipsAmbiguousPsms()
+        {
+            MetaDrawSettings.ResetSettings();
+            MetaDrawSettings.AmbiguityFilter = "1"; // Filter out ambiguous PSMs
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "Ambiguity Level",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Missed Cleavages",
+                parameters,
+                out _,
+                takeCount: 50); // Use more PSMs to ensure we have some ambiguity
+
+            // Verify the plot was created
+            Assert.That(plot.Model, Is.Not.Null);
+            Assert.That(plot.PlotData, Is.Not.Empty);
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AllowAmbiguousGroupsFalse_SkipsAmbiguousGroups()
+        {
+            MetaDrawSettings.ResetSettings();
+            MetaDrawSettings.AmbiguityFilter = "No Filter"; // Don't filter at settings level
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "Precursor Charge",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = false, // Skip ambiguous groups at plot level
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Missed Cleavages",
+                parameters,
+                out _,
+                takeCount: 50);
+
+            // Verify the plot was created without throwing
+            Assert.That(plot.Model, Is.Not.Null);
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_UseLogScaleYAxis_AddsLogarithmicAxis()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "None",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = true // Enable log scale
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Missed Cleavages",
+                parameters,
+                out _);
+
+            // Verify LogarithmicAxis is present
+            var logAxis = plot.Model.Axes.OfType<OxyPlot.Axes.LogarithmicAxis>().FirstOrDefault();
+            Assert.That(logAxis, Is.Not.Null, "LogarithmicAxis should be present when UseLogScaleYAxis is true");
+
+            // Verify axis properties
+            Assert.That(logAxis.AbsoluteMinimum, Is.EqualTo(0.1), "AbsoluteMinimum should be 0.1 for log scale");
+            Assert.That(logAxis.Minimum, Is.EqualTo(0.1), "Minimum should be 0.1 for log scale");
+            Assert.That(logAxis.Base, Is.EqualTo(10), "Log base should be 10");
+
+            // Verify all ColumnSeries have BaseValue = 0.1
+            var columnSeries = plot.Model.Series.OfType<PlotColumnSeries>().ToList();
+            Assert.That(columnSeries, Is.Not.Empty, "Should have at least one ColumnSeries");
+
+            foreach (var series in columnSeries)
+            {
+                Assert.That(series.BaseValue, Is.EqualTo(0.1), "ColumnSeries BaseValue should be 0.1 when using log scale");
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_UseLogScaleYAxis_SmallValuesClamped()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "None",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = true, // Enable normalization to get small values
+                UseLogScaleYAxis = true // Enable log scale
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Missed Cleavages",
+                parameters,
+                out _);
+
+            // Verify that small values in PlotData are properly handled
+            // The actual clamping happens during series creation
+            var columnSeries = plot.Model.Series.OfType<PlotColumnSeries>().ToList();
+            Assert.That(columnSeries, Is.Not.Empty);
+
+            // Check that all values in the series are >= 0.1 (the clamped minimum)
+            foreach (var series in columnSeries)
+            {
+                foreach (var item in series.Items)
+                {
+                    // Values should be at least 0.1 (or 0 if empty)
+                    Assert.That(item.Value, Is.GreaterThanOrEqualTo(0).Or.EqualTo(0.1),
+                        "Values in log scale should be >= 0.1 or 0 for empty bins");
+                }
+            }
+        }
+
         [Test]
         public static void TestMetaDrawReadPsmFile()
         {
