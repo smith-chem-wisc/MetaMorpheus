@@ -1049,37 +1049,45 @@ namespace TaskLayer
             }
         }
 
-        protected static void WriteSpectrumLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
-        {
-            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
-            string spectrumFilePath = outputFolder + "\\SpectralLibrary" + "_" + startTimeForAllFilenames + ".msp";
-            using (StreamWriter output = new StreamWriter(spectrumFilePath))
-            {
-                foreach (var x in spectrumLibrary)
-                {
-                    output.WriteLine(x.ToString());
-                }
+		protected static void WriteSpectrumLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
+		{
+			var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
-            }
-        }
+			// Write MSP (legacy format, kept for backward compatibility)
+			string mspPath = Path.Combine(outputFolder, "SpectralLibrary_" + startTimeForAllFilenames + ".msp");
+			using (StreamWriter output = new StreamWriter(mspPath))
+			{
+				foreach (var x in spectrumLibrary)
+					output.WriteLine(x.ToString());
+			}
 
-        protected string UpdateSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
-        {
-            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
-            string spectrumFilePath = outputFolder + "\\updateSpectralLibrary" +"_" + startTimeForAllFilenames + ".msp";
-            using (StreamWriter output = new StreamWriter(spectrumFilePath))
-            {
+			// Write MSL (binary format)
+			string mslPath = Path.Combine(outputFolder, "SpectralLibrary_" + startTimeForAllFilenames + ".msl");
+			MslLibrary.SaveFromLibrarySpectra(mslPath, spectrumLibrary);
+		}
 
-                foreach (var x in spectrumLibrary)
-                {
-                    output.WriteLine(x.ToString());
-                }
+		protected string UpdateSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
+		{
+			var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
-            }
-            return spectrumFilePath;
-        }
+			// Write MSP (legacy format, kept for backward compatibility)
+			string mspPath = Path.Combine(outputFolder, "updateSpectralLibrary_" + startTimeForAllFilenames + ".msp");
+			using (StreamWriter output = new StreamWriter(mspPath))
+			{
+				foreach (var x in spectrumLibrary)
+					output.WriteLine(x.ToString());
+			}
 
-        protected void ReportProgress(ProgressEventArgs v)
+			// Write MSL (binary format)
+			string mslPath = Path.Combine(outputFolder, "updateSpectralLibrary_" + startTimeForAllFilenames + ".msl");
+			MslLibrary.SaveFromLibrarySpectra(mslPath, spectrumLibrary);
+
+			// Return the MSL path as the canonical output; callers that feed this
+			// path back into LoadSpectralLibraries will get the faster binary format
+			return mslPath;
+		}
+
+		protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);
         }
