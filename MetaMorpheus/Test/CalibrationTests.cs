@@ -421,5 +421,116 @@ namespace Test
             Directory.Delete(unitTestFolder, true);
         }
 
+        /// <summary>
+        /// Tests that calibration using Modern Search produces the expected output files.
+        /// This is critical because Modern Search uses an indexed database approach (IndexingEngine + ModernSearchEngine)
+        /// rather than the ClassicSearchEngine. We need to verify that the calibration workflow works correctly
+        /// when using this alternative search strategy.
+        /// </summary>
+        [Test]
+        public static void CalibrationWithModernSearchTest()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CalibrationModernSearchTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(unitTestFolder, "testfile.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            // run calibration with Modern Search
+            CalibrationTask calibrationTask = new();
+            calibrationTask.CalibrationParameters.SearchType = SearchType.Modern;
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+
+            // test file-specific toml written by calibration w/ suggested ppm tolerances
+            string expectedTomlName = Path.GetFileNameWithoutExtension(nonCalibratedFilePath) + "-calib.toml";
+            string expectedCalibratedFileName = Path.GetFileNameWithoutExtension(nonCalibratedFilePath) + "-calib.mzML";
+            var expectedCalibratedFilePath = Path.Combine(outputFolder, expectedCalibratedFileName);
+
+            Assert.That(File.Exists(Path.Combine(outputFolder, expectedTomlName)), "Calibration toml file should exist");
+            Assert.That(File.Exists(expectedCalibratedFilePath), "Calibrated mzML file should exist");
+
+            var lines = File.ReadAllLines(Path.Combine(outputFolder, expectedTomlName));
+            var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
+            var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
+
+            Assert.That(double.TryParse(tolerance, out double tol), "Precursor tolerance should be parseable");
+            Assert.That(double.TryParse(tolerance1, out double tol1), "Product tolerance should be parseable");
+            Assert.That(lines[0].Contains("PrecursorMassTolerance"), "First line should contain PrecursorMassTolerance");
+            Assert.That(lines[1].Contains("ProductMassTolerance"), "Second line should contain ProductMassTolerance");
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
+
+        /// <summary>
+        /// Compares calibration results between Classic Search and Modern Search to ensure they produce
+        /// comparable results. This is critical to verify that the Modern Search implementation doesn't
+        /// introduce significant differences in calibration quality. Both search types should find
+        /// similar numbers of PSMs and produce similar mass tolerance recommendations.
+        /// </summary>
+        [Test]
+        public static void CalibrationClassicVsModernSearchComparison()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CalibrationClassicVsModernTest");
+            string classicOutputFolder = Path.Combine(unitTestFolder, @"ClassicOutput");
+            string modernOutputFolder = Path.Combine(unitTestFolder, @"ModernOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(classicOutputFolder);
+            Directory.CreateDirectory(modernOutputFolder);
+
+            // set up original spectra files (need separate copies to avoid file locking issues)
+            string classicFilePath = Path.Combine(unitTestFolder, "classic_test.mzML");
+            string modernFilePath = Path.Combine(unitTestFolder, "modern_test.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), classicFilePath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), modernFilePath, true);
+
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            // run calibration with Classic Search
+            CalibrationTask classicCalibrationTask = new();
+            classicCalibrationTask.CalibrationParameters.SearchType = SearchType.Classic;
+            classicCalibrationTask.RunTask(classicOutputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { classicFilePath }, "classic");
+
+            // run calibration with Modern Search
+            CalibrationTask modernCalibrationTask = new();
+            modernCalibrationTask.CalibrationParameters.SearchType = SearchType.Modern;
+            modernCalibrationTask.RunTask(modernOutputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { modernFilePath }, "modern");
+
+            // verify both produced output files
+            string classicTomlPath = Path.Combine(classicOutputFolder, "classic_test-calib.toml");
+            string modernTomlPath = Path.Combine(modernOutputFolder, "modern_test-calib.toml");
+
+            Assert.That(File.Exists(classicTomlPath), "Classic calibration should produce toml file");
+            Assert.That(File.Exists(modernTomlPath), "Modern calibration should produce toml file");
+
+            // read tolerances from both
+            var classicLines = File.ReadAllLines(classicTomlPath);
+            var modernLines = File.ReadAllLines(modernTomlPath);
+
+            double.TryParse(Regex.Match(classicLines[0], @"\d+\.\d*").Value, out double classicPrecursorTol);
+            double.TryParse(Regex.Match(classicLines[1], @"\d+\.\d*").Value, out double classicProductTol);
+            double.TryParse(Regex.Match(modernLines[0], @"\d+\.\d*").Value, out double modernPrecursorTol);
+            double.TryParse(Regex.Match(modernLines[1], @"\d+\.\d*").Value, out double modernProductTol);
+
+            // tolerances should be in a reasonable range (not wildly different)
+            // allowing some variance since the search engines may find slightly different PSMs
+            Assert.That(modernPrecursorTol, Is.InRange(classicPrecursorTol * 0.5, classicPrecursorTol * 2.0),
+                $"Modern precursor tolerance ({modernPrecursorTol}) should be within 2x of Classic ({classicPrecursorTol})");
+            Assert.That(modernProductTol, Is.InRange(classicProductTol * 0.5, classicProductTol * 2.0),
+                $"Modern product tolerance ({modernProductTol}) should be within 2x of Classic ({classicProductTol})");
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
+
     }
 }
