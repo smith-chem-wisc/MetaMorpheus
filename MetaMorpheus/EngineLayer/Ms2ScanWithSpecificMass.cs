@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,11 +9,15 @@ namespace EngineLayer
 {
     public class Ms2ScanWithSpecificMass
     {
-        public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam, IsotopicEnvelope[] neutralExperimentalFragments = null)
+        public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam,
+            IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null)
         {
             PrecursorMonoisotopicPeakMz = precursorMonoisotopicPeakMz;
             PrecursorCharge = precursorCharge;
             PrecursorMass = PrecursorMonoisotopicPeakMz.ToMass(precursorCharge);
+            PrecursorIntensity = precursorIntensity ?? 1;
+            PrecursorEnvelopePeakCount = envelopePeakCount ?? 1;
+            PrecursorFractionalIntensity = precursorFractionalIntensity ?? -1;
             FullFilePath = fullFilePath;
             ChildScans = new List<Ms2ScanWithSpecificMass>();
             NativeId = mzLibScan.NativeId;
@@ -23,7 +28,6 @@ namespace EngineLayer
             {
                 ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
             }
-
             if (ExperimentalFragments != null && ExperimentalFragments.Any())
             {
                 DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.MonoisotopicMass).ToArray();
@@ -38,52 +42,87 @@ namespace EngineLayer
         public double PrecursorMonoisotopicPeakMz { get; }
         public double PrecursorMass { get; }
         public int PrecursorCharge { get; }
+        public double PrecursorIntensity { get; }
+        public int PrecursorEnvelopePeakCount { get; }
+        public double PrecursorFractionalIntensity { get; }
         public string FullFilePath { get; }
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
         private double[] DeconvolutedMonoisotopicMasses;
-        public string NativeId { get; } 
-
+        public string NativeId { get; }
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
-
         public int? OneBasedPrecursorScanNumber => TheScan.OneBasedPrecursorScanNumber;
-
         public double RetentionTime => TheScan.RetentionTime;
-
         public int NumPeaks => TheScan.MassSpectrum.Size;
-
         public double TotalIonCurrent => TheScan.TotalIonCurrent;
+        /// <summary>
+        /// An array containing the intensities of the reporter ions for isobaric mass tags. 
+        /// If multiplex quantification wasn't performed, this will be null
+        /// </summary>
+        public double[]? IsobaricMassTagReporterIonIntensities { get; private set; }
 
         public static IsotopicEnvelope[] GetNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
         {
-            int minZ = 1;
-            int maxZ = 10;
+            var neutralExperimentalFragmentMasses =
+                Deconvoluter.Deconvolute(scan, commonParam.ProductDeconvolutionParameters, scan.MassSpectrum.Range).ToList();
 
-            var neutralExperimentalFragmentMasses = scan.MassSpectrum.Deconvolute(scan.MassSpectrum.Range,
-                minZ, maxZ, commonParam.DeconvolutionMassTolerance.Value, commonParam.DeconvolutionIntensityRatio).ToList();
+            if (!commonParam.AssumeOrphanPeaksAreZ1Fragments || scan.MassSpectrum is NeutralMassSpectrum)
+                return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
 
-            if (commonParam.AssumeOrphanPeaksAreZ1Fragments)
+            HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
+                .SelectMany(p => p.Peaks.Select(v => v.mz.RoundedDouble()!.Value)));
+
+            int charge = scan.Polarity == Polarity.Positive ? 1 : -1;
+            for (int i = 0; i < scan.MassSpectrum.XArray.Length; i++)
             {
-                HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
-                    .SelectMany(p => p.Peaks.Select(v => ClassExtensions.RoundedDouble(v.mz).Value)));
+                double mz = scan.MassSpectrum.XArray[i];
+                double intensity = scan.MassSpectrum.YArray[i];
 
-                for (int i = 0; i < scan.MassSpectrum.XArray.Length; i++)
+                if (!alreadyClaimedMzs.Contains(mz.RoundedDouble()!.Value))
                 {
-                    double mz = scan.MassSpectrum.XArray[i];
-                    double intensity = scan.MassSpectrum.YArray[i];
-
-                    if (!alreadyClaimedMzs.Contains(ClassExtensions.RoundedDouble(mz).Value))
-                    {
-                        neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
-                            new List<(double mz, double intensity)> { (mz, intensity) },
-                            mz.ToMass(1), 1, intensity, 0, 0));
-                    }
+                    neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
+                        new List<(double mz, double intensity)> { (mz, intensity) },
+                        mz.ToMass(charge), charge, intensity, 0));
                 }
             }
 
             return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
         }
 
+        /// <summary>
+        /// Writes the reporter ion intensities into the IsobaricMassTagReporterIonIntensities property
+        /// If the scan has
+        /// </summary>
+        /// <param name="massTag"></param>
+        public void SetIsobaricMassTagReporterIonIntensities(IsobaricMassTag massTag)
+        {
+            if (UseChildScansForIsobaricQuant(out var mostIntenseChildScan))
+            {
+                IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(mostIntenseChildScan.TheScan.MassSpectrum);
+                return;
+            }
+            IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(TheScan.MassSpectrum);
+        }
+
+        /// <summary>
+        /// Helper method to determine if child scans contain isobaric mass tag (e.g., TMT) reporter ions
+        /// In most cases, if MS3 scans exist, there will only be one MS3 scan per MS2 scan, and the ChildScans list will contain that one MS3 scan
+        /// If there are methods that generate multiple child scans, then this method will return the most intense child scan
+        /// However, if we ever have multiple child scans with isobaric mass tag reporter ions, we should revisit this logic
+        /// </summary>
+        /// <param name="mostIntenseChildScan">The child scan that has the highest ion current </param>
+        private bool UseChildScansForIsobaricQuant(out Ms2ScanWithSpecificMass mostIntenseChildScan)
+        {
+            mostIntenseChildScan = null;
+            if (ChildScans.IsNullOrEmpty()) return false;
+            mostIntenseChildScan = ChildScans.MaxBy(s => s.TotalIonCurrent);
+            if(mostIntenseChildScan != null)
+            {
+                return true;
+            }
+            return false;
+        }
+       
         public IsotopicEnvelope GetClosestExperimentalIsotopicEnvelope(double theoreticalNeutralMass)
         {
             if (DeconvolutedMonoisotopicMasses.Length == 0)
@@ -151,47 +190,6 @@ namespace EngineLayer
             }
             IsotopicEnvelope[] isotopicEnvelopes = ExperimentalFragments.Skip(startIndex).Take(length).ToArray();
             return isotopicEnvelopes;
-        }
-
-        public double? GetClosestExperimentalFragmentMz(double theoreticalMz, out double? intensity)
-        {
-            if (TheScan.MassSpectrum.XArray.Length == 0)
-            {
-                intensity = null;
-                return null;
-            }
-            intensity = TheScan.MassSpectrum.YArray[GetClosestFragmentMzIndex(theoreticalMz).Value];
-            return TheScan.MassSpectrum.XArray[GetClosestFragmentMzIndex(theoreticalMz).Value];
-        }
-
-        private int? GetClosestFragmentMzIndex(double mz)
-        {
-            if (TheScan.MassSpectrum.XArray.Length == 0)
-            {
-                return null;
-            }
-            int index = Array.BinarySearch(TheScan.MassSpectrum.XArray, mz);
-            if (index >= 0)
-            {
-                return index;
-            }
-            index = ~index;
-
-            if (index >= TheScan.MassSpectrum.XArray.Length)
-            {
-                return index - 1;
-            }
-            if (index == 0)
-            {
-                return index;
-            }
-
-            if (mz - TheScan.MassSpectrum.XArray[index - 1] > TheScan.MassSpectrum.XArray[index] - mz)
-            {
-                return index;
-            }
-            return index - 1;
-
         }
     }
 }

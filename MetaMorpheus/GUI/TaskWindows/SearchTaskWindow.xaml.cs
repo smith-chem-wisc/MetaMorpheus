@@ -2,7 +2,7 @@
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -17,6 +17,9 @@ using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using GuiFunctions;
+using Omics.Digestion;
+using Omics.Modifications;
+using Transcriptomics.Digestion;
 
 namespace MetaMorpheusGUI
 {
@@ -34,18 +37,39 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private MassDifferenceAcceptorSelectionViewModel _massDifferenceAcceptorViewModel;
+        private string _defaultMultiplexType = "TMT10";
+        private DeconHostViewModel DeconHostViewModel;
 
         internal SearchTask TheTask { get; private set; }
 
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
-            TheTask = task ?? new SearchTask();
+            if (task is null) // Happens when there is no default saved. 
+            {
+                TheTask = new SearchTask();
+                if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                {
+                    Title = "RNA Search Task";
+                    TheTask.SearchParameters = new RnaSearchParameters();
+                    TheTask.CommonParameters = new CommonParameters("RnaSearchTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20, precursorMassTolerance: new PpmTolerance(15));
+                }
+                else
+                {
+                    Title = "Search Task";
+                }
+            }
+            else
+                TheTask = task;
+
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
+            DeisotopingControl.DataContext = DeconHostViewModel;
+            MassDifferenceAcceptorControl.DataContext = _massDifferenceAcceptorViewModel;
 
             if (task == null)
             {
@@ -64,12 +88,6 @@ namespace MetaMorpheusGUI
             base.Closing += this.OnClosing;
         }
 
-
-        private void CheckIfNumber(object sender, TextCompositionEventArgs e)
-        {
-            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
-        }
-
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
@@ -81,23 +99,13 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
-            {
-                ProteaseComboBox.Items.Add(protease);
-            }
-            Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
-            ProteaseComboBox.SelectedItem = trypsin;
-
-            foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
-            {
-                InitiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
-            }
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            List<Modification> modsToUse = isRnaMode ? GlobalVariables.AllRnaModsKnown.ToList() : GlobalVariables.AllModsKnown.ToList();
 
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
             }
-
 
             foreach (string separationType in GlobalVariables.SeparationTypes)
             {
@@ -112,14 +120,14 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.Items.Add("Da");
             PrecursorMassToleranceComboBox.Items.Add("ppm");
 
-            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
+            foreach (var hm in modsToUse.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForGrid(hm.Key);
                 ModSelectionGridItems.Add(theModType);
             }
             ModSelectionGrid.ItemsSource = ModSelectionGridItems;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
+            foreach (var hm in modsToUse.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeViewModel(hm.Key, false);
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
@@ -130,7 +138,7 @@ namespace MetaMorpheusGUI
             }
             FixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
+            foreach (var hm in modsToUse.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeViewModel(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
@@ -141,9 +149,40 @@ namespace MetaMorpheusGUI
             }
             VariableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
+            foreach (var hm in modsToUse.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
+            }
+
+            if (isRnaMode)
+            {
+                foreach (Rnase rnase in RnaseDictionary.Dictionary.Values)
+                {
+                    ProteaseComboBox.Items.Add(rnase);
+                }
+                Rnase t1 = RnaseDictionary.Dictionary["RNase T1"];
+                ProteaseComboBox.SelectedItem = t1;
+            }
+            else
+            {
+                foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
+                {
+                    ProteaseComboBox.Items.Add(protease);
+                }
+                Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
+                ProteaseComboBox.SelectedItem = trypsin;
+
+                foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
+                {
+                    InitiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
+                }
+
+                foreach (string labelModType in GlobalVariables.AllModsKnown.Where(m => m.ModificationType.Equals("Multiplex Label"))
+                             .Select(m => m.OriginalId).Distinct())
+                {
+                    MultiplexComboBox.Items.Add(labelModType);
+                }
+                MultiplexComboBox.SelectedItem = _defaultMultiplexType;
             }
         }
 
@@ -153,97 +192,110 @@ namespace MetaMorpheusGUI
         /// <param name="task"></param>
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
+            if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
+            {
+                ProteaseComboBox.SelectedItem = digestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
+                //do these in if statements so as not to trigger the change
+                if (task.SearchParameters.SearchType == SearchType.NonSpecific && digestionParams.SearchModeType == CleavageSpecificity.None)
+                {
+                    NonSpecificSearchRadioButton.IsChecked = true; //when this is changed it overrides the protease
+                    if (digestionParams.SpecificProtease.Name.Equals("singleC") || digestionParams.SpecificProtease.Name.Equals("singleN"))
+                    {
+                        ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["non-specific"];
+                    }
+                    else
+                    {
+                        ProteaseComboBox.SelectedItem = digestionParams.SpecificProtease;
+                    }
+                }
+
+                //If SILAC turnover
+                if (task.SearchParameters.StartTurnoverLabel != null || task.SearchParameters.EndTurnoverLabel != null)
+                {
+                    task.SearchParameters.SilacLabels = null; //reset if between runs
+                    CheckBoxSILAC.IsChecked = true;
+                    var startLabel = task.SearchParameters.StartTurnoverLabel;
+                    if (startLabel != null)
+                    {
+                        SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(startLabel, SilacModificationWindow.ExperimentType.Start);
+                        if (startLabel.AdditionalLabels != null)
+                        {
+                            foreach (SilacLabel additionalLabel in startLabel.AdditionalLabels)
+                            {
+                                infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Start));
+                            }
+                        }
+                        StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                    }
+                    else //it's unlabeled for the start condition
+                    {
+                        StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Start));
+                    }
+                    var endLabel = task.SearchParameters.EndTurnoverLabel;
+                    if (endLabel != null)
+                    {
+                        SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(endLabel, SilacModificationWindow.ExperimentType.End);
+                        if (endLabel.AdditionalLabels != null)
+                        {
+                            foreach (SilacLabel additionalLabel in endLabel.AdditionalLabels)
+                            {
+                                infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.End));
+                            }
+                        }
+                        StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                    }
+                    else //it's unlabeled for the end condition
+                    {
+                        StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.End));
+                    }
+                }
+                //else if SILAC multiplex
+                else if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
+                {
+                    CheckBoxSILAC.IsChecked = true;
+                    List<SilacLabel> labels = task.SearchParameters.SilacLabels;
+                    foreach (SilacLabel label in labels)
+                    {
+                        SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label, SilacModificationWindow.ExperimentType.Multiplex);
+                        if (label.AdditionalLabels != null)
+                        {
+                            foreach (SilacLabel additionalLabel in label.AdditionalLabels)
+                            {
+                                infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Multiplex));
+                            }
+                        }
+                        StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                    }
+                    if (digestionParams.GeneratehUnlabeledProteinsForSilac)
+                    {
+                        StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Multiplex));
+                    }
+                }
+
+                CheckBoxQuantifyUnlabeledForSilac.IsChecked = digestionParams.GeneratehUnlabeledProteinsForSilac;
+                InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
+            }
+            else
+            {
+                ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.DigestionAgent;
+            }
             ClassicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             ModernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
-            //do these in if statements so as not to trigger the change
-            if (task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType == CleavageSpecificity.None)
-            {
-                NonSpecificSearchRadioButton.IsChecked = true; //when this is changed it overrides the protease
-                if (task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleC") || task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleN"))
-                {
-                    ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["non-specific"];
-                }
-                else
-                {
-                    ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease;
-                }
-            }
+            
             if (task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType != CleavageSpecificity.None)
             {
                 SemiSpecificSearchRadioButton.IsChecked = true;
             }
             CheckBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
-            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
-            CheckBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
-            //If SILAC turnover
-            if (task.SearchParameters.StartTurnoverLabel != null || task.SearchParameters.EndTurnoverLabel != null)
-            {
-                task.SearchParameters.SilacLabels = null; //reset if between runs
-                CheckBoxSILAC.IsChecked = true;
-                var startLabel = task.SearchParameters.StartTurnoverLabel;
-                if (startLabel != null)
-                {
-                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(startLabel, SilacModificationWindow.ExperimentType.Start);
-                    if (startLabel.AdditionalLabels != null)
-                    {
-                        foreach (Proteomics.SilacLabel additionalLabel in startLabel.AdditionalLabels)
-                        {
-                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Start));
-                        }
-                    }
-                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
-                }
-                else //it's unlabeled for the start condition
-                {
-                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Start));
-                }
-                var endLabel = task.SearchParameters.EndTurnoverLabel;
-                if (endLabel != null)
-                {
-                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(endLabel, SilacModificationWindow.ExperimentType.End);
-                    if (endLabel.AdditionalLabels != null)
-                    {
-                        foreach (Proteomics.SilacLabel additionalLabel in endLabel.AdditionalLabels)
-                        {
-                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.End));
-                        }
-                    }
-                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
-                }
-                else //it's unlabeled for the end condition
-                {
-                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.End));
-                }
-            }
-            //else if SILAC multiplex
-            else if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
-            {
-                CheckBoxSILAC.IsChecked = true;
-                List<Proteomics.SilacLabel> labels = task.SearchParameters.SilacLabels;
-                foreach (Proteomics.SilacLabel label in labels)
-                {
-                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label, SilacModificationWindow.ExperimentType.Multiplex);
-                    if (label.AdditionalLabels != null)
-                    {
-                        foreach (Proteomics.SilacLabel additionalLabel in label.AdditionalLabels)
-                        {
-                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Multiplex));
-                        }
-                    }
-                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
-                }
-                if (task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac)
-                {
-                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Multiplex));
-                }
-            }
-
-
-            CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
+            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoLabelFreeQuantification;
+            CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
+            CheckBoxUseSharedPeptidesForQuant.IsChecked = task.SearchParameters.UseSharedPeptidesForLFQ;
+            CheckBoxMultiplex.IsChecked = task.SearchParameters.DoMultiplexQuantification;
+            MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId ?? _defaultMultiplexType;
             PeakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
+            MbrFdrThresholdTextBox.Text = task.SearchParameters.MbrFdrThreshold.ToString(CultureInfo.InvariantCulture);
             CheckBoxNormalize.IsChecked = task.SearchParameters.Normalize;
             ModPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
             CheckBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
@@ -253,12 +305,11 @@ namespace MetaMorpheusGUI
             RadioButtonReverseDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Reverse;
             RadioButtonSlideDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Slide;
             MissedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
+            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinLength.ToString(CultureInfo.InvariantCulture);
+            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxLength.ToString(CultureInfo.InvariantCulture);
             MaxFragmentMassTextBox.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture); //put after max peptide length to allow for override of auto
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
-            InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
+            MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxMods.ToString(CultureInfo.InvariantCulture);
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             SeparationTypeComboBox.SelectedItem = task.CommonParameters.SeparationType.ToString();
             NTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.N;
@@ -271,18 +322,19 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             AddCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
-            DeconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
-            UseProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
             RemoveContaminantRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveContaminant;
             RemoveTargetRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveTarget;
             RenameTCProteinsRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RenameProtein;
             AllAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
-            DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
-            DeltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
+
+            DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
+                TheTask.CommonParameters.ProductDeconvolutionParameters,
+                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
+            DeisotopingControl.DataContext = DeconHostViewModel;
 
             NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
@@ -295,28 +347,29 @@ namespace MetaMorpheusGUI
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
 
-            if (task.CommonParameters.QValueOutputFilter < 1)
+            if (task.CommonParameters.QValueThreshold < 1)
             {
-                QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
-                QValueRadioButton.IsChecked = true;
+                QValueThresholdTextBox.Text = task.CommonParameters.QValueThreshold.ToString(CultureInfo.InvariantCulture);
             }
             else
             {
-                QValueTextBox.Text = "0.01";
+                QValueThresholdTextBox.Text = "0.01";
             }
 
-            if (task.CommonParameters.PepQValueOutputFilter < 1)
+            if (task.CommonParameters.PepQValueThreshold < 1)
             {
-                PepQValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
-                PepQValueRadioButton.IsChecked = true;
+                PepQValueThresholdTextBox.Text = task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture);
+                PepQValueThresholdCheckbox.IsChecked = true;
             }
             else
             {
-                PepQValueTextBox.Text = "0.01";  
+                PepQValueThresholdTextBox.Text = "0.01";
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
+            WriteDigestCountCheckBox.IsChecked = task.SearchParameters.WriteDigestionProductCountFile;
+            WriteHighQPsmsCheckBox.IsChecked = task.SearchParameters.WriteHighQValuePsms;
             WriteDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
@@ -324,6 +377,7 @@ namespace MetaMorpheusGUI
             UpdateSpectralLibraryCheckBox.IsChecked = task.SearchParameters.UpdateSpectralLibrary;
             CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
             IncludeMotifInModNamesCheckBox.IsChecked = task.SearchParameters.IncludeModMotifInMzid;
+            WriteTargetDecoyFastaCheckBox.IsChecked = task.SearchParameters.WriteTargetDecoyFasta;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -384,19 +438,7 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             }
 
-            MassDiffAcceptExact.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Exact;
-            MassDiffAccept1mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.OneMM;
-            MassDiffAccept2mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.TwoMM;
-            MassDiffAccept3mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ThreeMM;
-            MassDiffAcceptPlusOrMinusThree.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.PlusOrMinusThreeMM;
-            MassDiffAccept187.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen;
-            MassDiffAcceptOpen.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open;
-            MassDiffAcceptCustom.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom;
-
-            if (task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom)
-            {
-                CustomkMdacTextBox.Text = task.SearchParameters.CustomMdac;
-            }
+            _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac, task.CommonParameters.PrecursorMassTolerance.Value);
             WritePrunedDBCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
             UpdateModSelectionGrid();
         }
@@ -412,16 +454,34 @@ namespace MetaMorpheusGUI
             CleavageSpecificity searchModeType = GetSearchModeType(); //change search type to semi or non if selected
             SnesUpdates(searchModeType); //decide on singleN/C, make comp ion changes
 
-            if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
-                maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                PeakFindingToleranceTextBox.Text, HistogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text,
-                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, NumberOfDatabaseSearchesTextBox.Text, 
-                MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text, PepQValueTextBox.Text, InternalIonsCheckBox.IsChecked.Value ? MinInternalFragmentLengthTextBox.Text : null))
+            if (!TaskValidator.CheckTaskSettingsValidity(
+                PrecursorMassToleranceTextBox.Text, 
+                ProductMassToleranceTextBox.Text, 
+                MissedCleavagesTextBox.Text,
+                maxModificationIsoformsTextBox.Text, 
+                MinPeptideLengthTextBox.Text, 
+                MaxPeptideLengthTextBox.Text,
+                MaxThreadsTextBox.Text, 
+                MinScoreAllowed.Text,
+                PeakFindingToleranceTextBox.Text, 
+                MbrFdrThresholdTextBox.Text,
+                HistogramBinWidthTextBox.Text, 
+                DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), 
+                NumberOfPeaksToKeepPerWindowTextBox.Text,
+                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, 
+                WindowWidthThomsonsTextBox.Text, 
+                NumberOfWindowsTextBox.Text, 
+                NumberOfDatabaseSearchesTextBox.Text, 
+                MaxModNumTextBox.Text, 
+                MaxFragmentMassTextBox.Text, 
+                QValueThresholdTextBox.Text, 
+                PepQValueThresholdTextBox.Text, 
+                InternalIonsCheckBox.IsChecked.Value ? MinInternalFragmentLengthTextBox.Text : null))
             {
                 return;
             }
 
-            Protease protease = (Protease)ProteaseComboBox.SelectedItem;
+            DigestionAgent protease = (DigestionAgent)ProteaseComboBox.SelectedItem;
 
             string separationType = SeparationTypeComboBox.SelectedItem.ToString();
 
@@ -454,18 +514,32 @@ namespace MetaMorpheusGUI
             int maxModificationIsoformsValue = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             int maxModsForPeptideValue = (int.Parse(MaxModNumTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex);
-
-            DigestionParams digestionParamsToSave = new DigestionParams(
-                protease: protease.Name,
-                maxMissedCleavages: maxMissedCleavages,
-                minPeptideLength: minPeptideLengthValue,
-                maxPeptideLength: maxPeptideLengthValue,
-                maxModificationIsoforms: maxModificationIsoformsValue,
-                initiatorMethionineBehavior: initiatorMethionineBehavior,
-                maxModsForPeptides: maxModsForPeptideValue,
-                searchModeType: searchModeType,
-                fragmentationTerminus: fragmentationTerminus,
-                generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value);
+            IDigestionParams digestionParamsToSave;
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
+            {
+                digestionParamsToSave = new RnaDigestionParams(protease.Name, 
+                    maxMissedCleavages, 
+                    minPeptideLengthValue, 
+                    maxPeptideLengthValue, 
+                    maxModificationIsoformsValue, 
+                    maxModsForPeptideValue, 
+                    fragmentationTerminus);
+            }
+            else
+            {
+                digestionParamsToSave = new DigestionParams(
+                    protease: protease.Name,
+                    maxMissedCleavages: maxMissedCleavages,
+                    minPeptideLength: minPeptideLengthValue,
+                    maxPeptideLength: maxPeptideLengthValue,
+                    maxModificationIsoforms: maxModificationIsoformsValue,
+                    initiatorMethionineBehavior: initiatorMethionineBehavior,
+                    maxModsForPeptides: maxModsForPeptideValue,
+                    searchModeType: searchModeType,
+                    fragmentationTerminus: fragmentationTerminus,
+                    generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value);
+            }
+                
 
             Tolerance ProductMassTolerance;
             if (ProductMassToleranceComboBox.SelectedIndex == 0)
@@ -500,7 +574,7 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
-            if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
+            if (!TaskValidator.VariableModCheck(listOfModsVariable))
             {
                 return;
             }
@@ -537,15 +611,21 @@ namespace MetaMorpheusGUI
 
             bool parseMaxThreadsPerFile = !MaxThreadsTextBox.Text.Equals("") && (int.Parse(MaxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(MaxThreadsTextBox.Text) > 0);
 
+
+            DeconvolutionParameters precursorDeconvolutionParameters = DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters;
+            DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
+            bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
+            bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
+            
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
-                useDeltaScore: DeltaScoreCheckBox.IsChecked.Value,
                 reportAllAmbiguity: AllAmbiguity.IsChecked.Value,
-                deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
-                doPrecursorDeconvolution: DeconvolutePrecursors.IsChecked.Value,
-                useProvidedPrecursorInfo: UseProvidedPrecursor.IsChecked.Value,
+                doPrecursorDeconvolution: doPrecursorDeconvolution,
+                useProvidedPrecursorInfo: useProvidedPrecursorInfo,
+                qValueThreshold: !PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(QValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                pepQValueThreshold: PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(PepQValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
@@ -563,11 +643,11 @@ namespace MetaMorpheusGUI
                 numberOfWindows: numberOfWindows,//maybe change this some day
                 normalizePeaksAccrossAllWindows: normalizePeaksAccrossAllWindows,//maybe change this some day
                 addCompIons: AddCompIonCheckBox.IsChecked.Value,
-                qValueOutputFilter: QValueRadioButton.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
-                pepQValueOutputFilter: PepQValueRadioButton.IsChecked.Value ? double.Parse(PepQValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
-                maxHeterozygousVariants: MaxHeterozygousVariants);
+                maxHeterozygousVariants: MaxHeterozygousVariants,
+                precursorDeconParams: precursorDeconvolutionParameters,
+                productDeconParams: productDeconvolutionParameters);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {
@@ -591,13 +671,18 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.MinAllowedInternalFragmentLength = InternalIonsCheckBox.IsChecked.Value ? Convert.ToInt32(MinInternalFragmentLengthTextBox.Text) : 0;
             TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
-            TheTask.SearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask.SearchParameters.DoLabelFreeQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask.SearchParameters.UseSharedPeptidesForLFQ = CheckBoxUseSharedPeptidesForQuant.IsChecked.Value;
+            TheTask.SearchParameters.DoMultiplexQuantification = CheckBoxMultiplex.IsChecked.Value;
+            TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
+            TheTask.SearchParameters.MbrFdrThreshold = double.Parse(MbrFdrThresholdTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = CheckBoxTarget.IsChecked.Value;
             TheTask.SearchParameters.WriteMzId = CkbMzId.IsChecked.Value;
+            TheTask.SearchParameters.WriteHighQValuePsms = WriteHighQPsmsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
@@ -605,6 +690,8 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.UpdateSpectralLibrary = UpdateSpectralLibraryCheckBox.IsChecked.Value;
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteDigestionProductCountFile = WriteDigestCountCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteTargetDecoyFasta = WriteTargetDecoyFastaCheckBox.IsChecked.Value;
 
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {
@@ -637,49 +724,24 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             }
 
-            if (MassDiffAcceptExact.IsChecked.HasValue && MassDiffAcceptExact.IsChecked.Value)
-            {
-                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
-            }
-            if (MassDiffAccept1mm.IsChecked.HasValue && MassDiffAccept1mm.IsChecked.Value)
-            {
-                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
-            }
-            if (MassDiffAccept2mm.IsChecked.HasValue && MassDiffAccept2mm.IsChecked.Value)
-            {
-                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.TwoMM;
-            }
-            if (MassDiffAccept3mm.IsChecked.HasValue && MassDiffAccept3mm.IsChecked.Value)
-            {
-                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.ThreeMM;
-            }
-            if (MassDiffAccept187.IsChecked.HasValue && MassDiffAccept187.IsChecked.Value)
-            {
-                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.ModOpen;
-            }
-            if (MassDiffAcceptOpen.IsChecked.HasValue && MassDiffAcceptOpen.IsChecked.Value)
-            {
-                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Open;
-            }
-            if (MassDiffAcceptPlusOrMinusThree.IsChecked.HasValue && MassDiffAcceptPlusOrMinusThree.IsChecked.Value)
-            {
-                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.PlusOrMinusThreeMM;
-            }
-            if (MassDiffAcceptCustom.IsChecked.HasValue && MassDiffAcceptCustom.IsChecked.Value)
+            // Custom Mdac will be "" for all non-custom types, so no need to check for those.
+            if (_massDifferenceAcceptorViewModel.CustomMdac != string.Empty)
             {
                 try
                 {
-                    MassDiffAcceptor customMassDiffAcceptor = SearchTask.GetMassDiffAcceptor(null, MassDiffAcceptorType.Custom, CustomkMdacTextBox.Text);
+                    MassDiffAcceptor customMassDiffAcceptor =
+                        SearchTask.GetMassDiffAcceptor(null, MassDiffAcceptorType.Custom, _massDifferenceAcceptorViewModel.CustomMdac);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Could not parse custom mass difference acceptor: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Could not parse custom mass difference acceptor: " + ex.Message, "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
-
-                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
-                TheTask.SearchParameters.CustomMdac = CustomkMdacTextBox.Text;
             }
+
+            TheTask.SearchParameters.MassDiffAcceptorType = _massDifferenceAcceptorViewModel.SelectedType.Type;
+            TheTask.SearchParameters.CustomMdac = _massDifferenceAcceptorViewModel.CustomMdac;
 
             //determine if semi or nonspecific with a specific protease.
             if (searchModeType == CleavageSpecificity.Semi || protease.CleavageSpecificity == CleavageSpecificity.Semi)
@@ -806,10 +868,30 @@ namespace MetaMorpheusGUI
             }
         }
 
+        /// <summary>
+        /// When a new multiplex label is selected from the drop-down menu (MultiplexComboBox),
+        /// the fixed mod tree view is updated so that only those mods are selected. 
+        /// </summary>
+        private void MultiplexUpdate(object sender, RoutedEventArgs routedEventArgs)
+        {
+            ModTypeForTreeViewModel multiplexModType = FixedModTypeForTreeViewObservableCollection
+                .FirstOrDefault(b => b.DisplayName.Equals("Multiplex Label"));
+            string selectedModId = CheckBoxMultiplex.IsChecked.Value
+                ? (string)MultiplexComboBox.SelectedItem
+                : "NoMatchingMod";
+
+            foreach (ModForTreeViewModel mod in multiplexModType.Children)
+            {
+                mod.Use = mod.DisplayName.Contains(selectedModId);
+            }
+            UpdateModSelectionGrid();
+        }
+
         //this one is used by the GUI
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            string proteaseName = ((DigestionAgent)ProteaseComboBox.SelectedItem).Name;
             MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
 
             if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
@@ -827,16 +909,32 @@ namespace MetaMorpheusGUI
                     case "top-down":
                         if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
-                            UseProvidedPrecursor.IsChecked = false;
-                            DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
-                            TrimMsMs.IsChecked = false;
-                            CheckBoxNoQuant.IsChecked = true;
-                            MassDiffAccept3mm.IsChecked = true;
-                            //uncheck all variable mods
-                            foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                            DeconHostViewModel.DoPrecursorDeconvolution = true;
+                            DeconHostViewModel.UseProvidedPrecursors = false;
+                            if (isRnaMode)
                             {
-                                mod.Use = false;
+                                DeconHostViewModel.SetAllPrecursorMaxChargeState(-40);
+                                DeconHostViewModel.SetAllProductMaxChargeState(-20);
                             }
+                            else
+                            {
+                                DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
+                                DeconHostViewModel.SetAllProductMaxChargeState(20);
+                                InternalIonsCheckBox.IsChecked = true;
+                                MinInternalFragmentLengthTextBox.Text = "10";
+                                CheckBoxNoQuant.IsChecked = true; 
+                                _massDifferenceAcceptorViewModel.SelectedType =
+                                    _massDifferenceAcceptorViewModel.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
+
+                                //uncheck all variable mods
+                                foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                                {
+                                    mod.Use = false;
+                                }
+                            }
+                            TrimMsMs.IsChecked = false;
+                            maxModificationIsoformsTextBox.Text = "4096";
+
                         }
                         break;
                     case "Arg-C":
@@ -882,7 +980,7 @@ namespace MetaMorpheusGUI
         //this is an overload for co-dependent parameters
         private void ProteaseSpecificUpdate(object sender, TextChangedEventArgs e)
         {
-            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            if (((DigestionAgent)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
                 try
                 {
@@ -934,21 +1032,9 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void MbrAnalysisUpdate(object sender, RoutedEventArgs e)
-        {
-            if (CheckBoxLFQwMBR.IsChecked.Value)
-            {
-                if (UpdateGUISettings.UseMBRAnalysisMandatorySettings())
-                {
-                    CheckBoxMatchBetweenRuns.IsChecked = true;
-                    WriteSpectralLibraryCheckBox.IsChecked = true;
-                }
-            }
-        }
-
         private void KeyPressed(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Return)
+            if (e.Key == Key.Return && e.OriginalSource is not TextBox)
             {
                 SaveButton_Click(sender, e);
             }
@@ -1036,7 +1122,7 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow.Close();
         }
 
-        private static Proteomics.SilacLabel ConvertSilacDataGridInfoToSilacLabel(SilacInfoForDataGrid info)
+        private static SilacLabel ConvertSilacDataGridInfoToSilacLabel(SilacInfoForDataGrid info)
         {
             if (info == null)
             {
@@ -1044,7 +1130,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                Proteomics.SilacLabel label = info.SilacLabel[0];
+                SilacLabel label = info.SilacLabel[0];
                 //This is needed to prevent double adding of additional labels. 
                 //A quick test is to create a silac condition with two labels, save, reopen the task, save, and reopen again. 
                 //Without this line, the second label will be doubled. Example: (K+8)&(R+10)&(R+10)
@@ -1081,7 +1167,7 @@ namespace MetaMorpheusGUI
         {
             if (searchModeType != CleavageSpecificity.Full)
             {
-                if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+                if (((DigestionAgent)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
                     searchModeType = CleavageSpecificity.None; //prevents an accidental semi attempt of a non-specific protease
 
@@ -1153,7 +1239,7 @@ namespace MetaMorpheusGUI
                 //if they're all multiplex
                 if (StaticSilacLabelsObservableCollection.All(x => x.LabelType == SilacModificationWindow.ExperimentType.Multiplex))
                 {
-                    List<Proteomics.SilacLabel> labelsToSave = new List<Proteomics.SilacLabel>();
+                    List<SilacLabel> labelsToSave = new List<SilacLabel>();
                     foreach (SilacInfoForDataGrid info in StaticSilacLabelsObservableCollection)
                     {
                         labelsToSave.Add(ConvertSilacDataGridInfoToSilacLabel(info));
@@ -1262,32 +1348,16 @@ namespace MetaMorpheusGUI
             CheckBoxQuantifyUnlabeledForSilac_Checked(sender, e);
         }
 
+        private void CheckBoxMultiplex_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
+
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
         {
             SaveButton_Click(sender, e);
-            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
-        }
-
-        /// <summary>
-        /// Event Handler for when the pepQvalue radio button is checked. Sets value to default then uncecks and clears qValue
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void PepQValueRadioButton_Checked(object sender, RoutedEventArgs e)
-        {
-            QValueTextBox.Clear();
-            PepQValueTextBox.Text = "0.01";
-        }
-
-        /// <summary>
-        /// Event Handler for when the qvalue radio button is checked. Sets value to default then unchecks and clears pepQvalue.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void QValueRadioButton_Checked(object sender, RoutedEventArgs e)
-        {
-            PepQValueTextBox.Clear();
-            QValueTextBox.Text = "0.01";
+            var prefix = GuiGlobalParamsViewModel.Instance.IsRnaMode ? "Rna" : "";
+            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", $"{prefix}SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
 
         /// <summary>

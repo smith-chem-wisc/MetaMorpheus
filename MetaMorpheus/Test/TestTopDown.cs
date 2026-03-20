@@ -8,6 +8,7 @@ using EngineLayer.ModernSearch;
 using IO.MzML;
 using MzLibUtil;
 using NUnit.Framework;
+using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer;
@@ -26,10 +27,10 @@ namespace Test
                 scoreCutoff: 1,
                 assumeOrphanPeaksAreZ1Fragments: false);
 
-            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
 
             // test output file name (should be proteoform and not peptide)
-            Assert.That(GlobalVariables.AnalyteType == "Proteoform");
+            Assert.That(GlobalVariables.AnalyteType == AnalyteType.Proteoform);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -46,7 +47,7 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             bool writeSpetralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), writeSpetralLibrary).Run();
@@ -78,7 +79,7 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 null, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());

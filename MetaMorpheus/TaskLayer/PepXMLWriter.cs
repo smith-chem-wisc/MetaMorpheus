@@ -1,22 +1,22 @@
 ﻿using EngineLayer;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
+using EngineLayer.DatabaseLoading;
+using Omics.Fragmentation.Peptide;
+using Omics.Modifications;
 
 namespace TaskLayer
 {
     public static class PepXMLWriter
     {
-        public static void WritePepXml(List<PeptideSpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath, double qValueFilter)
+        public static void WritePepXml(List<SpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath)
         {
-            // TODO: needs a unit test
-            psms = psms.Where(p => p.FdrInfo.QValue <= qValueFilter && p.FdrInfo.QValueNotch < qValueFilter).ToList();
-
             if (!psms.Any())
             {
                 return;
@@ -28,8 +28,8 @@ namespace TaskLayer
             _pepxml.date = DateTime.Now;
             _pepxml.summary_xml = psms[0].FullFilePath + ".pep.XML";
 
-            string proteaseNC = string.Join(string.Empty, CommonParameters.DigestionParams.Protease.DigestionMotifs.Select(m => m.InducingCleavage));
-            string proteaseC = string.Join(string.Empty, CommonParameters.DigestionParams.Protease.DigestionMotifs.Select(m => m.InducingCleavage));
+            string proteaseNC = string.Join(string.Empty, CommonParameters.DigestionParams.DigestionAgent.DigestionMotifs.Select(m => m.InducingCleavage));
+            string proteaseC = string.Join(string.Empty, CommonParameters.DigestionParams.DigestionAgent.DigestionMotifs.Select(m => m.InducingCleavage));
 
             string fileNameNoExtension = Path.GetFileNameWithoutExtension(psms[0].FullFilePath);
             string filePathNoExtension = Path.ChangeExtension(psms[0].FullFilePath, null);
@@ -41,15 +41,15 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "MS_data_file", value = psms[0].FullFilePath });
 
                 para.Add(new pepXML.Generated.nameValueType { name = "MaxMissed Cleavages", value = CommonParameters.DigestionParams.MaxMissedCleavages.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Protease", value = CommonParameters.DigestionParams.Protease.Name });
-                para.Add(new pepXML.Generated.nameValueType { name = "Initiator Methionine", value = CommonParameters.DigestionParams.InitiatorMethionineBehavior.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Protease", value = CommonParameters.DigestionParams.DigestionAgent.Name });
+                para.Add(new pepXML.Generated.nameValueType { name = "Initiator Methionine", value = ((DigestionParams)CommonParameters.DigestionParams).InitiatorMethionineBehavior.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Max Modification Isoforms", value = CommonParameters.DigestionParams.MaxModificationIsoforms.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Min Peptide Len", value = CommonParameters.DigestionParams.MinPeptideLength.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParameters.DigestionParams.MaxPeptideLength.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Min Peptide Len", value = CommonParameters.DigestionParams.MinLength.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParameters.DigestionParams.MaxLength.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
                 // TODO: check this
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = string.Join(", ", DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]) });
-                para.Add(new pepXML.Generated.nameValueType { name = "Q-value Filter", value = CommonParameters.QValueOutputFilter.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Q-value Filter", value = CommonParameters.QValueThreshold.ToString() });
                 foreach (var item in fixedModifications)
                 {
                     para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });
@@ -72,7 +72,7 @@ namespace TaskLayer
                  raw_data = ".mzML", //TODO: use file format of spectra file used
                  sample_enzyme = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzyme()
                  {
-                     name = CommonParameters.DigestionParams.Protease.Name,
+                     name = CommonParameters.DigestionParams.DigestionAgent.Name,
                      specificity = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzymeSpecificity[1]
                      {
                          new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzymeSpecificity
@@ -104,7 +104,7 @@ namespace TaskLayer
                          },
                          enzymatic_search_constraint = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summaryEnzymatic_search_constraint
                          {
-                             enzyme = CommonParameters.DigestionParams.Protease.Name,
+                             enzyme = CommonParameters.DigestionParams.DigestionAgent.Name,
                              max_num_internal_cleavages = CommonParameters.DigestionParams.MaxMissedCleavages.ToString(),
                          },
 
@@ -120,7 +120,7 @@ namespace TaskLayer
 
             foreach (var psm in psms)
             {
-                PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
+                PeptideWithSetModifications peptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer as PeptideWithSetModifications;
 
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
                 foreach (var mod in peptide.AllModsOneIsNterminus)
@@ -133,7 +133,7 @@ namespace TaskLayer
                     mods.Add(pepXmlMod);
                 }
 
-                var proteinAccessions = psm.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).Distinct();
+                var proteinAccessions = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent.Accession).Distinct();
 
                 var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                 {
@@ -142,12 +142,12 @@ namespace TaskLayer
                     // TODO: add amino acid substitution
                     hit_rank = 1,
                     peptide = ((psm.BaseSequence != null) ? psm.BaseSequence : "Ambiguous"),
-                    peptide_prev_aa = peptide.PreviousAminoAcid.ToString(),
-                    peptide_next_aa = peptide.NextAminoAcid.ToString(),
+                    peptide_prev_aa = peptide.PreviousResidue.ToString(),
+                    peptide_next_aa = peptide.NextResidue.ToString(),
                     protein = ((peptide.Protein.Accession != null) ? peptide.Protein.Accession : string.Join("|", proteinAccessions)),
                     num_tot_proteins = (uint)proteinAccessions.Count(),
-                    calc_neutral_pep_mass = (float)((psm.PeptideMonisotopicMass != null) ? psm.PeptideMonisotopicMass : float.NaN),
-                    massdiff = ((psm.PeptideMonisotopicMass != null) ? (psm.ScanPrecursorMass - psm.PeptideMonisotopicMass.Value).ToString() : "Ambiguous"),
+                    calc_neutral_pep_mass = (float)((psm.BioPolymerWithSetModsMonoisotopicMass != null) ? psm.BioPolymerWithSetModsMonoisotopicMass : float.NaN),
+                    massdiff = ((psm.BioPolymerWithSetModsMonoisotopicMass != null) ? (psm.ScanPrecursorMass - psm.BioPolymerWithSetModsMonoisotopicMass.Value).ToString() : "Ambiguous"),
                     modification_info = (mods.Count == 0 ? new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() } : null),
                     search_score = new pepXML.Generated.nameValueType[]
                     {

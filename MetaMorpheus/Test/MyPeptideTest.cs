@@ -1,4 +1,4 @@
-﻿                                                                                                                                                                                                            using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
@@ -7,12 +7,13 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics.Modifications;
 using UsefulProteomicsDatabases;
 
 namespace Test
@@ -39,7 +40,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
+            SpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 1, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(
                 productMassTolerance: new PpmTolerance(5),
@@ -53,7 +54,7 @@ namespace Test
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpectralLibrary);
 
             cse.Run();
-            Assert.AreEqual(3, globalPsms[0].MatchedFragmentIons.Count);
+            Assert.That(globalPsms[0].MatchedFragmentIons.Count, Is.EqualTo(3));
         }
 
         [Test]
@@ -74,7 +75,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
+            SpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 1, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(
                 scoreCutoff: 1,
@@ -89,8 +90,8 @@ namespace Test
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpectralLibrary);
 
             cse.Run();
-            Assert.Less(globalPsms[0].Score, 2);
-            Assert.Greater(globalPsms[0].Score, 1);
+            Assert.That(globalPsms[0].Score < 2);
+            Assert.That(globalPsms[0].Score > 1);
         }
 
         [Test]
@@ -111,7 +112,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
+            SpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 1, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(
                 productMassTolerance: new PpmTolerance(5),
@@ -126,8 +127,8 @@ namespace Test
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpetralLibrary);
 
             cse.Run();
-            Assert.Less(globalPsms[0].Score, 2);
-            Assert.Greater(globalPsms[0].Score, 1);
+            Assert.That(globalPsms[0].Score < 2);
+            Assert.That(globalPsms[0].Score > 1);
         }
 
         [Test]
@@ -148,7 +149,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
+            SpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 600, 1, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(productMassTolerance: new PpmTolerance(5), scoreCutoff: 1, digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: int.MaxValue, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
 
@@ -158,8 +159,8 @@ namespace Test
             var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, new OpenSearchMode(), 0, new List<string>());
 
             cse.Run();
-            Assert.Less(globalPsms[0].Score, 2);
-            Assert.Greater(globalPsms[0].Score, 1);
+            Assert.That(globalPsms[0].Score < 2);
+            Assert.That(globalPsms[0].Score > 1);
         }
 
         [Test]
@@ -179,7 +180,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
+            SpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(productMassTolerance: new PpmTolerance(5), scoreCutoff: 1, digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: int.MaxValue, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
             bool writeSpetralLibrary = false;
@@ -187,7 +188,7 @@ namespace Test
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpetralLibrary);
 
             cse.Run();
-            Assert.IsNull(globalPsms[0]);
+            Assert.That(globalPsms[0], Is.Null);
         }
     }
 }

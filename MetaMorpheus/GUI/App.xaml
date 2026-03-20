@@ -8,7 +8,9 @@
         <!--TODO: store these in a file and read them from disk, to let users style MetaMorpheus?-->
         <SolidColorBrush x:Key="SideBarMainColor" Color="#353b48" />
         <SolidColorBrush x:Key="AccentColor" Color="#0097e6" />
-        <SolidColorBrush x:Key="SecondaryButtonColor" Color="#2f3640" />
+        <SolidColorBrush x:Key="LightAccentColor" Color="#bdf0ff" />
+        <SolidColorBrush x:Key="PurpleAccentColor" Color="#e6aeff" />
+        <SolidColorBrush x:Key="SecondaryButtonColor" Color="#504B59" />
         <SolidColorBrush x:Key="BackgroundColor" Color="#f5f6fa" />
         <SolidColorBrush x:Key="DataGridBackgroundColor" Color="#f5f6fa" />
         <SolidColorBrush x:Key="DataGridHeaderColor" Color="#dcdde1" />
@@ -19,6 +21,10 @@
         <Color x:Key="ForegroundDark">#bdbdbd</Color>
         <SolidColorBrush x:Key="ForegroundDarkBrush" Color="{StaticResource ForegroundDark}" />
 
+        <SolidColorBrush x:Key="RnaAccentColor" Color="#a64ef9" />
+        <SolidColorBrush x:Key="RnaLightAccentColor" Color="#FFC4C4FF" />
+        <SolidColorBrush x:Key="RnaSideBarMainColor" Color="#433d49" />
+        
         <!--Default button style for all of MetaMorpheus-->
         <!--<Style TargetType="Button">
             <Setter Property="BorderThickness" Value="0"/>
@@ -36,5 +42,76 @@
         <Style x:Key="DataGridCenteredCellStyle" TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Center"></Setter>
         </Style>
+
+        <!-- GroupBoxStyle -->
+        <Style TargetType="{x:Type GroupBox}" x:Key="GroupBoxStyle">
+            <Setter Property="BorderBrush" Value="{StaticResource ForegroundDarkBrush}"></Setter>
+            <Setter Property="BorderThickness" Value="2"></Setter>
+            <Setter Property="Margin" Value="5"></Setter>
+        </Style>
+
+        <!-- ValueEnteringStackPanel -->
+        <Style TargetType="{x:Type StackPanel}" x:Key="ValueEnteringStackPanel">
+            <Setter Property="Orientation" Value="Horizontal"></Setter>
+            <Setter Property="Margin" Value="5"></Setter>
+            <Setter Property="HorizontalAlignment" Value="Center"></Setter>
+        </Style>
+
+        <!-- TextBoxStyle -->
+        <Style TargetType="{x:Type TextBox}" x:Key="TextBoxStyle">
+            <Setter Property="HorizontalContentAlignment" Value="Center"></Setter>
+            <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
+            <Setter Property="Width" Value="40"></Setter>
+        </Style>
+
+        <Style x:Key="MetaDrawButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource SecondaryButtonColor}" />
+            <Setter Property="Foreground" Value="{StaticResource TextColor2}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Padding" Value="4,1" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <TextBlock Text="{TemplateBinding Content}"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       FontWeight="{TemplateBinding FontWeight}"
+                                       Padding="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource PurpleAccentColor}" />
+                                <Setter Property="Foreground" Value="{StaticResource TextColor1}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Icons -->
+        <BitmapImage x:Key="ProteinIcon" UriSource="Icons/IconProtein.bmp"/>
+        <BitmapImage x:Key="RnaIcon" UriSource="Icons/IconRna.bmp"/>
+        
+        <!-- Converters -->
+        <local:ProteinRnaTerminologyConverter x:Key="ProteinRnaTerminologyConverter"/>
+        <local:CollapseOnRnaModeConverter x:Key="CollapseOnRnaModeConverter"/>
     </Application.Resources>
 </Application>

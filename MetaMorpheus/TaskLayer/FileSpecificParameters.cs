@@ -1,8 +1,12 @@
-﻿using EngineLayer;
+﻿using System.Collections.Generic;
+using EngineLayer;
 using MzLibUtil;
 using Nett;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Transcriptomics.Digestion;
 
 namespace TaskLayer
 {
@@ -20,8 +24,33 @@ namespace TaskLayer
                         PrecursorMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
                     case nameof(ProductMassTolerance):
                         ProductMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
-                    case nameof(Protease):
-                        Protease = keyValuePair.Value.Get<Protease>(); break;
+                    case nameof(DigestionAgent): // Support new tomls that labeled by Digestion Agent Type instead of specific type
+                        string valueString = keyValuePair.Value.Get<string>();
+
+                        // If type is top-down we only have the analyte type to go off of. 
+                        // This should be updated if there is ever an Rnase and Protease that share a same name. 
+                        if (valueString.Contains("top-down"))
+                        {
+                            if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+                                DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                            else
+                                DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        }
+
+                        // If type is not top-down we can check the digestion agent dictionaries. 
+                        if (ProteaseDictionary.Dictionary.ContainsKey(valueString))
+                            DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        else if (RnaseDictionary.Dictionary.ContainsKey(valueString))
+                            DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                        else
+                            throw new MetaMorpheusException("Unrecognized digestion agent type \"" + valueString + "\" in file-specific parameters toml");
+                        break;
+                    case "Rnase": // Support old tomls that labeled by Digestion Agent Type instead of DigestionAgent
+                        DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                        break;
+                    case "Protease": // Support old tomls that labeled by Digestion Agent Type instead of DigestionAgent
+                        DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        break;
                     case nameof(MinPeptideLength):
                         MinPeptideLength = keyValuePair.Value.Get<int>(); break;
                     case nameof(MaxPeptideLength):
@@ -36,6 +65,8 @@ namespace TaskLayer
 
                     case nameof(DissociationType):
                         DissociationType = keyValuePair.Value.Get<DissociationType>(); break;
+                    case nameof(CustomIons):
+                        CustomIons = keyValuePair.Value.Get<List<ProductType>>(); break;
 
 
                     default:
@@ -51,7 +82,7 @@ namespace TaskLayer
 
         public Tolerance PrecursorMassTolerance { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
-        public Protease Protease { get; set; }
+        public DigestionAgent DigestionAgent { get; set; }
         public int? MinPeptideLength { get; set; }
         public int? MaxPeptideLength { get; set; }
         public int? MaxMissedCleavages { get; set; }
@@ -59,30 +90,7 @@ namespace TaskLayer
         public DissociationType? DissociationType { get; set; }
         public string SeparationType { get; set; }
 
-        // This method is to make sure developers keep consistent naming between CommonParameters and FileSpecificParameters.
-        // It's supposed to immediately crash MetaMorpheus if you rename a Common Parameter and don't rename it here.
-        // The reason this method exists is to make sure toml settings are written and parsed consistently between the tasks
-        // and the file-specific settings.
-        public static void ValidateFileSpecificVariableNames()
-        {
-            CommonParameters temp = new CommonParameters();
-
-            if (!nameof(temp.PrecursorMassTolerance).Equals(nameof(PrecursorMassTolerance)))
-                throw new MetaMorpheusException("Precursor tol variable name is inconsistent");
-            if (!nameof(temp.ProductMassTolerance).Equals(nameof(ProductMassTolerance)))
-                throw new MetaMorpheusException("Product tol variable name is inconsistent");
-            if (!nameof(temp.DigestionParams.Protease).Equals(nameof(Protease)))
-                throw new MetaMorpheusException("Protease variable name is inconsistent");
-            if (!nameof(temp.DigestionParams.MinPeptideLength).Equals(nameof(MinPeptideLength)))
-                throw new MetaMorpheusException("Min peptide length variable name is inconsistent");
-            if (!nameof(temp.DigestionParams.MaxPeptideLength).Equals(nameof(MaxPeptideLength)))
-                throw new MetaMorpheusException("Max peptide length variable name is inconsistent");
-            if (!nameof(temp.DigestionParams.MaxMissedCleavages).Equals(nameof(MaxMissedCleavages)))
-                throw new MetaMorpheusException("Max missed cleavages variable name is inconsistent");
-            if (!nameof(temp.DigestionParams.MaxModsForPeptide).Equals(nameof(MaxModsForPeptide)))
-                throw new MetaMorpheusException("Max mods per peptide variable name is inconsistent");
-
-        }
+        public List<ProductType> CustomIons { get; set; }
 
         public FileSpecificParameters Clone()
         {

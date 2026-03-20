@@ -1,24 +1,27 @@
-﻿using FlashLFQ;
-using Proteomics;
-using Proteomics.ProteolyticDigestion;
+﻿using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using MassSpectrometry;
+using Omics.Modifications;
 using ThermoFisher.CommonCore.Data;
+using Omics;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer
 {
     public class ProteinGroup
     {
-        public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
+        public ProteinGroup(HashSet<IBioPolymer> proteins, HashSet<IBioPolymerWithSetMods> peptides,
+            HashSet<IBioPolymerWithSetMods> uniquePeptides)
         {
             Proteins = proteins;
             ListOfProteinsOrderedByAccession = Proteins.OrderBy(p => p.Accession).ToList();
             ProteinGroupName = string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Accession));
             AllPeptides = peptides;
             UniquePeptides = uniquePeptides;
-            AllPsmsBelowOnePercentFDR = new HashSet<PeptideSpectralMatch>();
+            AllPsmsBelowOnePercentFDR = new HashSet<SpectralMatch>();
             SequenceCoverageFraction = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
@@ -38,6 +41,7 @@ namespace EngineLayer
                     IsDecoy = true;
                     break;
                 }
+
                 if (protein.IsContaminant)
                 {
                     IsContaminant = true;
@@ -52,17 +56,44 @@ namespace EngineLayer
 
         public List<SpectraFileInfo> FilesForQuantification { get; set; }
 
-        public HashSet<Protein> Proteins { get; set; }
+        public HashSet<IBioPolymer> Proteins { get; set; }
 
         public string ProteinGroupName { get; private set; }
 
         public double ProteinGroupScore { get; set; }
 
-        public HashSet<PeptideWithSetModifications> AllPeptides { get; set; }
+        public HashSet<IBioPolymerWithSetMods> AllPeptides { get; set; }
 
-        public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
-
-        public HashSet<PeptideSpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
+        public HashSet<IBioPolymerWithSetMods> UniquePeptides { get; set; }
+        /// <summary>
+        /// Contains all PSMs associated with this protein group that pass the configured quality threshold.
+        /// The specific filtering criteria depends on the <see cref="FilterType"/> and threshold passed to 
+        /// <see cref="ProteinScoringAndFdrEngine"/> during protein scoring:
+        /// <list type="bullet">
+        ///   <item>
+        ///     <term><see cref="FilterType.QValue"/></term>
+        ///     <description>PSMs where QValue ≤ threshold AND QValueNotch ≤ threshold</description>
+        ///   </item>
+        ///   <item>
+        ///     <term><see cref="FilterType.PepQValue"/></term>
+        ///     <description>PSMs where PEP_QValue ≤ threshold</description>
+        ///   </item>
+        /// </list>
+        /// The default threshold is 0.01 (1% FDR), but this can vary based on the filter configuration.
+        /// This collection is populated during <see cref="ProteinScoringAndFdrEngine.ScoreProteinGroups"/> 
+        /// and is used for:
+        /// <list type="bullet">
+        ///   <item>Calculating the <see cref="ProteinGroupScore"/> via the <see cref="Score"/> method</item>
+        ///   <item>Determining <see cref="BestPeptideScore"/>, <see cref="BestPeptideQValue"/>, and <see cref="BestPeptidePEP"/></item>
+        ///   <item>Computing sequence coverage in <see cref="CalculateSequenceCoverage"/></item>
+        ///   <item>Reporting the number of PSMs in protein group output</item>
+        /// </list>
+        /// </summary>
+        /// <remarks>
+        /// Note: The property name "AllPsmsBelowOnePercentFDR" is a legacy name. The actual threshold 
+        /// used is determined by the FilterThreshold parameter passed to ProteinScoringAndFdrEngine.
+        /// </remarks>
+        public HashSet<SpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
 
         public List<double> SequenceCoverageFraction { get; private set; }
 
@@ -76,6 +107,14 @@ namespace EngineLayer
 
         public double BestPeptideQValue { get; set; }
 
+        /// <summary>
+        /// The minimum Posterior Error Probability (PEP) among all PSMs in <see cref="AllPsmsBelowOnePercentFDR"/>.
+        /// Lower values indicate higher confidence that the best peptide identification is correct.
+        /// This value is populated during <see cref="ProteinScoringAndFdrEngine.DoProteinFdr"/> and is used
+        /// for protein group ranking when using PEP-based filtering (<see cref="FilterType.PepQValue"/>).
+        /// </summary>
+        public double BestPeptidePEP { get; set; }
+
         public double BestPeptideScore { get; set; }
 
         public int CumulativeTarget { get; set; }
@@ -88,7 +127,7 @@ namespace EngineLayer
 
         public Dictionary<SpectraFileInfo, double> IntensitiesByFile { get; set; }
 
-        private List<Protein> ListOfProteinsOrderedByAccession;
+        private List<IBioPolymer> ListOfProteinsOrderedByAccession;
 
         private string UniquePeptidesOutput;
         private string SharedPeptidesOutput;
@@ -103,26 +142,42 @@ namespace EngineLayer
                 //TODO add unit test with displaymodsonpeptides
                 if (!DisplayModsOnPeptides)
                 {
-                    UniquePeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => p.BaseSequence).Distinct()));
-                    SharedPeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|", SharedPeptides.Select(p => p.BaseSequence).Distinct()));
+                    UniquePeptidesOutput =
+                        GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                            UniquePeptides.Select(p => p.BaseSequence).Distinct()));
+                    SharedPeptidesOutput =
+                        GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                            SharedPeptides.Select(p => p.BaseSequence).Distinct()));
                 }
                 else
                 {
-                    UniquePeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => p.FullSequence).Distinct()));
-                    SharedPeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|", SharedPeptides.Select(p => p.FullSequence).Distinct()));
+                    UniquePeptidesOutput =
+                        GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                            UniquePeptides.Select(p => p.FullSequence).Distinct()));
+                    SharedPeptidesOutput =
+                        GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                            SharedPeptides.Select(p => p.FullSequence).Distinct()));
                 }
             }
             else
             {
                 if (!DisplayModsOnPeptides)
                 {
-                    UniquePeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => SilacConversions.GetAmbiguousLightSequence(p.BaseSequence, labels, true)).Distinct()));
-                    SharedPeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|", SharedPeptides.Select(p => SilacConversions.GetAmbiguousLightSequence(p.BaseSequence, labels, true)).Distinct()));
+                    UniquePeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                        UniquePeptides.Select(p =>
+                            SilacConversions.GetAmbiguousLightSequence(p.BaseSequence, labels, true)).Distinct()));
+                    SharedPeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                        SharedPeptides.Select(p =>
+                            SilacConversions.GetAmbiguousLightSequence(p.BaseSequence, labels, true)).Distinct()));
                 }
                 else
                 {
-                    UniquePeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => SilacConversions.GetAmbiguousLightSequence(p.FullSequence, labels, false)).Distinct()));
-                    SharedPeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|", SharedPeptides.Select(p => SilacConversions.GetAmbiguousLightSequence(p.FullSequence, labels, false)).Distinct()));
+                    UniquePeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                        UniquePeptides.Select(p =>
+                            SilacConversions.GetAmbiguousLightSequence(p.FullSequence, labels, false)).Distinct()));
+                    SharedPeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                        SharedPeptides.Select(p =>
+                            SilacConversions.GetAmbiguousLightSequence(p.FullSequence, labels, false)).Distinct()));
                 }
             }
         }
@@ -155,7 +210,8 @@ namespace EngineLayer
                 // into biorep-level intensity values. the SILAC code uses the "condition" field to organize this info,
                 // even if the experimental design is not defined by the user. So the following bool is a way to distinguish
                 // between experimental design being used in SILAC automatically vs. being defined by the user
-                bool silacExperimentalDesign = FilesForQuantification.Any(p => !File.Exists(p.FullFilePathWithExtension));
+                bool silacExperimentalDesign =
+                    FilesForQuantification.Any(p => !File.Exists(p.FullFilePathWithExtension));
 
                 foreach (var sampleGroup in FilesForQuantification.GroupBy(p => p.Condition))
                 {
@@ -169,18 +225,21 @@ namespace EngineLayer
                         else
                         {
                             // if the data is fractionated and/or the conditions have been defined, label the header w/ the condition and biorep number
-                            sb.Append("Intensity_" + sample.First().Condition + "_" + (sample.First().BiologicalReplicate + 1) + "\t");
+                            sb.Append("Intensity_" + sample.First().Condition + "_" +
+                                      (sample.First().BiologicalReplicate + 1) + "\t");
                         }
                     }
                 }
             }
+
             sb.Append("Number of PSMs" + '\t');
             sb.Append("Protein Decoy/Contaminant/Target" + '\t');
             sb.Append("Protein Cumulative Target" + '\t');
             sb.Append("Protein Cumulative Decoy" + '\t');
             sb.Append("Protein QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
-            sb.Append("Best Peptide Notch QValue");
+            sb.Append("Best Peptide Notch QValue" + '\t');
+            sb.Append("Best Peptide PEP");
             return sb.ToString();
         }
 
@@ -193,15 +252,18 @@ namespace EngineLayer
             sb.Append("\t");
 
             // genes
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()))));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                ListOfProteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()))));
             sb.Append("\t");
 
             // organisms
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Organism).Distinct())));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                ListOfProteinsOrderedByAccession.Select(p => p.Organism).Distinct())));
             sb.Append("\t");
 
             // list of protein names
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.FullName).Distinct())));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                ListOfProteinsOrderedByAccession.Select(p => p.FullName).Distinct())));
             sb.Append("\t");
 
             // list of masses
@@ -211,13 +273,18 @@ namespace EngineLayer
             {
                 try
                 {
-                    masses.Add(new Proteomics.AminoAcidPolymer.Peptide(sequence).MonoisotopicMass);
+                    if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+                        masses.Add(new OligoWithSetMods(sequence, GlobalVariables.AllRnaModsKnownDictionary).MonoisotopicMass);
+                    else
+                        masses.Add(new Proteomics.AminoAcidPolymer.Peptide(sequence).MonoisotopicMass);
+
                 }
                 catch (System.Exception)
                 {
                     masses.Add(double.NaN);
                 }
             }
+
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", masses)));
             sb.Append("\t");
 
@@ -230,6 +297,7 @@ namespace EngineLayer
             {
                 sb.Append(GlobalVariables.CheckLengthOfOutput(UniquePeptidesOutput));
             }
+
             sb.Append("\t");
 
             // list of shared peptides
@@ -237,6 +305,7 @@ namespace EngineLayer
             {
                 sb.Append(GlobalVariables.CheckLengthOfOutput(SharedPeptidesOutput));
             }
+
             sb.Append("\t");
 
             // number of peptides
@@ -248,6 +317,7 @@ namespace EngineLayer
             {
                 sb.Append("" + AllPeptides.Select(p => p.FullSequence).Distinct().Count());
             }
+
             sb.Append("\t");
 
             // number of unique peptides
@@ -259,10 +329,12 @@ namespace EngineLayer
             {
                 sb.Append("" + UniquePeptides.Select(p => p.FullSequence).Distinct().Count());
             }
+
             sb.Append("\t");
 
             // sequence coverage percent
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SequenceCoverageFraction.Select(p => string.Format("{0:0.#####}", p)))));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|",
+                SequenceCoverageFraction.Select(p => string.Format("{0:0.#####}", p)))));
             sb.Append("\t");
 
             // sequence coverage
@@ -320,6 +392,7 @@ namespace EngineLayer
             {
                 sb.Append("T");
             }
+
             sb.Append("\t");
 
             // cumulative target
@@ -342,26 +415,30 @@ namespace EngineLayer
             sb.Append(BestPeptideQValue);
             sb.Append("\t");
 
+            // best peptide PEP
+            sb.Append(BestPeptidePEP);
+
             return sb.ToString();
         }
 
-        // this method is only used internally, to make protein grouping faster
+        // Score() method is only used internally, to make protein grouping faster
         // this is NOT an output and is NOT used for protein FDR calculations
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
-            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
+            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.BaseSequence)
+                .Select(p => p.Select(x => x.Score).Max()).Sum();
         }
 
         public void CalculateSequenceCoverage()
         {
-            var proteinsWithUnambigSeqPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
-            var proteinsWithPsmsWithLocalizedMods = new Dictionary<Protein, List<PeptideWithSetModifications>>();
+            var proteinsWithUnambigSeqPsms = new Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>>();
+            var proteinsWithPsmsWithLocalizedMods = new Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>>();
 
             foreach (var protein in Proteins)
             {
-                proteinsWithUnambigSeqPsms.Add(protein, new List<PeptideWithSetModifications>());
-                proteinsWithPsmsWithLocalizedMods.Add(protein, new List<PeptideWithSetModifications>());
+                proteinsWithUnambigSeqPsms.Add(protein, new List<IBioPolymerWithSetMods>());
+                proteinsWithPsmsWithLocalizedMods.Add(protein, new List<IBioPolymerWithSetMods>());
             }
 
             foreach (var psm in AllPsmsBelowOnePercentFDR)
@@ -370,49 +447,52 @@ namespace EngineLayer
                 if (psm.BaseSequence != null)
                 {
                     psm.GetAminoAcidCoverage();
-                    var peptides = psm.BestMatchingPeptides.Select(p => p.Peptide);
-                    foreach (var peptide in peptides)
+
+                    foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods.Select(psm => psm.SpecificBioPolymer).DistinctBy(pep => pep.FullSequence))
                     {
                         // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
-                        if (Proteins.Contains(peptide.Protein))
+                        if (Proteins.Contains(peptide.Parent))
                         {
-                            proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
-                            //proteinsWithUnambigSeqPsmsCoverage[peptide.Protein].Add((peptide, psm.FragmentCoveragePositionInPeptide));
+                            proteinsWithUnambigSeqPsms[peptide.Parent].Add(peptide);
 
                             // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
-                            if (psm.FullSequence != null)
+                            if (peptide.FullSequence != null)
                             {
-                                proteinsWithPsmsWithLocalizedMods[peptide.Protein].Add(peptide);
+                                proteinsWithPsmsWithLocalizedMods[peptide.Parent].Add(peptide);
                             }
                         }
                     }
+                    
                 }
             }
 
             //Calculate sequence coverage at the amino acid level by looking at fragment specific coverage
             //loop through proteins
-            foreach (Protein protein in ListOfProteinsOrderedByAccession)
+            foreach (IBioPolymer protein in ListOfProteinsOrderedByAccession)
             {
                 //create a hash set for storing covered one-based residue numbers of protein
                 HashSet<int> coveredResiduesInProteinOneBased = new();
 
                 //loop through PSMs
-                foreach (PeptideSpectralMatch psm in AllPsmsBelowOnePercentFDR.Where(psm => psm.BaseSequence != null))
+                foreach (SpectralMatch psm in AllPsmsBelowOnePercentFDR.Where(psm => psm.BaseSequence != null))
                 {
                     //Calculate the covered bases within the psm. This is one based numbering for the peptide only
                     psm.GetAminoAcidCoverage();
                     if (psm.FragmentCoveragePositionInPeptide == null) continue;
                     //loop through each peptide within the psm
-                    IEnumerable<PeptideWithSetModifications> pwsms = psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => p.Protein.Accession == protein.Accession);
-                    foreach (PeptideWithSetModifications pwsm in pwsms)
+                    IEnumerable<IBioPolymerWithSetMods> pwsms = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer)
+                        .Where(p => p.Parent.Accession == protein.Accession);
+                    foreach (var pwsm in pwsms)
                     {
                         //create a hashset to store the covered residues for the peptide, converted to the corresponding indices of the protein
                         HashSet<int> coveredResiduesInPeptide = new();
                         //add the peptide start position within the protein to each covered index of the psm
                         foreach (var position in psm.FragmentCoveragePositionInPeptide)
                         {
-                            coveredResiduesInPeptide.Add(position + pwsm.OneBasedStartResidueInProtein - 1); //subtract one because these are both one based
+                            coveredResiduesInPeptide.Add(position + pwsm.OneBasedStartResidue -
+                                                         1); //subtract one because these are both one based
                         }
+
                         //Add the peptide specific positions, to the overall hashset for the protein
                         coveredResiduesInProteinOneBased.UnionWith(coveredResiduesInPeptide);
                     }
@@ -424,6 +504,7 @@ namespace EngineLayer
                 {
                     fragmentCoverageArray[residue - 1] = char.ToUpper(fragmentCoverageArray[residue - 1]);
                 }
+
                 FragmentSequenceCoverageDisplayList.Add(new string(fragmentCoverageArray));
             }
 
@@ -435,7 +516,7 @@ namespace EngineLayer
                 // get residue numbers of each peptide in the protein and identify them as observed if the sequence is unambiguous
                 foreach (var peptide in proteinsWithUnambigSeqPsms[protein])
                 {
-                    for (int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
+                    for (int i = peptide.OneBasedStartResidue; i <= peptide.OneBasedEndResidue; i++)
                     {
                         coveredOneBasedResidues.Add(i);
                     }
@@ -454,6 +535,7 @@ namespace EngineLayer
                 {
                     coverageArray[obsResidueLocation - 1] = char.ToUpper(coverageArray[obsResidueLocation - 1]);
                 }
+
                 sequenceCoverageDisplay = new string(coverageArray);
 
                 // add the coverage display
@@ -470,7 +552,9 @@ namespace EngineLayer
                             && !mod.Value.ModificationType.Contains("Common Variable")
                             && !mod.Value.ModificationType.Contains("Common Fixed"))
                         {
-                            modsOnThisProtein.Add(new KeyValuePair<int, Modification>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
+                            modsOnThisProtein.Add(
+                                new KeyValuePair<int, Modification>(pep.OneBasedStartResidue + mod.Key - 2,
+                                    mod.Value));
                         }
                     }
                 }
@@ -498,6 +582,7 @@ namespace EngineLayer
                             $"-[{mod.Value.IdWithMotif}]");
                     }
                 }
+
                 SequenceCoverageDisplayListWithMods.Add(sequenceCoverageDisplay);
 
                 if (!modsOnThisProtein.Any())
@@ -506,7 +591,7 @@ namespace EngineLayer
                 }
 
                 // calculate spectral count % of modified observations
-                var pepModTotals = new List<int>();  // count of modified peptides for each mod/index
+                var pepModTotals = new List<int>(); // count of modified peptides for each mod/index
                 var pepTotals = new List<int>(); // count of all peptides for each mod/index
                 var modIndex = new List<(int index, string modName)>(); // index and name of the modified position
 
@@ -531,7 +616,7 @@ namespace EngineLayer
                         }
                         else if (mod.Value.LocationRestriction.Equals("Anywhere."))
                         {
-                            indexInProtein = pep.OneBasedStartResidueInProtein + mod.Key - 2;
+                            indexInProtein = pep.OneBasedStartResidue + mod.Key - 2;
                         }
                         else if (mod.Value.LocationRestriction.Equals("C-terminal."))
                         {
@@ -554,12 +639,13 @@ namespace EngineLayer
                             modIndex.Add(modKey);
                             foreach (var pept in proteinsWithPsmsWithLocalizedMods[protein])
                             {
-                                if (indexInProtein >= pept.OneBasedStartResidueInProtein - (indexInProtein == 1 ? 1 : 0)
-                                    && indexInProtein <= pept.OneBasedEndResidueInProtein)
+                                if (indexInProtein >= pept.OneBasedStartResidue - (indexInProtein == 1 ? 1 : 0)
+                                    && indexInProtein <= pept.OneBasedEndResidue)
                                 {
                                     pepNumTotal += 1;
                                 }
                             }
+
                             pepTotals.Add(pepNumTotal);
                             pepModTotals.Add(1);
                         }
@@ -576,6 +662,7 @@ namespace EngineLayer
                     string tempString = ($"#aa{aa}[{modName},info:occupancy={occupancy}({fractOccupancy})]");
                     modStrings.Add((modIndex[i].index, tempString));
                 }
+
                 var modInfoString = string.Join(";", modStrings.OrderBy(x => x.aaNum).Select(x => x.part));
 
                 if (!string.IsNullOrEmpty(modInfoString))
@@ -600,9 +687,14 @@ namespace EngineLayer
 
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath, List<SilacLabel> silacLabels = null)
         {
-            var allPsmsForThisFile = new HashSet<PeptideSpectralMatch>(AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
-            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide)));
-            var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(UniquePeptides.Intersect(allPeptidesForThisFile));
+            var allPsmsForThisFile =
+                new HashSet<SpectralMatch>(
+                    AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
+            var allPeptidesForThisFile =
+                new HashSet<IBioPolymerWithSetMods>(
+                    allPsmsForThisFile.SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer)));
+            var allUniquePeptidesForThisFile =
+                new HashSet<IBioPolymerWithSetMods>(UniquePeptides.Intersect(allPeptidesForThisFile));
 
             ProteinGroup subsetPg = new ProteinGroup(Proteins, allPeptidesForThisFile, allUniquePeptidesForThisFile)
             {
@@ -613,28 +705,37 @@ namespace EngineLayer
             SpectraFileInfo spectraFileInfo = null;
             if (FilesForQuantification != null)
             {
-                spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath).FirstOrDefault();
+                spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath)
+                    .FirstOrDefault();
                 //check that file name wasn't changed (can occur in SILAC searches)
-                if (!silacLabels.IsNullOrEmpty() &&  spectraFileInfo == null)
+                if (!silacLabels.IsNullOrEmpty() && spectraFileInfo == null)
                 {
                     foreach (SilacLabel label in silacLabels)
                     {
-                        string fakeFilePath = SilacConversions.GetHeavyFileInfo(new SpectraFileInfo(fullFilePath, "", 0, 0, 0), label).FullFilePathWithExtension;
-                        spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath).FirstOrDefault();
+                        string fakeFilePath = SilacConversions
+                            .GetHeavyFileInfo(new SpectraFileInfo(fullFilePath, "", 0, 0, 0), label)
+                            .FullFilePathWithExtension;
+                        spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath)
+                            .FirstOrDefault();
                         if (spectraFileInfo != null)
                         {
                             break;
                         }
                     }
+
                     //if still no hits, might be SILAC turnover
                     if (spectraFileInfo == null)
                     {
-                        string filepathWithoutExtension = Path.Combine(Path.GetDirectoryName(fullFilePath), Path.GetFileNameWithoutExtension(fullFilePath));
+                        string filepathWithoutExtension = Path.Combine(Path.GetDirectoryName(fullFilePath),
+                            Path.GetFileNameWithoutExtension(fullFilePath));
                         string extension = Path.GetExtension(fullFilePath);
-                        string fakeFilePath = filepathWithoutExtension + SilacConversions.ORIGINAL_TURNOVER_LABEL_NAME + extension;
-                        spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath).FirstOrDefault();
+                        string fakeFilePath = filepathWithoutExtension + SilacConversions.ORIGINAL_TURNOVER_LABEL_NAME +
+                                              extension;
+                        spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath)
+                            .FirstOrDefault();
                     }
                 }
+
                 subsetPg.FilesForQuantification = new List<SpectraFileInfo> { spectraFileInfo };
             }
 
@@ -644,10 +745,27 @@ namespace EngineLayer
             }
             else
             {
-                subsetPg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { spectraFileInfo, IntensitiesByFile[spectraFileInfo] } };
+                subsetPg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>
+                    { { spectraFileInfo, IntensitiesByFile[spectraFileInfo] } };
             }
 
             return subsetPg;
+        }
+
+        //method only considers accessions, not peptides
+        public bool Equals(ProteinGroup grp)
+        {
+            //Check for null and compare run-time types.
+            if (grp == null) 
+            {
+                return false;
+            }
+            else if (!this.ListOfProteinsOrderedByAccession.Select(a=>a.Accession).ToList().SequenceEqual(grp.ListOfProteinsOrderedByAccession.Select(a => a.Accession).ToList()))
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

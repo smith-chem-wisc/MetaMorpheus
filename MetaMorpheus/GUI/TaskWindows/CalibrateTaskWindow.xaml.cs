@@ -3,6 +3,8 @@ using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
+using Omics.Digestion;
+using Omics.Modifications;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -15,6 +17,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
+using Transcriptomics.Digestion;
 
 namespace MetaMorpheusGUI
 {
@@ -28,16 +31,32 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private DeconHostViewModel DeconHostViewModel;
 
         public CalibrateTaskWindow(CalibrationTask myCalibrateTask)
         {
             InitializeComponent();
-            TheTask = myCalibrateTask ?? new CalibrationTask();
+            if (myCalibrateTask is null) // Happens when there is no default saved. 
+            {
+                TheTask = new CalibrationTask();
+                if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                {
+                    Title = "RNA Calibration Task";
+                    TheTask.CommonParameters = new CommonParameters("RnaCalibrationTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20, precursorMassTolerance: new PpmTolerance(15));
+                }
+                else
+                {
+                    Title = "Calibration Task";
+                }
+            }
+            else
+                TheTask = myCalibrateTask;
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
+            DeisotopingControl.DataContext = DeconHostViewModel;
 
             if (myCalibrateTask == null)
             {
@@ -51,14 +70,24 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
-            ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings
+            DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
+                TheTask.CommonParameters.ProductDeconvolutionParameters,
+                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
+            if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
+            {
+                ProteaseComboBox.SelectedItem = digestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings
+                InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
+            }
+            else
+            {
+                ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.DigestionAgent;
+            }
             MissedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
+            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinLength.ToString(CultureInfo.InvariantCulture);
+            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxLength.ToString(CultureInfo.InvariantCulture);
 
-            MaxModsPerPeptideTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
+            MaxModsPerPeptideTextBox.Text = task.CommonParameters.DigestionParams.MaxMods.ToString(CultureInfo.InvariantCulture);
             MaxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             MaxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
@@ -130,18 +159,8 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
-            {
-                ProteaseComboBox.Items.Add(protease);
-            }
-
-            Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
-            ProteaseComboBox.SelectedItem = trypsin;
-
-            foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
-            {
-                InitiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
-            }
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode; 
+            List<Modification> modsToUse = isRnaMode ? GlobalVariables.AllRnaModsKnown.ToList() : GlobalVariables.AllModsKnown.ToList();
 
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
@@ -153,7 +172,7 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.Items.Add("Da");
             PrecursorMassToleranceComboBox.Items.Add("ppm");
 
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
+            foreach (var hm in modsToUse.GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeViewModel(hm.Key, false);
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
@@ -166,7 +185,7 @@ namespace MetaMorpheusGUI
 
             FixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
+            foreach (var hm in modsToUse.GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeViewModel(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
@@ -178,6 +197,30 @@ namespace MetaMorpheusGUI
             }
 
             VariableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
+
+            if (isRnaMode)
+            {
+                foreach (Rnase rnase in RnaseDictionary.Dictionary.Values)
+                {
+                    ProteaseComboBox.Items.Add(rnase);
+                }
+                Rnase t1 = RnaseDictionary.Dictionary["RNase T1"];
+                ProteaseComboBox.SelectedItem = t1;
+            }
+            else
+            {
+                foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
+                {
+                    ProteaseComboBox.Items.Add(protease);
+                }
+                Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
+                ProteaseComboBox.SelectedItem = trypsin;
+
+                foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
+                {
+                    InitiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
+                }
+            }
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -189,16 +232,17 @@ namespace MetaMorpheusGUI
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             string fieldNotUsed = "1";
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
 
-            if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
+            if (!TaskValidator.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, 
+                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, 
                  null, null, null))
             {
                 return;
             }
 
-            Protease protease = (Protease)ProteaseComboBox.SelectedItem;
+            DigestionAgent protease = (DigestionAgent)ProteaseComboBox.SelectedItem;
             int maxMissedCleavages = string.IsNullOrEmpty(MissedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(MissedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
             int minPeptideLength = int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int maxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
@@ -209,14 +253,26 @@ namespace MetaMorpheusGUI
             //bool addTruncations = addTruncations.
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             CustomFragmentationWindow.Close();
-
-            DigestionParams digestionParamsToSave = new DigestionParams(
-                protease: protease.Name,
-                maxMissedCleavages: maxMissedCleavages,
-                minPeptideLength: minPeptideLength,
-                maxPeptideLength: maxPeptideLength,
-                maxModificationIsoforms: maxModificationIsoforms,
-                maxModsForPeptides: maxModsPerPeptide);
+            IDigestionParams digestionParamsToSave;
+            if (isRnaMode)
+            {
+                digestionParamsToSave = new RnaDigestionParams(protease.Name,
+                    maxMissedCleavages,
+                    minPeptideLength,
+                    maxPeptideLength,
+                    maxModificationIsoforms,
+                    maxModsPerPeptide);
+            }
+            else
+            {
+                digestionParamsToSave = new DigestionParams(
+                    protease: protease.Name,
+                    maxMissedCleavages: maxMissedCleavages,
+                    minPeptideLength: minPeptideLength,
+                    maxPeptideLength: maxPeptideLength,
+                    maxModificationIsoforms: maxModificationIsoforms,
+                    maxModsForPeptides: maxModsPerPeptide);
+            }
 
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in VariableModTypeForTreeViewObservableCollection)
@@ -224,7 +280,7 @@ namespace MetaMorpheusGUI
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
-            if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
+            if (!TaskValidator.VariableModCheck(listOfModsVariable))
             {
                 return;
             }
@@ -255,9 +311,13 @@ namespace MetaMorpheusGUI
             }
 
             bool parseMaxThreadsPerFile = int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0;
+            DeconvolutionParameters precursorDeconvolutionParameters = DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters;
+            DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
+            bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
+            bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
 
             //the below parameters are optimized for top-down but do not exist in the GUI as of Nov. 13, 2019
-            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
+            if (((DigestionAgent)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
             {
                 CommonParameters commonParamsToSave = new CommonParameters(
                     taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
@@ -269,12 +329,14 @@ namespace MetaMorpheusGUI
                     listOfModsVariable: listOfModsVariable,
                     productMassTolerance: productMassTolerance,
                     precursorMassTolerance: precursorMassTolerance,
-                    assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                    assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down" && !isRnaMode,
                     minVariantDepth: minVariantDepth,
                     maxHeterozygousVariants: maxHeterozygousVariants,
-                    useProvidedPrecursorInfo: false, //Updated
-                    deconvolutionMaxAssumedChargeState: 60, //Updated
-                    trimMsMsPeaks: false); //Updated
+                    trimMsMsPeaks: false,
+                    doPrecursorDeconvolution: doPrecursorDeconvolution,
+                    precursorDeconParams: precursorDeconvolutionParameters,
+                    productDeconParams: productDeconvolutionParameters,
+                    useProvidedPrecursorInfo: useProvidedPrecursorInfo); 
                 TheTask.CommonParameters = commonParamsToSave;
             }
             else //bottom-up
@@ -291,17 +353,16 @@ namespace MetaMorpheusGUI
                     precursorMassTolerance: precursorMassTolerance,
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                     minVariantDepth: minVariantDepth,
-                    maxHeterozygousVariants: maxHeterozygousVariants);
+                    maxHeterozygousVariants: maxHeterozygousVariants,
+                    useProvidedPrecursorInfo: useProvidedPrecursorInfo,
+                    doPrecursorDeconvolution: doPrecursorDeconvolution,
+                    precursorDeconParams: precursorDeconvolutionParameters,
+                    productDeconParams: productDeconvolutionParameters);
                 TheTask.CommonParameters = commonParamsToSave;
             }
 
             TheTask.CalibrationParameters.WriteIndexedMzml = writeIndexMzmlCheckbox.IsChecked.Value;
             DialogResult = true;
-        }
-
-        private void CheckIfNumber(object sender, TextCompositionEventArgs e)
-        {
-            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
         }
 
         private void KeyPressed(object sender, KeyEventArgs e)
@@ -363,12 +424,14 @@ namespace MetaMorpheusGUI
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
         {
             SaveButton_Click(sender, e);
-            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"CalibrationTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
+            var prefix = GuiGlobalParamsViewModel.Instance.IsRnaMode ? "Rna" : "";
+            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", $"{prefix}CalibrationTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
 
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            string proteaseName = ((DigestionAgent)ProteaseComboBox.SelectedItem).Name;
             MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
 
             if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
@@ -386,9 +449,23 @@ namespace MetaMorpheusGUI
                         {
                             //many variables are not present in the calibrate task gui, but we modify them when saving
                             //uncheck all variable mods
-                            foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                            DeconHostViewModel.UseProvidedPrecursors = false;
+                            DeconHostViewModel.DoPrecursorDeconvolution = true;
+                            if (isRnaMode)
                             {
-                                mod.Use = false;
+                                DeconHostViewModel.SetAllPrecursorMaxChargeState(-40);
+                                DeconHostViewModel.SetAllProductMaxChargeState(-20);
+                            }
+                            else
+                            {
+                                DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
+                                DeconHostViewModel.SetAllProductMaxChargeState(20);
+
+                                //uncheck all variable mods
+                                foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                                {
+                                    mod.Use = false;
+                                }
                             }
                         }
                         break;
@@ -424,7 +501,7 @@ namespace MetaMorpheusGUI
 
         private void ProteaseSpecificUpdate(object sender, TextChangedEventArgs e)
         {
-            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            if (((DigestionAgent)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
                 try
                 {

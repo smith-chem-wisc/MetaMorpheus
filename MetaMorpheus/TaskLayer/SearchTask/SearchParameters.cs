@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
-using Proteomics;
+using Omics.Modifications;
 
 namespace TaskLayer
 {
@@ -14,9 +14,10 @@ namespace TaskLayer
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
-            DoQuantification = true;
-            DoMbrAnalysis = true;
+            DoLabelFreeQuantification = true;
+            UseSharedPeptidesForLFQ = false;
             QuantifyPpmTol = 5;
+            MbrFdrThreshold = 0.01;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
@@ -30,6 +31,8 @@ namespace TaskLayer
             WriteMzId = true;
             WritePepXml = false;
             IncludeModMotifInMzid = false;
+            WriteDigestionProductCountFile = false;
+            WriteTargetDecoyFasta = false;
 
             ModsToWriteSelection = new Dictionary<string, int>
             {
@@ -52,6 +55,7 @@ namespace TaskLayer
                 {"UniProt", 2},
             };
 
+            WriteHighQValuePsms = true;
             WriteDecoys = true;
             WriteContaminants = true;
             WriteIndividualFiles = true;
@@ -64,6 +68,7 @@ namespace TaskLayer
         public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool MatchBetweenRuns { get; set; }
+        public double MbrFdrThreshold { get; set; }
         public bool Normalize { get; set; }
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
@@ -73,8 +78,10 @@ namespace TaskLayer
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
-        public bool DoQuantification { get; set; }
-        public bool DoMbrAnalysis { get; set; }
+        public bool DoLabelFreeQuantification { get; set; }
+        public bool UseSharedPeptidesForLFQ { get; set; }
+        public bool DoMultiplexQuantification { get; set; }
+        public string MultiplexModId { get; set; }
         public SearchType SearchType { get; set; }
         public List<FdrCategory> LocalFdrCategories { get; set; }
         public string CustomMdac { get; set; }
@@ -85,6 +92,7 @@ namespace TaskLayer
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
         public bool WriteMzId { get; set; }
         public bool WritePepXml { get; set; }
+        public bool WriteHighQValuePsms { get; set; }
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
         public bool WriteIndividualFiles { get; set; }
@@ -96,5 +104,7 @@ namespace TaskLayer
         public SilacLabel EndTurnoverLabel { get; set; } //used for SILAC turnover experiments
         public TargetContaminantAmbiguity TCAmbiguity { get; set; }
         public bool IncludeModMotifInMzid { get; set; }
+        public bool WriteDigestionProductCountFile { get; set; }
+        public bool WriteTargetDecoyFasta { get; set; }
     }
 }

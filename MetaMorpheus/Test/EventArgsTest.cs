@@ -5,12 +5,13 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using Omics.Modifications;
+using Omics;
 
 namespace Test
 {
@@ -29,12 +30,12 @@ namespace Test
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<Modification> variableModifications = new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
 
-            List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(4, allPeptidesWithSetModifications.Count());
-            PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
+            var allPeptidesWithSetModifications = parentProteinForMatch.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
+            Assert.That(allPeptidesWithSetModifications.Count(), Is.EqualTo(4));
+            var ps = allPeptidesWithSetModifications.First();
 
-            PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
+            var pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pepWithSetModsForSpectrum });
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.GetAllScansList().Last(), pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
@@ -43,9 +44,9 @@ namespace Test
             ps.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theoreticalProducts);
             
             var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalProducts, new CommonParameters());
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, commonParameters, matchedIons);
+            SpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, commonParameters, matchedIons);
 
-            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, myMsDataFile, new CommonParameters(), fsp, new List<string>());
+            LocalizationEngine f = new LocalizationEngine(new List<SpectralMatch> { newPsm }, myMsDataFile, new CommonParameters(), fsp, new List<string>());
 
             var singleEngine= new SingleEngineEventArgs(f);
             Assert.That(singleEngine.MyEngine.Equals(f));

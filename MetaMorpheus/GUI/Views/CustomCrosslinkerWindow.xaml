@@ -31,20 +31,23 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="1">
                     <Label x:Name="lblUdXLkerTotalMass" Content="Crosslinker Total Mass" />
-                    <TextBox x:Name="txtUdXLkerTotalMs" PreviewTextInput="CheckIfNumber" Width="60"/>
+                    <local:DoubleTextBoxControl x:Name="txtUdXLkerTotalMs" Width="60"/>
                 </StackPanel>
                 <CheckBox x:Name="ckbUdXLkerCleavable" Content="Cleavable" Grid.Column="0" Grid.Row="2" />
                 <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="3">
                     <Label x:Name="lblUdXLkerShortMass" Content="Crosslinker Short Mass"  />
-                    <TextBox x:Name="txtUdXLkerShortMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}" />
+                    <local:DoubleTextBoxControl x:Name="txtUdXLkerShortMass" Width="60" 
+                                                IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="4">
                     <Label x:Name="lblUdXLkerLongMass" Content="Crosslinker Long Mass" />
-                    <TextBox x:Name="txtUdXLkerLongMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}" />
+                    <local:DoubleTextBoxControl x:Name="txtUdXLkerLongMass" Width="60" 
+                                                IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="5">
                     <Label Content="DissociationType" />
-                    <TextBox x:Name="txtDissociationType" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}"/>
+                    <TextBox x:Name="txtDissociationType" Width="60" 
+                             IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="0">
                     <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acids" />
@@ -57,15 +60,18 @@
                 
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
                     <Label Content="H2O Quench Mass" />
-                    <TextBox x:Name="txtH2OQuenchMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbQuenchH2O}"  />
+                    <local:DoubleTextBoxControl x:Name="txtH2OQuenchMass" Width="60" 
+                                                IsEnabled="{Binding IsChecked, ElementName=ckbQuenchH2O}"  />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4">
                     <Label Content="NH2 Quench Mass" />
-                    <TextBox x:Name="txtNH2QuenchMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbQuenchNH2}"  />
+                    <local:DoubleTextBoxControl x:Name="txtNH2QuenchMass" Width="60" 
+                                                IsEnabled="{Binding IsChecked, ElementName=ckbQuenchNH2}"  />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="5">
                     <Label Content="Tris Quench Mass" />
-                    <TextBox x:Name="txtTrisQuenchMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbQuenchTris}"  />
+                    <local:DoubleTextBoxControl x:Name="txtTrisQuenchMass" Width="60" 
+                                                IsEnabled="{Binding IsChecked, ElementName=ckbQuenchTris}"  />
                 </StackPanel>
             </Grid>
         </StackPanel>

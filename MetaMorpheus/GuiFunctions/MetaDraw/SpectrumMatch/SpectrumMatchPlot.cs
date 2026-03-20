@@ -1,132 +1,60 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Chemistry;
-using EngineLayer;
-using iText.IO.Image;
-using iText.Kernel.Pdf;
-using iText.Layout;
 using MassSpectrometry;
-using mzPlot;
+using Omics.Fragmentation;
+using Omics.SpectrumMatch;
 using OxyPlot;
-using OxyPlot.Annotations;
-using OxyPlot.Axes;
-using OxyPlot.Series;
-using Proteomics.Fragmentation;
-using Canvas = System.Windows.Controls.Canvas;
+using OxyPlot.Wpf;
+using Readers;
+using Annotation = OxyPlot.Annotations.Annotation;
 using FontWeights = OxyPlot.FontWeights;
 using HorizontalAlignment = OxyPlot.HorizontalAlignment;
+using TextAnnotation = OxyPlot.Annotations.TextAnnotation;
 using VerticalAlignment = OxyPlot.VerticalAlignment;
 
 namespace GuiFunctions
 {
-    public class SpectrumMatchPlot : Plot
+    public class SpectrumMatchPlot : MassSpectrumPlot
     {
-        protected List<MatchedFragmentIon> matchedFragmentIons;
-        public MsDataScan Scan { get; protected set; }
-        public PsmFromTsv SpectrumMatch { get; set; }
+        public static int MaxCharactersPerDescriptionLine = 32;
+        public List<MatchedFragmentIon> MatchedFragmentIons { get; protected set; }
+        public SpectrumMatchFromTsv SpectrumMatch { get; set; }
 
-        public SpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv psm, MsDataScan scan) : base(plotView)
+        /// <summary>
+        /// Base Spectrum match constructor
+        /// Matched fragment ions should only be passed in for glyco parent/child scan
+        /// </summary>
+        /// <param name="plotView">Where the plot is going</param>
+        /// <param name="sm">sm to plot</param>
+        /// <param name="scan">spectrum to plot</param>
+        /// <param name="matchedIons">glyco ONLY child matched ions</param>
+        public SpectrumMatchPlot(PlotView plotView, SpectrumMatchFromTsv sm,
+            MsDataScan scan, List<MatchedFragmentIon> matchedIons = null) : base(plotView, scan)
         {
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
-            Scan = scan;
-            matchedFragmentIons = new();
 
-            DrawSpectrum();
-            if (psm != null)
+            if (matchedIons is null && sm is not null)
             {
-                SpectrumMatch = psm;
-                matchedFragmentIons = SpectrumMatch.MatchedIons;
-                AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
+                SpectrumMatch = sm;
+                MatchedFragmentIons = SpectrumMatch.MatchedIons;
+                AnnotateMatchedIons(isBetaPeptide: false, MatchedFragmentIons);
             }
+            else if (matchedIons is not null && sm is not null)
+            {
+                SpectrumMatch = sm;
+                MatchedFragmentIons = matchedIons;
+                AnnotateMatchedIons(false, matchedIons);
+            }
+            else
+                MatchedFragmentIons = new();
 
             ZoomAxes();
             RefreshChart();
-        }
-
-        /// <summary>
-        /// Adds the spectrum from the MSDataScan to the Model
-        /// </summary>
-        protected void DrawSpectrum()
-        {
-            // set up axes
-            Model.Axes.Add(new LinearAxis
-            {
-                Position = AxisPosition.Bottom,
-                Title = "m/z",
-                Minimum = Scan.ScanWindowRange.Minimum,
-                Maximum = Scan.ScanWindowRange.Maximum,
-                AbsoluteMinimum = Math.Max(0, Scan.ScanWindowRange.Minimum - 100),
-                AbsoluteMaximum = Scan.ScanWindowRange.Maximum + 100,
-                MajorStep = 200,
-                MinorStep = 200,
-                MajorTickSize = 2,
-                TitleFontWeight = FontWeights.Bold,
-                TitleFontSize = 14
-            });
-
-            Model.Axes.Add(new LinearAxis
-            {
-                Position = AxisPosition.Left,
-                Title = "Intensity",
-                Minimum = 0,
-                Maximum = Scan.MassSpectrum.YArray.Max(),
-                AbsoluteMinimum = 0,
-                AbsoluteMaximum = Scan.MassSpectrum.YArray.Max() * 2,
-                MajorStep = Scan.MassSpectrum.YArray.Max() / 10,
-                MinorStep = Scan.MassSpectrum.YArray.Max() / 10,
-                StringFormat = "0e-0",
-                MajorTickSize = 2,
-                TitleFontWeight = FontWeights.Bold,
-                TitleFontSize = 14,
-                AxisTitleDistance = 10,
-                ExtraGridlines = new double[] { 0 },
-                ExtraGridlineColor = OxyColors.Black,
-                ExtraGridlineThickness = 1
-            });
-
-            // draw all peaks in the scan
-            for (int i = 0; i < Scan.MassSpectrum.XArray.Length; i++)
-            {
-                double mz = Scan.MassSpectrum.XArray[i];
-                double intensity = Scan.MassSpectrum.YArray[i];
-
-                DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessUnannotated, MetaDrawSettings.UnannotatedPeakColor, null);
-            }
-        }
-
-        /// <summary>
-        /// Draws a peak on the spectrum
-        /// </summary>
-        /// <param name="mz">x value of peak to draw</param>
-        /// <param name="intensity">y max of peak to draw</param>
-        /// <param name="strokeWidth"></param>
-        /// <param name="color">Color to draw peak</param>
-        /// <param name="annotation">text to display above the peak</param>
-        protected void DrawPeak(double mz, double intensity, double strokeWidth, OxyColor color, TextAnnotation annotation)
-        {
-            // peak line
-            var line = new LineSeries();
-            line.Color = color;
-            line.StrokeThickness = strokeWidth;
-            line.Points.Add(new DataPoint(mz, 0));
-            line.Points.Add(new DataPoint(mz, intensity));
-
-            if (annotation != null)
-            {
-                Model.Annotations.Add(annotation);
-            }
-
-            Model.Series.Add(line);
         }
 
         /// <summary>
@@ -135,9 +63,25 @@ namespace GuiFunctions
         /// <param name="isBetaPeptide"></param>
         /// <param name="matchedFragmentIons"></param>
         /// <param name="useLiteralPassedValues"></param>
-        protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons, bool useLiteralPassedValues = false)
+        protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons,
+            bool useLiteralPassedValues = false)
         {
-            foreach (MatchedFragmentIon matchedIon in matchedFragmentIons)
+            List<MatchedFragmentIon> ionsToDisplay;
+            if (!MetaDrawSettings.DisplayInternalIons)
+            {
+                ionsToDisplay = new List<MatchedFragmentIon>(matchedFragmentIons.Count);
+                foreach (var p in matchedFragmentIons)
+                {
+                    if (p.NeutralTheoreticalProduct.SecondaryProductType == null)
+                        ionsToDisplay.Add(p);
+                }
+            }
+            else
+            {
+                ionsToDisplay = matchedFragmentIons;
+            }
+
+            foreach (MatchedFragmentIon matchedIon in ionsToDisplay)
             {
                 AnnotatePeak(matchedIon, isBetaPeptide, useLiteralPassedValues);
             }
@@ -149,12 +93,13 @@ namespace GuiFunctions
         /// <param name="matchedIon">matched ion to annotate</param>
         /// <param name="isBetaPeptide">is a beta x-linked peptide</param>
         /// <param name="useLiteralPassedValues"></param>
-        protected void AnnotatePeak(MatchedFragmentIon matchedIon, bool isBetaPeptide, bool useLiteralPassedValues = false, OxyColor? ionColorNullable = null)
+        protected void AnnotatePeak(MatchedFragmentIon matchedIon, bool isBetaPeptide,
+            bool useLiteralPassedValues = false, OxyColor? ionColorNullable = null, string annotation = null)
         {
             OxyColor ionColor;
             if (ionColorNullable == null)
             {
-                if (SpectrumMatch.VariantCrossingIons.Contains(matchedIon))
+                if (SpectrumMatch.VariantCrossingIons is not null && SpectrumMatch.VariantCrossingIons.Contains(matchedIon))
                 {
                     ionColor = MetaDrawSettings.VariantCrossColor;
                 }
@@ -177,7 +122,8 @@ namespace GuiFunctions
                 ionColor = (OxyColor)ionColorNullable;
             }
 
-            int i = Scan.MassSpectrum.GetClosestPeakIndex(matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge));
+            int i = Scan.MassSpectrum.GetClosestPeakIndex(
+                matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge));
             double mz = Scan.MassSpectrum.XArray[i];
             double intensity = Scan.MassSpectrum.YArray[i];
 
@@ -188,8 +134,8 @@ namespace GuiFunctions
             }
 
             // peak annotation
-            string prefix = "";
-            if (SpectrumMatch != null && SpectrumMatch.BetaPeptideBaseSequence != null)
+            string prefix = string.Empty;
+            if (SpectrumMatch.IsCrossLinkedPeptide())
             {
                 if (isBetaPeptide)
                 {
@@ -202,45 +148,91 @@ namespace GuiFunctions
                     prefix = "A-";
                 }
             }
+
             var peakAnnotation = new TextAnnotation();
-            if (MetaDrawSettings.DisplayIonAnnotations)
+            string peakAnnotationText = prefix;
+
+            // Fast path: direct annotation
+            if (annotation != null)
             {
-                string peakAnnotationText = prefix + matchedIon.NeutralTheoreticalProduct.Annotation;
+                peakAnnotationText += annotation;
+                intensity += intensity * 0.05;
+                peakAnnotation.TextColor = ionColor;
+            }
+            // Main annotation logic
+            else if (MetaDrawSettings.DisplayIonAnnotations)
+            {
+                peakAnnotation.TextColor = ionColor;
 
-                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 && !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
-                {
-                    peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
-                }
+                // Fragment Number annotation
+                if (MetaDrawSettings.SubAndSuperScriptIons)
+                    foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
+                    {
+                        if (char.IsDigit(character))
+                            peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
+                        else switch (character)
+                        {
+                            case '-':
+                                peakAnnotationText += "\u208B"; // sub scripted Hyphen
+                                break;
+                            case '[':
+                            case ']':
+                                continue;
+                            default:
+                                peakAnnotationText += character;
+                                break;
+                        }
+                    }
+                else
+                    peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
 
+                // Charge annotation
                 if (MetaDrawSettings.AnnotateCharges)
                 {
-                    peakAnnotationText += "+" + matchedIon.Charge;
+                    char chargeAnnotation = matchedIon.Charge > 0 ? '+' : '-';
+                    if (MetaDrawSettings.SubAndSuperScriptIons)
+                    {
+                        var superScript = new string(Math.Abs(matchedIon.Charge).ToString()
+                            .Select(digit => MetaDrawSettings.SuperScriptNumbers[digit - '0'])
+                            .ToArray());
+
+                        peakAnnotationText += superScript;
+                        if (chargeAnnotation == '+')
+                            peakAnnotationText += (char)(chargeAnnotation + 8271);
+                        else
+                            peakAnnotationText += (char)(chargeAnnotation + 8270);
+                    }
+                    else
+                        peakAnnotationText += chargeAnnotation.ToString() + matchedIon.Charge;
                 }
 
+                // m/z annotation
                 if (MetaDrawSettings.AnnotateMzValues)
                 {
                     peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
                 }
-
-
-                peakAnnotation.Font = "Arial";
-                peakAnnotation.FontSize = MetaDrawSettings.AnnotatedFontSize;
-                peakAnnotation.FontWeight = MetaDrawSettings.AnnotationBold ? FontWeights.Bold : 2.0;
-                peakAnnotation.TextColor = ionColor;
-                peakAnnotation.StrokeThickness = 0;
-                peakAnnotation.Text = peakAnnotationText;
-                peakAnnotation.TextPosition = new DataPoint(mz, intensity);
-                peakAnnotation.TextVerticalAlignment = intensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom;
-                peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Center;
             }
             else
             {
-                peakAnnotation.Text = string.Empty;
+                peakAnnotationText = string.Empty;
             }
-            if (matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null && !MetaDrawSettings.DisplayInternalIonAnnotations) //if internal fragment
+
+            // Hide internal fragment annotation if not displaying
+            if (matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null &&
+                !MetaDrawSettings.DisplayInternalIonAnnotations) //if internal fragment
             {
-                peakAnnotation.Text = string.Empty;
+                peakAnnotationText = string.Empty;
             }
+
+            // Set annotation properties
+            peakAnnotation.Text = peakAnnotationText;
+            peakAnnotation.Font = "Arial";
+            peakAnnotation.FontSize = MetaDrawSettings.AnnotatedFontSize;
+            peakAnnotation.FontWeight = MetaDrawSettings.AnnotationBold ? FontWeights.Bold : 2.0;
+            peakAnnotation.StrokeThickness = 0;
+            peakAnnotation.TextPosition = new DataPoint(mz, intensity);
+            peakAnnotation.TextVerticalAlignment = intensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom;
+            peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Center;
 
             DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
         }
@@ -249,19 +241,20 @@ namespace GuiFunctions
         /// Zooms the axis of the graph to the matched ions
         /// </summary>
         /// <param name="yZoom"></param>
-        /// <param name="matchedFramgentIons">ions to zoom to. if null, it will used the stored protected matchedFragmentIons</param>
+        /// <param name="matchedFramgentIons">ions to zoom to. if null, it will used the stored protected MatchedFragmentIons</param>
         protected void ZoomAxes(IEnumerable<MatchedFragmentIon> matchedFramgentIons = null, double yZoom = 1.2)
         {
-            matchedFramgentIons ??= matchedFragmentIons;
+            matchedFramgentIons ??= MatchedFragmentIons;
             double highestAnnotatedIntensity = 0;
             double highestAnnotatedMz = double.MinValue;
             double lowestAnnotatedMz = double.MaxValue;
+            var yArray = Scan.MassSpectrum.YArray;
 
-            foreach (var ion in matchedFragmentIons)
+            foreach (var ion in matchedFramgentIons)
             {
                 double mz = ion.NeutralTheoreticalProduct.NeutralMass.ToMz(ion.Charge);
                 int i = Scan.MassSpectrum.GetClosestPeakIndex(mz);
-                double intensity = Scan.MassSpectrum.YArray[i];
+                double intensity = yArray[i];
 
                 if (intensity > highestAnnotatedIntensity)
                 {
@@ -289,61 +282,6 @@ namespace GuiFunctions
                 Model.Axes[0].Zoom(lowestAnnotatedMz - 100, highestAnnotatedMz + 100);
             }
         }
-
-        /// <summary>
-        /// Exports plot from a combined bitmap created in the children classes
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="combinedBitmaps"></param>
-        /// <param name="width"></param>
-        /// <param name="height"></param>
-        public void ExportPlot(string path, Bitmap combinedBitmaps, double width = 700, double height = 370)
-        {
-            width = width > 0 ? width : 700;
-            height = height > 0 ? height : 300;
-            switch (MetaDrawSettings.ExportType)
-            {
-                case "Pdf":
-                    string tempCombinedPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "tempCombined.png");
-                    combinedBitmaps.Save(tempCombinedPath, System.Drawing.Imaging.ImageFormat.Png);
-
-                    PdfDocument pdfDoc = new(new PdfWriter(path));
-                    Document document = new(pdfDoc, new iText.Kernel.Geom.PageSize((float)width - 30, (float)height - 30));
-
-                    ImageData sequenceAndLegendImageData = ImageDataFactory.Create(tempCombinedPath);
-                    iText.Layout.Element.Image sequenceAndPtmLegendImage = new(sequenceAndLegendImageData);
-                    sequenceAndPtmLegendImage.SetMarginLeft(-30);
-                    sequenceAndPtmLegendImage.SetMarginTop(-30);
-                    sequenceAndPtmLegendImage.ScaleToFit((float)width, (float)height);
-                    document.Add(sequenceAndPtmLegendImage);
-
-                    pdfDoc.Close();
-                    document.Close();
-                    File.Delete(tempCombinedPath);
-                    break;
-
-                case "Png":
-                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Png);
-                    break;
-
-                case "Jpeg":
-                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Jpeg);
-                    break;
-
-                case "Tiff":
-                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Tiff);
-                    break;
-
-                case "Wmf":
-                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Wmf);
-                    break;
-
-                case "Bmp":
-                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Bmp);
-                    break;
-            }
-        }
-
         protected void AnnotateLibraryIons(bool isBetaPeptide, List<MatchedFragmentIon> libraryIons)
         {
             // figure out the sum of the intensities of the matched fragment ions
@@ -353,7 +291,8 @@ namespace GuiFunctions
             {
                 var matchedIon = SpectrumMatch.MatchedIons.FirstOrDefault(p =>
                     p.NeutralTheoreticalProduct.ProductType == libraryIon.NeutralTheoreticalProduct.ProductType
-                    && p.NeutralTheoreticalProduct.FragmentNumber == libraryIon.NeutralTheoreticalProduct.FragmentNumber);
+                    && p.NeutralTheoreticalProduct.FragmentNumber ==
+                    libraryIon.NeutralTheoreticalProduct.FragmentNumber);
 
                 if (matchedIon == null)
                 {
@@ -372,11 +311,15 @@ namespace GuiFunctions
 
             foreach (MatchedFragmentIon libraryIon in libraryIons)
             {
-                var neutralProduct = new Product(libraryIon.NeutralTheoreticalProduct.ProductType, libraryIon.NeutralTheoreticalProduct.Terminus,
-                    libraryIon.NeutralTheoreticalProduct.NeutralMass, libraryIon.NeutralTheoreticalProduct.FragmentNumber,
-                    libraryIon.NeutralTheoreticalProduct.AminoAcidPosition, libraryIon.NeutralTheoreticalProduct.NeutralLoss);
+                var neutralProduct = new Product(libraryIon.NeutralTheoreticalProduct.ProductType,
+                    libraryIon.NeutralTheoreticalProduct.Terminus,
+                    libraryIon.NeutralTheoreticalProduct.NeutralMass,
+                    libraryIon.NeutralTheoreticalProduct.FragmentNumber,
+                    libraryIon.NeutralTheoreticalProduct.ResiduePosition,
+                    libraryIon.NeutralTheoreticalProduct.NeutralLoss);
 
-                mirroredLibraryIons.Add(new MatchedFragmentIon(ref neutralProduct, libraryIon.Mz, multiplier * libraryIon.Intensity, libraryIon.Charge));
+                mirroredLibraryIons.Add(new MatchedFragmentIon(neutralProduct, libraryIon.Mz,
+                    multiplier * libraryIon.Intensity, libraryIon.Charge));
             }
 
             AnnotateMatchedIons(isBetaPeptide, mirroredLibraryIons, useLiteralPassedValues: true);
@@ -389,7 +332,7 @@ namespace GuiFunctions
             Model.Axes[1].LabelFormatter = DrawnSequence.YAxisLabelFormatter;
         }
 
-        protected void AnnotateProperties()
+        protected void AnnotateProperties(LibrarySpectrum librarySpectrum = null)
         {
             StringBuilder text = new StringBuilder();
             if (MetaDrawSettings.SpectrumDescription["Precursor Charge: "])
@@ -398,97 +341,116 @@ namespace GuiFunctions
                 text.Append(SpectrumMatch.PrecursorCharge);
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Precursor Mass: "])
             {
                 text.Append("Precursor Mass: ");
                 text.Append(SpectrumMatch.PrecursorMass.ToString("F3"));
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Theoretical Mass: "])
             {
                 text.Append("Theoretical Mass: ");
-                text.Append(double.TryParse(SpectrumMatch.PeptideMonoMass, NumberStyles.Any, CultureInfo.InvariantCulture, out var monoMass) ? monoMass.ToString("F3") : SpectrumMatch.PeptideMonoMass);
+                text.Append(
+                    double.TryParse(SpectrumMatch.MonoisotopicMassString, NumberStyles.Any, CultureInfo.InvariantCulture,
+                        out var monoMass)
+                        ? monoMass.ToString("F3")
+                        : SpectrumMatch.MonoisotopicMassString);
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Protein Accession: "])
             {
                 text.Append("Protein Accession: ");
-                if (SpectrumMatch.ProteinAccession.Length > 10)
+                if (SpectrumMatch.Accession.Length > 10)
                 {
-                    text.Append("\r\n   " + SpectrumMatch.ProteinAccession);
+                    text.Append("\r\n   " + SpectrumMatch.Accession);
                 }
                 else
-                    text.Append(SpectrumMatch.ProteinAccession);
+                    text.Append(SpectrumMatch.Accession);
+
                 text.Append("\r\n");
             }
-            if (SpectrumMatch.ProteinName != null && MetaDrawSettings.SpectrumDescription["Protein: "])
+
+            if (SpectrumMatch.Name != null && MetaDrawSettings.SpectrumDescription["Protein: "])
             {
                 text.Append("Protein: ");
-                if (SpectrumMatch.ProteinName.Length > 20)
-                {
-                    text.Append(SpectrumMatch.ProteinName.Substring(0, 20));
-                    int length = SpectrumMatch.ProteinName.Length;
-                    int remaining = length - 20;
-                    for (int i = 20; i < SpectrumMatch.ProteinName.Length; i += 26)
-                    {
-                        if (remaining <= 26)
-                            text.Append("\r\n   " + SpectrumMatch.ProteinName.Substring(i, remaining - 1));
-                        else
-                        {
-                            text.Append("\r\n   " + SpectrumMatch.ProteinName.Substring(i, 26));
-                            remaining -= 26;
-                        }
-                    }
-                }
-                else
-                    text.Append(SpectrumMatch.ProteinName);
+                text.Append(SpectrumMatch.Name);
                 text.Append("\r\n");
             }
+
+            if (MetaDrawSettings.SpectrumDescription["Retention Time: "])
+            {
+                text.Append("Retention Time: ");
+                text.Append(SpectrumMatch.RetentionTime);
+                text.Append("\r\n");
+            }
+
+            if (SpectrumMatch.OneOverK0 != null && MetaDrawSettings.SpectrumDescription["1/K\u2080: "])
+            {
+                text.Append("1/K\u2080: ");
+                text.Append(SpectrumMatch.OneOverK0);
+                text.Append("\r\n");
+            }
+
             if (MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "])
             {
                 text.Append("Decoy/Contaminant/Target: ");
                 text.Append(SpectrumMatch.DecoyContamTarget);
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Sequence Length: "])
             {
                 text.Append("Sequence Length: ");
                 text.Append(SpectrumMatch.BaseSeq.Length.ToString("F3").Split('.')[0]);
                 text.Append("\r\n");
             }
-            if (MetaDrawSettings.SpectrumDescription["ProForma Level: "])
+
+            if (MetaDrawSettings.SpectrumDescription["Ambiguity Level: "])
             {
-                text.Append("ProForma Level: ");
+                text.Append("Ambiguity Level: ");
                 text.Append(SpectrumMatch.AmbiguityLevel);
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Spectral Angle: "])
             {
-                text.Append("Spectral Angle: ");
                 if (SpectrumMatch.SpectralAngle != null)
-                    text.Append(SpectrumMatch.SpectralAngle.ToString());
-                else
-                    text.Append("N/A");
-                text.Append("\r\n");
+                {
+                    text.Append("Original Spectral Angle: ");
+                    text.Append(SpectrumMatch.SpectralAngle.ToString() + "\r\n");
+                }
+
+                if (librarySpectrum != null)
+                {
+                    text.Append("Displayed Spectral Angle: ");
+                    text.Append(librarySpectrum.CalculateSpectralAngleOnTheFly(this.MatchedFragmentIons) + "\r\n");
+                }
             }
+
             if (MetaDrawSettings.SpectrumDescription["Score: "])
             {
                 text.Append("Score: ");
                 text.Append(SpectrumMatch.Score.ToString("F3"));
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Q-Value: "])
             {
                 text.Append("Q-Value: ");
                 text.Append(SpectrumMatch.QValue.ToString("F3"));
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["PEP: "])
             {
                 text.Append("PEP: ");
                 text.Append(SpectrumMatch.PEP.ToString("F3"));
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["PEP Q-Value: "])
             {
                 text.Append("PEP Q-Value: ");
@@ -496,16 +458,25 @@ namespace GuiFunctions
                 text.Append("\r\n");
             }
 
+            double fontSize = MetaDrawSettings.SpectrumDescriptionFontSize;
+            string annotationText = text.ToString();
+            double averageCharWidth = 0.48; // Magic number determined by trial and error
+            int maxLineLength = Math.Min(annotationText.Split('\n').Max(line => line.Length), MaxCharactersPerDescriptionLine);
+            double estimatedWidth = fontSize * averageCharWidth * maxLineLength;
+
+            // Set X offset to negative estimated width minus a small margin
+            double xOffset = -estimatedWidth - 10 - (fontSize / 3);
+
             var annotation = new PlotTextAnnotation()
             {
                 Text = text.ToString(),
                 XPosition = PlotTextAnnotation.RelativeToX.Right,
                 YPosition = PlotTextAnnotation.RelativeToY.Top,
-                FontWeight = 550,
-                X = -155,
+                FontWeight = 450,
+                X = xOffset,
                 Font = "Arial",
-                FontSize = 10,
-                TextColor = OxyColors.Black,
+                FontSize = MetaDrawSettings.SpectrumDescriptionFontSize,
+                TextColor = OxyColors.Black, 
             };
 
             Model.Annotations.Add(annotation);
@@ -564,9 +535,59 @@ namespace GuiFunctions
             pX += X;
             pY += Y;
 
-            rc.DrawMultilineText(new ScreenPoint(pX, pY), Text, TextColor, Font, FontSize, FontWeight);
+            // Ensure text does not overlay in Y dimension. 
+            double lineSpacing = 1.2; // 20% extra space
+            double lineHeight = FontSize * lineSpacing;
+
+            string processedText = WrapLongLines(Text, SpectrumMatchPlot.MaxCharactersPerDescriptionLine, SpectrumMatchPlot.MaxCharactersPerDescriptionLine);
+            var lines = (processedText ?? string.Empty).Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                double yOffset = i * lineHeight;
+                rc.DrawText(
+                    new ScreenPoint(pX, pY + yOffset),
+                    lines[i],
+                    TextColor,
+                    Font,
+                    FontSize,
+                    FontWeight);
+            }
         }
 
+        private string WrapLongLines(string text, int firstLineLimit = 32, int wrapLineLimit = 29, string indent = "   ")
+        {
+            var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            var result = new StringBuilder();
+
+            foreach (var line in lines)
+            {
+                if (line.Length > firstLineLimit)
+                {
+                    int written = 0;
+                    int remaining = line.Length;
+                    // First line
+                    result.Append(line.Substring(0, firstLineLimit));
+                    written += firstLineLimit;
+                    remaining -= firstLineLimit;
+
+                    // Subsequent lines
+                    while (remaining > 0)
+                    {
+                        int take = Math.Min(wrapLineLimit - indent.Length, remaining);
+                        result.Append("\r\n" + indent + line.Substring(written, take));
+                        written += take;
+                        remaining -= take;
+                    }
+                    result.Append("\r\n");
+                }
+                else
+                {
+                    result.Append(line + "\r\n");
+                }
+            }
+            return result.ToString().TrimEnd('\r', '\n');
+        }
 
     }
 }

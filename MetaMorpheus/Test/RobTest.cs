@@ -1,14 +1,19 @@
 ﻿using Chemistry;
 using EngineLayer;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Digestion;
+using Omics.Modifications;
+using Omics;
+using Transcriptomics;
 
 namespace Test
 {
@@ -84,7 +89,7 @@ namespace Test
             }
 
             // create PSMs for the peptides
-            Dictionary<string, PeptideSpectralMatch> temp = new Dictionary<string, PeptideSpectralMatch>();
+            Dictionary<string, SpectralMatch> temp = new Dictionary<string, SpectralMatch>();
 
             MsDataScan fakeScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
                 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
@@ -96,7 +101,7 @@ namespace Test
             {
                 if (temp.TryGetValue(peptide.BaseSequence, out var psm))
                 {
-                    psm.AddOrReplace(peptide, 1, 0, true, new List<MatchedFragmentIon>(),0);
+                    psm.AddOrReplace(peptide, 1, 0, true, new List<MatchedFragmentIon>());
                 }
                 else
                 {
@@ -104,7 +109,7 @@ namespace Test
                 }
             }
 
-            List<PeptideSpectralMatch> psms = temp.Values.ToList();
+            List<SpectralMatch> psms = temp.Values.ToList();
 
             foreach (var psm in psms)
             {
@@ -112,26 +117,28 @@ namespace Test
                 psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             }
 
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
+
             // run parsimony
-            ProteinParsimonyEngine parsimonyEngine = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine parsimonyEngine = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, new List<string>());
             var parsimonyResults = (ProteinParsimonyResults)parsimonyEngine.Run();
             var proteinGroups = parsimonyResults.ProteinGroups;
 
-            ProteinScoringAndFdrEngine proteinScoringAndFdrEngine = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringAndFdrEngine = new ProteinScoringAndFdrEngine(proteinGroups, filteredPsms, true, false, true, new CommonParameters(), null, new List<string>());
             var proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)proteinScoringAndFdrEngine.Run();
             proteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
             // select the PSMs' proteins
-            List<string> parsimonyProteinSequences = psms.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide.Protein)).Select(v => v.BaseSequence).Distinct().ToList();
+            List<string> parsimonyProteinSequences = psms.SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer.Parent)).Select(v => v.BaseSequence).Distinct().ToList();
 
             // check that correct proteins are in parsimony list
-            Assert.Contains("AB--------", parsimonyProteinSequences);
-            Assert.Contains("--C-------", parsimonyProteinSequences);
-            Assert.Contains("-B-D---HHH--", parsimonyProteinSequences);
-            Assert.Contains("-B------I-", parsimonyProteinSequences);
-            Assert.Contains("----EFG---", parsimonyProteinSequences);
-            Assert.Contains("----EFG--J", parsimonyProteinSequences);
-            Assert.AreEqual(6, parsimonyProteinSequences.Count);
+            Assert.That(parsimonyProteinSequences.Contains("AB--------"));
+            Assert.That(parsimonyProteinSequences.Contains("--C-------"));
+            Assert.That(parsimonyProteinSequences.Contains("-B-D---HHH--"));
+            Assert.That(parsimonyProteinSequences.Contains("-B------I-"));
+            Assert.That(parsimonyProteinSequences.Contains("----EFG---"));
+            Assert.That(parsimonyProteinSequences.Contains("----EFG--J"));
+            Assert.That(parsimonyProteinSequences.Count, Is.EqualTo(6));
 
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
@@ -143,13 +150,12 @@ namespace Test
             }
 
             // test protein groups
-            Assert.AreEqual(4, proteinGroups.Count);
-            Assert.AreEqual(1, proteinGroups.First().Proteins.Count);
-            Assert.AreEqual("AB--------", proteinGroups.First().Proteins.First().BaseSequence);
-            Assert.AreEqual(2, proteinGroups.First().AllPsmsBelowOnePercentFDR.Count);
-            Assert.AreEqual(2, proteinGroups.First().ProteinGroupScore);
+            Assert.That(proteinGroups.Count, Is.EqualTo(4));
+            Assert.That(proteinGroups.First().Proteins.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.First().Proteins.First().BaseSequence, Is.EqualTo("AB--------"));
+            Assert.That(proteinGroups.First().AllPsmsBelowOnePercentFDR.Count, Is.EqualTo(2));
+            Assert.That(proteinGroups.First().ProteinGroupScore, Is.EqualTo(2));
         }
-
         [Test]
         public static void TestPTMOutput()
         {
@@ -176,28 +182,28 @@ namespace Test
 
             int idx = 0;
 
-            var pep1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("MNNNSK", pep1.Single().FullSequence);//this might be base
+            var pep1 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
+            Assert.That(pep1.Single().FullSequence, Is.EqualTo("MNNNSK"));//this might be base
 
-            var pep1mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("MNNNS[HaHa:resMod on S]K", pep1mod.Single().FullSequence);//this might be base
+            var pep1mod = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
+            Assert.That(pep1mod.Single().FullSequence, Is.EqualTo("MNNNS[HaHa:resMod on S]K"));//this might be base
 
-            var pep3 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("NNNSK", pep3.Single().FullSequence);//this might be base
+            var pep3 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
+            Assert.That(pep3.Single().FullSequence, Is.EqualTo("NNNSK"));//this might be base
 
-            var pep3mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("NNNS[HaHa:resMod on S]K", pep3mod.Single().FullSequence);//this might be base
+            var pep3mod = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
+            Assert.That(pep3mod.Single().FullSequence, Is.EqualTo("NNNS[HaHa:resMod on S]K"));//this might be base
 
-            var pep4 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("QQQI", pep4.Single().FullSequence);//this might be base
+            var pep4 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
+            Assert.That(pep4.Single().FullSequence, Is.EqualTo("QQQI"));//this might be base
 
-            var pep4mod1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("QQQI[HaHa:iModOne on I]", pep4mod1.Single().FullSequence);//this might be base
+            var pep4mod1 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
+            Assert.That(pep4mod1.Single().FullSequence, Is.EqualTo("QQQI[HaHa:iModOne on I]"));//this might be base
 
-            var pep4mod2 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("QQQI[HaHa:iModTwo on I]", pep4mod2.Single().FullSequence);//this might be base
+            var pep4mod2 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
+            Assert.That(pep4mod2.Single().FullSequence, Is.EqualTo("QQQI[HaHa:iModTwo on I]"));//this might be base
 
-            var peptideList = new HashSet<PeptideWithSetModifications>();
+            var peptideList = new HashSet<IBioPolymerWithSetMods>();
             foreach (var peptide in proteinList.SelectMany(protein => protein.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications)))
             {               
                 peptideList.Add(peptide);
@@ -228,7 +234,7 @@ namespace Test
             match66.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
+            List<SpectralMatch> psms = new List<SpectralMatch>
             {
                 match1,
                 match2,
@@ -242,21 +248,21 @@ namespace Test
             };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
-
-            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(psms, true, new CommonParameters(), null, new List<string> { "ff" });
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters, includeContaminants: false);
+            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(filteredPsms, true, new CommonParameters(), null, new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, filteredPsms, false, false, true, new CommonParameters(), null, new List<string>());
             f.Run();
 
-            Assert.AreEqual("#aa5[resMod on S,info:occupancy=0.67(2/3)];#aa10[iModOne on I,info:occupancy=0.33(2/6)];#aa10[iModTwo on I,info:occupancy=0.33(2/6)]", proteinGroups.First().ModsInfo[0]);
+            Assert.That(proteinGroups.First().ModsInfo[0], Is.EqualTo("#aa5[resMod on S,info:occupancy=0.67(2/3)];#aa10[iModOne on I,info:occupancy=0.33(2/6)];#aa10[iModTwo on I,info:occupancy=0.33(2/6)]"));
         }
 
         [Test]
         public static void TestProteinGroupsAccessionOutputOrder()
         {
-            var p = new HashSet<Protein>();
+            var p = new HashSet<IBioPolymer>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
 
             // make protein B
@@ -264,6 +270,26 @@ namespace Test
 
             // make protein A
             p.Add(new Protein("-----F----**", "A", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
+
+            // add protein B and A to the protein group
+            ProteinGroup testGroup = new ProteinGroup(p, null, null);
+
+            // test order is AB and not BA
+            Assert.That(testGroup.ProteinGroupName.Equals("A|B"));
+            Assert.That(testGroup.Proteins.First().Accession.Equals("B"));
+        }
+
+        [Test]
+        public static void TestTranscriptGroupsAccessionOutputOrder()
+        {
+            var p = new HashSet<IBioPolymer>();
+            List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
+
+            // make protein B
+            p.Add(new RNA("AAAAACAAAAU", "B", isDecoy: true));
+
+            // make protein A
+            p.Add(new RNA("AAAAACAAAAUU", "A", isDecoy: true));
 
             // add protein B and A to the protein group
             ProteinGroup testGroup = new ProteinGroup(p, null, null);

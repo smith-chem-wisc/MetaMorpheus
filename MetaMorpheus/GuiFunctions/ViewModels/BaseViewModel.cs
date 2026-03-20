@@ -1,12 +1,6 @@
-﻿using OxyPlot;
-using System;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media;
 
 namespace GuiFunctions
 {
@@ -32,7 +26,7 @@ namespace GuiFunctions
 
         #region Helpers
 
-        protected string AddSpaces(string text)
+        protected static string AddSpaces(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return "";
@@ -47,7 +41,7 @@ namespace GuiFunctions
             return newText.ToString();
         }
 
-        protected void AddSpaces(ObservableCollection<string> strings)
+        protected static void AddSpaces(ObservableCollection<string> strings)
         {
             for (int i = 0; i < strings.Count; i++)
             {

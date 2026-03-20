@@ -6,8 +6,6 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
         KeyDown="KeyPressed"
         Title="GPTMD Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
 
@@ -48,34 +46,7 @@
                 <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="FileLoadExpander" >
                         <StackPanel>
-                            <GroupBox Header="Deisotoping">
-                                <StackPanel>
-                                    <CheckBox x:Name="UseProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                        <CheckBox.ToolTip>
-                                            <TextBlock>
-                                                Use the charge states and precursor masses determined by the instrument controller.
-                                            </TextBlock>
-                                        </CheckBox.ToolTip>
-                                    </CheckBox>
-                                    <CheckBox x:Name="DeconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                        <CheckBox.ToolTip>
-                                            <TextBlock>
-                                                Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
-                                            </TextBlock>
-                                        </CheckBox.ToolTip>
-                                    </CheckBox>
-                                    <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label Content="Deconvolution Max Assumed Charge State" />
-                                        <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                            <TextBox.ToolTip>
-                                                <TextBlock>
-                                                    The maximum charge state that deconvolution should allow. Minimum is 1.
-                                                </TextBlock>
-                                            </TextBox.ToolTip>
-                                        </TextBox>
-                                    </StackPanel>
-                                </StackPanel>
-                            </GroupBox>
+                            <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
                             <GroupBox Header="Peak Trimming">
                                 <StackPanel>
                                     <CheckBox x:Name="TrimMs1" Content="Trim MS1 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -90,19 +61,19 @@
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks per m/z window" />
-                                        <TextBox x:Name="NumberOfPeaksToKeepPerWindowTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="NumberOfPeaksToKeepPerWindowTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="Use the N most intense peaks from the spectrum and remove all other peaks" />
                                             </ToolTipService.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Minimum intensity ratio" />
-                                        <TextBox x:Name="MinimumAllowedIntensityRatioToBasePeakTexBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:DoubleTextBoxControl x:Name="MinimumAllowedIntensityRatioToBasePeakTexBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="Peaks must be this intense compared to the base peak" />
                                             </ToolTipService.ToolTip>
-                                        </TextBox>
+                                        </local:DoubleTextBoxControl>
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -156,81 +127,109 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="maxMissedCleavageLabel" Content="Max Missed Cleavages" />
-                                        <TextBox x:Name="MissedCleavagesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
+                                        <local:IntegerTexBoxControl x:Name="MissedCleavagesTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     Maximum number of missed proteolytic cleavages allowed.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="proteaseLabel" Content="Protease" />
+                                        <Label x:Name="proteaseLabel" Width="150" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Protease:"/>
+                                            </Label.Content>
+                                        </Label>
                                         <ComboBox x:Name="ProteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="ProteaseSpecificUpdate">
-                                            <ComboBox.ToolTip>
-                                                <TextBlock>
-                                                        Protease used for digestion.
-                                                        <LineBreak/>
-                                                        Proteases can be added/modified by the user at "Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv"
-                                                </TextBlock>
-                                            </ComboBox.ToolTip>
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                                 ConverterParameter="Protease used for digestion.&#x0a;* Proteases can be added/modified by the user at &quot;Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv&quot;&#x0a;* For semi-specific digestions, select &quot;Semi-Specific Search&quot; in &quot;Search Mode&quot;."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
+                                            </ToolTipService.ToolTip>
                                         </ComboBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                        <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <Label x:Name="lblMinPeptideLength" Width="150" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                         ConverterParameter="Min Peptide Length:"/>
+                                            </Label.Content>
+                                        </Label>
+                                        <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
-                                                <TextBlock>
-                                                        The minimum allowed peptide length. Must be a positive, non-zero integer.
-                                                </TextBlock>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The minimum allowed peptide length. Must be a positive, non-zero integer."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                        <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
+                                        <Label x:Name="lblMaxPeptideLength" Width="150" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                         ConverterParameter="Max Peptide Length:"/>
+                                            </Label.Content>
+                                        </Label>
+                                        <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
                                             <TextBox.ToolTip>
-                                                <TextBlock>
-                                                        The maximum allowed peptide length. Leave empty for no limitation.
-                                                </TextBlock>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The maximum allowed peptide length. Leave empty for no limitation."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="LbMinVariantDepth" Content="Min Read Depth for Variants" />
-                                        <TextBox x:Name="MinVariantDepthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MinVariantDepthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The minimum number of reads to consider a nucleic acid sequence variant.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="LbMaxHeterozygousVariants" Content="Max Heterozygous variants for Combinitorics" />
-                                        <TextBox x:Name="MaxHeterozygousVariantsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MaxHeterozygousVariantsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The maximum number of heterozygous variants for combinitorics.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="minimumScoreLabel" Content="Minimum Score Allowed:" />
-                                        <TextBox x:Name="MinScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
-                                                    The minimum MetaMorpheus score allowed for a PSM to be reportable.
-                                                    <LineBreak/>
-                                                    Decreasing this number increases search time.
+                                                    <Run>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The minimum MetaMorpheus score allowed for a PSM to be reportable." Mode="OneWay"/>
+                                                    </Run>
+                                                    <LineBreak />
+                                                    <Run>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="Decreasing this number increases search time." Mode="OneWay"/>
+                                                    </Run>
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                    <StackPanel Orientation="Horizontal" Margin="5" 
+                                                Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                                         <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine" />
                                         <ComboBox x:Name="InitiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ComboBox.ToolTip>
@@ -242,7 +241,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="maxModificationIsoformsLabel" Content="Max Modification Isoforms" />
-                                        <TextBox x:Name="MaxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MaxModificationIsoformsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         The maximum number of isoforms (sequences with modifications) allowed from a given unmodified "base-sequence". 
@@ -250,26 +249,25 @@
                                                         This prevents highly ambiguous regions from greatly expanding the search space.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="MaxModsPerPeptideLabel" Content="Max Mods Per Peptide Before GPTMD" />
-                                        <TextBox x:Name="MaxModsPerPeptideTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <Label x:Name="MaxModsPerPeptideLabel" >
+                                            <Label.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                         ConverterParameter="Max Mods Per Peptide Before GPTMD:"/>
+                                            </Label.Content>
+                                        </Label>
+                                        <local:IntegerTexBoxControl x:Name="MaxModsPerPeptideTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
-                                                <TextBlock>
-                                                        The maximum number of modifications allowed on a single iteration of a given peptide sequence. 
-                                                        <LineBreak/>
-                                                        This parameters influences how many mods can exist on a peptide BEFORE GPTMD.
-                                                     <LineBreak/>
-                                                     <LineBreak/>
-                                                        MAX MODS ASSINGED BY GPTMD:
-                                                     <LineBreak/>
-                                                        The current implementation does not allow more than one modification to be discovered in a single identification EXCEPT for those with mass differences annotated in "...\\MetaMorpheus\\Data\\combos.txt".
-                                                    <LineBreak/>
-                                                        In MetaMorpheus near the top left, click "Data", select "Open folder with mods/data files", and open the "Data" folder.
-                                                </TextBlock>
+                                                <ToolTip>
+                                                    <ToolTip.Content>
+                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                 ConverterParameter="The maximum number of modifications allowed on a single iteration of a given peptide sequence.&#x0a;This parameter influences how many mods can exist on a peptide BEFORE GPTMD.&#x0a;&#x0a;MAX MODS ASSIGNED BY GPTMD:&#x0a;The current implementation does not allow more than one modification to be discovered in a single identification EXCEPT for those with mass differences annotated in &quot;...\\MetaMorpheus\\Data\\combos.txt&quot;.&#x0a;In MetaMorpheus near the top left, click &quot;Data&quot;, select &quot;Open folder with mods/data files&quot;, and open the &quot;Data&quot; folder."/>
+                                                    </ToolTip.Content>
+                                                </ToolTip>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -283,7 +281,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Max Threads" />
-                                        <TextBox x:Name="MaxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MaxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
@@ -291,7 +289,7 @@
                                                         Enter a lower number to limit CPU usage.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <CheckBox x:Name="AddCompIonCheckBox" Content="Generate Complementary Ions" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -468,7 +466,21 @@
                                     </TextBox.Style>
                                 </TextBox>
                             </StackPanel>
-                            <StackPanel Grid.Column="0" Grid.Row="2">
+                            <GroupBox Grid.Column="1" Grid.Row="1" Header="G-PTM-D Filter Stringency" Margin="0,-10,0,24">
+                                <ListBox x:Name="FilterOptionsListBox" ItemsSource="{Binding FilterOptions}" SelectionMode="Multiple"
+                                         Margin="0,0,0,0" Padding="0" BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,0" VerticalAlignment="Center"
+                                                        ToolTip="{Binding Summary}">
+                                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Name}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </GroupBox>
+                            <StackPanel Grid.Column="0" Grid.Row="1">
                                 <TreeView x:Name="gptmdModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400">
                                     <TreeView.Resources>
                                         <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
@@ -494,6 +506,21 @@
                         </Grid>
                     </Expander>
                 </GroupBox>
+                <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                    <Expander>
+                        <CheckBox x:Name="WriteDecoysCheckBox" Margin="20 0 0 0"
+                                  Content="Write decoys with discovered mods">
+                            <ToolTipService.ToolTip>
+                                <TextBlock>
+                                    Write out decoys to the database if and only if they contain discovered modifications.
+                                    <LineBreak/>
+                                    This is to ensure proper false discovery rate calculations in subsequent searches, particularly for top-down
+                                </TextBlock>
+                            </ToolTipService.ToolTip>
+                        </CheckBox>
+                    </Expander>
+                </GroupBox>
+
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">

@@ -4,36 +4,49 @@ using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
-using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
+using Omics;
+using Omics.Digestion;
+using Omics.Modifications;
+using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using static Nett.TomlObjectFactory;
+using EngineLayer.FdrAnalysis;
+using Omics.BioPolymer;
 
 namespace Test
 {
     [TestFixture]
     public static class SearchEngineTests
     {
+        public static Protease _customProtease;
+
+        [OneTimeSetUp]
+        public static void OneTimeSetUp()
+        {
+            _customProtease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
+            ProteaseDictionary.Dictionary.Add(_customProtease.Name, _customProtease);
+        }
+
         [Test]
         public static void TestClassicSearchEngine()
         {
-            Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
-            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
                 (digestionParams: new DigestionParams(
-                    protease: protease.Name,
+                    protease: _customProtease.Name,
                     minPeptideLength: 1),
                 scoreCutoff: 1);
 
@@ -41,78 +54,119 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
-
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, CommonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             // One scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
 
-            Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQ"));
         }
 
         [Test]
+        public static void TestClassicSearchEngine_IsoDec()
+        {
+            CommonParameters commonParameters = new CommonParameters
+            (digestionParams: new DigestionParams(
+                    protease: _customProtease.Name,
+                    minPeptideLength: 1),
+                scoreCutoff: 1, 
+                precursorDeconParams: new IsoDecDeconvolutionParameters());
+            commonParameters.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 12;
+
+            var myMsDataFile = new TestDataFile();
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            bool writeSpectralLibrary = false;
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchModes, commonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
+
+            // Single search mode
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
+
+            // One scan
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
+
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
+
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQ"));
+        }
+
+        [Test]
+        [NonParallelizable]
         public static void TestSearchEngineResultsPsmFromTsv()
         {
+            // only for unit test. must set to false at the end of each tests
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true); 
+
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500pruned.xml");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
+            searchTaskLoaded.CommonParameters.QValueCutoffForPepCalculation = 0.01;
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
             PsmFromTsv psm = parsedPsms.First();
-            Assert.AreEqual("EIADGLCLEVEGK", psm.BaseSeq);
-            Assert.AreEqual("T", psm.DecoyContamTarget);
-            Assert.AreEqual(502.117, psm.DeltaScore);
-            Assert.AreEqual("EIADGLCLEVEGK", psm.EssentialSeq);
-            Assert.AreEqual("sliced_b6", psm.FileNameWithoutExtension);
-            Assert.AreEqual("EIADGLC[Common Fixed:Carbamidomethyl on C]LEVEGK", psm.FullSequence);
-            Assert.AreEqual("primary:Tpt1, synonym:Trt", psm.GeneName);
-            Assert.AreEqual("", psm.IdentifiedSequenceVariations);
-            Assert.AreEqual("0.00652", psm.MassDiffDa);
-            Assert.AreEqual("4.55", psm.MassDiffPpm);
-            Assert.AreEqual(50, psm.MatchedIons.Count);
-            Assert.AreEqual("0", psm.MissedCleavage);
-            Assert.AreEqual(189, psm.Ms2ScanNumber);
-            Assert.AreEqual("M", psm.NextAminoAcid);
-            Assert.AreEqual("0", psm.Notch);
-            Assert.AreEqual("Mus musculus", psm.OrganismName);
+            Assert.That(psm.BaseSeq, Is.EqualTo("FTQTSGETTDADKEPAGEDK"));
+            Assert.That(psm.DecoyContamTarget, Is.EqualTo("T"));
+            Assert.That(psm.DeltaScore, Is.EqualTo(541.386));
+            Assert.That(psm.EssentialSeq, Is.EqualTo("FTQTSGETTDADKEPAGEDK"));
+            Assert.That(psm.FileNameWithoutExtension, Is.EqualTo("TaGe_SA_A549_3_snip"));
+            Assert.That(psm.FullSequence, Is.EqualTo("FTQTSGETTDADKEPAGEDK"));
+            Assert.That(psm.GeneName, Is.EqualTo("primary:MKI67"));
+            Assert.That(psm.IdentifiedSequenceVariations, Is.EqualTo(""));
+            Assert.That(psm.MassDiffDa, Is.EqualTo("-0.00544"));
+            Assert.That(psm.MassDiffPpm, Is.EqualTo("-2.56000"));
+            Assert.That(psm.MatchedIons.Count, Is.EqualTo(40));
+            Assert.That(psm.MissedCleavage, Is.EqualTo("1"));
+            Assert.That(psm.Ms2ScanNumber, Is.EqualTo(56));
+            Assert.That(psm.NextAminoAcid, Is.EqualTo("G"));
+            Assert.That(psm.Notch, Is.EqualTo("0"));
+            Assert.That(psm.OrganismName, Is.EqualTo("Homo sapiens"));
             Assert.That(0, Is.EqualTo(psm.PEP).Within(1E-04));
-            Assert.AreEqual(0, psm.PEP_QValue);
-            Assert.AreEqual("full", psm.PeptideDescription);
-            Assert.AreEqual("1431.69155", psm.PeptideMonoMass);
-            Assert.AreEqual(2, psm.PrecursorCharge);
-            Assert.AreEqual(1431.69806, psm.PrecursorMass);
-            Assert.AreEqual(716.85631, psm.PrecursorMz);
-            Assert.AreEqual(185, psm.PrecursorScanNum);
-            Assert.AreEqual("R", psm.PreviousAminoAcid);
-            Assert.AreEqual("P63028", psm.ProteinAccession);
-            Assert.AreEqual("Translationally-controlled tumor protein", psm.ProteinName);
-            Assert.AreEqual(0, psm.QValue);
-            Assert.AreEqual(0, psm.QValueNotch);
-            Assert.AreEqual(77.09543, psm.RetentionTime);
-            Assert.AreEqual(507.117, psm.Score);
-            Assert.AreEqual("[22 to 34]", psm.StartAndEndResiduesInProtein);
-            Assert.AreEqual(2529786.92095, psm.TotalIonCurrent);
-            Assert.AreEqual(0, psm.VariantCrossingIons.Count);
+            Assert.That(0.005, Is.EqualTo(psm.PEP_QValue).Within(1E-03));
+            Assert.That(psm.PeptideDescription, Is.EqualTo("full"));
+            Assert.That(psm.PeptideMonoMass, Is.EqualTo("2125.92875"));
+            Assert.That(psm.PrecursorCharge, Is.EqualTo(3));
+            Assert.That(psm.PrecursorMass, Is.EqualTo(2125.92331));
+            Assert.That(psm.PrecursorMz, Is.EqualTo(709.64838));
+            Assert.That(psm.PrecursorScanNum, Is.EqualTo(49));
+            Assert.That(psm.PreviousAminoAcid, Is.EqualTo("K"));
+            Assert.That(psm.ProteinAccession, Is.EqualTo("P46013"));
+            Assert.That(psm.ProteinName, Is.EqualTo("Proliferation marker protein Ki-67"));
+            Assert.That(0.004739, Is.EqualTo(psm.QValue).Within(1E-04));
+            Assert.That(0.004739, Is.EqualTo(psm.QValueNotch).Within(1E-04));
+            Assert.That(psm.RetentionTime, Is.EqualTo(45.59512));
+            Assert.That(psm.Score, Is.EqualTo(662.486));
+            Assert.That(psm.StartAndEndResiduesInParentSequence, Is.EqualTo("[2742 to 2761]"));
+            Assert.That(psm.TotalIonCurrent, Is.EqualTo(159644.25225));
+            Assert.That(psm.VariantCrossingIons.Count, Is.EqualTo(0));
+            property.SetValue(null, false);
         }
 
         //tests a weird crash from ms2 scans that had experimental peaks but they were all removed from the xarray by XCorr processing
@@ -120,7 +174,7 @@ namespace Test
         public static void TestXCorrWithNoPeaks()
         {
             MsDataScan datascan = new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive, 0, new MzLibUtil.MzRange(0, 2000), "", MZAnalyzerType.FTICR, 1, null, null, "");
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(datascan, 0, 0, "", new CommonParameters(), new IsotopicEnvelope[] { new IsotopicEnvelope(new List<(double mz, double intensity)> { (1, 1) }, 32, 2, 23, 1, 1) });
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(datascan, 0, 0, "", new CommonParameters(), new IsotopicEnvelope[] { new IsotopicEnvelope(new List<(double mz, double intensity)> { (1, 1) }, 32, 2, 23, 1) });
             scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1, 32);
             MetaMorpheusEngine.MatchFragmentIons(scan, new List<Product> { (new Product(ProductType.y, FragmentationTerminus.C, 0, 1, 1, 0)) }, new CommonParameters(dissociationType: DissociationType.LowCID));
         }
@@ -131,22 +185,22 @@ namespace Test
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Search.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500pruned.xml");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(127, parsedPsms.Count); //total psm count
-            Assert.AreEqual(37, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv
-            Assert.AreEqual(0, warnings.Count);
+            Assert.That(parsedPsms.Count, Is.EqualTo(385)); //total psm count
+            Assert.That(parsedPsms.Count(p => p.QValue < 0.01), Is.EqualTo(218)); //psms with q-value < 0.01 as read from psmtsv, including decoys
+            Assert.That(warnings.Count, Is.EqualTo(0));
 
-            int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l=>l.Contains("All target")).Split(":")[1].Trim());
-            Assert.AreEqual(37, countFromResultsTxt);
+            int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l => l.Contains("All target")).Split(":")[1].Trim());
+            Assert.That(countFromResultsTxt, Is.EqualTo(216));
         }
 
         [Test]
@@ -228,7 +282,7 @@ namespace Test
 
             var scans = MyMsDataFiles[origDataFile].GetAllScansList();
 
-            Assert.AreEqual(912, scans[1].MassSpectrum.XArray.Count());
+            Assert.That(scans[1].MassSpectrum.XArray.Count(), Is.EqualTo(912));
             Assert.That(200.33052062988281, Is.EqualTo(scans[1].MassSpectrum.XArray[0]).Within(0.00001));
 
             foreach (MsDataScan scan in scans.Where(s => s.MsnOrder > 1))
@@ -241,13 +295,13 @@ namespace Test
                 scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.IsolationMz.Value);
             }
 
-            Assert.IsTrue(scans[1].MassSpectrum.XcorrProcessed);
-            Assert.AreEqual(220, scans[1].MassSpectrum.XArray.Count());
+            Assert.That(scans[1].MassSpectrum.XcorrProcessed);
+            Assert.That(scans[1].MassSpectrum.XArray.Count(), Is.EqualTo(220));
             Assert.That(201.1020879, Is.EqualTo(scans[1].MassSpectrum.XArray[0]).Within(0.00001));
 
             var bubba = scans[239];
 
-            Assert.AreEqual(459, bubba.MassSpectrum.XArray.Count());
+            Assert.That(bubba.MassSpectrum.XArray.Count(), Is.EqualTo(459));
             Assert.That(201.102, Is.EqualTo(bubba.MassSpectrum.XArray[0]).Within(0.01));
             Assert.That(203.1031037, Is.EqualTo(bubba.MassSpectrum.XArray[1]).Within(0.01));
         }
@@ -280,13 +334,13 @@ namespace Test
                 scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.TheScan.IsolationMz.Value);
             }
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
 
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, null, null, 
                 proteinList, searchModes, CommonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
 
-            Assert.IsTrue(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XcorrProcessed);
+            Assert.That(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XcorrProcessed);
 
             List<double> expectedXarray = copyOflistOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList();
             List<double> expectedYarray = copyOflistOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList();
@@ -298,20 +352,20 @@ namespace Test
             Assert.That(expectedXarray.SequenceEqual(processedXarray));
             Assert.That(expectedYarray.SequenceEqual(processedYarray));
 
-            Assert.AreEqual(5, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b).ToList().Count);
-            Assert.AreEqual(5, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.bWaterLoss).ToList().Count);
-            Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).ToList().Count);
-            Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.yWaterLoss).ToList().Count);
+            Assert.That(allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b).ToList().Count, Is.EqualTo(5));
+            Assert.That(allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.bWaterLoss).ToList().Count, Is.EqualTo(5));
+            Assert.That(allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).ToList().Count, Is.EqualTo(6));
+            Assert.That(allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.yWaterLoss).ToList().Count, Is.EqualTo(6));
 
-            Assert.AreEqual(518.2, Math.Round(allPsmsArray[0].Score, 1));
+            Assert.That(Math.Round(allPsmsArray[0].Score, 1), Is.EqualTo(518.2));
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             // One scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].Score > 1);
         }
 
         [Test]
@@ -333,22 +387,22 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
                 proteinList, searchModes, CommonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             // One Scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
 
-            Assert.AreEqual("QXQ", allPsmsArray[0].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QXQ"));
         }
 
         [Test]
@@ -381,20 +435,20 @@ namespace Test
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
             Assert.That(allPsmsArray[0] != null);
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
 
-            Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQ"));
         }
 
         [Test]
@@ -435,20 +489,20 @@ namespace Test
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
             Assert.That(allPsmsArray[0] != null);
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
 
-            Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQ"));
         }
 
         [Test]
@@ -480,7 +534,7 @@ namespace Test
 
             foreach (var scan in myMsDataFile.GetAllScansList().Where(p => p.MsnOrder > 1))
             {
-                Assert.AreEqual(984, scan.MassSpectrum.XArray.Count());
+                Assert.That(scan.MassSpectrum.XArray.Count(), Is.EqualTo(984));
                 scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.IsolationMz.Value);
             }
 
@@ -497,7 +551,7 @@ namespace Test
 
             var remainingMasses = listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray;
 
-            Assert.AreEqual(195, listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray.Count());
+            Assert.That(listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray.Count(), Is.EqualTo(195));
 
             var mzs = listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray.ToList();
             List<int> mzsRounded = new List<int>();
@@ -512,7 +566,7 @@ namespace Test
                 650, 652, 655, 657, 658, 664, 670, 672, 674, 676, 679, 682, 688, 690, 691, 694, 697, 698, 700, 704, 708, 722, 745, 747, 755, 763, 765, 771, 772, 773, 782, 789, 795, 805, 809, 823, 828, 831, 839, 866, 867, 868, 874, 876,
                 885, 886, 906, 914, 916, 924, 951, 959, 965, 966, 973, 977, 982, 983, 988, 996, 1006, 1023, 1024, 1040, 1041, 1137, 1152, 1170};
 
-            Assert.AreEqual(mzsExpected, mzsRounded);
+            Assert.That(mzsRounded, Is.EqualTo(mzsExpected));
 
             Ms2ScanWithSpecificMass[] losm2 = listOfSortedms2Scans.Where(mass => mass.PrecursorMass > 1410 && mass.PrecursorMass < 1411).ToArray();
 
@@ -533,11 +587,11 @@ namespace Test
                 570290, 571290, 576293, 588299, 604307, 622316, 671341, 672341, 675343, 689350, 703357, 721366, 770391, 771392, 776394, 788400, 804408, 822417, 867440, 868441, 877445, 885449, 905460, 923469, 964490, 965490, 976496,
                 982499, 1004510, 1021519, 1022519, 1039528, 1089553, 1117567, 1135576, 1150584, 1151585, 1168593, 1190604, 1218619, 1236628, 1279650, 1280650, 1297659};
 
-            Assert.AreEqual(expectedIndicies, filledIndicies);
+            Assert.That(filledIndicies, Is.EqualTo(expectedIndicies));
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ModernSearchEngine(allPsmsArray, losm2, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
@@ -545,26 +599,33 @@ namespace Test
 
             List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", CommonParameters) };
 
-            EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(12, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(12));
 
             var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
 
             var myMatchedIons = goodPsm[0].MatchedFragmentIons;
 
-            Assert.AreEqual(47, myMatchedIons.Count());
+            Assert.That(myMatchedIons.Count(), Is.EqualTo(47));
 
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
             goodScore.Sort();
-            Assert.AreEqual(2, goodPsm.Count());
+            Assert.That(goodPsm.Count(), Is.EqualTo(2));
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestClassicSearchEngineLowResSimple()
         {
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DatabaseTests\sliced_b6.mzML");
+            //override to be only used for unit tests in non-parallelizable format
+            //must set to false at the end of this method
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true);
+
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
             CommonParameters CommonParameters = new CommonParameters(
@@ -593,16 +654,16 @@ namespace Test
 
             Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Assert.AreEqual(447, arrayOfMs2ScansSortedByMass.Count());
+            Assert.That(arrayOfMs2ScansSortedByMass.Count(), Is.EqualTo(535));
 
             int numSpectra = myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2);
 
-            Assert.AreEqual(257, numSpectra);
+            Assert.That(numSpectra, Is.EqualTo(147));
 
-            PeptideSpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+            SpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestClassicSearchEngineLowResSimple");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DatabaseTests", "LowResSnip_B6_mouse_11700_117500.xml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
             Directory.CreateDirectory(outputFolder);
 
@@ -628,49 +689,49 @@ namespace Test
             };
             Dictionary<string, Modification> u = new Dictionary<string, Modification>();
 
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinXML(myDatabase, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out u);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse, false, out List<string> errors);
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
             var listOfSortedXcorrms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Assert.AreEqual(447, listOfSortedXcorrms2Scans.Count());
+            Assert.That(listOfSortedXcorrms2Scans.Count(), Is.EqualTo(535));
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
 
             var fsp = new List<(string, CommonParameters)>();
             fsp.Add(("sliced_b6.mzML", CommonParameters));
 
             bool writeSpectralLibrary = false;
-            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            Assert.AreEqual(131, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
+            Assert.That(nonNullPsms.Count, Is.EqualTo(432)); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
 
-            EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(447, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(535));
 
-            var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
-            goodScore.Sort();
 
-            List<int> expectedScans = new List<int>() { 51, 53, 54, 56, 74, 81, 82, 86, 90, 98, 116, 120, 125, 127, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 197, 200, 206, 210, 211, 216, 226, 230, 235, 238, 256 };
-            List<int> foundScans = new List<int>();
-            foundScans.AddRange(goodPsm.Select(s => s.ScanNumber).ToList());
-            foundScans.Sort();
-
-            Assert.AreEqual(expectedScans, foundScans);
-            Assert.AreEqual(37, goodPsm.Count());
+            Assert.That(goodScore.Count(), Is.EqualTo(181));
             Directory.Delete(outputFolder, true);
+            property.SetValue(null, false);
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestModernSearchEngineLowResSimple()
         {
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
+            //override to be only used for unit tests in non-parallelizable format
+            //must set to false at the end of this method
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true);
+
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
             CommonParameters CommonParameters = new CommonParameters(
@@ -703,11 +764,11 @@ namespace Test
 
             Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
             int numSpectra = myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2);
-            PeptideSpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+            SpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestModernSearchEngineLowResSimple");
             //string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500.xml.gz");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500pruned.xml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
             Directory.CreateDirectory(outputFolder);
 
@@ -733,9 +794,7 @@ namespace Test
             };
             Dictionary<string, Modification> u = new Dictionary<string, Modification>();
 
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinXML(myDatabase, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out u);
-
-            //var myPtmList = ProteinDbLoader.GetPtmListFromProteinXml(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500.xmlpruned.xml"));
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse,false,out var errors);
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 fsp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -745,7 +804,7 @@ namespace Test
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, fsp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
@@ -753,19 +812,12 @@ namespace Test
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(447, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(535));
 
-            var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
-            goodScore.Sort();
 
-            List<int> expectedScans = new List<int>() { 51, 53, 54, 56, 74, 81, 82, 86, 90, 98, 116, 120, 125, 127, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 197, 200, 206, 210, 211, 216, 226, 230, 235, 238, 256 };
-            List<int> foundScans = new List<int>();
-            foundScans.AddRange(goodPsm.Select(s => s.ScanNumber).ToList());
-            foundScans.Sort();
-
-            Assert.AreEqual(expectedScans, foundScans);
-            Assert.AreEqual(37, goodPsm.Count());
+            Assert.That(goodScore.Count(), Is.EqualTo(181));
+            property.SetValue(null, false);
         }
 
         [Test]
@@ -796,7 +848,7 @@ namespace Test
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // no assertions... just don't crash...
@@ -829,9 +881,9 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[1][];
+            SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[1][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[0];
+            SpectralMatch[] allPsmsArray = allPsmsArrays[0];
 
             //Classic
             bool writeSpectralLibrary = false;
@@ -880,21 +932,21 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             var engine = new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
             Assert.That(allPsmsArray[0] != null);
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
 
-            Assert.AreEqual(3, allPsmsArray[0].NumDifferentMatchingPeptides);
+            Assert.That(allPsmsArray[0].NumDifferentMatchingPeptides, Is.EqualTo(3));
         }
 
         [Test]
@@ -941,11 +993,11 @@ namespace Test
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[2];
+            SpectralMatch[] allPsmsArray = allPsmsArrays[2];
 
             //coisolation index
             List<int>[] coisolationIndex = new List<int>[listOfSortedms2Scans.Length];
@@ -956,21 +1008,121 @@ namespace Test
             new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, fragmentIndexDict, 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 4);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 4);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
             CommonParameters = new CommonParameters(
                  digestionParams: new DigestionParams("singleN", minPeptideLength: 1),
                  precursorMassTolerance: new PpmTolerance(5),
                  scoreCutoff: 1);
 
             allPsmsArray[0].ResolveAllAmbiguities();
-            Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQGGGG"));
         }
+
+        [Test]
+        public static void TestNonSpecificEnzymeSearchEngine()
+        {
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchToml.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchTest");
+            Directory.CreateDirectory(outputFolder);
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\bosTaurusEnamPruned.xml");
+
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engineToml.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
+
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+
+            Assert.That(parsedPsms.Count, Is.EqualTo(39)); //total psm count
+
+            Directory.Delete(outputFolder, true);
+
+        }
+
+
+        [Test]
+        public static void TestNonSpecificEnzymeSearchEngineSingleNLowCID()
+        {
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                LocalFdrCategories = new List<FdrCategory>
+                {
+                    FdrCategory.FullySpecific,
+                    FdrCategory.SemiSpecific,
+                    FdrCategory.NonSpecific
+                }
+            };
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 0, null),
+                new DigestionMotif("K", null, 1, null),
+                new DigestionMotif("G", null, 0, null),
+                new DigestionMotif("G", null, 1, null),
+            };
+            DigestionParams dp = new DigestionParams("singleN", minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None);
+            CommonParameters CommonParameters = new CommonParameters(
+                dissociationType: DissociationType.LowCID,
+                precursorMassTolerance: new PpmTolerance(250),
+                digestionParams: dp,
+                scoreCutoff: 1,
+                addCompIons: true);
+
+            var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+
+            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
+
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
+                null, 100000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var indexResults = (IndexingResults)indexEngine.Run();
+            var peptideIndex = indexResults.PeptideIndex;
+            var fragmentIndexDict = indexResults.FragmentIndex;
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+
+            SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = allPsmsArrays[2];
+
+            //coisolation index
+            List<int>[] coisolationIndex = new List<int>[listOfSortedms2Scans.Length];
+            for (int i = 0; i < listOfSortedms2Scans.Length; i++)
+            {
+                coisolationIndex[i] = new List<int> { i };
+            }
+            new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, fragmentIndexDict, 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+
+            // Single search mode
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
+
+            // Single ms2 scan
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
+
+            Assert.That(allPsmsArray[0].Score > 4);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
+            CommonParameters = new CommonParameters(
+                 digestionParams: new DigestionParams("singleN", minPeptideLength: 1),
+                 precursorMassTolerance: new PpmTolerance(5),
+                 scoreCutoff: 1);
+
+            allPsmsArray[0].ResolveAllAmbiguities();
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQGGGG"));
+        }
+
 
         [Test]
         public static void TestNonSpecificEnzymeSearchEngineSingleCModifications()
@@ -1017,11 +1169,11 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[2];
+            SpectralMatch[] allPsmsArray = allPsmsArrays[2];
 
             //coisolation index
             List<int>[] coisolationIndex = new List<int>[listOfSortedms2Scans.Length];
@@ -1035,7 +1187,7 @@ namespace Test
 
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is no modification hanging out on the n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
             proteinList = new List<Protein> { new Protein("CDQPKLLGIETPLPKKEGGGGG", null) };
             guiltyPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]DQPKLLGIETPLPKKE", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
@@ -1061,7 +1213,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the protein n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
             proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGG", null) };
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
@@ -1076,7 +1228,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the peptide n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
         }
 
         [Test]
@@ -1124,11 +1276,11 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[2];
+            SpectralMatch[] allPsmsArray = allPsmsArrays[2];
 
             //coisolation index
             List<int>[] coisolationIndex = new List<int>[listOfSortedms2Scans.Length];
@@ -1141,7 +1293,7 @@ namespace Test
 
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is no modification hanging out on the n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
             proteinList = new List<Protein> { new Protein("GGGGGDQPKLLGIETPLPKKEC", null) };
             guiltyPwsm = new PeptideWithSetModifications("GGDQPKLLGIETPLPKKEC[Common Fixed:Carbamidomethyl on C]", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
@@ -1168,7 +1320,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the protein n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
             proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
@@ -1183,7 +1335,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the peptide n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
         }
 
         [Test]
@@ -1194,7 +1346,7 @@ namespace Test
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications("ACDEFGHIKLMNPQR", new Dictionary<string, Modification>());
             TestDataFile msFile = new TestDataFile(pwsm);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msFile, null, new CommonParameters()).ToArray();
-            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
@@ -1217,7 +1369,7 @@ namespace Test
             NonSpecificEnzymeSearchEngine searchEngine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, indexingResults.PeptideIndex, indexingResults.FragmentIndex, indexingResults.PrecursorIndex, 1, cp, null, null, massDiffAcceptor, 0, new List<string>());
 
             searchEngine.Run();
-            Assert.IsTrue(allPsmsArrays[2][0] != null);
+            Assert.That(allPsmsArrays[2][0] != null);
         }
 
         [Test]
@@ -1269,11 +1421,11 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[2];
+            SpectralMatch[] allPsmsArray = allPsmsArrays[2];
 
             //coisolation index
             List<int>[] coisolationIndex = new List<int>[listOfSortedms2Scans.Length];
@@ -1285,16 +1437,16 @@ namespace Test
             var searchResults = engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             //Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
             Assert.That(allPsmsArray[0] != null);
 
-            Assert.IsTrue(allPsmsArray[0].Score > 7);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 7);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
             allPsmsArray[0].ResolveAllAmbiguities();
-            Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQGGGG"));
         }
 
         [Test]
@@ -1321,11 +1473,11 @@ namespace Test
             var variableModifications = new List<Modification> { new Modification(_originalId: "16", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 3);
             var ListOfModifiedPeptides = protein.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(ListOfModifiedPeptides.Count, 192);
+            Assert.That(ListOfModifiedPeptides.Count, Is.EqualTo(192));
 
             var protein2 = new Protein(new string("MGGGGGMNNNKQQQMGGGGMGM".ToCharArray().Reverse().ToArray()), "TestProtein");
             var ListOfModifiedPeptides2 = protein2.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(ListOfModifiedPeptides2.Count, 132);
+            Assert.That(ListOfModifiedPeptides2.Count, Is.EqualTo(132));
         }
 
         [Test]
@@ -1351,11 +1503,11 @@ namespace Test
             var variableModifications = new List<Modification> { new Modification(_originalId: "16", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 3);
             var ListOfModifiedPeptides = protein.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(ListOfModifiedPeptides.Count, 132);
+            Assert.That(ListOfModifiedPeptides.Count, Is.EqualTo(132));
 
             var protein2 = new Protein(new string("MGGGGGMNNNKQQQMGGGGMGM".ToCharArray().Reverse().ToArray()), "TestProtein");
             var ListOfModifiedPeptides2 = protein2.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(ListOfModifiedPeptides2.Count, 192);
+            Assert.That(ListOfModifiedPeptides2.Count, Is.EqualTo(192));
         }
 
         [Test]
@@ -1400,7 +1552,7 @@ namespace Test
                 scoreCutoff: 2,
                 addCompIons: true);
 
-            HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
+            var digestParams = new HashSet<IDigestionParams> { CommonParameters.DigestionParams };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse,
                 CommonParameters, null, 100000, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -1412,10 +1564,10 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[2][];
+            SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[2][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[1];
+            SpectralMatch[] allPsmsArray = allPsmsArrays[1];
 
             //coisolation index
             List<int>[] coisolationIndex = new List<int>[listOfSortedms2Scans.Length];
@@ -1427,15 +1579,15 @@ namespace Test
             var searchResults = engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 4);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 4);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
             allPsmsArray[0].ResolveAllAmbiguities();
-            Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQGGGG"));
         }
 
         [Test]
@@ -1462,7 +1614,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMKNNNQQQGGGGKGG", null, null, null, null, new List<ProteolysisProduct> { new ProteolysisProduct(null, null, "test") }) };
+            var proteinList = new List<Protein> { new Protein("GGGGGMKNNNQQQGGGGKGG", null, null, null, null, new List<TruncationProduct> { new TruncationProduct(null, null, "test") }) };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
@@ -1475,7 +1627,7 @@ namespace Test
                 dissociationType: DissociationType.HCD,
                 addCompIons: true);
 
-            HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
+            var digestParams = new HashSet<IDigestionParams> { CommonParameters.DigestionParams };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse,
                 CommonParameters, null, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -1486,11 +1638,11 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[2];
+            SpectralMatch[] allPsmsArray = allPsmsArrays[2];
 
             //coisolation index
             List<int>[] coisolationIndex = new List<int>[listOfSortedms2Scans.Length];
@@ -1502,15 +1654,15 @@ namespace Test
             var searchResults = engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 4);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 4);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
             allPsmsArray[0].ResolveAllAmbiguities();
-            Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQGGGG"));
         }
 
         [Test]
@@ -1566,7 +1718,7 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
@@ -1580,31 +1732,31 @@ namespace Test
                 digestionParams: new DigestionParams(protease: protease2.Name, maxMissedCleavages: 5)
             );
 
-            HashSet<DigestionParams> digestParams2 = new HashSet<DigestionParams> { CommonParameters2.DigestionParams };
+            var digestParams2 = new HashSet<IDigestionParams> { CommonParameters2.DigestionParams };
 
             Tolerance DeconvolutionMassTolerance2 = new PpmTolerance(5);
 
             var listOfSortedms2Scans2 = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans2, variableModifications, fixedModifications, null, null, null, 
                 proteinList, searchModes, CommonParameters2, null, null, new List<string>(), writeSpectralLibrary).Run();
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray2.Length);
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray2.Length, Is.EqualTo(1));
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray2.Length);
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray2.Length, Is.EqualTo(1));
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
-            Assert.IsTrue(allPsmsArray2[0].Score > 4);
-            Assert.IsTrue(allPsmsArray[0].Score > 4);
-            Assert.AreEqual(2, allPsmsArray2[0].ScanNumber);
-            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
+            Assert.That(allPsmsArray2[0].Score > 4);
+            Assert.That(allPsmsArray[0].Score > 4);
+            Assert.That(allPsmsArray2[0].ScanNumber, Is.EqualTo(2));
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(allPsmsArray2[0].ScanNumber));
 
-            Assert.AreEqual("QQQGGGG", allPsmsArray2[0].BaseSequence);
-            Assert.AreEqual(allPsmsArray[0].BaseSequence, allPsmsArray2[0].BaseSequence);
+            Assert.That(allPsmsArray2[0].BaseSequence, Is.EqualTo("QQQGGGG"));
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo(allPsmsArray2[0].BaseSequence));
         }
 
         [Test]
@@ -1629,7 +1781,7 @@ namespace Test
                 modsDictionary.Add(mod, (ushort)ii);
                 ii++;
             }
-            List<ProteolysisProduct> protprod = new List<ProteolysisProduct> { new ProteolysisProduct(9, 21, "chain") };
+            List<TruncationProduct> protprod = new List<TruncationProduct> { new TruncationProduct(9, 21, "chain") };
             var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, null, protprod) };
 
             List<DigestionMotif> motifs1 = new List<DigestionMotif>
@@ -1661,7 +1813,7 @@ namespace Test
             }
             foreach (KeyValuePair<string, bool> kvp in found)
             {
-                Assert.IsTrue(kvp.Value);
+                Assert.That(kvp.Value);
             }
         }
 
@@ -1707,7 +1859,7 @@ namespace Test
             CommonParameters commonParameters = new CommonParameters(dissociationType: d, precursorMassTolerance: precursorTolerance, productMassTolerance: productTolerance, digestionParams: testDigestionParams);
 
             //Search the scan against the protein
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[1];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[1];
 
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, scans, new List<Modification>(), new List<Modification>(), null, null, null, 
@@ -1721,7 +1873,7 @@ namespace Test
             {
                 massToCharges.Add(mass.ToMz(1));
             }
-            Assert.AreEqual(20, massToCharges.Count());
+            Assert.That(massToCharges.Count(), Is.EqualTo(20));
         }
 
         [Test]
@@ -1730,7 +1882,7 @@ namespace Test
             CommonParameters commonParams = new CommonParameters(digestionParams: new DigestionParams(protease: "Arg-C", searchModeType: CleavageSpecificity.None));
             FileSpecificParameters fileSpecificParams = new FileSpecificParameters();
             CommonParameters updatedCommonParams = MetaMorpheusTask.SetAllFileSpecificCommonParams(commonParams, fileSpecificParams);
-            Assert.AreEqual(updatedCommonParams.DigestionParams.SpecificProtease, commonParams.DigestionParams.SpecificProtease);
+            Assert.That(((DigestionParams)updatedCommonParams.DigestionParams).SpecificProtease, Is.EqualTo(((DigestionParams)commonParams.DigestionParams).SpecificProtease));
         }
 
         [Test]
@@ -1738,8 +1890,9 @@ namespace Test
         {
             //peptide and ms file prep
             PeptideWithSetModifications nTermModifiedPwsm = new PeptideWithSetModifications("[Uniprot:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", GlobalVariables.AllModsKnownDictionary);
-            PeptideWithSetModifications cTermModifiedPwsm = new PeptideWithSetModifications("AGIAAKLAKDREAAEGLGSHA[Uniprot:Alanine amide on A]", GlobalVariables.AllModsKnownDictionary);
-            TestDataFile msFile = new TestDataFile(new List<PeptideWithSetModifications> { nTermModifiedPwsm, cTermModifiedPwsm });
+            PeptideWithSetModifications cTermModifiedPwsm = new PeptideWithSetModifications("AGIAAKLAKDREAAEGLGSHA-[Uniprot:Alanine amide on A]", GlobalVariables.AllModsKnownDictionary);
+            List<IBioPolymerWithSetMods> pwsmsAnswer = new List<IBioPolymerWithSetMods> { nTermModifiedPwsm, cTermModifiedPwsm };
+            TestDataFile msFile = new TestDataFile( pwsmsAnswer );
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //params for singleN and singleC
@@ -1751,6 +1904,11 @@ namespace Test
             //params for annotated and variable mods
             List<Protein> proteinWithMods = new List<Protein> {new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein",
                 oneBasedModifications: new Dictionary<int, List<Modification>>
+                // Mod Indices are 2 and 22 because the protein has an M at the start that is cleaved off during digestion
+                // so the A in the 2nd position of the protein is the first A in the peptide,
+                // and the A in the 22nd position of the protein is the last A in the peptide.
+                // Modifications passed to the Protein object are indexed at the protein's target amino acid position
+                // regardless of whether it is a sidechain or terminal modification on the digestion product.
                 {
                     { 2, new List<Modification>{GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"] } },
                     { 22, new List<Modification>{GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] } }
@@ -1768,20 +1926,21 @@ namespace Test
             };
 
             //Test all params and ensure the results are the same
-            string[] psmAnswer = new string[2] { "[UniProt:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", "AGIAAKLAKDREAAEGLGSHA[UniProt:Alanine amide on A]" };
+            string[] psmAnswer = new string[2] { "[UniProt:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", "AGIAAKLAKDREAAEGLGSHA-[UniProt:Alanine amide on A]" };
+            int[] modIndexAnswer = new int[2] { 1, 23 }; // mod indices in the test peptides (OneIsNTerminus-based)
             foreach (var termParams in variableParamsToTest)
             {
                 List<CommonParameters> paramsToTest = new List<CommonParameters> { cCommonParameters, nCommonParameters, cCleaveParams, nCleaveParams };
                 foreach (CommonParameters commonParams in paramsToTest)
                 {
-                    HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { commonParams.DigestionParams };
+                    var digestParams = new HashSet<IDigestionParams> { commonParams.DigestionParams };
                     var indexEngine = new IndexingEngine(termParams.proteinList, termParams.variableMods, empty, null, null, null, 1, DecoyType.None,
                         commonParams, null, 100000, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
                     var indexResults = (IndexingResults)indexEngine.Run();
                     var peptideIndex = indexResults.PeptideIndex;
                     var fragmentIndexDict = indexResults.FragmentIndex;
                     var precursorIndexDict = indexResults.PrecursorIndex;
-                    PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+                    SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
                     allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
                     //coisolation index
@@ -1794,10 +1953,16 @@ namespace Test
                     var searchResults = engine.Run();
                     for (int i = 0; i < listOfSortedms2Scans.Length; i++)
                     {
-                        PeptideSpectralMatch testPsm = allPsmsArrays[2][i];
-                        Assert.IsTrue(testPsm != null);
+                        SpectralMatch testPsm = allPsmsArrays[2][i];
+                        Assert.That(testPsm != null);
                         testPsm.ResolveAllAmbiguities();
-                        Assert.IsTrue(psmAnswer[1 - i].Equals(testPsm.FullSequence));
+                        var answerSeq = psmAnswer[1-i];
+                        var answerMods = pwsmsAnswer[1-i].AllModsOneIsNterminus;
+                        var testSeq = testPsm.FullSequence;
+                        var testMods = testPsm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.AllModsOneIsNterminus;
+                        Assert.That(answerSeq, Is.EqualTo(testSeq));
+                        Assert.That(answerMods, Is.EqualTo(testMods));
+                        Assert.That(modIndexAnswer[1 - i], Is.EqualTo(testMods.Keys.First())); 
                     }
                 }
             }
@@ -1810,7 +1975,7 @@ namespace Test
             var spectrum = new MzSpectrum(new double[1], new double[1], false);
             scans[0] = new MsDataScan(spectrum, 1, 1, true, Polarity.Positive, 1.0, new MzRange(0, 1), "", MZAnalyzerType.Orbitrap,
                 1, null, null, "");
-            var fileWithNoMs2Scans = new MsDataFile(scans, null);
+            var fileWithNoMs2Scans = new GenericMsDataFile(scans, null);
             var ms2Scans = MetaMorpheusTask.GetMs2Scans(fileWithNoMs2Scans, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             Assert.That(!ms2Scans.Any());
         }
@@ -1836,9 +2001,9 @@ namespace Test
             PeptideWithSetModifications peptide6 = new PeptideWithSetModifications("LNGEEPEPKSMTHERPEPSK", new Dictionary<string, Modification>());
             PeptideWithSetModifications peptide7 = new PeptideWithSetModifications("LNGEEPEPKASWELASKTHEPEPSK", new Dictionary<string, Modification>());
 
-            MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { peptide, peptide2, peptide3, peptide4, peptide5, peptide6, peptide7 });
+            MsDataFile myMsDataFile1 = new TestDataFile(new List<IBioPolymerWithSetMods> { peptide, peptide2, peptide3, peptide4, peptide5, peptide6, peptide7 });
             string mzmlName = @"test.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "testDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");

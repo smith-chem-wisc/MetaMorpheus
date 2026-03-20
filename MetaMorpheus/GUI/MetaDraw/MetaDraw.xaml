@@ -7,8 +7,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+        xmlns:metaDraw="clr-namespace:GuiFunctions.MetaDraw;assembly=GuiFunctions"
         mc:Ignorable="d"
         Title="MetaDraw" 
+        Closing="MetaDraw_OnClosing"
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1200">
     <!-- To make changes here more amendable in the future, an MVC architecture approach should be taken. In this approach, many of the variables and data 
          are store in C# classes that are bound to the xaml files. The xaml files reference their bound data instead of it being assinged in the code 
@@ -16,9 +18,118 @@
          where the view is what is displayed, the model or viewmodel holds the data to be displayed, and the controller instantiates and controls each of 
          the other components  -->
     <Grid>
-        <TabControl >
-            <TabItem Header="PSM Annotation" Background="DarkGray">
-                <DockPanel>
+        <TabControl x:Name="MainTabControl" >
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border x:Name="Border"
+                                        BorderThickness="1,1,1,0"
+                                        BorderBrush="Gainsboro"
+                                        CornerRadius="4,4,0,0"
+                                        Margin="2,0"
+                                        Height="{TemplateBinding Height}">
+                                    <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Margin="10,2">
+                                            
+                                            <!-- Circular Spinner -->
+                                            <Grid x:Name="Spinner"
+                                                  Width="18" Height="18"
+                                                  Margin="0,0,6,0"
+                                                  Visibility="Collapsed">
+                                                <!-- Rotate entire spinner about its center so the green arc "tracks" the white ring -->
+                                                <Grid.RenderTransform>
+                                                    <RotateTransform x:Name="SpinnerRotate" Angle="0" CenterX="9"
+                                                                     CenterY="9" />
+                                                </Grid.RenderTransform>
+
+                                                <!-- White track: same circle as the arc (r=6), semi-transparent -->
+                                                <Ellipse Width="12" Height="12"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"
+                                                         Stroke="White"
+                                                         StrokeThickness="3"
+                                                         Opacity="0.3"
+                                                         StrokeStartLineCap="Round"
+                                                         StrokeEndLineCap="Round" />
+
+                                                <!-- Green arc: verbose PathGeometry, exactly 120° sweep on the same r=6 circle -->
+                                                <Path x:Name="ProgressArc"
+                                                      Stroke="LimeGreen"
+                                                      StrokeThickness="3"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      StrokeLineJoin="Round"
+                                                      Fill="Transparent"
+                                                      Stretch="None">
+                                                    <Path.Data>
+                                                        <PathGeometry>
+                                                            <PathFigure StartPoint="9,3" IsClosed="False"
+                                                                        IsFilled="False">
+                                                                <ArcSegment Point="14.196,6"
+                                                                            Size="6,6"
+                                                                            RotationAngle="0"
+                                                                            IsLargeArc="False"
+                                                                            SweepDirection="Clockwise"
+                                                                            IsStroked="True" />
+                                                            </PathFigure>
+                                                        </PathGeometry>
+                                                    </Path.Data>
+                                                </Path>
+                                            </Grid>
+
+                                            <!-- Header Text -->
+                                            <ContentPresenter x:Name="ContentSite"
+                                                              VerticalAlignment="Center"
+                                                              HorizontalAlignment="Center"
+                                                              ContentSource="Header" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <ControlTemplate.Resources>
+                                    <Storyboard x:Key="SpinnerAnimation" RepeatBehavior="Forever">
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="SpinnerRotate"
+                                            Storyboard.TargetProperty="Angle"
+                                            From="0" To="360" Duration="0:0:1" />
+                                    </Storyboard>
+                                </ControlTemplate.Resources>
+
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Border" Property="Background" Value="LightSkyBlue" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter TargetName="Border" Property="Background"
+                                                Value="{StaticResource BackgroundColor}" />
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="Border" Property="Background" Value="LightGray" />
+                                        <Setter TargetName="ContentSite" Property="Opacity" Value="0.5" />
+                                        <Setter TargetName="Spinner" Property="Visibility" Value="Visible" />
+                                        <Trigger.EnterActions>
+                                            <BeginStoryboard Storyboard="{StaticResource SpinnerAnimation}" />
+                                        </Trigger.EnterActions>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
+
+            <!-- Psm Tab -->
+            <TabItem Background="DarkGray">
+                <TabItem.Header>
+                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="PSM Annotation"/>
+                </TabItem.Header>
+
+                    <DockPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="2*"/>
@@ -52,7 +163,11 @@
 
                             <!--Select MetaMorpheus output file (psmfromtsv) -->
                             <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="PSM files: " Width="95" />
+                                <Label  Width="95" >
+                                    <Label.Content>
+                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="PSM files:"/>
+                                    </Label.Content>
+                                </Label>
                                 <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
@@ -80,7 +195,10 @@
                             </Border>
 
                             <!--List of PSMs-->
-                            <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="4">
+                            <GroupBox Name="gbSpectra" Grid.Row="4">
+                                <GroupBox.Header>
+                                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Peptide Spectral Matches"/>
+                                </GroupBox.Header>
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="1*"/>
@@ -93,7 +211,7 @@
                                             <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}" Width="70" 
                                                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
                                             <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}" Width="160" />
-                                            <DataGridTextColumn Header="Protein Name" Binding="{Binding ProteinName}" Width="100" 
+                                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="100" 
                                                                 />
                                             <DataGridTextColumn Header="Organism Name" Binding="{Binding OrganismName}" Width="100" />
                                             <DataGridTextColumn Header="Q-Value" Binding="{Binding QValue}" Width="60"
@@ -101,11 +219,19 @@
                                             <DataGridTextColumn Header="PEP Value" Binding="{Binding PEP}" Width="70" />
                                             <DataGridTextColumn Header="MetaMorpheus Score" Binding="{Binding Score}" 
                                                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                                            <DataGridTextColumn Header="File Name" Binding="{Binding FileNameWithoutExtension}" 
+                                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </Grid>
                             </GroupBox>
-                            <Button Content="{Binding}" Grid.Row="5" Width="100" Click="PDFButton_Click" x:Name="ExportButton" />
+                            <!--Select spectra file-->
+                            <DockPanel Grid.Row="5" LastChildFill="True" Grid.ColumnSpan="3"  >
+                                <Label Content="Export As: " Width="75"  DockPanel.Dock="Left"/>
+                                <Button Name="exportPdfs" Content="{Binding ExportType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}" DockPanel.Dock="Left" IsEnabled="False" Width="40" Click="PDFButton_Click" Margin="5 0 5 0"/>
+                                <Button Name="exportSpectrumLibrary" Content="Spectrum Library" DockPanel.Dock="Right" IsEnabled="False" Click="ExportSpectrumLibraryButton_Click" 
+                                        Width="100" Margin="5 0 5 0" />
+                            </DockPanel>
                         </Grid>
 
                         <!--Moveable splitter-->
@@ -114,17 +240,7 @@
                           VerticalAlignment="Stretch"
                           Background="Silver"
                           Width="3"/>
-
-                        <!--Loading progress popup-->
-                        <Popup IsOpen="False" x:Name="prgsFeed" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center">
-                            <Border Background="LightGray" CornerRadius="2" Height="78" Width="298" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <StackPanel Height="78" Background="LightGray">
-                                    <Label x:Name="prgsText" FontSize="20"></Label>
-                                    <ProgressBar IsIndeterminate="True" Height="20"></ProgressBar>
-                                </StackPanel>
-                            </Border>
-                        </Popup>
-
+                        
                         <!--PSM annotated peaks-->
                         <Grid Grid.Column="2">
                             <Grid.RowDefinitions>
@@ -146,15 +262,7 @@
 
                                 <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
                                 <!--Settings menu-->
-                                <Button x:Name="Settings" Grid.Row="0" Grid.Column="1" Click="settings_Click" Background="White" 
-                                        BorderThickness="0" IsEnabled="{Binding SettingsView.CanOpen}">
-                                    <StackPanel Name="SettingsButton" Orientation="Horizontal">
-                                        <Image Source="Icons\icons8-settings-256.bmp" Margin="0,3,0,0" ></Image>
-                                        <ToolTipService.ToolTip>
-                                            <ToolTip Content="Settings" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
-                                        </ToolTipService.ToolTip>
-                                    </StackPanel>
-                                </Button>
+                                <local:SettingsButtonControl x:Name="SettingsButton" Grid.Row="0" Grid.Column="1"/>
 
                                 <!-- Scrolling Sequence and Ambiguous Textbox-->
                                 <Grid Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" >
@@ -202,7 +310,8 @@
                                     </TabItem.Header>
                                     <Grid Name="PsmAnnotationGrid">
                                         <Grid.RowDefinitions>
-                                            <RowDefinition/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
                                         <!--Spectrum annotation-->
@@ -210,13 +319,21 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height = "0.75*" />
                                             </Grid.RowDefinitions>
-                                            <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0"/>
+                                            <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0">
+                                                <oxy:PlotView.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="Copy m/z Spectrum (All)" Click="CopyMzSpectrum_Click"/>
+                                                        <MenuItem Header="Copy m/z Spectrum (Annotated)" Click="CopyAnnotatedMzSpectrum_Click"/>
+                                                        <MenuItem Header="Copy Matched Ions" Click="CopyMatchedIons_Click"/>
+                                                    </ContextMenu>
+                                                </oxy:PlotView.ContextMenu>
+                                            </oxy:PlotView>
                                         </Grid>
 
                                         <!--Canvas for drawing stationary sequence annotation-->
-                                        <Grid Grid.Row="0" Height="60" VerticalAlignment="Top" Margin="0 0 0 0">
+                                        <Grid Grid.Row="0" Height="60" VerticalAlignment="Top" Margin="0 6 0 0">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="53" />
+                                                <ColumnDefinition Width="110" />
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="200" />
                                             </Grid.ColumnDefinitions>
@@ -232,18 +349,26 @@
 
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="165" />
-                                                <ColumnDefinition Width="8" />
+                                                <ColumnDefinition Width="{Binding Path=Width, ElementName=ChildScanPtmLegendControl}" />
+                                                <ColumnDefinition Width="30" />
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel Grid.Column="1"  VerticalAlignment="Top">
                                                 <!-- sets vertical offset for ptm legend -->
                                                 <Separator Background="Transparent" Height="{Binding Path=DataContext.TopOffset, ElementName=ChildScanPtmLegendControl}" />
                                                 <!-- actual ptm legend -->
-                                                <local:PtmLegendControl x:Name="ChildScanPtmLegendControl"   DataContext="{Binding}" />
+                                                <local:PtmLegendControl x:Name="ChildScanPtmLegendControl" DataContext="{Binding}" />
                                             </StackPanel>
-                                            
                                         </Grid>
+
+                                        <!-- Refragment analysis -->
+                                        <Expander Grid.Row="1" VerticalAlignment="Bottom" IsExpanded="False" x:Name="AdditionalFragmentIonDisplay"
+                                                   DataContext="{x:Type guiFunctions:FragmentationReanalysisViewModel}" Header="Fragment Reanalysis">
+                                            <Expander.ToolTip>
+                                                Research the spectra file against the sequence with different fragment ions.
+                                            </Expander.ToolTip>
+                                            <local:FragmentReanalysisControl x:Name="AdditionalFragmentIonControl" DataContext="{Binding }" />
+                                        </Expander>
                                     </Grid>
                                 </TabItem>
 
@@ -378,37 +503,13 @@
                                         </Expander>
                                     </Grid>
                                 </TabItem>
-
-                                <!-- ChimeraPlot -->
-                                <TabItem x:Name="ChimeraScanPlot" >
-                                    <TabItem.Header>
-                                        <Label Content="Chimeric Scan View" x:Name="ChimeraScanPlotTabItem" />
-                                    </TabItem.Header>
-                                    <Grid Name="chimeraPlotGrid">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition />
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-
-                                        <!-- spectrum annotation -->
-                                        <Grid Grid.Row="0" >
-                                            <oxy:PlotView x:Name="chimeraPlot" FontSize="16" FontStretch="Expanded"
-                                                          Margin="0 0 0 0"  VerticalAlignment="Stretch"/>
-                                        </Grid>
-
-                                        <!-- Chimera Legend -->
-                                        <local:ChimeraLegendControl Grid.Row="1" x:Name="ChimeraLegendControl" DataContext="{Binding}" Height="Auto"/>
-                                    </Grid>
-                                </TabItem>
                             </TabControl>
 
                             <!--Detailed PSM properties-->
                             <StackPanel Grid.Row="2" >
                                 <Expander x:Name="NotificationExpander" Margin="3 0 0 0" >
                                     <Expander.Header>
-                                        <StackPanel>
-                                            <TextBlock>PSM Properties</TextBlock>
-                                        </StackPanel>
+                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="PSM Properties"/>
                                     </Expander.Header>
 
                                     <DataGrid x:Name="dataGridProperties" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
@@ -422,7 +523,7 @@
             </TabItem>
 
             <!--Stats tab-->
-            <TabItem Header="Data Visualization" Background="DarkGray">
+            <TabItem Header="Data Visualization" x:Name="DataVisualizationTab"  Background="DarkGray">
                 <DockPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -436,14 +537,19 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="29"/>
                                 <RowDefinition Height="29"/>
-                                <RowDefinition Height="50*"/>
-                                <RowDefinition Height="40*"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
                                 <RowDefinition Height="25"/>
                             </Grid.RowDefinitions>
 
                             <!--Select MetaMorpheus output file-->
                             <DockPanel Grid.Row="0" LastChildFill="True">
-                                <Label Content="PSMTSV file: " Width="75" />
+                                <Label Width="75" >
+                                    <Label.Content>
+                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="PSM File:"/>
+                                    </Label.Content>
+                                </Label>
                                 <Button Name="resetPsmFileButtonStat" Content="Reset" DockPanel.Dock="Right" Click="resetFilesButton_Click" Width="45" IsEnabled="False"/>
                                 <Button Name="selectPsmFileButtonStat" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="45" />
                                 <Label BorderThickness="1">
@@ -452,7 +558,11 @@
                             </DockPanel>
 
                             <DockPanel Grid.Row="1" Margin="2">
-                                <Button Name="loadFilesStat" Content="Import Files From PSMTSV" Width="160" Click="loadFilesButtonStat_Click"/>
+                                <Button Name="loadFilesStat" Width="160" Click="loadFilesButton_Click">
+                                    <Button.Content>
+                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Import Files From PSM"/>
+                                    </Button.Content>
+                                </Button>
                             </DockPanel>
 
                             <!--Select psms to display by source file-->
@@ -463,16 +573,37 @@
                                         <Button x:Name="selectAllSourceFiles" HorizontalAlignment="Left" Content="Select all" Click="selectAllSourceFiles_Click"/>
                                         <Button x:Name="deselectAllSourceFiles" HorizontalAlignment="Right" Content="Deselect all" Click="deselectAllSourceFiles_Click"/>
                                     </DockPanel>
-                                    <ListBox x:Name="selectSourceFileListBox" ItemsSource="{Binding}" SelectionMode="Multiple" SelectionChanged="selectSourceFileListBox_SelectionChanged" ScrollViewer.VerticalScrollBarVisibility="Visible"/>
+                                    <ListBox x:Name="selectSourceFileListBox" 
+                                             ItemsSource="{Binding}" 
+                                             SelectionMode="Multiple" 
+                                             AllowDrop="True"
+                                             SelectionChanged="selectSourceFileListBox_SelectionChanged"
+                                             PreviewMouseLeftButtonDown="selectSourceFileListBox_PreviewMouseLeftButtonDown"
+                                             PreviewMouseMove="selectSourceFileListBox_PreviewMouseMove"
+                                             Drop="selectSourceFileListBox_Drop"
+                                             DisplayMemberPath="."/>
                                 </DockPanel>
                             </DockPanel>
 
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left" x:Name="PlotFilterCheckBoxes" Margin="3" >
+                                <CheckBox Content="Filtered Only?" 
+                                          IsChecked="{Binding Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Path=DisplayFilteredOnly}" 
+                                          Checked="DataVisualizationFilters_OnChecked"
+                                          Unchecked="DataVisualizationFilters_OnChecked"
+                                          Margin="10 0"/>
+                                <CheckBox Content="Normalize to File?" 
+                                          IsChecked="{Binding Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Path=NormalizeHistogramToFile}"
+                                          Checked="DataVisualizationFilters_OnChecked"
+                                          Unchecked="DataVisualizationFilters_OnChecked"
+                                          Margin="10 0"/>
+                            </StackPanel>
+
                             <!--List of plot options-->
-                            <GroupBox Header="Plot Type" Name="plotType" Grid.Row="3">
+                            <GroupBox Header="Plot Type" Name="plotType" Grid.Row="4">
                                 <ListView x:Name="plotsListBox" ItemsSource="{Binding}" SelectionChanged ="PlotSelected" MaxHeight="400"/>
                             </GroupBox>
 
-                            <DockPanel Grid.Row="4" Margin="2">
+                            <DockPanel Grid.Row="5" Margin="2">
                                 <Button Content="Export to PDF" Width="100" Click="CreatePlotPdf_Click" />
                             </DockPanel>
                         </Grid>
@@ -495,12 +626,85 @@
                           Width="2"/>
 
                         <!--Plot-->
-                        <GroupBox Grid.Column="2" Header="Plot">
-                            <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" SizeChanged="PlotViewStat_SizeChanged" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" Grid.ColumnSpan="2"/>
-                        </GroupBox>
+                        <Grid Grid.Column="2">
+                            <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" SizeChanged="PlotViewStat_SizeChanged" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" />
+
+                            <local:SettingsButtonControl Height="52" x:Name="DataVisualizationSettingsButton" 
+                                                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                         Panel.ZIndex="1" SelectedTabIndex="3" />
+                        </Grid>
                     </Grid>
                 </DockPanel>
             </TabItem>
+
+            <!-- BioPolymer Coverage tab-->
+            <TabItem Header="{Binding TabHeader,
+                Converter={StaticResource ProteinRnaTerminologyConverter}, 
+                ConverterParameter=Protein Coverage}" 
+                     IsEnabled="{Binding IsTabEnabled}" Background="DarkGray"
+                     d:DataContext="{d:DesignInstance metaDraw:BioPolymerTabModel, IsDesignTimeCreatable=True}"
+                     DataContext="{Binding BioPolymerTabViewModel, RelativeSource={RelativeSource AncestorType=Window}}">
+                <local:BioPolymerCoverageTabView x:Name="BioPolymerCoverageTabView" />
+            </TabItem>
+
+            <!-- Chimera Analysis tab -->
+            <TabItem Header="{Binding TabHeader}" IsEnabled="{Binding IsTabEnabled}" Background="DarkGray" x:Name="ChimeraTab"
+                     d:DataContext="{d:DesignInstance metaDraw:ChimeraAnalysisTabViewModel, IsDesignTimeCreatable=True}"
+                     DataContext="{Binding ChimeraAnalysisTabViewModel, RelativeSource={RelativeSource AncestorType=Window}}">
+                <local:ChimeraAnalysisTabView x:Name="ChimeraAnalysisTabView" />
+            </TabItem>
+
+            <!--Deconvolution Exploration tab-->
+            <TabItem Header="{Binding TabHeader}" IsEnabled="{Binding IsTabEnabled}" Background="DarkGray"
+                     d:DataContext="{d:DesignInstance guiFunctions:DeconExplorationTabViewModel, IsDesignTimeCreatable=True}"
+                     DataContext="{Binding DeconExplorationViewModel, RelativeSource={RelativeSource AncestorType=Window}}">
+                <local:DeconExplorationTabView x:Name="DeconExplorationTabView"/>
+            </TabItem>
         </TabControl>
+
+
+        <!--Loading progress popup-->
+        <Popup IsOpen="{Binding IsVisible}" Placement="Center" StaysOpen="True"
+       DataContext="{x:Static guiFunctions:LoadingProgressViewModel.Instance}" AllowsTransparency="True"
+       PopupAnimation="Fade">
+            <Border Background="LightGray" CornerRadius="6" Padding=" 8 12" 
+            MinWidth="420" MinHeight="160" BorderBrush="Gray" BorderThickness="2" SnapsToDevicePixels="True">
+                <StackPanel>
+                    <TextBlock Text="Loading Data..." FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <ItemsControl ItemsSource="{Binding Steps}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,4" HorizontalAlignment="Stretch">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="42"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding StepName}" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Current}" FontWeight="Normal" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <Grid Grid.Column="2" Width="120" Height="18" VerticalAlignment="Center">
+                                        <ProgressBar Minimum="0"
+                                             Maximum="{Binding Total}"
+                                             Value="{Binding Current}"
+                                             Height="18"
+                                             VerticalAlignment="Stretch"
+                                             Background="{StaticResource BackgroundColor}"
+                                             Foreground="LimeGreen"/>
+                                        <ProgressBar IsIndeterminate="True"
+                                             Height="18"
+                                             VerticalAlignment="Stretch"
+                                             Opacity="0.5"
+                                             Background="Transparent"
+                                             Foreground="Gray"/>
+                                    </Grid>
+                                    <TextBlock Grid.Column="3" Text="{Binding Total}" FontWeight="Normal" VerticalAlignment="Center" Margin="4,0,5,0"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </Popup>
     </Grid>
 </Window>

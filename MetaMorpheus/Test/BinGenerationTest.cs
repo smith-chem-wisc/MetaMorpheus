@@ -7,8 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
+using EngineLayer.HistogramAnalysis;
+using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -28,7 +32,7 @@ namespace Test
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                     DecoyType = DecoyType.None,
                     DoParsimony = true,
-                    DoQuantification = true
+                    DoLabelFreeQuantification = true
                 },
             };
 
@@ -52,12 +56,12 @@ namespace Test
             Protein prot4 = new Protein("MNNDNNNN", "prot4");
             var pep3_10 = prot4.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification> { mod }).Last();
 
-            List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
+            var pepsWithSetMods = new List<IBioPolymerWithSetMods> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
             MsDataFile myMsDataFile = new TestDataFile(pepsWithSetMods);
 
             List<Protein> proteinList = new List<Protein> { prot1, prot2, prot3, prot4 };
 
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlFilePath, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlFilePath, false);
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList, proteinDbFilePath);
 
             string output_folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestBinGeneration");
@@ -68,7 +72,8 @@ namespace Test
                 new List<string> { mzmlFilePath },
                 null);
 
-            Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.tsv")).Count());
+
+            Assert.That(File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.tsv")).Count(), Is.EqualTo(3));
             Directory.Delete(output_folder, true);
             File.Delete(proteinDbFilePath);
             File.Delete(mzmlFilePath);
@@ -92,7 +97,7 @@ namespace Test
                     DoHistogramAnalysis = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                     MatchBetweenRuns = true,
-                    DoQuantification = true
+                    DoLabelFreeQuantification = true
                 },
             };
 
@@ -113,15 +118,15 @@ namespace Test
             var pep1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
             var pep2 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).Last();
 
-            List<PeptideWithSetModifications> listForFile1 = new List<PeptideWithSetModifications> { pep1, pep2 };
-            List<PeptideWithSetModifications> listForFile2 = new List<PeptideWithSetModifications> { pep2 };
+            var listForFile1 = new List<IBioPolymerWithSetMods> { pep1, pep2 };
+            var listForFile2 = new List<IBioPolymerWithSetMods> { pep2 };
             MsDataFile myMsDataFile1 = new TestDataFile(listForFile1);
             MsDataFile myMsDataFile2 = new TestDataFile(listForFile2);
 
             List<Protein> proteinList = new List<Protein> { prot1 };
 
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlFilePath1, false);
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlFilePath2, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlFilePath1, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlFilePath2, false);
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList, proteinDbFilePath);
 
             string output_folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles");
@@ -137,6 +142,36 @@ namespace Test
             File.Delete(mzmlFilePath1);
             File.Delete(mzmlFilePath2);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+        }
+
+
+        [Test]
+        public static void TestBin_IdentifyAA()
+        {
+            var bin = new Bin(71);
+            bin.IdentifyAA(1);
+            Assert.That(bin.AA, Is.EqualTo("Add Alanine"));
+
+            bin = new Bin(-56.1);
+            bin.IdentifyAA(1);
+            Assert.That(bin.AA, Is.EqualTo("Remove Glycine"));
+
+            bin = new Bin(114.102);
+            bin.IdentifyAA(1);
+            Assert.That(bin.AA, Is.EqualTo("Add Aspartic Acid|Add (Glycine+Glycine)|Add Asparagine"));
+
+            bin = new Bin(-142.156);
+            bin.IdentifyAA(1);
+            Assert.That(bin.AA, Is.EqualTo("Remove (Alanine+Alanine)"));
+        }
+
+        [Test]
+        public static void TestBin_IdentifyUnimodBins()
+        {
+            var bin = new Bin(77.987066);
+            bin.IdentifyUnimodBins(0.001);
+            Assert.That(bin.UnimodId, Is.EqualTo("Methylphosphonate on Y|Methylphosphonate on T|Methylphosphonate on S"));
+            Assert.That(bin.UnimodFormulas, Is.EqualTo("CH3O2P"));
         }
     }
 }

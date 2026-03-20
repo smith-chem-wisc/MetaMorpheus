@@ -5,11 +5,14 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Digestion;
+using Omics.Modifications;
+using Readers;
 using TaskLayer;
 
 namespace Test
@@ -56,24 +59,24 @@ namespace Test
             double isolationMZ = selectedIonMz;
             Scans[1] = new MsDataScan(MS2, 2, 2, false, Polarity.Positive, 2.0, new MzRange(100, 1500), "second spectrum", MZAnalyzerType.Unknown, MS2.SumOfAllY, null, null, "scan=2", selectedIonMz, null, null, isolationMZ, 2.5, DissociationType.HCD, 1, null);
 
-            var myMsDataFile = new MsDataFile(Scans, null);
+            var myMsDataFile = new GenericMsDataFile(Scans, null);
             
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters(deconvolutionIntensityRatio: 50)).OrderBy(b => b.PrecursorMass).ToArray();
             
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length]; ;
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length]; ;
 
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             // Two matches for this single scan! Corresponding to two co-isolated masses
-            Assert.AreEqual(2, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(2));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
 
-            Assert.AreEqual("NNNK", allPsmsArray[0].BaseSequence);
-            Assert.AreEqual("NDNK", allPsmsArray[1].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("NNNK"));
+            Assert.That(allPsmsArray[1].BaseSequence, Is.EqualTo("NDNK"));
         }
     }
 }

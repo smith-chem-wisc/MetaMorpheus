@@ -1,20 +1,19 @@
 ﻿using EngineLayer;
-using IO.Mgf;
-using IO.MzML;
-using IO.ThermoRawFileReader;
 using MassSpectrometry;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using Readers;
+using System.Reflection.Metadata.Ecma335;
 
 namespace TaskLayer
 {
     public class MyFileManager
     {
         private readonly bool DisposeOfFileWhenDone;
-        private readonly Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
-        private readonly object FileLoadingLock = new object();
+        private readonly ConcurrentDictionary<string, MsDataFile> MyMsDataFiles = new ConcurrentDictionary<string, MsDataFile>(); // Dictionary to hold loaded MsDataFiles, with the file path as the key.
 
         public MyFileManager(bool disposeOfFileWhenDone)
         {
@@ -25,64 +24,38 @@ namespace TaskLayer
 
         public bool SeeIfOpen(string path)
         {
-            return (MyMsDataFiles.ContainsKey(path) && MyMsDataFiles[path] != null);
+            return MyMsDataFiles.TryGetValue(path, out var file);
         }
 
         public MsDataFile LoadFile(string origDataFile, CommonParameters commonParameters)
         {
-            FilteringParams filter = new FilteringParams(commonParameters.NumberOfPeaksToKeepPerWindow, commonParameters.MinimumAllowedIntensityRatioToBasePeak, commonParameters.WindowWidthThomsons, commonParameters.NumberOfWindows, commonParameters.NormalizePeaksAccrossAllWindows, commonParameters.TrimMs1Peaks, commonParameters.TrimMsMsPeaks);
+            FilteringParams filter = new FilteringParams(
+                commonParameters.NumberOfPeaksToKeepPerWindow,
+                commonParameters.MinimumAllowedIntensityRatioToBasePeak,
+                commonParameters.WindowWidthThomsons,
+                commonParameters.NumberOfWindows,
+                commonParameters.NormalizePeaksAccrossAllWindows,
+                commonParameters.TrimMs1Peaks,
+                commonParameters.TrimMsMsPeaks);
 
             if (commonParameters.DissociationType == DissociationType.LowCID || commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID || commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID)
             {
                 filter = null;
             }
 
-            if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)
-            {
+            if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value))
                 return value;
-            }
 
-            // By now know that need to load this file!!!
-            lock (FileLoadingLock) // Lock because reading is sequential
-            {
-                if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
-                {
-                    MyMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter, commonParameters.MaxThreadsToUsePerFile);
-                }
-                else if (Path.GetExtension(origDataFile).Equals(".mgf", StringComparison.OrdinalIgnoreCase))
-                {
-                    MyMsDataFiles[origDataFile] = Mgf.LoadAllStaticData(origDataFile, filter);
-                }
-                else
-                {
-                    MyMsDataFiles[origDataFile] = ThermoRawFileReader.LoadAllStaticData(origDataFile, filter, commonParameters.MaxThreadsToUsePerFile);
-                }
-
-                return MyMsDataFiles[origDataFile];
-            }
-        }
-
-        public DynamicDataConnection OpenDynamicDataConnection(string origDataFile)
-        {
-            if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
-            {
-                return new MzmlDynamicData(origDataFile);
-            }
-            else if (Path.GetExtension(origDataFile).Equals(".mgf", StringComparison.OrdinalIgnoreCase))
-            {
-                return new MgfDynamicData(origDataFile);
-            }
-            else
-            {
-                return new ThermoDynamicData(origDataFile);
-            }
+            return MyMsDataFiles.GetOrAdd(origDataFile,
+                MsDataFileReader.GetDataFile(origDataFile).LoadAllStaticData(filter, commonParameters.MaxThreadsToUsePerFile));
         }
 
         internal void DoneWithFile(string origDataFile)
         {
             if (DisposeOfFileWhenDone)
             {
-                MyMsDataFiles[origDataFile] = null;
+                // This would only return false if the file was not in the dictionary
+                MyMsDataFiles.TryRemove(origDataFile, out var file);
             }
         }
 

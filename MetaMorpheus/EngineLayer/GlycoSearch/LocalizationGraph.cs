@@ -1,26 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
-using Proteomics;
+using Easy.Common.Extensions;
+using EngineLayer.ModSearch;
+using Omics.Fragmentation;
 using MzLibUtil;
+using Omics.Modifications;
 
 namespace EngineLayer.GlycoSearch
 {
     public class LocalizationGraph
     {
+        /// <summary>
+        /// The localization graph matrix, where each node represents a possible position in this graph.
+        /// </summary>
         public AdjNode[][] array { get; set; }
-        public int[] ModPos { get; }
+        /// <summary>
+        /// Motif information mapping amino acid indices to their corresponding motif strings for glycosylation sites.
+        /// </summary>
+        public SortedDictionary<int, string> ModPos { get; }
 
+        /// <summary>
+        /// The index of the ModBox (within all ModBoxes) that is associated with this localization graph.
+        /// </summary>
         public int ModBoxId { get; }
+        /// <summary>
+        /// The modification box representing the combined set of modifications for the peptide.
+        /// </summary>
         public ModBox ModBox { get; }
+        /// <summary>
+        /// The array of child ModBoxes, each ModBoxes representing a possible combination of modifications from the ModBox.
+        /// </summary>
         public ModBox[] ChildModBoxes { get; set; }
 
-        public double NoLocalCost{get; set;} //Note that we have node for each glycosite, the matched ions before the first node and after the last node is scored here.
-        public double TotalScore { get; set; } //Total score is the score of matched ions that are used for localization. For O-glycan, it is the score of all matched c/zDot ions. 
+        /// <summary>
+        /// The score for matched ions that are not localized to any glycosylation site (before the first node and after the last node).
+        /// </summary>
+        public double NoLocalCost { get; set; }
+        /// <summary>
+        /// The total score for all matched ions used for localization, typically the sum of scores for all c/zDot ions in O-glycan localization.
+        /// </summary>
+        public double TotalScore { get; set; }
 
-        public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id)
+        public LocalizationGraph(SortedDictionary<int, string> modPos, ModBox modBox, ModBox[] childModBoxes, int id)
         {
             ModPos = modPos;
             ModBox = modBox;
@@ -28,41 +49,48 @@ namespace EngineLayer.GlycoSearch
             ChildModBoxes = childModBoxes;
 
             //array is localization graph matrix. array is composed of 2d array of node. From left to right, node is build under a glycosite. From up to down, node is build for each child box.
-            array = new AdjNode[modPos.Length][];
-            for (int i = 0; i < modPos.Length; i++)
+            array = new AdjNode[modPos.Count][];
+            for (int i = 0; i < modPos.Count; i++)
             {
                 array[i] = new AdjNode[ChildModBoxes.Length];
             }
         }
 
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
-        //The function goes through the AdjNode[][] array from left to right, assign weight to each AdjNode, keep track of the heaviest previous AdjNode.
+        /// <summary>
+        /// The function goes through the AdjNode[][] array from left to right, assign weight to each AdjNode, keep track of the heaviest previous AdjNode.
+        /// </summary>
+        /// <param name="localizationGraph"> The space to store the data </param>
+        /// <param name="theScan"> The MS2 scan</param>
+        /// <param name="productTolerance"></param>
+        /// <param name="products"></param>
         public static void LocalizeOGlycan(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
         {
-            var boxSatisfyBox = BoxSatisfyBox(localizationGraph.ChildModBoxes);
-
-            for (int i = 0; i < localizationGraph.ModPos.Length; i++)
+            var validChart = BuildValidChart(localizationGraph.ChildModBoxes);
+            var modPos = localizationGraph.ModPos;
+            var modPos_index = modPos.Keys.ToArray(); // Just extract the keys from the modPos dictionary, which is the glycosite index. That will be used several times.
+            var modPos_motif = modPos.Values.ToArray(); // Extract the motif from the modPos dictionary, which is used to check if the motif in the node is valid for the childBox.
+            for (int x = 0; x < modPos.Count; x++)
             {
-                //maxLength: the most mods we can have up to current mod pos; minlengtt: the least mods we can have up to current mod pos.
-                int maxLength = i + 1;
-                int minlength = localizationGraph.ModBox.ModIds.Length - (localizationGraph.ModPos.Length - 1 - i);
-
-                for (int j = 0; j < localizationGraph.ChildModBoxes.Length; j++)
+                for (int y = 0; y < localizationGraph.ChildModBoxes.Length; y++)
                 {
-                    if (localizationGraph.ChildModBoxes[j].NumberOfMods <= maxLength && localizationGraph.ChildModBoxes[j].NumberOfMods >= minlength)
+                    //Check if the node is valid, if not, skip it.
+                    if (NodeCheck(localizationGraph.ModBox as GlycanBox, modPos_motif, x, y)) // Check the mod number in this node is valid
                     {
-                        AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);
+                        AdjNode adjNode = new AdjNode(x, y, modPos_index[x]
+                            
+                            , localizationGraph.ChildModBoxes[y]);
 
                         double cost = 0;
-                        if (i != localizationGraph.ModPos.Length - 1)
+                        if (x != modPos.Count - 1) // check the node is not the last one.
                         {              
-                            var fragments = GlycoPeptides.GetLocalFragment(products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]);
+                            var fragments = GlycoPeptides.GetLocalFragment(products, modPos_index, x, localizationGraph.ModBox, localizationGraph.ChildModBoxes[y]);
                             cost = CalculateCost(theScan, productTolerance, fragments);
                         }
 
                         adjNode.CurrentCost = cost;
                         //The first line of the graph didnot have Sources.
-                        if (i == 0)
+                        if (x == 0)
                         {
                             //Get cost                             
                             adjNode.maxCost = cost;
@@ -70,25 +98,27 @@ namespace EngineLayer.GlycoSearch
                         else
                         {
                             double maxCost = 0;
-                            for (int prej = 0; prej <= j; prej++)
+                            for (int preY = 0; preY <= y; preY++)
                             {
                                 //Check if a previous AdjNode exist and the current AdjNode could link to previous AdjNode. 
-                                if (boxSatisfyBox[j][prej] && localizationGraph.array[i - 1][prej] != null)
+                                var motifInThisPos = modPos_motif[x];
+                                // valid the connection between the previous node and the current node.
+                                if (validChart[y][preY] && localizationGraph.array[x - 1][preY] != null && MotifCheck(localizationGraph.ModBox as GlycanBox, preY, y, motifInThisPos))
                                 {
-                                    adjNode.AllSources.Add(prej);
+                                    adjNode.AllSources.Add(preY);
 
-                                    var tempCost = cost + localizationGraph.array[i - 1][prej].maxCost;
+                                    var tempCost = cost + localizationGraph.array[x - 1][preY].maxCost; //Try to get the max cost from previous AdjNode.
                                     if (tempCost > maxCost)
                                     {
-                                        adjNode.CummulativeSources.Clear();
+                                        adjNode.CumulativeSources.Clear();
                 
-                                        adjNode.CummulativeSources.Add(prej);
+                                        adjNode.CumulativeSources.Add(preY);
              
                                         maxCost = tempCost;
                                     }
                                     else if (tempCost == maxCost)
                                     {
-                                        adjNode.CummulativeSources.Add(prej);              
+                                        adjNode.CumulativeSources.Add(preY);              
                                     }
 
                                 }
@@ -98,19 +128,25 @@ namespace EngineLayer.GlycoSearch
 
                         }
 
-                        localizationGraph.array[i][j] = adjNode;
+                        localizationGraph.array[x][y] = adjNode;
                     }
                 }
 
             }
 
-            var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox);
+            var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, modPos_index, localizationGraph.ModBox);
             var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
             localizationGraph.NoLocalCost = noLocalScore;
-            localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;
+            localizationGraph.TotalScore = localizationGraph.array[modPos.Count - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;
         }
 
-        //Based on our implementation of Graph localization. We need to calculate cost between two nearby nodes (glycosites) 
+        /// <summary>
+        /// Calculate the cost/Score of the Scan.
+        /// </summary>
+        /// <param name="theScan"></param>
+        /// <param name="productTolerance"></param>
+        /// <param name="fragments"></param>
+        /// <returns> The Score </returns>
         public static double CalculateCost(Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<double> fragments)
         {
             double score = 0;
@@ -128,7 +164,12 @@ namespace EngineLayer.GlycoSearch
             return score;
         }
 
-        //Check if array1 contains array2 with repeats numbers.
+        /// <summary>
+        /// Check does the node1 contain everything in another node2? 
+        /// </summary>
+        /// <param name="array1"></param>
+        /// <param name="array2"></param>
+        /// <returns>Ture, False </returns>
         private static bool TryGetLeft(int[] array1, int[] array2)
         {
             //Get compliment box
@@ -148,10 +189,13 @@ namespace EngineLayer.GlycoSearch
             return true;
         }
 
-        //The Directed Acyclic Graph is build from left to right. In the process, we need to know which node can linked to nodes from its left. 
-        //Since node contains Childbox. We name this function as BoxSatisfyBox.
-        //The function defines how a childBox could be linked from all childBoxes.
-        public static Dictionary<int, bool[]> BoxSatisfyBox(ModBox[] childBoxes)
+
+        /// <summary>
+        /// Build a chart for the node connection rule. Used the chart to check if the next node could be linked to the previous node.
+        /// </summary>
+        /// <param name="childBoxes"></param>
+        /// <returns> Chart (one column is previous, one column is current, the value is boolean)</returns>
+        public static Dictionary<int, bool[]> BuildValidChart(ModBox[] childBoxes)
         {
             Dictionary<int, bool[]> boxIdBoxes = new Dictionary<int, bool[]>();
             for (int i = 0; i < childBoxes.Length; i++)
@@ -160,7 +204,7 @@ namespace EngineLayer.GlycoSearch
                 for (int j = 0; j <= i; j++)
                 {
                     if (childBoxes[i].NumberOfMods <= childBoxes[j].NumberOfMods + 1 && (childBoxes[j].NumberOfMods ==0 || TryGetLeft(childBoxes[i].ModIds, childBoxes[j].ModIds)))
-                    {
+                    { //Check the next node could be the same or one more mod than the previous node. Besdies, the next node should contain all mods that the previous node has.
                         idBoxes[j] = true;
                     }
                 }
@@ -170,8 +214,12 @@ namespace EngineLayer.GlycoSearch
             return boxIdBoxes;
         }
 
-        //Get all path with hightest score of Directed Acyclic Graph by recursion. 
-        //Start from the last AdjNode[row-1 ][col-1], go back to it Sources, which contains the previous AdjNode with the highest cost.
+        /// <summary>
+        /// Try to ll the highest score path in the graph. Start from the last AdjNode[row-1 ][col-1], go back to it Sources, which contains the previous AdjNode with the highest cost.
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="boxes"></param>
+        /// <returns> The path (one or more) with the higgest Score</returns>
         public static List<int[]> GetAllHighestScorePaths(AdjNode[][] array, ModBox[] boxes)
         {
             List<int[]> allPaths = new List<int[]>();
@@ -196,7 +244,7 @@ namespace EngineLayer.GlycoSearch
                 return;
             }
 
-            foreach (var pre in array[xind][yind].CummulativeSources)
+            foreach (var pre in array[xind][yind].CumulativeSources)
             {
                 xind--;
                 yind = pre;
@@ -207,7 +255,12 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        //Get one path of Directed Acyclic Graph by recursion.
+        /// <summary>
+        /// Get The toppest position path of in the localGraph by recursion Method.
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="boxes"></param>
+        /// <returns></returns>
         public static int[] GetFirstPath(AdjNode[][] array, ModBox[] boxes)
         {
 
@@ -216,7 +269,7 @@ namespace EngineLayer.GlycoSearch
 
             int[] temp = new int[xlength];
 
-            temp[xlength - 1] = ylength - 1;
+            temp[xlength - 1] = ylength - 1; // That is the last node in the graph, position is last one, and the childBpx is also the last one means the whole glycan.
 
             FirstPathHelper(array, xlength - 1, ylength - 1, temp);
 
@@ -225,59 +278,70 @@ namespace EngineLayer.GlycoSearch
 
         private static void FirstPathHelper(AdjNode[][] array, int xind, int yind, int[] temp)
         {
-            if (xind == 0)
+            if (xind == 0) //xind = 0 means, there is just one glycosite. So the node must be the last one in the childBox = whole glycan.
             {
-                return;
+                return; // temp[0] = last one in the childBox = length-1.
             }
 
-            var pre = array[xind][yind].CummulativeSources.First();
+            var pre = array[xind][yind].CumulativeSources.First(); // The first one in the CumulativeSources is the toppest previous node.
             xind--;
             yind = pre;
             temp[xind] = yind;
             FirstPathHelper(array, xind, yind, temp);
         }
 
-        //The original path we get is just an array of AdjNode positions. For example, path = [1, 1, 2, 2] means the best nodes are at array[0][1], array[1][1], array[2][2], array[3][2]
-        //This function here is to transfer the path into localized Route. Route contains each glycosite with glycanId.
-        //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at ModPos[0] and ModPos[2]
+        /// <summary>
+        /// Convert the path inforation into Route object.
+        /// </summary>
+        /// <param name="localizationGraph"></param>
+        /// <param name="path"> ex.[1,1,2,2,5] means the node in the localGraph, first node is ModBox1...last Node is modBox5</param>
+        /// <returns> Route object, present in glycosite-glycan pait format </returns>
         public static Route GetLocalizedPath(LocalizationGraph localizationGraph, int[] path)
         {
             Route route = new Route();
+            var modPos_Index = localizationGraph.ModPos.Keys.ToArray();
 
-            if (path.Length == 1)
+            if (path.Length == 1) //If there is only one number in the path, we will assined "the first glycan in the childBox" to the glycosite.
             {
                 bool onlyOneLocalized = false;
                 if (localizationGraph.TotalScore > 0)
                 {
                     onlyOneLocalized = true;
                 }
-                route.AddPos(localizationGraph.ModPos[0], localizationGraph.ChildModBoxes[path[0]].ModIds.First(), onlyOneLocalized);
+                route.AddPos(localizationGraph.ModPos.First().Key, localizationGraph.ChildModBoxes[path[0]].ModIds.First(), onlyOneLocalized);
                 return route;
             }
 
-            //Add first mod. If the childBoxes[path[0]].ModIds.Count == 0, means this is an empty childBox. 
+            //Add first mod in the first glycosite.
+            //If the childBoxes[path[0]].ModIds.Count == 0, means this is an empty childBox. 
             //Otherwise childBoxes[path[0]].ModIds.Count == 1 and childBoxes[path[0]].ModIds only contains one ModId.
             if (localizationGraph.ChildModBoxes[path[0]].ModIds.Count() != 0)
             {                
-                route.AddPos(localizationGraph.ModPos[0], localizationGraph.ChildModBoxes[path[0]].ModIds.First(), localizationGraph.array[0][path[0]].CurrentCost > 0);
+                route.AddPos(localizationGraph.ModPos.First().Key, localizationGraph.ChildModBoxes[path[0]].ModIds.First(), localizationGraph.array[0][path[0]].CurrentCost > 0);
             }
 
             for (int i = 1; i < path.Length; i++)
             {
-                //If there is a change of the path, get the difference between the two Adjnodes of the array.
+                // If there is a change of the path, get the difference between the two Adjnodes of the array.
+                // If the node is the same childBox as the previous node. That means there is no modification at this glycosite. We can move on to the next glycosite.
                 if (path[i] != path[i - 1])
                 {
                     var left = GetLeft(localizationGraph.array[i][path[i]].ModBox.ModIds, localizationGraph.array[i - 1][path[i - 1]].ModBox.ModIds).First();
 
                     var localPeakExist = localizationGraph.array[i - 1][path[i - 1]].CurrentCost > 0 && (localizationGraph.array[i][path[i]].CurrentCost > 0 || i == path.Length -1);
-                    route.AddPos(localizationGraph.ModPos[i], left, localPeakExist);
+                    route.AddPos(modPos_Index[i], left, localPeakExist);
                 }
             }
-
             return route;
         }
 
-        //Get the difference between array 1 and array 2 with repeat numbers.
+
+        /// <summary>
+        /// Get the difference in glycan between two node.
+        /// </summary>
+        /// <param name="array1"> The composition in this node. Ex. (0,0,1,2) means the cumulative glycoBox is composed of glycan0 + glycan0 + glycan 1 + glycan 2 </param>
+        /// <param name="array2"></param>
+        /// <returns> The difference of the glycan composition between the two node.</returns>
         public static int[] GetLeft(int[] array1, int[] array2)
         {
             //Get compliment box
@@ -323,6 +387,7 @@ namespace EngineLayer.GlycoSearch
                 var route = GetLocalizedPath(localizationGraph, temp);
                 route.Score = k;
                 route.ReversePScore = cp;
+                route.SetRPScoreToPair(); // Set the reverse p score to each pair in the route.
                 allPaths.Add(route);
                 return;
             }
@@ -340,49 +405,143 @@ namespace EngineLayer.GlycoSearch
         }
 
         //Dictionary<int, List<Tuple<int, double>>> is <modPos, List<glycanId, site probability>>
-        public static Dictionary<int, List<Tuple<int, double>>> CalSiteSpecificLocalizationProbability(List<Route> routes, int[] modPos)
+        /// <summary>
+        /// Generate the probability chart for each ModSitePair. Note we treat the same ModSitePair from different routes differently by using their RP score.
+        /// Then we set the probability to the ModSitePair in the localizedGlycans list.
+        /// </summary>
+        /// <param name="routes"></param>
+        /// <param name="modPos"></param>
+        /// <returns> A dictionary represent unique modSitePari and theirs Probability.</returns>
+        public static Dictionary<ModSitePair, double> CalProbabilityForModSitePair(List<Route> routes, List<ModSitePair> localizedGlycans = null)
         {
-            Dictionary<int, List<Tuple<int, double>>> probabilityMatrix = new Dictionary<int, List<Tuple<int, double>>>();
+            // Calculate the probability for each ModSitePair in the routes.
+            var allPairs = routes.SelectMany(p => p.ModSitePairs);
+            var pairsGroupBySite = allPairs.GroupBy(p => p.SiteIndex).ToDictionary(p => p.Key, p => p.ToList());
+            double totalScore = routes.Sum(p => p.ReversePScore);
 
-            Tuple<int, int, double>[][] matrix = new Tuple<int, int, double>[modPos.Length][];
-
-            for (int i = 0; i < modPos.Length; i++)
+            // Group all ModSitePairs by SiteIndex
+            foreach (var siteGroup in pairsGroupBySite)
             {
-                matrix[i] = new Tuple<int, int, double>[routes.Count];
-                for (int j = 0; j < routes.Count; j++)
+                // then in each siteGroup, group by ModId
+                var groupsByModId = siteGroup.Value.GroupBy(p => p.ModId);
+                foreach (var groupById in groupsByModId)
                 {
-                    foreach (var m in routes[j].Mods)
+                    // Calculate the probability each ModSitePair
+                    int siteIndex = siteGroup.Key;
+                    int modId = groupById.Key;
+                    double prob = groupById.Sum(p => p.RouteRPScore) / totalScore;
+                    groupById.ForEach(p => p.Probability = prob); // Set the probability to each ModSitePair in the group.
+                    if (localizedGlycans != null) // If localizedGlycans is not null, we will set the probability to the localizedGlycans.
                     {
-                        if (m.Item1 == modPos[i])
-                        {
-                            matrix[i][j] = new Tuple<int, int, double>(m.Item1, m.Item2, routes[j].ReversePScore);
-                        }
+                        localizedGlycans.Where(p => p.ModId == modId && p.SiteIndex == siteIndex).ForEach(p => p.Probability = prob);
                     }
                 }
             }
 
-            var sum = routes.Sum(p => p.ReversePScore);
-
-            for (int i = 0; i < modPos.Length; i++)
-            {
-                var gs = matrix[i].Where(p => p!=null).GroupBy(p => p.Item2);
-
-                List<Tuple<int, double>> value = new List<Tuple<int, double>>();
-
-                foreach (var g in gs)
-                {
-                    var prob = g.Sum(p => p.Item3) / sum;
-
-                    value.Add(new Tuple<int, double>(g.Key, prob));
-
-                }
-
-                probabilityMatrix.Add(modPos[i], value);
-            }
-
-            return probabilityMatrix;
+            // Create a dictionary with each unique ModSitePair (same modId and siteIndex) as key and its probability as value.
+            var modSitePairs_Prob = allPairs.GroupBy(p => p)
+                .ToDictionary(g => g.Key, g => g.Key.Probability);
+            return modSitePairs_Prob;
         }
 
+        /// <summary>
+        /// The number of the motifs in this node should be fit to the requirement of the modBox
+        /// </summary>
+        /// <param name="childBox"></param>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        public static bool NodeCheck(GlycanBox ModBox, string[] modPos_motif, int x, int y)
+        {
+            //Step 1: Check the number of modifications 
+
+            //maxModNum: the most mods we can have up to current mod pos;
+            int maxModNum = x + 1;
+
+            //MinModNum: the least mods we can have up to current mod pos. In order to get min number, the min = number of glycan in the box - number of node from the last.
+            //Ex. 3 glycan in the box, end position is 7, then for position 5, the min = 3 - (7-5) = 1.
+            int minModNum = ModBox.ModIds.Length - (modPos_motif.Length - 1 - x);
+            var childBox = ModBox.ChildGlycanBoxes[y]; // Get the childBox from the ModBox, which is the glycanBox in the localization graph.
+            if (childBox.NumberOfMods < minModNum || childBox.NumberOfMods > maxModNum)
+            {
+                return false; // The number of modifications is not within the valid range
+            }
+
+            // Step 2: Check the accumulated motifs number
+            // if the childBox is glycan on S + Oxidation on Q, then we have to check are there S and Q in the ModPosition
+            var motifInBox = new Dictionary<string, int>();
+            foreach (var modId in childBox.ModIds)
+            {
+                var motif = modId >= 0? GlycanBox.GlobalOGlycans[modId].Target.ToString() : GlycanBox.GlobalNGlycans[modId].Target.ToString();
+
+                if (!motifInBox.ContainsKey(motif))
+                {
+                    motifInBox[motif] = 0;
+                }
+                motifInBox[motif]++;
+            }
+
+            var motifInNode = new Dictionary<string, int>();
+            for (int i = 0; i <= x; i++)
+            {
+                var motif = modPos_motif[i];
+                if (!motifInNode.ContainsKey(motif))
+                {
+                    motifInNode[motif] = 0;
+                }
+                motifInNode[motif]++;
+            }
+
+            // Check if the motifs in the node is enough to cover the motifs in the childBox
+            foreach (var motif in motifInBox)
+            {
+                if (!motifInNode.ContainsKey(motif.Key) || motifInNode[motif.Key] < motif.Value)
+                {
+                    return false; // Not enough motifs in the node to cover the childBox
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Check the motif change (between two node connection) is valid for this position.
+        /// </summary>
+        /// <param name="preY"></param>
+        /// <param name="currentY"></param>
+        /// <param name="modPos"></param>
+        /// <returns></returns>
+        public static bool MotifCheck(GlycanBox modBox, int preY, int currentY, string motif)
+        {
+            var preModBoxId = modBox.ChildGlycanBoxes[preY].ModIds;
+            var currentModBoxId = modBox.ChildGlycanBoxes[currentY].ModIds;
+
+            var modDiff = GetDiff(preModBoxId, currentModBoxId);
+
+            if (modDiff == null || modDiff.Length == 0)
+            {
+                return true; // If there is no difference, there is no need for motif checking
+            }
+            
+            Modification modForthisNode = modDiff[0] >= 0?  GlycanBox.GlobalOGlycans[modDiff[0]] : GlycanBox.GlobalNGlycans[modDiff[0]];
+
+            return modForthisNode.Target.ToString() == motif;
+        }
+
+        /// <summary>
+        /// Get the mod difference between the previous node and the current node.
+        /// </summary>
+        /// <param name="preModId"></param>
+        /// <param name="currentModId"></param>
+        /// <returns> the different modId</returns>
+        public static int[] GetDiff(int[] preModId, int[] currentModId)
+        {
+            var gx = currentModId.GroupBy(p => p).ToDictionary(p => p.Key, p => p.ToList());
+            foreach (var iy in preModId)
+            {
+                gx[iy].RemoveAt(gx[iy].Count - 1);
+            }
+            var diff = gx.SelectMany(p => p.Value).ToArray();
+            return diff;
+        }
     }
 
 }

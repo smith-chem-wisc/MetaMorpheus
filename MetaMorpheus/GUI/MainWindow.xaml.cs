@@ -3,7 +3,6 @@ using IO.ThermoRawFileReader;
 using Microsoft.Win32;
 using MzLibUtil;
 using Nett;
-using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,10 +13,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Navigation;
+using Omics.Modifications;
 using TaskLayer;
+using System.Text.RegularExpressions;
+using Readers.InternalResults;
+using System.Diagnostics;
+using EngineLayer.DatabaseLoading;
+using GuiFunctions;
+using Easy.Common.Extensions;
+using GuiFunctions.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -26,7 +34,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly ObservableCollection<RawDataForDataGrid> SpectraFiles = new ObservableCollection<RawDataForDataGrid>();
+       private readonly ObservableCollection<RawDataForDataGrid> SpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<ProteinDbForDataGrid> ProteinDatabases = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> PreRunTasks = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
@@ -36,10 +44,8 @@ namespace MetaMorpheusGUI
 
         public MainWindow()
         {
-            InitializeComponent();
             GlobalVariables.SetUpGlobalVariables();
-
-            Title = "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
+            InitializeComponent();
 
             dataGridProteinDatabases.DataContext = ProteinDatabases;
             proteinDbSummaryDataGrid.DataContext = ProteinDatabases;
@@ -73,23 +79,22 @@ namespace MetaMorpheusGUI
             MetaMorpheusEngine.WarnHandler += NotificationHandler;
 
             MyFileManager.WarnHandler += NotificationHandler;
-            Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
+            GuiGlobalParamsViewModel.RequestModeSwitchConfirmation += HandleModeSwitchConfirmation;
         }
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
             UpdateGuiOnPreRunChange();
             UpdateOutputFolderTextbox();
-            FileSpecificParameters.ValidateFileSpecificVariableNames();
             SearchModifications.SetUpModSearchBoxes();
             PrintErrorsReadingMods();
 
-            if (!UpdateGUISettings.LoadGUISettings())
+            if (!GuiGlobalParamsViewModel.SettingsFileExists())
             {
                 notificationsTextBox.Document = GetWelcomeText();
             }
 
-            if (UpdateGUISettings.Params.AskAboutUpdating)
+            if (GuiGlobalParamsViewModel.Instance.AskAboutUpdating)
             {
                 UpdateMetaMorpheus();
             }
@@ -298,7 +303,7 @@ namespace MetaMorpheusGUI
             {
                 Dispatcher.BeginInvoke(new Action(() => NewoutLabelStatus(sender, s)));
             }
-            else
+            else if (InProgressTasks != null && s.NestedIDs?.Count > 0) 
             {
                 // Find the task or the collection!!!
 
@@ -451,7 +456,7 @@ namespace MetaMorpheusGUI
                 notificationsTextBox.AppendText(message + Environment.NewLine);
                 Exception exception = e;
                 //Find Output Folder
-                string outputFolder = e.Data["folder"].ToString();
+                string outputFolder = e.Data.Contains("folder") ? e.Data["folder"].ToString() : null;
                 string tomlText = "";
                 if (Directory.Exists(outputFolder))
                 {
@@ -516,7 +521,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddSpectraFile_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf)|*.raw;*.mzML;*.mgf");
+            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*ms2.msalign;*.tdf;*.tdf_bin)|*.raw;*.mzML;*.mgf;*ms2.msalign;*.tdf;*.tdf_bin");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -665,7 +670,8 @@ namespace MetaMorpheusGUI
             }
 
             // user is probably just checking or unchecking a checkbox, don't open the file
-            if (sender is DataGridCell cell && cell.Column is DataGridCheckBoxColumn)
+            // User is double clicking the decoy ident column. 
+            if (sender is DataGridCell { Column: DataGridCheckBoxColumn } || sender is DataGridCell { Column: DataGridTextColumn, TabIndex: >= 3})
             {
                 return;
             }
@@ -710,9 +716,13 @@ namespace MetaMorpheusGUI
         {
             OpenNewTaskWindow(MyTask.GlycoSearch);
         }
+        private void AddAveragingTaskButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            OpenNewTaskWindow(MyTask.Average);
+        }
 
         /// <summary>
-        /// Event fires when the "Add Task" button is clicked.
+        /// Event fires when the "Add Task" button is clicked on the RunPage
         /// </summary>
         private void AddTask_Click(object sender, RoutedEventArgs e)
         {
@@ -905,10 +915,9 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs("You need to add at least one spectra file!", null));
                 return;
             }
-            if (!ProteinDatabases.Any())
+            if (!ProteinDatabases.Any() && PreRunTasks.Any(p => p.metaMorpheusTask.TaskType != MyTask.Average)) // will not throw this if averaging is the only task
             {
                 NotificationHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
-                return;
             }
 
             // check that experimental design is defined if normalization is enabled
@@ -978,12 +987,42 @@ namespace MetaMorpheusGUI
 
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
             string outputFolder = OutputFolderTextBox.Text.Replace("$DATETIME", startTimeForAllFilenames);
+
+            bool rename = false;
+            bool exists = Directory.Exists(outputFolder);
+            if (exists && GuiGlobalParamsViewModel.Instance.AskAboutOverwritingOutputDirectory)
+            {
+                (bool Overwrite, bool AskAgain) results = ProteaseSpecificMsgBox.Show($"Output directory '{outputFolder}' already exists!",
+                    $"\tOutput directory '{outputFolder}' already exists!\r\n\t\t\tWould you like to overwrite it?");
+
+                if (!results.Overwrite)
+                    rename = true;
+
+                if (!results.AskAgain)
+                    GuiGlobalParamsViewModel.Instance.AskAboutOverwritingOutputDirectory = false;
+
+            }
+            else if (exists && !GuiGlobalParamsViewModel.Instance.OverwriteOutputDirectory)
+                rename = true;
+
+            if (rename)
+            {
+                int counter = 1;
+                string newOutputFolder;
+                do
+                {
+                    newOutputFolder = outputFolder + "_" + counter;
+                    counter++;
+                } while (Directory.Exists(newOutputFolder));
+                outputFolder = newOutputFolder;
+            }
+
             OutputFolderTextBox.Text = outputFolder;
 
             // everything is ready to run
             EverythingRunnerEngine a = new EverythingRunnerEngine(InProgressTasks.Select(b => (b.DisplayName, b.Task)).ToList(),
                 SpectraFiles.Where(b => b.Use).Select(b => b.FilePath).ToList(),
-                ProteinDatabases.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(),
+                ProteinDatabases.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant, b.DecoyIdentifier)).ToList(),
                 outputFolder);
 
             var t = new Task(a.Run);
@@ -1055,34 +1094,94 @@ namespace MetaMorpheusGUI
             OpenFolder(outputFolder);
         }
 
-        /// <summary>
-        /// Handles keyboard input.
-        /// Note: Window_KeyDown is NOT used because it does not seem to capture keyboard input from a DataGrid.
-        /// </summary>
+        
+
+        // This is designed for the entire window
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (RunTasksButton.IsEnabled)
+            if (!RunTasksButton.IsEnabled) return;
+            switch (e.Key)
+            {
+                // run all tasks
+                case Key.Enter when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    RunTasksButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                    e.Handled = true;
+                    break;
+
+                default:
+                    e.Handled = false; break;
+            }
+        }
+
+        private MetaMorpheusTask? _clipboard;
+
+        /// <summary>
+        /// Handles keyboard input.
+        /// Note: This is designed for all boxes which contain lists of items such as database, tasks, or spectra files. 
+        /// Note: Window_KeyDown is NOT used because it does not seem to capture keyboard input from a DataGrid.
+        /// </summary>
+        private void BoxWithList_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (!RunTasksButton.IsEnabled) return;
+
+            bool IsDatabaseOrSpectra(KeyEventArgs args) => args.OriginalSource is DataGrid;
+            bool IsTask(KeyEventArgs args) => args.OriginalSource is TreeViewItem;
+
+            switch (e.Key)
             {
                 // delete selected task/db/spectra
-                if (e.Key == Key.Delete || e.Key == Key.Back)
-                {
+                case Key.Delete when IsDatabaseOrSpectra(e) || IsTask(e):
+                case Key.Back when IsDatabaseOrSpectra(e) || IsTask(e):
                     Delete_Click(sender, e);
                     e.Handled = true;
-                }
+                    break;
 
                 // move task down
-                if (e.Key == Key.Add || e.Key == Key.OemPlus)
-                {
+                case Key.Add when IsTask(e):
+                case Key.OemPlus when IsTask(e):
                     MoveSelectedTask_Click(sender, e, false);
                     e.Handled = true;
-                }
+                    break;
 
                 // move task up
-                if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
-                {
+                case Key.Subtract when IsTask(e):
+                case Key.OemMinus when IsTask(e):
                     MoveSelectedTask_Click(sender, e, true);
                     e.Handled = true;
-                }
+                    break;
+
+                // copy selected task
+                case Key.C when IsTask(e) && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    if (sender is TreeView { SelectedItem: PreRunTask preRunTask })
+                    {
+                        _clipboard = preRunTask.metaMorpheusTask;
+                    }
+                    e.Handled = true;
+
+                    break;
+
+                // paste selected task 
+                case Key.V when IsTask(e) && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    if (sender is TreeView && _clipboard != null)
+                    {
+                        PreRunTasks.Add(new PreRunTask(_clipboard));
+                        UpdateGuiOnPreRunChange();
+                    }
+                    e.Handled = true;
+                    break;
+
+                // Duplicate Selected Task
+                case Key.D when IsTask(e) && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    if (sender is TreeView { SelectedItem: PreRunTask task })
+                    {
+                        PreRunTasks.Add(task);
+                        UpdateGuiOnPreRunChange();
+                    }
+                    e.Handled = true;
+                    break;
+
+                default:
+                    e.Handled = false; break;
             }
         }
 
@@ -1091,7 +1190,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-            if (UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (GuiGlobalParamsViewModel.Instance.AskBeforeExitingMetaMorpheus && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
             {
                 var exit = ExitMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
 
@@ -1101,8 +1200,8 @@ namespace MetaMorpheusGUI
                 }
                 else if (exit == MessageBoxResult.OK) // yes and don't ask me again
                 {
-                    UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus = false;
-                    Toml.WriteFile(UpdateGUISettings.Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    GuiGlobalParamsViewModel.Instance.AskBeforeExitingMetaMorpheus = false;
+                    GuiGlobalParamsViewModel.Instance.Save();
                     e.Cancel = false;
                 }
                 else // no, do not exit MetaMorpheus
@@ -1110,6 +1209,9 @@ namespace MetaMorpheusGUI
                     e.Cancel = true;
                 }
             }
+
+            if (GuiGlobalParamsViewModel.Instance.IsDirty())
+                GuiGlobalParamsViewModel.Instance.Save();
         }
 
         /// <summary>
@@ -1193,16 +1295,37 @@ namespace MetaMorpheusGUI
             Application.Current.Shutdown();
         }
 
-        private void MenuItem_GuiSettings_Click(object sender, RoutedEventArgs e)
-        {
-            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), useNotepadToOpenToml: true);
-            Application.Current.Shutdown();
-        }
-
         private void MenuItem_MetaDraw_Click(object sender, RoutedEventArgs e)
         {
-            MetaDraw metaDrawGui = new MetaDraw();
-            metaDrawGui.Show();
+            string[]? filesToLoad = null;
+            try
+            {
+                // get completed search tasks from in progress tasks. 
+                var completedSearchTasks = InProgressTasks.Where(p => p.Task is SearchTask && p.Progress >= 100).ToList();
+
+                // find last search task by the task ID
+                var finalSearchTask = completedSearchTasks.MaxBy(p => p.Id.Split('-')[0].Replace("Task", "").ToNullableInt());
+
+                // Get Spectra files
+                var prose = MetaMorpheusProseFile.LocateInDirectory(finalSearchTask.Task.OutputFolder);
+                var spectraFiles = prose!.SpectraFilePaths;
+
+                // Get search results
+                var searchResult = Directory.GetFiles(finalSearchTask.Task.OutputFolder)
+                    .First(p => p.EndsWith("PSMs.psmtsv") || p.EndsWith("OSMs.osmtsv"));
+
+                filesToLoad = spectraFiles.Append(searchResult).ToArray();
+            }
+            catch (Exception ex)
+            {
+                // Something went wrong in trying to find a completed search task. 
+                // This is expected when we do not have a completed search to parse. 
+            }
+            finally
+            {
+                MetaDraw metaDrawGui = new MetaDraw(filesToLoad);
+                metaDrawGui.Show();
+            }
         }
 
         private void MenuItem_ResetDefaults_Click(object sender, RoutedEventArgs e)
@@ -1249,19 +1372,60 @@ namespace MetaMorpheusGUI
         {
             var item = GetItemDataContext(sender, e).FirstOrDefault();
 
-            if (item is PreRunTask task)
+            if (item is PreRunTask)
+                DeleteAll_Tasks(sender, e);
+            else if (item is ProteinDbForDataGrid)
+                DeleteAll_Databases(sender, e);
+            else if (item is RawDataForDataGrid)
+                DeleteAll_Spectra(sender, e);
+        }
+
+        private void HandleModeSwitchConfirmation(object sender, ModeSwitchRequestEventArgs e)
+        {
+            // No files loaded, just return and switch modes
+            if (SpectraFiles.Count == 0 && ProteinDatabases.Count == 0 && PreRunTasks.Count == 0)
             {
-                PreRunTasks.Clear();
+                e.Result = ModeSwitchResult.SwitchKeepFiles;
+                return;
             }
-            else if (item is ProteinDbForDataGrid db)
+
+            if (!Dispatcher.CheckAccess())
             {
-                ProteinDatabases.Clear();
+                Dispatcher.Invoke(() => HandleModeSwitchConfirmation(sender, e));
+                return;
             }
-            else if (item is RawDataForDataGrid spectra)
+
+            if (GuiGlobalParamsViewModel.Instance.AskAboutModeSwitch)
             {
-                SpectraFiles.Clear();
+                var confirmationWindow = new ModeSwitchConfirmationWindow(e)
+                {
+                    Owner = this
+                };
+
+                confirmationWindow.ShowDialog();
+            }
+            else
+            {
+                e.Result = GuiGlobalParamsViewModel.Instance.CachedModeSwitchResult;
+            }
+
+
+            if (e.Result == ModeSwitchResult.SwitchRemoveFiles)
+            {
+                DeleteAll(sender, new());
             }
         }
+
+        private void DeleteAll(object sender, RoutedEventArgs e)
+        {
+            DeleteAll_Tasks(sender, e);
+            DeleteAll_Databases(sender, e);
+            DeleteAll_Spectra(sender, e);
+        }
+
+        private void DeleteAll_Spectra(object sender, RoutedEventArgs e) => SpectraFiles.Clear();
+        private void DeleteAll_Databases(object sender, RoutedEventArgs e) => ProteinDatabases.Clear();
+        private void DeleteAll_Tasks(object sender, RoutedEventArgs e) => PreRunTasks.Clear();
 
         #endregion
 
@@ -1510,14 +1674,14 @@ namespace MetaMorpheusGUI
         {
             foreach (string path in paths.OrderBy(p => Path.GetFileName(p)))
             {
-                if (Directory.Exists(path))
+                if (Directory.Exists(path) & !Regex.IsMatch(path, @".d$")) // don't add directories that end in ".d" (bruker data files)
                 {
                     foreach (string file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
                     {
                         AddPreRunFile(file);
                     }
                 }
-                else if (File.Exists(path))
+                else if (File.Exists(path) || Regex.IsMatch(path, @".d$"))
                 {
                     AddPreRunFile(path);
                 }
@@ -1533,8 +1697,27 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            // this line is NOT used because .xml.gz (extensions with two dots) mess up with Path.GetExtension
-            //var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
+            // Handle Windows shortcut (.lnk) files: resolve to the target file if possible
+            if (Path.GetExtension(filePath).Equals(".lnk", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    string resolvedPath = ResolveShortcutTarget(filePath);
+                    if (!string.IsNullOrEmpty(resolvedPath) && (File.Exists(resolvedPath) || Directory.Exists(resolvedPath)))
+                    {
+                        AddPreRunFile(resolvedPath);
+                    }
+                    else
+                    {
+                        NotificationHandler(null, new StringEventArgs("Could not resolve shortcut: " + filePath, null));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    NotificationHandler(null, new StringEventArgs("Error resolving shortcut: " + filePath + " (" + ex.Message + ")", null));
+                }
+                return;
+            }
 
             // we need to get the filename before parsing out the extension because if we assume that everything after the dot
             // is the extension and there are dots in the file path (i.e. in a folder name), this will mess up
@@ -1568,13 +1751,30 @@ namespace MetaMorpheusGUI
                             return;
                         }
                     }
-
                     goto case ".mzml";
-
                 case ".mgf":
                     NotificationHandler(null, new StringEventArgs(".mgf files lack MS1 spectra, which are needed for quantification and searching for coisolated peptides. All other features of MetaMorpheus will function.", null));
                     goto case ".mzml";
-
+                case ".msalign":
+                    if (filePath.Contains("_ms2."))
+                    {
+                        NotificationHandler(null, new StringEventArgs("MS2-only msalign files lack MS1 spectra, which are needed for quantification and searching for coisolated peptides. All other features of MetaMorpheus will function.", null));
+                        goto case ".mzml";
+                    }
+                    else if (filePath.Contains("_ms1."))
+                    {
+                        NotificationHandler(null, new StringEventArgs("MS1 align file type not currently supported " + theExtension, null));
+                    }
+                    break;
+                case ".tdf":
+                case ".tdf_bin":
+                    // for Bruker timsTof files, the .tdf file is in a ".d" directory which also contains a .tdf_bin file 
+                    // the fileReader is designed to take the path to the .d directory instead of either/both individual files
+                    filePath = Path.GetDirectoryName(filePath);
+                    goto case ".d";
+                case ".d": // Bruker data files are directories that contain .d files
+                    NotificationHandler(null, new StringEventArgs("Quantification and calibration are not currently supported for Bruker data files. All other features of MetaMorpheus will function.", null));
+                    goto case ".mzml";
                 case ".mzml":
                     if (compressed) // not implemented yet
                     {
@@ -1589,7 +1789,6 @@ namespace MetaMorpheusGUI
                     UpdateFileSpecificParamsDisplay(Path.ChangeExtension(filePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
-
                 case ".xml":
                 case ".fasta":
                 case ".fa":
@@ -1658,6 +1857,11 @@ namespace MetaMorpheusGUI
                                     var glyco = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
                                     AddTaskToCollection(glyco);
                                     break;
+
+                                case "Average":
+                                    var average = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(average);
+                                    break;
                             }
                         }
                         catch (Exception e)
@@ -1667,15 +1871,90 @@ namespace MetaMorpheusGUI
                     }
                     break;
 
+                case ".txt" when filename.Contains("AutoGeneratedManuscriptProse"):
+                    try
+                    {
+                        var directory = Path.GetDirectoryName(filePath);
+                        var proseFile = MetaMorpheusProseFile.LocateInDirectory(directory);
+                        if (proseFile is not null)
+                        {
+                            var filesToAdd = proseFile.SpectraFilePaths.Concat(proseFile.DatabasePaths);
+                            AddPreRunFiles(filesToAdd);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        NotificationHandler(null, new StringEventArgs("Cannot read prose file: " + e.Message, null));
+                    }
+
+                    break;
                 default:
                     NotificationHandler(null, new StringEventArgs("Unrecognized file type: " + theExtension, null));
                     break;
             }
         }
 
+        // Helper method to resolve Windows shortcut (.lnk) files to their target path
+        private static string ResolveShortcutTarget(string shortcutPath)
+        {
+            // Only works on Windows
+            if (!OperatingSystem.IsWindows())
+                return null;
+
+            try
+            {
+                Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType == null)
+                    return null;
+                dynamic shell = Activator.CreateInstance(shellType);
+                dynamic shortcut = shell.CreateShortcut(shortcutPath);
+                string targetPath = shortcut.TargetPath as string;
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shortcut);
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
+                return targetPath;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         private void AddTaskToCollection(MetaMorpheusTask taskToAdd)
         {
-            PreRunTasks.Add(new PreRunTask(taskToAdd));
+            var preRunTask = new PreRunTask(taskToAdd);
+
+            if (!preRunTask.IsModeAgnosticTask)
+            {
+                var taskAnalyteType = taskToAdd.CommonParameters.DetermineAnalyteType();
+                var tasksToConsider = PreRunTasks.Where(p => !p.IsModeAgnosticTask).ToList();
+
+                // Ensure we do not have RNA and Protein tasks in the same MetaMorpheus run and that the mode represents the task data type. 
+                if (tasksToConsider.Any())
+                {
+                    // Tasks Loaded - Incoming task is RNA - existing task is protein -> Abort task addition
+                    if (taskAnalyteType == AnalyteType.Oligo && tasksToConsider.Any(p => !p.IsRnaTask))
+                    {
+                        NotificationHandler(this, new("Cannot add RNA task with protein task currently loaded", []));
+                        return;
+                    }
+
+                    // Tasks Loaded - Incoming task is Protein - existing task is RNA -> Abort task addition
+                    if (taskAnalyteType != AnalyteType.Oligo && tasksToConsider.Any(p => p.IsRnaTask))
+                    {
+                        NotificationHandler(this, new("Cannot add protein task with RNA task currently loaded", []));
+                        return;
+                    }
+                }
+                // No Tasks Loaded - Incoming task is RNA - Mode is Protein -> Switch to RNA mode
+                else if (taskAnalyteType == AnalyteType.Oligo && !GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                    GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+
+                // No Tasks Loaded - Incoming task is Protein - Mode is Rna -> Switch to Protein Mode
+                else if (taskAnalyteType != AnalyteType.Oligo && GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                    GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+            }
+
+            PreRunTasks.Add(preRunTask);
             UpdateGuiOnPreRunChange();
         }
 
@@ -1697,15 +1976,17 @@ namespace MetaMorpheusGUI
             Window dialog = null;
             MetaMorpheusTask task = null;
             string defaultTomlName = null;
+            var prefix = GuiGlobalParamsViewModel.Instance.IsRnaMode ? "Rna" : "";
 
             // determine if there is a default .toml for this task
             switch (taskType)
             {
-                case MyTask.Search: defaultTomlName = "SearchTaskDefault.toml"; break;
-                case MyTask.Calibrate: defaultTomlName = "CalibrationTaskDefault.toml"; break;
-                case MyTask.Gptmd: defaultTomlName = "GptmdTaskDefault.toml"; break;
-                case MyTask.XLSearch: defaultTomlName = "XLSearchTaskDefault.toml"; break;
-                case MyTask.GlycoSearch: defaultTomlName = "GlycoSearchTaskDefault.toml"; break;
+                case MyTask.Search: defaultTomlName = $"{prefix}SearchTaskDefault.toml"; break;
+                case MyTask.Calibrate: defaultTomlName = $"{prefix}CalibrationTaskDefault.toml"; break;
+                case MyTask.Gptmd: defaultTomlName = $"{prefix}GptmdTaskDefault.toml"; break;
+                case MyTask.XLSearch: defaultTomlName = $"XLSearchTaskDefault.toml"; break;
+                case MyTask.GlycoSearch: defaultTomlName = $"GlycoSearchTaskDefault.toml"; break;
+                case MyTask.Average: defaultTomlName = "SpectralAverageTaskDefault.toml"; break;
             }
 
             string defaultTomlFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", defaultTomlName);
@@ -1721,6 +2002,7 @@ namespace MetaMorpheusGUI
                         case MyTask.Gptmd: task = Toml.ReadFile<GptmdTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                         case MyTask.XLSearch: task = Toml.ReadFile<XLSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                         case MyTask.GlycoSearch: task = Toml.ReadFile<GlycoSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
+                        case MyTask.Average: task = Toml.ReadFile<SpectralAveragingTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                     }
                 }
                 catch (Exception)
@@ -1737,9 +2019,11 @@ namespace MetaMorpheusGUI
                 case MyTask.Gptmd: dialog = new GptmdTaskWindow((GptmdTask)task); break;
                 case MyTask.XLSearch: dialog = new XLSearchTaskWindow((XLSearchTask)task); break;
                 case MyTask.GlycoSearch: dialog = new GlycoSearchTaskWindow((GlycoSearchTask)task); break;
+                case MyTask.Average: dialog = new SpectralAveragingTaskWindow((SpectralAveragingTask)task); break;
             }
 
             // save the task to the task collection
+            dialog.Owner = this;
             if (dialog.ShowDialog() == true)
             {
                 switch (taskType)
@@ -1748,7 +2032,8 @@ namespace MetaMorpheusGUI
                     case MyTask.Calibrate: AddTaskToCollection(((CalibrateTaskWindow)dialog).TheTask); break;
                     case MyTask.Gptmd: AddTaskToCollection(((GptmdTaskWindow)dialog).TheTask); break;
                     case MyTask.XLSearch: AddTaskToCollection(((XLSearchTaskWindow)dialog).TheTask); break;
-                    case MyTask.GlycoSearch: AddTaskToCollection(((GlycoSearchTaskWindow)dialog).TheTask); break;
+                    case MyTask.GlycoSearch: AddTaskToCollection(((GlycoSearchTaskWindow)dialog).TheTask); break; 
+                    case MyTask.Average: AddTaskToCollection(((SpectralAveragingTaskWindow)dialog).TheTask); break;
                 }
 
                 UpdateGuiOnPreRunChange();
@@ -1866,6 +2151,12 @@ namespace MetaMorpheusGUI
                     var GlycoSearchdialog = new GlycoSearchTaskWindow(preRunTask.metaMorpheusTask as GlycoSearchTask);
                     GlycoSearchdialog.ShowDialog();
                     break;
+
+                case MyTask.Average:
+                    var averagingDialog =
+                        new SpectralAveragingTaskWindow(preRunTask.metaMorpheusTask as SpectralAveragingTask);
+                    averagingDialog.ShowDialog();
+                    break;
             }
 
             UpdateGuiOnPreRunChange();
@@ -1948,9 +2239,13 @@ namespace MetaMorpheusGUI
 
         private void OpenProteomesFolder_Click(object sender, RoutedEventArgs e)
         {
-            OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
+            if (Directory.Exists(GuiGlobalParamsViewModel.Instance.ProteomeDirectory))
+            {
+                OpenFolder(GuiGlobalParamsViewModel.Instance.ProteomeDirectory);
+            }
+            else
+                MessageBox.Show(
+                    $"Cannot find proteome directory ${GuiGlobalParamsViewModel.Instance.ProteomeDirectory}{Environment.NewLine}See settings tab to update directory path");
         }
-
-       
     }
 }

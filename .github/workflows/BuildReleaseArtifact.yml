@@ -1,0 +1,105 @@
+name: Release — Patch Version & Build MSI
+
+on:
+  release:
+    types: [released, edited]
+
+jobs:
+  patch-build-upload:
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Compute version values from tag
+        id: vers
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.release.tag_name }}".Trim()
+          if (-not $tag) { Write-Error "No tag found on release event."; exit 1 }
+          if ($tag.StartsWith('v')) { $tag = $tag.Substring(1) }
+
+          # csproj <Version> can keep pre-release labels
+          $packageVersion = $tag
+
+          # AssemblyVersion/FileVersion must be numeric (no -beta). Use the numeric core.
+          $numericCore = ($packageVersion -split '[-+]')[0]
+          $parts = $numericCore.Split('.')
+          if ($parts.Count -lt 3) {
+            Write-Error "Tag must be at least Major.Minor.Patch (e.g., v1.2.3). Got: $tag"
+            exit 1
+          }
+          $fileVersion = if ($parts.Count -eq 3) { "$numericCore.0" } else { $numericCore }
+
+          "PACKAGE_VERSION=$packageVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "FILE_VERSION=$fileVersion"       | Out-File -FilePath $env:GITHUB_ENV -Append
+
+          Write-Host "PackageVersion: $packageVersion"
+          Write-Host "FileVersion   : $fileVersion"
+
+      - name: Patch <Version> in EngineLayer.csproj
+        shell: pwsh
+        run: |
+          $csprojPath = "./MetaMorpheus/EngineLayer/EngineLayer.csproj"
+          if (!(Test-Path $csprojPath)) { Write-Error "Missing $csprojPath"; exit 1 }
+      
+          [xml]$xml = Get-Content $csprojPath
+      
+          # Try to find <Version> with and without the MSBuild 2003 namespace
+          $versionNode = $xml.SelectSingleNode('//Version')
+          $versionNode.InnerText = $env:PACKAGE_VERSION
+          $xml.Save($csprojPath)
+          Write-Host "Set <Version> to $env:PACKAGE_VERSION in $csprojPath"
+          
+      - name: Set version in AssemblyInfo.cs files
+        uses: secondbounce/assemblyinfo-update@v2
+        with:
+          version: ${{ env.FILE_VERSION }}
+          directory: './MetaMorpheus/GUI/Properties/'
+          
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+
+      - name: Build solution
+        run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
+
+      - name: Build installer
+        run: |
+          dotnet msbuild ./MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release /verbosity=minimal /p:UseSharedCompilation=false
+          dotnet msbuild ./MetaMorpheus/Bootstrapper/Bootstrapper.wixproj /p:Configuration=Release /p:UseSharedCompilation=false
+          
+      - name: Collect MSI
+        shell: pwsh
+        run: |
+          Copy-Item .\MetaMorpheus\MetaMorpheusSetup\bin\Release\MetaMorpheusInstaller.msi .\MetaMorpheusInstaller.msi
+          if (!(Test-Path .\MetaMorpheusInstaller.msi)) { Write-Error "MSI not found after build"; exit 1 }
+          
+      - name: Zip command-line version
+        run: |
+          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\net8.0\* "-x!*.xml"
+
+      # check that installer is greater than 1 kb to avoid pushing an empty artifact
+      - name: Validate command-line zip artifact
+        run: |
+          if ((Get-Item MetaMorpheus_CommandLine.zip).length -lt 1kb) {
+            Write-Host "❌ The build failed because the command-line .zip did not build properly; it is empty." -ForegroundColor Red
+            exit 1
+          }
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: |
+            MetaMorpheus_CommandLine.zip
+            MetaMorpheusInstaller.msi

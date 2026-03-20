@@ -1,12 +1,8 @@
-﻿using EngineLayer;
-using IO.Mgf;
-using IO.MzML;
-using IO.ThermoRawFileReader;
+﻿global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
 using OxyPlot.Wpf;
-using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,100 +16,61 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using Org.BouncyCastle.Asn1.X509.Qualified;
+using Easy.Common.Extensions;
+using Readers;
+using System.Threading;
+using Omics.Fragmentation;
+using Omics.SpectrumMatch;
+using System.Runtime.CompilerServices;
+using Readers.SpectralLibrary;
+using GuiFunctions.MetaDraw;
 
+[assembly: InternalsVisibleTo("Test")]
 namespace GuiFunctions
 {
     public class MetaDrawLogic
     {
-        public ObservableCollection<string> PsmResultFilePaths { get; private set; }
+        public ObservableCollection<string> SpectralMatchResultFilePaths { get; private set; }
         public ObservableCollection<string> SpectraFilePaths { get; private set; }
         public ObservableCollection<string> SpectralLibraryPaths { get; private set; }
-        public ObservableCollection<PsmFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, etc.
-        public ObservableCollection<PsmFromTsv> ChimericPsms { get; private set; }
-        public Dictionary<string, ObservableCollection<PsmFromTsv>> PsmsGroupedByFile { get; private set; }
+        public ObservableCollection<SpectrumMatchFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, etc.
+        public Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> SpectralMatchesGroupedByFile { get; private set; }
         public DrawnSequence StationarySequence { get; set; }
         public DrawnSequence ScrollableSequence { get; set; }
         public DrawnSequence SequenceAnnotation { get; set; }
-        public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
         public SpectrumMatchPlot SpectrumAnnotation { get; set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
 
-        private List<PsmFromTsv> AllPsms; // all loaded PSMs
-        private Dictionary<string, DynamicDataConnection> MsDataFiles; // key is file name without extension
+        public List<SpectrumMatchFromTsv> AllSpectralMatches; // all loaded PSMs
+        public Dictionary<string, MsDataFile> MsDataFiles { get; } // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
-        private SpectralLibrary SpectralLibrary;
+        public SpectralLibrary SpectralLibrary { get; set; }
 
         public MetaDrawLogic()
         {
-            PsmResultFilePaths = new ObservableCollection<string>();
+            SpectralMatchResultFilePaths = new ObservableCollection<string>();
             SpectraFilePaths = new ObservableCollection<string>();
             SpectralLibraryPaths = new ObservableCollection<string>();
-            FilteredListOfPsms = new ObservableCollection<PsmFromTsv>();
-            PsmsGroupedByFile = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
-            AllPsms = new List<PsmFromTsv>();
-            MsDataFiles = new Dictionary<string, DynamicDataConnection>();
+            FilteredListOfPsms = new ObservableCollection<SpectrumMatchFromTsv>();
+            SpectralMatchesGroupedByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>();
+            AllSpectralMatches = new List<SpectrumMatchFromTsv>();
+            MsDataFiles = new Dictionary<string, MsDataFile>();
             PeptideSpectralMatchesView = CollectionViewSource.GetDefaultView(FilteredListOfPsms);
             ThreadLocker = new object();
             CurrentlyDisplayedPlots = new List<SpectrumMatchPlot>();
-            ChimericPsms = new();
+
+            // Enable cross-thread synchronization 
+            BindingOperations.EnableCollectionSynchronization(SpectralMatchResultFilePaths, ThreadLocker);
+            BindingOperations.EnableCollectionSynchronization(SpectraFilePaths, ThreadLocker);
+            BindingOperations.EnableCollectionSynchronization(FilteredListOfPsms, ThreadLocker);
+            BindingOperations.EnableCollectionSynchronization(SpectralMatchesGroupedByFile, ThreadLocker);
         }
 
-        public List<string> LoadFiles(bool loadSpectra, bool loadPsms)
-        {
-            List<string> errors = new List<string>();
+        #region Plot Generation 
 
-            lock (ThreadLocker)
-            {
-                FilteredListOfPsms.Clear();
-                PsmsGroupedByFile.Clear();
-                AllPsms.Clear();
-                MsDataFiles.Clear();
-            }
-
-            // load MS data files
-            if (loadSpectra)
-            {
-                LoadSpectraFiles(out var errors1);
-                errors.AddRange(errors1);
-            }
-
-            // load PSMs
-            if (loadPsms)
-            {
-                LoadPsms(out var errors2, loadSpectra);
-                errors.AddRange(errors2);
-            }
-
-            // load spectral libraries
-            LoadSpectralLibraries(out var errors3);
-            errors.AddRange(errors3);
-
-            return errors;
-        }
-
-        public void DisplayChimeraSpectra(PlotView plotView, List<PsmFromTsv> psms, out List<string> errors)
-        {
-            CleanUpCurrentlyDisplayedPlots();
-            errors = null;
-
-            // get the scan
-            if (!MsDataFiles.TryGetValue(psms.First().FileNameWithoutExtension, out DynamicDataConnection spectraFile))
-            {
-                errors = new List<string>();
-                errors.Add("The spectra file could not be found for this PSM: " + psms.First().FileNameWithoutExtension);
-                return;
-            }
-            MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psms.First().Ms2ScanNumber);
-            
-            ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(plotView, scan, psms);
-            ChimeraSpectrumMatchPlot.RefreshChart();
-            CurrentlyDisplayedPlots.Add(ChimeraSpectrumMatchPlot);
-        }
-
-        public void DisplaySpectrumMatch(PlotView plotView, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors)
+        public void DisplaySpectrumMatch(PlotView plotView, SpectrumMatchFromTsv sm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors)
         {
             errors = null;
 
@@ -122,37 +79,50 @@ namespace GuiFunctions
             CleanUpCurrentlyDisplayedPlots();
 
             // get the scan
-            if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out DynamicDataConnection spectraFile))
+            if (!MsDataFiles.TryGetValue(sm.FileNameWithoutExtension, out MsDataFile spectraFile))
             {
                 errors = new List<string>();
-                errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
+                errors.Add("The spectra file could not be found for this PSM: " + sm.FileNameWithoutExtension);
                 return;
             }
 
-            MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psm.Ms2ScanNumber);
+            MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(sm.Ms2ScanNumber);
+
             LibrarySpectrum librarySpectrum = null;
+            if (SpectralLibrary != null)
+            {
+                SpectralLibrary.TryGetSpectrum(sm.FullSequence, sm.PrecursorCharge, out var librarySpectrum1);
+                librarySpectrum = librarySpectrum1;
+            }
+
             //if not crosslinked
-            if (psm.BetaPeptideBaseSequence == null)
+            if (!sm.IsCrossLinkedPeptide())
             {
                 // get the library spectrum if relevant
                 if (SpectralLibrary != null)
                 {
-                    SpectralLibrary.TryGetSpectrum(psm.FullSequence, psm.PrecursorCharge, out var librarySpectrum1);
+                    SpectralLibrary.TryGetSpectrum(sm.FullSequence, sm.PrecursorCharge, out var librarySpectrum1);
                     librarySpectrum = librarySpectrum1;
                 }
 
-                SpectrumAnnotation = new PeptideSpectrumMatchPlot(plotView, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum, stationarySequence: true);
-
+                SpectrumAnnotation = new PeptideSpectrumMatchPlot(plotView, sm, scan, sm.MatchedIons, librarySpectrum: librarySpectrum, stationarySequence: true);
             }
             else //crosslinked
             {
-                SpectrumAnnotation = new CrosslinkSpectrumMatchPlot(plotView, psm, scan, StationarySequence.SequenceDrawingCanvas);
+                // get the library spectrum if relevant
+                if (SpectralLibrary != null)
+                {
+                    SpectralLibrary.TryGetSpectrum((sm as PsmFromTsv)!.UniqueSequence, sm.PrecursorCharge, out var librarySpectrum1);
+                    librarySpectrum = librarySpectrum1;
+                }
+
+                SpectrumAnnotation = new CrosslinkSpectrumMatchPlot(plotView, sm as PsmFromTsv, scan, StationarySequence.SequenceDrawingCanvas, librarySpectrum: librarySpectrum);
             }
 
             CurrentlyDisplayedPlots.Add(SpectrumAnnotation);
 
             // plot parent/child scans
-            if (psm.ChildScanMatchedIons != null)
+            if (sm.ChildScanMatchedIons != null)
             {
                 // draw parent scan
                 string parentAnnotation = "Scan: " + scan.OneBasedScanNumber
@@ -163,11 +133,11 @@ namespace GuiFunctions
 
                 var parentPlotView = new PlotView(); // placeholder
                 var parentCanvas = new Canvas();
-                DrawnSequence parentSequence = new(parentCanvas, psm, false);
-                parentSequence.AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, psm.MatchedIons, psm);
+                DrawnSequence parentSequence = new(parentCanvas, sm, false);
+                parentSequence.AnnotateBaseSequence(sm.BaseSeq, sm.FullSequence, 10, sm.MatchedIons, sm);
                 var item = new ParentChildScanPlotTemplate()
                 {
-                    Plot = new PeptideSpectrumMatchPlot(parentPlotView, psm, scan, psm.MatchedIons),
+                    Plot = new PeptideSpectrumMatchPlot(parentPlotView, sm, scan, sm.MatchedIons),
                     SpectrumLabel = parentAnnotation,
                     TheCanvas = parentSequence.SequenceDrawingCanvas
                 };
@@ -179,11 +149,11 @@ namespace GuiFunctions
 
                 // draw child scans
                 HashSet<int> scansDrawn = new HashSet<int>();
-                var allChildScanMatchedIons = psm.ChildScanMatchedIons;
+                var allChildScanMatchedIons = sm.ChildScanMatchedIons;
 
-                if (psm.BetaPeptideChildScanMatchedIons != null)
+                if (sm is PsmFromTsv { BetaPeptideChildScanMatchedIons: not null } peptide)
                 {
-                    allChildScanMatchedIons = allChildScanMatchedIons.Concat(psm.BetaPeptideChildScanMatchedIons)
+                    allChildScanMatchedIons = allChildScanMatchedIons.Concat(peptide.BetaPeptideChildScanMatchedIons)
                         .GroupBy(p => p.Key)
                         .ToDictionary(p => p.Key, q => q.SelectMany(p => p.Value).ToList());
                 }
@@ -210,12 +180,12 @@ namespace GuiFunctions
                         + " RetentionTime: " + childScan.RetentionTime.ToString("0.##");
 
                     Canvas childCanvas = new Canvas();
-                    DrawnSequence childSequence = new(childCanvas, psm, false);
-                    childSequence.AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedIons, psm);
+                    DrawnSequence childSequence = new(childCanvas, sm, false);
+                    childSequence.AnnotateBaseSequence(sm.BaseSeq, sm.FullSequence, 10, matchedIons, sm);
                     PlotView childPlotView = new PlotView(); // placeholder
 
                     // make the plot
-                    var childPlot = new PeptideSpectrumMatchPlot(childPlotView, psm, childScan, matchedIons, annotateProperties: false);
+                    var childPlot = new PeptideSpectrumMatchPlot(childPlotView, sm, childScan, matchedIons, annotateProperties: false);
                     childPlot.Model.Title = null;
                     childPlot.Model.Subtitle = null;
 
@@ -236,38 +206,38 @@ namespace GuiFunctions
         /// </summary>
         /// <param name="stationaryCanvas"></param>
         /// <param name="scrollableCanvas"></param>
-        /// <param name="psm"></param>
-        public void DisplaySequences(Canvas stationaryCanvas, Canvas scrollableCanvas, Canvas sequenceAnnotationCanvas, PsmFromTsv psm)
+        /// <param name="sm"></param>
+        public void DisplaySequences(Canvas stationaryCanvas, Canvas scrollableCanvas, Canvas sequenceAnnotationCanvas, SpectrumMatchFromTsv sm)
         {
-            if (!psm.FullSequence.Contains('|'))
+            if (!sm.FullSequence.Contains('|'))
             {
                 if (scrollableCanvas != null)
                 {
-                    ScrollableSequence = new(scrollableCanvas, psm, false);
+                    ScrollableSequence = new(scrollableCanvas, sm, false);
                 }
 
                 if (stationaryCanvas != null && MetaDrawSettings.DrawStationarySequence)
                 {
-                    if (psm.BetaPeptideBaseSequence == null) // if not crosslinked
+                    if (!sm.IsCrossLinkedPeptide()) // if not crosslinked
                     {
-                        StationarySequence = new(stationaryCanvas, psm, true);
+                        StationarySequence = new(stationaryCanvas, sm, true);
                     }
                     else
                     {
-                        StationarySequence = new(stationaryCanvas, psm, false);
+                        StationarySequence = new(stationaryCanvas, sm, false);
                         StationarySequence.DrawCrossLinkSequence();
                     }
                 }
 
                 if (sequenceAnnotationCanvas != null)
                 {
-                   SequenceAnnotation = new(sequenceAnnotationCanvas, psm, false, true);
+                   SequenceAnnotation = new(sequenceAnnotationCanvas, sm, false, true);
                 }
             }   
         }
 
         //draw the sequence coverage map: write out the sequence, overlay modifications, and display matched fragments
-        public void DrawSequenceCoverageMap(PsmFromTsv psm, Canvas sequenceText, Canvas map)
+        public void DrawSequenceCoverageMap(SpectrumMatchFromTsv sm, Canvas sequenceText, Canvas map)
         {
             map.Children.Clear();
             sequenceText.Children.Clear();
@@ -276,7 +246,7 @@ namespace GuiFunctions
             const int textHeight = 140;
             const int heightIncrement = 5;
             const int xShift = 10;
-            int peptideLength = psm.BaseSeq.Length;
+            int peptideLength = sm.BaseSeq.Length;
 
             //intensity arrays for each ion type
             double[] nIntensityArray = new double[peptideLength - 1];
@@ -289,28 +259,28 @@ namespace GuiFunctions
             Color internalColor = DrawnSequence.ParseColorFromOxyColor(MetaDrawSettings.CoverageTypeToColor["Internal Color"]);
 
             //draw sequence text
-            for (int r = 0; r < psm.BaseSeq.Length; r++)
+            for (int r = 0; r < sm.BaseSeq.Length; r++)
             {
                 TextDrawing(sequenceText, new Point(r * spacing + xShift, textHeight - 30), (r + 1).ToString(), Brushes.Black, 8);
-                TextDrawing(sequenceText, new Point(r * spacing + xShift, textHeight - 15), (psm.BaseSeq.Length - r).ToString(), Brushes.Black, 8);
-                TextDrawing(sequenceText, new Point(r * spacing + xShift, textHeight), psm.BaseSeq[r].ToString(), Brushes.Black, 16);
+                TextDrawing(sequenceText, new Point(r * spacing + xShift, textHeight - 15), (sm.BaseSeq.Length - r).ToString(), Brushes.Black, 8);
+                TextDrawing(sequenceText, new Point(r * spacing + xShift, textHeight), sm.BaseSeq[r].ToString(), Brushes.Black, 16);
             }
 
             //create circles for mods, if needed and able
-            if (!psm.FullSequence.Contains("|")) //can't draw mods if not localized/identified
+            if (!sm.FullSequence.Contains("|")) //can't draw mods if not localized/identified
             {
-                DrawnSequence.AnnotateModifications(psm, sequenceText, psm.FullSequence, textHeight-4, spacing, xShift+5);
+                DrawnSequence.AnnotateModifications(sm, sequenceText, sm.FullSequence, textHeight-4, spacing, xShift+5);
             }
 
             //draw lines for each matched fragment
             List<bool[]> index = new List<bool[]>();
 
             //N-terminal
-            List<MatchedFragmentIon> nTermFragments = psm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).ToList();
+            List<MatchedFragmentIon> leftTermFragments = sm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime).ToList();
             //C-terminal in reverse order
-            List<MatchedFragmentIon> cTermFragments = psm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).OrderByDescending(x => x.NeutralTheoreticalProduct.FragmentNumber).ToList();
+            List<MatchedFragmentIon> rightTermFragments = sm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime).OrderByDescending(x => x.NeutralTheoreticalProduct.FragmentNumber).ToList();
             //add internal fragments
-            List<MatchedFragmentIon> internalFragments = psm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.SecondaryProductType != null).OrderBy(x => x.NeutralTheoreticalProduct.FragmentNumber).ToList();
+            List<MatchedFragmentIon> internalFragments = sm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.SecondaryProductType != null).OrderBy(x => x.NeutralTheoreticalProduct.FragmentNumber).ToList();
 
             //indexes to navigate terminal ions
             int n = 0;
@@ -318,10 +288,10 @@ namespace GuiFunctions
             int heightForThisFragment = 70; //location to draw a fragment
 
             //line up terminal fragments so that complementary ions are paired on the same line
-            while (n < nTermFragments.Count && c < cTermFragments.Count)
+            while (n < leftTermFragments.Count && c < rightTermFragments.Count)
             {
-                MatchedFragmentIon nProduct = nTermFragments[n];
-                MatchedFragmentIon cProduct = cTermFragments[c];
+                MatchedFragmentIon nProduct = leftTermFragments[n];
+                MatchedFragmentIon cProduct = rightTermFragments[c];
                 int expectedComplementary = peptideLength - nProduct.NeutralTheoreticalProduct.FragmentNumber;
                 //if complementary pair
                 if (cProduct.NeutralTheoreticalProduct.FragmentNumber == expectedComplementary)
@@ -355,33 +325,39 @@ namespace GuiFunctions
                 heightForThisFragment += heightIncrement;
             }
             //wrap up leftover fragments without complementary pairs
-            for (; n < nTermFragments.Count; n++)
+            for (; n < leftTermFragments.Count; n++)
             {
-                MatchedFragmentIon nProduct = nTermFragments[n];
+                MatchedFragmentIon nProduct = leftTermFragments[n];
                 DrawHorizontalLine(0, nProduct.NeutralTheoreticalProduct.FragmentNumber, map, heightForThisFragment, nColor, spacing);
                 nIntensityArray[nProduct.NeutralTheoreticalProduct.FragmentNumber - 1] += nProduct.Intensity;
                 heightForThisFragment += heightIncrement;
             }
-            for (; c < cTermFragments.Count; c++)
+            for (; c < rightTermFragments.Count; c++)
             {
-                MatchedFragmentIon cProduct = cTermFragments[c];
+                MatchedFragmentIon cProduct = rightTermFragments[c];
                 DrawHorizontalLine(peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber, peptideLength, map, heightForThisFragment, cColor, spacing);
                 cIntensityArray[peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber - 1] += cProduct.Intensity;
                 heightForThisFragment += heightIncrement;
             }
 
             //internal fragments
-            foreach (MatchedFragmentIon fragment in internalFragments)
+            if (MetaDrawSettings.DisplayInternalIons)
             {
-                DrawHorizontalLine(fragment.NeutralTheoreticalProduct.FragmentNumber, fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber, map, heightForThisFragment, internalColor, spacing);
-                internalIntensityArray[fragment.NeutralTheoreticalProduct.FragmentNumber - 1] += fragment.Intensity;
-                internalIntensityArray[fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber - 1] += fragment.Intensity;
-                heightForThisFragment += heightIncrement;
+                foreach (MatchedFragmentIon fragment in internalFragments)
+                {
+                    DrawHorizontalLine(fragment.NeutralTheoreticalProduct.FragmentNumber,
+                        fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber, map, heightForThisFragment,
+                        internalColor, spacing);
+                    internalIntensityArray[fragment.NeutralTheoreticalProduct.FragmentNumber - 1] += fragment.Intensity;
+                    internalIntensityArray[fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber - 1] +=
+                        fragment.Intensity;
+                    heightForThisFragment += heightIncrement;
+                }
             }
 
             map.Height = heightForThisFragment + 100;
-            map.Width = spacing * psm.BaseSeq.Length + 100;
-            sequenceText.Width = spacing * psm.BaseSeq.Length + 100;
+            map.Width = spacing * sm.BaseSeq.Length + 100;
+            sequenceText.Width = spacing * sm.BaseSeq.Length + 100;
 
             ////PLOT INTENSITY HISTOGRAM////
             double[] intensityArray = new double[peptideLength - 1];
@@ -476,9 +452,20 @@ namespace GuiFunctions
             Canvas.SetZIndex(line, 1); //on top of any other things in canvas
         }
 
-        public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<PsmFromTsv> spectrumMatches,
+        #endregion
+
+        public MsDataScan GetMs2ScanFromPsm(SpectrumMatchFromTsv spectralMatch)
+        {
+            return !MsDataFiles.TryGetValue(spectralMatch.FileNameWithoutExtension, out MsDataFile spectraFile) 
+                ? null 
+                : spectraFile.GetOneBasedScanFromDynamicConnection(spectralMatch.Ms2ScanNumber);
+        }
+
+        #region Plot Export
+
+        public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<SpectrumMatchFromTsv> spectrumMatches,
             ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors,
-            Canvas legendCanvas = null, Vector ptmLegendLocationVector = new())
+            Canvas legendCanvas = null, Vector ptmLegendLocationVector = new(), FragmentationReanalysisViewModel? reFragment = null)
         {
             errors = new List<string>();
 
@@ -486,14 +473,24 @@ namespace GuiFunctions
             {
                 Directory.CreateDirectory(directory);
             }
-            
+
             foreach (var psm in spectrumMatches)
             {
                 // get the scan
-                if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out DynamicDataConnection spectraFile))
+                if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out MsDataFile spectraFile))
                 {
                     errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
                     return;
+                }
+
+                // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
+                List<MatchedFragmentIon> oldMatchedIons = null;
+                if (reFragment is not null)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    var scan = GetMs2ScanFromPsm(psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm, false);
+                    psm.MatchedIons = newIons;
                 }
 
                 if (plotView.Name == "plotView")
@@ -501,20 +498,17 @@ namespace GuiFunctions
                     DisplaySequences(stationaryCanvas, null, null, psm);
                     DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
                 }
-                else if (plotView.Name == "chimeraPlot")
-                {
-                    List<PsmFromTsv> chimericPsms = FilteredListOfPsms
-                        .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
-                    DisplayChimeraSpectra(plotView, chimericPsms, out errors);
-                }
-                
 
                 if (errors != null)
                 {
                     errors.AddRange(errors);
                 }
 
-                string sequence = illegalInFileName.Replace(psm.FullSequence, string.Empty);
+                string sequence = psm.IsPeptide()
+                    ? !(psm as PsmFromTsv).UniqueSequence.IsNullOrEmptyOrWhiteSpace()
+                        ? illegalInFileName.Replace((psm as PsmFromTsv).UniqueSequence, string.Empty)
+                        : illegalInFileName.Replace(psm.FullSequence, string.Empty)
+                    : psm.FullSequence;
 
                 if (sequence.Length > 30)
                 {
@@ -523,12 +517,12 @@ namespace GuiFunctions
 
                 foreach (var plot in CurrentlyDisplayedPlots)
                 {
-                    string filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "." + MetaDrawSettings.ExportType);
+                    string filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "." + MetaDrawSettings.ExportType.ToLower());
 
                     int i = 2;
                     while (File.Exists(filePath))
                     {
-                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + "." + MetaDrawSettings.ExportType);
+                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + "." + MetaDrawSettings.ExportType.ToLower());
                         i++;
                     }
 
@@ -537,13 +531,10 @@ namespace GuiFunctions
                     switch (type.Name)
                     {
                         case "PeptideSpectrumMatchPlot":
+                            if (!plot.SpectrumMatch.FullSequence.Contains('['))
+                                legendCanvas = null;
                             ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
-                            break;
-
-                        case "ChimeraSpectrumMatchPlot":
-                            ((ChimeraSpectrumMatchPlot)plot).ExportPlot(filePath, legendCanvas, plotView.ActualWidth,
-                                plotView.ActualHeight);
                             break;
 
                         case "CrosslinkSpectrumMatchPlot":
@@ -552,22 +543,31 @@ namespace GuiFunctions
                             break;
                     }
                 }
+                // put the original ions back in place if they were altered
+                if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                    psm.MatchedIons = oldMatchedIons;
             }
 
             if (plotView.Name == "plotView")
             {
-                DisplaySequences(stationaryCanvas, null, null, spectrumMatches.First());
-                DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out errors);
-            }
-            else if (plotView.Name == "chimeraPlot")
-            {
-                List<PsmFromTsv> chimericPsms = FilteredListOfPsms
-                    .Where(p => p.Ms2ScanNumber == spectrumMatches.First().Ms2ScanNumber &&
-                                p.FileNameWithoutExtension == spectrumMatches.First().FileNameWithoutExtension)
-                    .ToList();
-                DisplayChimeraSpectra(plotView, chimericPsms, out errors);
-            }
+                var psm = spectrumMatches.First();
 
+                // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
+                List<MatchedFragmentIon> oldMatchedIons = null;
+                if (reFragment is not null && reFragment.Persist)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    var scan = GetMs2ScanFromPsm(psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm, false);
+                    psm.MatchedIons = newIons;
+                }
+                DisplaySequences(stationaryCanvas, null, null, psm);
+                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+
+                // put the original ions back in place if they were altered
+                if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                    psm.MatchedIons = oldMatchedIons;
+            }
         }
 
         /// <summary>
@@ -576,9 +576,9 @@ namespace GuiFunctions
         /// <param name="textCanvas">representes the text and intensity bars</param>
         /// <param name="mapCanvas">represents the sequence coverage map</param>
         /// <param name="directory">where the files will be outputted</param>
-        /// <param name="fullSequence">fullsequence of the psm map being outputted</param>
-        /// <param name="scanNumber">MS2 scan number of the psm map being outputted</param>
-        public void ExportSequenceCoverage(Canvas textCanvas, Canvas mapCanvas, string directory, PsmFromTsv psm)
+        /// <param name="fullSequence">fullsequence of the sm map being outputted</param>
+        /// <param name="scanNumber">MS2 scan number of the sm map being outputted</param>
+        public void ExportSequenceCoverage(Canvas textCanvas, Canvas mapCanvas, string directory, SpectrumMatchFromTsv sm)
         {
             // initialize values
             if (!Directory.Exists(directory))
@@ -586,12 +586,12 @@ namespace GuiFunctions
                 Directory.CreateDirectory(directory);
             }
 
-            string sequence = illegalInFileName.Replace(psm.FullSequence, string.Empty);
+            string sequence = illegalInFileName.Replace(sm.FullSequence, string.Empty);
             if (sequence.Length > 30)
             {
                 sequence = sequence.Substring(0, 30);
             }
-            string path = System.IO.Path.Combine(directory, psm.Ms2ScanNumber + "_" + sequence + "_SequenceCoverage." + MetaDrawSettings.ExportType);
+            string path = System.IO.Path.Combine(directory, sm.Ms2ScanNumber + "_" + sequence + "_SequenceCoverage." + MetaDrawSettings.ExportType.ToLower());
 
             // convert to format for export
             System.Drawing.Bitmap textBitmap = ConvertCanvasToBitmap(textCanvas, directory);
@@ -611,10 +611,10 @@ namespace GuiFunctions
         /// </summary>
         /// <param name="sequenceAnnotaitonCanvas">canvas of the sequence annotaiton</param>
         /// <param name="ptmLegend">current depiction of the ptm legend</param>
-        /// <param name="psm">the psm being annotated</param>
+        /// <param name="psm">the sm being annotated</param>
         /// <param name="directory">where the files will be outputte</param>
         /// <param name="width">width of the annotation area</param>
-        public void ExportAnnotatedSequence(Canvas sequenceAnnotaitonCanvas, System.Windows.UIElement ptmLegend, PsmFromTsv psm, string directory, int width)
+        public void ExportAnnotatedSequence(Canvas sequenceAnnotaitonCanvas, System.Windows.UIElement ptmLegend, SpectrumMatchFromTsv psm, string directory, int width)
         {
             // initialize values
             if (!Directory.Exists(directory))
@@ -627,7 +627,7 @@ namespace GuiFunctions
             {
                 sequence = sequence.Substring(0, 30);
             }
-            string path = System.IO.Path.Combine(directory, psm.Ms2ScanNumber + "_" + sequence + "_SequenceAnnotation." + MetaDrawSettings.ExportType);
+            string path = System.IO.Path.Combine(directory, psm.Ms2ScanNumber + "_" + sequence + "_SequenceAnnotation." + MetaDrawSettings.ExportType.ToLower());
             int rows = (int)Math.Ceiling((double)psm.BaseSeq.Length / (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment * MetaDrawSettings.SequenceAnnotationSegmentPerRow)); ;
 
             // convert to format for export
@@ -712,13 +712,15 @@ namespace GuiFunctions
             }
         }
 
+        #endregion
+
         public void FilterPsms()
         {
             lock (ThreadLocker)
             {
                 FilteredListOfPsms.Clear();
 
-                foreach (var psm in AllPsms.Where(p => MetaDrawSettings.FilterAcceptsPsm(p)))
+                foreach (var psm in AllSpectralMatches.Where(MetaDrawSettings.FilterAcceptsPsm))
                 {
                     FilteredListOfPsms.Add(psm);
                 }
@@ -735,27 +737,26 @@ namespace GuiFunctions
             {
                 PeptideSpectralMatchesView.Filter = obj =>
                 {
-                    PsmFromTsv psm = obj as PsmFromTsv;
+                    SpectrumMatchFromTsv psm = obj as SpectrumMatchFromTsv;
                     return ((psm.Ms2ScanNumber.ToString()).StartsWith(searchString) || psm.FullSequence.ToUpper().Contains(searchString.ToUpper()) 
-                    || psm.ProteinName.Contains(searchString) || psm.OrganismName.Contains(searchString));
+                    || psm.Name.Contains(searchString) || psm.OrganismName.Contains(searchString));
                 };
             }
         }
 
-        public void FilterPsmsToChimerasOnly()
+        #region Resource Management
+
+        public List<string> LoadFiles(bool loadSpectra, bool loadPsms)
         {
             lock (ThreadLocker)
             {
                 FilteredListOfPsms.Clear();
-
-                var filteredChimericPsms = ChimericPsms.Where(p => MetaDrawSettings.FilterAcceptsPsm(p));
-                foreach (var psm in filteredChimericPsms)
-                {
-                    if (filteredChimericPsms.Count(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
-                        FilteredListOfPsms.Add(psm);
-                }
+                SpectralMatchesGroupedByFile.Clear();
+                AllSpectralMatches.Clear();
+                MsDataFiles.Clear();
             }
 
+            return new MetaDrawDataLoader(this).LoadAllAsync(loadSpectra, loadPsms, true).Result;
         }
 
         public void CleanUpResources()
@@ -777,6 +778,7 @@ namespace GuiFunctions
                 {
                     connection.Value.CloseDynamicConnection();
                 }
+                Thread.Sleep(1000); // sleep for one second to allow for test methods ran asychronously in parallel to finish, otherwise the tests will fail
                 MsDataFiles.Clear();
             }
         }
@@ -785,9 +787,9 @@ namespace GuiFunctions
         {
             lock (ThreadLocker)
             {
-                AllPsms.Clear();
+                AllSpectralMatches.Clear();
                 FilteredListOfPsms.Clear();
-                PsmResultFilePaths.Clear();
+                SpectralMatchResultFilePaths.Clear();
             }
         }
 
@@ -808,6 +810,8 @@ namespace GuiFunctions
             if (CurrentlyDisplayedPlots != null && CurrentlyDisplayedPlots.Any())
                 CurrentlyDisplayedPlots.Clear();
         }
+
+        #endregion
 
         #region Private Helpers
 
@@ -902,7 +906,7 @@ namespace GuiFunctions
         /// </summary>
         /// <param name="bitmap">image to be exported</param>
         /// <param name="path">where it should be exported to</param>
-        private void ExportBitmap(System.Drawing.Bitmap bitmap, string path)
+        internal static void ExportBitmap(System.Drawing.Bitmap bitmap, string path)
         {
             switch (MetaDrawSettings.ExportType)
             {
@@ -939,128 +943,6 @@ namespace GuiFunctions
                 case "Bmp":
                     bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Bmp);
                     break;
-            }
-        }
-
-        private void LoadPsms(out List<string> errors, bool haveLoadedSpectra)
-        {
-            errors = new List<string>();
-
-            HashSet<string> fileNamesWithoutExtension = new HashSet<string>(
-                SpectraFilePaths.Select(p => System.IO.Path.GetFileName(p.Replace(GlobalVariables.GetFileExtension(p), string.Empty))));
-            List<PsmFromTsv> psmsThatDontHaveMatchingSpectraFile = new List<PsmFromTsv>();
-
-            try
-            {
-                foreach (var resultsFile in PsmResultFilePaths)
-                {
-                    lock (ThreadLocker)
-                    {
-                        var psms = PsmTsvReader.ReadTsv(resultsFile, out List<string> warnings);
-                        foreach (PsmFromTsv psm in psms)
-                        {
-                            if (fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension) || !haveLoadedSpectra)
-                            {
-                                AllPsms.Add(psm);
-                            }
-                            else
-                            {
-                                psmsThatDontHaveMatchingSpectraFile.Add(psm);
-                            }
-
-                            if (PsmsGroupedByFile.TryGetValue(psm.FileNameWithoutExtension, out var psmsForThisFile))
-                            {
-                                psmsForThisFile.Add(psm);
-                            }
-                            else
-                            {
-                                PsmsGroupedByFile.Add(psm.FileNameWithoutExtension, new ObservableCollection<PsmFromTsv> { psm });
-                            }
-                        }
-                    }
-                }
-
-                foreach (var psm in AllPsms)
-                {
-                    if (AllPsms.Count(p =>
-                            p.Ms2ScanNumber == psm.Ms2ScanNumber &&
-                            p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
-                    {
-                        ChimericPsms.Add(psm);
-                    }
-                }
-
-            }
-            catch (Exception e)
-            {
-                errors.Add("Error reading PSM file:\n" + e.Message);
-            }
-
-            if (psmsThatDontHaveMatchingSpectraFile.Any())
-            {
-                foreach (var file in psmsThatDontHaveMatchingSpectraFile.GroupBy(p => p.FileNameWithoutExtension))
-                {
-                    errors.Add(file.Count() + " PSMs from " + file.Key + " were not loaded because this spectra file was not found");
-                }
-            }
-
-            FilterPsms();
-        }
-
-        private void LoadSpectraFiles(out List<string> errors)
-        {
-            errors = new List<string>();
-
-            foreach (var filepath in SpectraFilePaths)
-            {
-                lock (ThreadLocker)
-                {
-                    var fileNameWithoutExtension = filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty);
-                    fileNameWithoutExtension = System.IO.Path.GetFileName(fileNameWithoutExtension);
-
-                    DynamicDataConnection spectraFile = null;
-                    string extension = GlobalVariables.GetFileExtension(filepath);
-
-                    if (extension.Equals(".mzML", StringComparison.OrdinalIgnoreCase))
-                    {
-                        spectraFile = new MzmlDynamicData(filepath);
-                    }
-                    else if (extension.Equals(".mgf", StringComparison.OrdinalIgnoreCase))
-                    {
-                        spectraFile = new MgfDynamicData(filepath);
-                    }
-                    else if (extension.Equals(".raw", StringComparison.OrdinalIgnoreCase))
-                    {
-                        spectraFile = new ThermoDynamicData(filepath);
-                    }
-                    else
-                    {
-                        errors.Add("Unrecognized spectra file type: " + extension);
-                        continue;
-                    }
-
-                    if (!MsDataFiles.TryAdd(fileNameWithoutExtension, spectraFile))
-                    {
-                        spectraFile.CloseDynamicConnection();
-                        // print warning? but probably unnecessary. this means the data file was loaded twice. 
-                        // which is an error but not an important one because the data is loaded
-                    }
-                }
-            }
-        }
-
-        private void LoadSpectralLibraries(out List<string> errors)
-        {
-            errors = new List<string>();
-
-            try
-            {
-                SpectralLibrary = new SpectralLibrary(SpectralLibraryPaths.ToList());
-            }
-            catch (Exception e)
-            {
-                SpectralLibrary = null;
-                errors.Add("Problem loading spectral library: " + e.Message);
             }
         }
     }

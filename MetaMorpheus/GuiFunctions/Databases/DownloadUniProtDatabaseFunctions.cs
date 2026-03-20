@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace GuiFunctions.Databases
 {
@@ -11,32 +13,19 @@ namespace GuiFunctions.Databases
         public static string GetUniProtHtmlQueryString(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed)
         {
             StringBuilder htmlQueryString = new StringBuilder();
-            htmlQueryString.Append("https://rest.uniprot.org/uniprotkb/stream?");
+            htmlQueryString.Append("https://rest.uniprot.org/uniprotkb/search?");
 
-            if (!xmlFormat) //fasta
-            {
-                htmlQueryString.Append("format=fasta");
-            }
-            else
-            {
-                htmlQueryString.Append("format=xml");
-            }
+            string[] queryArray = new string[4];
 
-            if (isoforms && !xmlFormat) //Only the .fasta file can be isoforms
-            {
-                htmlQueryString.Append("&includeIsoform=true");
-            }
+            queryArray[0] = compressed ? "compressed=true" : null;
+            queryArray[1] = xmlFormat ? "format=xml" : "format=fasta";
+            queryArray[2] = isoforms && !xmlFormat ? "includeIsoform=true" : null;
+            queryArray[3] = reviewed ? $"query=reviewed:true&proteome:{proteomeID}" : $"query=proteome:{proteomeID}";
 
-            if (reviewed)
-            {
-                htmlQueryString.Append("&reviewed=true");
-            }
+            IEnumerable<string> queryArrayReduced = queryArray.Where(x => x != null);
 
-            if (compressed)
-            {
-                htmlQueryString.Append("&compressed=true");
-            }
-            htmlQueryString.Append("&query=%28%28proteome%3A" + proteomeID + "%29%29");
+            htmlQueryString.Append(string.Join("&", queryArrayReduced));
+
             return htmlQueryString.ToString();
         }
 

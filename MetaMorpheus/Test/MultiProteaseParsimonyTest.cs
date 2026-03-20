@@ -3,13 +3,18 @@ using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
+using Omics.Digestion;
+using Omics.Modifications;
 using TaskLayer;
+using Omics;
+using EngineLayer.SpectrumMatch;
 
 namespace Test
 {
@@ -50,18 +55,18 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmPEPR_T = new PeptideSpectralMatch(pepA_1T, 0, 10, 0, scan, commonParameters_Tryp, new List<MatchedFragmentIon>());
-            psmPEPR_T.AddOrReplace(pepA_2T, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            psmPEPR_T.AddOrReplace(pepA_3T, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmPEPR_A = new PeptideSpectralMatch(pepA_2A, 0, 10, 0, scan, commonParameters_ArgC, new List<MatchedFragmentIon>());
-            psmPEPR_A.AddOrReplace(pepA_3A, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmABCK_T = new PeptideSpectralMatch(pepB_1T, 0, 10, 0, scan, commonParameters_Tryp, new List<MatchedFragmentIon>());
+            SpectralMatch psmPEPR_T = new PeptideSpectralMatch(pepA_1T, 0, 10, 0, scan, commonParameters_Tryp, new List<MatchedFragmentIon>());
+            psmPEPR_T.AddOrReplace(pepA_2T, 10, 0, true, new List<MatchedFragmentIon>());
+            psmPEPR_T.AddOrReplace(pepA_3T, 10, 0, true, new List<MatchedFragmentIon>());
+            SpectralMatch psmPEPR_A = new PeptideSpectralMatch(pepA_2A, 0, 10, 0, scan, commonParameters_ArgC, new List<MatchedFragmentIon>());
+            psmPEPR_A.AddOrReplace(pepA_3A, 10, 0, true, new List<MatchedFragmentIon>());
+            SpectralMatch psmABCK_T = new PeptideSpectralMatch(pepB_1T, 0, 10, 0, scan, commonParameters_Tryp, new List<MatchedFragmentIon>());
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmPEPR_T, psmPEPR_A, psmABCK_T };
+            List<SpectralMatch> psms = new List<SpectralMatch> { psmPEPR_T, psmPEPR_A, psmABCK_T };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters_Tryp.DigestionParams);
             digestionParamsList.Add(commonParameters_ArgC.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -72,21 +77,23 @@ namespace Test
             Modification mod2 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif2, _locationRestriction: "Anyhwere.", _monoisotopicMass: 15.99491461957);
             List<Modification> modFixedList = new List<Modification> { mod };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters_Tryp);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
-            Assert.AreEqual(2, proteinGroups.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(2));
             var proteinGroup1 = proteinGroups.Where(h => h.ProteinGroupName == "1").First();
-            Assert.AreEqual(1, proteinGroup1.UniquePeptides.Count);
-            Assert.AreEqual(2, proteinGroup1.AllPeptides.Count);
+            Assert.That(proteinGroup1.UniquePeptides.Count, Is.EqualTo(1));
+            Assert.That(proteinGroup1.AllPeptides.Count, Is.EqualTo(2));
             var proteinGroup2 = proteinGroups.Where(h => h.ProteinGroupName == "2|3").First();
-            Assert.AreEqual(0, proteinGroup2.UniquePeptides.Count);
-            Assert.AreEqual(4, proteinGroup2.AllPeptides.Count);
+            Assert.That(proteinGroup2.UniquePeptides.Count, Is.EqualTo(0));
+            Assert.That(proteinGroup2.AllPeptides.Count, Is.EqualTo(4));
         }
 
         /// <summary>
@@ -137,19 +144,19 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters1, new List<MatchedFragmentIon>());
-            psmABC_Dp1.AddOrReplace(pepA_2Dp1, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_1Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            psmABC_Dp2.AddOrReplace(pepA_2Dp2, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmEFG_Dp1 = new PeptideSpectralMatch(pepB_2Dp1, 0, 10, 0, scan, commonParameters1, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters1, new List<MatchedFragmentIon>());
+            psmABC_Dp1.AddOrReplace(pepA_2Dp1, 10, 0, true, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_1Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            psmABC_Dp2.AddOrReplace(pepA_2Dp2, 10, 0, true, new List<MatchedFragmentIon>());
+            SpectralMatch psmEFG_Dp1 = new PeptideSpectralMatch(pepB_2Dp1, 0, 10, 0, scan, commonParameters1, new List<MatchedFragmentIon>());
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFG_Dp1 };
+            List<SpectralMatch> psms = new List<SpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFG_Dp1 };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters1.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -160,17 +167,19 @@ namespace Test
             Modification mod2 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif2, _locationRestriction: "Anyhwere.", _monoisotopicMass: 15.99491461957);
             List<Modification> modFixedList = new List<Modification> { mod };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters1);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
             // should result in 1 protein group (protein2)
-            Assert.AreEqual(1, proteinGroups.Count);
-            Assert.AreEqual("2", proteinGroups.ElementAt(0).ProteinGroupName);
+            Assert.That(proteinGroups.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("2"));
         }
 
         /// <summary>
@@ -215,19 +224,19 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepB_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepB_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmEFGABC_Dp1 = new PeptideSpectralMatch(pepC_2Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmXYZ_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            psmXYZ_Dp1.AddOrReplace(pepA_2Dp1, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            SpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepB_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepB_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmEFGABC_Dp1 = new PeptideSpectralMatch(pepC_2Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmXYZ_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            psmXYZ_Dp1.AddOrReplace(pepA_2Dp1, 10, 0, true, new List<MatchedFragmentIon>());
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFGABC_Dp1, psmXYZ_Dp1 };
+            List<SpectralMatch> psms = new List<SpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFGABC_Dp1, psmXYZ_Dp1 };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -238,34 +247,36 @@ namespace Test
             Modification mod2 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif2, _locationRestriction: "Anyhwere.", _monoisotopicMass: 15.99491461957);
             List<Modification> modFixedList = new List<Modification> { mod };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
-            Assert.AreEqual(2, proteinGroups.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(2));
 
             var proteinGroup1 = proteinGroups.Where(p => p.ProteinGroupName == "1").First();
-            Assert.AreEqual(2, proteinGroup1.AllPeptides.Count);
-            Assert.AreEqual(1, proteinGroup1.UniquePeptides.Count);
+            Assert.That(proteinGroup1.AllPeptides.Count, Is.EqualTo(2));
+            Assert.That(proteinGroup1.UniquePeptides.Count, Is.EqualTo(1));
             var pg1pep1 = proteinGroup1.AllPeptides.Where(p => p.BaseSequence == "XYZ").First();
-            Assert.That(pg1pep1.DigestionParams.Protease.Name == "proteaseA");
+            Assert.That(pg1pep1.DigestionParams.DigestionAgent.Name == "proteaseA");
             var pg1pep2 = proteinGroup1.AllPeptides.Where(p => p.BaseSequence == "ABC").First();
-            Assert.That(pg1pep2.DigestionParams.Protease.Name == "proteaseA");
+            Assert.That(pg1pep2.DigestionParams.DigestionAgent.Name == "proteaseA");
             Assert.That(proteinGroup1.UniquePeptides.First().BaseSequence.Equals("ABC"));
 
             var proteinGroup2 = proteinGroups.Where(p => p.ProteinGroupName == "2").First();
-            Assert.AreEqual(3, proteinGroup2.AllPeptides.Count);
-            Assert.AreEqual(2, proteinGroup2.UniquePeptides.Count);
+            Assert.That(proteinGroup2.AllPeptides.Count, Is.EqualTo(3));
+            Assert.That(proteinGroup2.UniquePeptides.Count, Is.EqualTo(2));
             var pg2pep1 = proteinGroup2.AllPeptides.Where(p => p.BaseSequence == "XYZ").First();
-            Assert.That(pg2pep1.DigestionParams.Protease.Name == "proteaseA");
+            Assert.That(pg2pep1.DigestionParams.DigestionAgent.Name == "proteaseA");
             var pg2pep2 = proteinGroup2.AllPeptides.Where(p => p.BaseSequence == "ABC").First();
-            Assert.That(pg2pep2.DigestionParams.Protease.Name == "proteaseB");
+            Assert.That(pg2pep2.DigestionParams.DigestionAgent.Name == "proteaseB");
             var pg2pep3 = proteinGroup2.AllPeptides.Where(p => p.BaseSequence == "EFGABC").First();
-            Assert.That(pg2pep3.DigestionParams.Protease.Name == "proteaseA");
+            Assert.That(pg2pep3.DigestionParams.DigestionAgent.Name == "proteaseA");
             var uniquePeptideSequences = proteinGroup2.UniquePeptides.Select(p => p.BaseSequence).ToList();
             Assert.That(uniquePeptideSequences.Contains("ABC"));
             Assert.That(uniquePeptideSequences.Contains("EFGABC"));
@@ -318,47 +329,49 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmEFG_Dp1 = new PeptideSpectralMatch(pepB_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmEFG_Dp2 = new PeptideSpectralMatch(pepB_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmEFG_Dp1 = new PeptideSpectralMatch(pepB_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmEFG_Dp2 = new PeptideSpectralMatch(pepB_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFG_Dp1, psmEFG_Dp2 };
+            List<SpectralMatch> psms = new List<SpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFG_Dp1, psmEFG_Dp2 };
 
             psms.ForEach(h => h.ResolveAllAmbiguities());
             psms.ForEach(h => h.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
 
-            Assert.AreEqual(2, proteinGroups.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(2));
 
             // check first protein group
             ProteinGroup pg1 = proteinGroups.Where(v => v.ProteinGroupName == "1").First();
-            PeptideWithSetModifications pg1pep1 = pg1.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
-            PeptideWithSetModifications pg1pep2 = pg1.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
+            IBioPolymerWithSetMods pg1pep1 = pg1.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
+            IBioPolymerWithSetMods pg1pep2 = pg1.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
             Assert.That(pg1.UniquePeptides.Contains(pg1pep1));
-            Assert.That(pg1pep1.DigestionParams.Protease.Name == "testA");
+            Assert.That(pg1pep1.DigestionParams.DigestionAgent.Name == "testA");
             Assert.That(pg1.UniquePeptides.Contains(pg1pep2));
-            Assert.That(pg1pep2.DigestionParams.Protease.Name == "testA");
+            Assert.That(pg1pep2.DigestionParams.DigestionAgent.Name == "testA");
             Assert.That(pg1.AllPeptides.Count == 2);
             Assert.That(pg1.UniquePeptides.Count == 2);
 
             // check second protein group
             ProteinGroup pg2 = proteinGroups.Where(v => v.ProteinGroupName == "2").First();
-            PeptideWithSetModifications pg2pep1 = pg2.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
-            PeptideWithSetModifications pg2pep2 = pg2.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
+            IBioPolymerWithSetMods pg2pep1 = pg2.AllPeptides.Where(v => v.BaseSequence == "ABC").First();
+            IBioPolymerWithSetMods pg2pep2 = pg2.AllPeptides.Where(v => v.BaseSequence == "EFG").First();
             Assert.That(pg2.UniquePeptides.Contains(pg2pep1));
-            Assert.That(pg2pep1.DigestionParams.Protease.Name == "testB");
+            Assert.That(pg2pep1.DigestionParams.DigestionAgent.Name == "testB");
             Assert.That(pg2.UniquePeptides.Contains(pg2pep2));
-            Assert.That(pg2pep2.DigestionParams.Protease.Name == "testB");
+            Assert.That(pg2pep2.DigestionParams.DigestionAgent.Name == "testB");
             Assert.That(pg2.AllPeptides.Count == 2);
             Assert.That(pg2.UniquePeptides.Count == 2);
         }
@@ -402,7 +415,7 @@ namespace Test
             };
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psms = new List<SpectralMatch>();
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
@@ -421,18 +434,20 @@ namespace Test
                 psms.Last().ResolveAllAmbiguities();
             }
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
 
-            Assert.AreEqual(1, proteinGroups.Count);
-            Assert.AreEqual("1", proteinGroups.ElementAt(0).ProteinGroupName);
-            Assert.AreEqual(2, proteinGroups.ElementAt(0).UniquePeptides.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("1"));
+            Assert.That(proteinGroups.ElementAt(0).UniquePeptides.Count, Is.EqualTo(2));
         }
 
         /// <summary>
@@ -475,43 +490,45 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            psmABC_Dp2.AddOrReplace(pepA_3Dp2, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            SpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            psmABC_Dp2.AddOrReplace(pepA_3Dp2, 10, 0, true, new List<MatchedFragmentIon>());
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>() { psmABC_Dp1, psmABC_Dp2 };
+            List<SpectralMatch> psms = new List<SpectralMatch>() { psmABC_Dp1, psmABC_Dp2 };
 
             psms.ForEach(h => h.ResolveAllAmbiguities());
             psms.ForEach(h => h.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
 
-            Assert.AreEqual(2, proteinGroups.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(2));
             if (proteinGroups.ElementAt(0).ProteinGroupName == "1")
             {
-                Assert.AreEqual("1", proteinGroups.ElementAt(0).ProteinGroupName);
-                Assert.AreEqual(1, proteinGroups.ElementAt(0).UniquePeptides.Count);
-                Assert.AreEqual("ABC", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).FullSequence);
-                Assert.AreEqual("2|3", proteinGroups.ElementAt(1).ProteinGroupName);
-                Assert.AreEqual(0, proteinGroups.ElementAt(1).UniquePeptides.Count);
-                Assert.AreEqual(2, proteinGroups.ElementAt(1).AllPeptides.Count);
+                Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("1"));
+                Assert.That(proteinGroups.ElementAt(0).UniquePeptides.Count, Is.EqualTo(1));
+                Assert.That(proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).FullSequence, Is.EqualTo("ABC"));
+                Assert.That(proteinGroups.ElementAt(1).ProteinGroupName, Is.EqualTo("2|3"));
+                Assert.That(proteinGroups.ElementAt(1).UniquePeptides.Count, Is.EqualTo(0));
+                Assert.That(proteinGroups.ElementAt(1).AllPeptides.Count, Is.EqualTo(2));
             }
             else
             {
-                Assert.AreEqual("1", proteinGroups.ElementAt(1).ProteinGroupName);
-                Assert.AreEqual(1, proteinGroups.ElementAt(1).UniquePeptides.Count);
-                Assert.AreEqual("ABC", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(0).FullSequence);
-                Assert.AreEqual("2|3", proteinGroups.ElementAt(0).ProteinGroupName);
-                Assert.AreEqual(0, proteinGroups.ElementAt(0).UniquePeptides.Count);
-                Assert.AreEqual(2, proteinGroups.ElementAt(0).AllPeptides.Count);
+                Assert.That(proteinGroups.ElementAt(1).ProteinGroupName, Is.EqualTo("1"));
+                Assert.That(proteinGroups.ElementAt(1).UniquePeptides.Count, Is.EqualTo(1));
+                Assert.That(proteinGroups.ElementAt(1).UniquePeptides.ElementAt(0).FullSequence, Is.EqualTo("ABC"));
+                Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("2|3"));
+                Assert.That(proteinGroups.ElementAt(0).UniquePeptides.Count, Is.EqualTo(0));
+                Assert.That(proteinGroups.ElementAt(0).AllPeptides.Count, Is.EqualTo(2));
             }
         }
 
@@ -539,7 +556,7 @@ namespace Test
             var protease2 = new Protease("test4", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
 
-            var peptideList = new List<PeptideWithSetModifications>();
+            var peptideList = new List<IBioPolymerWithSetMods>();
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
@@ -562,7 +579,7 @@ namespace Test
             }
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psms = new List<SpectralMatch>();
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
@@ -577,19 +594,21 @@ namespace Test
                 psms.Last().ResolveAllAmbiguities();
             }
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
 
-            Assert.AreEqual(1, proteinGroups.Count);
-            Assert.AreEqual("1", proteinGroups.ElementAt(0).ProteinGroupName);
-            Assert.AreEqual(1, proteinGroups.ElementAt(0).UniquePeptides.Count);
-            Assert.AreEqual("ABC", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).FullSequence);
+            Assert.That(proteinGroups.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("1"));
+            Assert.That(proteinGroups.ElementAt(0).UniquePeptides.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).FullSequence, Is.EqualTo("ABC"));
         }
 
         /// <summary>
@@ -603,7 +622,7 @@ namespace Test
                 "-XYZ--ABC",
                 "-XYZ-EFGABC",
             };
-            
+
             List<DigestionMotif> motifs1 = new List<DigestionMotif> { new DigestionMotif("-", null, 1, null), new DigestionMotif("Z", null, 1, null) };
             List<DigestionMotif> motifs2 = new List<DigestionMotif> { new DigestionMotif("G", null, 1, null) };
 
@@ -611,7 +630,7 @@ namespace Test
             ProteaseDictionary.Dictionary.Add(protease1.Name, protease1);
             var protease2 = new Protease("testD", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
-            var peptideList = new List<PeptideWithSetModifications>();
+            var peptideList = new List<IBioPolymerWithSetMods>();
 
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
@@ -645,7 +664,7 @@ namespace Test
             }
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psms = new List<SpectralMatch>();
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
@@ -693,11 +712,13 @@ namespace Test
                 psms.Last().ResolveAllAmbiguities();
             }
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -705,8 +726,8 @@ namespace Test
             psms.ElementAt(5).SetFdrValues(0, 0, goodFdr, 0, goodFdr, 0, 0, 0);
 
             //this iscopy of code that filteres psms in PostSearch Analysis Task
-            var fdrFilteredPsms = new List<PeptideSpectralMatch>();
-            foreach (PeptideSpectralMatch psm in psms)
+            var fdrFilteredPsms = new List<SpectralMatch>();
+            foreach (SpectralMatch psm in psms)
             {
                 if (psm != null && psm.FdrInfo.QValue <= 0.0100 && psm.FdrInfo.QValueNotch <= 0.0100)
                 {
@@ -714,7 +735,7 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(3, fdrFilteredPsms.Count);
+            Assert.That(fdrFilteredPsms.Count, Is.EqualTo(3));
 
             var test1 = fdrFilteredPsms.Contains(psms.ElementAt(2));
             var test2 = fdrFilteredPsms.Contains(psms.ElementAt(4));
@@ -722,12 +743,12 @@ namespace Test
             var test4 = fdrFilteredPsms.Contains(psms.ElementAt(0));
             var test5 = fdrFilteredPsms.Contains(psms.ElementAt(1));
             var test6 = fdrFilteredPsms.Contains(psms.ElementAt(3));
-            Assert.AreEqual(true, test1);
-            Assert.AreEqual(true, test2);
-            Assert.AreEqual(true, test3);
-            Assert.AreEqual(false, test4);
-            Assert.AreEqual(false, test5);
-            Assert.AreEqual(false, test6);
+            Assert.That(test1, Is.EqualTo(true));
+            Assert.That(test2, Is.EqualTo(true));
+            Assert.That(test3, Is.EqualTo(true));
+            Assert.That(test4, Is.EqualTo(false));
+            Assert.That(test5, Is.EqualTo(false));
+            Assert.That(test6, Is.EqualTo(false));
         }
 
         /// <summary>
@@ -741,11 +762,6 @@ namespace Test
         {
             SearchTask Task1 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                (
-                    qValueOutputFilter: 1
-                ),
-
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -765,10 +781,10 @@ namespace Test
 
             var psms = Path.Combine(thisTaskOutputFolder, "AllPSMs.psmtsv");
 
-            Assert.AreEqual(11, File.ReadLines(psms).Count());
+            Assert.That(File.ReadLines(psms).Count(), Is.EqualTo(11));
             var protGroups = Path.Combine(thisTaskOutputFolder, "AllQuantifiedProteinGroups.tsv");
 
-            Assert.AreEqual(7, File.ReadLines(protGroups).Count());
+            Assert.That(File.ReadLines(protGroups).Count(), Is.EqualTo(7));
             Directory.Delete(outputFolder, true);
         }
 
@@ -815,17 +831,17 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Alpha = new PeptideSpectralMatch(pepABC_1Alpha, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmABC_Beta = new PeptideSpectralMatch(pepABC_2Beta, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            psmABC_Beta.AddOrReplace(pepABC_4Beta, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmEFG_Beta = new PeptideSpectralMatch(pepEFG_3Beta, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            psmEFG_Beta.AddOrReplace(pepEFG_4Beta, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            SpectralMatch psmABC_Alpha = new PeptideSpectralMatch(pepABC_1Alpha, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Beta = new PeptideSpectralMatch(pepABC_2Beta, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            psmABC_Beta.AddOrReplace(pepABC_4Beta, 10, 0, true, new List<MatchedFragmentIon>());
+            SpectralMatch psmEFG_Beta = new PeptideSpectralMatch(pepEFG_3Beta, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            psmEFG_Beta.AddOrReplace(pepEFG_4Beta, 10, 0, true, new List<MatchedFragmentIon>());
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmABC_Alpha, psmABC_Beta, psmEFG_Beta };
+            List<SpectralMatch> psms = new List<SpectralMatch> { psmABC_Alpha, psmABC_Beta, psmEFG_Beta };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -836,21 +852,23 @@ namespace Test
             Modification mod2 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif2, _locationRestriction: "Anyhwere.", _monoisotopicMass: 15.99491461957);
             List<Modification> modFixedList = new List<Modification> { mod };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms psmsFiltered = FilteredPsms.Filter(psms, commonParameters);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsFiltered, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
-            Assert.AreEqual(2, proteinGroups.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(2));
             var proteinGroup1 = proteinGroups.Where(h => h.ProteinGroupName == "1").First();
-            Assert.AreEqual(1, proteinGroup1.UniquePeptides.Count);
-            Assert.AreEqual(1, proteinGroup1.AllPeptides.Count);
+            Assert.That(proteinGroup1.UniquePeptides.Count, Is.EqualTo(1));
+            Assert.That(proteinGroup1.AllPeptides.Count, Is.EqualTo(1));
             var proteinGroup2 = proteinGroups.Where(h => h.ProteinGroupName == "4").First();
-            Assert.AreEqual(0, proteinGroup2.UniquePeptides.Count);
-            Assert.AreEqual(2, proteinGroup2.AllPeptides.Count);
+            Assert.That(proteinGroup2.UniquePeptides.Count, Is.EqualTo(0));
+            Assert.That(proteinGroup2.AllPeptides.Count, Is.EqualTo(2));
         }
 
         /// <summary>
@@ -885,20 +903,20 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABCK_T = new PeptideSpectralMatch(pepABCK_1T, 0, 10, 0, scan, commonParameters_tryp, new List<MatchedFragmentIon>());
-            psmABCK_T.AddOrReplace(pepABCK_2T, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmABCK_L = new PeptideSpectralMatch(pepABCK_1L, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
-            psmABCK_L.AddOrReplace(pepABCK_2L, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmXYZK_T = new PeptideSpectralMatch(pepXYZK_1T, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
-            psmXYZK_T.AddOrReplace(pepXYZK_2T, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmXYZK_L = new PeptideSpectralMatch(pepXYZK_1L, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
-            psmXYZK_L.AddOrReplace(pepXYZK_2L, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            SpectralMatch psmABCK_T = new PeptideSpectralMatch(pepABCK_1T, 0, 10, 0, scan, commonParameters_tryp, new List<MatchedFragmentIon>());
+            psmABCK_T.AddOrReplace(pepABCK_2T, 10, 0, true, new List<MatchedFragmentIon>());
+            SpectralMatch psmABCK_L = new PeptideSpectralMatch(pepABCK_1L, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
+            psmABCK_L.AddOrReplace(pepABCK_2L, 10, 0, true, new List<MatchedFragmentIon>());
+            SpectralMatch psmXYZK_T = new PeptideSpectralMatch(pepXYZK_1T, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
+            psmXYZK_T.AddOrReplace(pepXYZK_2T, 10, 0, true, new List<MatchedFragmentIon>());
+            SpectralMatch psmXYZK_L = new PeptideSpectralMatch(pepXYZK_1L, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
+            psmXYZK_L.AddOrReplace(pepXYZK_2L, 10, 0, true, new List<MatchedFragmentIon>());
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmABCK_T, psmABCK_L, psmXYZK_T, psmXYZK_L };
+            List<SpectralMatch> psms = new List<SpectralMatch> { psmABCK_T, psmABCK_L, psmXYZK_T, psmXYZK_L };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters_tryp.DigestionParams);
             digestionParamsList.Add(commonParameters_LysC.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -909,17 +927,19 @@ namespace Test
             Modification mod2 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif2, _locationRestriction: "Anyhwere.", _monoisotopicMass: 15.99491461957);
             List<Modification> modFixedList = new List<Modification> { mod };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms psmsFiltered = FilteredPsms.Filter(psms, commonParameters_tryp);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsFiltered, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
-            Assert.AreEqual(1, proteinGroups.Count);
-            Assert.AreEqual("1|2", proteinGroups.ElementAt(0).ProteinGroupName);
-            Assert.AreEqual(8, proteinGroups.ElementAt(0).AllPeptides.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("1|2"));
+            Assert.That(proteinGroups.ElementAt(0).AllPeptides.Count, Is.EqualTo(8));
         }
 
         /// <summary>
@@ -939,7 +959,7 @@ namespace Test
             {
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
             }
-            
+
             List<DigestionMotif> motifs1 = new List<DigestionMotif> { new DigestionMotif("-", null, 0, null), new DigestionMotif("-", null, 1, null) };
             List<DigestionMotif> motifs2 = new List<DigestionMotif> { new DigestionMotif("G", null, 1, null) };
 
@@ -959,16 +979,16 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Dash = new PeptideSpectralMatch(pepABC_1Dash, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            psmABC_Dash.AddOrReplace(pepABC_2Dash, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmABC_G = new PeptideSpectralMatch(pepABC_2G, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            psmABC_G.AddOrReplace(pepABC_3G, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            SpectralMatch psmABC_Dash = new PeptideSpectralMatch(pepABC_1Dash, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            psmABC_Dash.AddOrReplace(pepABC_2Dash, 10, 0, true, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_G = new PeptideSpectralMatch(pepABC_2G, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            psmABC_G.AddOrReplace(pepABC_3G, 10, 0, true, new List<MatchedFragmentIon>());
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmABC_Dash, psmABC_G };
+            List<SpectralMatch> psms = new List<SpectralMatch> { psmABC_Dash, psmABC_G };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
-            HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
+            var digestionParamsList = new HashSet<IDigestionParams>();
             digestionParamsList.Add(commonParameters.DigestionParams);
             digestionParamsList.Add(commonParameters2.DigestionParams);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -979,21 +999,23 @@ namespace Test
             Modification mod2 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif2, _locationRestriction: "Anyhwere.", _monoisotopicMass: 15.99491461957);
             List<Modification> modFixedList = new List<Modification> { mod };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null);
+            FilteredPsms psmsFiltered = FilteredPsms.Filter(psms, commonParameters);
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsFiltered, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
-            Assert.AreEqual(1, proteinGroups.Count);
-            Assert.AreEqual("2", proteinGroups.ElementAt(0).ProteinGroupName);
-            Assert.AreEqual(2, proteinGroups.ElementAt(0).AllPeptides.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("2"));
+            Assert.That(proteinGroups.ElementAt(0).AllPeptides.Count, Is.EqualTo(2));
         }
 
         /// <summary>
-        /// This test ensures that FDR for each psm is calculated accoriding to its protease
+        /// This test ensures that FDR for each psm is calculated according to its protease
         /// </summary>
         [Test]
         public static void MultiProteaseParsimony_TestingProteaseSpecificFDRCalculations()
@@ -1014,7 +1036,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
             List<MatchedFragmentIon> f = new List<MatchedFragmentIon>();
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
+            List<SpectralMatch> psms = new List<SpectralMatch>
             {
                 new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: t), 0, 20, 1, scan, commonParameters_tryp, f),
                 new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_gluC.DigestionParams, p: t), 0, 19, 1, scan, commonParameters_gluC, f),
@@ -1033,18 +1055,34 @@ namespace Test
             List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", new CommonParameters()) };
 
             new FdrAnalysisEngine(psms, 0, new CommonParameters(), fsp, new List<string>()).Run();
-            psms = psms.OrderByDescending(p => p.Score).ToList();
+            psms = psms.OrderByDescending(p => p).ToList();
 
-            Assert.AreEqual(0.00, Math.Round(psms[0].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[1].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[2].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[3].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[4].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[5].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[6].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[7].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.50, Math.Round(psms[8].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.50, Math.Round(psms[9].FdrInfo.QValue, 2));
+            //q-value is computed   as targetCount / (decoyCount + targetCount) for each protease separately
+            //once a higher q-value is found, it is used for all subsequent PSMs with the same protease even if increasing number of targets would lower the q-value
+
+            //	Row	t/d	score	protease	targetCount	decoyCount	q-value
+            //	0	t	20	tryp	1	0	0
+            //	1	t	19	gluC	1	0	0
+            //	2	t	18	tryp	2	0	0
+            //	3	t	17	gluC	2	0	0
+            //	4	d	16	gluC	2	1	0.5
+            //	5	t	15	gluC	3	1	0.5
+            //	6	t	14	tryp	3	0	0
+            //	7	d	13	tryp	3	1	0.333333333
+            //	8	d	12	tryp	3	2	0.666666667
+            //	9	t	11	tryp	4	2	0.666666667
+
+            Assert.That(Math.Round(psms[0].FdrInfo.QValue, 2), Is.EqualTo(0.00));
+            Assert.That(Math.Round(psms[1].FdrInfo.QValue, 2), Is.EqualTo(0.00));
+            Assert.That(Math.Round(psms[2].FdrInfo.QValue, 2), Is.EqualTo(0.00));
+            Assert.That(Math.Round(psms[3].FdrInfo.QValue, 2), Is.EqualTo(0.00));
+            Assert.That(Math.Round(psms[4].FdrInfo.QValue, 2), Is.EqualTo(0.50));
+            Assert.That(Math.Round(psms[5].FdrInfo.QValue, 2), Is.EqualTo(0.50));
+            Assert.That(Math.Round(psms[6].FdrInfo.QValue, 2), Is.EqualTo(0.00));
+            Assert.That(Math.Round(psms[7].FdrInfo.QValue, 2), Is.EqualTo(0.33));
+            Assert.That(Math.Round(psms[8].FdrInfo.QValue, 2), Is.EqualTo(0.67));
+            Assert.That(Math.Round(psms[9].FdrInfo.QValue, 2), Is.EqualTo(0.67));
+
         }
     }
 }

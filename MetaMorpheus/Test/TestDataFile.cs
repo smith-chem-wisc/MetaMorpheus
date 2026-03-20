@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using Proteomics.Fragmentation;
+using Omics;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -135,7 +136,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss)
+        public TestDataFile(List<IBioPolymerWithSetMods> pepWithSetModss)
             : base(pepWithSetModss.Count * 2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
         {
             List<MsDataScan> ScansHere = new List<MsDataScan>();
@@ -283,7 +284,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(PeptideWithSetModifications pepWithSetMods)
+        public TestDataFile(IBioPolymerWithSetMods pepWithSetMods)
             : base(2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
         {
             var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + Constants.C13MinusC12).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2 * Constants.C13MinusC12).ToMz(2) };
@@ -312,7 +313,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(PeptideWithSetModifications pepWithSetMods, string v) : base(2, new SourceFile(null, null, null, null, null))
+        public TestDataFile(IBioPolymerWithSetMods pepWithSetMods, string v) : base(2, new SourceFile(null, null, null, null, null))
         {
             if (v.Equals("quadratic"))
             {
@@ -419,7 +420,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public string FilePath
+        public new string FilePath
         {
             get
             {
@@ -435,10 +436,37 @@ namespace Test
             }
         }
 
-        public void ReplaceFirstScanArrays(double[] mz, double[] intensities)
+        public void ReplaceFirstMs1ScanArrays(double[] mz, double[] intensities)
         {
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             Scans[0] = new MsDataScan(massSpectrum, Scans[0].OneBasedScanNumber, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, null, Scans[0].NativeId);
+        }
+
+        #region MsDataFile Abstract Methods
+
+        public override MsDataFile LoadAllStaticData(FilteringParams filteringParams = null, int maxThreads = 1)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override SourceFile GetSourceFile()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override MsDataScan GetOneBasedScanFromDynamicConnection(int oneBasedScanNumber, IFilteringParams filterParams = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void CloseDynamicConnection()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void InitiateDynamicConnection()
+        {
+            throw new NotImplementedException();
         }
 
         public override MsDataScan GetOneBasedScan(int scanNumber)
@@ -450,5 +478,8 @@ namespace Test
         {
             throw new NotImplementedException();
         }
+
+        #endregion
+
     }
 }

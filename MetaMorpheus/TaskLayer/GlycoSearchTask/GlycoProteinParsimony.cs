@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using EngineLayer.GlycoSearch;
+using Readers;
+using ThermoFisher.CommonCore.Data;
 
 namespace TaskLayer
 {
     public class GlycoProteinParsimony
     {
-        //id: ProteinAccession, ProtienPos, GlycanId.islocalized, minQValue, maxProb
+        //id: Accession, ProtienPos, GlycanId.islocalized, minQValue, maxProb
 
         public GlycoProteinParsimony(string proteinAccess, int proteinPos, char aminoAcid, bool isLocalized, double minQValue, LocalizationLevel bestLocalizeLevel, double maxProb)
         {
@@ -40,10 +42,10 @@ namespace TaskLayer
 
         public double MaxProbability { get; set; }
 
-        public static Dictionary<string, GlycoProteinParsimony> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
+        public static Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
         {
             //key: proPosId
-            Dictionary<string, GlycoProteinParsimony> localizedGlycan = new Dictionary<string, GlycoProteinParsimony>();
+            Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> localizedGlycan = new Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony>();
 
             foreach (var gsm in allPsmsGly)
             {
@@ -52,29 +54,29 @@ namespace TaskLayer
                     continue;
                 }
 
-                if (gsm.LocalizedGlycan.Count > 0)
+                if ((!gsm.LocalizedGlycan.IsNullOrEmpty()) && gsm.LocalizedGlycan.Count > 0)
                 {
                     foreach (var local in gsm.LocalizedGlycan)
                     {
-                        int proteinPos = local.Item1 + gsm.OneBasedStartResidueInProtein.Value - 2;
+                        int proteinPos = local.SiteIndex + gsm.OneBasedStartResidue.Value - 2;
 
-                        string proPosId = gsm.ProteinAccession + "-" + proteinPos.ToString() + "-" + local.Item2;
+                        (string,string,int) proPosId = new (gsm.Accession, proteinPos.ToString(), local.ModId);
 
                         double prob = -1;
-                        if (gsm.SiteSpeciLocalProb != null && gsm.SiteSpeciLocalProb.ContainsKey(local.Item1))
+                        if (gsm.ModSitePairProbDict != null && gsm.ModSitePairProbDict.ContainsKey(local))
                         {
-                            prob = gsm.SiteSpeciLocalProb[local.Item1].Where(p => p.Item1 == local.Item2).FirstOrDefault().Item2;
+                            prob = local.Probability;
                         }
 
 
                         if (!localizedGlycan.ContainsKey(proPosId))
                         {
-                            GlycoProteinParsimony gpp = new GlycoProteinParsimony(gsm.ProteinAccession, proteinPos, gsm.BaseSequence[local.Item1-2], local.Item3, gsm.FdrInfo.QValue, gsm.LocalizationLevel, prob);
+                            GlycoProteinParsimony gpp = new GlycoProteinParsimony(gsm.Accession, proteinPos, gsm.BaseSequence[local.SiteIndex -2], local.Confident, gsm.FdrInfo.QValue, gsm.LocalizationLevel, prob);
                             localizedGlycan.Add(proPosId, gpp);
                         }
                         else
                         {
-                            bool islocalized = (local.Item3 || localizedGlycan[proPosId].IsLocalized);
+                            bool islocalized = (local.Confident || localizedGlycan[proPosId].IsLocalized);
                             double minQValue = localizedGlycan[proPosId].MinQValue > gsm.FdrInfo.QValue ? gsm.FdrInfo.QValue : localizedGlycan[proPosId].MinQValue;
                             double maxProb = localizedGlycan[proPosId].MaxProbability > prob ? localizedGlycan[proPosId].MaxProbability : prob;
                             var localLevel = localizedGlycan[proPosId].BestLocalizeLevel < gsm.LocalizationLevel ? localizedGlycan[proPosId].BestLocalizeLevel : gsm.LocalizationLevel;

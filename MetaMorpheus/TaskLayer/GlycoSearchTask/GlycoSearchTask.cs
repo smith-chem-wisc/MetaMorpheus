@@ -1,17 +1,17 @@
 ﻿using EngineLayer;
-using EngineLayer.CrosslinkSearch;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.GlycoSearch;
 using EngineLayer.Indexing;
+using FlashLFQ;
 using MassSpectrometry;
+using MzLibUtil;
+using Omics;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using MzLibUtil;
-using EngineLayer.FdrAnalysis;
-using System;
-using FlashLFQ;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -50,21 +50,25 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
+            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, _glycoSearchParameters.DecoyType, true, localizeableModificationTypes);
+            var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
+            List<Protein> proteinList = loadingResults!.BioPolymers.Cast<Protein>().ToList();
 
-            MyFileManager myFileManager = new(true);
+            MyFileManager myFileManager = new (_glycoSearchParameters.DisposeOfFileWhenDone);
+            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
             int completedFiles = 0;
 
             Status("Searching files...", taskId);
             ProseCreatedWhileRunning.Append("\n");
-            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; \n");
+            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.DigestionAgent + "; \n");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; \n");
-            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; \n");
-            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
+            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinLength + "; \n");
+            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxLength == int.MaxValue ?
                 "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; \n");
-            ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; \n");
+                "maximum peptide length = " + CommonParameters.DigestionParams.MaxLength + "; \n");
+            if (CommonParameters.DigestionParams is DigestionParams digestionParams)
+                ProseCreatedWhileRunning.Append("initiator methionine behavior = " + digestionParams.InitiatorMethionineBehavior + "; \n");
             ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; \n");
             ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.IdWithMotif)) + "; \n");
             ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.IdWithMotif)) + "; \n");
@@ -86,6 +90,8 @@ namespace TaskLayer
             }                
             
             ProseCreatedWhileRunning.Append("\n");
+
+            FlashLfqResults flashLfqResults = null;
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -147,7 +153,7 @@ namespace TaskLayer
             var filteredAllPsms = new List<GlycoSpectralMatch>();
 
             //For each ms2scan, try to find the best candidate psm from the psms list. Do the localizaiton analysis. Add it into filteredAllPsms.
-            foreach (var gsmsPerScan in GsmPerScans.GroupBy(p => p.ScanNumber))
+            foreach (var gsmsPerScan in GsmPerScans.GroupBy(p => (p.ScanNumber, p.FullFilePath)))
             {
                 var glycos = RemoveSimilarSequenceDuplicates(gsmsPerScan.OrderByDescending(p=>p.Score).ToList());
 
@@ -188,7 +194,7 @@ namespace TaskLayer
                             {
                                 allRoutes.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
                             }
-                            glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allRoutes, glycoSpectralMatch.LocalizationGraphs.First().ModPos);
+                            glycoSpectralMatch.ModSitePairProbDict = LocalizationGraph.CalProbabilityForModSitePair(allRoutes, glycoSpectralMatch.LocalizedGlycan);
                         }
                     }
 
@@ -201,14 +207,18 @@ namespace TaskLayer
                 GlycoSearchTaskResults = MyTaskResults,
                 SearchTaskId = taskId,
                 GlycoSearchParameters = _glycoSearchParameters,
+                ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => (DigestionParams)p.DigestionParams)),
                 ProteinList = proteinList,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
                 AllPsms = filteredAllPsms.OrderByDescending(p => p.Score).ToList(),
                 OutputFolder = OutputFolder,
+                IndividualResultsOutputFolder = Path.Combine(OutputFolder, "IndividualFileResults"),
+                FlashLfqResults = flashLfqResults,
                 FileSettingsList = fileSettingsList,
                 DatabaseFilenameList = dbFilenameList,
-                CurrentRawFileList = currentRawFileList
+                CurrentRawFileList = currentRawFileList,
+                BioPolymerList = proteinList,
             };
             
             PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask()

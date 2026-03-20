@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Readers;
 
 namespace EngineLayer.Calibration
 {
@@ -62,16 +63,10 @@ namespace EngineLayer.Calibration
             //generate new scans
             MsDataScan[] calibratedScans = new MsDataScan[originalScans.Count];
 
-            //hard copy original scans
-            for (int i = 0; i < originalScans.Count; i++)
-            {
-                calibratedScans[i] = originalScans[i];
-            }
-
             //apply a smoothing function, so that outlier scans aren't wildly shifted
             double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors);
             double[] ms2SmoothedErrors = new double[ms2RelativeErrors.Length];
-            if (!(CommonParameters.DissociationType == DissociationType.LowCID))
+            if (CommonParameters.DissociationType != DissociationType.LowCID)
             {
                 ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors);
             }
@@ -102,7 +97,7 @@ namespace EngineLayer.Calibration
                 }
             }
 
-            CalibratedDataFile = new MsDataFile(calibratedScans, MyMsDataFile.SourceFile);
+            CalibratedDataFile = new GenericMsDataFile(calibratedScans, MyMsDataFile.SourceFile);
             return new MetaMorpheusEngineResults(this);
         }
 

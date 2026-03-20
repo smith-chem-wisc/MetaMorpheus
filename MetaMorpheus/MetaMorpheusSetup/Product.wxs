@@ -24,7 +24,6 @@
       <ComponentGroupRef Id="LinuxNativeMathComponents" />
       <ComponentGroupRef Id="OsxNativeMathComponents" />
       <ComponentGroupRef Id="WinNativeMathComponents" />
-      <ComponentGroupRef Id="MathNumerics_x64" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent" />
 
@@ -35,6 +34,7 @@
       <ComponentGroupRef Id="Appsrc_NGlycan_files" />
       <ComponentGroupRef Id="Appsrc_OGlycan_files" />
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
+      <ComponentGroupRef Id="Appsrc_Digestion_files" />
       <ComponentGroupRef Id="Appsrc_Proteomes_files" />
       <ComponentGroupRef Id="Appsrc_Contaminants_files" />
       <ComponentGroupRef Id="ExcelDefaults" />
@@ -126,7 +126,10 @@
 
           <!--ProteolyticDigestion Folder-->
           <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
-          
+
+			<!--Digestion Folder-->
+          <Directory Id="MetaAppDigestionFolder" Name="Digestion" />
+			
           <!--Contaminants Folder-->
           <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
 
@@ -181,6 +184,9 @@
       <Component Id="src_MassSpectrometry.dll" Guid="d6241678-3d48-4c7a-becf-9c1160fbe06b">
         <File Id="src_MassSpectrometry.dll" Name="MassSpectrometry.dll" Source="$(var.GUI_TargetDir)MassSpectrometry.dll" />
       </Component>
+      <Component Id="src_SpectralAveraging.dll" Guid="{1B9EB148-6FC3-4DA1-82D0-935EDE76E8D7}">
+        <File Id="src_SpectralAveraging.dll" Name="SpectralAveraging.dll" Source="$(var.GUI_TargetDir)SpectralAveraging.dll" />
+      </Component>
       <Component Id="src_MathNet.Numerics.dll" Guid="dea92905-719e-48e1-8a64-e845dca06dac">
         <File Id="src_MathNet.Numerics.dll" Name="MathNet.Numerics.dll" Source="$(var.GUI_TargetDir)MathNet.Numerics.dll" />
       </Component>
@@ -193,9 +199,21 @@
       <Component Id="src_MzLibUtil.dll" Guid="9475fcb2-63bd-490c-8441-17a1760869ac">
         <File Id="src_MzLibUtil.dll" Name="MzLibUtil.dll" Source="$(var.GUI_TargetDir)MzLibUtil.dll" />
       </Component>
-      <Component Id="src_MzML.dll" Guid="40c12490-638a-41b9-9e0c-05e949236a5a">
-        <File Id="src_MzML.dll" Name="MzML.dll" Source="$(var.GUI_TargetDir)MzML.dll" />
-      </Component>
+	  <Component Id="src_Chromatography.dll" Guid="e6316c7b-2cf7-4d42-9472-de4ac10fe988">
+		<File Id="src_Chromatography.dll" Name="Chromatography.dll" Source="$(var.GUI_TargetDir)Chromatography.dll" />
+	  </Component>			
+	  <Component Id="src_Google.Protobuf.dll" Guid="432636b6-b59d-4ac6-8095-8bb6d5f0372d">
+		<File Id="src_Google.Protobuf.dll" Name="Google.Protobuf.dll" Source="$(var.GUI_TargetDir)Google.Protobuf.dll" />
+	  </Component>			
+	  <Component Id="src_ICSharpCode.SharpZipLib.dll" Guid="cc1e1397-c950-4f18-ac97-951f5d2c4678">
+		<File Id="src_ICSharpCode.SharpZipLib.dll" Name="ICSharpCode.SharpZipLib.dll" Source="$(var.GUI_TargetDir)ICSharpCode.SharpZipLib.dll" />
+	  </Component>
+	  <Component Id="src_SkiaSharp.dll" Guid="fafc53a6-83b1-4823-addc-64f1cb7ca21c">
+		<File Id="src_SkiaSharp.dll" Name="SkiaSharp.dll" Source="$(var.GUI_TargetDir)SkiaSharp.dll" />
+	  </Component>	
+	  <Component Id="src_TorchSharp.dll" Guid="eaaac4c4-8912-4914-acac-127ab77216d7">
+		<File Id="src_TorchSharp.dll" Name="TorchSharp.dll" Source="$(var.GUI_TargetDir)TorchSharp.dll" />
+	  </Component>	
       <Component Id="src_NetSerializer.dll" Guid="9eddc340-0dcb-415a-85f4-322f0eaeee4b">
         <File Id="src_NetSerializer.dll" Name="NetSerializer.dll" Source="$(var.GUI_TargetDir)NetSerializer.dll" />
       </Component>
@@ -235,9 +253,6 @@
       <Component Id="src_SharpLearning.RandomForest.dll" Guid="f86fdc0c-6a23-4e4f-803b-0012aaa418e7">
         <File Id="src_SharpLearning.RandomForest.dll" Name="SharpLearning.RandomForest.dll" Source="$(var.GUI_TargetDir)SharpLearning.RandomForest.dll" />
       </Component>
-      <Component Id="src_Mgf.dll" Guid="B4EB5CEA-CFCA-40C7-A915-DB3B9EF53775">
-        <File Id="src_Mgf.dll" Name="Mgf.dll" Source="$(var.GUI_TargetDir)Mgf.dll" />
-      </Component>
       <Component Id="src_OxyPlot.dll" Guid="1B25D408-13DB-4A9E-A49E-B0A7FC8C05A6">
         <File Id="src_OxyPlot.dll" Name="OxyPlot.dll" Source="$(var.GUI_TargetDir)OxyPlot.dll" />
       </Component>
@@ -265,11 +280,90 @@
       <Component Id="src_itext.sign.dll" Guid="37F6B45B-B6C2-4E6B-9CBD-D3AFDCE3B45B">
         <File Id="src_itext.sign.dll" Name="itext.sign.dll" Source="$(var.GUI_TargetDir)itext.sign.dll" />
       </Component>
+      <Component Id="src_itext.bouncy_castle_adapter.dll" Guid="5648E5A3-B648-42B6-B706-7B02721816A2">
+        <File Id="src_itext.bouncy_castle_adapter.dll" Name="itext.bouncy-castle-adapter.dll" Source="$(var.GUI_TargetDir)itext.bouncy-castle-adapter.dll" />
+      </Component>
+      <Component Id="src_itext.bouncy_castle_connector.dll" Guid="F1AE1D39-6FC8-4D7B-8BE7-A8B7765B601D">
+        <File Id="src_itext.bouncy_castle_connector.dll" Name="itext.bouncy-castle-connector.dll" Source="$(var.GUI_TargetDir)itext.bouncy-castle-connector.dll" />
+      </Component>
+	  <Component Id="src_BouncyCastle.Cryptography.dll" Guid="89AB7B00-40C4-4D9B-8CA0-F9E48DF0866A">
+	  	<File Id="src_BouncyCastle.Cryptography.dll" Name="BouncyCastle.Cryptography.dll" Source="$(var.GUI_TargetDir)BouncyCastle.Cryptography.dll" />
+	  </Component>
+	  <Component Id="src_ExCSS.dll" Guid="08836151-C7AC-42C1-9386-D05834CD4036">
+	  	<File Id="src_ExCSS.dll" Name="ExCSS.dll" Source="$(var.GUI_TargetDir)ExCSS.dll" />
+	  </Component>
+	  <Component Id="src_itext.commons.dll" Guid="83239B61-114F-428E-838D-A9A399F4F7FB">
+	  	<File Id="src_itext.commons.dll" Name="itext.commons.dll" Source="$(var.GUI_TargetDir)itext.commons.dll" />
+	  </Component>
+	  <Component Id="src_itext.pdfua.dll" Guid="883BC2DD-C3F6-4156-9538-4F77FED07ECE">
+	  	<File Id="src_itext.pdfua.dll" Name="itext.pdfua.dll" Source="$(var.GUI_TargetDir)itext.pdfua.dll" />
+	  </Component>
+	  <Component Id="src_Svg.dll" Guid="82015092-7ABD-4BF2-9069-0BA4C0C0E978">
+	  	<File Id="src_Svg.dll" Name="Svg.dll" Source="$(var.GUI_TargetDir)Svg.dll" />
+	  </Component>
       <Component Id="src_itext.styledxmlparser.dll" Guid="105FCEC7-A05E-45CF-8F38-BFA5EFA0559B">
         <File Id="src_itext.styledxmlparser.dll" Name="itext.styledxmlparser.dll" Source="$(var.GUI_TargetDir)itext.styledxmlparser.dll" />
       </Component>
       <Component Id="src_itext.svg.dll" Guid="C49A6ADB-94DD-4223-B97E-884D60EABF82">
         <File Id="src_itext.svg.dll" Name="itext.svg.dll" Source="$(var.GUI_TargetDir)itext.svg.dll" />
+      </Component>
+      <Component Id="src_Readers.dll" Guid="07FD5A1B-E8CC-4270-9DB9-C7DEFC7BFE44">
+	    <File Id="src_Readers.dll" Name="Readers.dll" Source="$(var.GUI_TargetDir)Readers.dll" />
+      </Component>
+	  <Component Id="src_Omics.dll" Guid="B8F0F0A0-5F0B-4F0B-9F0B-0B0B0B0B0B0B">
+	    <File Id="src_Omics.dll" Name="Omics.dll" Source="$(var.GUI_TargetDir)Omics.dll" />
+	  </Component>
+	  <Component Id="src_Transcriptomics.dll" Guid="94E807A9-617E-4761-9B76-4435FB2B61EA">
+	  	<File Id="src_Transcriptomics.dll" Name="Transcriptomics.dll" Source="$(var.GUI_TargetDir)Transcriptomics.dll" />
+	  </Component>
+	  <Component Id="src_isodeclib.dll" Guid="0289908F-7EB7-41C5-8B73-4A4BFD501CCB">
+	  	<File Id="src_isodeclib.dll" Name="isodeclib.dll" Source="$(var.GUI_TargetDir)isodeclib.dll" />
+	  </Component>
+	  <Component Id="src_isogenmass.dll" Guid="8A6C1ECC-6081-4A6A-9325-2EC7855EB4BF">
+	  	<File Id="src_isogenmass.dll" Name="isogenmass.dll" Source="$(var.GUI_TargetDir)isogenmass.dll" />
+	  </Component>
+	  <Component Id="src_libmmd.dll" Guid="BE1DFE98-90FD-4577-8568-B438C21457DD">
+	  	<File Id="src_libmmd.dll" Name="libmmd.dll" Source="$(var.GUI_TargetDir)libmmd.dll" />
+	  </Component>
+	  <Component Id="src_svml_dispmd.dll" Guid="8FB6522C-298B-440D-A8CD-B96782220DFC">
+	  	<File Id="src_svml_dispmd.dll" Name="svml_dispmd.dll" Source="$(var.GUI_TargetDir)svml_dispmd.dll" />
+	  </Component>
+	  <Component Id="src_TopDownProteomics.dll" Guid="5FA064E8-F67E-44E3-A462-DBBC381247A5">
+	  	<File Id="src_TopDownProteomics.dll" Name="TopDownProteomics.dll" Source="$(var.GUI_TargetDir)TopDownProteomics.dll" />
+	  </Component>
+	  <Component Id="src_CsvHelper.dll" Guid="79F28320-5AF2-4825-9B9B-AC0776E753C1">
+	  	<File Id="src_CsvHelper.dll" Name="CsvHelper.dll" Source="$(var.GUI_TargetDir)CsvHelper.dll" />
+	  </Component>
+	  <Component Id="src_EntityFramework.dll" Guid="AAB0BE24-C695-42CE-9495-B804B0929589">
+	  	<File Id="src_EntityFramework.dll" Name="EntityFramework.dll" Source="$(var.GUI_TargetDir)EntityFramework.dll" />
+	  </Component>
+	  <Component Id="src_EntityFramework.SqlServer.dll" Guid="C8207F75-5358-4EEB-9E86-D648FAFDD735">
+	  	<File Id="src_EntityFramework.SqlServer.dll" Name="EntityFramework.SqlServer.dll" Source="$(var.GUI_TargetDir)EntityFramework.SqlServer.dll" />
+	  </Component>
+	  <Component Id="src_msvcp110.dll" Guid="36947FB1-E7F0-4580-A15C-66CB25D566C4">
+	  	<File Id="src_msvcp110.dll" Name="msvcp110.dll" Source="$(var.GUI_TargetDir)msvcp110.dll" />
+	  </Component>
+	  <Component Id="src_msvcr110.dll" Guid="4C52ED24-C962-42B7-AE53-0FF423D25E64">
+	  	<File Id="src_msvcr110.dll" Name="msvcr110.dll" Source="$(var.GUI_TargetDir)msvcr110.dll" />
+	  </Component>
+	  <Component Id="src_System.Data.SqlClient.dll" Guid="46279896-7740-429F-A4B4-F4453F577F67">
+	  	<File Id="src_System.Data.SqlClient.dll" Name="System.Data.SqlClient.dll" Source="$(var.GUI_TargetDir)System.Data.SqlClient.dll" />
+	  </Component>
+	  <Component Id="src_System.Data.SQLite.dll" Guid="5CB69DD0-680A-4E49-9A93-74D0F4A10661">
+		<File Id="src_System.Data.SQLite.dll" Name="System.Data.SQLite.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.dll" />
+	  </Component>
+	  <Component Id="src_System.Data.SQLite.EF6.dll" Guid="F9804BA5-D660-4079-8BB4-738DF62EAF7E">
+	  	<File Id="src_System.Data.SQLite.EF6.dll" Name="System.Data.SQLite.EF6.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.EF6.dll" />
+	  </Component>
+
+	  <Component Id="src_System.Drawing.Common.dll" Guid="D0717D69-C8C8-422C-8E25-A32A422AEFCE">
+	  	<File Id="src_System.Drawing.Common.dll" Name="System.Drawing.Common.dll" Source="$(var.GUI_TargetDir)System.Drawing.Common.dll" />
+	  </Component>
+	  <Component Id="src_System.Numerics.Tensors.dll" Guid="E82682ED-383F-4592-8B64-A0314FFB5481">
+	  	<File Id="src_System.Numerics.Tensors.dll" Name="System.Numerics.Tensors.dll" Source="$(var.GUI_TargetDir)System.Numerics.Tensors.dll" />
+	  </Component>
+      <Component Id="src_timsdata.dll" Guid="22BAA8D2-623B-493E-932E-666A27ECC5A0">
+      	<File Id="src_timsdata.dll" Name="timsdata.dll" Source="$(var.GUI_TargetDir)timsdata.dll" />
       </Component>
       <Component Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Guid="F3DA60DB-CF5F-4671-9F3C-1033780261DD">
         <File Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Name="ThermoFisher.CommonCore.BackgroundSubtraction.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.BackgroundSubtraction.dll" />
@@ -283,14 +377,14 @@
       <Component Id="src_ThermoFisher.CommonCore.RawFileReader.dll" Guid="F5EDAA70-06CD-49E7-932F-016C679B07C7">
         <File Id="src_ThermoFisher.CommonCore.RawFileReader.dll" Name="ThermoFisher.CommonCore.RawFileReader.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.RawFileReader.dll" />
       </Component>
-      <Component Id="src_ThermoRawFileReader.dll" Guid="4BE9A662-4CD1-4E5B-8234-0734036A007E">
-        <File Id="src_ThermoRawFileReader.dll" Name="ThermoRawFileReader.dll" Source="$(var.GUI_TargetDir)ThermoRawFileReader.dll" />
-      </Component>
       <Component Id="src_BayesianEstimation.dll" Guid="100F4A2E-F4FE-4D25-8C5F-66A7092A2622">
         <File Id="src_BayesianEstimation.dll" Name="BayesianEstimation.dll" Source="$(var.GUI_TargetDir)BayesianEstimation.dll" />
       </Component>
-      <Component Id="src_Microsoft.ML.Core.dll" Guid="A5B34A93-481B-4B6A-868C-A0DB916CB37C">
-        <File Id="src_Microsoft.ML.Core.dll" Name="Microsoft.ML.Core.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Core.dll" />
+	  <Component Id="src_Microsoft.ML.Core.dll" Guid="A5B34A93-481B-4B6A-868C-A0DB916CB37C">
+	  	<File Id="src_Microsoft.ML.Core.dll" Name="Microsoft.ML.Core.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Core.dll" />
+	  </Component>
+      <Component Id="src_Microsoft.ML.dll" Guid="8721FB9E-AFC5-4685-A89F-ADCACD5742B6">
+        <File Id="src_Microsoft.ML.dll" Name="Microsoft.ML.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.dll" />
       </Component>
       <Component Id="src_Microsoft.ML.CpuMath.dll" Guid="5D8DCF19-98EB-4EF8-B4FF-4B039FB5CE95">
         <File Id="src_Microsoft.ML.CpuMath.dll" Name="Microsoft.ML.CpuMath.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.CpuMath.dll" />
@@ -316,6 +410,9 @@
       <Component Id="src_Microsoft.ML.Transforms.dll" Guid="9FF08BC2-8F99-4004-A4F0-3BB63014BB21">
         <File Id="src_Microsoft.ML.Transforms.dll" Name="Microsoft.ML.Transforms.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Transforms.dll" />
       </Component>
+	  <Component Id="src_Microsoft.Extensions.ObjectPool.dll" Guid="ADF5C3F3-BB96-4160-A36A-C05C5DC46494">
+	   <File Id="src_Microsoft.Extensions.ObjectPool.dll" Name="Microsoft.Extensions.ObjectPool.dll" Source="$(var.GUI_TargetDir)Microsoft.Extensions.ObjectPool.dll" />
+	  </Component>
       <Component Id="src_MarkdownSharp.dll" Guid="5F6FD76A-5674-4E64-9727-1C97AD493FD5">
         <File Id="src_MarkdownSharp.dll" Name="MarkdownSharp.dll" Source="$(var.GUI_TargetDir)MarkdownSharp.dll" />
       </Component>
@@ -330,15 +427,6 @@
       </Component>
       <Component Id="src_OpenMcdf.Extensions.dll" Guid="69004206-94FD-4342-A98D-70560B41C7B3">
         <File Id="src_OpenMcdf.Extensions.dll" Name="OpenMcdf.Extensions.dll" Source="$(var.GUI_TargetDir)OpenMcdf.Extensions.dll" />
-      </Component>
-      <Component Id="src_Common.Logging.Core.dll" Guid="894B4A68-17E7-48A5-B2C6-74C33CD08979">
-        <File Id="src_Common.Logging.Core.dll" Name="Common.Logging.Core.dll" Source="$(var.GUI_TargetDir)Common.Logging.Core.dll" />
-      </Component>
-      <Component Id="src_Common.Logging.dll" Guid="B543DE60-4AE9-4C43-88A7-1B1F752D7171">
-        <File Id="src_Common.Logging.dll" Name="Common.Logging.dll" Source="$(var.GUI_TargetDir)Common.Logging.dll" />
-      </Component>
-      <Component Id="src_BouncyCastle.Crypto.dll" Guid="54F72A71-C672-4655-95AA-4D32C9983A7D">
-        <File Id="src_BouncyCastle.Crypto.dll" Name="BouncyCastle.Crypto.dll" Source="$(var.GUI_TargetDir)BouncyCastle.Crypto.dll" />
       </Component>
       <Component Id="src_Microsoft.DotNet.PlatformAbstractions.dll" Guid="F42DEDAA-6D88-4D5B-AB51-C472617F2C5F">
         <File Id="src_Microsoft.DotNet.PlatformAbstractions.dll" Name="Microsoft.DotNet.PlatformAbstractions.dll" Source="$(var.GUI_TargetDir)Microsoft.DotNet.PlatformAbstractions.dll" />
@@ -358,6 +446,9 @@
       <Component Id="MetaMorpheusGUI.dll.config" Guid="84f9e2f4-79d4-47c0-a2c9-aa7dbcb2b0fd">
         <File Id="MetaMorpheusGUI.dll.config" Name="MetaMorpheusGUI.dll.config" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.dll.config" />
       </Component>
+		<Component Id="src_PredictionClients.dll" Guid="C6398A43-F845-47C2-9F35-0BB2435AFE16">
+			<File Id="src_PredictionClients.dll" Name="PredictionClients.dll" Source="$(var.GUI_TargetDir)PredictionClients.dll" />
+		</Component>
 
       <!--Commandline Components-->
       <Component Id="src_CMD.deps.json" Guid="92190CCF-0138-4F0B-9356-02C914D5A439">
@@ -410,16 +501,9 @@
       <Component Id="src_LdaNative.dll" Guid="2FDBD232-12A0-43D6-A54D-06FFC627CE23">
         <File Id="src_LdaNative.dll" Name="LdaNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\LdaNative.dll" />
       </Component>
-    </ComponentGroup>
-    
-    <!--Other x64 Components-->
-    <ComponentGroup Id="MathNumerics_x64" Directory="MathNumericsFolder_x64">
-      <Component Id="src_libiomp5md.dll" Guid="CB28608B-0F60-4002-B0E3-F8A151DCD871">
-        <File Id="src_libiomp5md.dll" Name="libiomp5md.dll" Source="$(var.GUI_TargetDir)x64\libiomp5md.dll" />
-      </Component>
-      <Component Id="srcMathNet.Numerics.MKL.dll" Guid="9384C245-B63C-48EF-B5DA-8AB2C04A6B27">
-        <File Id="src_MathNet.Numerics.MKL.dll" Name="MathNet.Numerics.MKL.dll" Source="$(var.GUI_TargetDir)x64\MathNet.Numerics.MKL.dll" />
-      </Component>
+	  <Component Id="src_SQLite.Interop.dll" Guid="A918BB3C-0720-469E-900B-27FA93B7BB86">
+		<File Id="src_SQLite.Interop.dll" Name="SQLite.Interop.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\SQLite.Interop.dll" />
+	  </Component>
     </ComponentGroup>
   </Fragment>
 
@@ -605,29 +689,39 @@
   <!--Builds the App ProteolyticDigestion folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_ProteolyticDigestion_files" Directory="MetaAppProteolyticDigestionFolder">
-      <Component Id="RemoveProteolyticDigestion" Condition="OVERWRITEAPPDATA">
-        
+      <Component Id="RemoveProteolyticDigestion" Condition="OVERWRITEAPPDATA" Guid="C0E85E53-4245-44ED-A3CB-BD5C241FC302">
         <RemoveFolder Id="MetaAppProteolyticDigestionFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
       <Component Id="Appsrc_ProteolyticDigestion_proteases.tsv" Guid="A3AF0FEB-59EE-4207-9BDB-3B285D1E720E" Condition="OVERWRITEAPPDATA">
-        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_ProteolyticDigestion_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)ProteolyticDigestion\proteases.tsv" />
       </Component>
     </ComponentGroup>
   </Fragment>
 
+  <!--Builds the App Rnases folder-->
+  <Fragment>
+	  <ComponentGroup Id="Appsrc_Digestion_files" Directory="MetaAppDigestionFolder">
+		  <Component Id="RemoveDigestion" Condition="OVERWRITEAPPDATA" Guid="25CA934F-1A99-49D8-BB94-C52639E21615">
+			  <RemoveFolder Id="MetaAppDigestionFolder" On="both" />
+			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+		  </Component>
+		  <Component Id="Appsrc_Digestion_rnases.tsv" Guid="07709B54-1331-4851-92AD-26116852467C" Condition="OVERWRITEAPPDATA">
+			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+			  <File ReadOnly="no" Id="Appsrc_Digestion_rnases.tsv" Name="rnases.tsv" Source="$(var.GUI_TargetDir)Digestion\rnases.tsv" />
+		  </Component>
+	  </ComponentGroup>
+  </Fragment>
+
   <!--Builds the App Contaminants folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Contaminants_files" Directory="MetaAppContaminantsFolder">
       <Component Id="RemoveContaminants" Guid="D40C37B7-1F04-4DCC-A4AC-46D9F613570A" Condition="OVERWRITEAPPDATA">
-        
         <RemoveFolder Id="MetaAppContaminantsFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
       <Component Id="Appsrc_Contaminants_MetaMorpheus_Contaminants.xml" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d" Condition="OVERWRITEAPPDATA">
-        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Contaminants_MetaMorpheusContaminants.xml" Name="MetaMorpheusContaminants.xml" Source="$(var.GUI_TargetDir)Contaminants\MetaMorpheusContaminants.xml" />
       </Component>
@@ -637,14 +731,12 @@
   <!--Build the Proteomes folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Proteomes_files" Directory="MetaAppProteomesFolder">
-      <Component Id="RemoveProteomes" Guid="CE2297F1-81E4-4268-9976-50A5A48C391D" Condition="OVERWRITEAPPDATA">
-        
+      <Component Id="RemoveProteomes" Guid="CE2297F1-81E4-4268-9976-50A5A48C391D" Condition="OVERWRITEAPPDATA">    
         <RemoveFolder Id="MetaAppProteomesFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
       <Component Id="Appsrc_Proteomes_availableUniProtProteomes.txt.gz" Guid="89F6BBC1-4668-4F9C-A52B-69603CE418C1" Condition="OVERWRITEAPPDATA">
         <File ReadOnly="yes" Id="Appsrc_Proteomes_availableUniProtProteomes.txt" Name="availableUniProtProteomes.txt.gz" Source="$(var.GUI_TargetDir)Proteomes\availableUniProtProteomes.txt.gz" />
-        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </ComponentGroup>
@@ -654,7 +746,6 @@
   <Fragment>
     <ComponentGroup Id="ExcelDefaults">
       <Component Id="ExcelDefault" Directory="ProgramFiles64Folder" Guid="{D6A1CF31-27C8-4DCB-A92F-D36D6EDB7C70}" Permanent="yes" Condition="EXCELDEFAULTPROPERTY">
-        
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv" />
         <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithList">
           <RegistryValue Name="a" Value="EXCEL.EXE" Type="string" />
@@ -673,7 +764,6 @@
         </RegistryKey>
       </Component>
       <Component Id="ExcelDefault2" Directory="ProgramFiles64Folder" Guid="{A19A382C-8DD8-4A03-8DE8-66973C197A98}" Permanent="yes" Condition="EXCELSELECT&lt;&gt;&quot;1&quot;">
-        
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command" />
         <RegistryKey Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command">
           <RegistryValue Action="write" Value="&quot;[EXCELSELECT]&quot; &quot;%1&quot;" Type="string" />

@@ -1,0 +1,37 @@
+name: Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    name: Test on Windows
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.204
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+        
+      - name: Build
+        run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration Release
+        
+      - name: Install Coverlet for code coverage
+        run: dotnet add ./MetaMorpheus/Test/Test.csproj package coverlet.collector -v 6.0.2
+        
+      - name: Run unit tests with coverage
+        run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+        
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          flags: unittests
