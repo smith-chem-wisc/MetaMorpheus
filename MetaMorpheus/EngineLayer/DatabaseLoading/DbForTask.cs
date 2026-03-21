@@ -8,8 +8,8 @@ public class DbForTask
         FilePath = filePath;
         IsContaminant = isContaminant;
         FileName = System.IO.Path.GetFileName(filePath);
-        IsSpectralLibrary = GlobalVariables.GetFileExtension(filePath).ToLowerInvariant() == ".msp";
-        DecoyIdentifier = decoyIdentifier ?? GlobalVariables.DecoyIdentifier;
+		IsSpectralLibrary = GlobalVariables.GetFileExtension(filePath).ToLowerInvariant() is ".msp" or ".msl";
+		DecoyIdentifier = decoyIdentifier ?? GlobalVariables.DecoyIdentifier;
     }
 
     public bool IsSpectralLibrary { get; }

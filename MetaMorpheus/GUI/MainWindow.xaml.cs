@@ -592,7 +592,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddProteinDatabase_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = StartOpenFileDialog("Database Files|*.xml;*.xml.gz;*.fasta;*.fa;*.msp");
+            var openPicker = StartOpenFileDialog("Database Files|*.xml;*.xml.gz;*.fasta;*.fa;*.msp;*.msl");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -1793,6 +1793,7 @@ namespace MetaMorpheusGUI
                 case ".fasta":
                 case ".fa":
                 case ".msp":
+                case ".msl":
                     ProteinDbForDataGrid uu = new ProteinDbForDataGrid(filePath);
                     if (!DatabaseExists(ProteinDatabases, uu))
                     {
