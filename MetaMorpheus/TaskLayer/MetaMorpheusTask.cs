@@ -1,6 +1,11 @@
 using Chemistry;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
+using EngineLayer.DIA;
 using EngineLayer.Indexing;
+using EngineLayer.SpectrumMatch;
+using EngineLayer.SpectrumMatch;
+using EngineLayer.Util;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -8,6 +13,7 @@ using Omics;
 using Omics.BioPolymer;
 using Omics.Digestion;
 using Omics.Modifications;
+using Omics.SpectralMatch.MslSpectralLibrary;
 using Omics.SpectrumMatch;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -22,14 +28,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EngineLayer.DatabaseLoading;
-using EngineLayer.SpectrumMatch;
-using UsefulProteomicsDatabases;
 using Transcriptomics;
 using Transcriptomics.Digestion;
-using EngineLayer.Util;
-using EngineLayer.DIA;
-using EngineLayer.SpectrumMatch;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -1053,17 +1054,30 @@ namespace TaskLayer
 		{
 			var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
-			// Write MSP (legacy format, kept for backward compatibility)
+			// Write MSP
 			string mspPath = Path.Combine(outputFolder, "SpectralLibrary_" + startTimeForAllFilenames + ".msp");
 			using (StreamWriter output = new StreamWriter(mspPath))
-			{
 				foreach (var x in spectrumLibrary)
 					output.WriteLine(x.ToString());
-			}
 
-			// Write MSL (binary format)
+			// Write MSL — skip invalid entries rather than crashing
+			var entries = spectrumLibrary
+				.Select(s => MslLibraryEntry.TryFromLibrarySpectrum(s))
+				.Where(r => r.Success)
+				.Select(r => r.Entry!)
+				.ToList();
+			var results = spectrumLibrary
+	.Select(s => MslLibraryEntry.TryFromLibrarySpectrum(s))
+	.ToList();
+
+			var failed = results.Where(r => !r.Success).ToList();
+			if (failed.Any())
+				Warn($"MSL library skipped {failed.Count} invalid entries: " +
+					 string.Join("; ", failed.SelectMany(r => r.Errors).Distinct()));
+
+			entries = results.Where(r => r.Success).Select(r => r.Entry!).ToList();
 			string mslPath = Path.Combine(outputFolder, "SpectralLibrary_" + startTimeForAllFilenames + ".msl");
-			MslLibrary.SaveFromLibrarySpectra(mslPath, spectrumLibrary);
+			MslLibrary.Save(mslPath, entries);
 		}
 
 		protected string UpdateSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
@@ -1073,17 +1087,19 @@ namespace TaskLayer
 			// Write MSP (legacy format, kept for backward compatibility)
 			string mspPath = Path.Combine(outputFolder, "updateSpectralLibrary_" + startTimeForAllFilenames + ".msp");
 			using (StreamWriter output = new StreamWriter(mspPath))
-			{
 				foreach (var x in spectrumLibrary)
 					output.WriteLine(x.ToString());
-			}
 
-			// Write MSL (binary format)
+			// Write MSL — skip invalid entries rather than crashing
+			var entries = spectrumLibrary
+				.Select(s => MslLibraryEntry.TryFromLibrarySpectrum(s))
+				.Where(r => r.Success)
+				.Select(r => r.Entry!)
+				.ToList();
+
 			string mslPath = Path.Combine(outputFolder, "updateSpectralLibrary_" + startTimeForAllFilenames + ".msl");
-			MslLibrary.SaveFromLibrarySpectra(mslPath, spectrumLibrary);
+			MslLibrary.Save(mslPath, entries);
 
-			// Return the MSL path as the canonical output; callers that feed this
-			// path back into LoadSpectralLibraries will get the faster binary format
 			return mslPath;
 		}
 

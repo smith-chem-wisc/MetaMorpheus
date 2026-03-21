@@ -41,7 +41,7 @@ namespace MetaMorpheusGUI
         public PtmLegendViewModel PtmLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".osmtsv", ".tsv" };
-        private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
+        private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp", ".msl" };
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
         public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
         public DeconExplorationTabViewModel DeconExplorationViewModel { get; set; }
