@@ -17,6 +17,7 @@ using System.Text;
 using TopDownProteomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
+using Omics.Modifications.IO;
 
 namespace EngineLayer
 {
@@ -53,7 +54,7 @@ namespace EngineLayer
         public static GlobalSettings GlobalSettings { get; set; }
         public static IEnumerable<Modification> UnimodDeserialized { get; private set; }
         public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
-        public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; private set; }
+        public static obo PsiModDeserialized { get; private set; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<Modification> AllRnaModsKnown { get { return _AllRnaModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
