@@ -24,6 +24,23 @@ namespace EngineLayer
 
             TheScan = mzLibScan;
 
+            // Build the lightweight metadata snapshot
+            ScanMetadata = new ScanMetadata(
+                OneBasedScanNumber: mzLibScan.OneBasedScanNumber,
+                OneBasedPrecursorScanNumber: mzLibScan.OneBasedPrecursorScanNumber,
+                RetentionTime: mzLibScan.RetentionTime,
+                NumPeaks: mzLibScan.MassSpectrum.Size,
+                TotalIonCurrent: mzLibScan.TotalIonCurrent,
+                NativeId: mzLibScan.NativeId,
+                FullFilePath: fullFilePath,
+                PrecursorCharge: precursorCharge,
+                PrecursorMonoisotopicPeakMz: precursorMonoisotopicPeakMz,
+                PrecursorMass: PrecursorMass,
+                PrecursorIntensity: PrecursorIntensity,
+                PrecursorEnvelopePeakCount: PrecursorEnvelopePeakCount,
+                PrecursorFractionalIntensity: PrecursorFractionalIntensity,
+                OneOverK0: mzLibScan is TimsDataScan tims ? tims.OneOverK0 : null);
+
             if (commonParam.DissociationType != DissociationType.LowCID)
             {
                 ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
@@ -39,6 +56,14 @@ namespace EngineLayer
         }
 
         public MsDataScan TheScan { get; }
+
+        /// <summary>
+        /// Lightweight, immutable snapshot of scan and precursor metadata.
+        /// Designed to be passed to SpectralMatch so the heavyweight scan objects
+        /// can be released from memory after scoring.
+        /// </summary>
+        public ScanMetadata ScanMetadata { get; }
+
         public double PrecursorMonoisotopicPeakMz { get; }
         public double PrecursorMass { get; }
         public int PrecursorCharge { get; }
