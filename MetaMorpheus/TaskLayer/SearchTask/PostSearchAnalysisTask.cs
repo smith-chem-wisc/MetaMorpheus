@@ -1178,12 +1178,12 @@ namespace TaskLayer
                     sb.Append(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults).Trim());
                     sb.Append('\t');
 
-                    if (psm.IsobaricMassTagReporterIonIntensities != null && psm.IsobaricMassTagReporterIonIntensities.Length > 0)
+                    if (psm.ReporterIonIntensities != null && psm.ReporterIonIntensities.Length > 0)
                     {
-                        for (int i = 0; i < psm.IsobaricMassTagReporterIonIntensities.Length; i++)
+                        for (int i = 0; i < psm.ReporterIonIntensities.Length; i++)
                         {
                             if (i > 0) sb.Append('\t');
-                            sb.Append(psm.IsobaricMassTagReporterIonIntensities[i].ToString("F1", CultureInfo.InvariantCulture));
+                            sb.Append(psm.ReporterIonIntensities[i].ToString("F1", CultureInfo.InvariantCulture));
                         }
                     }
                     else
