@@ -16,7 +16,6 @@ namespace TaskLayer
             ModPeptidesAreDifferent = false;
             DoLabelFreeQuantification = true;
             UseSharedPeptidesForLFQ = false;
-            DoSpectralRecovery = false;
             QuantifyPpmTol = 5;
             MbrFdrThreshold = 0.01;
             SearchTarget = true;
@@ -82,7 +81,6 @@ namespace TaskLayer
         public bool UseSharedPeptidesForLFQ { get; set; }
         public bool DoMultiplexQuantification { get; set; }
         public string MultiplexModId { get; set; }
-        public bool DoSpectralRecovery { get; set; }
         public SearchType SearchType { get; set; }
         public List<FdrCategory> LocalFdrCategories { get; set; }
         public string CustomMdac { get; set; }

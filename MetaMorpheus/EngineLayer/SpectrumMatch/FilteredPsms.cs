@@ -1,16 +1,10 @@
-﻿using Easy.Common.Extensions;
+using Easy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer.SpectrumMatch
 {
-    public enum FilterType
-    {
-        QValue,
-        PepQValue
-    }
-
     /// <summary>
     /// Contains a filtered list of PSMs.
     /// All properties within this class are read-only, and should only be set on object construction
@@ -25,7 +19,7 @@ namespace EngineLayer.SpectrumMatch
         public double FilterThreshold { get; init; }
         public bool FilteringNotPerformed { get; init; }
         public bool PeptideLevelFiltering { get; init; }
-        public FilteredPsms(List<SpectralMatch> filteredPsms, FilterType filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
+        private FilteredPsms(List<SpectralMatch> filteredPsms, FilterType filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
         {
             FilteredPsmsList = filteredPsms;
             FilterType = filterType;
@@ -69,11 +63,19 @@ namespace EngineLayer.SpectrumMatch
         /// <summary>
         /// Returns a FilteredPsms object that holds every psm that passed the filtering criteria.
         /// Q-Value and PEP Q-Value thresholds are read from common parameters by default, but can be overridden
-        /// Q-Value and PEP Q-Value filtering are mutually exculsive.
+        /// Q-Value and PEP Q-Value filtering are mutually exclusive.
         /// In cases where PEP filtering was selected but PEP wasn't performed due to insufficient PSMs, 
         /// filtering defaults to Q and Q_Notch.
+        /// 
+        /// NOTE: In multiprotease searches, each protease may have its own CommonParameters with different 
+        /// filtering thresholds. However, this method only accepts a single CommonParameters instance, 
+        /// so filtering may not be optimal for all proteases when generating a combined filtered PSM list.
+        /// Consider passing explicit qValueThreshold and pepQValueThreshold parameters to ensure consistent 
+        /// filtering across all proteases.
         /// </summary>
         /// <param name="psms"> List of spectral match objects to be filtered</param>
+        /// <param name="commonParams">Common parameters containing default filter thresholds. In multiprotease scenarios, 
+        /// consider using explicit threshold parameters instead.</param>
         /// <param name="filterAtPeptideLevel">Filter results at the peptide level (defaults to false) </param>
         /// <returns> A FilteredPsms object</returns>
         public static FilteredPsms Filter(IEnumerable<SpectralMatch> psms,
@@ -132,9 +134,9 @@ namespace EngineLayer.SpectrumMatch
         }
     }
 
-    public static class FilteredPsmsExtensions
+    internal static class FilteredPsmsExtensions
     {
-        public static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
+        internal static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
         {
             if (!filterAtPeptideLevel)
             {
@@ -151,7 +153,7 @@ namespace EngineLayer.SpectrumMatch
             }
         }
 
-        public static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType)
+        internal static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType)
         {
             foreach (var psm in psms)
             {

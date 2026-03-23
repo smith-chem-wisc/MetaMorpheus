@@ -1,4 +1,5 @@
 ﻿using Proteomics;
+using FlashLFQ;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -67,7 +68,34 @@ namespace EngineLayer
         public HashSet<IBioPolymerWithSetMods> AllPeptides { get; set; }
 
         public HashSet<IBioPolymerWithSetMods> UniquePeptides { get; set; }
-
+        /// <summary>
+        /// Contains all PSMs associated with this protein group that pass the configured quality threshold.
+        /// The specific filtering criteria depends on the <see cref="FilterType"/> and threshold passed to 
+        /// <see cref="ProteinScoringAndFdrEngine"/> during protein scoring:
+        /// <list type="bullet">
+        ///   <item>
+        ///     <term><see cref="FilterType.QValue"/></term>
+        ///     <description>PSMs where QValue ≤ threshold AND QValueNotch ≤ threshold</description>
+        ///   </item>
+        ///   <item>
+        ///     <term><see cref="FilterType.PepQValue"/></term>
+        ///     <description>PSMs where PEP_QValue ≤ threshold</description>
+        ///   </item>
+        /// </list>
+        /// The default threshold is 0.01 (1% FDR), but this can vary based on the filter configuration.
+        /// This collection is populated during <see cref="ProteinScoringAndFdrEngine.ScoreProteinGroups"/> 
+        /// and is used for:
+        /// <list type="bullet">
+        ///   <item>Calculating the <see cref="ProteinGroupScore"/> via the <see cref="Score"/> method</item>
+        ///   <item>Determining <see cref="BestPeptideScore"/>, <see cref="BestPeptideQValue"/>, and <see cref="BestPeptidePEP"/></item>
+        ///   <item>Computing sequence coverage in <see cref="CalculateSequenceCoverage"/></item>
+        ///   <item>Reporting the number of PSMs in protein group output</item>
+        /// </list>
+        /// </summary>
+        /// <remarks>
+        /// Note: The property name "AllPsmsBelowOnePercentFDR" is a legacy name. The actual threshold 
+        /// used is determined by the FilterThreshold parameter passed to ProteinScoringAndFdrEngine.
+        /// </remarks>
         public HashSet<SpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
 
         public List<double> SequenceCoverageFraction { get; private set; }
@@ -81,6 +109,14 @@ namespace EngineLayer
         public double QValue { get; set; }
 
         public double BestPeptideQValue { get; set; }
+
+        /// <summary>
+        /// The minimum Posterior Error Probability (PEP) among all PSMs in <see cref="AllPsmsBelowOnePercentFDR"/>.
+        /// Lower values indicate higher confidence that the best peptide identification is correct.
+        /// This value is populated during <see cref="ProteinScoringAndFdrEngine.DoProteinFdr"/> and is used
+        /// for protein group ranking when using PEP-based filtering (<see cref="FilterType.PepQValue"/>).
+        /// </summary>
+        public double BestPeptidePEP { get; set; }
 
         public double BestPeptideScore { get; set; }
 
@@ -212,7 +248,8 @@ namespace EngineLayer
             sb.Append("Protein Cumulative Decoy" + '\t');
             sb.Append("Protein QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
-            sb.Append("Best Peptide Notch QValue");
+            sb.Append("Best Peptide Notch QValue" + '\t');
+            sb.Append("Best Peptide PEP");
             return sb.ToString();
         }
 
@@ -393,6 +430,10 @@ namespace EngineLayer
 
             // best peptide q value
             sb.Append(BestPeptideQValue);
+            sb.Append("\t");
+
+            // best peptide PEP
+            sb.Append(BestPeptidePEP);
 
             return sb.ToString();
         }
@@ -529,7 +570,7 @@ namespace EngineLayer
             }
         }
 
-        // this method is only used internally, to make protein grouping faster
+        // Score() method is only used internally, to make protein grouping faster
         // this is NOT an output and is NOT used for protein FDR calculations
         public void Score()
         {

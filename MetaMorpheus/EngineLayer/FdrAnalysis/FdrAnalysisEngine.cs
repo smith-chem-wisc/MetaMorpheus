@@ -4,7 +4,6 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Transcriptomics.Digestion;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -77,7 +76,7 @@ namespace EngineLayer.FdrAnalysis
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
                 var psms = proteasePsms.OrderByDescending(p => p).ToList();
-                var peptides = FilteredPsms.Filter(allPsms,
+                var peptides = FilteredPsms.Filter(psms,
                     commonParameters,
                     includeDecoys: true,
                     includeContaminants: true,

@@ -18,7 +18,6 @@ DoLocalizationAnalysis = true
 DoLabelFreeQuantification = false
 DoMultiplexQuantification = true
 MultiplexModId = "DiLeu-4plex"
-DoSpectralRecovery = false
 SearchType = "Classic"
 LocalFdrCategories = ["FullySpecific"]
 MaxFragmentSize = 30000.0
