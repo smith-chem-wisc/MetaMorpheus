@@ -287,6 +287,7 @@ public class MIonLossViewModel : BaseViewModel
     public string Name => MIonLoss.Name;
     public string Annotation => MIonLoss.Annotation;
     public double MassShift => MIonLoss.MonoisotopicMass;
+    public string ChemicalFormula => MIonLoss.ThisChemicalFormula.Formula;
     public bool IsCustom { get; }
 
     private bool _isSelected;

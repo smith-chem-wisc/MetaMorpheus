@@ -6,9 +6,7 @@
              xmlns:local="clr-namespace:MetaMorpheusGUI"
              xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
              mc:Ignorable="d" 
-             d:DesignHeight="400" d:DesignWidth="600"
-             MaxHeight="300"
-
+             d:DesignHeight="500" d:DesignWidth="650"
              d:DataContext="{x:Static guiFunctions:FragmentationParamsDesignModel.Instance}">
 
     <UserControl.Resources>
@@ -35,16 +33,15 @@
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Left Side -->
-            <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Top">
-                <StackPanel Orientation="Horizontal" Margin="6 2 0 2">
-                    <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="146" />
-                    <local:DoubleTextBoxControl x:Name="MaxFragmentMassTextBox" Width="45"
+            <!-- Left Column: Max Fragment Mass -->
+            <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Top" Margin="5">
+                <StackPanel Orientation="Horizontal" Margin="5 2 0 2">
+                    <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="155" />
+                    <local:DoubleTextBoxControl x:Name="MaxFragmentMassTextBox" Width="50"
                                                 Text="{Binding MaxFragmentMassDa}" ToolTipService.ShowDuration="999999"
                                                 ToolTipService.InitialShowDelay="500">
                         <TextBox.ToolTip>
@@ -56,7 +53,11 @@
                         </TextBox.ToolTip>
                     </local:DoubleTextBoxControl>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="10 2 0 2">
+            </StackPanel>
+
+            <!-- Right Column: Checkboxes -->
+            <StackPanel Grid.Column="1" Grid.Row="0" VerticalAlignment="Top" Margin="5">
+                <StackPanel Orientation="Horizontal" Margin="5 2 0 5">
                     <CheckBox x:Name="AddCompIonCheckBox" Content="Generate Complementary Ions"
                           ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                           IsChecked="{Binding GenerateComplementaryIons}">
@@ -69,7 +70,7 @@
                         </CheckBox.ToolTip>
                     </CheckBox>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="10 2 0 2">
+                <StackPanel Orientation="Horizontal" Margin="5 2 0 5">
                     <CheckBox x:Name="NTerminalIons" ToolTipService.ShowDuration="999999"
                           ToolTipService.InitialShowDelay="500" IsChecked="{Binding RightSideFragmentIons}">
                         <CheckBox.Content>
@@ -85,7 +86,7 @@
                             </TextBlock>
                         </CheckBox.ToolTip>
                     </CheckBox>
-                    <CheckBox x:Name="CTerminalIons" Margin="10 0 0 0"
+                    <CheckBox x:Name="CTerminalIons" Margin="15 0 0 0"
                           ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                           IsChecked="{Binding LeftSideFragmentIons}">
                         <CheckBox.Content>
@@ -102,7 +103,7 @@
                         </CheckBox.ToolTip>
                     </CheckBox>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="10 2 0 2"
+                <StackPanel Orientation="Horizontal" Margin="5 2 0 2"
                         Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                     <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions"
                           ToolTipService.ShowDuration="999999" IsChecked="{Binding GenerateInternalIons}"
@@ -113,7 +114,7 @@
                             </TextBlock>
                         </CheckBox.ToolTip>
                     </CheckBox>
-                    <Label x:Name="minInternalFragmentLengthLabel" Content="Min Internal Length:" Margin="24,-6,0,0" />
+                    <Label x:Name="minInternalFragmentLengthLabel" Content="Min Internal Length:" Margin="10,-2,0,0" />
                     <local:IntegerTexBoxControl x:Name="MinInternalFragmentLengthTextBox" Width="45"
                                             IsEnabled="{Binding IsChecked, ElementName=InternalIonsCheckBox}"
                                             Text="{Binding MinInternalIonLength}"
@@ -128,9 +129,9 @@
                         </TextBox.ToolTip>
                     </local:IntegerTexBoxControl>
                 </StackPanel>
-
+                
                 <!-- Generate M Ions checkbox -->
-                <StackPanel Orientation="Horizontal" Margin="10 2 0 10">
+                <StackPanel Orientation="Horizontal" Margin="5 2 0 2">
                     <CheckBox IsChecked="{Binding GenerateMIon}"
                               ToolTipService.ShowDuration="999999"
                               ToolTipService.InitialShowDelay="500">
@@ -150,44 +151,60 @@
                 </StackPanel>
             </StackPanel>
 
-            <!-- M-Ion Loss Management Buttons -->
-            <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Horizontal" Margin="10,5,5,5" VerticalAlignment="Bottom">
-                <Button Content="Add All Losses" 
-                        Width="90" 
-                        Height="23" 
-                        FontWeight="Bold"
-                        Margin="0,0,5,0"
-                        Style="{StaticResource ImportantButtonStyle}"
-                        Command="{Binding AddAllLossesCommand}"
-                        IsEnabled="{Binding GenerateMIon}"
-                        ToolTip="Select all available M-Ion losses"/>
-                <Button Content="Remove All" 
-                        Width="90" 
-                        Height="23" 
-                        FontWeight="Bold"
-                        Margin="0,0,5,0"
-                        Style="{StaticResource ImportantButtonStyle}"
-                        Command="{Binding RemoveAllLossesCommand}"
-                        IsEnabled="{Binding GenerateMIon}"
-                        ToolTip="Deselect all M-Ion losses"/>
-                <Button x:Name="AddCustomLossButton"
-                        Content="New Custom Loss" 
-                        Width="110" 
-                        Height="23"
-                        FontWeight="Bold"
-                        Style="{StaticResource ImportantButtonStyle}"
-                        IsEnabled="{Binding GenerateMIon}"
-                        Click="AddCustomMIonLoss_Click"
-                        ToolTip="Create a new custom M-Ion loss"/>
-            </StackPanel>
-
-            <!-- M-Ion Losses DataGrid -->
-            <GroupBox Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Header="M-Ion Neutral Losses"
-                    BorderBrush="{StaticResource BorderColor}" 
-                    BorderThickness="1" 
-                    Padding="5" 
-                    Margin="10,5,5,0">
-                    <DataGrid ItemsSource="{Binding AvailableMIonLosses}"
+            <!-- Bottom: M-Ion Loss Management (spans both columns) -->
+            <GroupBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" 
+                      Header="M-Ion Neutral Losses"
+                      BorderBrush="{StaticResource BorderColor}" 
+                      BorderThickness="1" 
+                      Padding="5" 
+                      Margin="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- M-Ion Loss Management Buttons -->
+                    <Grid Grid.Row="0" Margin="0,0,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="Add All Losses" 
+                                Width="90" 
+                                Height="23" 
+                                FontWeight="Bold"
+                                HorizontalAlignment="Center"
+                                Style="{StaticResource ImportantButtonStyle}"
+                                Command="{Binding AddAllLossesCommand}"
+                                IsEnabled="{Binding GenerateMIon}"
+                                ToolTip="Select all available M-Ion losses"/>
+                        <Button Grid.Column="1" Content="Remove All" 
+                                Width="90" 
+                                Height="23" 
+                                FontWeight="Bold"
+                                HorizontalAlignment="Center"
+                                Style="{StaticResource ImportantButtonStyle}"
+                                Command="{Binding RemoveAllLossesCommand}"
+                                IsEnabled="{Binding GenerateMIon}"
+                                ToolTip="Deselect all M-Ion losses"/>
+                        <Button Grid.Column="2" x:Name="AddCustomLossButton"
+                                Content="New Custom Loss" 
+                                Width="110" 
+                                Height="23"
+                                FontWeight="Bold"
+                                HorizontalAlignment="Center"
+                                Style="{StaticResource ImportantButtonStyle}"
+                                IsEnabled="{Binding GenerateMIon}"
+                                Click="AddCustomMIonLoss_Click"
+                                ToolTip="Create a new custom M-Ion loss"/>
+                    </Grid>
+                    
+                    <!-- M-Ion Losses DataGrid -->
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding AvailableMIonLosses}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               CanUserDeleteRows="False"
@@ -197,38 +214,44 @@
                               SelectionMode="Single"
                               GridLinesVisibility="Horizontal"
                               IsEnabled="{Binding GenerateMIon}"
-                              VerticalScrollBarVisibility="Auto">
+                              VerticalScrollBarVisibility="Auto"
+                              MaxHeight="200">
                         <DataGrid.Columns>
                             <DataGridCheckBoxColumn Header="Use" 
                                                     Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" 
                                                     Width="Auto"/>
-                        <DataGridTextColumn Header="Annotation" 
-                                            Binding="{Binding Annotation}" 
-                                            Width="Auto" 
-                                            IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Annotation" 
+                                                Binding="{Binding Annotation}" 
+                                                Width="Auto" 
+                                                IsReadOnly="True"/>
                             <DataGridTextColumn Header="Mass Shift (Da)" 
                                                 Binding="{Binding MassShift, StringFormat=F4}" 
                                                 Width="Auto" 
                                                 IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Name" 
+                            <DataGridTextColumn Header="Name" 
                                                 Binding="{Binding Name}" 
+                                                Width="Auto" 
+                                                IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Chemical Formula" 
+                                                Binding="{Binding ChemicalFormula}" 
                                                 Width="Auto" 
                                                 IsReadOnly="True"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                </GroupBox>
-
-                <!-- Note about M-Ion losses -->
-            <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"  Margin="10,5,5,5"
-                       TextWrapping="Wrap"
-                       Foreground="Gray"
-                       FontStyle="Italic"
-                       FontSize="10">
-                <TextBlock.Text>
-                    <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
-                             ConverterParameter="M-ion losses include common losses like water (-H2O) and ammonia (-NH3). For RNA, additional losses include base losses and phosphate losses." />
-                </TextBlock.Text>
-            </TextBlock>
+                    
+                    <!-- Note about M-Ion losses -->
+                    <TextBlock Grid.Row="2" Margin="0,5,0,0"
+                               TextWrapping="Wrap"
+                               Foreground="Gray"
+                               FontStyle="Italic"
+                               FontSize="10">
+                        <TextBlock.Text>
+                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                     ConverterParameter="M-ion losses include common losses like water (-H2O) and ammonia (-NH3). For RNA, additional losses include base losses and phosphate losses." />
+                        </TextBlock.Text>
+                    </TextBlock>
+                </Grid>
+            </GroupBox>
 
         </Grid>
         
