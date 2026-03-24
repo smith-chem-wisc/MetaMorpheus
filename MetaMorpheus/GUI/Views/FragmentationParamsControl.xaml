@@ -72,7 +72,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="5 2 0 5">
                     <CheckBox x:Name="NTerminalIons" ToolTipService.ShowDuration="999999"
-                          ToolTipService.InitialShowDelay="500" IsChecked="{Binding RightSideFragmentIons}">
+                          ToolTipService.InitialShowDelay="500" IsChecked="{Binding LeftSideFragmentIons}">
                         <CheckBox.Content>
                             <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
                                  ConverterParameter="N-Terminal Ions" />
@@ -88,7 +88,7 @@
                     </CheckBox>
                     <CheckBox x:Name="CTerminalIons" Margin="15 0 0 0"
                           ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
-                          IsChecked="{Binding LeftSideFragmentIons}">
+                          IsChecked="{Binding RightSideFragmentIons}">
                         <CheckBox.Content>
                             <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
                                  ConverterParameter="C-Terminal Ions" />
