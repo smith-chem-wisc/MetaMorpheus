@@ -6,6 +6,7 @@ using System.Windows.Input;
 using Easy.Common.Extensions;
 using EngineLayer;
 using Omics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using TaskLayer;
 using Transcriptomics;
 using GuiFunctions.Util;
@@ -245,23 +246,23 @@ public class FragmentationParamsViewModel : BaseViewModel
         // Force reload by clearing cache
         CustomMIonLossManager.ClearCache();
         
-        // Reload with current parameters (preserve selections if possible)
-        var currentlySelected = AvailableMIonLosses.Where(l => l.IsSelected).Select(l => l.Annotation).ToList();
+        // Preserve current terminus state to avoid resetting user preferences
+        var terminus = LeftSideFragmentIons && RightSideFragmentIons ? FragmentationTerminus.Both
+            : LeftSideFragmentIons ? FragmentationTerminus.N
+            : RightSideFragmentIons ? FragmentationTerminus.C
+            : FragmentationTerminus.Both;
         
-        var commonParams = new CommonParameters
-        {
-            FragmentationParameters = ToFragmentationParams()
-        };
+        // Build CommonParameters with correct terminus - LoadAvailableMIonLosses reads this
+        var commonParams = new CommonParameters(
+            digestionParams: new DigestionParams(fragmentationTerminus: terminus),
+            fragmentationParams: ToFragmentationParams()
+        );
 
+        // LoadAvailableMIonLosses already restores selections from FragmentationParameters.MIonLosses
+        // No need to manually restore selections here
         AvailableMIonLosses.Clear();
         foreach (var loss in LoadAvailableMIonLosses(commonParams))
             AvailableMIonLosses.Add(loss);
-        
-        // Restore selections
-        foreach (var loss in AvailableMIonLosses.Where(l => currentlySelected.Contains(l.Annotation)))
-        {
-            loss.IsSelected = true;
-        }
         
         OnPropertyChanged(nameof(AvailableMIonLosses));
     }
