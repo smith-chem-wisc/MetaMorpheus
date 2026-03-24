@@ -306,7 +306,8 @@ namespace GuiFunctions
                        && x.NeutralTheoreticalProduct.FragmentNumber == y.NeutralTheoreticalProduct.FragmentNumber
                        && x.NeutralTheoreticalProduct.ProductType == y.NeutralTheoreticalProduct.ProductType
                        && x.NeutralTheoreticalProduct.SecondaryProductType == y.NeutralTheoreticalProduct.SecondaryProductType
-                       && x.NeutralTheoreticalProduct.SecondaryFragmentNumber == y.NeutralTheoreticalProduct.SecondaryFragmentNumber;
+                       && x.NeutralTheoreticalProduct.SecondaryFragmentNumber == y.NeutralTheoreticalProduct.SecondaryFragmentNumber
+                       && x.NeutralTheoreticalProduct.NeutralLoss.Equals(y.NeutralTheoreticalProduct.NeutralLoss);
             }
 
             public int GetHashCode(MatchedFragmentIon obj)
@@ -321,6 +322,7 @@ namespace GuiFunctions
                 hash = hash * 23 + (obj.NeutralTheoreticalProduct.SecondaryProductType?.GetHashCode() ?? 0);
                 if (obj.NeutralTheoreticalProduct.SecondaryFragmentNumber != null)
                     hash = hash * 23 + obj.NeutralTheoreticalProduct.SecondaryFragmentNumber.GetHashCode();
+                hash = hash * 23 + obj.NeutralTheoreticalProduct.NeutralLoss.GetHashCode();
 
                 return hash;
             }
