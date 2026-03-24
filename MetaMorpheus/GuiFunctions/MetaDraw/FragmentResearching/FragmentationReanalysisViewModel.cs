@@ -42,8 +42,8 @@ namespace GuiFunctions
                     && Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod) 
                     && prod.Count != 0);
                 SelectedDissociationType = DissociationType.HCD;
-                common = new CommonParameters(digestionParams: new RnaDigestionParams(), fragmentationParams: new RnaFragmentationParams());
-                search = new RnaSearchParameters()
+                common = new CommonParameters(digestionParams: new DigestionParams(), fragmentationParams: new FragmentationParams());
+                search = new SearchParameters()
                 {
                     MinAllowedInternalFragmentLength = 0,
                     MaxFragmentSize = 30000
@@ -56,8 +56,8 @@ namespace GuiFunctions
                                 && Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod)
                                 && prod.Count != 0);
                 SelectedDissociationType = DissociationType.CID;
-                common = new CommonParameters(digestionParams: new DigestionParams(), fragmentationParams: new FragmentationParams());
-                search = new SearchParameters()
+                common = new CommonParameters(digestionParams: new RnaDigestionParams(), fragmentationParams: new RnaFragmentationParams());
+                search = new RnaSearchParameters()
                 {
                     MinAllowedInternalFragmentLength = 0,
                     MaxFragmentSize = 30000
