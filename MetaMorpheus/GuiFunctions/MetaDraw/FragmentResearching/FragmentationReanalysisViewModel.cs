@@ -25,6 +25,7 @@ namespace GuiFunctions
     public class FragmentationReanalysisViewModel : BaseViewModel
     {
         private readonly bool _isProtein;
+        private static readonly object _fragmentationLock = new();
 
         public FragmentationReanalysisViewModel(bool isProtein = true)
         {
@@ -245,15 +246,19 @@ namespace GuiFunctions
             IFragmentationParams fragmentationParams = FragmentationParamsViewModel.ToFragmentationParams();
 
             List<Product> terminalProducts = new List<Product>();
-            smToRematch.ProductsFromDissociationType()[DissociationType.Custom] = _productsToUse.ToList(); 
-            bioPolymer.Fragment(DissociationType.Custom, FragmentationTerminus.Both, terminalProducts, fragmentationParams);
-
-
             List<Product> internalProducts = new List<Product>();
-            if (FragmentationParamsViewModel.GenerateInternalIons && bioPolymer is PeptideWithSetModifications) // internal ions are not currently implemented for RNA
+
+            // Lock to ensure thread-safe mutation of static DissociationTypeCollection dictionary
+            lock (_fragmentationLock)
             {
-                Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList();
-                bioPolymer.FragmentInternally(DissociationType.Custom, FragmentationParamsViewModel.MinInternalIonLength, internalProducts, fragmentationParams);
+                smToRematch.ProductsFromDissociationType()[DissociationType.Custom] = _productsToUse.ToList();
+                bioPolymer.Fragment(DissociationType.Custom, FragmentationTerminus.Both, terminalProducts, fragmentationParams);
+
+                if (FragmentationParamsViewModel.GenerateInternalIons && bioPolymer is PeptideWithSetModifications) // internal ions are not currently implemented for RNA
+                {
+                    Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList();
+                    bioPolymer.FragmentInternally(DissociationType.Custom, FragmentationParamsViewModel.MinInternalIonLength, internalProducts, fragmentationParams);
+                }
             }
             var allProducts = terminalProducts.Concat(internalProducts).ToList();
 
