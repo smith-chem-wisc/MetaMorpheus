@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
-        Title="Add Circular Search Task" Width="660" Height="640"
+        Title="Add Circular Search Task" Width="660" Height="700"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
@@ -68,20 +68,36 @@
                     </Grid>
                 </GroupBox>
 
-                <!-- ── Precursor tolerance ───────────────────────────────────── -->
-                <GroupBox Header="Precursor Mass Tolerance" Margin="0,0,0,8">
+                <!-- ── Mass Tolerances ───────────────────────────────────────── -->
+                <GroupBox Header="Mass Tolerances" Margin="0,0,0,8">
                     <Grid Margin="0,4,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="200"/>
                             <ColumnDefinition Width="80"/>
                             <ColumnDefinition Width="80"/>
                         </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" Content="Precursor tolerance:"
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                        </Grid.RowDefinitions>
+
+                        <Label Grid.Row="0" Grid.Column="0" Content="Precursor tolerance:"
                                VerticalAlignment="Center"/>
                         <TextBox x:Name="PrecursorMassToleranceTextBox"
-                                 Grid.Column="1" VerticalAlignment="Center" Text="5"/>
+                                 Grid.Row="0" Grid.Column="1"
+                                 VerticalAlignment="Center" Text="10"/>
                         <ComboBox x:Name="PrecursorMassToleranceComboBox"
-                                  Grid.Column="2" VerticalAlignment="Center"/>
+                                  Grid.Row="0" Grid.Column="2"
+                                  VerticalAlignment="Center"/>
+
+                        <Label Grid.Row="1" Grid.Column="0" Content="Product tolerance:"
+                               VerticalAlignment="Center"/>
+                        <TextBox x:Name="ProductMassToleranceTextBox"
+                                 Grid.Row="1" Grid.Column="1"
+                                 VerticalAlignment="Center" Text="20"/>
+                        <ComboBox x:Name="ProductMassToleranceComboBox"
+                                  Grid.Row="1" Grid.Column="2"
+                                  VerticalAlignment="Center"/>
                     </Grid>
                 </GroupBox>
 
@@ -140,8 +156,8 @@
                 <GroupBox Header="Modifications" Margin="0,0,0,8">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Fixed mods -->
@@ -264,15 +280,40 @@
 
                 <!-- ── Output ─────────────────────────────────────────────────── -->
                 <GroupBox Header="Output" Margin="0,0,0,8">
-                    <StackPanel Margin="4">
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="28"/>
+                            <RowDefinition Height="28"/>
+                            <RowDefinition Height="28"/>
+                            <RowDefinition Height="30"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+
                         <CheckBox x:Name="WriteDecoyCheckBox"
-                                  Content="Write decoy PSMs" Margin="0,2"/>
+                                  Grid.Row="0" Grid.Column="0"
+                                  Content="Write decoy PSMs"
+                                  VerticalAlignment="Center"/>
                         <CheckBox x:Name="WriteContaminantCheckBox"
-                                  Content="Write contaminant PSMs" Margin="0,2"/>
+                                  Grid.Row="1" Grid.Column="0"
+                                  Content="Write contaminant PSMs"
+                                  VerticalAlignment="Center"/>
                         <CheckBox x:Name="WriteHighQValueCheckBox"
+                                  Grid.Row="2" Grid.Column="0"
                                   Content="Write all PSMs (including above q-value threshold)"
-                                  Margin="0,2"/>
-                    </StackPanel>
+                                  VerticalAlignment="Center"/>
+
+                        <!-- Minimum score -->
+                        <StackPanel Grid.Row="3" Grid.Column="0"
+                                    Orientation="Horizontal" VerticalAlignment="Center">
+                            <Label Content="Minimum score allowed:" VerticalAlignment="Center"/>
+                            <TextBox x:Name="MinScoreTextBox"
+                                     Width="60" VerticalAlignment="Center"
+                                     Text="1"/>
+                        </StackPanel>
+                    </Grid>
                 </GroupBox>
 
             </StackPanel>

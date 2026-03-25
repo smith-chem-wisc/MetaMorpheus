@@ -63,6 +63,11 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.Items.Add("ppm");
             PrecursorMassToleranceComboBox.SelectedIndex = 1; // default ppm
 
+            // Product tolerance units
+            ProductMassToleranceComboBox.Items.Add("Da");
+            ProductMassToleranceComboBox.Items.Add("ppm");
+            ProductMassToleranceComboBox.SelectedIndex = 1; // default ppm
+
             // Mass-diff acceptor types
             foreach (MassDiffAcceptorType t in Enum.GetValues(typeof(MassDiffAcceptorType)))
                 MassDiffAcceptorComboBox.Items.Add(t);
@@ -120,6 +125,13 @@ namespace MetaMorpheusGUI
                     .ToString(CultureInfo.InvariantCulture);
             PrecursorMassToleranceComboBox.SelectedIndex =
                 task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+
+            // Product tolerance
+            ProductMassToleranceTextBox.Text =
+                task.CircularSearchParameters.ProductMassTolerance.Value
+                    .ToString(CultureInfo.InvariantCulture);
+            ProductMassToleranceComboBox.SelectedIndex =
+                task.CircularSearchParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
 
             // Mass-diff acceptor
             MassDiffAcceptorComboBox.SelectedItem =
@@ -203,17 +215,28 @@ namespace MetaMorpheusGUI
             WriteDecoyCheckBox.IsChecked = task.CircularSearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task.CircularSearchParameters.WriteContaminants;
             WriteHighQValueCheckBox.IsChecked = task.CircularSearchParameters.WriteHighQValuePsms;
+            MinScoreTextBox.Text = task.CircularSearchParameters.MinScore
+                .ToString(CultureInfo.InvariantCulture);
         }
 
         // ── Add Task (Save) ───────────────────────────────────────────────────
         private void AddTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            // Validate numeric fields
+            // Validate precursor tolerance
             if (!double.TryParse(PrecursorMassToleranceTextBox.Text,
                     NumberStyles.Any, CultureInfo.InvariantCulture, out double precTolValue)
                 || precTolValue <= 0)
             {
                 MessageBox.Show("Please enter a valid positive precursor mass tolerance.");
+                return;
+            }
+
+            // Validate product tolerance
+            if (!double.TryParse(ProductMassToleranceTextBox.Text,
+                    NumberStyles.Any, CultureInfo.InvariantCulture, out double prodTolValue)
+                || prodTolValue <= 0)
+            {
+                MessageBox.Show("Please enter a valid positive product mass tolerance.");
                 return;
             }
 
@@ -237,6 +260,14 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            if (!double.TryParse(MinScoreTextBox.Text,
+                    NumberStyles.Any, CultureInfo.InvariantCulture, out double minScore)
+                || minScore < 0)
+            {
+                MessageBox.Show("Minimum score must be a non-negative number.");
+                return;
+            }
+
             // Collect fixed mods
             var listOfModsFixed = new List<(string, string)>();
             foreach (var typeNode in FixedModTypeForTreeViewObservableCollection)
@@ -253,18 +284,23 @@ namespace MetaMorpheusGUI
                             .Where(c => c.Use)
                             .Select(c => (c.Parent.DisplayName, c.ModName)));
 
-            // Build tolerance
+            // Build tolerances
             Tolerance precursorTolerance =
                 PrecursorMassToleranceComboBox.SelectedIndex == 0
                     ? (Tolerance)new AbsoluteTolerance(precTolValue)
                     : new PpmTolerance(precTolValue);
+
+            Tolerance productTolerance =
+                ProductMassToleranceComboBox.SelectedIndex == 0
+                    ? (Tolerance)new AbsoluteTolerance(prodTolValue)
+                    : new PpmTolerance(prodTolValue);
 
             // Dissociation type
             DissociationType dissociationType =
                 GlobalVariables.AllSupportedDissociationTypes[
                     DissociationTypeComboBox.SelectedItem.ToString()];
 
-            // Protease
+            // Protease / digestion
             int missedCleavagesValue = MissedCleavagesTextBox.Text == ""
                 ? int.MaxValue
                 : missedCleavages;
@@ -274,16 +310,20 @@ namespace MetaMorpheusGUI
                 maxMissedCleavages: missedCleavagesValue,
                 maxModsForPeptides: maxMods);
 
-            // Build CommonParameters
+            // Build CommonParameters — product tolerance and score cutoff now included
             TheTask.CommonParameters = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorTolerance,
+                productMassTolerance: productTolerance,
+                scoreCutoff: minScore,
                 digestionParams: digestionParams,
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
                 taskDescriptor: "CircularSearch");
 
             // Circular-specific parameters
+            TheTask.CircularSearchParameters.ProductMassTolerance = productTolerance;
+            TheTask.CircularSearchParameters.MinScore = minScore;
             TheTask.CircularSearchParameters.MinInternalFragmentLength = minFragLen;
             TheTask.CircularSearchParameters.MassDiffAcceptorType =
                 (MassDiffAcceptorType)MassDiffAcceptorComboBox.SelectedItem;
