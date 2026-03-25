@@ -22,11 +22,16 @@ namespace EngineLayer.CircularSearch
     /// ---------
     /// Each <see cref="CircularProtein"/> is digested via
     /// <see cref="CircularProtein.Digest"/>, which produces:
-    ///   • <see cref="CircularPeptideWithSetModifications"/> — intact ring or
-    ///     two-cut sub-peptides. Scored using internal fragment ions only
+    ///   • <see cref="CircularPeptideWithSetModifications"/> — intact ring.
+    ///     Scored using internal fragment ions only
     ///     (<see cref="CircularPeptideWithSetModifications.FragmentInternally"/>).
     ///   • <see cref="PeptideWithSetModifications"/> — ring-opening linear
-    ///     products from a single cut. Scored with standard terminal ions.
+    ///     products from a single cut. Scored with BOTH standard terminal ions
+    ///     AND internal fragment ions, because these peptides derive from a
+    ///     cyclic precursor and internal ions are physically meaningful.
+    ///     NOTE: This dual scoring applies ONLY in CircularSearchEngine.
+    ///     ClassicSearchEngine scores linear peptides with terminal ions only
+    ///     and must not be changed.
     ///
     /// SCORING
     /// -------
@@ -167,7 +172,11 @@ namespace EngineLayer.CircularSearch
                                 {
                                     if (isCircular)
                                     {
-                                        // Circular: internal fragments only
+                                        // Intact ring: internal fragments only.
+                                        // A single backbone cleavage of the intact ring
+                                        // produces a linear ion mass-equivalent to the
+                                        // precursor — no sequence information is gained
+                                        // and these ions are not scored.
                                         ((CircularPeptideWithSetModifications)bioPolymer)
                                             .FragmentInternally(
                                                 dissociationType,
@@ -176,11 +185,30 @@ namespace EngineLayer.CircularSearch
                                     }
                                     else
                                     {
-                                        // Linear ring-opening: standard terminal ions
-                                        bioPolymer.Fragment(
+                                        // Linear ring-opening product: terminal ions AND
+                                        // internal ions.
+                                        //
+                                        // This peptide originated from a cyclic precursor,
+                                        // so internal fragment ions are physically meaningful
+                                        // and must be scored. This dual scoring is intentional
+                                        // and ONLY applies in CircularSearchEngine — do not
+                                        // replicate in ClassicSearchEngine.
+                                        var linearPeptide = (PeptideWithSetModifications)bioPolymer;
+
+                                        // Terminal ions (b, y, etc.)
+                                        linearPeptide.Fragment(
                                             dissociationType,
                                             CommonParameters.DigestionParams.FragmentationTerminus,
                                             theorProducts);
+
+                                        // Internal ions — appended to the same list so
+                                        // MatchFragmentIons sees the full theoretical set.
+                                        var internalProducts = new List<Product>();
+                                        linearPeptide.FragmentInternally(
+                                            dissociationType,
+                                            MinInternalFragmentLength,
+                                            internalProducts);
+                                        theorProducts.AddRange(internalProducts);
                                     }
                                 }
 
