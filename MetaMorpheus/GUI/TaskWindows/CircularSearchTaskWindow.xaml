@@ -1,0 +1,300 @@
+<Window x:Class="MetaMorpheusGUI.CircularSearchTaskWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+        mc:Ignorable="d"
+        Title="Add Circular Search Task" Width="660" Height="640"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <Style TargetType="GroupBox">
+            <Setter Property="BorderThickness" Value="3 1 1 1"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="BorderBrush" Value="DarkSlateGray"/>
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Foreground="Black" FontWeight="Bold"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="3 0 0 0"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="50"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════════════════════════════════════════════════ MAIN CONTENT -->
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="10">
+
+                <TextBlock Text="Circular Peptide Search Task"
+                           FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <!-- ── Fragmentation ──────────────────────────────────────────── -->
+                <GroupBox Header="Fragmentation" Margin="0,0,0,8">
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                        </Grid.RowDefinitions>
+
+                        <Label Grid.Row="0" Grid.Column="0" Content="Dissociation type:"
+                               VerticalAlignment="Center"/>
+                        <ComboBox x:Name="DissociationTypeComboBox"
+                                  Grid.Row="0" Grid.Column="1"
+                                  Width="200" HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"/>
+
+                        <Label Grid.Row="1" Grid.Column="0" Content="Min internal fragment length:"
+                               VerticalAlignment="Center"/>
+                        <TextBox x:Name="MinInternalFragmentLengthTextBox"
+                                 Grid.Row="1" Grid.Column="1"
+                                 Width="60" HorizontalAlignment="Left"
+                                 VerticalAlignment="Center" Text="3"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- ── Precursor tolerance ───────────────────────────────────── -->
+                <GroupBox Header="Precursor Mass Tolerance" Margin="0,0,0,8">
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="80"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Content="Precursor tolerance:"
+                               VerticalAlignment="Center"/>
+                        <TextBox x:Name="PrecursorMassToleranceTextBox"
+                                 Grid.Column="1" VerticalAlignment="Center" Text="5"/>
+                        <ComboBox x:Name="PrecursorMassToleranceComboBox"
+                                  Grid.Column="2" VerticalAlignment="Center"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- ── Mass Difference Acceptor ──────────────────────────────── -->
+                <GroupBox Header="Mass Difference Acceptor" Margin="0,0,0,8">
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Content="Acceptor type:"
+                               VerticalAlignment="Center"/>
+                        <ComboBox x:Name="MassDiffAcceptorComboBox"
+                                  Grid.Column="1" Width="200"
+                                  HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- ── Digestion ─────────────────────────────────────────────── -->
+                <GroupBox Header="Digestion" Margin="0,0,0,8">
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                        </Grid.RowDefinitions>
+
+                        <Label Grid.Row="0" Grid.Column="0" Content="Protease:"
+                               VerticalAlignment="Center"/>
+                        <ComboBox x:Name="ProteaseComboBox"
+                                  Grid.Row="0" Grid.Column="1"
+                                  Width="200" HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"/>
+
+                        <Label Grid.Row="1" Grid.Column="0" Content="Max missed cleavages:"
+                               VerticalAlignment="Center"/>
+                        <TextBox x:Name="MissedCleavagesTextBox"
+                                 Grid.Row="1" Grid.Column="1"
+                                 Width="60" HorizontalAlignment="Left"
+                                 VerticalAlignment="Center" Text="2"/>
+
+                        <Label Grid.Row="2" Grid.Column="0" Content="Max mods per peptide:"
+                               VerticalAlignment="Center"/>
+                        <TextBox x:Name="MaxModsTextBox"
+                                 Grid.Row="2" Grid.Column="1"
+                                 Width="60" HorizontalAlignment="Left"
+                                 VerticalAlignment="Center" Text="2"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- ── Modifications — two-column grouped TreeViews ──────────── -->
+                <GroupBox Header="Modifications" Margin="0,0,0,8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Fixed mods -->
+                        <StackPanel Grid.Column="0" Margin="5,4,5,4">
+                            <Label Content="Fixed:"/>
+                            <TextBox x:Name="SearchFixedMod"
+                                     TextChanged="SearchFixedMod_TextChanged"
+                                     Margin="0,0,0,2">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox"
+                                           xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                        <Style.Resources>
+                                            <VisualBrush x:Key="CueBannerBrush"
+                                                         AlignmentX="Left" AlignmentY="Center"
+                                                         Stretch="None">
+                                                <VisualBrush.Visual>
+                                                    <Label Content="Search..." Foreground="Gray"/>
+                                                </VisualBrush.Visual>
+                                            </VisualBrush>
+                                        </Style.Resources>
+                                        <Style.Triggers>
+                                            <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                <Setter Property="Background"
+                                                        Value="{StaticResource CueBannerBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="Text" Value="{x:Null}">
+                                                <Setter Property="Background"
+                                                        Value="{StaticResource CueBannerBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter Property="Background" Value="White"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <TreeView x:Name="FixedModsTreeView" Height="140"
+                                      ItemsSource="{Binding}">
+                                <TreeView.Resources>
+                                    <HierarchicalDataTemplate
+                                        DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}"
+                                        ItemsSource="{Binding Children}">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Background="{Binding Background}">
+                                            <CheckBox IsChecked="{Binding Use}"/>
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                        </StackPanel>
+                                    </HierarchicalDataTemplate>
+                                    <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Background="{Binding Background}"
+                                                    ToolTip="{Binding ToolTipStuff}">
+                                            <CheckBox IsChecked="{Binding Use}"/>
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </TreeView.Resources>
+                            </TreeView>
+                        </StackPanel>
+
+                        <!-- Variable mods -->
+                        <StackPanel Grid.Column="1" Margin="5,4,5,4">
+                            <Label Content="Variable:"/>
+                            <TextBox x:Name="SearchVariableMod"
+                                     TextChanged="SearchVariableMod_TextChanged"
+                                     Margin="0,0,0,2">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox"
+                                           xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                        <Style.Resources>
+                                            <VisualBrush x:Key="CueBannerBrush"
+                                                         AlignmentX="Left" AlignmentY="Center"
+                                                         Stretch="None">
+                                                <VisualBrush.Visual>
+                                                    <Label Content="Search..." Foreground="Gray"/>
+                                                </VisualBrush.Visual>
+                                            </VisualBrush>
+                                        </Style.Resources>
+                                        <Style.Triggers>
+                                            <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                <Setter Property="Background"
+                                                        Value="{StaticResource CueBannerBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="Text" Value="{x:Null}">
+                                                <Setter Property="Background"
+                                                        Value="{StaticResource CueBannerBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter Property="Background" Value="White"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <TreeView x:Name="VariableModsTreeView" Height="140"
+                                      ItemsSource="{Binding}">
+                                <TreeView.Resources>
+                                    <HierarchicalDataTemplate
+                                        DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}"
+                                        ItemsSource="{Binding Children}">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Background="{Binding Background}">
+                                            <CheckBox IsChecked="{Binding Use}"/>
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                        </StackPanel>
+                                    </HierarchicalDataTemplate>
+                                    <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Background="{Binding Background}"
+                                                    ToolTip="{Binding ToolTipStuff}">
+                                            <CheckBox IsChecked="{Binding Use}"/>
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </TreeView.Resources>
+                            </TreeView>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <!-- ── Output ─────────────────────────────────────────────────── -->
+                <GroupBox Header="Output" Margin="0,0,0,8">
+                    <StackPanel Margin="4">
+                        <CheckBox x:Name="WriteDecoyCheckBox"
+                                  Content="Write decoy PSMs" Margin="0,2"/>
+                        <CheckBox x:Name="WriteContaminantCheckBox"
+                                  Content="Write contaminant PSMs" Margin="0,2"/>
+                        <CheckBox x:Name="WriteHighQValueCheckBox"
+                                  Content="Write all PSMs (including above q-value threshold)"
+                                  Margin="0,2"/>
+                    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ═══════════════════════════════════════════════════ ADD / CANCEL ROW -->
+        <Grid Grid.Row="1" Margin="10,4,10,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="120"/>
+                <ColumnDefinition Width="100"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="1" x:Name="AddTaskButton"
+                    Content="Add Task"
+                    Click="AddTaskButton_Click"
+                    Background="#2e7bcf" Foreground="White"
+                    FontWeight="SemiBold" Height="32" Margin="0,0,8,0"/>
+            <Button Grid.Column="2" x:Name="CancelButton"
+                    Content="Cancel"
+                    Click="CancelButton_Click"
+                    Background="#666" Foreground="White"
+                    Height="32"/>
+        </Grid>
+    </Grid>
+</Window>
