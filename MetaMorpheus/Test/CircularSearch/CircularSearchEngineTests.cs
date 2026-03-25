@@ -401,5 +401,146 @@ namespace Test.CircularSearch
             }
             finally { File.Delete(mgf); }
         }
+        /// <summary>
+        /// Verifies that the engine correctly scores a top-down circular peptide
+        /// using internal fragment ions only — no b/y terminal ions.
+        ///
+        /// Setup:
+        ///   Ring = "AAKPEPTIDEK" (canonical, N=11, 2 trypsin sites).
+        ///   Protease = "top-down" (no cleavage motif, specificity=none).
+        ///   top-down finds 0 cleavage sites → maxMissedCleavages=0 >= 0 →
+        ///   exactly one CircularPeptideWithSetModifications, no linear products.
+        ///
+        ///   The engine's isCircular branch calls FragmentInternally() only.
+        ///   Internal fragment neutral masses are written to the synthetic MGF.
+        ///   The precursor mass is the circular peptide's MonoisotopicMass.
+        ///
+        /// Proves:
+        ///   1. The engine assigns a PSM with positive score.
+        ///   2. Every matched ion has FragmentationTerminus.None (internal only).
+        ///      No b or y terminal ions appear in the matched ion list.
+        ///   3. No linear product interferes — the only candidate from top-down
+        ///      digestion is the CircularPeptideWithSetModifications.
+        /// </summary>
+        [Test]
+        public static void TopDownProtease_CircularProduct_ScoredWithInternalIonsOnly()
+        {
+            // "AAKPEPTIDEK" has 2 trypsin sites but top-down finds none.
+            var protein = new CircularProtein("AAKPEPTIDEK", "acc_topdown_engine");
+            Assert.That(protein.BaseSequence, Is.EqualTo("AAKPEPTIDEK"),
+                "Pre-condition: already canonical.");
+
+            // top-down CommonParameters — scoreCutoff=1 for synthetic scan
+            var commonParams = new CommonParameters(
+                dissociationType: DissociationType.HCD,
+                precursorMassTolerance: new PpmTolerance(5),
+                productMassTolerance: new PpmTolerance(20),
+                scoreCutoff: 1,
+                digestionParams: new DigestionParams(
+                    protease: "top-down",
+                    maxMissedCleavages: 0,
+                    minPeptideLength: 1));
+
+            // Digest with top-down → exactly one circular product, no linear
+            var digestProducts = protein
+                .Digest(commonParams.DigestionParams,
+                    new List<Modification>(),
+                    new List<Modification>())
+                .ToList();
+
+            var circularPeptide = digestProducts
+                .OfType<CircularPeptideWithSetModifications>()
+                .SingleOrDefault();
+
+            Assert.That(circularPeptide, Is.Not.Null,
+                "Pre-condition: top-down must produce exactly one CircularPeptideWithSetModifications.");
+
+            var linearProducts = digestProducts
+                .OfType<PeptideWithSetModifications>()
+                .Where(p => p is not CircularPeptideWithSetModifications)
+                .ToList();
+
+            Assert.That(linearProducts.Count, Is.EqualTo(0),
+                "Pre-condition: top-down must produce no linear products.");
+
+            // Generate internal fragments (minLength=2 matches top-down convention)
+            var fragmentProducts = new List<Product>();
+            circularPeptide.FragmentInternally(
+                DissociationType.HCD,
+                minLengthOfFragments: 2,
+                fragmentProducts);
+
+            Assert.That(fragmentProducts.Count, Is.GreaterThan(0),
+                "Pre-condition: FragmentInternally must produce at least one product.");
+
+            // Build MGF from internal fragment neutral masses
+            double precursorMass = circularPeptide.MonoisotopicMass;
+            var fragmentNeutralMasses = fragmentProducts
+                .Select(p => p.NeutralMass)
+                .Distinct();
+
+            string mgf = WriteTempMgf(precursorMass, fragmentNeutralMasses,
+                nameof(TopDownProtease_CircularProduct_ScoredWithInternalIonsOnly));
+
+            try
+            {
+                var scans = LoadScansFromMgf(mgf, commonParams);
+
+                Assert.That(scans.Length, Is.EqualTo(1),
+                    "Pre-condition: MGF must produce exactly one scan.");
+
+                // Run engine with minInternalFragmentLength=2
+                var psms = new SpectralMatch[scans.Length];
+                new CircularSearchEngine(
+                    globalPsms: psms,
+                    arrayOfSortedMS2Scans: scans,
+                    variableModifications: new List<Modification>(),
+                    fixedModifications: new List<Modification>(),
+                    circularProteins: new List<CircularProtein> { protein },
+                    searchMode: new SinglePpmAroundZeroSearchMode(5),
+                    commonParameters: commonParams,
+                    fileSpecificParameters: null,
+                    nestedIds: new List<string>(),
+                    minInternalFragmentLength: 2)
+                    .Run();
+
+                // ── Assertion 1: PSM assigned with positive score ─────────────
+                Assert.That(psms[0], Is.Not.Null,
+                    "Engine must assign a PSM for the top-down circular peptide.");
+                Assert.That(psms[0].Score, Is.GreaterThan(0),
+                    "PSM score must be positive.");
+
+                Console.WriteLine($"Top-down PSM score: {psms[0].Score}");
+
+                psms[0].ResolveAllAmbiguities();
+                var matchedIons = psms[0].MatchedFragmentIons;
+
+                Assert.That(matchedIons, Is.Not.Null.And.Not.Empty,
+                    "Matched fragment ions must not be empty.");
+
+                Console.WriteLine("Matched ions:");
+                foreach (var ion in matchedIons)
+                    Console.WriteLine(
+                        $"  [{ion.NeutralTheoreticalProduct.FragmentNumber}-" +
+                        $"{ion.NeutralTheoreticalProduct.SecondaryFragmentNumber}] " +
+                        $"Terminus={ion.NeutralTheoreticalProduct.Terminus}");
+
+                // ── Assertion 2: every matched ion is internal (Terminus=None) ─
+                // FragmentInternally produces ions with FragmentationTerminus.None.
+                // The engine's isCircular branch calls only FragmentInternally,
+                // so no terminal b/y ions should appear in the matched set.
+                foreach (var ion in matchedIons)
+                {
+                    Assert.That(
+                        ion.NeutralTheoreticalProduct.Terminus,
+                        Is.EqualTo(FragmentationTerminus.None),
+                        $"Ion [{ion.NeutralTheoreticalProduct.FragmentNumber}-" +
+                        $"{ion.NeutralTheoreticalProduct.SecondaryFragmentNumber}] " +
+                        $"must be internal (Terminus=None). " +
+                        $"Actual: {ion.NeutralTheoreticalProduct.Terminus}.");
+                }
+            }
+            finally { File.Delete(mgf); }
+        }
     }
 }

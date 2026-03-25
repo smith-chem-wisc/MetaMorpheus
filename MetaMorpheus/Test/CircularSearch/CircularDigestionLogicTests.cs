@@ -345,5 +345,112 @@ namespace Test.CircularSearch
                     $"Actual keys: [{string.Join(", ", cp.AllModsOneIsNterminus.Keys)}]");
             }
         }
+        // ── Top-down protease ─────────────────────────────────────────────────
+
+        /// <summary>
+        /// Verifies that the "top-down" protease produces exactly one
+        /// CircularPeptideWithSetModifications and no linear products,
+        /// regardless of maxMissedCleavages.
+        ///
+        /// The top-down protease has no cleavage motif and specificity "none",
+        /// meaning it identifies zero cleavage sites in any ring. Since
+        /// numCleavageSites = 0, the condition maxMissedCleavages >= 0 is always
+        /// satisfied and the circular product is always emitted. No linear
+        /// PeptideWithSetModifications is ever produced because there are no
+        /// cuts to make.
+        ///
+        /// This has a direct consequence for the CircularSearchEngine: because
+        /// there are no linear ring-opening products, the search scores only
+        /// internal fragment ions (via FragmentInternally). No b/y terminal
+        /// ions are generated or matched.
+        ///
+        /// The ring used is "AAKPEPTIDEK" (canonical, 2 trypsin sites) to confirm
+        /// that the choice of protease — not the ring sequence — determines
+        /// whether cleavage sites are found.
+        /// </summary>
+        [Test]
+        public static void Digestion_TopDownProtease_OnlyCircularProduct_NoLinearProducts()
+        {
+            // Use a ring that has 2 trypsin sites, confirming that it is the
+            // protease choice — not the absence of K/R — that suppresses digestion.
+            var protein = new CircularProtein("PEPTIDEKAAK", "acc_topdown");
+            Assert.That(protein.BaseSequence, Is.EqualTo("AAKPEPTIDEK"),
+                "Pre-condition: canonical sequence must be AAKPEPTIDEK.");
+
+            var topDownParams = new DigestionParams(
+                protease: "top-down",
+                maxMissedCleavages: 0,
+                minPeptideLength: 1);
+
+            var products = Digest(protein, topDownParams);
+
+            var circular = products.OfType<CircularPeptideWithSetModifications>().ToList();
+            var linear = products
+                .OfType<PeptideWithSetModifications>()
+                .Where(p => p is not CircularPeptideWithSetModifications)
+                .ToList();
+
+            // Exactly one circular product — the intact ring
+            Assert.That(circular.Count, Is.EqualTo(1),
+                "top-down: exactly one CircularPeptideWithSetModifications expected.");
+            Assert.That(circular[0].BaseSequence, Is.EqualTo("AAKPEPTIDEK"),
+                "top-down: circular product must span the full canonical ring.");
+            Assert.That(circular[0].BaseSequence.Length, Is.EqualTo(11),
+                "top-down: circular product must be length N=11.");
+
+            // No linear products — no cuts were made
+            Assert.That(linear.Count, Is.EqualTo(0),
+                "top-down: no linear PeptideWithSetModifications expected.");
+
+            // Verify that the circular product's parent is the originating protein
+            Assert.That(circular[0].Parent, Is.SameAs(protein),
+                "top-down: circular product must reference the originating CircularProtein.");
+        }
+
+        /// <summary>
+        /// Verifies that FragmentInternally on the top-down circular product
+        /// produces internal ions, and that calling Fragment() (terminal ions)
+        /// on it would be inappropriate — confirming the engine's branching
+        /// logic is correct: isCircular == true → FragmentInternally only.
+        ///
+        /// For a ring of length 11 with minLength=2, we expect at least one
+        /// internal fragment. No b/y terminal ion scoring applies.
+        /// </summary>
+        [Test]
+        public static void Digestion_TopDownProtease_CircularProduct_ProducesInternalFragmentsOnly()
+        {
+            var protein = new CircularProtein("PEPTIDEKAAK", "acc_topdown_frag");
+            Assert.That(protein.BaseSequence, Is.EqualTo("AAKPEPTIDEK"));
+
+            var topDownParams = new DigestionParams(
+                protease: "top-down",
+                maxMissedCleavages: 0,
+                minPeptideLength: 1);
+
+            var products = Digest(protein, topDownParams);
+
+            var circularPeptide = products
+                .OfType<CircularPeptideWithSetModifications>()
+                .Single();
+
+            // Generate internal fragments (the only ion type used for circular products)
+            var internalFragments = new List<Omics.Fragmentation.Product>();
+            circularPeptide.FragmentInternally(
+                MassSpectrometry.DissociationType.HCD,
+                minLengthOfFragments: 2,
+                internalFragments);
+
+            Assert.That(internalFragments.Count, Is.GreaterThan(0),
+                "top-down circular product must produce at least one internal fragment.");
+
+            // All fragments must be internal (FragmentationTerminus.None)
+            // and have no primary ion product type (b/y/a/c/z etc.)
+            foreach (var frag in internalFragments)
+            {
+                Assert.That(frag.Terminus, Is.EqualTo(Omics.Fragmentation.FragmentationTerminus.None),
+                    $"Internal fragment at [{frag.FragmentNumber}-{frag.SecondaryFragmentNumber}] " +
+                    $"must have Terminus=None, not a terminal ion type.");
+            }
+        }
     }
 }

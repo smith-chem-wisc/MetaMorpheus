@@ -286,6 +286,7 @@
                             <RowDefinition Height="28"/>
                             <RowDefinition Height="28"/>
                             <RowDefinition Height="30"/>
+                            <RowDefinition Height="24"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -313,6 +314,12 @@
                                      Width="60" VerticalAlignment="Center"
                                      Text="1"/>
                         </StackPanel>
+
+                        <!-- Decoy note -->
+                        <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                                   Text="Note: circular decoys always use random shuffling (never reverse)."
+                                   Foreground="Gray" FontStyle="Italic"
+                                   VerticalAlignment="Center" Margin="4,0,0,0"/>
                     </Grid>
                 </GroupBox>
 
