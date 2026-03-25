@@ -457,7 +457,8 @@ namespace TaskLayer
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
 
-                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(v => v.FullSequence != null))
+                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.OfType<SpectralMatch>()
+                        .Where(v => v.FullSequence != null))
                     {
                         if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
                         {
@@ -550,19 +551,22 @@ namespace TaskLayer
                 foreach (var proteinGroup in ProteinGroups)
                 {
                     proteinGroup.FilesForQuantification = spectraFileInfo;
-                    proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
 
-                    foreach (var spectraFile in proteinGroup.FilesForQuantification)
+                    // Build the dictionary locally, then assign in one shot.
+                    // The IntensitiesByFile getter returns a copy, so .Add() on it would be lost.
+                    var intensities = new Dictionary<SpectraFileInfo, double>();
+                    foreach (var spectraFile in spectraFileInfo)
                     {
                         if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
                         {
-                            proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
+                            intensities.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
                         }
                         else
                         {
-                            proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
+                            intensities.Add(spectraFile, 0);
                         }
                     }
+                    proteinGroup.IntensitiesByFile = intensities;
                 }
             }
         }

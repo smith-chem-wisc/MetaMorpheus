@@ -8,9 +8,9 @@ using MassSpectrometry;
 using Omics.Modifications;
 using Omics;
 using Omics.BioPolymerGroup;
+using Omics.SpectralMatch;
 using Transcriptomics.Digestion;
 using MzLibUtil;
-using MzLibUtil.PositionFrequencyAnalysis;
 using Easy.Common.Extensions;
 
 namespace EngineLayer
@@ -24,10 +24,9 @@ namespace EngineLayer
     /// to the corresponding BioPolymerGroup base properties. Consumers should gradually migrate to
     /// the base class names.
     ///
-    /// NOTE: AllPsmsBelowOnePercentFDR is shadowed here as HashSet&lt;SpectralMatch&gt; because
-    /// MetaMorpheus's SpectralMatch does not yet implement mzLib's ISpectralMatch interface.
-    /// When SpectralMatch is updated to implement ISpectralMatch, this shadow and the related
-    /// method shadows (Score, CalculateSequenceCoverage) can be removed.
+    /// Score() and CalculateSequenceCoverage() are overridden (via new) because they access
+    /// MetaMorpheus-specific SpectralMatch members (GetAminoAcidCoverage, BestMatchingBioPolymersWithSetMods,
+    /// FragmentCoveragePositionInPeptide) that are not on the ISpectralMatch interface.
     /// </summary>
     public class ProteinGroup : BioPolymerGroup
     {
@@ -35,7 +34,7 @@ namespace EngineLayer
             HashSet<IBioPolymerWithSetMods> uniquePeptides)
             : base(proteins, peptides, uniquePeptides)
         {
-            AllPsmsBelowOnePercentFDR = new HashSet<SpectralMatch>();
+            AllPsmsBelowOnePercentFDR = new HashSet<ISpectralMatch>();
             SequenceCoverageFraction = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
@@ -110,12 +109,6 @@ namespace EngineLayer
         #endregion
 
         #region MetaMorpheus-Specific Properties
-
-        /// <summary>
-        /// Shadowed as HashSet&lt;SpectralMatch&gt; because MM's SpectralMatch does not implement ISpectralMatch.
-        /// Remove this shadow when SpectralMatch implements ISpectralMatch.
-        /// </summary>
-        public new HashSet<SpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
 
         /// <summary>
         /// The minimum Posterior Error Probability (PEP) among all PSMs in <see cref="AllPsmsBelowOnePercentFDR"/>.
@@ -395,7 +388,8 @@ namespace EngineLayer
         #region Scoring and Coverage
 
         /// <summary>
-        /// Shadows base Score() to use the MM-specific SpectralMatch-typed AllPsmsBelowOnePercentFDR.
+        /// Computes protein group score as the sum of the best score per unique base sequence.
+        /// Overrides base to use MetaMorpheus-specific scoring logic.
         /// </summary>
         public new void Score()
         {
@@ -404,7 +398,8 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Shadows base CalculateSequenceCoverage() to use MM's SpectralMatch concrete type.
+        /// Computes sequence coverage using MetaMorpheus-specific SpectralMatch members
+        /// (GetAminoAcidCoverage, BestMatchingBioPolymersWithSetMods, FragmentCoveragePositionInPeptide).
         /// Results are stored in the flat list properties (SequenceCoverageFraction, etc.)
         /// rather than in <see cref="BioPolymerGroup.CoverageResult"/>.
         /// </summary>
@@ -419,7 +414,7 @@ namespace EngineLayer
                 proteinsWithPsmsWithLocalizedMods.Add(protein, new List<IBioPolymerWithSetMods>());
             }
 
-            foreach (var psm in AllPsmsBelowOnePercentFDR)
+            foreach (var psm in AllPsmsBelowOnePercentFDR.OfType<SpectralMatch>())
             {
                 if (psm.BaseSequence != null)
                 {
@@ -446,7 +441,8 @@ namespace EngineLayer
             {
                 HashSet<int> coveredResiduesInProteinOneBased = new();
 
-                foreach (SpectralMatch psm in AllPsmsBelowOnePercentFDR.Where(psm => psm.BaseSequence != null))
+                foreach (SpectralMatch psm in AllPsmsBelowOnePercentFDR.OfType<SpectralMatch>()
+                    .Where(psm => psm.BaseSequence != null))
                 {
                     psm.GetAminoAcidCoverage();
                     if (psm.FragmentCoveragePositionInPeptide == null) continue;
@@ -543,12 +539,11 @@ namespace EngineLayer
         #region Merge and Subset
 
         /// <summary>
-        /// Merges another ProteinGroup into this one. Handles the SpectralMatch-typed PSM set locally,
-        /// then delegates to <see cref="BioPolymerGroup.MergeWith"/> for biopolymer/peptide/name updates.
+        /// Merges another ProteinGroup into this one. Delegates entirely to
+        /// <see cref="BioPolymerGroup.MergeWith"/> which handles PSMs, biopolymers, peptides, and name.
         /// </summary>
         public void MergeProteinGroupWith(ProteinGroup other)
         {
-            this.AllPsmsBelowOnePercentFDR.UnionWith(other.AllPsmsBelowOnePercentFDR);
             base.MergeWith(other);
         }
 
@@ -558,11 +553,11 @@ namespace EngineLayer
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath, List<SilacLabel> silacLabels = null)
         {
             var allPsmsForThisFile =
-                new HashSet<SpectralMatch>(
+                new HashSet<ISpectralMatch>(
                     AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
             var allPeptidesForThisFile =
                 new HashSet<IBioPolymerWithSetMods>(
-                    allPsmsForThisFile.SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer)));
+                    allPsmsForThisFile.SelectMany(p => p.GetIdentifiedBioPolymersWithSetMods()));
             var allUniquePeptidesForThisFile =
                 new HashSet<IBioPolymerWithSetMods>(UniquePeptides.Intersect(allPeptidesForThisFile));
 

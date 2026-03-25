@@ -7,6 +7,7 @@ using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
 using Omics;
+using Omics.SpectralMatch;
 using System;
 using Omics.Digestion;
 using EngineLayer.CrosslinkSearch;
@@ -14,7 +15,7 @@ using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer
 {
-    public abstract class SpectralMatch : IComparable<SpectralMatch>
+    public abstract class SpectralMatch : ISpectralMatch, IComparable<SpectralMatch>
     {
         public const double ToleranceForScoreDifferentiation = 1e-9;
 
@@ -75,6 +76,46 @@ namespace EngineLayer
         public string NativeId => ScanMetadata.NativeId;
 
         #endregion
+
+        #region ISpectralMatch explicit interface implementations
+
+        /// <summary>Maps to <see cref="ScanNumber"/> for ISpectralMatch compatibility.</summary>
+        int ISpectralMatch.OneBasedScanNumber => ScanNumber;
+
+        /// <summary>
+        /// Consolidates quantification intensities for ISpectralMatch compatibility.
+        /// Returns ReporterIonIntensities if available (isobaric), a singleton array of
+        /// PrecursorScanIntensity for LFQ, or null if neither is populated.
+        /// </summary>
+        double[]? ISpectralMatch.Intensities =>
+            ReporterIonIntensities ??
+            (PrecursorScanIntensity > 0 ? new[] { PrecursorScanIntensity } : null);
+
+        /// <summary>
+        /// Returns the identified biopolymers (peptides/proteoforms) for ISpectralMatch compatibility.
+        /// Unwraps SpectralMatchHypothesis to the underlying IBioPolymerWithSetMods.
+        /// </summary>
+        public IEnumerable<IBioPolymerWithSetMods> GetIdentifiedBioPolymersWithSetMods() =>
+            BestMatchingBioPolymersWithSetMods.Select(h => h.SpecificBioPolymer);
+
+        public int CompareTo(ISpectralMatch? other)
+        {
+            if (other is null) return 1;
+            if (other is SpectralMatch mm) return CompareTo(mm);
+            // Fallback: compare by score descending
+            return Score.CompareTo(other.Score);
+        }
+
+        public bool Equals(ISpectralMatch? other)
+        {
+            if (other is null) return false;
+            return FullFilePath == other.FullFilePath
+                && ScanNumber == other.OneBasedScanNumber
+                && FullSequence == other.FullSequence;
+        }
+
+        #endregion
+
         /// <summary>
         /// Refers to the index of the Ms2ScanWithSpecificMass in an array of Ms2ScansWithSpecificMass that is sorted by precursor mass
         /// </summary>

@@ -261,10 +261,9 @@ namespace Test
             ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, filteredPsms, false, false, true, new CommonParameters(), null, new List<string>());
             f.Run();
 
-            // inclined to delete this test
-            // Otherwise, readapt to run flashlfq and then correctly check modinfo...
-            Assert.That(proteinGroups.First().ModsInfo, Is.Null);
-            Assert.That(proteinGroups.First().ModInfoStringFromGroupedFiles(proteinGroups.First().FilesForQuantification), Is.EqualTo(""));
+            // Occupancy is now computed by BioPolymerGroup.PopulateSampleGroupResults().
+            // Without FlashLFQ, SampleGroupResults should be null or empty.
+            Assert.That(proteinGroups.First().SampleGroupResults, Is.Null);
         }
 
         [Test]

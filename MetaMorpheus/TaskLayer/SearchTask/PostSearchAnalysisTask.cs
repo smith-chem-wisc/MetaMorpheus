@@ -18,7 +18,6 @@ using System.Linq;
 using System.Text;
 using EngineLayer.DatabaseLoading;
 using MzLibUtil;
-using MzLibUtil.PositionFrequencyAnalysis;
 using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
@@ -364,7 +363,8 @@ namespace TaskLayer
                             string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
                             string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
 
-                        foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(v => v.FullSequence != null))
+                        foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.OfType<SpectralMatch>()
+                            .Where(v => v.FullSequence != null))
                         {
                             if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
                             {
@@ -597,51 +597,30 @@ namespace TaskLayer
                     Parameters.FlashLfqResults = flashLfqEngine.Run();
                 }
 
-                // get protein intensity and mod stoichiometry back from FlashLFQ
+                // get protein intensity back from FlashLFQ
+                // Modification occupancy is now computed by BioPolymerGroup.PopulateSampleGroupResults()
+                // which is called lazily by ToString()/GetTabSeparatedHeader().
                 if (ProteinGroups != null && Parameters.FlashLfqResults != null)
                 {
-                    // get protein intensity back from FlashLFQ
                     foreach (var proteinGroup in ProteinGroups)
                     {
                         proteinGroup.FilesForQuantification = spectraFileInfo;
-                        proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
-                        proteinGroup.ModsInfo = new Dictionary<SpectraFileInfo, QuantifiedProteinGroup>();
 
-                        foreach (var spectraFile in proteinGroup.FilesForQuantification)
+                        // Build the dictionary locally, then assign in one shot.
+                        // The IntensitiesByFile getter returns a copy, so .Add() on it would be lost.
+                        var intensities = new Dictionary<SpectraFileInfo, double>();
+                        foreach (var spectraFile in spectraFileInfo)
                         {
                             if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
                             {
-                                proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
+                                intensities.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
                             }
                             else
                             {
-                                proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
-                            }
-
-                            // Now get the modification stoichiometries using FlashLFQ spectraFile-specific intensities
-                            // and add them to the proteinGroup.ModsInfo property. The stoichiometry strings will only be
-                            // extracted from the protein group's ToString method.
-
-                            // Pull out only the peptides in this protein group that were quantified by FlashLFQ
-                            var pgQuantifiedPeptides = Parameters.FlashLfqResults.PeptideModifiedSequences.Where(x => proteinGroup.AllPeptides.Select(x => x.FullSequence).Contains(x.Key)).ToList();
-
-                            if (pgQuantifiedPeptides.IsNotNullOrEmpty())
-                            {
-                                var peptides = pgQuantifiedPeptides.Select(pep => new QuantifiedPeptideRecord(pep.Value.Sequence,
-                                                                                                              new HashSet<string> { proteinGroup.ProteinGroupName },
-                                                                                                              pep.Value.GetIntensity(spectraFile))).ToList();
-                                if (peptides.IsNullOrEmpty())
-                                {
-                                    proteinGroup.ModsInfo.Add(spectraFile, new QuantifiedProteinGroup(proteinGroup.ProteinGroupName));
-                                    continue;
-                                }
-
-                                var proteins = proteinGroup.Proteins.Select(p => new KeyValuePair<string, string>(p.Accession, p.BaseSequence)).ToDictionary();
-                                PositionFrequencyAnalysis pfa = new PositionFrequencyAnalysis();
-                                pfa.SetUpQuantificationFromQuantifiedPeptideRecords(peptides, proteins); // uses zero-based indexes for the mods.
-                                proteinGroup.ModsInfo.Add(spectraFile, pfa.ProteinGroups.First().Value); // Getting stoich one protein group at a time, so only getting First() is ok here.
+                                intensities.Add(spectraFile, 0);
                             }
                         }
+                        proteinGroup.IntensitiesByFile = intensities;
                     }
                 }
 
