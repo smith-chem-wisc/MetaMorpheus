@@ -214,7 +214,7 @@ namespace EngineLayer.CircularSearch
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
-        private void AddCandidateToPsm(
+        internal void AddCandidateToPsm(
             ScanWithIndexAndNotchInfo scan,
             double score,
             IBioPolymerWithSetMods peptide,
