@@ -5,10 +5,12 @@ using System.Linq;
 using System.Windows.Input;
 using Easy.Common.Extensions;
 using EngineLayer;
+using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer;
 using Transcriptomics;
+using Transcriptomics.Digestion;
 using GuiFunctions.Util;
 
 namespace GuiFunctions;
@@ -251,10 +253,15 @@ public class FragmentationParamsViewModel : BaseViewModel
             : LeftSideFragmentIons ? FragmentationTerminus.N
             : RightSideFragmentIons ? FragmentationTerminus.C
             : FragmentationTerminus.Both;
-        
-        // Build CommonParameters with correct terminus - LoadAvailableMIonLosses reads this
+
+        // Build CommonParameters with correct digeston type to avoid CommonParameters
+        // overriding the passed fragmentationParams with a protein default
+        IDigestionParams digParams = GuiGlobalParamsViewModel.Instance?.IsRnaMode == true
+            ? new RnaDigestionParams(fragmentationTerminus: terminus)
+            : new DigestionParams(fragmentationTerminus: terminus);
+
         var commonParams = new CommonParameters(
-            digestionParams: new DigestionParams(fragmentationTerminus: terminus),
+            digestionParams: digParams,
             fragmentationParams: ToFragmentationParams()
         );
 

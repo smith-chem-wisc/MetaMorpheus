@@ -480,5 +480,26 @@ public class FragmentParamsVM
         Assert.That(vm.GenerateComplementaryIons, Is.True);
     }
 
+    [Test]
+    [NonParallelizable]
+    public void ReloadMIonLosses_InRnaMode_PreservesRnaFragmentationParams()
+    {
+        // Arrange
+        GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+        var rnaFragmentationParams = new RnaFragmentationParams();
+        var common = new CommonParameters(fragmentationParams: rnaFragmentationParams, digestionParams: new RnaDigestionParams());
+        var vm = new FragmentationParamsViewModel(common, new());
+
+        // Act
+        vm.ReloadMIonLosses();
+
+        // Assert
+        var reloadedParams = vm.ToFragmentationParams();
+        Assert.That(reloadedParams, Is.TypeOf<RnaFragmentationParams>(),
+            "ReloadMIonLosses should preserve RnaFragmentationParams type in RNA mode");
+
+        // Cleanup
+        GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+    }
 
 }
