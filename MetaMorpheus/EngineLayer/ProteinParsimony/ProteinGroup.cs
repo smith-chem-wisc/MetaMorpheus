@@ -604,14 +604,14 @@ namespace EngineLayer
                 subsetPg.FilesForQuantification = new List<SpectraFileInfo> { spectraFileInfo };
             }
 
-            if (IntensitiesByFile == null)
+            if (IntensitiesByFile == null || spectraFileInfo == null)
             {
                 subsetPg.IntensitiesByFile = null;
             }
             else
             {
                 subsetPg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>
-                    { { spectraFileInfo, IntensitiesByFile[spectraFileInfo] } };
+                    { { spectraFileInfo, IntensitiesByFile.GetValueOrDefault(spectraFileInfo, 0) } };
             }
 
             return subsetPg;

@@ -521,7 +521,8 @@ namespace TaskLayer
             var flashLFQIdentifications = new List<Identification>();
             foreach (var spectraFile in psmsGroupedByFile)
             {
-                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
+                var rawfileinfo = spectraFileInfo.FirstOrDefault(p => p.FullFilePathWithExtension.Equals(spectraFile.Key));
+                if (rawfileinfo == null) continue;
 
                 foreach (var psm in spectraFile)
                 {
@@ -545,28 +546,25 @@ namespace TaskLayer
                 Parameters.FlashLfqResults = FlashLfqEngine.Run();
             }
 
-            // get protein intensity back from FlashLFQ
-            if (ProteinGroups != null && Parameters.FlashLfqResults != null)
+            // Propagate quantification data to protein groups
+            if (ProteinGroups != null)
             {
                 foreach (var proteinGroup in ProteinGroups)
                 {
                     proteinGroup.FilesForQuantification = spectraFileInfo;
 
-                    // Build the dictionary locally, then assign in one shot.
-                    // The IntensitiesByFile getter returns a copy, so .Add() on it would be lost.
-                    var intensities = new Dictionary<SpectraFileInfo, double>();
-                    foreach (var spectraFile in spectraFileInfo)
+                    if (Parameters.FlashLfqResults != null)
                     {
-                        if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
+                        var intensities = new Dictionary<SpectraFileInfo, double>();
+                        foreach (var spectraFile in spectraFileInfo)
                         {
-                            intensities.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
+                            intensities.Add(spectraFile,
+                                Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup)
+                                    ? flashLfqProteinGroup.GetIntensity(spectraFile)
+                                    : 0);
                         }
-                        else
-                        {
-                            intensities.Add(spectraFile, 0);
-                        }
+                        proteinGroup.IntensitiesByFile = intensities;
                     }
-                    proteinGroup.IntensitiesByFile = intensities;
                 }
             }
         }
@@ -594,11 +592,8 @@ namespace TaskLayer
                             file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
                         WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
                             file.Key.FilenameWithoutExtension + "_QuantifiedPeptides", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
-                        if (true)
-                        {
-                            WriteProteinQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
-                                file.Key.FilenameWithoutExtension + "_QuantifiedProteins", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
-                        }
+                        WriteProteinQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
+                            file.Key.FilenameWithoutExtension + "_QuantifiedProteins", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
                     }
                 }
             }

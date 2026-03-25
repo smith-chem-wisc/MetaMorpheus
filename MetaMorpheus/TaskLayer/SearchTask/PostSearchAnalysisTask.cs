@@ -537,7 +537,6 @@ namespace TaskLayer
                 var undefinedPg = new ProteinGroup("UNDEFINED", "", "");
                 //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
                 Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
-                Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
 
                 foreach (IDigestionParams dp in Parameters.ListOfDigestionParams)
                 {
@@ -560,7 +559,8 @@ namespace TaskLayer
                 var flashLFQIdentifications = new List<Identification>();
                 foreach (var spectraFile in psmsGroupedByFile)
                 {
-                    var rawfileinfo = spectraFileInfo.First(p => p.FullFilePathWithExtension.Equals(spectraFile.Key));
+                    var rawfileinfo = spectraFileInfo.FirstOrDefault(p => p.FullFilePathWithExtension.Equals(spectraFile.Key));
+                    if (rawfileinfo == null) continue;
 
                     foreach (var psm in spectraFile)
                     {
@@ -597,30 +597,33 @@ namespace TaskLayer
                     Parameters.FlashLfqResults = flashLfqEngine.Run();
                 }
 
-                // get protein intensity back from FlashLFQ
-                // Modification occupancy is now computed by BioPolymerGroup.PopulateSampleGroupResults()
-                // which is called lazily by ToString()/GetTabSeparatedHeader().
-                if (ProteinGroups != null && Parameters.FlashLfqResults != null)
+                // Propagate quantification data to protein groups so that PopulateSampleGroupResults()
+                // has the per-file context it needs to produce spectral-count and intensity-based occupancy columns.
+                //
+                // FilesForQuantification is always assigned once spectraFileInfo is available so that
+                // count-based occupancy is written even when FlashLFQ produced no peaks (e.g., when
+                // flashLFQIdentifications is empty and FlashLfqResults remains null).
+                // IntensitiesByFile is only assigned when FlashLFQ actually ran and returned results.
+                if (ProteinGroups != null)
                 {
                     foreach (var proteinGroup in ProteinGroups)
                     {
                         proteinGroup.FilesForQuantification = spectraFileInfo;
 
-                        // Build the dictionary locally, then assign in one shot.
-                        // The IntensitiesByFile getter returns a copy, so .Add() on it would be lost.
-                        var intensities = new Dictionary<SpectraFileInfo, double>();
-                        foreach (var spectraFile in spectraFileInfo)
+                        if (Parameters.FlashLfqResults != null)
                         {
-                            if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
+                            // Build the dictionary locally, then assign in one shot.
+                            // The IntensitiesByFile getter returns a copy, so .Add() on it would be lost.
+                            var intensities = new Dictionary<SpectraFileInfo, double>();
+                            foreach (var spectraFile in spectraFileInfo)
                             {
-                                intensities.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
+                                intensities.Add(spectraFile,
+                                    Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup)
+                                        ? flashLfqProteinGroup.GetIntensity(spectraFile)
+                                        : 0);
                             }
-                            else
-                            {
-                                intensities.Add(spectraFile, 0);
-                            }
+                            proteinGroup.IntensitiesByFile = intensities;
                         }
-                        proteinGroup.IntensitiesByFile = intensities;
                     }
                 }
 
@@ -770,8 +773,6 @@ namespace TaskLayer
                     includeContaminants: Parameters.SearchParameters.WriteContaminants,
                     includeAmbiguous: true,
                     includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms);
-
-                int count = psmsToWrite.Where(psm => psm.PsmFdrInfo.PEP <= 0.01).Count();
 
                 // write PSMs
                 string writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + $"_{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s.{GlobalVariables.AnalyteType.GetSpectralMatchExtension()}");
@@ -1206,7 +1207,7 @@ namespace TaskLayer
             new FdrAnalysisEngine(possibleVariantPsms, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
                 new List<string> { Parameters.SearchTaskId }, "variant_PSMs", doPEP: false).Run();
 
-            possibleVariantPsms
+            possibleVariantPsms = possibleVariantPsms
                 .OrderBy(p => p.FdrInfo.QValue)
                 .ThenByDescending(p => p.Score)
                 .ThenBy(p => p.FdrInfo.CumulativeTarget)
@@ -1524,8 +1525,7 @@ namespace TaskLayer
                 output.WriteLine(directions.ToString());
 
                 int idNumber = 0;
-                psmList.OrderByDescending(p => p.Score);
-                foreach (SpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
+                foreach (SpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null).OrderByDescending(p => p.Score))
                 {
                     foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods)
                     {
