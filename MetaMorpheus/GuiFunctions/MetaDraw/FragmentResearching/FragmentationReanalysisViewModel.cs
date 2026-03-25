@@ -248,15 +248,17 @@ namespace GuiFunctions
             List<Product> terminalProducts = new List<Product>();
             List<Product> internalProducts = new List<Product>();
 
+            // Snapshot products before acquiring lock to avoid enumerating collection while it may be modified by UI thread
+            var productsSnapshot = _productsToUse.ToList();
             // Lock to ensure thread-safe mutation of static DissociationTypeCollection dictionary
             lock (_fragmentationLock)
             {
-                smToRematch.ProductsFromDissociationType()[DissociationType.Custom] = _productsToUse.ToList();
+                smToRematch.ProductsFromDissociationType()[DissociationType.Custom] = productsSnapshot;
                 bioPolymer.Fragment(DissociationType.Custom, FragmentationTerminus.Both, terminalProducts, fragmentationParams);
 
                 if (FragmentationParamsViewModel.GenerateInternalIons && bioPolymer is PeptideWithSetModifications) // internal ions are not currently implemented for RNA
                 {
-                    Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList();
+                    Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = productsSnapshot;
                     bioPolymer.FragmentInternally(DissociationType.Custom, FragmentationParamsViewModel.MinInternalIonLength, internalProducts, fragmentationParams);
                 }
             }
@@ -283,7 +285,7 @@ namespace GuiFunctions
                 ? newMatches.Concat(smToRematch.MatchedIons) 
                 : newMatches;
 
-            uniqueMatches = uniqueMatches.Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType))
+            uniqueMatches = uniqueMatches.Where(p => productsSnapshot.Contains(p.NeutralTheoreticalProduct.ProductType))
                 .Where(p => Math.Abs(p.MassErrorPpm) <= ProductIonMassTolerance);
 
             // retain only internal ions
