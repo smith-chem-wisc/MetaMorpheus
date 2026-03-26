@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using Chemistry;
+using EngineLayer;
 using MassSpectrometry;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
@@ -66,6 +67,11 @@ namespace GuiFunctions
         protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons,
             bool useLiteralPassedValues = false)
         {
+            if (MetaDrawSettings.AnnotateIsotopicEnvelopes && Scan != null)
+            {
+                PopulateEnvelopesForScanIfNeeded(Scan, matchedFragmentIons);
+            }
+
             List<MatchedFragmentIon> ionsToDisplay;
             if (!MetaDrawSettings.DisplayInternalIons)
             {
@@ -84,6 +90,47 @@ namespace GuiFunctions
             foreach (MatchedFragmentIon matchedIon in ionsToDisplay)
             {
                 AnnotatePeak(matchedIon, isBetaPeptide, useLiteralPassedValues);
+            }
+        }
+
+        /// <summary>
+        /// Lazily populates envelopes for matched ions if needed
+        /// </summary>
+        private void PopulateEnvelopesForScanIfNeeded(MsDataScan scan, List<MatchedFragmentIon> ions)
+        {
+            var ionsNeedingEnvelopes = ions
+                .OfType<MatchedFragmentIonWithEnvelope>()
+                .Where(p => p.Envelope == null)
+                .ToList();
+
+            if (ionsNeedingEnvelopes.Count == 0)
+                return;
+
+            var products = ionsNeedingEnvelopes
+                .Select(p => p.NeutralTheoreticalProduct)
+                .Distinct()
+                .ToList();
+
+            var commonParams = new CommonParameters(
+                precursorDeconParams: MetaDrawSettingsViewModel.Instance?.DeconHostViewModel?.PrecursorDeconvolutionParameters?.Parameters,
+                productDeconParams: MetaDrawSettingsViewModel.Instance?.DeconHostViewModel?.ProductDeconvolutionParameters?.Parameters);
+
+            var specificMass = new Ms2ScanWithSpecificMass(Scan, SpectrumMatch.PrecursorMz,
+                SpectrumMatch.PrecursorCharge, SpectrumMatch.FileNameWithoutExtension, commonParams);
+
+            var allMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, products, commonParams, matchAllCharges: false);
+
+            var productToMatch = allMatches
+                .OfType<MatchedFragmentIonWithEnvelope>()
+                .Where(p => p.Envelope != null)
+                .ToDictionary(p => p.NeutralTheoreticalProduct);
+
+            foreach (var ion in ionsNeedingEnvelopes)
+            {
+                if (productToMatch.TryGetValue(ion.NeutralTheoreticalProduct, out var match))
+                {
+                    ion.Envelope = match.Envelope;
+                }
             }
         }
 
@@ -122,6 +169,29 @@ namespace GuiFunctions
                 ionColor = (OxyColor)ionColorNullable;
             }
 
+            // peak annotation
+            string prefix = string.Empty;
+            if (SpectrumMatch.IsCrossLinkedPeptide())
+            {
+                if (isBetaPeptide)
+                {
+                    prefix = "B-";
+                }
+                else
+                {
+                    prefix = "A-";
+                }
+            }
+
+            // Check for isotopic envelope
+            if (MetaDrawSettings.AnnotateIsotopicEnvelopes && 
+                matchedIon is MatchedFragmentIonWithEnvelope envIon && 
+                envIon.Envelope != null)
+            {
+                AnnotateEnvelopePeaks(envIon, ionColor, isBetaPeptide, useLiteralPassedValues, prefix, annotation);
+                return;
+            }
+
             int i = Scan.MassSpectrum.GetClosestPeakIndex(
                 matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge));
             double mz = Scan.MassSpectrum.XArray[i];
@@ -131,22 +201,6 @@ namespace GuiFunctions
             {
                 mz = matchedIon.Mz;
                 intensity = matchedIon.Intensity;
-            }
-
-            // peak annotation
-            string prefix = string.Empty;
-            if (SpectrumMatch.IsCrossLinkedPeptide())
-            {
-                if (isBetaPeptide)
-                {
-                    //prefix = "β";
-                    prefix = "B-";
-                }
-                else
-                {
-                    //prefix = "α";
-                    prefix = "A-";
-                }
             }
 
             var peakAnnotation = new TextAnnotation();
@@ -235,6 +289,119 @@ namespace GuiFunctions
             peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Center;
 
             DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
+        }
+
+        /// <summary>
+        /// Annotates all peaks in an isotopic envelope, with text annotation only on the tallest peak
+        /// </summary>
+        private void AnnotateEnvelopePeaks(MatchedFragmentIonWithEnvelope envIon, OxyColor ionColor, 
+            bool isBetaPeptide, bool useLiteralPassedValues, string prefix, string directAnnotation)
+        {
+            var envelope = envIon.Envelope!;
+            var product = envIon.NeutralTheoreticalProduct;
+
+            // Find the tallest peak in the envelope
+            var tallestPeak = envelope.Peaks.MaxBy(p => p.intensity);
+            if (tallestPeak.Value.intensity == 0)
+                return;
+
+            // Annotate all peaks in the envelope
+            foreach (var (envMz, envIntensity) in envelope.Peaks)
+            {
+                bool isTallest = Math.Abs(envMz - tallestPeak.mz) < 0.001 && Math.Abs(envIntensity - tallestPeak.intensity) < 0.001;
+
+                // Draw peak marker (colored)
+                DrawPeak(envMz, envIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, null);
+
+                // Draw TEXT annotation only on tallest peak
+                if (isTallest)
+                {
+                    string peakAnnotationText = BuildAnnotationText(envIon, isBetaPeptide, prefix, directAnnotation);
+                    
+                    var peakAnnotation = new TextAnnotation
+                    {
+                        Text = peakAnnotationText,
+                        Font = "Arial",
+                        FontSize = MetaDrawSettings.AnnotatedFontSize,
+                        FontWeight = MetaDrawSettings.AnnotationBold ? FontWeights.Bold : 2.0,
+                        StrokeThickness = 0,
+                        TextPosition = new DataPoint(envMz, envIntensity),
+                        TextVerticalAlignment = envIntensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom,
+                        TextHorizontalAlignment = HorizontalAlignment.Center,
+                        TextColor = ionColor
+                    };
+
+                    DrawPeak(envMz, envIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Builds the annotation text for a matched fragment ion
+        /// </summary>
+        private string BuildAnnotationText(MatchedFragmentIon matchedIon, bool isBetaPeptide, string prefix, string directAnnotation)
+        {
+            if (directAnnotation != null)
+                return prefix + directAnnotation;
+
+            if (!MetaDrawSettings.DisplayIonAnnotations)
+                return string.Empty;
+
+            string peakAnnotationText = prefix;
+
+            // Fragment Number annotation
+            if (MetaDrawSettings.SubAndSuperScriptIons)
+            {
+                foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
+                {
+                    if (char.IsDigit(character))
+                        peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
+                    else switch (character)
+                    {
+                        case '-':
+                            peakAnnotationText += "\u208B";
+                            break;
+                        case '[':
+                        case ']':
+                            continue;
+                        default:
+                            peakAnnotationText += character;
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
+            }
+
+            // Charge annotation
+            if (MetaDrawSettings.AnnotateCharges)
+            {
+                char chargeAnnotation = matchedIon.Charge > 0 ? '+' : '-';
+                if (MetaDrawSettings.SubAndSuperScriptIons)
+                {
+                    var superScript = new string(Math.Abs(matchedIon.Charge).ToString()
+                        .Select(digit => MetaDrawSettings.SuperScriptNumbers[digit - '0'])
+                        .ToArray());
+
+                    peakAnnotationText += superScript;
+                    if (chargeAnnotation == '+')
+                        peakAnnotationText += (char)(chargeAnnotation + 8271);
+                    else
+                        peakAnnotationText += (char)(chargeAnnotation + 8270);
+                }
+                else
+                    peakAnnotationText += chargeAnnotation.ToString() + matchedIon.Charge;
+            }
+
+            // m/z annotation
+            if (MetaDrawSettings.AnnotateMzValues)
+            {
+                peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
+            }
+
+            return peakAnnotationText;
         }
 
         /// <summary>
