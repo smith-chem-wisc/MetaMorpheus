@@ -196,6 +196,7 @@ class TestBioPolymer : IBioPolymer
     public string DatabaseFilePath { get; }
     public bool IsDecoy { get; }
     public bool IsContaminant { get; }
+    public bool IsEntrapment { get; } = false;
     public string Organism { get; }
     public string Accession { get; set; }
     public List<Tuple<string, string>> GeneNames { get; }
