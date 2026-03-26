@@ -181,6 +181,11 @@ namespace GuiFunctions
             get => MetaDrawSettings.SubAndSuperScriptIons;
             set { MetaDrawSettings.SubAndSuperScriptIons = value; OnPropertyChanged(nameof(SubAndSuperScriptIons)); }
         }
+        public bool AnnotateIsotopicEnvelopes
+        {
+            get => MetaDrawSettings.AnnotateIsotopicEnvelopes;
+            set { MetaDrawSettings.AnnotateIsotopicEnvelopes = value; OnPropertyChanged(nameof(AnnotateIsotopicEnvelopes)); }
+        }
 
         public int AnnotatedFontSize
         {
