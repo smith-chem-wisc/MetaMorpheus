@@ -302,7 +302,7 @@ namespace GuiFunctions
 
             // Find the tallest peak in the envelope
             var tallestPeak = envelope.Peaks.MaxBy(p => p.intensity);
-            if (tallestPeak.Value.intensity == 0)
+            if (tallestPeak.intensity == 0)
                 return;
 
             // Annotate all peaks in the envelope
