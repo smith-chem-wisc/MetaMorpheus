@@ -216,6 +216,7 @@ namespace GuiFunctions
             else
             {
                 peakAnnotationText = BuildAnnotationText(matchedIon, isBetaPeptide, prefix, null);
+                peakAnnotation.TextColor = ionColor;
             }
 
             // Hide internal fragment annotation if not displaying
