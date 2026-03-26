@@ -204,76 +204,23 @@ namespace GuiFunctions
             }
 
             var peakAnnotation = new TextAnnotation();
-            string peakAnnotationText = prefix;
+            string peakAnnotationText;
 
             // Fast path: direct annotation
             if (annotation != null)
             {
-                peakAnnotationText += annotation;
+                peakAnnotationText = prefix + annotation;
                 intensity += intensity * 0.05;
                 peakAnnotation.TextColor = ionColor;
             }
-            // Main annotation logic
-            else if (MetaDrawSettings.DisplayIonAnnotations)
-            {
-                peakAnnotation.TextColor = ionColor;
-
-                // Fragment Number annotation
-                if (MetaDrawSettings.SubAndSuperScriptIons)
-                    foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
-                    {
-                        if (char.IsDigit(character))
-                            peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
-                        else switch (character)
-                        {
-                            case '-':
-                                peakAnnotationText += "\u208B"; // sub scripted Hyphen
-                                break;
-                            case '[':
-                            case ']':
-                                continue;
-                            default:
-                                peakAnnotationText += character;
-                                break;
-                        }
-                    }
-                else
-                    peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
-
-                // Charge annotation
-                if (MetaDrawSettings.AnnotateCharges)
-                {
-                    char chargeAnnotation = matchedIon.Charge > 0 ? '+' : '-';
-                    if (MetaDrawSettings.SubAndSuperScriptIons)
-                    {
-                        var superScript = new string(Math.Abs(matchedIon.Charge).ToString()
-                            .Select(digit => MetaDrawSettings.SuperScriptNumbers[digit - '0'])
-                            .ToArray());
-
-                        peakAnnotationText += superScript;
-                        if (chargeAnnotation == '+')
-                            peakAnnotationText += (char)(chargeAnnotation + 8271);
-                        else
-                            peakAnnotationText += (char)(chargeAnnotation + 8270);
-                    }
-                    else
-                        peakAnnotationText += chargeAnnotation.ToString() + matchedIon.Charge;
-                }
-
-                // m/z annotation
-                if (MetaDrawSettings.AnnotateMzValues)
-                {
-                    peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
-                }
-            }
             else
             {
-                peakAnnotationText = string.Empty;
+                peakAnnotationText = BuildAnnotationText(matchedIon, isBetaPeptide, prefix, null);
             }
 
             // Hide internal fragment annotation if not displaying
             if (matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null &&
-                !MetaDrawSettings.DisplayInternalIonAnnotations) //if internal fragment
+                !MetaDrawSettings.DisplayInternalIonAnnotations)
             {
                 peakAnnotationText = string.Empty;
             }
