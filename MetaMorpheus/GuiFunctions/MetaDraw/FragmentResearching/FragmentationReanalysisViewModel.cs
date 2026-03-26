@@ -249,7 +249,7 @@ namespace GuiFunctions
             var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, smToRematch.PrecursorMz,
                 smToRematch.PrecursorCharge, smToRematch.FileNameWithoutExtension, commonParams);
 
-            var newMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, MatchAllCharges);
+            var newMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, MatchAllCharges, includeExperimentalEnvelope: true);
             IEnumerable<MatchedFragmentIon> uniqueMatches = concatOldIonsOfType 
                 ? newMatches.Concat(smToRematch.MatchedIons) 
                 : newMatches;
