@@ -175,10 +175,12 @@ namespace GuiFunctions
             {
                 if (isBetaPeptide)
                 {
+                    //prefix = "β";
                     prefix = "B-";
                 }
                 else
                 {
+                    //prefix = "α";
                     prefix = "A-";
                 }
             }
@@ -263,8 +265,17 @@ namespace GuiFunctions
 
                 // Draw TEXT annotation only on tallest peak
                 if (isTallest)
-                {
-                    string peakAnnotationText = BuildAnnotationText(envIon, isBetaPeptide, prefix, directAnnotation);
+                {                // Hide internal fragment annotation if not displaying
+                    string peakAnnotationText;
+                    if (envIon.NeutralTheoreticalProduct.SecondaryProductType != null &&
+                        !MetaDrawSettings.DisplayInternalIonAnnotations)
+                    {
+                        peakAnnotationText = string.Empty;
+                    }
+                    else
+                    {
+                        peakAnnotationText = BuildAnnotationText(envIon, isBetaPeptide, prefix, directAnnotation);
+                    }
                     
                     var peakAnnotation = new TextAnnotation
                     {
