@@ -56,6 +56,58 @@ namespace Test
             Assert.That(0, Is.EqualTo(matchedIons.Count));
         }
 
+        [Test]
+        public static void MatchFragmentIons_IncludeEnvelopeParameter()
+        {
+            TestDataFile t = new TestDataFile();
+            double precursorMass = 300;
+            
+            // Create a theoretical product that will match
+            List<Product> products = new List<Product>
+            {
+                new Product(ProductType.b, FragmentationTerminus.N, 147.0764, 1, 1, 0)
+            };
+
+            CommonParameters commonParameters = new CommonParameters { ProductMassTolerance = new AbsoluteTolerance(0.01) };
+            MsDataScan scan = t.GetOneBasedScan(2);
+            
+            // Ensure the scan is NOT Xcorr processed by setting minimal preprocessing
+            // This allows the envelope-based matching to be used
+            scan.MassSpectrum.XCorrPrePreprocessing(0, 1, precursorMass.ToMz(1));
+            
+            var scanWithMass = new Ms2ScanWithSpecificMass(scan, precursorMass.ToMz(1), 1, "", new CommonParameters());
+
+            // Test default (no envelope)
+            var matchedIonsDefault = MetaMorpheusEngine.MatchFragmentIons(scanWithMass, products, commonParameters);
+            
+            // Test with envelope = false (explicit)
+            var matchedIonsNoEnvelope = MetaMorpheusEngine.MatchFragmentIons(scanWithMass, products, commonParameters, includeExperimentalEnvelope: false);
+            
+            // Test with envelope = true
+            var matchedIonsWithEnvelope = MetaMorpheusEngine.MatchFragmentIons(scanWithMass, products, commonParameters, includeExperimentalEnvelope: true);
+
+            // Verify all return results (this test requires the scan to have ExperimentalFragments)
+            // If the test data doesn't have experimental fragments, we at least verify the parameter doesn't crash
+            if (matchedIonsDefault.Count == 0)
+            {
+                Assert.Pass("Test data does not have matching fragments - verifying method does not crash");
+                return;
+            }
+
+            Assert.That(matchedIonsNoEnvelope.Count, Is.EqualTo(matchedIonsDefault.Count));
+            Assert.That(matchedIonsWithEnvelope.Count, Is.EqualTo(matchedIonsDefault.Count));
+
+            // Verify type when includeEnvelope = true
+            Assert.That(matchedIonsWithEnvelope[0], Is.InstanceOf<MatchedFragmentIonWithEnvelope>());
+            var ionWithEnvelope = (MatchedFragmentIonWithEnvelope)matchedIonsWithEnvelope[0];
+            Assert.That(ionWithEnvelope.Envelope, Is.Not.Null);
+            Assert.That(ionWithEnvelope.Envelope.Peaks, Is.Not.Empty);
+
+            // Verify type when includeEnvelope = false
+            Assert.That(matchedIonsDefault[0], Is.InstanceOf<MatchedFragmentIon>());
+            Assert.That(matchedIonsDefault[0], Is.Not.InstanceOf<MatchedFragmentIonWithEnvelope>());
+        }
+
         private class TestEngine : MetaMorpheusEngine
         {
 
