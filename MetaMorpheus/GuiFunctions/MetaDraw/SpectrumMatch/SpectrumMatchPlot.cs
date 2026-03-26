@@ -118,7 +118,7 @@ namespace GuiFunctions
             var specificMass = new Ms2ScanWithSpecificMass(Scan, SpectrumMatch.PrecursorMz,
                 SpectrumMatch.PrecursorCharge, SpectrumMatch.FileNameWithoutExtension, commonParams);
 
-            var allMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, products, commonParams, matchAllCharges: false);
+            var allMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, products, commonParams, matchAllCharges: false, includeExperimentalEnvelope: true);
 
             var productToMatch = allMatches
                 .OfType<MatchedFragmentIonWithEnvelope>()
