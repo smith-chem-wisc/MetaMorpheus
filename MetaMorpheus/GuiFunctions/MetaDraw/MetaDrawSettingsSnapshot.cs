@@ -32,6 +32,7 @@ namespace GuiFunctions
         public int AxisLabelTextSize { get; set; } = 12;
         public double StrokeThicknessUnannotated { get; set; } = 0.7;
         public double StrokeThicknessAnnotated { get; set; } = 1.0;
+        public bool AnnotateIsotopicEnvelopes { get; set; } = true;
         public double SpectrumDescriptionFontSize { get; set; } = 10;
         public bool DisplayChimeraLegend { get; set; } = true;
         public bool SuppressMessageBoxes { get; set; } = false;
