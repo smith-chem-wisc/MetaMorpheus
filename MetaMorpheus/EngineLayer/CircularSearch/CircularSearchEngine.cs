@@ -10,6 +10,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EngineLayer.CircularSearch
@@ -57,10 +58,20 @@ namespace EngineLayer.CircularSearch
         private readonly object[] Locks;
 
         /// <summary>
-        /// Tracks digestion product counts per protein if enabled.
+        /// Internal mutable store for digestion product counts, populated during
+        /// <see cref="RunSpecific"/>. External code should use
+        /// <see cref="DigestionCountDictionary"/> instead.
         /// </summary>
-        public readonly ConcurrentDictionary<(string Accession, string BaseSequence), int>
-            DigestionCountDictionary = new();
+        private readonly ConcurrentDictionary<(string Accession, string BaseSequence), int>
+            _digestionCountDictionary = new();
+
+        /// <summary>
+        /// Digestion product counts per (Accession, BaseSequence) pair.
+        /// The returned dictionary is a read-only snapshot; it is safe to
+        /// enumerate after <see cref="RunSpecific"/> has completed.
+        /// </summary>
+        public IReadOnlyDictionary<(string Accession, string BaseSequence), int>
+            DigestionCountDictionary => _digestionCountDictionary;
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -79,7 +90,9 @@ namespace EngineLayer.CircularSearch
         {
             SpectralMatches = globalPsms;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
-            MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
+            MyScanPrecursorMasses = new double[arrayOfSortedMS2Scans.Length];
+            for (int i = 0; i < arrayOfSortedMS2Scans.Length; i++)
+                MyScanPrecursorMasses[i] = arrayOfSortedMS2Scans[i].PrecursorMass;
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             CircularProteins = circularProteins;
@@ -100,7 +113,7 @@ namespace EngineLayer.CircularSearch
             if (!CircularProteins.Any())
                 return new MetaMorpheusEngineResults(this);
 
-            double proteinsSearched = 0;
+            int proteinsSearched = 0;
             int oldPercentProgress = 0;
 
             int maxThreads = CommonParameters.MaxThreadsToUsePerFile;
@@ -138,7 +151,7 @@ namespace EngineLayer.CircularSearch
                                      FixedModifications,
                                      VariableModifications))
                         {
-                            DigestionCountDictionary.AddOrUpdate(
+                            _digestionCountDictionary.AddOrUpdate(
                                 (bioPolymer.Parent.Accession, bioPolymer.BaseSequence),
                                 1, (_, v) => v + 1);
 
@@ -151,9 +164,21 @@ namespace EngineLayer.CircularSearch
                                 ? ((CircularPeptideWithSetModifications)bioPolymer).MonoisotopicMass
                                 : ((PeptideWithSetModifications)bioPolymer).MonoisotopicMass;
 
-                            // Clear previous fragments
+                            // INVARIANT: Fragment caching contract
+                            // ---------------------------------------------------------
+                            // All fragment lists are cleared once per bioPolymer so that
+                            // stale ions from a previous peptide are never reused.
+                            // The computedDissociationTypes set is also reset so each
+                            // dissociation type's list is lazily populated exactly once
+                            // per bioPolymer on first scan encounter (guarded by the
+                            // HashSet.Add check below). This means:
+                            //   1. Do NOT move this Clear() inside the scan loop.
+                            //   2. Do NOT selectively clear individual keys — every
+                            //      key must be reset together.
+                            // ---------------------------------------------------------
                             foreach (var fl in fragmentsPerDissociationType.Values)
                                 fl.Clear();
+                            var computedDissociationTypes = new HashSet<DissociationType>();
 
                             foreach (var scan in GetAcceptableScans(precursorMass, SearchMode))
                             {
@@ -168,7 +193,7 @@ namespace EngineLayer.CircularSearch
                                     continue;
 
                                 // Generate fragments on first encounter for this type
-                                if (theorProducts.Count == 0)
+                                if (computedDissociationTypes.Add(dissociationType))
                                 {
                                     if (isCircular)
                                     {
@@ -201,8 +226,9 @@ namespace EngineLayer.CircularSearch
                                             CommonParameters.DigestionParams.FragmentationTerminus,
                                             theorProducts);
 
-                                        // Internal ions — appended to the same list so
-                                        // MatchFragmentIons sees the full theoretical set.
+                                        // Internal ions — collected separately because
+                                        // FragmentInternally calls Clear() on its output
+                                        // list, which would destroy the terminal ions above.
                                         var internalProducts = new List<Product>();
                                         linearPeptide.FragmentInternally(
                                             dissociationType,
@@ -222,12 +248,14 @@ namespace EngineLayer.CircularSearch
                             }
                         }
 
-                        // Progress reporting
-                        proteinsSearched++;
-                        int pct = (int)(proteinsSearched / CircularProteins.Count * 100);
-                        if (pct > oldPercentProgress)
+                        // Progress reporting — thread-safe counter
+                        var newCount = Interlocked.Increment(ref proteinsSearched);
+                        int pct = (int)((double)newCount / CircularProteins.Count * 100);
+                        if (pct > Volatile.Read(ref oldPercentProgress))
                         {
-                            oldPercentProgress = pct;
+                            // Benign race: two threads may both enter here and
+                            // report the same percentage; this is harmless.
+                            Volatile.Write(ref oldPercentProgress, pct);
                             ReportProgress(new ProgressEventArgs(
                                 pct, "Circular peptide search...", NestedIds));
                         }
@@ -252,6 +280,11 @@ namespace EngineLayer.CircularSearch
 
             lock (Locks[scan.ScanIndex])
             {
+                // Compare against RunnerUpScore (not Score) intentionally:
+                // candidates scoring between RunnerUpScore and Score must reach
+                // AddOrReplace so it can update the runner-up. Candidates slightly
+                // below the runner-up are discarded harmlessly inside AddOrReplace.
+                // This matches the guard logic in ClassicSearchEngine.
                 bool improve = SpectralMatches[scan.ScanIndex] == null
                             || (score - SpectralMatches[scan.ScanIndex].RunnerUpScore)
                                > -SpectralMatch.ToleranceForScoreDifferentiation;

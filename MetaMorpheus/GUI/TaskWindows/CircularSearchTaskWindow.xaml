@@ -64,7 +64,8 @@
                         <TextBox x:Name="MinInternalFragmentLengthTextBox"
                                  Grid.Row="1" Grid.Column="1"
                                  Width="60" HorizontalAlignment="Left"
-                                 VerticalAlignment="Center" Text="3"/>
+                                 VerticalAlignment="Center" Text="3"
+                                 PreviewTextInput="TextBox_PreviewTextInput_Int"/>
                     </Grid>
                 </GroupBox>
 
@@ -85,7 +86,8 @@
                                VerticalAlignment="Center"/>
                         <TextBox x:Name="PrecursorMassToleranceTextBox"
                                  Grid.Row="0" Grid.Column="1"
-                                 VerticalAlignment="Center" Text="10"/>
+                                 VerticalAlignment="Center" Text="10"
+                                 PreviewTextInput="TextBox_PreviewTextInput_Double"/>
                         <ComboBox x:Name="PrecursorMassToleranceComboBox"
                                   Grid.Row="0" Grid.Column="2"
                                   VerticalAlignment="Center"/>
@@ -94,7 +96,8 @@
                                VerticalAlignment="Center"/>
                         <TextBox x:Name="ProductMassToleranceTextBox"
                                  Grid.Row="1" Grid.Column="1"
-                                 VerticalAlignment="Center" Text="20"/>
+                                 VerticalAlignment="Center" Text="20"
+                                 PreviewTextInput="TextBox_PreviewTextInput_Double"/>
                         <ComboBox x:Name="ProductMassToleranceComboBox"
                                   Grid.Row="1" Grid.Column="2"
                                   VerticalAlignment="Center"/>
@@ -141,14 +144,16 @@
                         <TextBox x:Name="MissedCleavagesTextBox"
                                  Grid.Row="1" Grid.Column="1"
                                  Width="60" HorizontalAlignment="Left"
-                                 VerticalAlignment="Center" Text="2"/>
+                                 VerticalAlignment="Center" Text="2"
+                                 PreviewTextInput="TextBox_PreviewTextInput_Int"/>
 
                         <Label Grid.Row="2" Grid.Column="0" Content="Max mods per peptide:"
                                VerticalAlignment="Center"/>
                         <TextBox x:Name="MaxModsTextBox"
                                  Grid.Row="2" Grid.Column="1"
                                  Width="60" HorizontalAlignment="Left"
-                                 VerticalAlignment="Center" Text="2"/>
+                                 VerticalAlignment="Center" Text="2"
+                                 PreviewTextInput="TextBox_PreviewTextInput_Int"/>
                     </Grid>
                 </GroupBox>
 
@@ -312,7 +317,8 @@
                             <Label Content="Minimum score allowed:" VerticalAlignment="Center"/>
                             <TextBox x:Name="MinScoreTextBox"
                                      Width="60" VerticalAlignment="Center"
-                                     Text="1"/>
+                                     Text="1"
+                                     PreviewTextInput="TextBox_PreviewTextInput_Double"/>
                         </StackPanel>
 
                         <!-- Decoy note -->

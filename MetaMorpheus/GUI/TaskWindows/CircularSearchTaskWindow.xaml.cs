@@ -42,10 +42,21 @@ namespace MetaMorpheusGUI
 
             TheTask = task ?? new CircularSearchTask();
 
-            PopulateChoices();
-            UpdateFieldsFromTask(TheTask);
+            try
+            {
+                PopulateChoices();
+                UpdateFieldsFromTask(TheTask);
+            }
+            catch
+            {
+                // Ensure no dangling subscription on the shared static timer
+                SearchModifications.Timer.Tick -= TextChangeTimerHandler;
+                throw;
+            }
 
             // Wire the search-filter timer (same as SearchTaskWindow)
+            // Subscribe AFTER all fallible work so a failed constructor
+            // cannot leave a handler attached to the shared static timer.
             SearchModifications.Timer.Tick += TextChangeTimerHandler;
             base.Closing += OnWindowClosing;
         }
@@ -126,32 +137,37 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.SelectedIndex =
                 task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
 
-            // Product tolerance
+            // Product tolerance — always read from CommonParameters (authoritative source)
             ProductMassToleranceTextBox.Text =
-                task.CircularSearchParameters.ProductMassTolerance.Value
+                task.CommonParameters.ProductMassTolerance.Value
                     .ToString(CultureInfo.InvariantCulture);
             ProductMassToleranceComboBox.SelectedIndex =
-                task.CircularSearchParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+                task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
 
             // Mass-diff acceptor
             MassDiffAcceptorComboBox.SelectedItem =
                 task.CircularSearchParameters.MassDiffAcceptorType;
 
             // Digestion
-            if (task.CommonParameters.DigestionParams is DigestionParams dp
-                && ProteaseDictionary.Dictionary.TryGetValue(
-                    dp.SpecificProtease.Name, out var savedProtease))
-                ProteaseComboBox.SelectedItem = savedProtease;
+            if (task.CommonParameters.DigestionParams is DigestionParams dp)
+            {
+                if (ProteaseDictionary.Dictionary.TryGetValue(
+                        dp.SpecificProtease.Name, out var savedProtease))
+                    ProteaseComboBox.SelectedItem = savedProtease;
 
-            MissedCleavagesTextBox.Text =
-                task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue
-                    ? ""
-                    : task.CommonParameters.DigestionParams.MaxMissedCleavages
-                          .ToString(CultureInfo.InvariantCulture);
+                MissedCleavagesTextBox.Text =
+                    dp.MaxMissedCleavages == int.MaxValue
+                        ? ""
+                        : dp.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
 
-            MaxModsTextBox.Text =
-                task.CommonParameters.DigestionParams.MaxMods
-                    .ToString(CultureInfo.InvariantCulture);
+                MaxModsTextBox.Text =
+                    dp.MaxMods.ToString(CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                MissedCleavagesTextBox.Text = "";
+                MaxModsTextBox.Text = "0";
+            }
 
             // ── Restore fixed mod check states ────────────────────────────────
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -215,7 +231,8 @@ namespace MetaMorpheusGUI
             WriteDecoyCheckBox.IsChecked = task.CircularSearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task.CircularSearchParameters.WriteContaminants;
             WriteHighQValueCheckBox.IsChecked = task.CircularSearchParameters.WriteHighQValuePsms;
-            MinScoreTextBox.Text = task.CircularSearchParameters.MinScore
+            // MinScore — always read from CommonParameters (authoritative source)
+            MinScoreTextBox.Text = task.CommonParameters.ScoreCutoff
                 .ToString(CultureInfo.InvariantCulture);
         }
 
@@ -251,6 +268,12 @@ namespace MetaMorpheusGUI
                 && MissedCleavagesTextBox.Text != "")
             {
                 MessageBox.Show("Please enter a valid number of missed cleavages.");
+                return;
+            }
+
+            if (MissedCleavagesTextBox.Text != "" && missedCleavages < 0)
+            {
+                MessageBox.Show("Missed cleavages must be a non-negative integer.");
                 return;
             }
 
@@ -322,6 +345,8 @@ namespace MetaMorpheusGUI
                 taskDescriptor: "CircularSearch");
 
             // Circular-specific parameters
+            // ProductMassTolerance and MinScore are authoritative in CommonParameters only.
+            // CircularSearchParameters mirrors them for backward-compatible serialization.
             TheTask.CircularSearchParameters.ProductMassTolerance = productTolerance;
             TheTask.CircularSearchParameters.MinScore = minScore;
             TheTask.CircularSearchParameters.MinInternalFragmentLength = minFragLen;
@@ -379,6 +404,31 @@ namespace MetaMorpheusGUI
         private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             SearchModifications.Timer.Tick -= TextChangeTimerHandler;
+        }
+
+        private void TextBox_PreviewTextInput_Int(object sender, System.Windows.Input.TextCompositionEventArgs e)
+        {
+            e.Handled = !char.IsDigit(e.Text.Last());
+        }
+
+        private void TextBox_PreviewTextInput_Double(object sender, System.Windows.Input.TextCompositionEventArgs e)
+        {
+            char c = e.Text.Last();
+            TextBox textBox = (TextBox)sender;
+
+            // Allow digits always; allow at most one decimal point
+            if (char.IsDigit(c))
+            {
+                e.Handled = false;
+            }
+            else if (c == '.' && !textBox.Text.Contains('.'))
+            {
+                e.Handled = false;
+            }
+            else
+            {
+                e.Handled = true;
+            }
         }
     }
 }

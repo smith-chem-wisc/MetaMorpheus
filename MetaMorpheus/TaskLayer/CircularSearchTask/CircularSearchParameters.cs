@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using System;
+using EngineLayer;
 using MzLibUtil;
 using Omics.Modifications;
 using System.Collections.Generic;
@@ -77,12 +78,18 @@ namespace TaskLayer
         /// </summary>
         public Tolerance ProductMassTolerance { get; set; }
 
+        private int _minInternalFragmentLength;
+
         /// <summary>
         /// Minimum residue length of internal fragment ions used when scoring
         /// <see cref="CircularPeptideWithSetModifications"/> precursors.
-        /// Values below 2 are silently raised to 2.
+        /// Values below 2 are silently raised to 2 at assignment time.
         /// </summary>
-        public int MinInternalFragmentLength { get; set; }
+        public int MinInternalFragmentLength
+        {
+            get => _minInternalFragmentLength;
+            set => _minInternalFragmentLength = Math.Max(2, value);
+        }
 
         /// <summary>
         /// Minimum PSM score required to retain a match. Default: 1.

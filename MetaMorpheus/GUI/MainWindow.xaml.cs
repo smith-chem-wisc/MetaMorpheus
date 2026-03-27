@@ -782,8 +782,15 @@ namespace MetaMorpheusGUI
             taskSummary.DataContext = PreRunTasks;
             UpdateGuiOnPreRunChange();
 
-            var pathOfFirstSpectraFile = Path.GetDirectoryName(SpectraFiles.First().FilePath);
-            OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
+            if (SpectraFiles.Any())
+            {
+                var pathOfFirstSpectraFile = Path.GetDirectoryName(SpectraFiles.First().FilePath);
+                OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
+            }
+            else
+            {
+                OutputFolderTextBox.Clear();
+            }
         }
 
         private void CancelTasks_Click(object sender, RoutedEventArgs e)
@@ -851,6 +858,7 @@ namespace MetaMorpheusGUI
             if (!ProteinDatabases.Any() && PreRunTasks.Any(p => p.metaMorpheusTask.TaskType != MyTask.Average))
             {
                 NotificationHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
+                return;
             }
 
             var searchTasks = PreRunTasks

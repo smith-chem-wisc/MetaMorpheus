@@ -409,8 +409,28 @@
                         </Label.Content>
                     </Label>
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Grid.ColumnSpan="4">
-                        Add <Hyperlink NavigateUri="https://www.uniprot.org/" RequestNavigate="Hyperlink_RequestNavigate">reference proteome(s)</Hyperlink> in .xml or .fasta format.
-                        <Hyperlink NavigateUri="https://chemdata.nist.gov/dokuwiki/doku.php?id=peptidew:start" RequestNavigate="Hyperlink_RequestNavigate">Spectral libraries</Hyperlink> in .msp format can also be added.
+                        <Run>
+                            Add
+                        </Run>
+
+                        <Hyperlink NavigateUri="https://www.uniprot.org/" RequestNavigate="Hyperlink_RequestNavigate">
+                            reference proteome(s)
+                        </Hyperlink>
+
+                        <Run>
+                            <Run.Text>
+                                <Binding Path="IsRnaMode"
+                                         Source="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}"
+                                         Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                         ConverterParameter="in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations, whereas .fasta format only contains amino acid sequences."/>
+                            </Run.Text>
+                        </Run>
+
+                       <Hyperlink NavigateUri="https://chemdata.nist.gov/dokuwiki/doku.php?id=peptidew:start" RequestNavigate="Hyperlink_RequestNavigate">
+                            Spectral libraries
+                       </Hyperlink>
+
+                       in .msp format can be added to improve search results.
                     </TextBlock>
                     <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="DOWNLOAD PROTEOME" Visibility="Collapsed"
                         Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="10,0,0,0" HorizontalAlignment="Left" />
@@ -450,7 +470,7 @@
                     </Grid.RowDefinitions>
                     <Label Content="Spectra" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
-                        Add spectra file(s) in .mzML, .mgf, Thermo .raw, ms2.msalign, or Bruker .d formats.
+                        Add spectra file(s) in .mzML, .mgf, Thermo .raw, ms2.msalign, or Bruker .d formats. For Bruker files, either the .tdf or .tdf_bin file inside the .d folder can be selected.
                     </TextBlock>
                     <Button Name="AddSpectraButton" Grid.Row="2" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
@@ -753,7 +773,9 @@
                     <TextBlock Grid.Row="2" Style="{StaticResource TextBlockStyle}">
                         Please visit our <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">wiki</Hyperlink> to find answers to commonly-asked questions.
                         <LineBreak/><LineBreak/>
-                        If you encounter problems, please visit <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/issues/new" RequestNavigate="Hyperlink_RequestNavigate">our issues page</Hyperlink> on GitHub.
+                        If you encounter problems or you have a suggestion, please visit <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/issues/new" RequestNavigate="Hyperlink_RequestNavigate">our issues page</Hyperlink> on GitHub and submit a new issue.
+                        <LineBreak/><LineBreak/>
+                        If you would prefer to keep your correspondence private, you may email us at <Hyperlink NavigateUri="null" RequestNavigate="MenuItem_EmailHelp_Click">mm_support@chem.wisc.edu</Hyperlink>.
                     </TextBlock>
                     <Grid Grid.Row="3" Style="{StaticResource PageGridStyle}" Margin="5,0,0,0">
                         <Grid.RowDefinitions>

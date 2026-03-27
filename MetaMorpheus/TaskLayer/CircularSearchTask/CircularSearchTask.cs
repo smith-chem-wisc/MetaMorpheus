@@ -37,9 +37,8 @@ namespace TaskLayer
     ///
     /// OUTPUT FILES
     /// ------------
-    /// • CircularPeptideSpectralMatches.psmtsv
-    /// • CircularPeptides.psmtsv  (unique peptide-level results)
-    /// • (Optional) .mzID
+    /// • CircularPeptideSpectralMatches.psmtsv  – all PSMs passing filters
+    /// • CircularPeptides.psmtsv  – unique peptide-level results (best PSM per full sequence)
     /// </summary>
     public class CircularSearchTask : MetaMorpheusTask
     {
@@ -61,6 +60,14 @@ namespace TaskLayer
             FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
+
+            if (fileSettingsList.Length < currentRawFileList.Count)
+            {
+                throw new MetaMorpheusException(
+                    $"Mismatch between spectra files ({currentRawFileList.Count}) " +
+                    $"and file-specific settings ({fileSettingsList.Length}). " +
+                    "Each spectra file must have a corresponding entry in the file settings list.");
+            }
 
             // ── Load modifications ────────────────────────────────────────────
             LoadModifications(taskId,
@@ -115,11 +122,11 @@ namespace TaskLayer
                 var rng = new Random(42); // fixed seed for reproducibility
                 foreach (var target in targetProteins)
                 {
-                    char[] arr = target.BaseSequence.ToCharArray();
                     string decoySeq = null;
 
                     for (int attempt = 0; attempt < 10; attempt++)
                     {
+                        char[] arr = target.BaseSequence.ToCharArray();
                         // Fisher-Yates shuffle
                         for (int i = arr.Length - 1; i > 0; i--)
                         {
@@ -162,6 +169,13 @@ namespace TaskLayer
                 CircularSearchParameters.MassDiffAcceptorType,
                 CircularSearchParameters.CustomMdac);
 
+            // ── Validate spectra file list ────────────────────────────────────
+            if (currentRawFileList == null || currentRawFileList.Count == 0)
+            {
+                Warn("No spectra files were provided — circular search cannot proceed.");
+                return MyTaskResults;
+            }
+
             // ── Search each spectra file ──────────────────────────────────────
             var myFileManager = new MyFileManager(
                 CircularSearchParameters.DisposeOfFileWhenDone);
@@ -169,11 +183,18 @@ namespace TaskLayer
             var allPsms = new List<SpectralMatch>();
             int completedFiles = 0;
 
+            // Pre-compute file-specific params for every spectra file (once each)
+            var allFileParams = new CommonParameters[currentRawFileList.Count];
+            for (int i = 0; i < currentRawFileList.Count; i++)
+            {
+                allFileParams[i] = SetAllFileSpecificCommonParams(
+                    CommonParameters, fileSettingsList[i]);
+            }
+
             // Pre-load first file
             string firstFile = currentRawFileList[0];
             var nextFileTask = new Task<MsDataFile>(
-                () => myFileManager.LoadFile(firstFile,
-                    SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+                () => myFileManager.LoadFile(firstFile, allFileParams[0]));
             nextFileTask.Start();
 
             for (int spectraFileIndex = 0;
@@ -186,8 +207,7 @@ namespace TaskLayer
                 StartingDataFile(origDataFile,
                     [taskId, "Individual Spectra Files", origDataFile]);
 
-                var combinedParams = SetAllFileSpecificCommonParams(
-                    CommonParameters, fileSettingsList[spectraFileIndex]);
+                var combinedParams = allFileParams[spectraFileIndex];
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -197,14 +217,12 @@ namespace TaskLayer
                 var myMsDataFile = nextFileTask.Result;
 
                 // Begin loading the next file asynchronously
-                if (origDataFile != currentRawFileList.Last())
+                if (spectraFileIndex < currentRawFileList.Count - 1)
                 {
                     int next = spectraFileIndex + 1;
                     nextFileTask = new Task<MsDataFile>(
                         () => myFileManager.LoadFile(
-                            currentRawFileList[next],
-                            SetAllFileSpecificCommonParams(
-                                CommonParameters, fileSettingsList[next])));
+                            currentRawFileList[next], allFileParams[next]));
                     nextFileTask.Start();
                 }
 
@@ -229,7 +247,7 @@ namespace TaskLayer
                     combinedParams,
                     FileSpecificParameters,
                     thisId,
-                    Math.Max(2, CircularSearchParameters.MinInternalFragmentLength));
+                    CircularSearchParameters.MinInternalFragmentLength);
 
                 engine.Run();
 
@@ -241,7 +259,7 @@ namespace TaskLayer
                 FinishedDataFile(origDataFile,
                     [taskId, "Individual Spectra Files", origDataFile]);
                 ReportProgress(new ProgressEventArgs(
-                    completedFiles / currentRawFileList.Count,
+                    (int)(completedFiles * 100.0 / currentRawFileList.Count),
                     "Searching...",
                     [taskId, "Individual Spectra Files"]));
             }
@@ -250,7 +268,7 @@ namespace TaskLayer
             Status("Calculating FDR...", taskId);
 
             new FdrAnalysisEngine(
-                allPsms, 1 /* notch count */,
+                allPsms, massDiffAcceptor.NumNotches,
                 CommonParameters, FileSpecificParameters,
                 [taskId]).Run();
 
@@ -269,15 +287,30 @@ namespace TaskLayer
 
             // PSM-level TSV — inherited protected static from MetaMorpheusTask
             string psmPath = Path.Combine(outputFolder, "CircularPeptideSpectralMatches.psmtsv");
+            var writablePsmsList = writablePsms.ToList();
             WritePsmsToTsv(
-                writablePsms,
+                writablePsmsList,
                 psmPath,
                 new Dictionary<string, int>());
             FinishedWritingFile(psmPath, [taskId]);
 
+            // Unique peptide-level TSV — best-scoring PSM per full sequence
+            string peptidePath = Path.Combine(outputFolder, "CircularPeptides.psmtsv");
+            var uniquePeptides = writablePsmsList
+                .GroupBy(p => p.FullSequence)
+                .Select(g => g.OrderByDescending(p => p.Score).First())
+                .OrderByDescending(p => p.Score)
+                .ToList();
+            WritePsmsToTsv(
+                uniquePeptides,
+                peptidePath,
+                new Dictionary<string, int>());
+            FinishedWritingFile(peptidePath, [taskId]);
+
             MyTaskResults.AddResultText(
-                $"Circular search complete. {allPsms.Count} PSMs found " +
-                $"({allPsms.Count(p => p.FdrInfo?.QValue <= 0.01)} at q≤0.01).");
+                $"Circular search complete. {writablePsmsList.Count} PSMs found " +
+                $"({allPsms.Count(p => p.FdrInfo?.QValue <= 0.01)} at q≤0.01), " +
+                $"{uniquePeptides.Count} unique peptides.");
 
             return MyTaskResults;
         }
