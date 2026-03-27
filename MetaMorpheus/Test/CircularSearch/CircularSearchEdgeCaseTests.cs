@@ -43,7 +43,7 @@ namespace Test.CircularSearch
                 maxMissedCleavages: maxMissedCleavages,
                 minPeptideLength: minPeptideLength);
 
-        private static List<IBioPolymerWithSetMods> Digest(
+        private static IEnumerable<IBioPolymerWithSetMods> Digest(
             CircularProtein protein,
             DigestionParams digestionParams) =>
             protein.Digest(digestionParams,

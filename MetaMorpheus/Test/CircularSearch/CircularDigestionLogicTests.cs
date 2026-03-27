@@ -30,7 +30,7 @@ namespace Test.CircularSearch
                 minPeptideLength: minPeptideLength,
                 maxModsForPeptides: maxModsForPeptides);
 
-        private static List<IBioPolymerWithSetMods> Digest(
+        private static IEnumerable<IBioPolymerWithSetMods> Digest(
             CircularProtein protein,
             DigestionParams digestionParams,
             List<Modification> variableMods = null) =>
@@ -282,7 +282,7 @@ namespace Test.CircularSearch
 
             var products = Digest(protein, paramsWithMods, new List<Modification> { anywheremod });
             var paramsNoMods = MakeParams(maxMissedCleavages: 2);
-            var unmodifiedProducts = Digest(protein, paramsNoMods);
+            var unmodifiedProducts = Digest(protein, paramsNoMods).ToList();
 
             Assert.That(products.Count, Is.EqualTo(unmodifiedProducts.Count),
                 "With MaxMods=0, no additional modified forms should be emitted.");

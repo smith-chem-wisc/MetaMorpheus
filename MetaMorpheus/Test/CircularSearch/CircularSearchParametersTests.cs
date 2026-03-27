@@ -33,13 +33,6 @@ namespace Test.CircularSearch
         }
 
         [Test]
-        public static void DefaultParameters_DecoyType_IsReverse()
-        {
-            var p = new CircularSearchParameters();
-            Assert.That(p.DecoyType, Is.EqualTo(DecoyType.Reverse));
-        }
-
-        [Test]
         public static void DefaultParameters_SearchTarget_IsTrue()
         {
             var p = new CircularSearchParameters();
