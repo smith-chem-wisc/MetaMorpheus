@@ -363,7 +363,11 @@ namespace EngineLayer.GlycoSearch
             var psmGlyco = new GlycoSpectralMatch(peptideWithMod, 0, PeptideScore, scanIndex, theScan, CommonParameters, matchedIons);
 
             //TO DO: This p is from childScan p, it works for HCD-pd-EThcD, which may not work for other type.
-            psmGlyco.ScanInfo_p = p;
+            psmGlyco.ScanInfo_p = p > 1? 1 : p;
+            // p is the probability of randomly matching a single theoretical fragment ion.
+            // With a wide mass tolerance (> 0.4 Da), the computed p may exceed 1,
+            // which is not physically meaningful and can cause numerical issues.
+            // In such cases, p is capped at 1.
 
             psmGlyco.Thero_n = n;
 
