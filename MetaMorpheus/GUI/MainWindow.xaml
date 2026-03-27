@@ -17,8 +17,12 @@
 
     <Window.Resources>
         <ResourceDictionary>
+            <!--App-wide resources (e.g., colors) can be found in App.xaml-->
+
+            <!--Allows use of "not" (i.e., inverse of true boolean) in binding properties-->
             <local:BooleanInverter x:Key="InvertedBooleanConverter" />
 
+            <!--Styling for the context menu to add tasks-->
             <Style x:Key="ContextMenuStyle" TargetType="ContextMenu">
                 <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
                 <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
@@ -41,6 +45,7 @@
                 </Setter>
             </Style>
 
+            <!--Defines the context menu to remove sections of the pre-run setup-->
             <ContextMenu x:Key="BigDeleteContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Remove All" Click="DeleteAll" />
                 <MenuItem Header="Remove Spectra" Click="DeleteAll_Spectra" />
@@ -56,12 +61,15 @@
                             <Grid ClipToBounds="true">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
+                                    <!-- For tab headers -->
                                     <ColumnDefinition Width="*"/>
+                                    <!-- For content -->
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
+                                <!-- Actual Tab Headers -->
                                 <TabPanel Grid.Row="0" Grid.Column="0"
                                           Name="HeaderPanel"
                                           IsItemsHost="True"
@@ -69,7 +77,9 @@
                                           KeyboardNavigation.TabIndex="1"
                                           Panel.ZIndex="1"
                                           Background="Transparent"/>
+                                <!-- Protein/RNA Toggle Control -->
                                 <local:ProteinRnaImageToggle Grid.Row="1" Grid.Column="0" Width="100"/>
+                                <!-- Content Panel -->
                                 <ContentPresenter
                                     Name="PART_SelectedContentHost"
                                     Margin="4 0 0 0 "
@@ -89,6 +99,7 @@
                 </Style.Triggers>
             </Style>
 
+            <!--Styling for the tab items on the left side-->
             <Style x:Key="TabItemStyle" TargetType="TabItem">
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="BorderThickness" Value="0" />
@@ -132,11 +143,13 @@
                 </Style.Triggers>
             </Style>
 
+            <!--Styling for the grid that defines each page-->
             <Style x:Key="PageGridStyle" TargetType="Grid">
                 <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
                 <Setter Property="Margin" Value="-3,-2,-2,-2"/>
             </Style>
 
+            <!--Styling for the "important" buttons like add task, add DB, etc.-->
             <Style x:Key="ImportantButtonStyle" TargetType="Button">
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Width" Value="200"/>
@@ -150,6 +163,7 @@
                 </Style.Triggers>
             </Style>
 
+            <!--Styling for the "important" buttons that should disappear in RNA mode-->
             <Style x:Key="ImportantButtonStyleNotForRna" TargetType="Button" BasedOn="{StaticResource ImportantButtonStyle}">
                 <Setter Property="Visibility" Value="Visible" />
                 <Style.Triggers>
@@ -159,11 +173,13 @@
                 </Style.Triggers>
             </Style>
 
+            <!--Styling for borders-->
             <Style x:Key="x:BorderStyle" TargetType="Border">
                 <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
                 <Setter Property="BorderThickness" Value="1"/>
             </Style>
 
+            <!--Styling for the big text header at the top of each page-->
             <Style x:Key="HeaderLabelStyle" TargetType="Label">
                 <Setter Property="HorizontalAlignment" Value="Left"/>
                 <Setter Property="FontSize" Value="26"/>
@@ -172,6 +188,7 @@
                 <Setter Property="Margin" Value="10,5,0,0"/>
             </Style>
 
+            <!--Styling for the "main" text in the About + Help pages-->
             <Style x:Key="TextBlockStyle" TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
                 <Setter Property="FontSize" Value="13"/>
@@ -179,7 +196,7 @@
                 <Setter Property="Margin" Value="15,0,10,0"/>
             </Style>
 
-            <!-- ── AddTaskMenu: circular search item added as a proper top-level item ── -->
+            <!--Defines the context menu when "add task" button is clicked-->
             <ContextMenu x:Key="AddTaskMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Add new calibration task" Click="AddCalibrateTaskButton_Click" />
                 <MenuItem Header="Add new averaging task" Click="AddAveragingTaskButton_OnClick" />
@@ -226,6 +243,7 @@
                 <MenuItem Header="Load task from .toml file" Click="LoadTask_Click" />
             </ContextMenu>
 
+            <!--Defines the context menu when a protein database is right-clicked-->
             <ContextMenu x:Key="ProteinDatabaseContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Set as contaminant database" Click="SetSelectedDatabaseAsContaminant_Click"/>
                 <MenuItem Header="Set as non-contaminant database" Click="SetSelectedDatabaseAsNonContaminant_Click"/>
@@ -235,6 +253,7 @@
                 <MenuItem Header="Delete all" Click="DeleteAll_Click" />
             </ContextMenu>
 
+            <!--Defines the context menu when a spectra file is right-clicked-->
             <ContextMenu x:Key="SpectraFileContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Set file-specific parameters" Click="SetFileSpecificParameters_Click"/>
                 <MenuItem Header="Open file" Click="OpenFile_Click"/>
@@ -243,6 +262,7 @@
                 <MenuItem Header="Delete all" Click="DeleteAll_Click" />
             </ContextMenu>
 
+            <!--Defines the context menu when a task is right-clicked-->
             <ContextMenu x:Key="TaskContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Edit task" Click="EditTask_Click"/>
                 <MenuItem Header="Save as .toml" Click="SaveTaskAsToml_Click" />
@@ -252,11 +272,13 @@
                 <MenuItem Header="Delete all" Click="DeleteAll_Click" />
             </ContextMenu>
 
+            <!--Defines the context menu when a written file is right-clicked-->
             <ContextMenu x:Key="WrittenFileContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Open file" Click="OpenFile_Click" />
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
 
+            <!--Styling for the datagrids that store spectra/databases-->
             <Style x:Key="x:DataGridStyle" TargetType="DataGrid">
                 <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
                 <Setter Property="Background" Value="{StaticResource DataGridBackgroundColor}"/>
@@ -273,17 +295,20 @@
                 <Setter Property="AutoGenerateColumns" Value="False"/>
             </Style>
 
+            <!--Styling for the datagrid headers-->
             <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
                 <Setter Property="Background" Value="{StaticResource DataGridHeaderColor}"/>
                 <Setter Property="FontSize" Value="13" />
             </Style>
 
+            <!--Styles the spectra file datagrid items-->
             <Style x:Key="SpectraFileDataGridItemStyle" TargetType="DataGridRow">
                 <EventSetter Event="Selected" Handler="AddSelectedSpectra" />
                 <EventSetter Event="Unselected" Handler="RemoveSelectedSpectra" />
                 <Setter Property="ContextMenu" Value="{StaticResource SpectraFileContextMenu}" />
             </Style>
 
+            <!--Styles the protein DB datagrid items-->
             <Style x:Key="DatabaseDataGridItemStyle" TargetType="DataGridRow">
                 <EventSetter Event="Selected" Handler="AddSelectedDatabase" />
                 <EventSetter Event="Unselected" Handler="RemoveSelectedDatabase" />
@@ -303,6 +328,7 @@
                 </Style.Triggers>
             </Style>
 
+            <!--Data templates for the types displayed in the treeview-->
             <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
                 <StackPanel Orientation="Horizontal" ContextMenu="{StaticResource TaskContextMenu}">
                     <TextBlock Text="T " />
@@ -333,17 +359,20 @@
             </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
-
+    <!--Window content-->
     <Grid ContextMenu="{StaticResource BigDeleteContextMenu}">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!--Pages-->
         <TabControl x:Name="MainWindowTabControl" Grid.Row="0" TabStripPlacement="Left" Margin="0" SelectionChanged="TabControl_SelectionChanged" 
                     BorderThickness="0" BorderBrush="{StaticResource BorderColor}" Style="{StaticResource TabControlStyle}">
             <TabControl.Resources>
                 <Style TargetType="Grid">
+                    <!--This defines the *default* style for *all grids in the entire tab control*-->
+                    <!--This is not great but seems necessary to have a proper background on the tab items...-->
                     <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
@@ -353,7 +382,7 @@
                 </Style>
             </TabControl.Resources>
 
-            <!-- About tab (unchanged) -->
+            <!--About tab-->
             <TabItem Name="AboutTab" Header="About" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
@@ -363,7 +392,9 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
+                    <!--Header label-->
                     <Label Content="About" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <!--Text content-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Margin="14 0">
                         <Run>
                             <Run.Text>
@@ -394,7 +425,7 @@
                 </Grid>
             </TabItem>
 
-            <!-- Databases tab (unchanged) -->
+            <!--Databases tab-->
             <TabItem Name="DatabasesTab" Header="Databases" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
@@ -403,11 +434,13 @@
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
+                    <!--Header label-->
                     <Label Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4" Grid.Row="0">
                         <Label.Content>
                             <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Protein Databases and Spectral Libraries"/>
                         </Label.Content>
                     </Label>
+                    <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Grid.ColumnSpan="4">
                         <Run>
                             Add
@@ -432,6 +465,7 @@
 
                        in .msp format can be added to improve search results.
                     </TextBlock>
+                    <!--Buttons to add databases-->
                     <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="DOWNLOAD PROTEOME" Visibility="Collapsed"
                         Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="10,0,0,0" HorizontalAlignment="Left" />
                     <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN DATABASE FOLDER"
@@ -440,6 +474,7 @@
                         Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" HorizontalAlignment="Right"/>
                     <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="+ADD DEFAULT CONTAMINANTS" 
                         Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,211,0" HorizontalAlignment="Right"/>
+                    <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" Grid.ColumnSpan="4" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
                               ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="BoxWithList_PreviewKeyDown">
                         <DataGrid.RowStyle>
@@ -459,7 +494,7 @@
                 </Grid>
             </TabItem>
 
-            <!-- Spectra tab (unchanged) -->
+            <!--Spectra tab-->
             <TabItem Name="SpectraTab" Header="Spectra" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
@@ -468,16 +503,20 @@
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
+                    <!--Header label-->
                     <Label Content="Spectra" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
                         Add spectra file(s) in .mzML, .mgf, Thermo .raw, ms2.msalign, or Bruker .d formats. For Bruker files, either the .tdf or .tdf_bin file inside the .d folder can be selected.
                     </TextBlock>
+                    <!--Button to add spectra files-->
                     <Button Name="AddSpectraButton" Grid.Row="2" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
                     <Button Name="SetFileSpecificSettingsButton" Grid.Row="2" Content="SET FILE-SPECIFIC SETTINGS" Click="SetFileSpecificParameters_Click" 
                             HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,211,0"/>
                     <Button Name="SetExperimentalDesignButton" Grid.Row="2" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" 
                             HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,412,0"/>
+                    <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="3" Style="{StaticResource x:DataGridStyle}"
                               ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="BoxWithList_PreviewKeyDown">
                         <DataGrid.RowStyle>
@@ -496,7 +535,7 @@
                 </Grid>
             </TabItem>
 
-            <!-- Tasks tab — button row extended with CircularSearch button -->
+            <!--Workflow tab-->
             <TabItem Name="TasksTab" Header="Tasks" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
@@ -505,12 +544,14 @@
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
+                    <!--Header label-->
                     <Label Content="Tasks" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
                         Add MetaMorpheus tasks to construct a workflow. Tasks can be saved/loaded as .toml files for repeat use.
                     </TextBlock>
 
-                    <!-- ── Task button row: Viewbox auto-scales all 7 buttons to fit the window ── -->
+                    <!--Button to add tasks-->
                     <Viewbox Grid.Row="2" Stretch="Uniform" StretchDirection="DownOnly"
                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                              Margin="0,0,10,0">
@@ -542,12 +583,13 @@
                         </Grid>
                     </Viewbox>
 
+                    <!--List of tasks-->
                     <TreeView x:Name="tasksTreeView" Grid.Row="3" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
                               Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}" PreviewKeyDown="BoxWithList_PreviewKeyDown"/>
                 </Grid>
             </TabItem>
 
-            <!-- Run tab (unchanged) -->
+            <!--Run tab-->
             <TabItem Name="RunTab" Header="Run" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
@@ -557,6 +599,7 @@
                         <RowDefinition Height="50" />
                         <RowDefinition Height="1*" />
                     </Grid.RowDefinitions>
+                    <!--This grid holds the 3 summary datagrids at the top-->
                     <Grid Grid.Row="0" Background="{StaticResource BackgroundColor}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="5*" />
@@ -569,6 +612,7 @@
                                 <RowDefinition Height="5" />
                                 <RowDefinition Height="1*" />
                             </Grid.RowDefinitions>
+                            <!--Protein DB Summary-->
                             <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="0" Margin="20,10,0,0" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="BoxWithList_PreviewKeyDown">
                                 <DataGrid.RowStyle>
@@ -590,6 +634,7 @@
                             <Button Name="MiniAddProteinDbButton" Grid.Row="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,1,1" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click"/>
                             <GridSplitter Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Transparent" Height="5" Margin="20,0,0,0"/>
+                            <!--Spectra file Summary-->
                             <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="2" Margin="20,0,0,10" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="BoxWithList_PreviewKeyDown">
                                 <DataGrid.RowStyle>
@@ -611,6 +656,7 @@
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click"/>
                         </Grid>
                         <GridSplitter Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Center" Background="Transparent" Width="10" Margin="0,10,0,10"/>
+                        <!--Task Summary-->
                         <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="0,10,20,10" MouseDoubleClick="TasksTreeView_MouseDoubleClick" PreviewKeyDown="BoxWithList_PreviewKeyDown">
                             <TreeView.ItemContainerStyle>
                                 <Style TargetType="{x:Type TreeViewItem}">
@@ -622,6 +668,7 @@
                         <Button Name="MiniAddTaskButton" Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,21,11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddTask_Click"/>
                     </Grid>
+                    <!--Define/open output folder-->
                     <DockPanel Margin="5,0,10,0" Grid.Row="2" LastChildFill="True">
                         <Button x:Name="OpenOutputFolderButton" Content="OPEN" Width="60" DockPanel.Dock="Right" 
                                 Click="OpenOutputFolder_Click" Background="{StaticResource SecondaryButtonColor}" Foreground="White" FontSize="12" BorderThickness="0" />
@@ -630,6 +677,7 @@
                              Background="Transparent" Foreground="{StaticResource TextColor1}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" FontSize="13"/>
                     </DockPanel>
                     <Grid Grid.Row="3" Background="{StaticResource BackgroundColor}">
+                        <!--Run button-->
                         <Button x:Name="RunTasksButton" Content="RUN METAMORPHEUS" Click="RunAllTasks_Click" FontSize="14" Margin="10" Height="30" Width="200" Style="{StaticResource ImportantButtonStyle}" />
                         <Button x:Name="ResetTasksButton" Content="RESET TASKS" Click="ResetTasks_Click" FontSize="14" Margin="210,10,10,10" Height="30" Width="200" Style="{StaticResource ImportantButtonStyle}" />
                         <Button x:Name="CancelTasksButton" Content="CANCEL RUN" Click="CancelTasks_Click" FontSize="14" Margin="-210,10,10,10" Height="30" Width="200" Style="{StaticResource ImportantButtonStyle}" />
@@ -637,14 +685,14 @@
                 </Grid>
             </TabItem>
 
-            <!-- Spacer -->
+            <!--Spacer-->
             <TabItem Style="{StaticResource TabItemStyle}" IsHitTestVisible="False">
                 <TabItem.Header>
                     <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Background="{StaticResource SideBarMainColor}" />
                 </TabItem.Header>
             </TabItem>
 
-            <!-- Visualize tab (unchanged) -->
+            <!--Visualize tab-->
             <TabItem Name="VisualizeTab" Header="Visualize" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
@@ -652,14 +700,17 @@
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
+                    <!--Header label-->
                     <Label Content="Visualize" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <!--This tab doesn't actually have any content, it just opens MetaDraw-->
+                    <!--In the future maybe this tab could contain MetaDraw itself-->
                     <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
                         MetaDraw, MetaMorpheus's spectral viewer, will open in a new window.
                     </TextBlock>
                 </Grid>
             </TabItem>
 
-            <!-- Settings tab (unchanged) -->
+            <!--Settings tab-->
             <TabItem Name="SettingsTab" Header="Settings" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
@@ -668,12 +719,14 @@
                         <RowDefinition Height="1*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
+                    <!--Header label-->
                     <Label Content="Settings" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
                     <Grid Grid.Row="2" Style="{StaticResource PageGridStyle}" Margin="5,0,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="300"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
+                        <!-- Left: Existing buttons -->
                         <Grid Grid.Column="0" Style="{StaticResource PageGridStyle}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="22"/>
@@ -705,6 +758,7 @@
                             <CheckBox Grid.Row="10" Grid.Column="1" Content="Rna Mode" FontSize="13" VerticalAlignment="Center" VerticalContentAlignment="Center"
                                          IsChecked="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode, Mode=TwoWay}" />
                         </Grid>
+                        <!-- Right: New settings controls -->
                         <Grid Grid.Column="1" Style="{StaticResource PageGridStyle}" DataContext="{x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}" Margin="20,-10,0,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="24" />
@@ -724,6 +778,7 @@
                                 <ColumnDefinition Width="80"/>
                                 <ColumnDefinition Width="160"/>
                             </Grid.ColumnDefinitions>
+                            <!-- Ask/Use pairs -->
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Top-Down Recommendations" VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
                             <CheckBox Grid.Row="0" Grid.Column="1" Content="Ask" IsChecked="{Binding AskAboutTopDownParams, Mode=TwoWay}" VerticalAlignment="Center"/>
                             <CheckBox Grid.Row="0" Grid.Column="2" Content="Use" IsChecked="{Binding UseTopDownParams, Mode=TwoWay}" VerticalAlignment="Center"/>
@@ -751,6 +806,7 @@
                                       ItemsSource="{Binding AllModeSwitchValues}" SelectedItem="{Binding CachedModeSwitchResult, Mode=TwoWay}" />
                         </Grid>
                     </Grid>
+                    <!-- Proteome Directory -->
                     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Stretch">
                         <TextBlock Text="Database Directory" Margin="24 10" VerticalAlignment="Center" Style="{StaticResource TextBlockStyle}"/>
                         <TextBox FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"
@@ -760,7 +816,7 @@
                 </Grid>
             </TabItem>
 
-            <!-- Help tab (unchanged) -->
+            <!--Help tab-->
             <TabItem Name="HelpTab" Header="Help" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
@@ -769,6 +825,7 @@
                         <RowDefinition Height="1*"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
+                    <!--Header label-->
                     <Label Content="Help" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
                     <TextBlock Grid.Row="2" Style="{StaticResource TextBlockStyle}">
                         Please visit our <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">wiki</Hyperlink> to find answers to commonly-asked questions.
@@ -840,7 +897,7 @@
             </TabItem>
         </TabControl>
 
-        <!-- Notifications (unchanged) -->
+        <!--Notifications-->
         <Grid Grid.Row="1" Margin="0,-1,0,0">
             <Grid.Resources>
                 <Style TargetType="Grid">
