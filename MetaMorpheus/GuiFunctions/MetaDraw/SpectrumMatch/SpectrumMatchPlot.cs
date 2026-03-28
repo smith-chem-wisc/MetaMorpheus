@@ -166,23 +166,28 @@ namespace GuiFunctions
 
                 // Fragment Number annotation
                 if (MetaDrawSettings.SubAndSuperScriptIons)
+                {
+                    char? previousCharacter = null;
                     foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
                     {
                         if (char.IsDigit(character))
                             peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
-                        else switch (character)
-                        {
-                            case '-':
-                                peakAnnotationText += "\u208B"; // sub scripted Hyphen
-                                break;
-                            case '[':
-                            case ']':
-                                continue;
-                            default:
-                                peakAnnotationText += character;
-                                break;
-                        }
+                        else
+                            switch (character)
+                            {
+                                case '-' when previousCharacter is not null && char.IsNumber(previousCharacter.Value):
+                                    peakAnnotationText += "\u208B"; // sub scripted Hyphen
+                                    break;
+                                case '[':
+                                case ']':
+                                    continue;
+                                default:
+                                    peakAnnotationText += character;
+                                    break;
+                            }
+                        previousCharacter = character;
                     }
+                }
                 else
                     peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
 

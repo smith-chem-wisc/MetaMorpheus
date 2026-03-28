@@ -136,7 +136,7 @@ namespace EngineLayer.Gptmd
 
                                 var newPep = pepWithSetMods.Localize(pepSeqIndex, mod.MonoisotopicMass.Value);
                                 peptideTheorProducts.Clear();
-                                newPep.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                                newPep.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
 
                                 ms2ScanWithSpecificMass ??= new Ms2ScanWithSpecificMass(scan, precursorMass, precursorCharge, fileName, CommonParameters);
                                 var matchedIons = MatchFragmentIons(ms2ScanWithSpecificMass, peptideTheorProducts, CommonParameters, matchAllCharges: false);
