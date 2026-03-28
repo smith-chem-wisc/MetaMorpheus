@@ -888,8 +888,11 @@ namespace Test
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
             }
 
+            Assert.That(ProteaseDictionary.Dictionary.ContainsKey("trypsin"), Is.True, "Expected protease 'trypsin' not found in ProteaseDictionary");
+            Assert.That(ProteaseDictionary.Dictionary.ContainsKey("Lys-C|P"), Is.True, "Expected protease 'Lys-C|P' not found in ProteaseDictionary; the embedded proteases.tsv may use a different name");
+
             CommonParameters commonParameters_tryp = new CommonParameters(digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 1));
-            CommonParameters commonParameters_LysC = new CommonParameters(digestionParams: new DigestionParams(protease: "Lys-C (don't cleave before proline)", minPeptideLength: 1));
+            CommonParameters commonParameters_LysC = new CommonParameters(digestionParams: new DigestionParams(protease: "Lys-C|P", minPeptideLength: 1));
 
             PeptideWithSetModifications pepABCK_1T = new PeptideWithSetModifications(protein: p.ElementAt(0), digestionParams: commonParameters_tryp.DigestionParams, oneBasedStartResidueInProtein: 2, oneBasedEndResidueInProtein: 4, cleavageSpecificity: CleavageSpecificity.Full, peptideDescription: "ABCK", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
             PeptideWithSetModifications pepABCK_2T = new PeptideWithSetModifications(protein: p.ElementAt(1), digestionParams: commonParameters_tryp.DigestionParams, oneBasedStartResidueInProtein: 6, oneBasedEndResidueInProtein: 8, cleavageSpecificity: CleavageSpecificity.Full, peptideDescription: "ABCK", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
