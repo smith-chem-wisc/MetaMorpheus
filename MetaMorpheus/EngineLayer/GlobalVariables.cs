@@ -578,10 +578,10 @@ namespace EngineLayer
         }
         /// <summary>
         /// Loads protease and RNase digestion agents from mzLib embedded resources.
-        /// The mzLib defaults are always written to a *_default.tsv file so upgrades take effect.
-        /// If a user-editable file does not yet exist, it is seeded from the defaults.
-        /// At load time, both the default and the user file are merged so that new
-        /// mzLib entries are available even when the user has customized the file.
+        /// The embedded resource is always extracted to proteases.tsv / rnases.tsv,
+        /// ensuring the latest mzLib definitions are used on every startup.
+        /// A separate *_custom.tsv file is created once (header only) for user-defined
+        /// entries. Custom entries are merged in but default entries win on name collisions.
         /// </summary>
         private static void LoadDigestionAgents()
         {
@@ -590,57 +590,87 @@ namespace EngineLayer
 
             // --- Proteases ---
             string proteasesDir = Path.Combine(DataDir, @"ProteolyticDigestion");
-            string proteasesDefaultPath = Path.Combine(proteasesDir, @"proteases_default.tsv");
             string proteasesPath = Path.Combine(proteasesDir, @"proteases.tsv");
+            string proteasesCustomPath = Path.Combine(proteasesDir, @"proteases_custom.tsv");
 
             if (!Directory.Exists(proteasesDir))
             {
                 Directory.CreateDirectory(proteasesDir);
             }
 
-            // Always overwrite the default file so it reflects the current mzLib version
-            ExtractEmbeddedResource(typeof(ProteaseDictionary).Assembly, "proteases.tsv", proteasesDefaultPath);
+            // Always overwrite from embedded resource to ensure latest definitions
+            ExtractEmbeddedResource(typeof(ProteaseDictionary).Assembly, "proteases.tsv", proteasesPath);
+            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(proteasesPath, ProteaseMods);
 
-            // Seed the user file from defaults if it doesn't exist yet
-            if (!File.Exists(proteasesPath))
+            // Create custom file with documentation and header if it doesn't exist yet
+            if (!File.Exists(proteasesCustomPath))
             {
-                File.Copy(proteasesDefaultPath, proteasesPath);
+                // Extract header comments from the embedded proteases.tsv (everything before the data header)
+                var embeddedLines = File.ReadAllLines(proteasesPath);
+                var customFileLines = new List<string>();
+                bool foundHeader = false;
+                foreach (var line in embeddedLines)
+                {
+                    if (!foundHeader && !line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
+                    {
+                        customFileLines.Add(line);
+                        foundHeader = true;
+                        break;
+                    }
+                    customFileLines.Add(line);
+                }
+                File.WriteAllLines(proteasesCustomPath, customFileLines);
             }
 
-            // Load defaults first, then layer user file on top (user entries with the
-            // same name override defaults; new defaults not in the user file are kept)
-            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(proteasesDefaultPath, ProteaseMods);
-            var userProteases = ProteaseDictionary.LoadProteaseDictionary(proteasesPath, ProteaseMods);
-            foreach (var kvp in userProteases)
+            // Merge custom entries — defaults win on name collisions
+            var customProteases = ProteaseDictionary.LoadProteaseDictionary(proteasesCustomPath, ProteaseMods);
+            foreach (var kvp in customProteases)
             {
-                ProteaseDictionary.Dictionary[kvp.Key] = kvp.Value;
+                if (!ProteaseDictionary.Dictionary.ContainsKey(kvp.Key))
+                {
+                    ProteaseDictionary.Dictionary[kvp.Key] = kvp.Value;
+                }
             }
 
             // --- RNases ---
             string rnasesDir = Path.Combine(DataDir, @"Digestion");
-            string rnasesDefaultPath = Path.Combine(rnasesDir, @"rnases_default.tsv");
             string rnasesPath = Path.Combine(rnasesDir, @"rnases.tsv");
+            string rnasesCustomPath = Path.Combine(rnasesDir, @"rnases_custom.tsv");
 
             if (!Directory.Exists(rnasesDir))
             {
                 Directory.CreateDirectory(rnasesDir);
             }
 
-            // Always overwrite the default file so it reflects the current mzLib version
-            ExtractEmbeddedResource(typeof(RnaseDictionary).Assembly, "rnases.tsv", rnasesDefaultPath);
+            // Always overwrite from embedded resource to ensure latest definitions
+            ExtractEmbeddedResource(typeof(RnaseDictionary).Assembly, "rnases.tsv", rnasesPath);
+            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(rnasesPath);
 
-            // Seed the user file from defaults if it doesn't exist yet
-            if (!File.Exists(rnasesPath))
+            // Create custom file with documentation and header if it doesn't exist yet
+            if (!File.Exists(rnasesCustomPath))
             {
-                File.Copy(rnasesDefaultPath, rnasesPath);
+                var embeddedRnaseLines = File.ReadAllLines(rnasesPath);
+                var customRnaseFileLines = new List<string>();
+                foreach (var line in embeddedRnaseLines)
+                {
+                    if (!line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
+                    {
+                        customRnaseFileLines.Add(line);
+                        break;
+                    }
+                    customRnaseFileLines.Add(line);
+                }
+                File.WriteAllLines(rnasesCustomPath, customRnaseFileLines);
             }
 
-            // Load defaults first, then layer user file on top
-            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(rnasesDefaultPath);
-            var userRnases = RnaseDictionary.LoadRnaseDictionary(rnasesPath);
-            foreach (var kvp in userRnases)
+            // Merge custom entries — defaults win on name collisions
+            var customRnases = RnaseDictionary.LoadRnaseDictionary(rnasesCustomPath);
+            foreach (var kvp in customRnases)
             {
-                RnaseDictionary.Dictionary[kvp.Key] = kvp.Value;
+                if (!RnaseDictionary.Dictionary.ContainsKey(kvp.Key))
+                {
+                    RnaseDictionary.Dictionary[kvp.Key] = kvp.Value;
+                }
             }
         }
 
