@@ -7,6 +7,12 @@ namespace TaskLayer
 {
     public class SearchParameters
     {
+        /// <summary>
+        /// Default maximum fragment size in Daltons used for indexing. This value is shared across
+        /// all task types that require fragment indexing (Search, Calibration, CrossLink, Glyco).
+        /// </summary>
+        public const double DefaultMaxFragmentSize = 30000.0;
+
         public SearchParameters()
         {
             // default search task parameters
@@ -26,7 +32,7 @@ namespace TaskLayer
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
-            MaxFragmentSize = 30000.0;
+            MaxFragmentSize = DefaultMaxFragmentSize;
             MinAllowedInternalFragmentLength = 0;
             WriteMzId = true;
             WritePepXml = false;

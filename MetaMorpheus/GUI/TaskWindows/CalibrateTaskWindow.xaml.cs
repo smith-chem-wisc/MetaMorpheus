@@ -100,7 +100,23 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             writeIndexMzmlCheckbox.IsChecked = task.CalibrationParameters.WriteIndexedMzml;
 
-            //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
+            //// Set Search Type radio buttons
+            switch (task.CalibrationParameters.SearchType)
+            {
+                case SearchType.Classic:
+                    ClassicSearchRadioButton.IsChecked = true;
+                    ModernSearchRadioButton.IsChecked = false;
+                    break;
+                case SearchType.Modern:
+                    ClassicSearchRadioButton.IsChecked = false;
+                    ModernSearchRadioButton.IsChecked = true;
+                    break;
+                default:
+                    throw new NotSupportedException(
+                        $"SearchType '{task.CalibrationParameters.SearchType}' is not supported by the Calibration Task window.");
+            }
+
+            writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
@@ -362,6 +378,19 @@ namespace MetaMorpheusGUI
             }
 
             TheTask.CalibrationParameters.WriteIndexedMzml = writeIndexMzmlCheckbox.IsChecked.Value;
+            TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
+            if (ModernSearchRadioButton.IsChecked == true)
+            {
+                TheTask.CalibrationParameters.SearchType = SearchType.Modern;
+            }
+            else if (ClassicSearchRadioButton.IsChecked == true)
+            {
+                TheTask.CalibrationParameters.SearchType = SearchType.Classic;
+            }
+            else
+            {
+                throw new InvalidOperationException("No search type is selected. Please select Classic or Modern search.");
+            }
             DialogResult = true;
         }
 
