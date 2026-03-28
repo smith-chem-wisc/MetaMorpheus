@@ -293,27 +293,33 @@ namespace EngineLayer
         public Task<MetaMorpheusEngineResults> RunAsync() => Task.Run(Run);
 
         /// <summary>
-        /// Changes the name of the analytes from "peptide" to "proteoform" or "oligo" if the protease is set to top-down
+        /// Determines and sets the analyte type based on CommonParameters digestion settings.
+        /// This method is called automatically by MetaMorpheusEngine.Run() to handle:
+        /// - RNA mode (RnaDigestionParams → Oligo)
+        /// - Top-down mode (protease == "top-down" → Proteoform)  
+        /// - Bottom-up/default mode (→ Peptide)
+        /// 
+        /// IMPORTANT: This recalculates the analyte type at runtime and may differ from the GUI mode
+        /// set by GuiGlobalParamsViewModel.IsRnaMode. This is intentional to support:
+        /// - File-specific parameters with different modes
+        /// - Mixed mode workflows
+        /// 
+        /// For GUI initialization, rely on GuiGlobalParamsViewModel.IsRnaMode which sets 
+        /// GlobalVariables.AnalyteType. Do NOT call this method during GUI task window initialization.
         /// </summary>
         /// <param name="commonParameters"></param>
         public static void DetermineAnalyteType(CommonParameters commonParameters)
         {
-            // Comment made while DetemineAnalyteType happened at the task layer
+            // Comment made while DetermineAnalyteType happened at the task layer
             // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
             // that bottom-up and top-down data is not being searched in the same task. 
 
-            // Update: Now that it is in the engine layer, analyte type specific operations will be okay at the engine layer, meaning seaching top-down and bottom-up with file specific params will execute the proper control flow. However, a problem still exists in PostSearchAnalysis where that analyte type will be set to whatever the main parameters are. 
+            // Update: Now that it is in the engine layer, analyte type specific operations will be okay at the engine layer, meaning searching top-down and bottom-up with file specific params will execute the proper control flow. However, a problem still exists in PostSearchAnalysis where that analyte type will be set to whatever the main parameters are. 
 
             if (commonParameters == null || commonParameters.DigestionParams == null)
                 return;
 
-            GlobalVariables.AnalyteType = commonParameters.DigestionParams switch
-            {
-                RnaDigestionParams => AnalyteType.Oligo,
-                DigestionParams { Protease: not null } when commonParameters.DigestionParams.DigestionAgent.Name == "top-down"
-                    => AnalyteType.Proteoform,
-                _ => AnalyteType.Peptide
-            };
+            GlobalVariables.AnalyteType = commonParameters.DetermineAnalyteType();
         }
 
         #region Event Helpers

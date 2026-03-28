@@ -192,7 +192,6 @@ namespace MetaMorpheusGUI
         /// <param name="task"></param>
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            MetaMorpheusEngine.DetermineAnalyteType(TheTask.CommonParameters);
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
                 ProteaseComboBox.SelectedItem = digestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
@@ -378,6 +377,7 @@ namespace MetaMorpheusGUI
             UpdateSpectralLibraryCheckBox.IsChecked = task.SearchParameters.UpdateSpectralLibrary;
             CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
             IncludeMotifInModNamesCheckBox.IsChecked = task.SearchParameters.IncludeModMotifInMzid;
+            WriteTargetDecoyFastaCheckBox.IsChecked = task.SearchParameters.WriteTargetDecoyFasta;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -691,6 +691,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteDigestionProductCountFile = WriteDigestCountCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteTargetDecoyFasta = WriteTargetDecoyFastaCheckBox.IsChecked.Value;
 
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {

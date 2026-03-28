@@ -673,6 +673,15 @@
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
+                                <CheckBox x:Name="WriteTargetDecoyFastaCheckBox" Content="Write target-decoy FASTA file">
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            Writes a FASTA file containing all target and decoy sequences loaded from the database.
+                                            <LineBreak/>
+                                            This can be useful for verifying the decoy generation and database sanitization.
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
                                 
                             </StackPanel>
                             
@@ -1160,7 +1169,7 @@
                                                     </ToolTip>
                                                 </ToolTipService.ToolTip>
                                             </CheckBox>
-                                            <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+                                            <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
                                                 <DataGrid.Columns>
                                                     <DataGridTextColumn Header="Mod Type"  Width="1*" Binding="{Binding ModName}" />
                                                     <DataGridTemplateColumn  Header=" Do not Write"  Width ="1*" IsReadOnly="False">
