@@ -101,8 +101,20 @@ namespace MetaMorpheusGUI
             writeIndexMzmlCheckbox.IsChecked = task.CalibrationParameters.WriteIndexedMzml;
 
             //// Set Search Type radio buttons
-            ClassicSearchRadioButton.IsChecked = task.CalibrationParameters.SearchType == SearchType.Classic;
-            ModernSearchRadioButton.IsChecked = task.CalibrationParameters.SearchType == SearchType.Modern;
+            switch (task.CalibrationParameters.SearchType)
+            {
+                case SearchType.Classic:
+                    ClassicSearchRadioButton.IsChecked = true;
+                    ModernSearchRadioButton.IsChecked = false;
+                    break;
+                case SearchType.Modern:
+                    ClassicSearchRadioButton.IsChecked = false;
+                    ModernSearchRadioButton.IsChecked = true;
+                    break;
+                default:
+                    throw new NotSupportedException(
+                        $"SearchType '{task.CalibrationParameters.SearchType}' is not supported by the Calibration Task window.");
+            }
 
             writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
@@ -367,7 +379,18 @@ namespace MetaMorpheusGUI
 
             TheTask.CalibrationParameters.WriteIndexedMzml = writeIndexMzmlCheckbox.IsChecked.Value;
             TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
-            TheTask.CalibrationParameters.SearchType = ModernSearchRadioButton.IsChecked == true ? SearchType.Modern : SearchType.Classic;
+            if (ModernSearchRadioButton.IsChecked == true)
+            {
+                TheTask.CalibrationParameters.SearchType = SearchType.Modern;
+            }
+            else if (ClassicSearchRadioButton.IsChecked == true)
+            {
+                TheTask.CalibrationParameters.SearchType = SearchType.Classic;
+            }
+            else
+            {
+                throw new InvalidOperationException("No search type is selected. Please select Classic or Modern search.");
+            }
             DialogResult = true;
         }
 

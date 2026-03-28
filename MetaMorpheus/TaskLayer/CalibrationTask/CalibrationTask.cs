@@ -46,7 +46,6 @@ namespace TaskLayer
         private static readonly double ProductMultiplierForToml = 6;
         private static readonly double InitialPrecursorTolerance = 10;
         private static readonly double InitialProductTolerance = 30;
-        private static readonly double MaxFragmentSize = 30000.0;
 
         public const string CalibSuffix = "-calib";
 
@@ -57,7 +56,8 @@ namespace TaskLayer
         private List<Modification> _variableModifications;
         private List<Modification> _fixedModifications;
         private MyFileManager _myFileManager;
-        
+        private List<DbForTask> _dbFilenameList;
+
         // Modern Search indexing fields
         private List<PeptideWithSetModifications> _peptideIndex;
         private List<int>[] _fragmentIndex;
@@ -76,6 +76,10 @@ namespace TaskLayer
                 {
                     continue;
                 }
+
+                // Reset indexes so they are regenerated with this file's combinedParams
+                _peptideIndex = null;
+                _fragmentIndex = null;
 
                 // get original file name, and file names for potential outputs
                 string originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
@@ -209,14 +213,11 @@ namespace TaskLayer
             }
             else // Modern Search
             {
-                // Generate index if not already created
-                if (_peptideIndex == null || _fragmentIndex == null)
-                {
-                    GenerateIndexes(combinedParameters, fileNameWithoutExtension);
-                }
+                // Regenerate indexes whenever tolerances change to keep fragment index in sync with current parameters
+                GenerateIndexes(combinedParameters, fileNameWithoutExtension);
 
                 _ = new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, _peptideIndex, _fragmentIndex, 0, combinedParameters,
-                    FileSpecificParameters, searchMode, MaxFragmentSize, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+                    FileSpecificParameters, searchMode, SearchParameters.DefaultMaxFragmentSize, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
             }
 
             List<SpectralMatch> allPsms = allPsmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
@@ -278,6 +279,7 @@ namespace TaskLayer
             
             _myFileManager = new MyFileManager(true);
             _unsuccessfullyCalibratedFilePaths = new List<string>();
+            _dbFilenameList = dbFilenameList;
 
             // Reset indexes for Modern Search (will be generated on first use)
             _peptideIndex = null;
@@ -288,14 +290,34 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Generates peptide and fragment indexes for Modern Search
+        /// Generates peptide and fragment indexes for Modern Search.
+        /// Filters the biopolymer list to Protein entries only. Throws <see cref="MetaMorpheusException"/>
+        /// if no Protein entries remain after filtering. Warns if non-protein biopolymers were excluded.
         /// </summary>
+        /// <param name="combinedParameters">The combined common parameters for the current search.</param>
+        /// <param name="fileNameWithoutExtension">The spectra file name (without extension) for status reporting.</param>
+        /// <exception cref="MetaMorpheusException">Thrown when the database contains no Protein entries compatible with Modern Search.</exception>
         private void GenerateIndexes(CommonParameters combinedParameters, string fileNameWithoutExtension)
         {
             Status("Generating indexes for Modern Search...", new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
             // Cast protein list to List<Protein> for indexing engine
             var proteinList = _proteinList.OfType<Protein>().ToList();
+
+            if (proteinList.Count == 0)
+            {
+                throw new MetaMorpheusException(
+                    "Modern Search calibration requires protein sequences, but the loaded database contains no Protein entries " +
+                    $"({_proteinList.Count} non-protein biopolymer(s) were filtered out). " +
+                    "Use Classic Search calibration for non-protein analytes, or provide a protein sequence database.");
+            }
+
+            if (proteinList.Count < _proteinList.Count)
+            {
+                int dropped = _proteinList.Count - proteinList.Count;
+                Warn($"Modern Search calibration: {dropped} non-protein biopolymer(s) were excluded from the search index. " +
+                     "Only protein sequences are supported by Modern Search.");
+            }
 
             var indexingEngine = new IndexingEngine(
                 proteinList,
@@ -308,9 +330,9 @@ namespace TaskLayer
                 DecoyType.Reverse,
                 combinedParameters,
                 FileSpecificParameters,
-                MaxFragmentSize,
+                SearchParameters.DefaultMaxFragmentSize,
                 false, // generatePrecursorIndex
-                null,  // proteinDatabases
+                _dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(),
                 TargetContaminantAmbiguity.RemoveContaminant,
                 new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
 

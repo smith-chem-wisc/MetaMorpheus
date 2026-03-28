@@ -75,7 +75,9 @@ namespace Test
         }
 
         [Test]
-        public static void TestToleranceExpansion()
+        [TestCase(SearchType.Classic)]
+        [TestCase(SearchType.Modern)]
+        public static void TestToleranceExpansion(SearchType searchType)
         {
             // capture warnings
             var originalOut = Console.Out; 
@@ -103,6 +105,7 @@ namespace Test
 
                 // run calibration
                 CalibrationTask calibrationTask = new();
+                calibrationTask.CalibrationParameters.SearchType = searchType;
                 calibrationTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(2);
                 calibrationTask.CommonParameters.ProductMassTolerance = new PpmTolerance(2);
                 calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
@@ -149,7 +152,9 @@ namespace Test
         }
 
         [Test]
-        public static void CalibrationTestNoPsms()
+        [TestCase(SearchType.Classic)]
+        [TestCase(SearchType.Modern)]
+        public static void CalibrationTestNoPsms(SearchType searchType)
         {
             // set up directories
             string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
@@ -170,6 +175,7 @@ namespace Test
 
             // run calibration
             CalibrationTask calibrationTask = new();
+            calibrationTask.CalibrationParameters.SearchType = searchType;
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
 
             // test new experimental design written by calibration
@@ -232,9 +238,12 @@ namespace Test
         }
 
         [Test]
-        public static void CalibrationTestLowRes()
+        [TestCase(SearchType.Classic)]
+        [TestCase(SearchType.Modern)]
+        public static void CalibrationTestLowRes(SearchType searchType)
         {
             CalibrationTask calibrationTask = new CalibrationTask();
+            calibrationTask.CalibrationParameters.SearchType = searchType;
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationLow");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
@@ -516,10 +525,14 @@ namespace Test
             var classicLines = File.ReadAllLines(classicTomlPath);
             var modernLines = File.ReadAllLines(modernTomlPath);
 
-            double.TryParse(Regex.Match(classicLines[0], @"\d+\.\d*").Value, out double classicPrecursorTol);
-            double.TryParse(Regex.Match(classicLines[1], @"\d+\.\d*").Value, out double classicProductTol);
-            double.TryParse(Regex.Match(modernLines[0], @"\d+\.\d*").Value, out double modernPrecursorTol);
-            double.TryParse(Regex.Match(modernLines[1], @"\d+\.\d*").Value, out double modernProductTol);
+            Assert.That(double.TryParse(Regex.Match(classicLines[0], @"\d+\.\d*").Value, out double classicPrecursorTol),
+                "Classic precursor tolerance should be parseable");
+            Assert.That(double.TryParse(Regex.Match(classicLines[1], @"\d+\.\d*").Value, out double classicProductTol),
+                "Classic product tolerance should be parseable");
+            Assert.That(double.TryParse(Regex.Match(modernLines[0], @"\d+\.\d*").Value, out double modernPrecursorTol),
+                "Modern precursor tolerance should be parseable");
+            Assert.That(double.TryParse(Regex.Match(modernLines[1], @"\d+\.\d*").Value, out double modernProductTol),
+                "Modern product tolerance should be parseable");
 
             // tolerances should be in a reasonable range (not wildly different)
             // allowing some variance since the search engines may find slightly different PSMs

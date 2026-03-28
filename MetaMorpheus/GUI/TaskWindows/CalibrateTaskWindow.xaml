@@ -463,7 +463,7 @@
                                                     <ColumnDefinition Width="1*" />
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel Grid.Column="0">
-                                                    <RadioButton x:Name="ClassicSearchRadioButton" Content="Classic Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <RadioButton x:Name="ClassicSearchRadioButton" Content="Classic Search" GroupName="SearchType" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <RadioButton.ToolTip>
                                                             <TextBlock>
                                                                 Basic search designed for standard search spaces (tight precursor mass tolerance, strict enzyme specificity)
