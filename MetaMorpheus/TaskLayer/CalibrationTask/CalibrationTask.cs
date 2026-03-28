@@ -119,29 +119,37 @@ namespace TaskLayer
 
                 // If the second acquisition results are worse, then calibration made things worse. So we should give up 
                 // and write the uncalibrated file
-                // TODO: We should check if calibration made things better, and if so keep the calibrated file
-                // this if statement only checks if things got worse
                 if (!SufficientAcquisitionResults(acquisitionResultsSecond))
                 {
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, taskId);
                     continue;
                 }
 
-                myMsDataFile = engine.CalibratedDataFile; // Start with the calibrated data from round 2
-                UpdateCombinedParameters(combinedParams, acquisitionResultsSecond);
-
-                // generate calibration function and shift data points
-                Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-                engine = new(myMsDataFile, acquisitionResultsSecond, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                _ = engine.Run();
-
-                // Third round of calibration
-                DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile,  combinedParams, originalUncalibratedFilePath);
-
-                if (CalibrationHasValue(acquisitionResultsSecond, acquisitionResultsThird))
+                //only continue with the third round if the second round showed improvement
+                if (CalibrationHasValue(acquisitionResultsFirst, acquisitionResultsSecond))
                 {
                     myMsDataFile = engine.CalibratedDataFile;
-                    UpdateCombinedParameters(combinedParams, acquisitionResultsThird);
+                    UpdateCombinedParameters(combinedParams, acquisitionResultsSecond);
+
+                    // generate calibration function and shift data points
+                    Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
+                    engine = new(myMsDataFile, acquisitionResultsSecond, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                    _ = engine.Run();
+
+                    // Third round of calibration
+                    DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile, combinedParams, originalUncalibratedFilePath);
+
+                    if (CalibrationHasValue(acquisitionResultsSecond, acquisitionResultsThird))
+                    {
+                        myMsDataFile = engine.CalibratedDataFile;
+                        UpdateCombinedParameters(combinedParams, acquisitionResultsThird);
+                    }
+                }
+                // if calibration did not make things better, write uncalibrated file and update the tolerances
+                else
+                {
+                    WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, taskId);
+                    continue;
                 }
 
                 // Update file specific params to reflect the new tolerances, then write them out
