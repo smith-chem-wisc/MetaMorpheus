@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Omics.Modifications.IO;
@@ -428,11 +429,7 @@ namespace EngineLayer
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
-            // Use mzLib's embedded protease_mods.txt
-            ProteaseMods = ProteaseDictionary.LoadEmbeddedProteaseMods();
-
-            // ProteaseDictionary is auto-initialized by mzLib from embedded resources
-            // RnaseDictionary is auto-initialized by mzLib from embedded resources
+            // ProteaseMods and digestion dictionaries are initialized in LoadDigestionAgents()
         }
 
         private static void LoadRnaModifications()
@@ -581,7 +578,10 @@ namespace EngineLayer
         }
         /// <summary>
         /// Loads protease and RNase digestion agents from mzLib embedded resources.
-        /// Files are extracted to DataDir for user visibility and customization.
+        /// The mzLib defaults are always written to a *_default.tsv file so upgrades take effect.
+        /// If a user-editable file does not yet exist, it is seeded from the defaults.
+        /// At load time, both the default and the user file are merged so that new
+        /// mzLib entries are available even when the user has customized the file.
         /// </summary>
         private static void LoadDigestionAgents()
         {
@@ -589,40 +589,59 @@ namespace EngineLayer
             ProteaseMods = ProteaseDictionary.LoadEmbeddedProteaseMods();
 
             // --- Proteases ---
-            string proteasesPath = Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv");
-            string proteasesDir = Path.GetDirectoryName(proteasesPath);
+            string proteasesDir = Path.Combine(DataDir, @"ProteolyticDigestion");
+            string proteasesDefaultPath = Path.Combine(proteasesDir, @"proteases_default.tsv");
+            string proteasesPath = Path.Combine(proteasesDir, @"proteases.tsv");
 
             if (!Directory.Exists(proteasesDir))
             {
                 Directory.CreateDirectory(proteasesDir);
             }
 
-            // Extract from mzLib embedded resource if file doesn't exist locally
+            // Always overwrite the default file so it reflects the current mzLib version
+            ExtractEmbeddedResource(typeof(ProteaseDictionary).Assembly, "proteases.tsv", proteasesDefaultPath);
+
+            // Seed the user file from defaults if it doesn't exist yet
             if (!File.Exists(proteasesPath))
             {
-                ExtractEmbeddedResource(typeof(ProteaseDictionary).Assembly, "proteases.tsv", proteasesPath);
+                File.Copy(proteasesDefaultPath, proteasesPath);
             }
 
-            // Load from local file (allows user customization)
-            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(proteasesPath, ProteaseMods);
+            // Load defaults first, then layer user file on top (user entries with the
+            // same name override defaults; new defaults not in the user file are kept)
+            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(proteasesDefaultPath, ProteaseMods);
+            var userProteases = ProteaseDictionary.LoadProteaseDictionary(proteasesPath, ProteaseMods);
+            foreach (var kvp in userProteases)
+            {
+                ProteaseDictionary.Dictionary[kvp.Key] = kvp.Value;
+            }
 
             // --- RNases ---
-            string rnasesPath = Path.Combine(DataDir, @"Digestion", @"rnases.tsv");
-            string rnasesDir = Path.GetDirectoryName(rnasesPath);
+            string rnasesDir = Path.Combine(DataDir, @"Digestion");
+            string rnasesDefaultPath = Path.Combine(rnasesDir, @"rnases_default.tsv");
+            string rnasesPath = Path.Combine(rnasesDir, @"rnases.tsv");
 
             if (!Directory.Exists(rnasesDir))
             {
                 Directory.CreateDirectory(rnasesDir);
             }
 
-            // Extract from mzLib embedded resource if file doesn't exist locally
+            // Always overwrite the default file so it reflects the current mzLib version
+            ExtractEmbeddedResource(typeof(RnaseDictionary).Assembly, "rnases.tsv", rnasesDefaultPath);
+
+            // Seed the user file from defaults if it doesn't exist yet
             if (!File.Exists(rnasesPath))
             {
-                ExtractEmbeddedResource(typeof(RnaseDictionary).Assembly, "rnases.tsv", rnasesPath);
+                File.Copy(rnasesDefaultPath, rnasesPath);
             }
 
-            // Load from local file (allows user customization)
-            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(rnasesPath);
+            // Load defaults first, then layer user file on top
+            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(rnasesDefaultPath);
+            var userRnases = RnaseDictionary.LoadRnaseDictionary(rnasesPath);
+            foreach (var kvp in userRnases)
+            {
+                RnaseDictionary.Dictionary[kvp.Key] = kvp.Value;
+            }
         }
 
         /// <summary>
@@ -631,21 +650,28 @@ namespace EngineLayer
         private static void ExtractEmbeddedResource(Assembly assembly, string resourceFileName, string outputPath)
         {
             var resourceNames = assembly.GetManifestResourceNames();
-            var resourceName = resourceNames.FirstOrDefault(r => r.EndsWith(resourceFileName, StringComparison.OrdinalIgnoreCase));
+            var suffix = "." + resourceFileName;
+            var resourceName = resourceNames.FirstOrDefault(r =>
+                r.Equals(resourceFileName, StringComparison.OrdinalIgnoreCase) ||
+                r.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
 
             if (resourceName == null)
             {
                 throw new FileNotFoundException($"Embedded resource '{resourceFileName}' not found in assembly '{assembly.FullName}'");
             }
 
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream == null)
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
             {
-                throw new InvalidOperationException($"Could not load embedded resource '{resourceName}'");
-            }
+                if (stream == null)
+                {
+                    throw new InvalidOperationException($"Could not load embedded resource '{resourceName}'");
+                }
 
-            using var fileStream = File.Create(outputPath);
-            stream.CopyTo(fileStream);
+                using (var fileStream = File.Create(outputPath))
+                {
+                    stream.CopyTo(fileStream);
+                }
+            }
         }
     }
 }

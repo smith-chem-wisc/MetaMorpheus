@@ -33,8 +33,6 @@
       <ComponentGroupRef Id="Appsrc_Glycan_Mods_files" />
       <ComponentGroupRef Id="Appsrc_NGlycan_files" />
       <ComponentGroupRef Id="Appsrc_OGlycan_files" />
-      <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
-      <ComponentGroupRef Id="Appsrc_Digestion_files" />
       <ComponentGroupRef Id="Appsrc_Proteomes_files" />
       <ComponentGroupRef Id="Appsrc_Contaminants_files" />
       <ComponentGroupRef Id="ExcelDefaults" />
@@ -124,11 +122,7 @@
             <Directory Id="MetaAppOGlycanFolder" Name="OGlycan" />
           </Directory>
 
-          <!--ProteolyticDigestion Folder-->
-          <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
 
-			<!--Digestion Folder-->
-          <Directory Id="MetaAppDigestionFolder" Name="Digestion" />
 			
           <!--Contaminants Folder-->
           <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
@@ -682,25 +676,6 @@
     </ComponentGroup>
   </Fragment>
 
-  <!--Builds the App ProteolyticDigestion folder-->
-  <Fragment>
-    <ComponentGroup Id="Appsrc_ProteolyticDigestion_files" Directory="MetaAppProteolyticDigestionFolder">
-      <Component Id="RemoveProteolyticDigestion" Condition="OVERWRITEAPPDATA" Guid="C0E85E53-4245-44ED-A3CB-BD5C241FC302">
-        <RemoveFolder Id="MetaAppProteolyticDigestionFolder" On="both" />
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
-  <!--Builds the App Rnases folder-->
-  <Fragment>
-	  <ComponentGroup Id="Appsrc_Digestion_files" Directory="MetaAppDigestionFolder">
-		  <Component Id="RemoveDigestion" Condition="OVERWRITEAPPDATA" Guid="25CA934F-1A99-49D8-BB94-C52639E21615">
-			  <RemoveFolder Id="MetaAppDigestionFolder" On="both" />
-			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-		  </Component>
-	  </ComponentGroup>
-  </Fragment>
 
   <!--Builds the App Contaminants folder-->
   <Fragment>
