@@ -15,7 +15,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
-using ThermoFisher.CommonCore.Data.Business;
 
 namespace GuiFunctions;
 
@@ -123,6 +122,40 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         }
     }
 
+    private int _minChargeToAnnotate;
+    public int MinChargeToAnnotate
+    {
+        get
+        {
+            if (_minChargeToAnnotate.IsDefaultOrNull())
+                _minChargeToAnnotate = GuiGlobalParamsViewModel.Instance.IsRnaMode
+                    ? -100 : 1;
+            return _minChargeToAnnotate;
+        }
+        set
+        {
+            _minChargeToAnnotate = value;
+            OnPropertyChanged(nameof(MinChargeToAnnotate));
+        }
+    }
+
+    private int _maxChargeToAnnotate;
+    public int MaxChargeToAnnotate
+    {
+        get
+        {
+            if (_maxChargeToAnnotate.IsDefaultOrNull())
+                _maxChargeToAnnotate = GuiGlobalParamsViewModel.Instance.IsRnaMode
+                    ? -1 : 100;
+            return _maxChargeToAnnotate;
+        }
+        set
+        {
+            _maxChargeToAnnotate = value;
+            OnPropertyChanged(nameof(MaxChargeToAnnotate));
+        }
+    }
+
     public ICommand RunDeconvolutionCommand { get; }
 
     public DeconExplorationTabViewModel(MetaDrawLogic? metaDrawLogic)
@@ -143,10 +176,12 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         MzRange? isolationRange;
         MsDataScan scanToPlot;
 
+        double min;
+        double max;
         if (Mode == DeconvolutionMode.FullSpectrum)
         {
-            var min = MinMzToPlot > 0 ? MinMzToPlot : SelectedMsDataScan.MassSpectrum.Range.Minimum;
-            var max = MaxMzToPlot > 0 ? MaxMzToPlot : SelectedMsDataScan.MassSpectrum.Range.Maximum;
+            min = MinMzToPlot > 0 ? MinMzToPlot : SelectedMsDataScan.MassSpectrum.Range.Minimum;
+            max = MaxMzToPlot > 0 ? MaxMzToPlot : SelectedMsDataScan.MassSpectrum.Range.Maximum;
             isolationRange = new MzRange(min, max);
 
             scanToPlot = SelectedMsDataScan;
@@ -154,13 +189,17 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         }
         else
         {
+            min = SelectedMsDataScan.IsolationRange.Minimum - 1;
+            max = SelectedMsDataScan.IsolationRange.Maximum + 1;
             isolationRange = SelectedMsDataScan.IsolationRange;
             scanToPlot = SelectedMsDataFile!.GetOneBasedScan(SelectedMsDataScan.OneBasedPrecursorScanNumber!.Value);
             results = DeconvoluteIsolationRegion(SelectedMsDataScan, scanToPlot);
         }
 
         var sortedSpecies = results
-            .Where(p => isolationRange is null || p.Envelope.Peaks.Any(peak => isolationRange.Contains(peak.mz)))
+            .Where(p => isolationRange is null || p.Envelope.Peaks.Any(peak => isolationRange.Contains(peak.mz)) 
+            && p.Envelope.Charge >= MinChargeToAnnotate && p.Envelope.Charge <= MaxChargeToAnnotate 
+            && p.MonoMz <= max && p.MonoMz >= min)
             .OrderByDescending(p => p.MonoisotopicMass.Round(2))
             .ThenByDescending(p => p.Charge)
             .ToList();

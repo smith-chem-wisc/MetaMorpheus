@@ -32,6 +32,7 @@ namespace TaskLayer
             WritePepXml = false;
             IncludeModMotifInMzid = false;
             WriteDigestionProductCountFile = false;
+            WriteTargetDecoyFasta = false;
 
             ModsToWriteSelection = new Dictionary<string, int>
             {
@@ -104,5 +105,6 @@ namespace TaskLayer
         public TargetContaminantAmbiguity TCAmbiguity { get; set; }
         public bool IncludeModMotifInMzid { get; set; }
         public bool WriteDigestionProductCountFile { get; set; }
+        public bool WriteTargetDecoyFasta { get; set; }
     }
 }

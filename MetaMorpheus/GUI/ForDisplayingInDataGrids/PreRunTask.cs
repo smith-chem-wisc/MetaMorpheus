@@ -23,6 +23,10 @@ namespace MetaMorpheusGUI
 
         public string DisplayName { get; set; }
 
+        public bool IsRnaTask => metaMorpheusTask.CommonParameters.DetermineAnalyteType() == EngineLayer.AnalyteType.Oligo;
+
+        public bool IsModeAgnosticTask => metaMorpheusTask is SpectralAveragingTask;
+
         #endregion Public Properties
 
         #region Public Methods
