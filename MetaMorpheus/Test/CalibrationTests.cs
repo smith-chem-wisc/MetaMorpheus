@@ -8,10 +8,15 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using TaskLayer;
 using System;
+using System.Reflection;
 using EngineLayer.DatabaseLoading;
 using System.Diagnostics;
 using MzLibUtil;
+using Omics;
+using Omics.Modifications;
 using Proteomics;
+using Readers;
+using Transcriptomics;
 
 
 namespace Test
@@ -543,6 +548,126 @@ namespace Test
 
             // clean up
             Directory.Delete(unitTestFolder, true);
+        }
+
+        /// <summary>
+        /// Verifies that Modern Search calibration throws an informative MetaMorpheusException
+        /// when the loaded database contains only non-Protein biopolymers (e.g., RNA).
+        /// This covers the proteinList.Count == 0 guard in GenerateIndexes, ensuring users
+        /// get a clear error message directing them to use Classic Search for non-protein analytes.
+        /// </summary>
+        [Test]
+        public static void ModernSearchCalibration_AllNonProteinBiopolymers_ThrowsInformativeException()
+        {
+            CalibrationTask calibrationTask = new();
+            calibrationTask.CalibrationParameters.SearchType = SearchType.Modern;
+
+            // Set up the private fields that GenerateIndexes depends on via reflection.
+            // _proteinList contains only RNA (non-Protein IBioPolymer) — this triggers the exception.
+            var rnaList = new List<IBioPolymer>
+            {
+                new RNA("GUACUG", "rna_1"),
+                new RNA("AACUGCUAG", "rna_2")
+            };
+
+            SetPrivateField(calibrationTask, "_proteinList", rnaList);
+            SetPrivateField(calibrationTask, "_taskId", "test");
+            SetPrivateField(calibrationTask, "_variableModifications", new List<Modification>());
+            SetPrivateField(calibrationTask, "_fixedModifications", new List<Modification>());
+            SetPrivateField(calibrationTask, "_dbFilenameList", new List<DbForTask>());
+
+            // Invoke the private GenerateIndexes method directly
+            MethodInfo generateIndexes = typeof(CalibrationTask)
+                .GetMethod("GenerateIndexes", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.That(generateIndexes, Is.Not.Null, "GenerateIndexes method should exist");
+
+            CommonParameters combinedParams = new();
+
+            // The reflection call wraps the inner exception in TargetInvocationException
+            var ex = Assert.Throws<TargetInvocationException>(() =>
+                generateIndexes.Invoke(calibrationTask, new object[] { combinedParams, "testfile" }));
+
+            // Verify it's the expected MetaMorpheusException with a helpful message
+            Assert.That(ex.InnerException, Is.TypeOf<MetaMorpheusException>());
+            Assert.That(ex.InnerException.Message, Does.Contain("Modern Search calibration requires protein sequences"));
+            Assert.That(ex.InnerException.Message, Does.Contain("2 non-protein biopolymer(s) were filtered out"),
+                "Exception should report the count of filtered-out biopolymers");
+            Assert.That(ex.InnerException.Message, Does.Contain("Use Classic Search calibration"),
+                "Exception should suggest the alternative search type");
+        }
+
+        /// <summary>
+        /// Verifies that Modern Search calibration emits a warning when the database contains
+        /// a mix of Protein and non-Protein biopolymers (e.g., Protein + RNA). The non-protein
+        /// entries are silently excluded from the search index, and the user should be warned.
+        /// This covers the proteinList.Count &lt; _proteinList.Count branch in GenerateIndexes.
+        /// </summary>
+        [Test]
+        public static void ModernSearchCalibration_MixedBiopolymers_WarnsAboutExcludedEntries()
+        {
+            CalibrationTask calibrationTask = new();
+            calibrationTask.CalibrationParameters.SearchType = SearchType.Modern;
+
+            // Create a mixed list: one real Protein (needed for IndexingEngine to succeed) and one RNA.
+            // The RNA entry will be filtered out, triggering the warning.
+            var protein = new Protein("MKWVTFISLLLLFSSAYSR", "P00001");
+            var rna = new RNA("GUACUG", "rna_1");
+            var mixedList = new List<IBioPolymer> { protein, rna };
+
+            SetPrivateField(calibrationTask, "_proteinList", mixedList);
+            SetPrivateField(calibrationTask, "_taskId", "test");
+            SetPrivateField(calibrationTask, "_variableModifications", new List<Modification>());
+            SetPrivateField(calibrationTask, "_fixedModifications", new List<Modification>());
+            SetPrivateField(calibrationTask, "_dbFilenameList", new List<DbForTask>());
+
+            // Subscribe to WarnHandler to capture the warning message
+            string capturedWarning = null;
+            EventHandler<StringEventArgs> handler = (_, e) => capturedWarning = e.S;
+            MetaMorpheusTask.WarnHandler += handler;
+
+            try
+            {
+                // Call GenerateIndexes — the warning fires before IndexingEngine runs.
+                // IndexingEngine may throw due to minimal setup, but the warning should already be captured.
+                MethodInfo generateIndexes = typeof(CalibrationTask)
+                    .GetMethod("GenerateIndexes", BindingFlags.NonPublic | BindingFlags.Instance);
+                Assert.That(generateIndexes, Is.Not.Null, "GenerateIndexes method should exist");
+
+                CommonParameters combinedParams = new();
+
+                try
+                {
+                    generateIndexes.Invoke(calibrationTask, new object[] { combinedParams, "testfile" });
+                }
+                catch (TargetInvocationException)
+                {
+                    // IndexingEngine may fail with minimal test setup — that's fine.
+                    // The warning we're testing fires before IndexingEngine runs.
+                }
+
+                // Verify the warning was emitted with the correct message
+                Assert.That(capturedWarning, Is.Not.Null, "A warning should be emitted when non-protein biopolymers are excluded");
+                Assert.That(capturedWarning, Does.Contain("1 non-protein biopolymer(s) were excluded from the search index"),
+                    "Warning should report the exact count of excluded entries");
+                Assert.That(capturedWarning, Does.Contain("Only protein sequences are supported by Modern Search"),
+                    "Warning should explain the limitation");
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+        }
+
+        /// <summary>
+        /// Helper to set private/internal fields on CalibrationTask via reflection.
+        /// Used by tests that need to control internal state for targeted unit testing.
+        /// </summary>
+        private static void SetPrivateField(object obj, string fieldName, object value)
+        {
+            FieldInfo field = obj.GetType().GetField(fieldName,
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.That(field, Is.Not.Null, $"Field '{fieldName}' should exist on {obj.GetType().Name}");
+            field.SetValue(obj, value);
         }
 
     }
