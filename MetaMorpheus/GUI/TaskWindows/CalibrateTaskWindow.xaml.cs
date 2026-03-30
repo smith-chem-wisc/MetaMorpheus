@@ -99,6 +99,7 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             writeIndexMzmlCheckbox.IsChecked = task.CalibrationParameters.WriteIndexedMzml;
+            NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
 
             //// Set Search Type radio buttons
             switch (task.CalibrationParameters.SearchType)
@@ -175,7 +176,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode; 
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
             List<Modification> modsToUse = isRnaMode ? GlobalVariables.AllRnaModsKnown.ToList() : GlobalVariables.AllModsKnown.ToList();
 
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
@@ -252,7 +253,7 @@ namespace MetaMorpheusGUI
 
             if (!TaskValidator.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, 
+                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed,
                  null, null, null))
             {
                 return;
@@ -348,11 +349,12 @@ namespace MetaMorpheusGUI
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down" && !isRnaMode,
                     minVariantDepth: minVariantDepth,
                     maxHeterozygousVariants: maxHeterozygousVariants,
+                    totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                     trimMsMsPeaks: false,
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,
                     productDeconParams: productDeconvolutionParameters,
-                    useProvidedPrecursorInfo: useProvidedPrecursorInfo); 
+                    useProvidedPrecursorInfo: useProvidedPrecursorInfo);
                 TheTask.CommonParameters = commonParamsToSave;
             }
             else //bottom-up
@@ -370,6 +372,7 @@ namespace MetaMorpheusGUI
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                     minVariantDepth: minVariantDepth,
                     maxHeterozygousVariants: maxHeterozygousVariants,
+                    totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                     useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,

@@ -539,12 +539,12 @@ namespace Test
             Assert.That(double.TryParse(Regex.Match(modernLines[1], @"\d+\.\d*").Value, out double modernProductTol),
                 "Modern product tolerance should be parseable");
 
-            // tolerances should be in a reasonable range (not wildly different)
-            // allowing some variance since the search engines may find slightly different PSMs
-            Assert.That(modernPrecursorTol, Is.InRange(classicPrecursorTol * 0.5, classicPrecursorTol * 2.0),
-                $"Modern precursor tolerance ({modernPrecursorTol}) should be within 2x of Classic ({classicPrecursorTol})");
-            Assert.That(modernProductTol, Is.InRange(classicProductTol * 0.5, classicProductTol * 2.0),
-                $"Modern product tolerance ({modernProductTol}) should be within 2x of Classic ({classicProductTol})");
+            // tolerances should be very close — both engines search the same data
+            // and feed into the same calibration math
+            Assert.That(modernPrecursorTol, Is.InRange(classicPrecursorTol * 0.9, classicPrecursorTol * 1.1),
+                $"Modern precursor tolerance ({modernPrecursorTol}) should be within 10% of Classic ({classicPrecursorTol})");
+            Assert.That(modernProductTol, Is.InRange(classicProductTol * 0.9, classicProductTol * 1.1),
+                $"Modern product tolerance ({modernProductTol}) should be within 10% of Classic ({classicProductTol})");
 
             // clean up
             Directory.Delete(unitTestFolder, true);

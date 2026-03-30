@@ -26,8 +26,8 @@
             </Setter>
         </Style>
     </Window.Resources>
-    
-    
+
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -456,13 +456,17 @@
                                 </Expander.Style>
                                 <StackPanel>
                                     <GroupBox Header="Search Mode">
-                                        <StackPanel Margin="5">
-                                            <Grid>
+                                        <Grid Margin="5">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="1*" />
                                                     <ColumnDefinition Width="1*" />
                                                 </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0">
+                                                <Grid.RowDefinitions>
+                                                <RowDefinition Height="1*" />
+                                                <RowDefinition Height="1*" />
+                                            </Grid.RowDefinitions>
+
+                                                <StackPanel Grid.Column="0" Grid.Row="0" HorizontalAlignment="Center">
                                                     <RadioButton x:Name="ClassicSearchRadioButton" Content="Classic Search" GroupName="SearchType" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <RadioButton.ToolTip>
                                                             <TextBlock>
@@ -473,7 +477,7 @@
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>
                                                 </StackPanel>
-                                                <StackPanel Grid.Column="1">
+                                            <StackPanel Grid.Column="1" Grid.Row="0" HorizontalAlignment="Center">
                                                     <RadioButton x:Name="ModernSearchRadioButton" Content="Modern Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <RadioButton.ToolTip>
                                                             <TextBlock>
@@ -488,8 +492,22 @@
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>
                                                 </StackPanel>
+                                                <StackPanel Grid.Column="1" Grid.Row="1"  Orientation="Horizontal">
+                                                    <Label x:Name="numberOfDatabaseSearchesLabel" Content="Number of Database Partitions:" />
+                                                    <local:IntegerTexBoxControl x:Name="NumberOfDatabaseSearchesTextBox" Width="45" 
+                                ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
+                                IsEnabled="{Binding IsChecked, ElementName=ModernSearchRadioButton}" HorizontalAlignment="Center">
+                                                        <TextBox.ToolTip>
+                                                            <TextBlock>
+                Splits indexed search modes (Modern) into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
+                <LineBreak />
+                There is no correlation between the number of partitions and the resulting search speed.
+                                                            </TextBlock>
+                                                        </TextBox.ToolTip>
+                                                    </local:IntegerTexBoxControl>
+                                                </StackPanel>
                                             </Grid>
-                                        </StackPanel>
+
                                     </GroupBox>
                                     <GroupBox Header="In-Silico Digestion Parameters" >
                                         <StackPanel Margin="2">
