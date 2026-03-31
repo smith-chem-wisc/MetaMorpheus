@@ -116,6 +116,7 @@ namespace GuiFunctions
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
         public static string[] AmbiguityTypes { get; set; } = { "No Filter", "1", "2A", "2B", "2C", "2D", "3", "4", "5" };
+        public static string[] GroupingProperties { get; set; } = { "None", "Notch", "Precursor Charge", "File Name", "Ambiguity Level", "Missed Cleavages", "OrganismName", "DecoyContamTarget" };
 
         #endregion
 
@@ -295,6 +296,10 @@ namespace GuiFunctions
             StrokeThicknessUnannotated = 0.7;
             StrokeThicknessAnnotated = 1.0;
             AnnotateIsotopicEnvelopes = true;
+            
+            // Reset the new ViewModel structure
+            PlotModelStatParametersViewModel.Instance.LoadFromSnapshot(new PlotModelStatParameters());
+            
             SetDefaultColors();
         }
 
@@ -550,7 +555,14 @@ namespace GuiFunctions
                 DisplayFilteredOnly = DisplayFilteredOnly,
                 DataVisualizationColorOrder = DataVisualizationColorOrder?.Select(c => c.GetColorName()).ToList(),
                 BioPolymerCoverageFontSize = BioPolymerCoverageFontSize,
-                BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList()
+                BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList(),
+                
+                // Save from the new ViewModel structure
+                UseLogScaleYAxis = PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis,
+                GroupingProperty = PlotModelStatParametersViewModel.Instance.GroupingProperty,
+                MinRelativeCutoff = PlotModelStatParametersViewModel.Instance.MinRelativeCutoff,
+                MaxRelativeCutoff = PlotModelStatParametersViewModel.Instance.MaxRelativeCutoff,
+                AllowAmbiguousGroups = PlotModelStatParametersViewModel.Instance.AllowAmbiguousGroups
             };
         }
 
@@ -595,6 +607,19 @@ namespace GuiFunctions
             NormalizeHistogramToFile = settings.NormalizeHistogramToFile;
             DisplayFilteredOnly = settings.DisplayFilteredOnly;
             BioPolymerCoverageFontSize = settings.BioPolymerCoverageFontSize;
+            
+            // Load into the new ViewModel structure
+            var plotParams = new PlotModelStatParameters
+            {
+                UseLogScaleYAxis = settings.UseLogScaleYAxis,
+                GroupingProperty = settings.GroupingProperty ?? "None",
+                MinRelativeCutoff = settings.MinRelativeCutoff,
+                MaxRelativeCutoff = settings.MaxRelativeCutoff,
+                NormalizeHistogramToFile = settings.NormalizeHistogramToFile,
+                DisplayFilteredOnly = settings.DisplayFilteredOnly,
+                AllowAmbiguousGroups = settings.AllowAmbiguousGroups
+            };
+            PlotModelStatParametersViewModel.Instance.LoadFromSnapshot(plotParams);
 
             try // Product Type Colors
             {
