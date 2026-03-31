@@ -519,6 +519,7 @@ namespace TaskLayer
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            Tolerance childScanMassTolerance = fileSpecificParams.ChildScanMassTolerance ?? commonParams.ChildScanMassTolerance;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
@@ -526,6 +527,7 @@ namespace TaskLayer
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
                 productMassTolerance: productMassTolerance,
+                childScanMassTolerance: childScanMassTolerance,
                 digestionParams: fileSpecificDigestionParams,
                 separationType: separationType,
 

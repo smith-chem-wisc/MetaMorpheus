@@ -16,6 +16,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         public static bool CheckTaskSettingsValidity(string precursorMassTolerance,
             string productMassTolerance,
+            string childScanMassTolerance,
             string maxMissedCleavages,
             string maxModificationIsoforms,
             string minPeptideLength,
@@ -45,6 +46,7 @@ namespace MetaMorpheusGUI
             {
                 (CheckPrecursorMassTolerance(precursorMassTolerance)),
                 (CheckProductMassTolerance(productMassTolerance)),
+                (string.IsNullOrWhiteSpace(childScanMassTolerance) || CheckProductMassTolerance(childScanMassTolerance)),
                 (CheckMaxMissedCleavages(maxMissedCleavages)),
                 (CheckMaxModificationIsoForms(maxModificationIsoforms)),
                 (CheckPeptideLength(minPeptideLength, maxPeptideLength)),

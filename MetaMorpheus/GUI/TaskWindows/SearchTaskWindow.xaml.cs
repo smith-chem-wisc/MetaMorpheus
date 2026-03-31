@@ -457,6 +457,7 @@ namespace MetaMorpheusGUI
             if (!TaskValidator.CheckTaskSettingsValidity(
                 PrecursorMassToleranceTextBox.Text, 
                 ProductMassToleranceTextBox.Text, 
+                null,
                 MissedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, 
                 MinPeptideLengthTextBox.Text, 

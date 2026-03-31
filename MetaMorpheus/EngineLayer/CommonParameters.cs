@@ -47,7 +47,8 @@ namespace EngineLayer
             bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, 
             Tolerance productMassTolerance = null, 
-            Tolerance precursorMassTolerance = null, 
+            Tolerance precursorMassTolerance = null,
+            Tolerance childScanMassTolerance = null,
             Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, 
             IDigestionParams digestionParams = null, 
@@ -84,6 +85,7 @@ namespace EngineLayer
             MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1 ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1 : maxThreadsToUsePerFile;
             ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
             PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
+            ChildScanMassTolerance = childScanMassTolerance ?? ProductMassTolerance;
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
             DissociationType = dissociationType;
@@ -157,6 +159,7 @@ namespace EngineLayer
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
+        public Tolerance ChildScanMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; private set; }
         /// <summary>
@@ -257,6 +260,7 @@ namespace EngineLayer
                                 TrimMsMsPeaks,
                                 ProductMassTolerance,
                                 PrecursorMassTolerance,
+                                ChildScanMassTolerance,
                                 DeconvolutionMassTolerance,
                                 MaxThreadsToUsePerFile,
                                 DigestionParams.Clone(terminus),

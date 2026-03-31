@@ -238,13 +238,12 @@
                             <GroupBox Header="Fragment Ion Search Parameters">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="1.5*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal"  Margin="5">
-                                            <Label x:Name="lblPrecusorMsTl"  Content="Precursor mass tolerance" />
+                                            <Label x:Name="lblPrecusorMsTl"  Content="Precursor Mass tolerance" />
                                             <local:DoubleTextBoxControl x:Name="PrecusorMsTlTextBox"  Width="45" />
                                             <ComboBox x:Name="cbbPrecusorMsTl" />
                                         </StackPanel>
@@ -253,8 +252,20 @@
                                             <local:DoubleTextBoxControl x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
                                             <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="lblChildMs2" Content="Child Scan Mass Tolerance" ToolTipService.ShowDuration="99999" ToolTipService.InitialShowDelay="500">
+                                                <Label.ToolTip>
+                                                    <TextBlock>
+                                                        Fragment mass tolerance used for child scans (MS2/MS3).
+                                                        This is applied when matching fragment ions in ChildScan with lower resolution.
+                                                    </TextBlock>
+                                                </Label.ToolTip>
+                                            </Label>
+                                            <local:DoubleTextBoxControl x:Name="childScanMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
+                                            <ComboBox x:Name="childScanMassToleranceComboBox" HorizontalAlignment="Left" />
+                                        </StackPanel>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="2">
+                                    <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="ffdf" Content="Minimum score allowed:" />
                                             <local:IntegerTexBoxControl x:Name="minScoreAllowed" Width="45" />

@@ -55,7 +55,6 @@ namespace EngineLayer.GlycoSearch
             this.OxoniumIonFilter = oxoniumIonFilter;
             this._oglycanDatabase = oglycanDatabase;
             this._nglycanDatabase = nglycanDatabase;
-
             SecondFragmentIndex = secondFragmentIndex;
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
             ProductSearchMode = new SinglePpmAroundZeroSearchMode(20); //For Oxonium ion only
@@ -314,7 +313,7 @@ namespace EngineLayer.GlycoSearch
                 fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan));
             }
 
-            var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters);
+            var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters, isChildScan : false);
 
             double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
 
@@ -334,7 +333,7 @@ namespace EngineLayer.GlycoSearch
             {
                 var childFragments = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
 
-                var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters);
+                var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters, isChildScan : true);
 
                 n += childFragments.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).Count();
 
@@ -356,7 +355,7 @@ namespace EngineLayer.GlycoSearch
                 //TO THINK:may think a different way to use childScore
                 score += childScore;
 
-                p += childScan.TheScan.MassSpectrum.Size * CommonParameters.ProductMassTolerance.GetRange(1000).Width / childScan.TheScan.MassSpectrum.Range.Width;
+                p += childScan.TheScan.MassSpectrum.Size * CommonParameters.ChildScanMassTolerance.GetRange(1000).Width / childScan.TheScan.MassSpectrum.Range.Width;
 
             }
 
@@ -439,12 +438,14 @@ namespace EngineLayer.GlycoSearch
             SortedDictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, Motifs); //list all of the possible glycoslation site/postition
 
             var localizationScan = theScan;
+            var toleranceForLocalizationScan = CommonParameters.ProductMassTolerance;
             List<Product> products = new List<Product>(); // product list for the theoretical fragment ions
 
             //For HCD-pd-ETD or CD-pd-EThcD type of data, we generate the different rpoducts.
             if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons))
             {
                 localizationScan = theScan.ChildScans.First();
+                toleranceForLocalizationScan = CommonParameters.ChildScanMassTolerance;
                 theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
             }
 
@@ -477,7 +478,7 @@ namespace EngineLayer.GlycoSearch
                 if (GraphCheck(modPos, GlycanBoxes[iDLow])) // the glycosite number should be larger than the possible glycan number.
                 {
                     LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBoxes[iDLow], GlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
-                    LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, CommonParameters.ProductMassTolerance, products); //create the localization graph with the glycan mass and the possible glycosite.
+                    LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, toleranceForLocalizationScan, products); //create the localization graph with the glycan mass and the possible glycosite.
 
                     double currentLocalizationScore = localizationGraph.TotalScore;
                     if (currentLocalizationScore > bestLocalizedScore) //Try to find the best glycanBox with the highest score.

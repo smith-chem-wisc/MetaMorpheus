@@ -24,6 +24,8 @@ namespace TaskLayer
                         PrecursorMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
                     case nameof(ProductMassTolerance):
                         ProductMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
+                    case nameof(ChildScanMassTolerance):
+                        ChildScanMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
                     case nameof(DigestionAgent): // Support new tomls that labeled by Digestion Agent Type instead of specific type
                         string valueString = keyValuePair.Value.Get<string>();
 
@@ -82,6 +84,7 @@ namespace TaskLayer
 
         public Tolerance PrecursorMassTolerance { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
+        public Tolerance ChildScanMassTolerance { get; set; }
         public DigestionAgent DigestionAgent { get; set; }
         public int? MinPeptideLength { get; set; }
         public int? MaxPeptideLength { get; set; }
