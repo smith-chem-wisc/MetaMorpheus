@@ -172,7 +172,10 @@ public class GuiGlobalParamsViewModel : BaseViewModel
     {
         get => _current.IsRnaMode;
         set
-        {   
+        {
+            if (value == _current.IsRnaMode)
+                return;
+
             // Invoke the event to check if the user wants to switch modes
             var args = new ModeSwitchRequestEventArgs();
 
