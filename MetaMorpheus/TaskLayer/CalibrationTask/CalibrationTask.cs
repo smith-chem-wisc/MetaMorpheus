@@ -92,11 +92,11 @@ namespace TaskLayer
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { _taskId, "Individual Spectra Files", originalUncalibratedFilePath });
 
                 // carry over file-specific parameters from the uncalibrated file to the calibrated one and update combined params
-                FileSpecificParameters fileSpecificParams = fileSettingsList[spectraFileIndex] == null 
-                    ? new() 
+                FileSpecificParameters fileSpecificParams = fileSettingsList[spectraFileIndex] == null
+                    ? new()
                     : fileSettingsList[spectraFileIndex].Clone();
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams);
-                
+
                 // load the file
                 Status("Loading spectra file...", new List<string> { _taskId, "Individual Spectra Files" });
                 MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams).LoadAllStaticData();
@@ -115,7 +115,7 @@ namespace TaskLayer
                     acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
                 }
                 // If there still aren't enough points, give up
-                if(!SufficientAcquisitionResults(acquisitionResultsFirst))
+                if (!SufficientAcquisitionResults(acquisitionResultsFirst))
                 {
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, _taskId);
                     continue;
@@ -150,7 +150,7 @@ namespace TaskLayer
                 _ = engine.Run();
 
                 // Third round of calibration
-                DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile,  combinedParams, originalUncalibratedFilePath);
+                DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile, combinedParams, originalUncalibratedFilePath);
 
                 if (CalibrationHasValue(acquisitionResultsSecond, acquisitionResultsThird))
                 {
@@ -276,7 +276,7 @@ namespace TaskLayer
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, DecoyType.Reverse, true, localizeableModificationTypes);
             var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
             _proteinList = loadingResults!.BioPolymers;
-            
+
             _myFileManager = new MyFileManager(true);
             _unsuccessfullyCalibratedFilePaths = new List<string>();
             _dbFilenameList = dbFilenameList;
@@ -290,9 +290,27 @@ namespace TaskLayer
         }
 
         /// <summary>
+        /// Filters a mixed biopolymer list down to <see cref="Protein"/> entries only, returning
+        /// the filtered list and the number of non-protein entries that were excluded.
+        /// Does not throw or warn — callers are responsible for acting on the returned counts.
+        /// </summary>
+        /// <param name="bioPolymers">The full list of biopolymers loaded from the database.</param>
+        /// <returns>
+        /// A tuple of the filtered <see cref="Protein"/> list and the count of excluded non-protein entries.
+        /// </returns>
+        public static (List<Protein> Proteins, int ExcludedCount) FilterBiopolymersForModernSearch(
+            List<IBioPolymer> bioPolymers)
+        {
+            var proteins = bioPolymers.OfType<Protein>().ToList();
+            int excludedCount = bioPolymers.Count - proteins.Count;
+            return (proteins, excludedCount);
+        }
+
+        /// <summary>
         /// Generates peptide and fragment indexes for Modern Search.
-        /// Filters the biopolymer list to Protein entries only. Throws <see cref="MetaMorpheusException"/>
-        /// if no Protein entries remain after filtering. Warns if non-protein biopolymers were excluded.
+        /// Delegates biopolymer filtering to <see cref="FilterBiopolymersForModernSearch"/>.
+        /// Throws <see cref="MetaMorpheusException"/> if no Protein entries remain after filtering.
+        /// Warns if non-protein biopolymers were excluded.
         /// </summary>
         /// <param name="combinedParameters">The combined common parameters for the current search.</param>
         /// <param name="fileNameWithoutExtension">The spectra file name (without extension) for status reporting.</param>
@@ -301,21 +319,19 @@ namespace TaskLayer
         {
             Status("Generating indexes for Modern Search...", new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
-            // Cast protein list to List<Protein> for indexing engine
-            var proteinList = _proteinList.OfType<Protein>().ToList();
+            var (proteinList, excludedCount) = FilterBiopolymersForModernSearch(_proteinList);
 
             if (proteinList.Count == 0)
             {
                 throw new MetaMorpheusException(
                     "Modern Search calibration requires protein sequences, but the loaded database contains no Protein entries " +
-                    $"({_proteinList.Count} non-protein biopolymer(s) were filtered out). " +
+                    $"({excludedCount} non-protein biopolymer(s) were filtered out). " +
                     "Use Classic Search calibration for non-protein analytes, or provide a protein sequence database.");
             }
 
-            if (proteinList.Count < _proteinList.Count)
+            if (excludedCount > 0)
             {
-                int dropped = _proteinList.Count - proteinList.Count;
-                Warn($"Modern Search calibration: {dropped} non-protein biopolymer(s) were excluded from the search index. " +
+                Warn($"Modern Search calibration: {excludedCount} non-protein biopolymer(s) were excluded from the search index. " +
                      "Only protein sequences are supported by Modern Search.");
             }
 
@@ -405,7 +421,7 @@ namespace TaskLayer
             // if we didn't calibrate, write the uncalibrated file to the output folder as an mzML
             File.Copy(originalUncalibratedFilePath, uncalibratedNewFullFilePath, true);
             // and add it to the list of all unsuccessfully calibrated files
-            unsuccessfullyCalibratedFilePaths.Add(uncalibratedNewFullFilePath); 
+            unsuccessfullyCalibratedFilePaths.Add(uncalibratedNewFullFilePath);
 
             // provide a message indicating why we couldn't calibrate
             CalibrationWarnMessage(acquisitionResults);
@@ -425,7 +441,7 @@ namespace TaskLayer
             int peptidesCountFirst = acquisitionResultsFirst.Psms.Select(p => p.FullSequence).Distinct().Count();
             int peptidesCountSecond = acquisitionResultsSecond.Psms.Select(p => p.FullSequence).Distinct().Count();
             bool improvedCounts = psmsCountSecond > psmsCountFirst && peptidesCountSecond > peptidesCountFirst;
-            if(improvedCounts)
+            if (improvedCounts)
             {
                 return true;
             }
@@ -436,11 +452,11 @@ namespace TaskLayer
 
             return (numPsmsIncreased && numPeptidesIncreased && psmPrecursorMedianPpmErrorDecreased && psmProductMedianPpmErrorDecreased);
         }
-        
+
         private bool SufficientAcquisitionResults(DataPointAquisitionResults acquisitionResults)
         {
-            return acquisitionResults.Psms.Count >= NumRequiredPsms 
-                && acquisitionResults.Ms1List.Count >= NumRequiredMs1Datapoints 
+            return acquisitionResults.Psms.Count >= NumRequiredPsms
+                && acquisitionResults.Ms1List.Count >= NumRequiredMs1Datapoints
                 && acquisitionResults.Ms2List.Count >= NumRequiredMs2Datapoints;
         }
 
