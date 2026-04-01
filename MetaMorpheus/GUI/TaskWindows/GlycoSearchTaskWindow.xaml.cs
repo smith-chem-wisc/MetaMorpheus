@@ -367,13 +367,27 @@ namespace MetaMorpheusGUI
             }
 
             Tolerance ChildScanMassTolerance;
-            if (childScanMassToleranceComboBox.SelectedIndex == 0)
+            var childScanMassToleranceText = childScanMassToleranceTextBox.Text;
+            if (string.IsNullOrWhiteSpace(childScanMassToleranceText))
             {
-                ChildScanMassTolerance = new AbsoluteTolerance(double.Parse(childScanMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                // If no child scan mass tolerance is specified, fall back to product mass tolerance
+                ChildScanMassTolerance = ProductMassTolerance;
             }
             else 
             {
-                ChildScanMassTolerance = new PpmTolerance(double.Parse(childScanMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                if (!double.TryParse(childScanMassToleranceText, NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedChildTolerance)) 
+                {
+                    MessageBox.Show("The child scan mass tolerance is invalid. Please enter a positive number.");
+                    return;
+                }
+                if (childScanMassToleranceComboBox.SelectedIndex == 0)
+                {
+                    ChildScanMassTolerance = new AbsoluteTolerance(parsedChildTolerance);
+                }
+                else
+                {
+                    ChildScanMassTolerance = new PpmTolerance(parsedChildTolerance);
+                }
             }
 
                 Tolerance PrecursorMassTolerance;

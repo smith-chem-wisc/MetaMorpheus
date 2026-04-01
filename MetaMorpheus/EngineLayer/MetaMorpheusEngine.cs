@@ -128,7 +128,7 @@ namespace EngineLayer
 
         }
 
-        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool isChildScan = false, bool matchAllCharges = false)
+        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool matchAllCharges = false, bool isChildScan = false)
         {
             var productMassTolerance = isChildScan ? commonParameters.ChildScanMassTolerance : commonParameters.ProductMassTolerance;
             if (matchAllCharges)

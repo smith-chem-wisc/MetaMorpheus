@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Org.BouncyCastle.Tls;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -46,7 +47,7 @@ namespace MetaMorpheusGUI
             {
                 (CheckPrecursorMassTolerance(precursorMassTolerance)),
                 (CheckProductMassTolerance(productMassTolerance)),
-                (string.IsNullOrWhiteSpace(childScanMassTolerance) || CheckProductMassTolerance(childScanMassTolerance)),
+                (string.IsNullOrWhiteSpace(childScanMassTolerance) || CheckChildScanMassTolerance(childScanMassTolerance)),
                 (CheckMaxMissedCleavages(maxMissedCleavages)),
                 (CheckMaxModificationIsoForms(maxModificationIsoforms)),
                 (CheckPeptideLength(minPeptideLength, maxPeptideLength)),
@@ -168,6 +169,16 @@ namespace MetaMorpheusGUI
             if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double productMassTolerance) || productMassTolerance <= 0)
             {
                 MessageBox.Show("The product mass tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
+                return false;
+            }
+            return true;
+        }
+
+        public static bool CheckChildScanMassTolerance(string text)
+        {
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double childScanMassTolerance) || childScanMassTolerance <= 0)
+            {
+                MessageBox.Show("The child scan mass tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
                 return false;
             }
             return true;
