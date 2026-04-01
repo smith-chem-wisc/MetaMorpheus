@@ -21,6 +21,8 @@ namespace GuiFunctions
 {
     public class SpectrumMatchPlot : MassSpectrumPlot
     {
+        private static readonly OxyColor HiddenAnnotationColor = OxyColor.FromArgb(0, 0, 0, 1);
+
         public static int MaxCharactersPerDescriptionLine = 32;
         public List<MatchedFragmentIon> MatchedFragmentIons { get; protected set; }
         public SpectrumMatchFromTsv SpectrumMatch { get; set; }
@@ -213,13 +215,11 @@ namespace GuiFunctions
             {
                 peakAnnotationText = prefix + annotation;
                 intensity += intensity * 0.05;
-                peakAnnotation.TextColor = ionColor;
             }
             // Main annotation logic
             else
             {
                 peakAnnotationText = BuildAnnotationText(matchedIon, isBetaPeptide, prefix, null);
-                peakAnnotation.TextColor = ionColor;
             }
 
             // Hide internal fragment annotation if not displaying
@@ -228,6 +228,10 @@ namespace GuiFunctions
             {
                 peakAnnotationText = string.Empty;
             }
+
+            peakAnnotation.TextColor = string.IsNullOrEmpty(peakAnnotationText)
+                ? HiddenAnnotationColor
+                : ionColor;
 
             // Set annotation properties
             peakAnnotation.Text = peakAnnotationText;
@@ -288,8 +292,11 @@ namespace GuiFunctions
                         TextPosition = new DataPoint(envMz, envIntensity),
                         TextVerticalAlignment = envIntensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom,
                         TextHorizontalAlignment = HorizontalAlignment.Center,
-                        TextColor = ionColor
                     };
+
+                    peakAnnotation.TextColor = string.IsNullOrEmpty(peakAnnotationText)
+                        ? HiddenAnnotationColor
+                        : ionColor;
 
                     DrawPeak(envMz, envIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
                 }
