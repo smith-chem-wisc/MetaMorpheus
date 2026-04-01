@@ -5,8 +5,10 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Omics;
+using Omics.Modifications;
 using Proteomics;
 using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -611,6 +613,111 @@ namespace Test
                 "All proteins should be retained when input contains only Protein entries");
             Assert.That(excludedCount, Is.EqualTo(0),
                 "No entries should be excluded when input contains only Protein entries");
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="CalibrationTask.GenerateIndexes(CommonParameters, string)"/> throws a
+        /// <see cref="MetaMorpheusException"/> when the loaded database contains only non-Protein biopolymers,
+        /// and that the message directs the user to Classic Search or a protein database.
+        /// The exception is thrown before any indexing work begins, so no spectra files are needed.
+        /// </summary>
+        [Test]
+        public static void GenerateIndexes_AllNonProteinDatabase_ThrowsMetaMorpheusException()
+        {
+            var calibrationTask = new CalibrationTask();
+            var type = typeof(CalibrationTask);
+
+            type.GetField("_proteinList", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, new List<IBioPolymer>
+                {
+                    new RNA("GUACUG", "rna_1"),
+                    new RNA("AACUGCUAG", "rna_2")
+                });
+            type.GetField("_taskId", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, "testTask");
+
+            var generateIndexes = type.GetMethod("GenerateIndexes",
+                BindingFlags.NonPublic | BindingFlags.Instance,
+                null,
+                new[] { typeof(CommonParameters), typeof(string) },
+                null);
+
+            MetaMorpheusException caughtException = null;
+            try
+            {
+                generateIndexes.Invoke(calibrationTask, new object[] { new CommonParameters(), "testFile" });
+            }
+            catch (TargetInvocationException ex)
+            {
+                caughtException = ex.InnerException as MetaMorpheusException;
+            }
+
+            Assert.That(caughtException, Is.Not.Null,
+                "A MetaMorpheusException should be thrown when the database contains no Protein entries");
+            Assert.That(caughtException.Message, Does.Contain("Modern Search calibration requires protein sequences"),
+                "Exception message should describe the requirement for protein sequences");
+            Assert.That(caughtException.Message, Does.Contain("2 non-protein biopolymer(s) were filtered out"),
+                "Exception message should report the number of excluded non-protein biopolymers");
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="CalibrationTask.GenerateIndexes(CommonParameters, string)"/> emits a
+        /// warning via <see cref="MetaMorpheusTask.WarnHandler"/> when the loaded database contains a mix
+        /// of Protein and non-Protein biopolymers, informing the user that only protein sequences are indexed.
+        /// The warning is emitted before the <see cref="IndexingEngine"/> runs, so any failure in the
+        /// subsequent indexing step does not affect whether the warning was captured.
+        /// </summary>
+        [Test]
+        public static void GenerateIndexes_MixedBiopolymers_EmitsWarnForExcludedNonProteinEntries()
+        {
+            var calibrationTask = new CalibrationTask();
+            var type = typeof(CalibrationTask);
+
+            type.GetField("_proteinList", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, new List<IBioPolymer>
+                {
+                    new Protein("MKWVTFISLLLLFSSAYSR", "P00001"),
+                    new RNA("GUACUG", "rna_1")
+                });
+            type.GetField("_taskId", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, "testTask");
+            type.GetField("_variableModifications", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, new List<Modification>());
+            type.GetField("_fixedModifications", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, new List<Modification>());
+
+            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            type.GetField("_dbFilenameList", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, new List<DbForTask> { new DbForTask(dbPath, false) });
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> warnHandler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += warnHandler;
+
+            var generateIndexes = type.GetMethod("GenerateIndexes",
+                BindingFlags.NonPublic | BindingFlags.Instance,
+                null,
+                new[] { typeof(CommonParameters), typeof(string) },
+                null);
+
+            try
+            {
+                generateIndexes.Invoke(calibrationTask, new object[] { new CommonParameters(), "testFile" });
+            }
+            catch (TargetInvocationException)
+            {
+                // The warning is emitted before the IndexingEngine runs; any subsequent
+                // failure does not affect whether the warning was captured.
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= warnHandler;
+            }
+
+            Assert.That(warnings.Any(w => w.Contains("1 non-protein biopolymer(s) were excluded from the search index")),
+                "A warning should be emitted when non-protein entries are excluded from the search index");
+            Assert.That(warnings.Any(w => w.Contains("Only protein sequences are supported by Modern Search")),
+                "Warning should indicate that Modern Search only supports protein sequences");
         }
 
     }
