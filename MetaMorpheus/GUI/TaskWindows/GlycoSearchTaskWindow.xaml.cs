@@ -90,6 +90,8 @@ namespace MetaMorpheusGUI
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
+            childScanMassToleranceComboBox.Items.Add("Da");
+            childScanMassToleranceComboBox.Items.Add("ppm");
 
             foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
@@ -184,6 +186,8 @@ namespace MetaMorpheusGUI
             TxtBoxMaxModPerPep.Text = task.CommonParameters.DigestionParams.MaxMods.ToString(CultureInfo.InvariantCulture);
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            childScanMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance_LowRes?.Value.ToString(CultureInfo.InvariantCulture);
+            childScanMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance_LowRes is AbsoluteTolerance ? 0 : 1;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
@@ -257,7 +261,7 @@ namespace MetaMorpheusGUI
         {
             string fieldNotUsed = "1";
 
-            if (!TaskValidator.CheckTaskSettingsValidity(PrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+            if (!TaskValidator.CheckTaskSettingsValidity(PrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, childScanMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
                 fieldNotUsed, fieldNotUsed, fieldNotUsed, DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, TxtBoxMaxModPerPep.Text, 
                 fieldNotUsed, null, null, null))
@@ -362,7 +366,31 @@ namespace MetaMorpheusGUI
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
 
-            Tolerance PrecursorMassTolerance;
+            Tolerance ProductMassTolerance_lowRes;
+            var childScanMassToleranceText = childScanMassToleranceTextBox.Text;
+            if (string.IsNullOrWhiteSpace(childScanMassToleranceText))
+            {
+                // If no child scan mass tolerance is specified, fall back to product mass tolerance
+                ProductMassTolerance_lowRes = ProductMassTolerance;
+            }
+            else 
+            {
+                if (!double.TryParse(childScanMassToleranceText, NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedChildTolerance)) 
+                {
+                    MessageBox.Show("The child scan mass tolerance is invalid. Please enter a positive number.");
+                    return;
+                }
+                if (childScanMassToleranceComboBox.SelectedIndex == 0)
+                {
+                    ProductMassTolerance_lowRes = new AbsoluteTolerance(parsedChildTolerance);
+                }
+                else
+                {
+                    ProductMassTolerance_lowRes = new PpmTolerance(parsedChildTolerance);
+                }
+            }
+
+                Tolerance PrecursorMassTolerance;
             if (cbbPrecusorMsTl.SelectedIndex == 0)
             {
                 PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(PrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
@@ -394,6 +422,7 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GlycoSearchTask",
                 productMassTolerance: ProductMassTolerance,
+                productMassTolerance_LowRes: ProductMassTolerance_lowRes,
                 doPrecursorDeconvolution: doPrecursorDeconvolution,
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                 digestionParams: digestionParamsToSave,

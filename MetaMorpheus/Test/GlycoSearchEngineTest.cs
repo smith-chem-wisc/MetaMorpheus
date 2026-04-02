@@ -1,24 +1,17 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Omics.Modifications;
-using Org.BouncyCastle.Asn1.Cmp;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using TaskLayer;
-using ThermoFisher.CommonCore.Data.Business;
-using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 
 namespace Test
 {
@@ -75,6 +68,104 @@ namespace Test
             // Compute expected p and verify it exceeds 1 so capping behavior is exercised.
             Assert.That(pEstimate, Is.GreaterThan(1d), "Test must drive p > 1 to validate the cap.");
             Assert.That(result.ScanInfo_p, Is.EqualTo(1), "P value should be capped at 1 when product mass tolerance is very wide.");
+        }
+
+        [Test]
+        public static void TestChildScanToleranceConstruction_Default() 
+        {
+            var commonParameters = new CommonParameters();
+            Assert.That(commonParameters.ProductMassTolerance_LowRes, Is.Not.Null, "ChildScanMassTolerance should be initialized by default.");
+
+            // Default product tolerance is a PpmTolerance of 20 ppm; verify type and numeric width equivalence
+            Assert.That(commonParameters.ProductMassTolerance, Is.TypeOf<PpmTolerance>());
+            Assert.That(commonParameters.ProductMassTolerance.GetRange(1000).Width, Is.EqualTo(new PpmTolerance(20).GetRange(1000).Width));
+
+            // By default child tolerance should equal product tolerance
+            Assert.That(commonParameters.ProductMassTolerance_LowRes.GetRange(1000).Width, Is.EqualTo(commonParameters.ProductMassTolerance.GetRange(1000).Width));
+        }
+
+        [Test]
+        public static void TestChildScanTolerance_Da() 
+        {
+            // Purpose:
+            // - Validate that fragment matching use `ChildScanMassTolerance` for child scans (isChildScan flag).
+            // - Confirm initial tolerances are set as expected: product, child, precursor.
+            // - For matched fragment ions, verify the observed m/z (converted to mass) is within the correct tolerance.
+
+            // --- initialize tolerances for test
+            var childScanTolerance = new AbsoluteTolerance(0.5);
+
+            // Create CommonParameters with explicit tolerances
+            var commonParameters = new CommonParameters(
+                productMassTolerance_LowRes: childScanTolerance,
+                dissociationType: DissociationType.ETD,
+                trimMsMsPeaks: false);
+            Assert.That(commonParameters.ProductMassTolerance_LowRes.GetRange(1000).Width, Is.EqualTo(childScanTolerance.GetRange(1000).Width));
+
+            // Sanity-check the parameter values were set
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var scan = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).First();
+
+            // Load a single MS2 scan from test data
+            var peptide = new PeptideWithSetModifications("TTGSLEPSSGASGPQVSSVK");
+            var glycoPeptide = new PeptideWithSetModifications("T[O-linked glycosylation:H1N1 on T]T[O-linked glycosylation:H1N1 on T]GSLEPSS[O-linked glycosylation:N1 on S]GASGPQVSSVK", GlobalVariables.AllModsKnownDictionary);
+            var fragmentsForEachGlycoPeptide = GlycoPeptides.OGlyGetTheoreticalFragments(commonParameters.DissociationType, null, peptide, glycoPeptide);
+
+            // Match fragments treating the scan as a child scan (isChildScan = true).
+            // Expect matches to satisfy child scan tolerance (potentially wider).
+            var childMatchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, fragmentsForEachGlycoPeptide, commonParameters, isLowRes: true);
+            Assert.That(childMatchedIons.Count, Is.GreaterThan(0));
+            foreach (var ion in childMatchedIons)
+            {
+                double matchedMass = ion.Mz.ToMass(ion.Charge);
+                double theoreticalMass = ion.NeutralTheoreticalProduct.NeutralMass;
+                // Verify matched ion is within child-scan tolerance
+                Assert.That(commonParameters.ProductMassTolerance_LowRes.Within(matchedMass, theoreticalMass));
+                Assert.That(childScanTolerance.Within(matchedMass, theoreticalMass));
+            }
+        }
+
+        [Test]
+        public static void TestChildScanTolerance_ppm()
+        {
+            // Purpose:
+            // - Validate that fragment matching use `ChildScanMassTolerance` for child scans (isChildScan flag).
+            // - Confirm initial tolerances are set as expected: product, child, precursor.
+            // - For matched fragment ions, verify the observed m/z (converted to mass) is within the correct tolerance.
+
+            // --- initialize tolerances for test
+            var childScanTolerance = new PpmTolerance(200);
+
+            // Create CommonParameters with explicit tolerances
+            var commonParameters = new CommonParameters(
+                productMassTolerance_LowRes: childScanTolerance,
+                dissociationType: DissociationType.ETD,
+                trimMsMsPeaks: false);
+            Assert.That(commonParameters.ProductMassTolerance_LowRes.GetRange(1000).Width, Is.EqualTo(childScanTolerance.GetRange(1000).Width));
+
+            // Sanity-check the parameter values were set
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var scan = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).First();
+
+            // Load a single MS2 scan from test data
+            var peptide = new PeptideWithSetModifications("TTGSLEPSSGASGPQVSSVK");
+            var glycoPeptide = new PeptideWithSetModifications("T[O-linked glycosylation:H1N1 on T]T[O-linked glycosylation:H1N1 on T]GSLEPSS[O-linked glycosylation:N1 on S]GASGPQVSSVK", GlobalVariables.AllModsKnownDictionary);
+            var fragmentsForEachGlycoPeptide = GlycoPeptides.OGlyGetTheoreticalFragments(commonParameters.DissociationType, null, peptide, glycoPeptide);
+
+            // Match fragments treating the scan as a child scan (isChildScan = true).
+            // Expect matches to satisfy child scan tolerance (potentially wider).
+            var childMatchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, fragmentsForEachGlycoPeptide, commonParameters, isLowRes: true);
+            Assert.That(childMatchedIons.Count, Is.GreaterThan(0));
+            foreach (var ion in childMatchedIons)
+            {
+                double matchedMass = ion.Mz.ToMass(ion.Charge);
+                double theoreticalMass = ion.NeutralTheoreticalProduct.NeutralMass;
+                // Verify matched ion is within child-scan tolerance
+                Assert.That(commonParameters.ProductMassTolerance_LowRes.Within(matchedMass, theoreticalMass));
+                Assert.That(childScanTolerance.Within(matchedMass, theoreticalMass));
+            }
         }
     }
 }
