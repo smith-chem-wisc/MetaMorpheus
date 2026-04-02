@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using Nett;
 using Omics.Digestion;
-using Omics.Fragmentation.Peptide;
 using Transcriptomics.Digestion;
 using EngineLayer.DIA;
+using Transcriptomics;
 
 namespace EngineLayer
 {
@@ -60,7 +60,8 @@ namespace EngineLayer
             DeconvolutionParameters precursorDeconParams = null,
             DeconvolutionParameters productDeconParams = null,
             bool useMostAbundantPrecursorIntensity = true,
-            DIAparameters diaParameters = null)
+            DIAparameters diaParameters = null,
+            IFragmentationParams fragmentationParams = null)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -119,11 +120,13 @@ namespace EngineLayer
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
                 PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
                 ProductDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+                FragmentationParameters = fragmentationParams ?? RnaFragmentationParams.Default;
             }
             else
             {
                 ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
+                FragmentationParameters = fragmentationParams ?? new FragmentationParams();
             }
 
             CustomIons = digestionParams.ProductsFromDissociationType()[DissociationType.Custom];
@@ -158,7 +161,7 @@ namespace EngineLayer
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
-        public bool AddCompIons { get; private set; }
+        public bool AddCompIons { get; set; }
         /// <summary>
         /// Only peptides/PSMs with Q-Value and Q-Value Notch below this threshold are used for quantification and
         /// spectral library generation. If SearchParameters.WriteHighQValuePsms is set to false, only 
@@ -199,6 +202,7 @@ namespace EngineLayer
 
         public bool UseMostAbundantPrecursorIntensity { get; set; }
         public DIAparameters? DIAparameters { get; set; } //only for DIA analysis involving pseudo ms2 scan generation
+        public IFragmentationParams FragmentationParameters { get; set; }
 
         public CommonParameters Clone()
         {
@@ -267,7 +271,10 @@ namespace EngineLayer
                                 MinVariantDepth,
                                 AddTruncations,
                                 PrecursorDeconvolutionParameters, 
-                                ProductDeconvolutionParameters);
+                                ProductDeconvolutionParameters,
+                                UseMostAbundantPrecursorIntensity,
+                                DIAparameters,
+                                FragmentationParameters);
         }
 
         public void SetCustomProductTypes()

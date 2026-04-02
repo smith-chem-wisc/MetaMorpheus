@@ -719,6 +719,54 @@ namespace Test.MetaDraw
         }
 
         [Test]
+        public static void TestMetaDrawSettingsViewModelPlotModelStatWrappedProperties()
+        {
+            MetaDrawSettings.ResetSettings();
+            var viewModel = new MetaDrawSettingsViewModel(false);
+            var parametersVm = PlotModelStatParametersViewModel.Instance;
+
+            bool originalUseLog = parametersVm.UseLogScaleYAxis;
+            string originalGrouping = parametersVm.GroupingProperty;
+            double originalMin = parametersVm.MinRelativeCutoff;
+            double originalMax = parametersVm.MaxRelativeCutoff;
+
+            try
+            {
+                viewModel.UseLogScaleYAxis = !originalUseLog;
+                Assert.That(viewModel.UseLogScaleYAxis, Is.EqualTo(!originalUseLog));
+                Assert.That(parametersVm.UseLogScaleYAxis, Is.EqualTo(viewModel.UseLogScaleYAxis));
+
+                string newGrouping = viewModel.GroupingProperties.FirstOrDefault(g => g != originalGrouping) ?? originalGrouping;
+                viewModel.GroupingProperty = newGrouping;
+                Assert.That(viewModel.GroupingProperty, Is.EqualTo(newGrouping));
+                Assert.That(parametersVm.GroupingProperty, Is.EqualTo(newGrouping));
+
+                const double testMax = 80.0;
+                viewModel.MaxRelativeCutoff = testMax;
+                Assert.That(viewModel.MaxRelativeCutoff, Is.EqualTo(testMax));
+                Assert.That(parametersVm.MaxRelativeCutoff, Is.EqualTo(testMax));
+
+                const double testMin = 15.0;
+                viewModel.MinRelativeCutoff = testMin;
+                Assert.That(viewModel.MinRelativeCutoff, Is.EqualTo(testMin));
+                Assert.That(parametersVm.MinRelativeCutoff, Is.EqualTo(testMin));
+
+                const double relativeCutoff = 10.0;
+                viewModel.RelativeIntensityCutoff = relativeCutoff;
+                Assert.That(viewModel.RelativeIntensityCutoff, Is.EqualTo(relativeCutoff));
+                Assert.That(viewModel.MinRelativeCutoff, Is.EqualTo(relativeCutoff));
+                Assert.That(parametersVm.MinRelativeCutoff, Is.EqualTo(relativeCutoff));
+            }
+            finally
+            {
+                viewModel.UseLogScaleYAxis = originalUseLog;
+                viewModel.GroupingProperty = originalGrouping;
+                viewModel.MaxRelativeCutoff = originalMax;
+                viewModel.RelativeIntensityCutoff = originalMin;
+            }
+        }
+
+        [Test]
         public static void TestModTypeForTreeView()
         {
             var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType).ToList();
