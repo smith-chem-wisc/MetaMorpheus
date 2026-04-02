@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;
@@ -99,8 +99,29 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             writeIndexMzmlCheckbox.IsChecked = task.CalibrationParameters.WriteIndexedMzml;
+            NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
 
-            //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
+            //// Set Search Type radio buttons
+            switch (task.CalibrationParameters.SearchType)
+            {
+                case SearchType.Classic:
+                    ClassicSearchRadioButton.IsChecked = true;
+                    ModernSearchRadioButton.IsChecked = false;
+                    break;
+                case SearchType.Modern:
+                    ClassicSearchRadioButton.IsChecked = false;
+                    ModernSearchRadioButton.IsChecked = true;
+                    break;
+                default:
+                    MessageBox.Show(
+                        $"SearchType '{task.CalibrationParameters.SearchType}' is not supported by the Calibration Task window.",
+                        "Unsupported Search Type",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    break;
+            }
+
+            writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
@@ -159,7 +180,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode; 
+            bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
             List<Modification> modsToUse = isRnaMode ? GlobalVariables.AllRnaModsKnown.ToList() : GlobalVariables.AllModsKnown.ToList();
 
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
@@ -236,7 +257,7 @@ namespace MetaMorpheusGUI
 
             if (!TaskValidator.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, 
+                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed,
                  null, null, null))
             {
                 return;
@@ -332,11 +353,12 @@ namespace MetaMorpheusGUI
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down" && !isRnaMode,
                     minVariantDepth: minVariantDepth,
                     maxHeterozygousVariants: maxHeterozygousVariants,
+                    totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                     trimMsMsPeaks: false,
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,
                     productDeconParams: productDeconvolutionParameters,
-                    useProvidedPrecursorInfo: useProvidedPrecursorInfo); 
+                    useProvidedPrecursorInfo: useProvidedPrecursorInfo);
                 TheTask.CommonParameters = commonParamsToSave;
             }
             else //bottom-up
@@ -354,6 +376,7 @@ namespace MetaMorpheusGUI
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                     minVariantDepth: minVariantDepth,
                     maxHeterozygousVariants: maxHeterozygousVariants,
+                    totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                     useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,
@@ -362,6 +385,24 @@ namespace MetaMorpheusGUI
             }
 
             TheTask.CalibrationParameters.WriteIndexedMzml = writeIndexMzmlCheckbox.IsChecked.Value;
+            TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
+            if (ModernSearchRadioButton.IsChecked == true)
+            {
+                TheTask.CalibrationParameters.SearchType = SearchType.Modern;
+            }
+            else if (ClassicSearchRadioButton.IsChecked == true)
+            {
+                TheTask.CalibrationParameters.SearchType = SearchType.Classic;
+            }
+            else
+            {
+                MessageBox.Show(
+                    "No search type is selected. Please select Classic or Modern search.",
+                    "No Search Type Selected",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
             DialogResult = true;
         }
 
