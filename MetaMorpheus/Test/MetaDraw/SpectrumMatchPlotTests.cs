@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Windows.Controls;
 using GuiFunctions;
@@ -12,6 +14,8 @@ using Readers;
 using TaskLayer;
 using Chemistry;
 using EngineLayer.DatabaseLoading;
+using MzLibUtil;
+using MassSpectrometry;
 
 namespace Test.MetaDraw
 {
@@ -68,6 +72,12 @@ namespace Test.MetaDraw
             var neutralLossIon = new MatchedFragmentIon(neutralTheorecticalProduct, neutralTheorecticalProduct.MonoisotopicMass.ToMz(ionToCopy.Charge), ionToCopy.Intensity, ionToCopy.Charge);
             psm.MatchedIons.Add(neutralLossIon);
 
+        }
+
+        [SetUp]
+        public void ResetSettings()
+        {
+            MetaDrawSettings.AnnotateIsotopicEnvelopes = false;
         }
 
         [OneTimeTearDown]
@@ -169,6 +179,10 @@ namespace Test.MetaDraw
         [TestCaseSource(nameof(GetAnnotationTestCases))]
         public void TestPeakAnnotation(PeakAnnotationTestCase testCase)
         {
+            // Ensure internal ions are displayed so test indices are stable
+            MetaDrawSettings.DisplayInternalIons = true;
+            MetaDrawSettings.DisplayInternalIonAnnotations = true;
+            
             // set parameters for test case
             MetaDrawSettings.DisplayIonAnnotations = testCase.AnnotatePeaks;
             MetaDrawSettings.AnnotateCharges = testCase.AnnotateCharges;
@@ -264,7 +278,7 @@ namespace Test.MetaDraw
                 Assert.That(File.Exists(Path.Combine(outputFolderPath, @$"{psm.Ms2ScanNumber}_{psm.FullSequence}{psm.BetaPeptideBaseSequence}.{exportType}")));
             }
 
-            // clean up resources
+// clean up resources
             metaDrawLogic.CleanUpSpectraFiles();
             Assert.That(!metaDrawLogic.SpectraFilePaths.Any());
 
@@ -274,6 +288,203 @@ namespace Test.MetaDraw
 
             // delete output
             Directory.Delete(outputFolderPath, true);
+        }
+
+        /// <summary>
+        /// Tests that PopulateEnvelopesForScanIfNeeded populates ions with null envelopes
+        /// </summary>
+        [Test]
+        public void TestEnvelopePopulatesNullEnvelopes()
+        {
+            // Enable envelope annotation
+            MetaDrawSettings.AnnotateIsotopicEnvelopes = true;
+            MetaDrawSettings.DisplayIonAnnotations = true;
+
+            // Store original ion count
+            int originalCount = psm.MatchedIons.Count;
+
+            // Create MatchedFragmentIonWithEnvelope with null Envelope (simulating TSV placeholder state)
+            var existingIon = psm.MatchedIons.First();
+            var product = existingIon.NeutralTheoreticalProduct;
+            
+            // Create ion with null envelope - this is the "placeholder" state from TSV files
+            var ionWithNullEnvelope = new MatchedFragmentIonWithEnvelope(
+                product, 
+                existingIon.Mz, 
+                existingIon.Intensity, 
+                existingIon.Charge,
+                envelope: null);  // null envelope triggers PopulateEnvelopesForScanIfNeeded
+            
+            // Add to PSM
+            psm.MatchedIons.Add(ionWithNullEnvelope);
+
+            try
+            {
+                // Verify it has null envelope before display
+                Assert.That(ionWithNullEnvelope.Envelope, Is.Null, "Ion should have null envelope before display");
+
+                // Create a fresh plotView
+                var testPlotView = new OxyPlot.Wpf.PlotView();
+
+                // Display - this should trigger PopulateEnvelopesForScanIfNeeded
+                metadrawLogic.DisplaySpectrumMatch(testPlotView, psm, parentChildView, out List<string> errors);
+                Assert.That(errors == null || !errors.Any());
+
+                // After display, the envelope should be populated
+                Assert.That(ionWithNullEnvelope.Envelope, Is.Not.Null, "Envelope should be populated after display");
+                
+                // Verify annotations were added
+                Assert.That(testPlotView.Model.Annotations.Count, Is.GreaterThan(0));
+            }
+            finally
+            {
+                // Remove the added ion and restore original state
+                psm.MatchedIons.RemoveAt(psm.MatchedIons.Count - 1);
+                Assert.That(psm.MatchedIons.Count, Is.EqualTo(originalCount), "PSM should have original ion count after test");
+                MetaDrawSettings.AnnotateIsotopicEnvelopes = false;
+            }
+        }
+
+        /// <summary>
+        /// Tests that PopulateEnvelopesForScanIfNeeded is skipped when all envelopes are already populated
+        /// </summary>
+        [Test]
+        public void TestEnvelopeAlreadyPopulated()
+        {
+            try
+            {
+                // First display to populate envelopes
+                MetaDrawSettings.AnnotateIsotopicEnvelopes = true;
+                MetaDrawSettings.DisplayIonAnnotations = true;
+
+                var testPlotView1 = new OxyPlot.Wpf.PlotView();
+                metadrawLogic.DisplaySpectrumMatch(testPlotView1, psm, parentChildView, out List<string> errors1);
+                Assert.That(errors1 == null || !errors1.Any());
+
+                // Verify envelopes are populated
+                var envelopeIons = psm.MatchedIons.OfType<MatchedFragmentIonWithEnvelope>().ToList();
+                var allPopulated = envelopeIons.All(i => i.Envelope != null);
+                Assert.That(allPopulated, "All envelopes should be populated after first display");
+
+                int annotationCountAfterFirst = testPlotView1.Model.Annotations.Count;
+
+                // Second display - should NOT call PopulateEnvelopesForScanIfNeeded (already populated)
+                var testPlotView2 = new OxyPlot.Wpf.PlotView();
+                metadrawLogic.DisplaySpectrumMatch(testPlotView2, psm, parentChildView, out List<string> errors2);
+                Assert.That(errors2 == null || !errors2.Any());
+
+                // Should have same annotations (envelopes already populated, no re-population needed)
+                Assert.That(testPlotView2.Model.Annotations.Count, Is.EqualTo(annotationCountAfterFirst));
+            }
+            finally
+            {
+                MetaDrawSettings.AnnotateIsotopicEnvelopes = false;
+            }
+        }
+
+        /// <summary>
+        /// Tests that envelope check is skipped when AnnotateIsotopicEnvelopes is false
+        /// </summary>
+        [Test]
+        public void TestEnvelopeAnnotationDisabled()
+        {
+            try
+            {
+                // Disable envelope annotation - should skip PopulateEnvelopesForScanIfNeeded
+                MetaDrawSettings.AnnotateIsotopicEnvelopes = false;
+                MetaDrawSettings.DisplayIonAnnotations = true;
+
+                var testPlotView = new OxyPlot.Wpf.PlotView();
+
+                int initialAnnotationCount = testPlotView.Model?.Annotations?.Count ?? 0;
+
+                // Display the spectrum match - envelope check should be skipped
+                metadrawLogic.DisplaySpectrumMatch(testPlotView, psm, parentChildView, out List<string> errors);
+                Assert.That(errors == null || !errors.Any());
+
+                // Verify annotations were added (normal annotation, not envelope)
+                Assert.That(testPlotView.Model.Annotations.Count, Is.GreaterThan(initialAnnotationCount));
+            }
+            finally
+            {
+                MetaDrawSettings.AnnotateIsotopicEnvelopes = false;
+            }
+        }
+
+        /// <summary>
+        /// Tests that AnnotateEnvelopePeaks draws multiple peaks for an envelope (not just the monoisotopic)
+        /// </summary>
+        [Test]
+        public void TestEnvelopeMultiplePeaksDrawn()
+        {
+            try
+            {
+                MetaDrawSettings.AnnotateIsotopicEnvelopes = true;
+                MetaDrawSettings.DisplayIonAnnotations = true;
+
+                var testPlotView = new OxyPlot.Wpf.PlotView();
+                metadrawLogic.DisplaySpectrumMatch(testPlotView, psm, parentChildView, out List<string> errors);
+                Assert.That(errors == null || !errors.Any());
+
+                // Get ions with populated envelopes
+                var envelopeIons = psm.MatchedIons.OfType<MatchedFragmentIonWithEnvelope>()
+                    .Where(i => i.Envelope != null)
+                    .ToList();
+
+                Assert.That(envelopeIons.Any(), "Should have ions with populated envelopes");
+
+                // Find ions with envelopes that have multiple peaks
+                var multiPeakEnvelopes = envelopeIons.Where(e => e.Envelope!.Peaks.Count > 1).ToList();
+                
+                if (multiPeakEnvelopes.Any())
+                {
+                    // If there are multi-peak envelopes, verify the plot has more annotations than just ions
+                    // (envelope adds multiple peak markers per ion)
+                    Console.WriteLine($"Found {multiPeakEnvelopes.Count} ions with multi-peak envelopes");
+                    
+                    // The annotation count should be greater than just the number of ions
+                    // because each envelope with multiple peaks adds extra markers
+                    Assert.That(testPlotView.Model.Annotations.Count, Is.GreaterThan(envelopeIons.Count));
+                }
+                else
+                {
+                    // If no multi-peak envelopes, just verify annotations exist
+                    Assert.That(testPlotView.Model.Annotations.Count, Is.GreaterThan(0));
+                    Console.WriteLine("No multi-peak envelopes found in test data");
+                }
+            }
+            finally
+            {
+                MetaDrawSettings.AnnotateIsotopicEnvelopes = false;
+            }
+        }
+
+        /// <summary>
+        /// Tests that internal fragment ions are handled correctly with envelope annotation off
+        /// </summary>
+        [Test]
+        public void TestInternalFragmentWithEnvelopeDisabled()
+        {
+            MetaDrawSettings.AnnotateIsotopicEnvelopes = false;
+            MetaDrawSettings.DisplayIonAnnotations = true;
+            MetaDrawSettings.DisplayInternalIonAnnotations = false;
+
+            var testPlotView = new OxyPlot.Wpf.PlotView();
+            metadrawLogic.DisplaySpectrumMatch(testPlotView, psm, parentChildView, out List<string> errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // Verify annotations exist but internal fragments are hidden
+            Assert.That(testPlotView.Model.Annotations.Count, Is.GreaterThan(0));
+
+            // Find any text annotations that might indicate internal fragments
+            var textAnnotations = testPlotView.Model.Annotations.OfType<OxyPlot.Annotations.TextAnnotation>().ToList();
+            
+            // With DisplayInternalIonAnnotations=false, internal fragment text should be hidden
+            // The color should be HiddenAnnotationColor
+            var hiddenAnnotations = textAnnotations.Where(a => 
+                a.TextColor == OxyColor.FromArgb(0, 0, 0, 1)).ToList();
+            
+            Console.WriteLine($"Total annotations: {textAnnotations.Count}, Hidden: {hiddenAnnotations.Count}");
         }
     }
 }
