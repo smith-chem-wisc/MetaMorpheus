@@ -128,12 +128,13 @@ namespace EngineLayer
 
         }
 
-        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool matchAllCharges = false, bool isChildScan = false)
+        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool matchAllCharges = false, bool isLowRes = false)
         {
-            var productMassTolerance = isChildScan ? commonParameters.ChildScanMassTolerance : commonParameters.ProductMassTolerance;
+            // if this is a child scan and it's an ion trap 2D scan, we want to use the wider tolerance for matching
+            var productMassTolerance = isLowRes? commonParameters.ProductMassTolerance_LowRes : commonParameters.ProductMassTolerance;
             if (matchAllCharges)
             {
-                return MatchFragmentIonsOfAllCharges(scan, theoreticalProducts, commonParameters, isChildScan);
+                return MatchFragmentIonsOfAllCharges(scan, theoreticalProducts, commonParameters, isLowRes);
             }
 
             var matchedFragmentIons = new List<MatchedFragmentIon>();
@@ -230,9 +231,9 @@ namespace EngineLayer
         //Used only when user wants to generate spectral library.
         //Normal search only looks for one match ion for one fragment, and if it accepts it then it doesn't try to look for different charge states of that same fragment. 
         //But for library generation, we need find all the matched peaks with all the different charges.
-        private static List<MatchedFragmentIon> MatchFragmentIonsOfAllCharges(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool isChildScan = false)
+        private static List<MatchedFragmentIon> MatchFragmentIonsOfAllCharges(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool isLowRes = false)
         {
-            var productMassTolerance = isChildScan ? commonParameters.ChildScanMassTolerance : commonParameters.ProductMassTolerance;
+            var productMassTolerance = isLowRes ? commonParameters.ProductMassTolerance_LowRes : commonParameters.ProductMassTolerance;
             var matchedFragmentIons = new List<MatchedFragmentIon>();
             var ions = new List<string>();
 

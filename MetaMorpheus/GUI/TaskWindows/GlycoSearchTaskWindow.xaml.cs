@@ -186,8 +186,8 @@ namespace MetaMorpheusGUI
             TxtBoxMaxModPerPep.Text = task.CommonParameters.DigestionParams.MaxMods.ToString(CultureInfo.InvariantCulture);
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-            childScanMassToleranceTextBox.Text = task.CommonParameters.ChildScanMassTolerance?.Value.ToString(CultureInfo.InvariantCulture);
-            childScanMassToleranceComboBox.SelectedIndex = task.CommonParameters.ChildScanMassTolerance is AbsoluteTolerance ? 0 : 1;
+            childScanMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance_LowRes?.Value.ToString(CultureInfo.InvariantCulture);
+            childScanMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance_LowRes is AbsoluteTolerance ? 0 : 1;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
@@ -366,12 +366,12 @@ namespace MetaMorpheusGUI
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
 
-            Tolerance ChildScanMassTolerance;
+            Tolerance ProductMassTolerance_lowRes;
             var childScanMassToleranceText = childScanMassToleranceTextBox.Text;
             if (string.IsNullOrWhiteSpace(childScanMassToleranceText))
             {
                 // If no child scan mass tolerance is specified, fall back to product mass tolerance
-                ChildScanMassTolerance = ProductMassTolerance;
+                ProductMassTolerance_lowRes = ProductMassTolerance;
             }
             else 
             {
@@ -382,11 +382,11 @@ namespace MetaMorpheusGUI
                 }
                 if (childScanMassToleranceComboBox.SelectedIndex == 0)
                 {
-                    ChildScanMassTolerance = new AbsoluteTolerance(parsedChildTolerance);
+                    ProductMassTolerance_lowRes = new AbsoluteTolerance(parsedChildTolerance);
                 }
                 else
                 {
-                    ChildScanMassTolerance = new PpmTolerance(parsedChildTolerance);
+                    ProductMassTolerance_lowRes = new PpmTolerance(parsedChildTolerance);
                 }
             }
 
@@ -422,7 +422,7 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GlycoSearchTask",
                 productMassTolerance: ProductMassTolerance,
-                childScanMassTolerance: ChildScanMassTolerance,
+                productMassTolerance_LowRes: ProductMassTolerance_lowRes,
                 doPrecursorDeconvolution: doPrecursorDeconvolution,
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                 digestionParams: digestionParamsToSave,

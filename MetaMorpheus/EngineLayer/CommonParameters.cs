@@ -48,7 +48,7 @@ namespace EngineLayer
             bool trimMsMsPeaks = true, 
             Tolerance productMassTolerance = null, 
             Tolerance precursorMassTolerance = null,
-            Tolerance childScanMassTolerance = null,
+            Tolerance productMassTolerance_LowRes = null,
             Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, 
             IDigestionParams digestionParams = null, 
@@ -86,7 +86,7 @@ namespace EngineLayer
             MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1 ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1 : maxThreadsToUsePerFile;
             ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
             PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
-            ChildScanMassTolerance = childScanMassTolerance ?? ProductMassTolerance;
+            ProductMassTolerance_LowRes = productMassTolerance_LowRes ?? ProductMassTolerance;
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
             DissociationType = dissociationType;
@@ -162,7 +162,7 @@ namespace EngineLayer
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
-        public Tolerance ChildScanMassTolerance { get; set; }
+        public Tolerance ProductMassTolerance_LowRes { get; set; } // Wider mass tolerance for lower resolution analyzer (e.g. ion trap).
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; set; }
         /// <summary>
@@ -264,7 +264,7 @@ namespace EngineLayer
                                 TrimMsMsPeaks,
                                 ProductMassTolerance,
                                 PrecursorMassTolerance,
-                                ChildScanMassTolerance,
+                                ProductMassTolerance_LowRes,
                                 DeconvolutionMassTolerance,
                                 MaxThreadsToUsePerFile,
                                 DigestionParams.Clone(terminus),

@@ -313,7 +313,7 @@ namespace EngineLayer.GlycoSearch
                 fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan));
             }
 
-            var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters, isChildScan : false);
+            var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters);
 
             double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
 
@@ -332,8 +332,8 @@ namespace EngineLayer.GlycoSearch
             foreach (var childScan in theScan.ChildScans)
             {
                 var childFragments = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
-
-                var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters, isChildScan : true);
+                bool isIonTrapData = childScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap2D;
+                var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters, isLowRes : isIonTrapData);
 
                 n += childFragments.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).Count();
 
@@ -355,7 +355,8 @@ namespace EngineLayer.GlycoSearch
                 //TO THINK:may think a different way to use childScore
                 score += childScore;
 
-                p += childScan.TheScan.MassSpectrum.Size * CommonParameters.ChildScanMassTolerance.GetRange(1000).Width / childScan.TheScan.MassSpectrum.Range.Width;
+                var productTolerance = isIonTrapData ? CommonParameters.ProductMassTolerance_LowRes : CommonParameters.ProductMassTolerance;
+                p += childScan.TheScan.MassSpectrum.Size * productTolerance.GetRange(1000).Width / childScan.TheScan.MassSpectrum.Range.Width;
 
             }
 
@@ -445,7 +446,8 @@ namespace EngineLayer.GlycoSearch
             if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons))
             {
                 localizationScan = theScan.ChildScans.First();
-                toleranceForLocalizationScan = CommonParameters.ChildScanMassTolerance;
+                // For the localization scan, if it is from ion trap, we will use a wider tolerance for the localization.
+                toleranceForLocalizationScan = localizationScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap2D? CommonParameters.ProductMassTolerance_LowRes : CommonParameters.ProductMassTolerance;
                 theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
             }
 

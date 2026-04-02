@@ -74,14 +74,14 @@ namespace Test
         public static void TestChildScanToleranceConstruction_Default() 
         {
             var commonParameters = new CommonParameters();
-            Assert.That(commonParameters.ChildScanMassTolerance, Is.Not.Null, "ChildScanMassTolerance should be initialized by default.");
+            Assert.That(commonParameters.ProductMassTolerance_LowRes, Is.Not.Null, "ChildScanMassTolerance should be initialized by default.");
 
             // Default product tolerance is a PpmTolerance of 20 ppm; verify type and numeric width equivalence
             Assert.That(commonParameters.ProductMassTolerance, Is.TypeOf<PpmTolerance>());
             Assert.That(commonParameters.ProductMassTolerance.GetRange(1000).Width, Is.EqualTo(new PpmTolerance(20).GetRange(1000).Width));
 
             // By default child tolerance should equal product tolerance
-            Assert.That(commonParameters.ChildScanMassTolerance.GetRange(1000).Width, Is.EqualTo(commonParameters.ProductMassTolerance.GetRange(1000).Width));
+            Assert.That(commonParameters.ProductMassTolerance_LowRes.GetRange(1000).Width, Is.EqualTo(commonParameters.ProductMassTolerance.GetRange(1000).Width));
         }
 
         [Test]
@@ -97,10 +97,10 @@ namespace Test
 
             // Create CommonParameters with explicit tolerances
             var commonParameters = new CommonParameters(
-                childScanMassTolerance: childScanTolerance,
+                productMassTolerance_LowRes: childScanTolerance,
                 dissociationType: DissociationType.ETD,
                 trimMsMsPeaks: false);
-            Assert.That(commonParameters.ChildScanMassTolerance.GetRange(1000).Width, Is.EqualTo(childScanTolerance.GetRange(1000).Width));
+            Assert.That(commonParameters.ProductMassTolerance_LowRes.GetRange(1000).Width, Is.EqualTo(childScanTolerance.GetRange(1000).Width));
 
             // Sanity-check the parameter values were set
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
@@ -114,14 +114,14 @@ namespace Test
 
             // Match fragments treating the scan as a child scan (isChildScan = true).
             // Expect matches to satisfy child scan tolerance (potentially wider).
-            var childMatchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, fragmentsForEachGlycoPeptide, commonParameters, isChildScan: true);
+            var childMatchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, fragmentsForEachGlycoPeptide, commonParameters, isLowRes: true);
             Assert.That(childMatchedIons.Count, Is.GreaterThan(0));
             foreach (var ion in childMatchedIons)
             {
                 double matchedMass = ion.Mz.ToMass(ion.Charge);
                 double theoreticalMass = ion.NeutralTheoreticalProduct.NeutralMass;
                 // Verify matched ion is within child-scan tolerance
-                Assert.That(commonParameters.ChildScanMassTolerance.Within(matchedMass, theoreticalMass));
+                Assert.That(commonParameters.ProductMassTolerance_LowRes.Within(matchedMass, theoreticalMass));
                 Assert.That(childScanTolerance.Within(matchedMass, theoreticalMass));
             }
         }
@@ -139,10 +139,10 @@ namespace Test
 
             // Create CommonParameters with explicit tolerances
             var commonParameters = new CommonParameters(
-                childScanMassTolerance: childScanTolerance,
+                productMassTolerance_LowRes: childScanTolerance,
                 dissociationType: DissociationType.ETD,
                 trimMsMsPeaks: false);
-            Assert.That(commonParameters.ChildScanMassTolerance.GetRange(1000).Width, Is.EqualTo(childScanTolerance.GetRange(1000).Width));
+            Assert.That(commonParameters.ProductMassTolerance_LowRes.GetRange(1000).Width, Is.EqualTo(childScanTolerance.GetRange(1000).Width));
 
             // Sanity-check the parameter values were set
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
@@ -156,14 +156,14 @@ namespace Test
 
             // Match fragments treating the scan as a child scan (isChildScan = true).
             // Expect matches to satisfy child scan tolerance (potentially wider).
-            var childMatchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, fragmentsForEachGlycoPeptide, commonParameters, isChildScan: true);
+            var childMatchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, fragmentsForEachGlycoPeptide, commonParameters, isLowRes: true);
             Assert.That(childMatchedIons.Count, Is.GreaterThan(0));
             foreach (var ion in childMatchedIons)
             {
                 double matchedMass = ion.Mz.ToMass(ion.Charge);
                 double theoreticalMass = ion.NeutralTheoreticalProduct.NeutralMass;
                 // Verify matched ion is within child-scan tolerance
-                Assert.That(commonParameters.ChildScanMassTolerance.Within(matchedMass, theoreticalMass));
+                Assert.That(commonParameters.ProductMassTolerance_LowRes.Within(matchedMass, theoreticalMass));
                 Assert.That(childScanTolerance.Within(matchedMass, theoreticalMass));
             }
         }
