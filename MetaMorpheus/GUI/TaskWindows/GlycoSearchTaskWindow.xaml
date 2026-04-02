@@ -248,11 +248,11 @@
                                             <ComboBox x:Name="cbbPrecusorMsTl" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label2_Copy" Content="Product Mass Tolerance (Higer Res)" ToolTipService.ShowDuration="99999" ToolTipService.InitialShowDelay="500">
+                                            <Label x:Name="label2_Copy" Content="Product Mass Tolerance (Higher Res)" ToolTipService.ShowDuration="99999" ToolTipService.InitialShowDelay="500">
                                                 <Label.ToolTip>
                                                     <TextBlock>
                                                         Mass tolerance used for matching fragment ions in the main MS2 scan.
-                                                        This is applied for mass analyzer with higher resoultion (e.g. Orbitrap).
+                                                        Use this for higher-resolution analyzers (for example, Orbitrap/TOF).
                                                     </TextBlock>
                                                 </Label.ToolTip>
                                             </Label>
@@ -264,7 +264,7 @@
                                                 <Label.ToolTip>
                                                     <TextBlock>
                                                         Mass tolerance used for matching fragment ions in the MS2 child scan.
-                                                        This is applied for mass analyzer with lower resolution (e.g. Ion trap).
+                                                        Use this for lower-resolution analyzers (for example, ion trap).
                                                     </TextBlock>
                                                 </Label.ToolTip>
                                             </Label>
