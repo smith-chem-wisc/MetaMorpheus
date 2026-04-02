@@ -12,6 +12,10 @@ using EngineLayer.DatabaseLoading;
 using System.Diagnostics;
 using MzLibUtil;
 using Proteomics;
+using System.Data.Entity;
+using Org.BouncyCastle.Asn1.Cmp;
+using Omics.Modifications;
+using Readers;
 
 
 namespace Test
@@ -407,7 +411,6 @@ namespace Test
             // run calibration
             CalibrationTask calibrationTask = new CalibrationTask();
 
-
             bool wasCalled = false;
             MetaMorpheusTask.WarnHandler += (o, e) => wasCalled = true;
             
@@ -416,10 +419,45 @@ namespace Test
             //The original experimental design file is bad so we expect Warn event in "WriteNewExperimentalDesignFile"
             Assert.That(wasCalled);
             
-
             // clean up
             Directory.Delete(unitTestFolder, true);
         }
 
+        [Test]
+        public static void CalibrationSkipMs3Scans()
+        {
+            //setup
+            string uncalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\11-24-25_SPS-TMT_Sam13chan_3uL_RT70.06-70.79.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\13chan_snip.fasta");
+            CalibrationTask calibrationTask = new CalibrationTask();
+            var fixedMods = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U"), ("Multiplex Label", "TMT18 on K"), ("Multiplex Label", "TMT18 on X") };
+            calibrationTask.CommonParameters = new CommonParameters(listOfModsFixed: fixedMods, precursorMassTolerance: new PpmTolerance(10), productMassTolerance: new AbsoluteTolerance(0.1));
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CalibrationSkipMs3ScansTest");
+            Directory.CreateDirectory(outputFolder);
+
+            //run calibration task
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { uncalibratedFilePath }, "test");
+
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"11-24-25_SPS-TMT_Sam13chan_3uL_RT70.06-70.79-calib.mzML")));
+
+            //MS3 scans stay the same as uncalibrated file
+            var myFileManager = new MyFileManager(true);
+            var msDataFile = myFileManager.LoadFile(uncalibratedFilePath, calibrationTask.CommonParameters);
+            var origMs3Scans = msDataFile.GetAllScansList().Where(b => b.MsnOrder == 3).ToArray();
+            var calibratedFile = MsDataFileReader.GetDataFile(Path.Combine(outputFolder, @"11-24-25_SPS-TMT_Sam13chan_3uL_RT70.06-70.79-calib.mzML"));
+            var Ms3ScansAfterCalibration = calibratedFile.GetAllScansList().Where(b => b.MsnOrder == 3).ToArray();
+            Assert.That(origMs3Scans.Length == Ms3ScansAfterCalibration.Length);
+
+            //make sure the ms3 scans are identical before and after calibration
+            for (int i = 0; i < Ms3ScansAfterCalibration.Length; i++)
+            {
+                for (int j = 0; j < Ms3ScansAfterCalibration[i].MassSpectrum.XArray.Length; j++)
+                {
+                    Assert.That(origMs3Scans[i].MassSpectrum.XArray[j] == Ms3ScansAfterCalibration[i].MassSpectrum.XArray[j]);
+                    Assert.That(origMs3Scans[i].MassSpectrum.YArray[j] == Ms3ScansAfterCalibration[i].MassSpectrum.YArray[j]);
+                }
+            }
+            Directory.Delete(outputFolder, true);
+        }
     }
 }
