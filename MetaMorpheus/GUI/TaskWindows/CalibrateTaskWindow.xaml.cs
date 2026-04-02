@@ -113,8 +113,12 @@ namespace MetaMorpheusGUI
                     ModernSearchRadioButton.IsChecked = true;
                     break;
                 default:
-                    throw new NotSupportedException(
-                        $"SearchType '{task.CalibrationParameters.SearchType}' is not supported by the Calibration Task window.");
+                    MessageBox.Show(
+                        $"SearchType '{task.CalibrationParameters.SearchType}' is not supported by the Calibration Task window.",
+                        "Unsupported Search Type",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    break;
             }
 
             writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
@@ -392,7 +396,12 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                throw new InvalidOperationException("No search type is selected. Please select Classic or Modern search.");
+                MessageBox.Show(
+                    "No search type is selected. Please select Classic or Modern search.",
+                    "No Search Type Selected",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
             }
             DialogResult = true;
         }
