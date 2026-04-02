@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 ---------------------------------------------------------------------------
         UniProt Knowledgebase:
           Swiss-Prot Protein Knowledgebase
