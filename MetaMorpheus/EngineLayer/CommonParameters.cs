@@ -86,7 +86,7 @@ namespace EngineLayer
             MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1 ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1 : maxThreadsToUsePerFile;
             ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
             PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
-            ProductMassTolerance_LowRes = productMassTolerance_LowRes ?? ProductMassTolerance;
+            ProductMassTolerance_LowRes = productMassTolerance_LowRes ?? new AbsoluteTolerance(0.35);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
             DissociationType = dissociationType;
@@ -162,7 +162,7 @@ namespace EngineLayer
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
-        public Tolerance ProductMassTolerance_LowRes { get; set; } // Wider mass tolerance for lower resolution analyzer (e.g. ion trap).
+        public Tolerance ProductMassTolerance_LowRes { get; set; }// Wider mass tolerance for lower resolution analyzer (e.g. ion trap). For now, this is a independent parameter, will not be modified by the calibration task.
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; set; }
         /// <summary>

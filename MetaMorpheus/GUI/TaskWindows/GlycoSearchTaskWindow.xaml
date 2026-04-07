@@ -268,8 +268,8 @@
                                                     </TextBlock>
                                                 </Label.ToolTip>
                                             </Label>
-                                            <local:DoubleTextBoxControl x:Name="childScanMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
-                                            <ComboBox x:Name="childScanMassToleranceComboBox" HorizontalAlignment="Left" />
+                                            <local:DoubleTextBoxControl x:Name="productMassTolerance_LowResTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
+                                            <ComboBox x:Name="productMassTolerance_LowResComboBox" HorizontalAlignment="Left" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">

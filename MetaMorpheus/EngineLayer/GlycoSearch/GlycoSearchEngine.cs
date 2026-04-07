@@ -332,7 +332,7 @@ namespace EngineLayer.GlycoSearch
             foreach (var childScan in theScan.ChildScans)
             {
                 var childFragments = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
-                bool isIonTrapData = childScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap2D;
+                bool isIonTrapData = childScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap2D || childScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap3D;
                 var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters, isLowRes : isIonTrapData);
 
                 n += childFragments.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).Count();
@@ -447,7 +447,8 @@ namespace EngineLayer.GlycoSearch
             {
                 localizationScan = theScan.ChildScans.First();
                 // For the localization scan, if it is from ion trap, we will use a wider tolerance for the localization.
-                toleranceForLocalizationScan = localizationScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap2D? CommonParameters.ProductMassTolerance_LowRes : CommonParameters.ProductMassTolerance;
+                toleranceForLocalizationScan = localizationScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap2D ||
+                    localizationScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap3D ? CommonParameters.ProductMassTolerance_LowRes : CommonParameters.ProductMassTolerance;
                 theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
             }
 
