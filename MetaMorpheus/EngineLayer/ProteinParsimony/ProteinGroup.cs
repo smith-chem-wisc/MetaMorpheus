@@ -324,7 +324,7 @@ namespace EngineLayer
 
             if (SampleGroupResults != null)
             {
-                bool isProteinLevel = GroupType == BioPolymerGroupType.Protein;
+                bool isProteinLevel = GroupType == BioPolymerGroupType.Parent;
                 IEnumerable<string> orderedKeys = isProteinLevel
                     ? ListOfProteinsOrderedByAccession.Select(p => p.Accession)
                     : AllPeptides.Select(p => p.BaseSequence).Distinct().OrderBy(s => s);
@@ -341,12 +341,12 @@ namespace EngineLayer
                         sb.Append("\t");
                     }
 
-                    sb.Append(GlobalVariables.CheckLengthOfOutput(group.FormatCountOccupancy(orderedKeys, isProteinLevel)));
+                    sb.Append(GlobalVariables.CheckLengthOfOutput(group.FormatOccupancy(orderedKeys, isProteinLevel, intensityBased: false)));
                     sb.Append("\t");
 
                     if (group.HasIntensityData)
                     {
-                        sb.Append(GlobalVariables.CheckLengthOfOutput(group.FormatIntensityOccupancy(orderedKeys, isProteinLevel)));
+                        sb.Append(GlobalVariables.CheckLengthOfOutput(group.FormatOccupancy(orderedKeys, isProteinLevel, intensityBased: true)));
                         sb.Append("\t");
                     }
                 }
