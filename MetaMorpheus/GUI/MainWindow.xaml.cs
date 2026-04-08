@@ -1854,7 +1854,7 @@ namespace MetaMorpheusGUI
                                     break;
 
                                 case "GlycoSearch":
-                                    var glyco = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                                    var glyco = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(filePath);
                                     AddTaskToCollection(glyco);
                                     break;
 
@@ -1931,7 +1931,8 @@ namespace MetaMorpheusGUI
                 // Ensure we do not have RNA and Protein tasks in the same MetaMorpheus run and that the mode represents the task data type. 
                 if (tasksToConsider.Any())
                 {
-                    // Tasks Loaded - Incoming task is RNA - existing task is protein -> Abort task addition
+                    // Tasks Loaded - Incoming task is RNA - existing task is
+                    // -> Abort task addition
                     if (taskAnalyteType == AnalyteType.Oligo && tasksToConsider.Any(p => !p.IsRnaTask))
                     {
                         NotificationHandler(this, new("Cannot add RNA task with protein task currently loaded", []));

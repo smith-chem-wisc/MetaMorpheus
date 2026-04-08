@@ -77,7 +77,7 @@ namespace Test
         public static void TestLowResToleranceConstruction_Default() 
         {
             var commonParameters = new CommonParameters();
-            Assert.That(commonParameters.ProductMassTolerance_LowRes, Is.Not.Null, "ChildScanMassTolerance should be initialized by default.");
+            Assert.That(commonParameters.ProductMassTolerance_LowRes, Is.Not.Null, "Low-Res tolerance should be initialized by default.");
 
             // Default product tolerance is a AbsoluteTolerance of 0.35 Da; verify type and numeric width equivalence
             Assert.That(commonParameters.ProductMassTolerance_LowRes, Is.TypeOf<AbsoluteTolerance>());
@@ -85,19 +85,66 @@ namespace Test
         }
 
         [Test]
-        public static void TestLowResToleranceConstruction_Default2() 
+        public static void TestLowResToleranceConstruction_Default2_Omit() 
         {
-            // In this toml settng, we omit the productMassTolerance_LowRes. The test confirms that the default value is 0.35 Da.
+            // In this toml setting, we omit the productMassTolerance_LowRes. The test confirms that the lowResTolerance should follow the productMassTolerance because of legacy compatible.
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
 
             try
             {
-                var inputTask = Toml.ReadFile<GlycoSearchTask>(
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_ToleranceTracking.toml"),
-                    MetaMorpheusTask.tomlConfig);
+                // Read TOML with low-res tolerance omitted, relying on fallback to productMassTolerance for low-res.
+                var inputTask = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_OmitNewLowResTolerance.toml"));
 
                 // Confirm read-in behavior (tracking expected when low-res omitted)
+                Assert.That(inputTask.CommonParameters.ProductMassTolerance, Is.TypeOf<PpmTolerance>());
+                Assert.That(inputTask.CommonParameters.ProductMassTolerance.Value, Is.EqualTo(40).Within(1e-9));
+                Assert.That(inputTask.CommonParameters.ProductMassTolerance_LowRes, Is.TypeOf<PpmTolerance>());
+                Assert.That(inputTask.CommonParameters.ProductMassTolerance_LowRes.Value, Is.EqualTo(40).Within(1e-9));
+
+                DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
+                string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("Task", inputTask) },
+                    new List<string> { spectraFile },
+                    new List<DbForTask> { db },
+                    outputFolder).Run();
+
+                // Confirm written TOML exists
+                string writtenTaskToml = Path.Combine(outputFolder, "Task Settings", "Taskconfig.toml");
+                Assert.That(File.Exists(writtenTaskToml), Is.True, "Expected task config TOML was not written.");
+
+                // Confirm written TOML preserves tracked values
+                var writtenTask = Toml.ReadFile<GlycoSearchTask>(writtenTaskToml, MetaMorpheusTask.tomlConfig);
+                Assert.That(writtenTask.CommonParameters.ProductMassTolerance, Is.TypeOf<PpmTolerance>());
+                Assert.That(writtenTask.CommonParameters.ProductMassTolerance.Value, Is.EqualTo(40).Within(1e-9));
+                Assert.That(writtenTask.CommonParameters.ProductMassTolerance_LowRes, Is.TypeOf<PpmTolerance>());
+                Assert.That(writtenTask.CommonParameters.ProductMassTolerance_LowRes.Value, Is.EqualTo(40).Within(1e-9));
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder))
+                {
+                    Directory.Delete(outputFolder, true);
+                }
+            }
+        }
+
+        [Test]
+        public static void TestLowResToleranceConstruction_Default3_AddNewTolerance()
+        {
+            // New TOML with explicit ProductMassTolerance_LowRes = 0.35 Da — helper should not override it
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            try
+            {
+                var inputTask = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_LowResToleranceAdded.toml"));
+
+                // Confirm read-in behavior: explicit low-res tolerance is preserved (not overridden by product tolerance)
                 Assert.That(inputTask.CommonParameters.ProductMassTolerance, Is.TypeOf<PpmTolerance>());
                 Assert.That(inputTask.CommonParameters.ProductMassTolerance.Value, Is.EqualTo(40).Within(1e-9));
                 Assert.That(inputTask.CommonParameters.ProductMassTolerance_LowRes, Is.TypeOf<AbsoluteTolerance>());
@@ -116,7 +163,7 @@ namespace Test
                 string writtenTaskToml = Path.Combine(outputFolder, "Task Settings", "Taskconfig.toml");
                 Assert.That(File.Exists(writtenTaskToml), Is.True, "Expected task config TOML was not written.");
 
-                // Confirm written TOML preserves tracked values
+                // Confirm written TOML updated low-Res values
                 var writtenTask = Toml.ReadFile<GlycoSearchTask>(writtenTaskToml, MetaMorpheusTask.tomlConfig);
                 Assert.That(writtenTask.CommonParameters.ProductMassTolerance, Is.TypeOf<PpmTolerance>());
                 Assert.That(writtenTask.CommonParameters.ProductMassTolerance.Value, Is.EqualTo(40).Within(1e-9));
@@ -311,10 +358,6 @@ namespace Test
                 var calibratedFileSpecific = new FileSpecificParameters(calibratedTable);
                 Assert.That(calibratedFileSpecific.PrecursorMassTolerance, Is.Not.Null);
                 Assert.That(calibratedFileSpecific.ProductMassTolerance, Is.Not.Null);
-
-                // Verify Glyco task consumed file-specific params from the calibrated file.
-                Assert.That(glycoTask.FileSpecificParameters, Is.Not.Null);
-                Assert.That(glycoTask.FileSpecificParameters.Count, Is.EqualTo(1));
 
                 // Verify Glyco task consumed file-specific params from the calibrated file.
                 Assert.That(glycoTask.FileSpecificParameters, Is.Not.Null);

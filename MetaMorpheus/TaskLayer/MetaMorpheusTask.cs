@@ -1577,5 +1577,29 @@ namespace TaskLayer
                 }
             }
         }
+
+        /// <summary>
+        /// Legacy TOML compatibility — when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
+        /// </summary>
+        /// <typeparam name="TTask"></typeparam>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public static TTask ReadTaskTomlWithLowResFallback<TTask>(string filePath) where TTask : MetaMorpheusTask
+        {
+            TomlTable raw = Toml.ReadFile(filePath, tomlConfig);
+            TTask task = raw.Get<TTask>();
+
+            if (raw.ContainsKey(nameof(CommonParameters)))
+            {
+                TomlTable common = raw.Get<TomlTable>(nameof(CommonParameters));
+                if (!common.ContainsKey(nameof(CommonParameters.ProductMassTolerance_LowRes)))
+                {
+                    // Legacy TOML behavior: omitted low-res follows product tolerance
+                    task.CommonParameters.ProductMassTolerance_LowRes = task.CommonParameters.ProductMassTolerance;
+                }
+            }
+
+            return task;
+        }
     }
 }
