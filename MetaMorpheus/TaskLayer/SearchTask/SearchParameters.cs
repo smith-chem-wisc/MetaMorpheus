@@ -7,6 +7,12 @@ namespace TaskLayer
 {
     public class SearchParameters
     {
+        /// <summary>
+        /// Default maximum fragment size in Daltons used for indexing. This value is shared across
+        /// all task types that require fragment indexing (Search, Calibration, CrossLink, Glyco).
+        /// </summary>
+        public const double DefaultMaxFragmentSize = 30000.0;
+
         public SearchParameters()
         {
             // default search task parameters
@@ -26,12 +32,13 @@ namespace TaskLayer
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
-            MaxFragmentSize = 30000.0;
+            MaxFragmentSize = DefaultMaxFragmentSize;
             MinAllowedInternalFragmentLength = 0;
             WriteMzId = true;
             WritePepXml = false;
             IncludeModMotifInMzid = false;
             WriteDigestionProductCountFile = false;
+            WriteTargetDecoyFasta = false;
 
             ModsToWriteSelection = new Dictionary<string, int>
             {
@@ -104,5 +111,6 @@ namespace TaskLayer
         public TargetContaminantAmbiguity TCAmbiguity { get; set; }
         public bool IncludeModMotifInMzid { get; set; }
         public bool WriteDigestionProductCountFile { get; set; }
+        public bool WriteTargetDecoyFasta { get; set; }
     }
 }

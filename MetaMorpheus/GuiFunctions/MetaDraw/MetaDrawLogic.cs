@@ -489,7 +489,7 @@ namespace GuiFunctions
                 {
                     oldMatchedIons = psm.MatchedIons;
                     var scan = GetMs2ScanFromPsm(psm);
-                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm, false);
                     psm.MatchedIons = newIons;
                 }
 
@@ -558,7 +558,7 @@ namespace GuiFunctions
                 {
                     oldMatchedIons = psm.MatchedIons;
                     var scan = GetMs2ScanFromPsm(psm);
-                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm, false);
                     psm.MatchedIons = newIons;
                 }
                 DisplaySequences(stationaryCanvas, null, null, psm);

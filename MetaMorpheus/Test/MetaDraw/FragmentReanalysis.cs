@@ -30,8 +30,8 @@ namespace Test.MetaDraw
             // check default parameters on loading
             Assert.That(viewModel.SelectedDissociationType, Is.EqualTo(DissociationType.HCD));
             Assert.That(!viewModel.Persist);
-            Assert.That(!viewModel.UseInternalIons);
-            Assert.That(viewModel.MinInternalIonLength, Is.EqualTo(10));
+            Assert.That(!viewModel.FragmentationParamsViewModel.GenerateInternalIons);
+            Assert.That(viewModel.FragmentationParamsViewModel.MinInternalIonLength, Is.EqualTo(0));
             Assert.That(viewModel.DissociationTypes.Count(), Is.EqualTo(7));
             Assert.That(viewModel.ProductIonMassTolerance, Is.EqualTo(20));
 
@@ -99,22 +99,23 @@ namespace Test.MetaDraw
 
             // increase product ion tolerance and ensure more ions are found
             viewModel.ProductIonMassTolerance = 200;
-            var newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            var newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
             Assert.That(psmToResearch.MatchedIons.Count < newMatchedIons.Count);
 
             // decrease product ion tolerance and ensure fewer ions are found
             viewModel.ProductIonMassTolerance = 2;
-            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
             Assert.That(newMatchedIons.Count < psmToResearch.MatchedIons.Count);
             viewModel.ProductIonMassTolerance = 150; // Set big to ensure intersection with XCorr results. 
 
             // ensure ambiguous psms get kicked out before reanalysis
             var ambiguousPsm = parsedPsms.First(p => p.FullSequence.Contains('|'));
-            var newIons = viewModel.MatchIonsWithNewTypes(scan, ambiguousPsm);
+            var newIons = viewModel.MatchIonsWithNewTypes(scan, ambiguousPsm, true);
             CollectionAssert.AreEqual(ambiguousPsm.MatchedIons, newIons);
 
             viewModel.PossibleProducts.ForEach(p => p.Use = true);
-            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
+            int withConcat = newMatchedIons.Count;
 
             // searching with additional ions should yield more 
             Assert.That(psmToResearch.MatchedIons.Count, Is.LessThan(newMatchedIons.Count));
@@ -122,18 +123,21 @@ namespace Test.MetaDraw
             var intersect = newMatchedIons.Select(p => p.Annotation).Intersect(psmToResearch.MatchedIons.Select(p => p.Annotation));
             Assert.That(intersect.Count(), Is.EqualTo(psmToResearch.MatchedIons.Count));
 
+            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, false);
+            Assert.That(withConcat, Is.GreaterThan(newMatchedIons.Count));
+
             // Search with all charges
             viewModel.MatchAllCharges = true;
-            var allChargeIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            var allChargeIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
             Assert.That(psmToResearch.MatchedIons.Count, Is.LessThan(allChargeIons.Count));
             viewModel.MatchAllCharges = false;
 
             // perform the same operation but also with internal ions
-            viewModel.UseInternalIons = true;
-            viewModel.MinInternalIonLength = 3;
+            viewModel.FragmentationParamsViewModel.GenerateInternalIons = true;
+            viewModel.FragmentationParamsViewModel.MinInternalIonLength = 3;
 
             // searching with even more ions should yield even more results but still contain all original results
-            var internalIonNewIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            var internalIonNewIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
             Assert.That(psmToResearch.MatchedIons.Count, Is.LessThan(internalIonNewIons.Count));
             Assert.That(newMatchedIons.Count, Is.LessThan(internalIonNewIons.Count));
 
@@ -194,17 +198,17 @@ namespace Test.MetaDraw
 
             // increase product ion tolerance and ensure more ions are found
             viewModel.ProductIonMassTolerance = 200;
-            var newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            var newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
             Assert.That(psmToResearch.MatchedIons.Count < newMatchedIons.Count);
 
             // decrease product ion tolerance and ensure fewer ions are found
             viewModel.ProductIonMassTolerance = 2;
-            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
             Assert.That(newMatchedIons.Count < psmToResearch.MatchedIons.Count);
             viewModel.ProductIonMassTolerance = 20;
 
             viewModel.PossibleProducts.ForEach(p => p.Use = true);
-            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
 
             // clean up
             Directory.Delete(outputFolder, true);

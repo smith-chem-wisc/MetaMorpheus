@@ -13,7 +13,6 @@
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
         
         <!-- used in Quantifications -->
-        <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
         <local:BooleanOrConverter x:Key="boolOrConverter"/>
         <local:BooleanOrToVisibilityConverter x:Key="boolOr2VisConverter"/>
 
@@ -95,6 +94,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
@@ -264,7 +264,7 @@
                                 </StackPanel>
 
                                 <!-- Q-Value Filter -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="6">
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="5">
                                     <Label x:Name="QValueThreshold" Content="Q-Value Threshold:" Width="150" />
                                     <local:DoubleTextBoxControl x:Name="QValueThresholdTextBox"  Width="45" 
                                              ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
@@ -280,10 +280,10 @@
                                 </StackPanel>
 
                                 <!-- PEP Q-Value Filter -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="6">
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="5">
                                     <!-- pep 1-value button -->
                                     <CheckBox x:Name="PepQValueThresholdCheckbox" Content="PEP Q-Value Threshold:" 
-                                                 IsChecked="False" Margin="5,5,5,0" />
+                                                 IsChecked="False" Margin="5,5,2,0" />
                                     <local:DoubleTextBoxControl x:Name="PepQValueThresholdTextBox"
                                              IsEnabled="{Binding IsChecked, ElementName=PepQValueThresholdCheckbox}" Width="45"
                                              Height="23" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -297,6 +297,39 @@
                                     </local:DoubleTextBoxControl>
                                 </StackPanel>
 
+                                <!-- Max Threads -->
+                                <StackPanel Grid.Column="1" Grid.Row="6" Margin="5 5 5 0" Orientation="Horizontal">
+                                    <Label Content="Max Threads:" Width="150" />
+                                    <local:IntegerTexBoxControl x:Name="MaxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox.ToolTip>
+                                            <TextBlock>
+                                                By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
+                                                <LineBreak />
+                                                Enter a lower number to limit CPU usage.
+                                            </TextBlock>
+                                        </TextBox.ToolTip>
+                                    </local:IntegerTexBoxControl>
+                                </StackPanel>
+                                
+                                <!-- Min Score -->
+                                <StackPanel Grid.Column="0" Grid.Row="6"  Orientation="Horizontal"  Margin="5 5 5 0">
+                                    <Label x:Name="minScoreAllowedLabel" Width="150" Content="Minimum score allowed:" HorizontalContentAlignment="Left"/>
+                                    <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox.ToolTip>
+                                            <TextBlock>
+                                                            <Run>
+                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                         ConverterParameter="The minimum MetaMorpheus score allowed for a PSM to be reportable." Mode="OneWay"/>
+                                                            </Run>
+                                                            <LineBreak />
+                                                            <Run>
+                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                                         ConverterParameter="Decreasing this number increases search time." Mode="OneWay"/>
+                                                            </Run>
+                                            </TextBlock>
+                                        </TextBox.ToolTip>
+                                    </local:IntegerTexBoxControl>
+                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </GroupBox>
@@ -642,10 +675,7 @@
 
                                 <!-- Writing Options  -->
                                 <ColumnDefinition Width="*" />
-
-                                <!-- Filtering options -->
-                                <ColumnDefinition Width="*" />
-
+                                
                             </Grid.ColumnDefinitions>
                             
                             <!-- writing options -->
@@ -673,38 +703,17 @@
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
+                                <CheckBox x:Name="WriteTargetDecoyFastaCheckBox" Content="Write target-decoy FASTA file">
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            Writes a FASTA file containing all target and decoy sequences loaded from the database.
+                                            <LineBreak/>
+                                            This can be useful for verifying the decoy generation and database sanitization.
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
                                 
                             </StackPanel>
-                            
-                            <!-- filtering options -->
-                            <StackPanel Orientation="Vertical" Margin="5" Grid.Column="1">
-
-                                <!-- min score allowed box -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="410" />
-                                        <ColumnDefinition Width="50" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <Label x:Name="minScoreAllowedLabel" Content="    Minimum score allowed:" HorizontalContentAlignment="Left"/>
-                                    <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                        <TextBox.ToolTip>
-                                            <TextBlock>
-                                                            <Run>
-                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
-                                                                         ConverterParameter="The minimum MetaMorpheus score allowed for a PSM to be reportable." Mode="OneWay"/>
-                                                            </Run>
-                                                            <LineBreak />
-                                                            <Run>
-                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
-                                                                         ConverterParameter="Decreasing this number increases search time." Mode="OneWay"/>
-                                                            </Run>
-                                            </TextBlock>
-                                        </TextBox.ToolTip>
-                                    </local:IntegerTexBoxControl>
-                                </Grid>
-                            </StackPanel>
-                            
                         </Grid>
                         
                         
@@ -996,92 +1005,8 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
-                                    <GroupBox Header="Fragment Ion Search Parameters">
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                                                <CheckBox x:Name="AddCompIonCheckBox" Content="Generate Complementary Ions" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                                    Generates experimental (not theoretical) complementary ions for each MS2.
-                                                    <LineBreak />
-                                                    Useful for localization of modifications.
-                                                        </TextBlock>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                                                <CheckBox x:Name="NTerminalIons" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
-                                                    <CheckBox.Content>
-                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="N-Terminal Ions"/>
-                                                    </CheckBox.Content>
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                                            <TextBlock.Text>
-                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Search for theoretical ions from the N-Terminus. &#x0a;The specific ion series are specified through the dissociation type."/>
-                                                            </TextBlock.Text>
-                                                        </TextBlock>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                                <CheckBox x:Name="CTerminalIons" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
-                                                    <CheckBox.Content>
-                                                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="C-Terminal Ions"/>
-                                                    </CheckBox.Content>
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                                            <TextBlock.Text>
-                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Search for theoretical ions from the C-Terminus. &#x0a;The specific ion series are specified through the dissociation type."/>
-                                                            </TextBlock.Text>
-                                                        </TextBlock>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5,0,0,5" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
-                                                <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" 
-                                                          ToolTipService.InitialShowDelay="500" IsChecked="False" Checked="InternalIonsCheckBox_Checked">
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                                    Search for theoretical internal fragment ions AFTER scoring. These ions are useful for localizing PTMs, but are not used during scoring.
-                                                        </TextBlock>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                                <Label x:Name="minInternalFragmentLengthLabel" Content="Min Internal Length:" Margin="18,-6,0,0" />
-                                                <local:IntegerTexBoxControl x:Name="MinInternalFragmentLengthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=InternalIonsCheckBox}" 
-                                                                            ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <TextBox.ToolTip>
-                                                        <TextBlock>
-                                                            <TextBlock.Text>
-                                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Minimum length (number of amino acids) allowed for an internal fragment ion. &#x0a;Small internal fragments can be uninformative and computationally expensive."/>
-                                                            </TextBlock.Text>
-                                                        </TextBlock>
-                                                    </TextBox.ToolTip>
-                                                </local:IntegerTexBoxControl>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5">
-                                                <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="146" />
-                                                <local:DoubleTextBoxControl x:Name="MaxFragmentMassTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=ClassicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <TextBox.ToolTip>
-                                                        <TextBlock>
-                                                        Indexed Search Only: Limits the maximum MS2 fragment mass to avoid rare crashes.
-                                                        <LineBreak />
-                                                        A very high value (e.g. 30000) does not impact performance.
-                                                        </TextBlock>
-                                                    </TextBox.ToolTip>
-                                                </local:DoubleTextBoxControl>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5">
-                                                <Label Content="Max Threads:" Width="146" />
-                                                <local:IntegerTexBoxControl x:Name="MaxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <TextBox.ToolTip>
-                                                        <TextBlock>
-                                                        By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
-                                                        <LineBreak />
-                                                        Enter a lower number to limit CPU usage.
-                                                        </TextBlock>
-                                                    </TextBox.ToolTip>
-                                                </local:IntegerTexBoxControl>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </GroupBox>
+
+                                    <local:FragmentationParamsControl x:Name="FragmentationParametersControl" DataContext="{Binding}"/>
 
                                     <local:MassDifferenceAcceptorControl x:Name="MassDifferenceAcceptorControl" d:DataContext="{x:Static guiFunctions:MassDifferenceAcceptorSelectionModel.Instance}" />
 
@@ -1160,7 +1085,7 @@
                                                     </ToolTip>
                                                 </ToolTipService.ToolTip>
                                             </CheckBox>
-                                            <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+                                            <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
                                                 <DataGrid.Columns>
                                                     <DataGridTextColumn Header="Mod Type"  Width="1*" Binding="{Binding ModName}" />
                                                     <DataGridTemplateColumn  Header=" Do not Write"  Width ="1*" IsReadOnly="False">

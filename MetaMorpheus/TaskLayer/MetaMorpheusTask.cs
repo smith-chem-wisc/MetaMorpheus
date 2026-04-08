@@ -30,6 +30,7 @@ using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
 using EngineLayer.SpectrumMatch;
+using Omics.Fragmentation;
 
 namespace TaskLayer
 {
@@ -153,6 +154,27 @@ namespace TaskLayer
                     )
                 )
             )
+            .ConfigureType<List<MIonLoss>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => string.Join("\t", custom.Select(f => f.Annotation)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(typeName => MIonLoss.AllMIonLosses.GetValueOrDefault(typeName, null))
+                        .Where(t => t != null)
+                        .ToList()
+                    )
+                )
+            )
+            .ConfigureType<IFragmentationParams>(type => type
+                .WithConversionFor<TomlTable>(c => c
+                    .FromToml(tmlTable =>
+                        tmlTable.ContainsKey("ModificationsCanSuppressBaseLossIons")
+                            ? tmlTable.Get<RnaFragmentationParams>()
+                            : tmlTable.Get<FragmentationParams>())))
+            .ConfigureType<RnaFragmentationParams>(type => type
+                .CreateInstance(() => RnaFragmentationParams.Default))
+            .ConfigureType<FragmentationParams>(type => type
+                .CreateInstance(() => new()))
         );
        
 
@@ -559,7 +581,8 @@ namespace TaskLayer
                 addTruncations: commonParams.AddTruncations,
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
                 productDeconParams: commonParams.ProductDeconvolutionParameters,
-                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity);
+                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
+                fragmentationParams: commonParams.FragmentationParameters);
 
             return returnParams;
         }

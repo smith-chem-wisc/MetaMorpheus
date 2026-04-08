@@ -202,6 +202,9 @@
 	  <Component Id="src_Chromatography.dll" Guid="e6316c7b-2cf7-4d42-9472-de4ac10fe988">
 		<File Id="src_Chromatography.dll" Name="Chromatography.dll" Source="$(var.GUI_TargetDir)Chromatography.dll" />
 	  </Component>			
+	  <Component Id="src_Quantification.dll" Guid="98d95d9c-a44b-4813-b1d4-2cba0f489cbd">
+	    <File Id="src_Quantification.dll" Name="Quantification.dll" Source="$(var.GUI_TargetDir)Quantification.dll" />
+	  </Component>		
 	  <Component Id="src_Google.Protobuf.dll" Guid="432636b6-b59d-4ac6-8095-8bb6d5f0372d">
 		<File Id="src_Google.Protobuf.dll" Name="Google.Protobuf.dll" Source="$(var.GUI_TargetDir)Google.Protobuf.dll" />
 	  </Component>			
@@ -446,6 +449,9 @@
       <Component Id="MetaMorpheusGUI.dll.config" Guid="84f9e2f4-79d4-47c0-a2c9-aa7dbcb2b0fd">
         <File Id="MetaMorpheusGUI.dll.config" Name="MetaMorpheusGUI.dll.config" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.dll.config" />
       </Component>
+		<Component Id="src_PredictionClients.dll" Guid="C6398A43-F845-47C2-9F35-0BB2435AFE16">
+			<File Id="src_PredictionClients.dll" Name="PredictionClients.dll" Source="$(var.GUI_TargetDir)PredictionClients.dll" />
+		</Component>
 
       <!--Commandline Components-->
       <Component Id="src_CMD.deps.json" Guid="92190CCF-0138-4F0B-9356-02C914D5A439">

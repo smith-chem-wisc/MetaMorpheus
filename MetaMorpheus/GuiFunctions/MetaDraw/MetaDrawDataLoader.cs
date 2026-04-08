@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using EngineLayer;
+using Omics.Fragmentation;
 using Readers.SpectralLibrary;
 using Readers;
 using System;
@@ -35,7 +36,8 @@ public class MetaDrawDataLoader
         bool loadLibraries,
         ChimeraAnalysisTabViewModel? chimeraTabViewModel = null,
         BioPolymerTabViewModel? bioPolymerTabViewModel = null,
-        DeconExplorationTabViewModel? deconExplorationTabViewModel = null)
+        DeconExplorationTabViewModel? deconExplorationTabViewModel = null,
+        FragmentationReanalysisViewModel? fragmentationReanalysisViewModel = null)
     {
         // Cancel any previous run
         _cancellationTokenSource?.Cancel();
@@ -63,8 +65,8 @@ public class MetaDrawDataLoader
             ? LoadLibrariesAsync(token) 
             : Task.FromResult(new List<string>());
         var proseAndTomlTask = _logic.SpectralMatchResultFilePaths.Any()
-            ? TryLoadProseAndSearchToml(bioPolymerTabViewModel, deconExplorationTabViewModel)
-            : Task.FromResult((false, false));
+            ? TryLoadProseAndSearchToml(bioPolymerTabViewModel, deconExplorationTabViewModel, fragmentationReanalysisViewModel)
+            : Task.FromResult((false, false, false));
 
         List<string>[] results;
         try 
@@ -306,10 +308,11 @@ public class MetaDrawDataLoader
         return errors;
     }
 
-    public async Task<(bool Database, bool SearchParams)> TryLoadProseAndSearchToml(BioPolymerTabViewModel? bpTabVm, DeconExplorationTabViewModel? deconTabVm)
+    public async Task<(bool Database, bool SearchParams, bool FragmentationParams)> TryLoadProseAndSearchToml(BioPolymerTabViewModel? bpTabVm, DeconExplorationTabViewModel? deconTabVm, FragmentationReanalysisViewModel? fragmentationReanalysisVm)
     {
         bool loadedDb = false;
         bool loadedSearchParams = false;
+        bool loadedFragmentationParams = false;
 
         var searchDirectories = _logic.SpectralMatchResultFilePaths
             .Select(Path.GetDirectoryName)
@@ -327,7 +330,7 @@ public class MetaDrawDataLoader
             .Distinct()
             .ToArray();
 
-        // Try to find search tomls to load decon parameters. 
+        // Try to find search tomls to load decon and fragmentation parameters. 
         try
         {
             HashSet<string?> distinctSearchTomls = new();
@@ -353,12 +356,16 @@ public class MetaDrawDataLoader
 
             List<DeconvolutionParameters> precursorParameters = new();
             List<DeconvolutionParameters> productParameters = new();
+            List<CommonParameters> commonParameters = new();
+            List<SearchParameters> searchParameters = new();
 
             foreach (var searchToml in distinctSearchTomls.Where(p => p != null))
             {
                 var task = Toml.ReadFile<SearchTask>(searchToml, MetaMorpheusTask.tomlConfig);
                 precursorParameters.Add(task.CommonParameters.PrecursorDeconvolutionParameters);
                 productParameters.Add(task.CommonParameters.ProductDeconvolutionParameters);
+                commonParameters.Add(task.CommonParameters);
+                searchParameters.Add(task.SearchParameters);
             }
 
             // IF we find params, and have multiple, take the last. 
@@ -375,18 +382,31 @@ public class MetaDrawDataLoader
                     deconTabVm.DeconHostViewModel = new(precursor, product);
                 }
             }
+
+            // Load fragmentation parameters if found
+            if (commonParameters.Any() && searchParameters.Any() && fragmentationReanalysisVm != null)
+            {
+                var commonParam = commonParameters.Last();
+                var searchParam = searchParameters.Last();
+                fragmentationReanalysisVm.LoadFragmentationParameters(commonParam, searchParam);
+                loadedFragmentationParams = true;
+            }
         }
-        catch (Exception) { loadedSearchParams = false; }
+        catch (Exception) 
+        { 
+            loadedSearchParams = false; 
+            loadedFragmentationParams = false;
+        }
 
         if (bpTabVm is null)
-            return (loadedDb, loadedSearchParams);
+            return (loadedDb, loadedSearchParams, loadedFragmentationParams);
 
         string[] acceptableDbTypes = new[] { ".fasta", ".fa", ".xml" };
 
-        // Try to find databases from the prose files. 
+        // Try to find databases from the prose files and collect ALL unique databases
         try
         {
-            List<string> databases = new();
+            HashSet<string> databases = new(StringComparer.OrdinalIgnoreCase);
             foreach (var searchDir in searchDirectories)
             {
                 if (searchDir == null) 
@@ -394,25 +414,34 @@ public class MetaDrawDataLoader
                 var proseFile = MetaMorpheusProseFile.LocateInDirectory(searchDir);
                 if (proseFile == null) 
                     continue;
-                databases.AddRange(proseFile.DatabasePaths);
+                
+                // Add all databases from this prose file
+                foreach (var dbPath in proseFile.DatabasePaths)
+                {
+                    if (File.Exists(dbPath) && acceptableDbTypes.Any(dbPath.Contains))
+                    {
+                        databases.Add(dbPath);
+                    }
+                }
             }
 
-            // Db tab only supports one database at a time currently, pick the one which occurs the most, then first in order
-            foreach (var dbGroup in databases
-                .Where(p => File.Exists(p) && acceptableDbTypes.Any(p.Contains))
-                            .GroupBy(db => db, StringComparer.OrdinalIgnoreCase)
-                            .OrderByDescending(g => g.Count())
-                            .ThenBy(g => databases.IndexOf(g.Key)))
+            // Add all found databases to the BioPolymer tab
+            if (databases.Any())
             {
-                bpTabVm.DatabasePath = dbGroup.Key;
+                bpTabVm.DatabasePaths.Clear();
+                foreach (var db in databases.OrderBy(p => p))
+                {
+                    bpTabVm.DatabasePaths.Add(db);
+                }
+                bpTabVm.OnPropertyChanged(nameof(bpTabVm.DatabaseName));
+                bpTabVm.OnPropertyChanged(nameof(bpTabVm.DatabasePathsTooltip));
                 loadedDb = true;
-                break;
             }
         }
         catch (Exception) { loadedDb = false; }
 
 
-        return (loadedDb, loadedSearchParams);
+        return (loadedDb, loadedSearchParams, loadedFragmentationParams);
     }
 
     #endregion
@@ -424,7 +453,7 @@ public class MetaDrawDataLoader
         if (token.IsCancellationRequested) return;
 
         // Load DB if present but not loaded
-        if (!tab.IsDatabaseLoaded && !string.IsNullOrEmpty(tab.DatabasePath))
+        if (!tab.IsDatabaseLoaded && tab.DatabasePaths.Count > 0)
         {
             tab.LoadDatabaseCommand.Execute(null);
         }

@@ -80,6 +80,7 @@ namespace GuiFunctions
         public ObservableCollection<LegendDisplayProperty> ChimericLegendDisplayProperties { get; } = [..Enum.GetValues<LegendDisplayProperty>()];
         public ObservableCollection<string> AmbiguityFilters { get; } =  [..MetaDrawSettings.AmbiguityTypes];
         public ObservableCollection<LocalizationLevel> GlycanLocalizationLevels { get; } = [.. Enum.GetValues<LocalizationLevel>()];
+        public ObservableCollection<string> GroupingProperties { get; } = [..MetaDrawSettings.GroupingProperties];
 
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
@@ -246,6 +247,37 @@ namespace GuiFunctions
         {
             get => MetaDrawSettings.NormalizeHistogramToFile;
             set { MetaDrawSettings.NormalizeHistogramToFile = value; OnPropertyChanged(nameof(NormalizeHistogramToFile)); }
+        }
+
+        // These properties now forward to PlotModelStatParametersViewModel
+        public bool UseLogScaleYAxis
+        {
+            get => PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis;
+            set { PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis = value; OnPropertyChanged(nameof(UseLogScaleYAxis)); }
+        }
+
+        public string GroupingProperty
+        {
+            get => PlotModelStatParametersViewModel.Instance.GroupingProperty;
+            set { PlotModelStatParametersViewModel.Instance.GroupingProperty = value; OnPropertyChanged(nameof(GroupingProperty)); }
+        }
+
+        public double MinRelativeCutoff
+        {
+            get => PlotModelStatParametersViewModel.Instance.MinRelativeCutoff;
+            set { PlotModelStatParametersViewModel.Instance.MinRelativeCutoff = value; OnPropertyChanged(nameof(MinRelativeCutoff)); }
+        }
+
+        public double MaxRelativeCutoff
+        {
+            get => PlotModelStatParametersViewModel.Instance.MaxRelativeCutoff;
+            set { PlotModelStatParametersViewModel.Instance.MaxRelativeCutoff = value; OnPropertyChanged(nameof(MaxRelativeCutoff)); }
+        }
+
+        public double RelativeIntensityCutoff
+        {
+            get => PlotModelStatParametersViewModel.Instance.MinRelativeCutoff;
+            set { PlotModelStatParametersViewModel.Instance.MinRelativeCutoff = value; OnPropertyChanged(nameof(RelativeIntensityCutoff)); }
         }
 
         // BioPolymer Coverage Settings

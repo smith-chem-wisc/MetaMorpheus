@@ -1,4 +1,56 @@
-﻿################################## METALS
+﻿
+---------------------------------------------------------------------------
+        UniProt Knowledgebase:
+          Swiss-Prot Protein Knowledgebase
+          TrEMBL Protein Database
+        SIB Swiss Institute of Bioinformatics; Geneva, Switzerland
+        European Bioinformatics Institute (EBI); Hinxton, United Kingdom
+        Protein Information Resource (PIR); Washington DC, USA
+---------------------------------------------------------------------------
+
+Description: Controlled vocabulary of posttranslational modifications (PTM)
+Name:        ptmlist.txt
+Release:     2018_01 of 31-Jan-2018
+
+---------------------------------------------------------------------------
+
+  This document lists the posttranslational modifications used in the
+  UniProt knowledgebase (Swiss-Prot and TrEMBL).
+
+  The definition of the posttranslational modifications usage as well as
+  other information is provided in the following format:
+
+  ---------  ---------------------------     ------------------------------
+  Line code  Content                         Occurrence in an entry
+  ---------  ---------------------------     ------------------------------
+  ID         Identifier (FT description)     Once; starts a PTM entry
+  AC         Accession (PTM-xxxx)            Once
+  FT         Feature key                     Once
+  TG         Target                          Once; two targets separated by
+                                             a dash in case of intrachain
+                                             crosslinks
+  PA         Position of the modification    Optional; once
+             on the amino acid
+  PP         Position of the modification    Optional; once
+             in the polypeptide
+  CF         Correction formula              Optional; once
+  MM         Monoisotopic mass difference    Optional; once
+  MA         Average mass difference         Optional; once
+  LC         Cellular location               Optional; once; alternatives
+                                             can be proposed
+  TR         Taxonomic range                 Optional; once or more
+  KW         Keyword                         Optional; once or more
+  DR         Cross-reference to PTM          Optional; once or more
+             databases
+  BM		 Backbone modification           Optional; once; alternatives can be
+                                             proposed; if present, the
+                                             affected fragment types are
+                                             listed after the modification
+  //         Terminator                      Once; ends an entry
+
+
+___________________________________________________________________________
+################################## METALS
 ID   Sodium
 TG   A or C or G or U
 PP   Anywhere.
@@ -14,40 +66,77 @@ CF   H-1 K1
 DR   Unimod; 530.
 //
 ################################## Biological
-ID   Methylation
-TG   A or C or G or U or T or Y
+ID   2'-O-Methyladenosine
+TG   A
 PP   Anywhere.
 MT   Biological
 CF   C1 H2
+BL   Suppressed
 DR   Unimod; 34.
+//
+ID   N6-methyladenosine
+TG   A
+PP   Anywhere.
+MT   Biological
+CF   C1 H2
+BL   Modified
+DR   Unimod; 34.
+//
+ID   2'-O-Methyluridine
+TG   U
+PP   Anywhere.
+MT   Biological
+CF   C1 H2
+BL   Suppressed
+DR   Unimod; 34.
+//
+ID   5-Methylcytidine
+TG   C
+PP   Anywhere.
+MT   Biological
+CF   C1 H2
+BL   Modified:C1H2
+DR   Unimod; 34.
+//
+ID   N6,2'-O-dimethyladenosine
+TG   A
+PP   Anywhere.
+MT   Biological
+CF   C2 H4
+BL   Suppressed:C1H2
+DR   Unimod; 36.
+//
+################################## Simple Biological
+ID   Methylation
+TG   A or C or G or U or T or Y
+PP   Anywhere.
+MT   Simple Biological
+CF   C1 H2
 //
 ID   Dimethylation
 TG   A or C or G or U or T or Y
 PP   Anywhere.
-MT   Biological
+MT   Simple Biological
 CF   C2 H4
-DR   Unimod; 34.
 //
 ID   MethoxyEthoxylation
 TG   A or C or G or U
 PP   Anywhere.
-MT   Biological
+MT   Simple Biological
 CF   C3 H6 O1
-DR   Unimod; 34.
 //
+################################## Base Conversion
 ID   Deoxylnosine
 TG   T
 PP   Anywhere.
-MT   Biological
+MT   Base Conversion
 CF   N-1H-1
-DR   Unimod; 34.
 //
 ID   Deoxylnosine
 TG   G
 PP   Anywhere.
-MT   Biological
+MT   Base Conversion
 CF   N-1H-1O-1
-DR   Unimod; 34.
 //
 ################################## Common Artificial
 ID   DeoxyFluoronation
@@ -55,7 +144,6 @@ TG   A or C or G or U
 PP   Anywhere.
 MT   Common Artificial
 CF   O-1 H-1 F1
-DR   Unimod; 34.
 //
 ################################## Terminal Shifts
 ID   Cyclic Phosphate
@@ -63,34 +151,55 @@ TG   X
 PP   Oligo 3'-terminal.
 MT   Digestion Termini
 CF   H-2 O-1
-DR   Unimod; 280.
 //
 ID   Terminal Phosphorylation
 TG   X
 PP   Oligo 5'-terminal.
 MT   Digestion Termini
 CF   H1 O3 P1
-DR   Unimod; 280.
 //
 ID   Terminal Dephosphorylation
 TG   X
 PP   Oligo 5'-terminal.
 MT   Digestion Termini
 CF   P-1 O-3 H-1
-DR   Unimod; 280.
 //
 ID   Pfizer 5'-Cap
 TG   X
 PP   5'-terminal.
 MT   Standard
 CF   C13H22N5O14P3
-DR   Unimod; 280.
 //
 ################################## Backbone Shift
 ID   Phosphorothioate
 TG   X
+FT   Backbone
 PP   Anywhere.
 MT   Common Variable
 CF   SO-1
-DR   Unimod; 280.
+BM   w,x,c,d 
+//
+ID   Boranophosphate
+TG   X
+PP   Anywhere.
+FT   Backbone
+MT   Therapeutic
+CF   B1 H3 O-1
+BM   w,x,c,d                    
+//
+ID   N3'-Phosphoramidate
+TG   X
+PP   Anywhere.
+FT   Backbone
+MT   Therapeutic
+CF   N1 H1 O-1                      # Replace 3'-O with NH
+BM   w,b,c,d 
+//
+ID   Methylphosphonate
+TG   X
+PP   Anywhere.
+FT   Backbone
+MT   Therapeutic
+CF   C1 H2 O-1
+BM   w,x,c,d 
 //
