@@ -153,5 +153,111 @@ namespace Test
                 }
             }
         }
+
+        /// <summary>
+        /// Test that when a user provides a path to a .tdf file directly,
+        /// the CMD corrects it to use the parent .d directory instead.
+        /// </summary>
+        [Test]
+        public static void TestTdfFilePathCorrectedToParentDotDDirectory()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTdfPathCorrection");
+
+            try
+            {
+                // Clean up if exists from previous failed run
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                // Create a valid .d folder with timsTOF files
+                string validDotD = Path.Combine(tempFolder, "data.d");
+                Directory.CreateDirectory(validDotD);
+
+                string tdfFilePath = Path.Combine(validDotD, "analysis.tdf");
+                string tdfBinFilePath = Path.Combine(validDotD, "analysis.tdf_bin");
+                File.WriteAllText(tdfFilePath, "fake tdf content");
+                File.WriteAllText(tdfBinFilePath, "fake tdf_bin content");
+
+                // User provides the .tdf file path directly instead of the .d folder
+                var settings = new CommandLineSettings
+                {
+                    _spectra = new[] { tdfFilePath },
+                    _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                    _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") }
+                };
+
+                settings.ValidateCommandLineSettings();
+
+                // Should have corrected the path to the parent .d directory
+                Assert.That(settings.Spectra.Count, Is.EqualTo(1), "Should have exactly one spectra entry");
+                Assert.That(settings.Spectra[0], Does.EndWith("data.d"),
+                    "Should have corrected the .tdf path to the parent .d directory");
+                Assert.That(settings.Spectra[0], Does.Not.Contain("analysis.tdf"),
+                    "Should not contain the .tdf filename");
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Test that when a user provides a path to a .tdf_bin file directly,
+        /// the CMD corrects it to use the parent .d directory instead.
+        /// </summary>
+        [Test]
+        public static void TestTdfBinFilePathCorrectedToParentDotDDirectory()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTdfBinPathCorrection");
+
+            try
+            {
+                // Clean up if exists from previous failed run
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                // Create a valid .d folder with timsTOF files
+                string validDotD = Path.Combine(tempFolder, "data.d");
+                Directory.CreateDirectory(validDotD);
+
+                string tdfFilePath = Path.Combine(validDotD, "analysis.tdf");
+                string tdfBinFilePath = Path.Combine(validDotD, "analysis.tdf_bin");
+                File.WriteAllText(tdfFilePath, "fake tdf content");
+                File.WriteAllText(tdfBinFilePath, "fake tdf_bin content");
+
+                // User provides the .tdf_bin file path directly instead of the .d folder
+                var settings = new CommandLineSettings
+                {
+                    _spectra = new[] { tdfBinFilePath },
+                    _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                    _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") }
+                };
+
+                settings.ValidateCommandLineSettings();
+
+                // Should have corrected the path to the parent .d directory
+                Assert.That(settings.Spectra.Count, Is.EqualTo(1), "Should have exactly one spectra entry");
+                Assert.That(settings.Spectra[0], Does.EndWith("data.d"),
+                    "Should have corrected the .tdf_bin path to the parent .d directory");
+                Assert.That(settings.Spectra[0], Does.Not.Contain("analysis.tdf_bin"),
+                    "Should not contain the .tdf_bin filename");
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
     }
 }

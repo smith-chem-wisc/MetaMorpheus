@@ -1699,11 +1699,11 @@ namespace MetaMorpheusGUI
 
         private bool AddOrWarnTimsTofDirectory(string directoryPath)
         {
-            if (directoryPath.EndsWith(".d", StringComparison.OrdinalIgnoreCase) && Directory.Exists(directoryPath)
-                   // for data with tims enabled, we need to have both the .tdf and .tdf_bin files to process the data
-                && ((File.Exists(Path.Combine(directoryPath, "analysis.tdf")) && File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin")))
-                   // for data from a timsTOF running *without* tims enabled, both the .tsf and .tsf_bin files are needed to process the data
-                   || (File.Exists(Path.Combine(directoryPath, "analysis.tsf")) && File.Exists(Path.Combine(directoryPath, "analysis.tsf_bin")))))
+            if (directoryPath.EndsWith(".d", StringComparison.OrdinalIgnoreCase) 
+                && Directory.Exists(directoryPath)
+                 // for data with tims enabled, we need to have both the .tdf and .tdf_bin files to process the data
+                && File.Exists(Path.Combine(directoryPath, "analysis.tdf")) 
+                && File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin")))
             {
                 AddPreRunFile(directoryPath);
                 return true;
@@ -1793,8 +1793,6 @@ namespace MetaMorpheusGUI
                     break;
                 case ".tdf":
                 case ".tdf_bin":
-                case ".tsf":
-                case ".tsf_bin":
                     // for Bruker timsTof files, the .tdf file is in a ".d" directory which also contains a .tdf_bin file 
                     // the fileReader is designed to take the path to the .d directory instead of either/both individual files
                     filePath = Path.GetDirectoryName(filePath);
