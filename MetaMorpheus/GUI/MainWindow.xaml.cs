@@ -1699,11 +1699,7 @@ namespace MetaMorpheusGUI
 
         private bool AddOrWarnTimsTofDirectory(string directoryPath)
         {
-            if (directoryPath.EndsWith(".d", StringComparison.OrdinalIgnoreCase) 
-                && Directory.Exists(directoryPath)
-                 // for data with tims enabled, we need to have both the .tdf and .tdf_bin files to process the data
-                && File.Exists(Path.Combine(directoryPath, "analysis.tdf")) 
-                && File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin")))
+            if (IsValidTimsTofDirectory(directoryPath))
             {
                 AddPreRunFile(directoryPath);
                 return true;
@@ -1713,6 +1709,20 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs($"{directoryPath} is not a valid timsTOF data file.", null));
             }
             return false;
+        }
+
+        /// <summary>
+        /// Determines whether the specified directory is a valid timsTOF data directory.
+        /// </summary>
+        /// <param name="directoryPath">The full path to the directory to validate. The path must end with the ".d" extension.</param>
+        /// <returns>true if the directory exists, ends with ".d", and contains both "analysis.tdf" and "analysis.tdf_bin" files;
+        /// otherwise, false.</returns>
+        public bool IsValidTimsTofDirectory(string directoryPath)
+        {
+            return directoryPath.EndsWith(".d", StringComparison.OrdinalIgnoreCase)
+                && Directory.Exists(directoryPath)
+                && File.Exists(Path.Combine(directoryPath, "analysis.tdf"))
+                && File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin"));
         }
 
         private void AddPreRunFile(string filePath)
@@ -1793,13 +1803,15 @@ namespace MetaMorpheusGUI
                     break;
                 case ".tdf":
                 case ".tdf_bin":
-                    // for Bruker timsTof files, the .tdf file is in a ".d" directory which also contains a .tdf_bin file 
-                    // the fileReader is designed to take the path to the .d directory instead of either/both individual files
-                    filePath = Path.GetDirectoryName(filePath);
-                    if (AddOrWarnTimsTofDirectory(filePath))
+                    // for Bruker timsTof files, the .tdf and .tdf_bin files are in a ".d" directory 
+                    // the fileReader is designed to take the path to the .d directory instead of the individual files
+                    var parent = Path.GetDirectoryName(filePath);
+                    if (!IsValidTimsTofDirectory(parent))
                     {
+                        NotificationHandler(null, new StringEventArgs($"{parent} is not a valid timsTOF data file; {filePath} could not be added.", null));
                         return;
                     }
+                    filePath = parent; // change the file path to the .d directory so that it can be properly read by the file reader
                     goto case ".d";
                 case ".d": // Bruker data files are directories that contain .d files
                     NotificationHandler(null, new StringEventArgs("Quantification and calibration are not currently supported for Bruker data files. All other features of MetaMorpheus will function.", null));
