@@ -87,40 +87,11 @@ namespace MetaMorpheusCommandLine
             List<string> spectraFromDirectories = new List<string>();
             foreach (string item in Spectra)
             {
-                if (Directory.Exists(item) && !item.EndsWith(".d", StringComparison.OrdinalIgnoreCase))
+                if (Directory.Exists(item))
                 {
-                    // Get files directly in the directory
-                    string[] directoryFiles = Directory.GetFiles(item);
-
-                    foreach (var file in directoryFiles)
-                    {
-                        if (GlobalVariables.AcceptedSpectraFormats.Contains(GlobalVariables.GetFileExtension(file).ToLowerInvariant()))
-                        {
-                            spectraFromDirectories.Add(file);
-
-                            if (Verbosity == VerbosityType.normal)
-                            {
-                                Console.WriteLine("Found spectra file: " + file);
-                            }
-                        }
-                    }
-
-                    // Also look for .d subdirectories (timsTOF data folders)
-                    string[] subdirectories = Directory.GetDirectories(item);
-                    foreach (var subdir in subdirectories)
-                    {
-                        if (subdir.EndsWith(".d", StringComparison.OrdinalIgnoreCase))
-                        {
-                            spectraFromDirectories.Add(subdir);
-
-                            if (Verbosity == VerbosityType.normal)
-                            {
-                                Console.WriteLine("Found spectra file: " + subdir);
-                            }
-                        }
-                    }
+                    FindSpectraFilesRecursive(item, spectraFromDirectories, Verbosity);
                 }
-                else if (!File.Exists(item) && !(Directory.Exists(item) && item.EndsWith(".d", StringComparison.OrdinalIgnoreCase)))
+                else if (!File.Exists(item))
                 {
                     throw new MetaMorpheusException("The following is not a known file or directory: " + item);
                 }
@@ -205,6 +176,76 @@ namespace MetaMorpheusCommandLine
             {
                 throw new MetaMorpheusException("Default tomls could not be written: " + e.Message);
             }
+        }
+
+        /// <summary>
+        /// Recursively finds spectra files in a directory.
+        /// For .d folders (timsTOF data), only adds them if they are valid (contain required tdf/tsf files).
+        /// If a .d folder is invalid, recurses into it to find nested valid .d folders.
+        /// </summary>
+        private static void FindSpectraFilesRecursive(string path, List<string> spectraFiles, VerbosityType verbosity)
+        {
+            if (File.Exists(path))
+            {
+                if (GlobalVariables.AcceptedSpectraFormats.Contains(GlobalVariables.GetFileExtension(path).ToLowerInvariant()))
+                {
+                    spectraFiles.Add(path);
+
+                    if (verbosity == VerbosityType.normal)
+                    {
+                        Console.WriteLine("Found spectra file: " + path);
+                    }
+                }
+                return;
+            }
+
+            if (Directory.Exists(path))
+            {
+                // Check if this is a .d folder
+                if (path.EndsWith(".d", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Check if it's a valid timsTOF data folder
+                    if (IsValidTimsTofDirectory(path))
+                    {
+                        spectraFiles.Add(path);
+
+                        if (verbosity == VerbosityType.normal)
+                        {
+                            Console.WriteLine("Found spectra file: " + path);
+                        }
+                        return; // Valid .d folder - don't recurse into it
+                    }
+                    // Invalid .d folder - fall through to recurse and find nested valid .d folders
+                }
+
+                // Recurse into directory
+                foreach (var entry in Directory.EnumerateFileSystemEntries(path))
+                {
+                    FindSpectraFilesRecursive(entry, spectraFiles, verbosity);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks if a .d directory is a valid timsTOF data folder.
+        /// </summary>
+        private static bool IsValidTimsTofDirectory(string directoryPath)
+        {
+            // for data with tims enabled, we need to have both the .tdf and .tdf_bin files
+            if (File.Exists(Path.Combine(directoryPath, "analysis.tdf")) &&
+                File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin")))
+            {
+                return true;
+            }
+
+            // for data from a timsTOF running *without* tims enabled, both the .tsf and .tsf_bin files are needed
+            if (File.Exists(Path.Combine(directoryPath, "analysis.tsf")) &&
+                File.Exists(Path.Combine(directoryPath, "analysis.tsf_bin")))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

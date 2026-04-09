@@ -1674,36 +1674,45 @@ namespace MetaMorpheusGUI
         {
             foreach (string path in paths.OrderBy(p => Path.GetFileName(p)))
             {
-                if (Directory.Exists(path) && !path.EndsWith(".d", StringComparison.OrdinalIgnoreCase)) // don't add directories that end in ".d" (bruker data files)
-                {
-                    // Get files directly in this directory (not recursive) to avoid going into .d folders
-                    foreach (string file in Directory.EnumerateFiles(path))
-                    {
-                        AddPreRunFile(file);
-                    }
-
-                    // Recursively process subdirectories, but handle .d folders specially
-                    foreach (string subdir in Directory.EnumerateDirectories(path))
-                    {
-                        if (subdir.EndsWith(".d", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // .d folders are timsTOF data - add them as spectra files, don't recurse into them
-                            AddPreRunFile(subdir);
-                        }
-                        else
-                        {
-                            // Recurse into non-.d subdirectories
-                            AddPreRunFiles(new[] { subdir });
-                        }
-                    }
-                }
-                else if (File.Exists(path) || (Directory.Exists(path) && path.EndsWith(".d", StringComparison.OrdinalIgnoreCase)))
-                {
-                    AddPreRunFile(path);
-                }
+                AddPreRunFileRecursiveHelper(path);
             }
-
             UpdateGuiOnPreRunChange();
+        }
+
+        private void AddPreRunFileRecursiveHelper(string path)
+        {
+            if (File.Exists(path))
+            {
+                AddPreRunFile(path);
+                return; // base case 1
+            }  
+            if (Directory.Exists(path))
+            {
+                // .d folders are usually timsTOF data - if it's a valid timsTOF file, don't recurse into it
+                if (path.EndsWith(".d", StringComparison.OrdinalIgnoreCase) 
+                    && AddOrWarnTimsTofDirectory(path))
+                    return; // base case 2
+                foreach (var entry in Directory.EnumerateFileSystemEntries(path))
+                    AddPreRunFileRecursiveHelper(entry);
+            }
+        }
+
+        private bool AddOrWarnTimsTofDirectory(string directoryPath)
+        {
+            if (directoryPath.EndsWith(".d", StringComparison.OrdinalIgnoreCase) && Directory.Exists(directoryPath)
+                   // for data with tims enabled, we need to have both the .tdf and .tdf_bin files to process the data
+                && ((File.Exists(Path.Combine(directoryPath, "analysis.tdf")) && File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin")))
+                   // for data from a timsTOF running *without* tims enabled, both the .tsf and .tsf_bin files are needed to process the data
+                   || (File.Exists(Path.Combine(directoryPath, "analysis.tsf")) && File.Exists(Path.Combine(directoryPath, "analysis.tsf_bin")))))
+            {
+                AddPreRunFile(directoryPath);
+                return true;
+            }
+            else
+            {
+                NotificationHandler(null, new StringEventArgs($"{directoryPath} is not a valid timsTOF data file.", null));
+            }
+            return false;
         }
 
         private void AddPreRunFile(string filePath)
