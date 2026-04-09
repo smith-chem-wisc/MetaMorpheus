@@ -1793,9 +1793,15 @@ namespace MetaMorpheusGUI
                     break;
                 case ".tdf":
                 case ".tdf_bin":
+                case ".tsf":
+                case ".tsf_bin":
                     // for Bruker timsTof files, the .tdf file is in a ".d" directory which also contains a .tdf_bin file 
                     // the fileReader is designed to take the path to the .d directory instead of either/both individual files
                     filePath = Path.GetDirectoryName(filePath);
+                    if (AddOrWarnTimsTofDirectory(filePath))
+                    {
+                        return;
+                    }
                     goto case ".d";
                 case ".d": // Bruker data files are directories that contain .d files
                     NotificationHandler(null, new StringEventArgs("Quantification and calibration are not currently supported for Bruker data files. All other features of MetaMorpheus will function.", null));
