@@ -1674,14 +1674,30 @@ namespace MetaMorpheusGUI
         {
             foreach (string path in paths.OrderBy(p => Path.GetFileName(p)))
             {
-                if (Directory.Exists(path) & !Regex.IsMatch(path, @".d$")) // don't add directories that end in ".d" (bruker data files)
+                if (Directory.Exists(path) && !path.EndsWith(".d", StringComparison.OrdinalIgnoreCase)) // don't add directories that end in ".d" (bruker data files)
                 {
-                    foreach (string file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
+                    // Get files directly in this directory (not recursive) to avoid going into .d folders
+                    foreach (string file in Directory.EnumerateFiles(path))
                     {
                         AddPreRunFile(file);
                     }
+
+                    // Recursively process subdirectories, but handle .d folders specially
+                    foreach (string subdir in Directory.EnumerateDirectories(path))
+                    {
+                        if (subdir.EndsWith(".d", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // .d folders are timsTOF data - add them as spectra files, don't recurse into them
+                            AddPreRunFile(subdir);
+                        }
+                        else
+                        {
+                            // Recurse into non-.d subdirectories
+                            AddPreRunFiles(new[] { subdir });
+                        }
+                    }
                 }
-                else if (File.Exists(path) || Regex.IsMatch(path, @".d$"))
+                else if (File.Exists(path) || (Directory.Exists(path) && path.EndsWith(".d", StringComparison.OrdinalIgnoreCase)))
                 {
                     AddPreRunFile(path);
                 }

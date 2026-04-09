@@ -87,8 +87,9 @@ namespace MetaMorpheusCommandLine
             List<string> spectraFromDirectories = new List<string>();
             foreach (string item in Spectra)
             {
-                if (Directory.Exists(item))
+                if (Directory.Exists(item) && !item.EndsWith(".d", StringComparison.OrdinalIgnoreCase))
                 {
+                    // Get files directly in the directory
                     string[] directoryFiles = Directory.GetFiles(item);
 
                     foreach (var file in directoryFiles)
@@ -103,8 +104,23 @@ namespace MetaMorpheusCommandLine
                             }
                         }
                     }
+
+                    // Also look for .d subdirectories (timsTOF data folders)
+                    string[] subdirectories = Directory.GetDirectories(item);
+                    foreach (var subdir in subdirectories)
+                    {
+                        if (subdir.EndsWith(".d", StringComparison.OrdinalIgnoreCase))
+                        {
+                            spectraFromDirectories.Add(subdir);
+
+                            if (Verbosity == VerbosityType.normal)
+                            {
+                                Console.WriteLine("Found spectra file: " + subdir);
+                            }
+                        }
+                    }
                 }
-                else if (!File.Exists(item))
+                else if (!File.Exists(item) && !(Directory.Exists(item) && item.EndsWith(".d", StringComparison.OrdinalIgnoreCase)))
                 {
                     throw new MetaMorpheusException("The following is not a known file or directory: " + item);
                 }
@@ -113,13 +129,16 @@ namespace MetaMorpheusCommandLine
             Spectra.AddRange(spectraFromDirectories);
 
             // remove spectra directories, after their spectra files have been added
-            Spectra.RemoveAll(p => Directory.Exists(p));
+            // but keep .d directories as they are valid timsTOF spectra folders
+            Spectra.RemoveAll(p => Directory.Exists(p) && !p.EndsWith(".d", StringComparison.OrdinalIgnoreCase));
 
             IEnumerable<string> fileNames = Tasks.Concat(Databases).Concat(Spectra);
 
             foreach (string filename in fileNames)
             {
-                if (!File.Exists(filename))
+                // .d folders are directories, so we need to check for both files and .d directories
+                bool isDotDDirectory = filename.EndsWith(".d", StringComparison.OrdinalIgnoreCase) && Directory.Exists(filename);
+                if (!File.Exists(filename) && !isDotDDirectory)
                 {
                     throw new MetaMorpheusException("The following file does not exist: " + filename);
                 }
