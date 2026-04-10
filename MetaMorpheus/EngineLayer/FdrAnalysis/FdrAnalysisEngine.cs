@@ -1,5 +1,6 @@
 ﻿using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
+using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -401,7 +402,21 @@ namespace EngineLayer.FdrAnalysis
                 _ => "standard"
             };
 
-            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder).ComputePEPValuesForAllPSMs();
+            // Determine which RT predictor to use based on search type
+            IRetentionTimePredictor rtPredictor = null;
+            if (searchType == "standard")
+            {
+                bool isTmtSearch = fileSpecificParameters.Any(f =>
+                    f.fileSpecificParameters.ListOfModsFixed.Any(m =>
+                        m.Item2.Contains("TMT") || m.Item2.Contains("iTRAQ")));
+
+                var model = isTmtSearch
+                    ? (PredictionClients.Koina.AbstractClasses.RetentionTimeModel)new Prosit2020iRTTMT()
+                    : new Prosit2019iRT();
+                rtPredictor = new RetentionTimeModelAdapter(model);
+            }
+
+            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder, rtPredictor).ComputePEPValuesForAllPSMs();
         }
 
         /// <summary>
