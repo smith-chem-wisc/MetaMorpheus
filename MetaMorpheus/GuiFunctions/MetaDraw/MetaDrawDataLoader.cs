@@ -205,7 +205,13 @@ public class MetaDrawDataLoader
                     token.ThrowIfCancellationRequested();
                     try
                     {
-                        var psms = SpectrumMatchTsvReader.ReadTsv(rf, out var warnings);
+                        var parsingParams = new SpectrumMatchParsingParameters
+                        {
+                            FragmentIonsHavePlaceholderForEnvelope = true,
+                            ParseMatchedFragmentIons = true
+                        };
+
+                        var psms = SpectrumMatchTsvReader.ReadTsv(rf, out var warnings, parsingParams);
                         foreach (var w in warnings)
                         {
                             errors.Add($"Warning parsing '{rf}': {w}");
