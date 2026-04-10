@@ -162,7 +162,7 @@ namespace EngineLayer
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
-        public Tolerance ProductMassTolerance_LowRes { get; set; }// Wider mass tolerance for lower resolution analyzer (e.g. ion trap). For now, this is a independent parameter, will not be modified by the calibration task.
+        public Tolerance ProductMassTolerance_LowRes { get; set; }// Use a wider mass tolerance for lower-resolution analyzers (e.g., ion traps). For now, this is an independent parameter used only in glyco tasks and is not modified by the calibration task.
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; set; }
         /// <summary>
