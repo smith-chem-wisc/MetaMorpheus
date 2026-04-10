@@ -19,6 +19,7 @@ using Omics;
 using Easy.Common.Extensions;
 using System.Threading;
 using EngineLayer.SpectrumMatch;
+using PredictionClients.Koina.AbstractClasses;
 
 namespace EngineLayer
 {
@@ -60,6 +61,21 @@ namespace EngineLayer
         public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified { get; private set; }
         public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE  { get; private set; }
 
+        // Injected RT predictor (null = feature disabled)
+        private readonly IRetentionTimePredictor _rtPredictor;
+
+        // Per-file: iRT → RT linear calibration parameters (slope, intercept)
+        // NaN values indicate insufficient calibration peptides for that file
+        public Dictionary<string, (double Slope, double Intercept)>
+            FileSpecificIrtCalibration { get; private set; } = new();
+
+        // Per-file: 2-min RT bin → (mean residual, stddev residual)
+        public Dictionary<string, Dictionary<int, Tuple<double, double>>>
+            FileSpecificPredictedRTAverageAndDeviation { get; private set; } = new();
+
+        // Per-session cache: full sequence → predicted iRT value
+        private Dictionary<string, double> _irtBySequence = new();
+
         /// <summary>
         /// A dictionary which stores the chimeric ID string in the key and the number of chimeric identifications as the vale
         /// </summary>
@@ -70,7 +86,7 @@ namespace EngineLayer
 
         public double QValueCutoff { get; }
         public bool UsePeptideLevelQValueForTraining = true;
-        public string[] TrainingVariables { get; }
+        public string[] TrainingVariables { get; private set; }
         public string OutputFolder { get; }
         public List<SpectralMatch> AllPsms { get; }
         public string SearchType { get; }
@@ -88,8 +104,9 @@ namespace EngineLayer
             FileSpecificParametersDictionary = fileSpecificParameters.ToDictionary(p => Path.GetFileName(p.fileName), p => p.fileSpecificParameters);
         }
 
-        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
+        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor rtPredictor = null)
         {
+            _rtPredictor = rtPredictor;
             // This creates a new list of PSMs, but does not clone the Psms themselves.
             // This allows the PSMs to be modified and the order to be preserved
             AllPsms = psms.OrderByDescending(p => p).ToList();
@@ -198,6 +215,140 @@ namespace EngineLayer
             if (trainingVariables.Contains("ChimeraCount"))
             {
                 chimeraCountDictionary = trainingData.GroupBy(p => p.ChimeraIdString).ToDictionary(g => g.Key, g => g.Count());
+            }
+
+            if (trainingVariables.Contains("PredictedRTZScore") && _rtPredictor != null)
+            {
+                try
+                {
+                    ComputePredictedRTValues(trainingData);
+                }
+                catch (Exception)
+                {
+                    TrainingVariables = TrainingVariables.Where(v => v != "PredictedRTZScore").ToArray();
+                    _irtBySequence = new Dictionary<string, double>();
+                    FileSpecificIrtCalibration = new Dictionary<string, (double, double)>();
+                    FileSpecificPredictedRTAverageAndDeviation =
+                        new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fetches iRT predictions for all unique high-confidence peptide sequences,
+        /// performs per-file linear calibration (iRT → RT), and builds the
+        /// time-windowed residual distributions used for z-score computation.
+        ///
+        /// Called from BuildFileSpecificDictionaries() when _rtPredictor is not null
+        /// and SearchType == "standard".
+        ///
+        /// Populates: _irtBySequence, FileSpecificIrtCalibration,
+        ///            FileSpecificPredictedRTAverageAndDeviation
+        ///
+        /// Throws: Any exception from _rtPredictor.Predict() — caller must catch.
+        /// </summary>
+        private void ComputePredictedRTValues(List<SpectralMatch> psms)
+        {
+            // Step A: Collect unique sequences from high-confidence PSMs
+            var uniqueSequences = new HashSet<string>();
+            foreach (var psm in psms.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01))
+            {
+                foreach (var bestMatch in psm.BestMatchingBioPolymersWithSetMods)
+                {
+                    string seq = bestMatch.SpecificBioPolymer.FullSequence;
+                    if (!string.IsNullOrEmpty(seq))
+                    {
+                        uniqueSequences.Add(seq);
+                    }
+                }
+            }
+
+            if (uniqueSequences.Count == 0)
+                return;
+
+            // Step B: Call the predictor (throws on failure — let caller handle)
+            var inputs = uniqueSequences.Select(s => new RetentionTimePredictionInput(s)).ToList();
+            var predictions = _rtPredictor.Predict(inputs);
+
+            // Step C: Build _irtBySequence lookup
+            _irtBySequence = predictions
+                .Where(p => p.PredictedRetentionTime.HasValue)
+                .GroupBy(p => p.FullSequence)
+                .ToDictionary(g => g.Key, g => g.First().PredictedRetentionTime.Value);
+
+            // Step D: Per-file calibration loop
+            var filenames = FileSpecificParametersDictionary.Keys
+                .Select(k => Path.GetFileName(k))
+                .Distinct()
+                .ToList();
+
+            foreach (string filename in filenames)
+            {
+                // D1: Gather calibration data
+                var calibrationPoints = new List<(double ObservedRT, double PredictedIRT)>();
+                var calibrationSequences = new HashSet<string>();
+
+                foreach (var psm in psms.Where(f =>
+                    (f.FullFilePath == null || Path.GetFileName(f.FullFilePath) == filename)
+                    && !f.IsDecoy && f.FdrInfo.QValue <= 0.01))
+                {
+                    foreach (var bestMatch in psm.BestMatchingBioPolymersWithSetMods)
+                    {
+                        string seq = bestMatch.SpecificBioPolymer.FullSequence;
+                        if (string.IsNullOrEmpty(seq))
+                            continue;
+                        if (calibrationSequences.Contains(seq))
+                            continue;
+                        calibrationSequences.Add(seq);
+
+                        if (_irtBySequence.TryGetValue(seq, out double irt))
+                        {
+                            calibrationPoints.Add((psm.ScanRetentionTime, irt));
+                        }
+                    }
+                }
+
+                // D2: Check minimum calibration threshold (unique peptides)
+                if (calibrationSequences.Count(s => _irtBySequence.ContainsKey(s)) < 100)
+                {
+                    FileSpecificIrtCalibration[filename] = (double.NaN, double.NaN);
+                    continue;
+                }
+
+                // D3: Linear regression
+                var xVals = calibrationPoints.Select(p => p.PredictedIRT).ToList();
+                var yVals = calibrationPoints.Select(p => p.ObservedRT).ToList();
+                (double slope, double intercept) = IrtCalibrationHelper.LinearRegression(xVals, yVals);
+
+                if (double.IsNaN(slope))
+                {
+                    FileSpecificIrtCalibration[filename] = (double.NaN, double.NaN);
+                    continue;
+                }
+
+                FileSpecificIrtCalibration[filename] = (slope, intercept);
+
+                // D4: Build residual bin dictionary
+                var residualsByBin = new Dictionary<int, List<double>>();
+                var allResiduals = new List<double>();
+
+                foreach (var point in calibrationPoints)
+                {
+                    double predictedRT = slope * point.PredictedIRT + intercept;
+                    double residual = point.ObservedRT - predictedRT;
+                    int bin = IrtCalibrationHelper.GetRtBinKey(point.ObservedRT);
+
+                    if (!residualsByBin.ContainsKey(bin))
+                        residualsByBin[bin] = new List<double>();
+                    residualsByBin[bin].Add(residual);
+                    allResiduals.Add(residual);
+                }
+
+                // D5: Compute and stabilize bin statistics
+                var averageAndStdDev = IrtCalibrationHelper.ComputeBinStatistics(residualsByBin);
+                double globalStdDev = allResiduals.StandardDeviation();
+                IrtCalibrationHelper.StabilizeBinStDevs(averageAndStdDev, globalStdDev);
+                FileSpecificPredictedRTAverageAndDeviation[filename] = averageAndStdDev;
             }
         }
 
@@ -487,6 +638,7 @@ namespace EngineLayer
             float longestSeq = 0;
             float complementaryIonCount = 0;
             float hydrophobicityZscore = float.NaN;
+            float predictedRtZScore = (float)IrtCalibrationHelper.MaxZScore;
             bool isVariantPeptide = false;
 
             //crosslink specific features
@@ -558,6 +710,12 @@ namespace EngineLayer
                         }
                     }
                 }
+
+                if (TrainingVariables.Contains("PredictedRTZScore"))
+                {
+                    predictedRtZScore = GetPredictedRTZScore(psm, tentativeSpectralMatch.SpecificBioPolymer);
+                }
+
                 //this is not for actual crosslinks but for the byproducts of crosslink loop links, deadends, etc.
                 if (psm is CrosslinkSpectralMatch)
                 {
@@ -648,6 +806,7 @@ namespace EngineLayer
                 MostAbundantPrecursorPeakIntensity = mostAbundantPrecursorPeakIntensity,
                 PrecursorFractionalIntensity = fractionalIntensity,
                 InternalIonCount = internalMatchingFragmentCount,
+                PredictedRTZScore = predictedRtZScore,
             };
 
             return psm.PsmData_forPEPandPercolator;
@@ -909,6 +1068,34 @@ namespace EngineLayer
             double mobility = (Math.Log(1 + 0.35 * (double)charge)) / Math.Pow(pwsm.MonoisotopicMass, 0.411);
 
             return mobility;
+        }
+
+        private float GetPredictedRTZScore(SpectralMatch psm, IBioPolymerWithSetMods peptide)
+        {
+            string filename = Path.GetFileName(psm.FullFilePath);
+
+            if (!FileSpecificPredictedRTAverageAndDeviation.TryGetValue(filename, out var binDict)
+                || binDict == null)
+                return (float)IrtCalibrationHelper.MaxZScore;
+
+            if (!_irtBySequence.TryGetValue(peptide.FullSequence, out double irt))
+                return (float)IrtCalibrationHelper.MaxZScore;
+
+            if (!FileSpecificIrtCalibration.TryGetValue(filename, out var calibration)
+                || double.IsNaN(calibration.Slope))
+                return (float)IrtCalibrationHelper.MaxZScore;
+
+            double predictedRT = calibration.Slope * irt + calibration.Intercept;
+            double residual = psm.ScanRetentionTime - predictedRT;
+            int bin = IrtCalibrationHelper.GetRtBinKey(psm.ScanRetentionTime);
+
+            if (!binDict.TryGetValue(bin, out var meanAndStdDev))
+                return (float)IrtCalibrationHelper.MaxZScore;
+
+            double zScore = IrtCalibrationHelper.ComputeZScore(
+                residual, meanAndStdDev.Item1, meanAndStdDev.Item2);
+
+            return (float)zScore;
         }
 
         private static float GetSSRCalcHydrophobicityZScore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d)
