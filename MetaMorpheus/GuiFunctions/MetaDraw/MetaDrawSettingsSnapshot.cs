@@ -32,6 +32,7 @@ namespace GuiFunctions
         public int AxisLabelTextSize { get; set; } = 12;
         public double StrokeThicknessUnannotated { get; set; } = 0.7;
         public double StrokeThicknessAnnotated { get; set; } = 1.0;
+        public bool AnnotateIsotopicEnvelopes { get; set; } = true;
         public double SpectrumDescriptionFontSize { get; set; } = 10;
         public bool DisplayChimeraLegend { get; set; } = true;
         public bool SuppressMessageBoxes { get; set; } = false;
@@ -46,6 +47,11 @@ namespace GuiFunctions
         public bool DisplayFilteredOnly { get; set; } = true;
         public bool NormalizeHistogramToFile { get; set; } = false;
         public List<string> DataVisualizationColorOrder { get; set; }
+        public bool UseLogScaleYAxis { get; set; } = false;
+        public string GroupingProperty { get; set; } = "None";
+        public double MinRelativeCutoff { get; set; } = 0.0;
+        public double MaxRelativeCutoff { get; set; } = 100.0;
+        public bool AllowAmbiguousGroups { get; set; } = false;
 
 
         // filter settings

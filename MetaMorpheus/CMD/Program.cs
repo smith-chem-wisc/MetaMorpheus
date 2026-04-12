@@ -228,7 +228,7 @@ namespace MetaMorpheusCommandLine
                         break;
 
                     case "GlycoSearch":
-                        var GlycoTask = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        var GlycoTask = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(filePath);
                         taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
                         break;
 

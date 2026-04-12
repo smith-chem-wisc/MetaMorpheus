@@ -30,8 +30,8 @@ namespace Test.MetaDraw
             // check default parameters on loading
             Assert.That(viewModel.SelectedDissociationType, Is.EqualTo(DissociationType.HCD));
             Assert.That(!viewModel.Persist);
-            Assert.That(!viewModel.UseInternalIons);
-            Assert.That(viewModel.MinInternalIonLength, Is.EqualTo(10));
+            Assert.That(!viewModel.FragmentationParamsViewModel.GenerateInternalIons);
+            Assert.That(viewModel.FragmentationParamsViewModel.MinInternalIonLength, Is.EqualTo(0));
             Assert.That(viewModel.DissociationTypes.Count(), Is.EqualTo(7));
             Assert.That(viewModel.ProductIonMassTolerance, Is.EqualTo(20));
 
@@ -133,8 +133,8 @@ namespace Test.MetaDraw
             viewModel.MatchAllCharges = false;
 
             // perform the same operation but also with internal ions
-            viewModel.UseInternalIons = true;
-            viewModel.MinInternalIonLength = 3;
+            viewModel.FragmentationParamsViewModel.GenerateInternalIons = true;
+            viewModel.FragmentationParamsViewModel.MinInternalIonLength = 3;
 
             // searching with even more ions should yield even more results but still contain all original results
             var internalIonNewIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
