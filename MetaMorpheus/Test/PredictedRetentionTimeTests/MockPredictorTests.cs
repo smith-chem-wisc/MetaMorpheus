@@ -48,7 +48,7 @@ namespace Test.PredictedRetentionTimeTests
             out RetentionTimeFailureReason? failureReason)
             => throw new System.Exception("Simulated predictor failure");
 
-        public Dictionary<string, double?> PredictRetentionTimes(
+        public IReadOnlyDictionary<string, double?> PredictRetentionTimes(
             IEnumerable<IRetentionPredictable> peptides)
             => throw new System.Exception("Simulated batch predictor failure");
 
