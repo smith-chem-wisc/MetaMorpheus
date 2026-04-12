@@ -1,5 +1,8 @@
-﻿using EngineLayer.CrosslinkSearch;
+﻿using Chromatography.RetentionTimePrediction;
+using Chromatography.RetentionTimePrediction.Chronologer;
+using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
+using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -9,6 +12,11 @@ namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {
+        private static readonly Lazy<ChronologerRetentionTimePredictor> _chronologerInstance =
+            new Lazy<ChronologerRetentionTimePredictor>(
+                () => new ChronologerRetentionTimePredictor(),
+                System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+
         private List<SpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
         private readonly string AnalysisType;
@@ -401,7 +409,25 @@ namespace EngineLayer.FdrAnalysis
                 _ => "standard"
             };
 
-            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder).ComputePEPValuesForAllPSMs();
+            var rtPredictor = GetRTPredictor(searchType, fileSpecificParameters);
+            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder, rtPredictor).ComputePEPValuesForAllPSMs();
+        }
+
+        private static IRetentionTimePredictor GetRTPredictor(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
+        {
+            if (searchType != "standard")
+                return null;
+
+            // Get predictor name from the first file's parameters
+            var predictorName = fileSpecificParameters.FirstOrDefault().fileSpecificParameters?.RTPredictorName;
+
+            return predictorName switch
+            {
+                "Chronologer" => _chronologerInstance.Value,
+                "Prosit2019iRT" => new Prosit2019iRT(),
+                "Prosit2020iRTTMT" => new Prosit2020iRTTMT(),
+                _ => null
+            };
         }
 
         /// <summary>
