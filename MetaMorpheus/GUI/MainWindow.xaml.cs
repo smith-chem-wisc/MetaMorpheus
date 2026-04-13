@@ -282,15 +282,13 @@ namespace MetaMorpheusGUI
                 for (int i = 1; i < s.NestedIDs.Count - 1; i++)
                 {
                     var hm = s.NestedIDs[i];
-                    try
-                    {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
-                    }
-                    catch
+                    var existing = theEntityOnWhichToUpdateLabel.Children.FirstOrDefault(b => b.Id.Equals(hm));
+                    if (existing == null)
                     {
                         theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        existing = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
                     }
+                    theEntityOnWhichToUpdateLabel = existing;
                 }
 
                 theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(s.S, s.NestedIDs.Last()));
@@ -311,15 +309,13 @@ namespace MetaMorpheusGUI
 
                 foreach (var hm in s.NestedIDs.Skip(1))
                 {
-                    try
-                    {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
-                    }
-                    catch
+                    var existing = theEntityOnWhichToUpdateLabel.Children.FirstOrDefault(b => b.Id.Equals(hm));
+                    if (existing == null)
                     {
                         theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        existing = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
                     }
+                    theEntityOnWhichToUpdateLabel = existing;
                 }
 
                 theEntityOnWhichToUpdateLabel.Status = s.S;
@@ -342,15 +338,13 @@ namespace MetaMorpheusGUI
 
                 foreach (var hm in s.NestedIDs.Skip(1))
                 {
-                    try
-                    {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
-                    }
-                    catch
+                    var existing = theEntityOnWhichToUpdateLabel.Children.FirstOrDefault(b => b.Id.Equals(hm));
+                    if (existing == null)
                     {
                         theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        existing = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
                     }
+                    theEntityOnWhichToUpdateLabel = existing;
                 }
 
                 theEntityOnWhichToUpdateLabel.Status = s.V;
