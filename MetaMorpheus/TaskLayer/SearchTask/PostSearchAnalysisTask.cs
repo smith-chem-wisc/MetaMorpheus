@@ -274,6 +274,20 @@ namespace TaskLayer
 
                 if (!Parameters.SearchParameters.DoLabelFreeQuantification)
                 {
+                    // Always set FilesForQuantification before writing the TSV so that
+                    // PopulateSampleGroupResults() uses the consistent first branch (keyed
+                    // on the full searched-file list) rather than the per-PSM else branch.
+                    var spectraFileInfoForGroups = Parameters.CurrentRawFileList
+                        .Select((f, i) => new SpectraFileInfo(f, "", i, 0, 0))
+                        .ToList<SpectraFileInfo>();
+                    if (ProteinGroups != null)
+                    {
+                        foreach (var pg in ProteinGroups)
+                        {
+                            if (pg.FilesForQuantification == null)
+                                pg.FilesForQuantification = spectraFileInfoForGroups;
+                        }
+                    }
                     return;
                 }
 

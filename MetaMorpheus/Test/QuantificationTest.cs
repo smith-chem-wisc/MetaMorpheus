@@ -233,7 +233,7 @@ namespace Test
 
             // check the intensity column headers
             List<string> splitHeader = lines[0].Split(new char[] { '\t' }).ToList();
-            List<string> intensityColumnHeaders = splitHeader.Where(p => p.Contains("Intensity", StringComparison.OrdinalIgnoreCase)).ToList();
+            List<string> intensityColumnHeaders = splitHeader.Where(p => p.Contains("Intensity_", StringComparison.OrdinalIgnoreCase)).ToList();
 
             Assert.That(intensityColumnHeaders.Count == 2);
 

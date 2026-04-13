@@ -84,10 +84,11 @@ namespace Test
                 new HashSet<IBioPolymerWithSetMods>() { pwsm1, pwsm2 }, new HashSet<IBioPolymerWithSetMods>() { pwsm1, pwsm2 });
 
             //string exectedProteinGroupToString = proteinGroup1.ToString();
-            string exectedProteinGroupToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
+            string exectedProteinGroupToString =
+    "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t0";
             var out1 = proteinGroup1.ToString().Split("\t");
             var out1h = proteinGroup1.GetTabSeparatedHeader().Split("\t");
-            var out1zipped = out1h.Zip(out1, (a, b) => (a, b)).ToDictionary();
+            Assert.That(out1.Count(), Is.EqualTo(out1h.Count()));
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupToString));
 
 
@@ -95,7 +96,8 @@ namespace Test
             List<Protein> proteinList3 = new List<Protein> { prot3 };
             ProteinGroup proteinGroup3 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList3),
                                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
-            string exectedProteinGroupWithDecoyToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
+            string exectedProteinGroupWithDecoyToString =
+    "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t0";
             var out2 = proteinGroup1.ToString();
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupWithDecoyToString));
         }
@@ -248,12 +250,25 @@ namespace Test
             Assert.That(totalNumberOfMods, Is.EqualTo(4));
 
             List<string> proteinGroupsOutput = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllQuantifiedProteinGroups.tsv")).ToList();
-            string testDataLine = proteinGroupsOutput.Where(x => x.StartsWith("P10591")).First();
-            string modInfoListProteinTwo = testDataLine.Split('\t')[14];
+            Assert.That(proteinGroupsOutput.Count, Is.EqualTo(8));
 
-            Assert.That(8, Is.EqualTo(proteinGroupsOutput.Count));
-            Assert.That(modInfoListProteinTwo, Is.EqualTo("P10591:{M#65[Common Variable:Oxidation on M, info: occupancy=1.0000(654315.977066199)]S#71[Less Common:Oxidation on S, info: occupancy=0.1957(654315.977066199)]}" +
-                                                          "P10592:{M#65[Common Variable:Oxidation on M, info: occupancy=1.0000(654315.977066199)]S#71[Less Common:Oxidation on S, info: occupancy=0.1957(654315.977066199)]}"));
+            // Use the header row to locate occupancy columns dynamically,
+            // guarding against future column-order changes.
+            List<string> header = proteinGroupsOutput[0].Split('\t').ToList();
+            int countOccupancyIndex = header.IndexOf(header.First(h => h.StartsWith("CountOccupancy_")));
+            int intensityOccupancyIndex = header.IndexOf(header.First(h => h.StartsWith("IntensityOccupancy_")));
+
+            string[] testDataFields = proteinGroupsOutput.First(x => x.StartsWith("P10591")).Split('\t');
+            string countOccupancy = testDataFields[countOccupancyIndex];
+            string intensityOccupancy = testDataFields[intensityOccupancyIndex];
+
+            // Tests count-based PTM occupancy: pos{residue}[{modName},info:fraction={count-fraction}({modified PSMs}/{total PSMs})]
+            Assert.That(countOccupancy, Is.EqualTo(
+                "pos71[Oxidation on S,info:fraction=0.50(1/2)]|pos71[Oxidation on S,info:fraction=0.50(1/2)]"));
+
+            // Tests intensity-based PTM occupancy: pos{residue}[{modName},info:fraction={intensity-fraction}({mod intensity}/{total intensity})]
+            Assert.That(intensityOccupancy, Is.EqualTo(
+                "pos71[Oxidation on S,info:fraction=0.1899(1.279E+05/6.736E+05)]|pos71[Oxidation on S,info:fraction=0.1899(1.279E+05/6.736E+05)]"));
 
             Directory.Delete(outputFolder, true);
         }

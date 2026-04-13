@@ -73,6 +73,7 @@ namespace TaskLayer
                     if (Parameters.GlycoSearchParameters.DoParsimony)
                     {
                         GlycoProteinAnalysis(fspList, individualFileFolderPath, individualFileFolder); //Creat the proteinGroups file 
+                        WriteProteinResults(individualFileFolderPath, individualFileFolder);
                     }
                     
                     foreach (GlycoSpectralMatch gsm in fspList) //maybe this needs to be the filterd list???
@@ -157,6 +158,11 @@ namespace TaskLayer
             
             QuantificationAnalysis();
             WriteQuantificationResults();
+
+            if (glycoSearchParameters.DoParsimony)
+            {
+                WriteProteinResults(OutputFolder, null, MyTaskResults);
+            }
 
             if (Parameters.GlycoSearchParameters.WritePrunedDataBase)
             {
@@ -319,7 +325,6 @@ namespace TaskLayer
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
             Status("Done constructing protein groups!", Parameters.SearchTaskId);
-            WriteProteinResults(outputFolder, individualFileFolder, myTaskResults);
          
         }
         private void GlycoAccessionAnalysis(List<GlycoSpectralMatch> gsms, string individualFileFolderPath, string individualFileFolder = null)
@@ -390,6 +395,20 @@ namespace TaskLayer
         {
             if (!Parameters.GlycoSearchParameters.DoQuantification)
             {
+                // Always set FilesForQuantification before writing the TSV so that
+                // PopulateSampleGroupResults() uses the consistent first branch (keyed
+                // on the full searched-file list) rather than the per-PSM else branch.
+                var spectraFileInfoForGroups = Parameters.CurrentRawFileList
+                    .Select((f, i) => new SpectraFileInfo(f, "", i, 0, 0))
+                    .ToList<SpectraFileInfo>();
+                if (ProteinGroups != null)
+                {
+                    foreach (var pg in ProteinGroups)
+                    {
+                        if (pg.FilesForQuantification == null)
+                            pg.FilesForQuantification = spectraFileInfoForGroups;
+                    }
+                }
                 return;
             }
 
