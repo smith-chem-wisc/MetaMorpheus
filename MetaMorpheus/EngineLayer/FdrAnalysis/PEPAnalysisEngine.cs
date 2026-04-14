@@ -76,6 +76,7 @@ namespace EngineLayer
         public string OutputFolder { get; }
         public List<SpectralMatch> AllPsms { get; }
         public string SearchType { get; }
+        public IRetentionTimePredictor RetentionTimePredictor { get; }
 
         /// <summary>
         /// This method is used to compute the PEP values for all PSMs in a dataset. 
@@ -90,12 +91,13 @@ namespace EngineLayer
             FileSpecificParametersDictionary = fileSpecificParameters.ToDictionary(p => Path.GetFileName(p.fileName), p => p.fileSpecificParameters);
         }
 
-        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
+        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor? rtPredictor = null)
         {
             // This creates a new list of PSMs, but does not clone the Psms themselves.
             // This allows the PSMs to be modified and the order to be preserved
             AllPsms = psms.OrderByDescending(p => p).ToList();
             TrainingVariables = PsmData.trainingInfos[searchType];
+            RetentionTimePredictor = rtPredictor ?? new SSRCalc3RetentionTimePredictor();
             OutputFolder = outputFolder;
             SearchType = searchType;
             SetFileSpecificParameters(fileSpecificParameters);
@@ -193,8 +195,8 @@ namespace EngineLayer
 
             if (trainingVariables.Contains("HydrophobicityZScore"))
             {
-                FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = ComputeRetentionTimeEquivalentValues(trainingData, false, new SSRCalc3RetentionTimePredictor());
-                FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeRetentionTimeEquivalentValues(trainingData, true, new SSRCalc3RetentionTimePredictor());
+                FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = ComputeRetentionTimeEquivalentValues(trainingData, false, RetentionTimePredictor);
+                FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeRetentionTimeEquivalentValues(trainingData, true, RetentionTimePredictor);
                 FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = ComputeMobilityValues(trainingData);
             }
             if (trainingVariables.Contains("ChimeraCount"))
@@ -552,7 +554,7 @@ namespace EngineLayer
                             var dict = isUnmodified
                                 ? FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified
                                 : FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified;
-                            hydrophobicityZscore = (float)Math.Round(GetRetentionTimeEquivalentZscore(psm, tentativeSpectralMatch.SpecificBioPolymer, dict, new SSRCalc3RetentionTimePredictor()) * 10.0, 0);
+                            hydrophobicityZscore = (float)Math.Round(GetRetentionTimeEquivalentZscore(psm, tentativeSpectralMatch.SpecificBioPolymer, dict, RetentionTimePredictor) * 10.0, 0);
                         }
                         else
                         {
