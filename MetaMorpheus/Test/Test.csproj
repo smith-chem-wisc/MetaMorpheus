@@ -31,6 +31,7 @@
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="..\CMD\CMD.csproj" />
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
     <ProjectReference Include="..\GuiFunctions\GuiFunctions.csproj" />
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
@@ -104,6 +105,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\GlycoSearchTaskconfigN_OGlycoTest_Run.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\GlycoSearchTaskconfigOGlycoTest_OmitNewLowResTolerance.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\GlycoSearchTaskconfigOGlycoTest_LowResToleranceAdded.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run2.toml">

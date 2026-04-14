@@ -1674,20 +1674,55 @@ namespace MetaMorpheusGUI
         {
             foreach (string path in paths.OrderBy(p => Path.GetFileName(p)))
             {
-                if (Directory.Exists(path) & !Regex.IsMatch(path, @".d$")) // don't add directories that end in ".d" (bruker data files)
-                {
-                    foreach (string file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
-                    {
-                        AddPreRunFile(file);
-                    }
-                }
-                else if (File.Exists(path) || Regex.IsMatch(path, @".d$"))
-                {
-                    AddPreRunFile(path);
-                }
+                AddPreRunFileRecursiveHelper(path);
             }
-
             UpdateGuiOnPreRunChange();
+        }
+
+        private void AddPreRunFileRecursiveHelper(string path)
+        {
+            if (File.Exists(path))
+            {
+                AddPreRunFile(path);
+                return; // base case 1
+            }  
+            if (Directory.Exists(path))
+            {
+                // .d folders are usually timsTOF data - if it's a valid timsTOF file, don't recurse into it
+                if (path.EndsWith(".d", StringComparison.OrdinalIgnoreCase) 
+                    && AddOrWarnTimsTofDirectory(path))
+                    return; // base case 2
+                foreach (var entry in Directory.EnumerateFileSystemEntries(path))
+                    AddPreRunFileRecursiveHelper(entry);
+            }
+        }
+
+        private bool AddOrWarnTimsTofDirectory(string directoryPath)
+        {
+            if (IsValidTimsTofDirectory(directoryPath))
+            {
+                AddPreRunFile(directoryPath);
+                return true;
+            }
+            else
+            {
+                NotificationHandler(null, new StringEventArgs($"{directoryPath} is not a valid timsTOF data file.", null));
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether the specified directory is a valid timsTOF data directory.
+        /// </summary>
+        /// <param name="directoryPath">The full path to the directory to validate. The path must end with the ".d" extension.</param>
+        /// <returns>true if the directory exists, ends with ".d", and contains both "analysis.tdf" and "analysis.tdf_bin" files;
+        /// otherwise, false.</returns>
+        public bool IsValidTimsTofDirectory(string directoryPath)
+        {
+            return directoryPath.EndsWith(".d", StringComparison.OrdinalIgnoreCase)
+                && Directory.Exists(directoryPath)
+                && File.Exists(Path.Combine(directoryPath, "analysis.tdf"))
+                && File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin"));
         }
 
         private void AddPreRunFile(string filePath)
@@ -1768,9 +1803,15 @@ namespace MetaMorpheusGUI
                     break;
                 case ".tdf":
                 case ".tdf_bin":
-                    // for Bruker timsTof files, the .tdf file is in a ".d" directory which also contains a .tdf_bin file 
-                    // the fileReader is designed to take the path to the .d directory instead of either/both individual files
-                    filePath = Path.GetDirectoryName(filePath);
+                    // for Bruker timsTof files, the .tdf and .tdf_bin files are in a ".d" directory 
+                    // the fileReader is designed to take the path to the .d directory instead of the individual files
+                    var parent = Path.GetDirectoryName(filePath);
+                    if (!IsValidTimsTofDirectory(parent))
+                    {
+                        NotificationHandler(null, new StringEventArgs($"{parent} is not a valid timsTOF data file; {filePath} could not be added.", null));
+                        return;
+                    }
+                    filePath = parent; // change the file path to the .d directory so that it can be properly read by the file reader
                     goto case ".d";
                 case ".d": // Bruker data files are directories that contain .d files
                     NotificationHandler(null, new StringEventArgs("Quantification and calibration are not currently supported for Bruker data files. All other features of MetaMorpheus will function.", null));
@@ -1854,7 +1895,7 @@ namespace MetaMorpheusGUI
                                     break;
 
                                 case "GlycoSearch":
-                                    var glyco = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                                    var glyco = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(filePath);
                                     AddTaskToCollection(glyco);
                                     break;
 
@@ -1931,7 +1972,8 @@ namespace MetaMorpheusGUI
                 // Ensure we do not have RNA and Protein tasks in the same MetaMorpheus run and that the mode represents the task data type. 
                 if (tasksToConsider.Any())
                 {
-                    // Tasks Loaded - Incoming task is RNA - existing task is protein -> Abort task addition
+                    // Tasks Loaded - Incoming task is RNA - existing task is
+                    // -> Abort task addition
                     if (taskAnalyteType == AnalyteType.Oligo && tasksToConsider.Any(p => !p.IsRnaTask))
                     {
                         NotificationHandler(this, new("Cannot add RNA task with protein task currently loaded", []));

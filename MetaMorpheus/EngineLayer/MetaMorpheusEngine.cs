@@ -128,11 +128,13 @@ namespace EngineLayer
 
         }
 
-        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool matchAllCharges = false)
+        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool matchAllCharges = false, bool includeExperimentalEnvelope = false, bool isLowRes = false)
         {
+            // if this is a child scan and it's an ion trap 2D scan, we want to use the wider tolerance for matching
+            var productMassTolerance = isLowRes? commonParameters.ProductMassTolerance_LowRes : commonParameters.ProductMassTolerance;
             if (matchAllCharges)
             {
-                return MatchFragmentIonsOfAllCharges(scan, theoreticalProducts, commonParameters);
+                return MatchFragmentIonsOfAllCharges(scan, theoreticalProducts, commonParameters, isLowRes);
             }
 
             var matchedFragmentIons = new List<MatchedFragmentIon>();
@@ -153,7 +155,8 @@ namespace EngineLayer
                     double theoreticalFragmentMz = Math.Round(product.NeutralMass.ToMz(1) / 1.0005079, 0) * 1.0005079;
                     var closestMzIndex = scan.TheScan.MassSpectrum.GetClosestPeakIndex(theoreticalFragmentMz);
 
-                    if (commonParameters.ProductMassTolerance.Within(scan.TheScan.MassSpectrum.XArray[closestMzIndex], theoreticalFragmentMz))
+
+                    if (productMassTolerance.Within(scan.TheScan.MassSpectrum.XArray[closestMzIndex], theoreticalFragmentMz))
                     {
                         matchedFragmentIons.Add(new MatchedFragmentIon(product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
                     }
@@ -183,11 +186,22 @@ namespace EngineLayer
 
                 // is the mass error acceptable?
                 if (closestExperimentalMass != null
-                    && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass)
-                    && Math.Abs(closestExperimentalMass.Charge) <= Math.Abs(scan.PrecursorCharge))//TODO apply this filter before picking the envelope
+                    && productMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass)
+                    && Math.Abs(closestExperimentalMass.Charge) <= Math.Abs(scan.PrecursorCharge))
                 {
-                    matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
-                        closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
+                    if (includeExperimentalEnvelope)
+                    {
+                        matchedFragmentIons.Add(new MatchedFragmentIonWithEnvelope(product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
+                            closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge)
+                        {
+                            Envelope = closestExperimentalMass
+                        });
+                    }
+                    else
+                    {
+                        matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
+                            closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
+                    }
                 }
             }
             if (commonParameters.AddCompIons)
@@ -211,12 +225,22 @@ namespace EngineLayer
                         IsotopicEnvelope closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(compIonMass);
 
                         // is the mass error acceptable?
-                        if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, compIonMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
+                        if (closestExperimentalMass != null && productMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, compIonMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
                         {
                             //found the peak, but we don't want to save that m/z because it's the complementary of the observed ion that we "added". Need to create a fake ion instead.
                             double mz = (scan.PrecursorMass + protonMassShift - closestExperimentalMass.MonoisotopicMass).ToMz(closestExperimentalMass.Charge);
 
-                            matchedFragmentIons.Add(new MatchedFragmentIon(product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
+                            if (includeExperimentalEnvelope)
+                            {
+                                matchedFragmentIons.Add(new MatchedFragmentIonWithEnvelope(product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge)
+                                {
+                                    Envelope = closestExperimentalMass
+                                });
+                            }
+                            else
+                            {
+                                matchedFragmentIons.Add(new MatchedFragmentIon(product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
+                            }
                         }
                     }
                 }
@@ -228,8 +252,9 @@ namespace EngineLayer
         //Used only when user wants to generate spectral library.
         //Normal search only looks for one match ion for one fragment, and if it accepts it then it doesn't try to look for different charge states of that same fragment. 
         //But for library generation, we need find all the matched peaks with all the different charges.
-        private static List<MatchedFragmentIon> MatchFragmentIonsOfAllCharges(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
+        private static List<MatchedFragmentIon> MatchFragmentIonsOfAllCharges(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool isLowRes = false)
         {
+            var productMassTolerance = isLowRes ? commonParameters.ProductMassTolerance_LowRes : commonParameters.ProductMassTolerance;
             var matchedFragmentIons = new List<MatchedFragmentIon>();
             var ions = new List<string>();
 
@@ -249,8 +274,8 @@ namespace EngineLayer
                 }
 
                 //get the range we can accept 
-                var minMass = commonParameters.ProductMassTolerance.GetMinimumValue(product.NeutralMass);
-                var maxMass = commonParameters.ProductMassTolerance.GetMaximumValue(product.NeutralMass);
+                var minMass = productMassTolerance.GetMinimumValue(product.NeutralMass);
+                var maxMass = productMassTolerance.GetMaximumValue(product.NeutralMass);
                 var closestExperimentalMassList = scan.GetClosestExperimentalIsotopicEnvelopeList(minMass, maxMass);
                 if (closestExperimentalMassList != null)
                 {
@@ -259,7 +284,7 @@ namespace EngineLayer
                         String ion = $"{product.ProductType.ToString()}{ product.FragmentNumber}^{x.Charge}-{product.NeutralLoss}";
                         if (x != null 
                             && !ions.Contains(ion) 
-                            && commonParameters.ProductMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) 
+                            && productMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) 
                             && Math.Abs(x.Charge) <= Math.Abs(scan.PrecursorCharge))//TODO apply this filter before picking the envelope
                         {
                             Product temProduct = product;
