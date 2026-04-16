@@ -1,36 +1,38 @@
 ﻿using Easy.Common.Extensions;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
 using EngineLayer.ModificationAnalysis;
+using EngineLayer.SpectrumMatch;
 using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
+using MzLibUtil;
+using Omics.BioPolymer;
+using Omics.Digestion;
+using Omics.Modifications;
+using Omics.SpectrumMatch;
+using PredictionClients.Koina.AbstractClasses;
+using PredictionClients.Koina.SupportedModels.FragmentIntensityModels;
+using PredictionClients.Koina.Util;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers.SpectralLibrary;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
-using EngineLayer.DatabaseLoading;
-using MzLibUtil;
-using Omics.Digestion;
-using Omics.BioPolymer;
-using Omics.Modifications;
-using Omics.SpectrumMatch;
-using EngineLayer.SpectrumMatch;
 using ProteinGroup = FlashLFQ.ProteinGroup;
-using PredictionClients.Koina.AbstractClasses;
-using PredictionClients.Koina.SupportedModels.FragmentIntensityModels;
-using Readers.SpectralLibrary;
-
 
 namespace TaskLayer
 {
+    
     public class PostSearchAnalysisTask : MetaMorpheusTask
     {
         public PostSearchAnalysisParameters Parameters { get; set; }
@@ -231,9 +233,21 @@ namespace TaskLayer
                 return lookup;
 
             // 3. Run the predictions and merge the results in.
-            var model = new Prosit2020IntensityHCD(modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull);
+            var model = new Prosit2020IntensityHCD(
+                modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull);
             var inputs = needsPrediction.Values.ToList();
             model.Predict(inputs);
+
+            // 4. Build a mapping from ValidatedFullSequence back to original FullSequence
+            //    so we can find the right lookup key for each predicted spectrum.
+            var validatedToOriginal = new Dictionary<string, string>();
+            foreach (var prediction in model.Predictions)
+            {
+                if (prediction.ValidatedFullSequence != null)
+                {
+                    validatedToOriginal[prediction.ValidatedFullSequence] = prediction.FullSequence;
+                }
+            }
 
             var predictedSpectra = model.GenerateLibrarySpectraFromPredictions(
                 new double?[model.Predictions.Count],
@@ -241,7 +255,12 @@ namespace TaskLayer
 
             foreach (var spectrum in predictedSpectra)
             {
-                var key = (spectrum.Sequence, spectrum.ChargeState);
+                // The spectrum.Sequence might be in UNIMOD format (ValidatedFullSequence),
+                // but we need to look it up using the original format for consistency
+                // with how PSMs will query the lookup.
+                string originalSequence = validatedToOriginal.GetValueOrDefault(spectrum.Sequence, spectrum.Sequence);
+                var key = (originalSequence, spectrum.ChargeState);
+
                 // Real-library entries already in `lookup` take precedence; only add
                 // predicted spectra where nothing's there yet.
                 if (!lookup.ContainsKey(key))
@@ -256,7 +275,7 @@ namespace TaskLayer
             // SpectralAngle < 0 is the "not computed" sentinel; 0 is a legitimate
             // (terrible) score and must not trigger recomputation.
             return Parameters.AllSpectralMatches
-                .Where(psm => psm.FullSequence != null && psm.SpectralAngle < 0 && (psm.FullSequence == psm.BaseSequence)) //TODO allow supported mods
+                .Where(psm => psm.FullSequence != null && psm.SpectralAngle < 0) //TODO allow supported mods
                 .ToList();
         }
         /// <summary>
