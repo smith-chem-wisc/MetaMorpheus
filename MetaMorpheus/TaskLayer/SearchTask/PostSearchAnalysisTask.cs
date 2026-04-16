@@ -26,9 +26,7 @@ using EngineLayer.SpectrumMatch;
 using ProteinGroup = FlashLFQ.ProteinGroup;
 using PredictionClients.Koina.AbstractClasses;
 using PredictionClients.Koina.SupportedModels.FragmentIntensityModels;
-using PredictionClients.Koina.Util;
 using Readers.SpectralLibrary;
-using SkiaSharp;
 
 
 namespace TaskLayer
@@ -233,7 +231,7 @@ namespace TaskLayer
                 return lookup;
 
             // 3. Run the predictions and merge the results in.
-            var model = new Prosit2020IntensityHCD();
+            var model = new Prosit2020IntensityHCD(modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull);
             var inputs = needsPrediction.Values.ToList();
             model.Predict(inputs);
 
@@ -258,7 +256,7 @@ namespace TaskLayer
             // SpectralAngle < 0 is the "not computed" sentinel; 0 is a legitimate
             // (terrible) score and must not trigger recomputation.
             return Parameters.AllSpectralMatches
-                .Where(psm => psm.FullSequence != null && psm.SpectralAngle < 0 && psm.FullSequence == psm.BaseSequence) //TODO.figure out how to include modified peptides in spectral angle calculations
+                .Where(psm => psm.FullSequence != null && psm.SpectralAngle < 0 && (psm.FullSequence == psm.BaseSequence)) //TODO allow supported mods
                 .ToList();
         }
         /// <summary>
