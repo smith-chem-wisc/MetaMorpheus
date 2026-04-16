@@ -19,12 +19,9 @@ using System.Windows.Input;
 using System.Windows.Navigation;
 using Omics.Modifications;
 using TaskLayer;
-using System.Text.RegularExpressions;
 using Readers.InternalResults;
-using System.Diagnostics;
 using EngineLayer.DatabaseLoading;
 using GuiFunctions;
-using Easy.Common.Extensions;
 using GuiFunctions.Util;
 
 namespace MetaMorpheusGUI
