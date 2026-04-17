@@ -12,6 +12,7 @@ using MathNet.Numerics.Distributions;
 using MzLibUtil;
 using Omics.BioPolymer;
 using Omics.Digestion;
+using Omics.Fragmentation;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using PredictionClients.Koina.AbstractClasses;
@@ -234,7 +235,7 @@ namespace TaskLayer
 
             // 3. Run the predictions and merge the results in.
             var model = new Prosit2020IntensityHCD(
-                modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull);
+                modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull, fragmentIonMappingMode: FragmentIonMappingMode.MapToInputFullSequence);
             var inputs = needsPrediction.Values.ToList();
             model.Predict(inputs);
 
