@@ -163,13 +163,6 @@ namespace EngineLayer
                 var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(PSMDataGroups[groupIndexNumber]));
                 CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
 
-                //Parallel operation of the following code requires the method to be stored and then read, once for each thread
-                //if not output directory is specified, the model cannot be stored, and we must force single-threaded operation
-                if (OutputFolder != null)
-                {
-                    mlContext.Model.Save(trainedModels[groupIndexNumber], dataView.Schema, Path.Combine(OutputFolder, "model.zip"));
-                }
-
                 //model is trained on peptides but here we can use that to compute PEP for all PSMs
                 int ambiguousPeptidesResolved = Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], SearchType, OutputFolder);
 
@@ -389,8 +382,6 @@ namespace EngineLayer
             return s.ToString();
         }
 
-        private readonly object _modelLock = new();
-
         public int Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
             MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, string outputFolder)
@@ -398,73 +389,76 @@ namespace EngineLayer
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
             int ambiguousPeptidesResolved = 0;
 
-            //the trained model is not threadsafe. Therefore, to use the same model for each thread saved the model to disk. Then each thread reads its own copy of the model back from disk.
-            //If there is no output folder specified, then this can't happen. We set maxthreads eqaul to one and use the model that gets passed into the method.
+            // Preserve previous behavior for null/empty output folder by forcing single-threaded operation.
             if (String.IsNullOrEmpty(outputFolder))
             {
                 maxThreads = 1;
             }
 
-            Parallel.ForEach(Partitioner.Create(0, peptideGroupIndices.Count),
-                new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
-                (range, loopState) =>
-                {
-                    // Stop loop if canceled
-                    if (GlobalVariables.StopLoops) { return; }
+            var predictionEnginePerThread =
+                new ThreadLocal<PredictionEngine<PsmData, TruePositivePrediction>>(
+                    () => mLContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel),
+                    trackAllValues: true);
 
-                    ITransformer threadSpecificTrainedModel;
+            try
+            {
+                Parallel.ForEach(Partitioner.Create(0, peptideGroupIndices.Count),
+                    new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
+                    (range, loopState) =>
+                    {
+                        // Stop loop if canceled
+                        if (GlobalVariables.StopLoops) { return; }
 
-                    if (maxThreads == 1)
-                    {
-                        threadSpecificTrainedModel = trainedModel;
-                    }
-                    else
-                    {
-                        lock (_modelLock)
+                        // one prediction engine per thread, because the prediction engine is not thread-safe
+                        var threadPredictionEngine = predictionEnginePerThread.Value;
+
+                        int ambigousPeptidesRemovedinThread = 0;
+
+                        List<int> indiciesOfPeptidesToRemove = new List<int>();
+                        List<double> pepValuePredictions = new List<double>();
+                        for (int i = range.Item1; i < range.Item2; i++)
                         {
-                            threadSpecificTrainedModel = mLContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
-                        }
-                    }
-
-                    // one prediction engine per thread, because the prediction engine is not thread-safe
-                    var threadPredictionEngine = mLContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(threadSpecificTrainedModel);
-
-                    int ambigousPeptidesRemovedinThread = 0;
-
-                    List<int> indiciesOfPeptidesToRemove = new List<int>();
-                    List<double> pepValuePredictions = new List<double>();
-                    for (int i = range.Item1; i < range.Item2; i++)
-                    {
-                        foreach (SpectralMatch psm in peptideGroups[peptideGroupIndices[i]])
-                        {
-                            // I'm not sure what's going one here vis-a-vis disambiguations, but I'm not going to touch it for now
-                            if (psm != null)
+                            foreach (SpectralMatch psm in peptideGroups[peptideGroupIndices[i]])
                             {
-                                indiciesOfPeptidesToRemove.Clear();
-                                pepValuePredictions.Clear();
-
-                                //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
-                                var bestMatchingBioPolymersWithSetMods = psm.BestMatchingBioPolymersWithSetMods.ToList();
-                                foreach (SpectralMatchHypothesis bestMatch in bestMatchingBioPolymersWithSetMods)
+                                // I'm not sure what's going one here vis-a-vis disambiguations, but I'm not going to touch it for now
+                                if (psm != null)
                                 {
-                                    PsmData pd = CreateOnePsmDataEntry(searchType, psm, bestMatch, !bestMatch.IsDecoy);
-                                    var pepValuePrediction = threadPredictionEngine.Predict(pd);
-                                    pepValuePredictions.Add(pepValuePrediction.Probability);
-                                    //A score is available using the variable pepvaluePrediction.Score
+                                    indiciesOfPeptidesToRemove.Clear();
+                                    pepValuePredictions.Clear();
+
+                                    //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
+                                    var bestMatchingBioPolymersWithSetMods = psm.BestMatchingBioPolymersWithSetMods.ToList();
+                                    foreach (SpectralMatchHypothesis bestMatch in bestMatchingBioPolymersWithSetMods)
+                                    {
+                                        PsmData pd = CreateOnePsmDataEntry(searchType, psm, bestMatch, !bestMatch.IsDecoy);
+                                        var pepValuePrediction = threadPredictionEngine.Predict(pd);
+                                        pepValuePredictions.Add(pepValuePrediction.Probability);
+                                        //A score is available using the variable pepvaluePrediction.Score
+                                    }
+
+                                    GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+                                    RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, bestMatchingBioPolymersWithSetMods, ref ambigousPeptidesRemovedinThread);
+
+                                    psm.PsmFdrInfo.PEP = 1 - pepValuePredictions.Max();
+                                    psm.PeptideFdrInfo.PEP = 1 - pepValuePredictions.Max();
                                 }
 
-                                GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-                                RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, bestMatchingBioPolymersWithSetMods, ref ambigousPeptidesRemovedinThread);
-
-                                psm.PsmFdrInfo.PEP = 1 - pepValuePredictions.Max();
-                                psm.PeptideFdrInfo.PEP = 1 - pepValuePredictions.Max();
                             }
-
                         }
-                    }
 
-                    Interlocked.Add(ref ambiguousPeptidesResolved, ambigousPeptidesRemovedinThread);
-                });
+                        Interlocked.Add(ref ambiguousPeptidesResolved, ambigousPeptidesRemovedinThread);
+                    });
+            }
+            finally
+            {
+                foreach (var engine in predictionEnginePerThread.Values)
+                {
+                    engine?.Dispose();
+                }
+
+                predictionEnginePerThread.Dispose();
+            }
+
             return ambiguousPeptidesResolved;
         }
 
