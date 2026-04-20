@@ -274,20 +274,6 @@ namespace TaskLayer
 
                 if (!Parameters.SearchParameters.DoLabelFreeQuantification)
                 {
-                    // Always set FilesForQuantification before writing the TSV so that
-                    // PopulateSampleGroupResults() uses the consistent first branch (keyed
-                    // on the full searched-file list) rather than the per-PSM else branch.
-                    var spectraFileInfoForGroups = Parameters.CurrentRawFileList
-                        .Select((f, i) => new SpectraFileInfo(f, "", i, 0, 0))
-                        .ToList<SpectraFileInfo>();
-                    if (ProteinGroups != null)
-                    {
-                        foreach (var pg in ProteinGroups)
-                        {
-                            if (pg.FilesForQuantification == null)
-                                pg.FilesForQuantification = spectraFileInfoForGroups;
-                        }
-                    }
                     return;
                 }
 
@@ -300,7 +286,7 @@ namespace TaskLayer
                 }
 
                 // construct file info for FlashLFQ
-                List<SpectraFileInfo> spectraFileInfo;
+                List<SpectraFileInfo> spectraFileInfo = null;
 
                 // get experimental design info
                 string pathToFirstSpectraFile = Directory.GetParent(Parameters.CurrentRawFileList.First()).FullName;
@@ -324,16 +310,18 @@ namespace TaskLayer
 
                     if (errors.Any())
                     {
-                        Warn("Error reading experimental design file: " + errors.First() + ". Skipping quantification");
-                        return;
+                        Warn("Error reading experimental design file: " + errors.First() + ". Falling back to default experimental design.");
+                        spectraFileInfo = null;
                     }
                 }
-                else if (Parameters.SearchParameters.Normalize)
+
+                if (Parameters.SearchParameters.Normalize && (spectraFileInfo == null || !File.Exists(assumedExperimentalDesignPath)))
                 {
-                    Warn("Could not find experimental design file at " + assumedExperimentalDesignPath + ", which is required for normalization. Skipping quantification");
+                    Warn("Could not find or parse experimental design file at " + assumedExperimentalDesignPath + ", which is required for normalization. Skipping quantification");
                     return;
                 }
-                else
+
+                if (spectraFileInfo == null || !spectraFileInfo.Any())
                 {
                     spectraFileInfo = new List<SpectraFileInfo>();
 
@@ -617,27 +605,27 @@ namespace TaskLayer
                 // FilesForQuantification is always assigned once spectraFileInfo is available so that
                 // count-based occupancy is written even when FlashLFQ produced no peaks (e.g., when
                 // flashLFQIdentifications is empty and FlashLfqResults remains null).
-                // IntensitiesByFile is only assigned when FlashLFQ actually ran and returned results.
+                // IntensitiesByFile is always assigned (with zeros if FlashLFQ produced no results)
+                // so that HasIntensityData is true and intensity-based occupancy columns are always written.
                 if (ProteinGroups != null)
                 {
                     foreach (var proteinGroup in ProteinGroups)
                     {
                         proteinGroup.FilesForQuantification = spectraFileInfo;
 
-                        if (Parameters.FlashLfqResults != null)
+                        // Build the dictionary locally, then assign in one shot.
+                        var intensities = new Dictionary<SpectraFileInfo, double>();
+                        foreach (var spectraFile in spectraFileInfo)
                         {
-                            // Build the dictionary locally, then assign in one shot.
-                            // The IntensitiesByFile getter returns a copy, so .Add() on it would be lost.
-                            var intensities = new Dictionary<SpectraFileInfo, double>();
-                            foreach (var spectraFile in spectraFileInfo)
-                            {
-                                intensities.Add(spectraFile,
-                                    Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup)
-                                        ? flashLfqProteinGroup.GetIntensity(spectraFile)
-                                        : 0);
-                            }
-                            proteinGroup.IntensitiesByFile = intensities;
+                            intensities.Add(spectraFile,
+                                Parameters.FlashLfqResults?.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup) == true
+                                    ? flashLfqProteinGroup.GetIntensity(spectraFile)
+                                    : 0);
                         }
+                        proteinGroup.IntensitiesByFile = intensities;
+
+                        // Reset cached SampleGroupResults so it re-populates with the updated intensity data.
+                        proteinGroup.SampleGroupResults = null;
                     }
                 }
 

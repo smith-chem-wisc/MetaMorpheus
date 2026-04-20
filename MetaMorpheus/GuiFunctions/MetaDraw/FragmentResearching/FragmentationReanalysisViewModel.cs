@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows;
 using Easy.Common.Extensions;
 using EngineLayer;
+using GuiFunctions.Util;
 using iText.StyledXmlParser.Jsoup;
 using MassSpectrometry;
 using MzLibUtil;
@@ -26,12 +27,13 @@ namespace GuiFunctions
     {
         private readonly bool _isProtein;
         private static readonly object _fragmentationLock = new();
+        private static readonly object _productsLock = new();
 
         public FragmentationReanalysisViewModel(bool isProtein = true)
         {
             _isProtein = isProtein;
             ProductIonMassTolerance = 20;
-            PossibleProducts = [.. GetPossibleProducts()];
+            PossibleProducts = new ThreadSafeObservableCollection<FragmentViewModel>(GetPossibleProducts());
 
             IEnumerable<DissociationType> values;
             CommonParameters common;
@@ -77,14 +79,12 @@ namespace GuiFunctions
             FragmentationParamsViewModel = new(common, search);
         }
 
-        private ObservableCollection<FragmentViewModel> _possibleProducts;
-        public ObservableCollection<FragmentViewModel> PossibleProducts
+        private ThreadSafeObservableCollection<FragmentViewModel> _possibleProducts;
+        public ThreadSafeObservableCollection<FragmentViewModel> PossibleProducts
         {
             get => _possibleProducts;
             set { _possibleProducts = value; OnPropertyChanged(nameof(PossibleProducts)); }
         }
-
-        private IEnumerable<ProductType> _productsToUse => PossibleProducts.Where(p => p.Use).Select(p => p.ProductType);
 
         private bool _persist;
         public bool Persist
@@ -249,7 +249,7 @@ namespace GuiFunctions
             List<Product> internalProducts = new List<Product>();
 
             // Snapshot products before acquiring lock to avoid enumerating collection while it may be modified by UI thread
-            var productsSnapshot = _productsToUse.ToList();
+            var productsSnapshot = GetProductsSnapshot();
             // Lock to ensure thread-safe mutation of static DissociationTypeCollection dictionary
             lock (_fragmentationLock)
             {
@@ -296,6 +296,14 @@ namespace GuiFunctions
                 uniqueMatches = uniqueMatches.Where(p => !p.IsInternalFragment || Math.Abs(p.NeutralTheoreticalProduct.FragmentNumber - p.NeutralTheoreticalProduct.SecondaryFragmentNumber) >= FragmentationParamsViewModel.MinInternalIonLength);
             return uniqueMatches.Distinct(MatchedFragmentIonComparer)
                 .ToList();
+        }
+
+        private List<ProductType> GetProductsSnapshot()
+        {
+            lock (_productsLock)
+            {
+                return PossibleProducts.Where(p => p.Use).Select(p => p.ProductType).ToList();
+            }
         }
 
         public static readonly IEqualityComparer<MatchedFragmentIon> MatchedFragmentIonComparer = new MatchedFragmentIonEqualityComparer();

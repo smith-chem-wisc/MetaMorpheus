@@ -15,6 +15,7 @@ using UsefulProteomicsDatabases;
 using System.Text.RegularExpressions;
 using EngineLayer.DatabaseLoading;
 using Omics;
+using MzLibUtil;
 
 namespace Test
 {
@@ -218,7 +219,6 @@ namespace Test
                         ).Select(b => (b.ModificationType, b.IdWithMotif)).ToList()
                 }
             };
-
             SearchTask task2 = new SearchTask
             {
                 CommonParameters = new CommonParameters(),
@@ -238,7 +238,7 @@ namespace Test
 
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
-            string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
+            string final = Path.Combine(outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
             // ensures that protein out put contains the correct number of proteins to match the following conditions.
             // all proteins in DB have baseSequence!=null (not ambiguous)
@@ -254,6 +254,9 @@ namespace Test
 
             // Use the header row to locate occupancy columns dynamically,
             // guarding against future column-order changes.
+            bool allEqualColumns = proteinGroupsOutput.Select(x => x.Split('\t').Length).AllSame();
+            Assert.That(allEqualColumns, Is.True, "All rows in the protein groups output should have the same number of columns.");
+
             List<string> header = proteinGroupsOutput[0].Split('\t').ToList();
             int countOccupancyIndex = header.IndexOf(header.First(h => h.StartsWith("CountOccupancy_")));
             int intensityOccupancyIndex = header.IndexOf(header.First(h => h.StartsWith("IntensityOccupancy_")));
