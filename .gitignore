@@ -234,8 +234,9 @@ _Pvt_Extensions
 
 # Macintosh files
 **/.DS_Store
+
+# Agents
 /.opencode/
 /AGENTS.md
 /.serena
-/MetaMorpheus/Benchmark/results
-/MetaMorpheus/Benchmark/BenchmarkDotNet.Artifacts/results
+/Generated Files
