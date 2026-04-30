@@ -12,6 +12,7 @@ using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
 using TaskLayer;
 using Transcriptomics.Digestion;
+using System;
 
 namespace Test
 {
@@ -335,7 +336,7 @@ namespace Test
             Assert.Throws<MetaMorpheusException>(() => new FileSpecificParameters(fileSpecificTomlBad));
         }
 
-        class BadDigestionParams : IDigestionParams
+        class BadDigestionParams : IDigestionParams, IEquatable<IDigestionParams>
         {
             public int MaxMissedCleavages { get; set; }
             public int MinLength { get; set; }
@@ -346,6 +347,32 @@ namespace Test
             public FragmentationTerminus FragmentationTerminus { get; }
             public CleavageSpecificity SearchModeType { get; }
             public IDigestionParams Clone(FragmentationTerminus? newTerminus = null) => this;
+
+            private bool Equals(BadDigestionParams other)
+            {
+                return MaxMissedCleavages == other.MaxMissedCleavages && MinLength == other.MinLength && MaxLength == other.MaxLength && MaxModificationIsoforms == other.MaxModificationIsoforms && MaxMods == other.MaxMods && DigestionAgent.Equals(other.DigestionAgent) && FragmentationTerminus == other.FragmentationTerminus && SearchModeType == other.SearchModeType;
+            }
+
+            public bool Equals(IDigestionParams other)
+            {
+                if (other is null) return false;
+                if (ReferenceEquals(this, other)) return true;
+                if (other.GetType() != GetType()) return false;
+                return Equals((BadDigestionParams)other);
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj is null) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                if (obj.GetType() != GetType()) return false;
+                return Equals((BadDigestionParams)obj);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(MaxMissedCleavages, MinLength, MaxLength, MaxModificationIsoforms, MaxMods, DigestionAgent, (int)FragmentationTerminus, (int)SearchModeType);
+            }
         }
     }
 }
