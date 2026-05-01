@@ -389,12 +389,6 @@ namespace EngineLayer
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
             int ambiguousPeptidesResolved = 0;
 
-            // Preserve previous behavior for null/empty output folder by forcing single-threaded operation.
-            if (String.IsNullOrEmpty(outputFolder))
-            {
-                maxThreads = 1;
-            }
-
             var predictionEnginePerThread =
                 new ThreadLocal<PredictionEngine<PsmData, TruePositivePrediction>>(
                     () => mLContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel),
