@@ -428,8 +428,13 @@ namespace EngineLayer
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
             ProteaseMods = ModificationLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
-            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
-            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
+            // mzLib seeds the global Protease/Rnase dictionaries from embedded
+            // resources at startup; MM's TSVs add anything with a different name
+            // on top of that baseline. The new API merges atomically and returns
+            // a CustomDigestionAgentLoadResult (collision report) -- discarded
+            // here, but available if MM ever wants to log additions.
+            ProteaseDictionary.LoadAndMergeCustomProteases(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
+            RnaseDictionary.LoadAndMergeCustomRnases(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
         }
 
         private static void LoadRnaModifications()

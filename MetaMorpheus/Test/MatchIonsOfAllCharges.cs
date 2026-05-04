@@ -106,7 +106,12 @@ namespace Test
 
             List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
             Protease protease = new Protease("Custom Protease3", CleavageSpecificity.Full, null, null, motifs);
-            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            // Indexer (not Add) -- another test in this assembly registers the same
+            // "Custom Protease3" name and the global dictionary is no longer reset
+            // between tests since mzLib made ProteaseDictionary.Dictionary a
+            // private-set property. Idempotent overwrite is safe here: both tests
+            // construct an identical protease.
+            ProteaseDictionary.Dictionary[protease.Name] = protease;
 
             CommonParameters CommonParameters1 = new CommonParameters(
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1),

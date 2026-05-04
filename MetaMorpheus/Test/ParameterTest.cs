@@ -346,6 +346,11 @@ namespace Test
             public FragmentationTerminus FragmentationTerminus { get; }
             public CleavageSpecificity SearchModeType { get; }
             public IDigestionParams Clone(FragmentationTerminus? newTerminus = null) => this;
+            // Stub: the test only uses this class to assert MM throws on an
+            // unrecognized IDigestionParams type. Reference equality is the safe
+            // minimum that satisfies IEquatable<IDigestionParams> without
+            // affecting test behavior.
+            public bool Equals(IDigestionParams? other) => ReferenceEquals(this, other);
         }
     }
 }

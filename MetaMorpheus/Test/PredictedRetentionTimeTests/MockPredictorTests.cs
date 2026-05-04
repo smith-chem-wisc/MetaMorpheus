@@ -28,12 +28,22 @@ namespace Test.PredictedRetentionTimeTests
             return _value;
         }
 
+        public double? PredictRetentionTimeEquivalent(IRetentionPredictable peptide,
+            out RetentionTimeFailureReason? failureReason)
+            => PredictRetentionTime(peptide, out failureReason);
+
+        public IReadOnlyList<(double? PredictedValue, IRetentionPredictable Peptide, RetentionTimeFailureReason? FailureReason)>
+            PredictRetentionTimeEquivalents(IEnumerable<IRetentionPredictable> peptides, int maxThreads = 1)
+            => peptides.Select(p => ((double?)_value, p, (RetentionTimeFailureReason?)null)).ToList();
+
         public string? GetFormattedSequence(IRetentionPredictable peptide,
             out RetentionTimeFailureReason? failureReason)
         {
             failureReason = null;
             return peptide.BaseSequence;
         }
+
+        public void Dispose() { }
     }
 
     /// <summary>
@@ -52,12 +62,22 @@ namespace Test.PredictedRetentionTimeTests
             IEnumerable<IRetentionPredictable> peptides)
             => throw new System.Exception("Simulated batch predictor failure");
 
+        public double? PredictRetentionTimeEquivalent(IRetentionPredictable peptide,
+            out RetentionTimeFailureReason? failureReason)
+            => throw new System.Exception("Simulated predictor failure");
+
+        public IReadOnlyList<(double? PredictedValue, IRetentionPredictable Peptide, RetentionTimeFailureReason? FailureReason)>
+            PredictRetentionTimeEquivalents(IEnumerable<IRetentionPredictable> peptides, int maxThreads = 1)
+            => throw new System.Exception("Simulated batch predictor failure");
+
         public string? GetFormattedSequence(IRetentionPredictable peptide,
             out RetentionTimeFailureReason? failureReason)
         {
             failureReason = null;
             return null;
         }
+
+        public void Dispose() { }
     }
 
     [TestFixture]
