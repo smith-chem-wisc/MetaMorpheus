@@ -463,6 +463,24 @@ namespace GuiFunctions
 
         #region Plot Export
 
+        private class SpectralMatchComparer : IEqualityComparer<SpectrumMatchFromTsv>
+        {
+            public static SpectralMatchComparer Instance = new();
+            public bool Equals(SpectrumMatchFromTsv x, SpectrumMatchFromTsv y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null) return false;
+                if (y is null) return false;
+                if (x.GetType() != y.GetType()) return false;
+                return x.FullSequence == y.FullSequence && x.Ms2ScanNumber == y.Ms2ScanNumber && x.FileNameWithoutExtension == y.FileNameWithoutExtension && x.PrecursorScanNum == y.PrecursorScanNum;
+            }
+
+            public int GetHashCode(SpectrumMatchFromTsv obj)
+            {
+                return HashCode.Combine(obj.FullSequence, obj.Ms2ScanNumber, obj.FileNameWithoutExtension, obj.PrecursorScanNum);
+            }
+        }
+
         public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<SpectrumMatchFromTsv> spectrumMatches,
             ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors,
             Canvas legendCanvas = null, Vector ptmLegendLocationVector = new(), FragmentationReanalysisViewModel? reFragment = null)
@@ -474,34 +492,44 @@ namespace GuiFunctions
                 Directory.CreateDirectory(directory);
             }
 
+            // No need to recalculate the plot if we are only exporting the plot that is currently displayed. 
+            bool skipPlotRegeneration = spectrumMatches.Count == 1
+                && CurrentlyDisplayedPlots.Count == 1
+                && reFragment == null
+                && SpectralMatchComparer.Instance.Equals(CurrentlyDisplayedPlots[0].SpectrumMatch, spectrumMatches[0]);
+
             foreach (var psm in spectrumMatches)
             {
-                // get the scan
-                if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out MsDataFile spectraFile))
-                {
-                    errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
-                    return;
-                }
-
-                // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
                 List<MatchedFragmentIon> oldMatchedIons = null;
-                if (reFragment is not null)
-                {
-                    oldMatchedIons = psm.MatchedIons;
-                    var scan = GetMs2ScanFromPsm(psm);
-                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm, false);
-                    psm.MatchedIons = newIons;
-                }
 
-                if (plotView.Name == "plotView")
+                if (!skipPlotRegeneration)
                 {
-                    DisplaySequences(stationaryCanvas, null, null, psm);
-                    DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
-                }
+                    // get the scan
+                    if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out MsDataFile spectraFile))
+                    {
+                        errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
+                        return;
+                    }
 
-                if (errors != null)
-                {
-                    errors.AddRange(errors);
+                    // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
+                    if (reFragment is not null)
+                    {
+                        oldMatchedIons = psm.MatchedIons;
+                        var scan = GetMs2ScanFromPsm(psm);
+                        var newIons = reFragment.MatchIonsWithNewTypes(scan, psm, false);
+                        psm.MatchedIons = newIons;
+                    }
+
+                    if (plotView.Name == "plotView")
+                    {
+                        DisplaySequences(stationaryCanvas, null, null, psm);
+                        DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+                    }
+
+                    if (errors != null)
+                    {
+                        errors.AddRange(errors);
+                    }
                 }
 
                 string sequence = psm.IsPeptide()
@@ -548,7 +576,7 @@ namespace GuiFunctions
                     psm.MatchedIons = oldMatchedIons;
             }
 
-            if (plotView.Name == "plotView")
+            if (!skipPlotRegeneration && plotView.Name == "plotView")
             {
                 var psm = spectrumMatches.First();
 
