@@ -495,6 +495,17 @@ namespace GuiFunctions
                     theModType.Children.Add(new ModForTreeViewModel(mod.ToString(), false, mod.IdWithMotif, false, theModType));
                 }
             }
+
+            modGroups = GlobalVariables.AllRnaModsKnown.GroupBy(b => b.ModificationType);
+            foreach (var group in modGroups)
+            {
+                var theModType = new ModTypeForTreeViewModel(group.Key, false);
+                _Modifications.Add(theModType);
+                foreach (var mod in group)
+                {
+                    theModType.Children.Add(new ModForTreeViewModel(mod.ToString(), false, mod.IdWithMotif, false, theModType));
+                }
+            }
             OnPropertyChanged(nameof(Modifications));
         }
 
