@@ -496,7 +496,7 @@ namespace GuiFunctions
 
             if (MetaDrawSettings.SpectrumDescription["Protein Accession: "])
             {
-                text.Append("Protein Accession: ");
+                text.Append("Accession: ");
                 if (SpectrumMatch.Accession.Length > 10)
                 {
                     text.Append("\r\n   " + SpectrumMatch.Accession);
@@ -509,7 +509,11 @@ namespace GuiFunctions
 
             if (SpectrumMatch.Name != null && MetaDrawSettings.SpectrumDescription["Protein: "])
             {
-                text.Append("Protein: ");
+                if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                    text.Append("Transcript: ");
+                else
+                    text.Append("Protein: ");
+
                 text.Append(SpectrumMatch.Name);
                 text.Append("\r\n");
             }
