@@ -117,6 +117,7 @@ namespace Test.MetaDraw
             var reversedColors = MetaDrawSettings.DataVisualizationColorOrder.Reverse<OxyColor>().ToList();
             snapshot.DataVisualizationColorOrder = [..reversedColors.Select(c => c.GetColorName())];
             snapshot.BioPolymerCoverageFontSize = 3;
+            snapshot.UseShortIonAnnotationsWhenPossible = true;
 
             MetaDrawSettings.LoadSettings(snapshot, out bool flaggedError);
             Assert.That(!flaggedError);
@@ -142,6 +143,7 @@ namespace Test.MetaDraw
             Assert.That(MetaDrawSettings.DataVisualizationColorOrder.Count, Is.EqualTo(reversedColors.Count));
             CollectionAssert.AreEqual(reversedColors.Select(c => c.GetColorName()), MetaDrawSettings.DataVisualizationColorOrder.Select(c => c.GetColorName()));
             Assert.That(snapshot.BioPolymerCoverageFontSize, Is.EqualTo(MetaDrawSettings.BioPolymerCoverageFontSize));
+            Assert.That(snapshot.UseShortIonAnnotationsWhenPossible);
 
             colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();

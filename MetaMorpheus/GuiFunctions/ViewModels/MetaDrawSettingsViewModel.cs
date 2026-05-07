@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using GuiFunctions.MetaDraw;
 using Readers;
+using System.Windows.Input;
 
 namespace GuiFunctions
 {
@@ -86,6 +87,12 @@ namespace GuiFunctions
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
         public static string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
+
+        public bool UseShortIonAnnotationsWhenPossible
+        {
+            get => MetaDrawSettings.UseShortIonAnnotationsWhenPossible;
+            set { MetaDrawSettings.UseShortIonAnnotationsWhenPossible = value; OnPropertyChanged(nameof(UseShortIonAnnotationsWhenPossible)); }
+        }
 
         public bool ShowDecoys
         {
