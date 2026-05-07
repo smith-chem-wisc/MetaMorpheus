@@ -319,7 +319,7 @@ namespace MetaMorpheusGUI
                 }
                 if (psm.Accession.Length > 10)
                     descriptionLineCount++;
-                double verticalOffset = descriptionLineCount * 1.4 * MetaDrawSettings.SpectrumDescriptionFontSize;
+                double verticalOffset = descriptionLineCount * 1.7 * MetaDrawSettings.SpectrumDescriptionFontSize;
                 
                 PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
                 ChildScanPtmLegendControl.DataContext = PtmLegend;
