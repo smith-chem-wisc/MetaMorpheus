@@ -207,19 +207,33 @@
                                         <local:DoubleTextBoxControl x:Name ="SpectrumDescriptionFontSizeBox" Width="80" Height="24" 
                                                                     VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                     </StackPanel>
-                                    <ItemsControl ItemsSource="{Binding SpectrumDescriptors}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <CheckBox Margin="3"
-                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                          Content="{Binding DisplayName}">
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock Text="{Binding DisplayName, Converter={StaticResource SpectrumDescriptorToolTipConverter}}"/>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                    <Grid Margin="0 3 0 0">
+                                        <ItemsControl Grid.Column="0" ItemsSource="{Binding SpectrumDescriptors}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <CheckBox Margin="3"
+                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                              Content="{Binding DisplayName}">
+                                                        <CheckBox.ToolTip>
+                                                            <TextBlock Text="{Binding DisplayName, Converter={StaticResource SpectrumDescriptorToolTipConverter}}"/>
+                                                        </CheckBox.ToolTip>
+                                                    </CheckBox>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <StackPanel Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                            <Button Content="Select All"
+                                                    Width="90"
+                                                    Margin="0 0 0 5"
+                                                    Command="{Binding SelectAllSpectrumDescriptorsCommand}"
+                                                    Style="{StaticResource MetaDrawButtonStyle}"/>
+                                            <Button Content="Deselect All"
+                                                    Width="90"
+                                                    Command="{Binding DeselectAllSpectrumDescriptorsCommand}"
+                                                    Style="{StaticResource MetaDrawButtonStyle}"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
 
                             </Expander>

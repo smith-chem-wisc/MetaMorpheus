@@ -978,6 +978,50 @@ namespace Test.MetaDraw
                 Assert.That(descVm.IsSelected, Is.EqualTo(newValue));
             }
         }
+
+        [Test]
+        public static void TestSelectAllSpectrumDescriptorsCommandSelectsAll()
+        {
+            MetaDrawSettings.ResetSettings();
+            var vm = new MetaDrawSettingsViewModel(false);
+
+            for (int i = 0; i < vm.SpectrumDescriptors.Count; i++)
+            {
+                vm.SpectrumDescriptors[i].IsSelected = i % 2 == 0;
+            }
+
+            Assert.That(vm.SpectrumDescriptors.Any(p => !p.IsSelected));
+
+            vm.SelectAllSpectrumDescriptorsCommand.Execute(null);
+
+            Assert.That(vm.SpectrumDescriptors.All(p => p.IsSelected));
+            foreach (var descriptor in vm.SpectrumDescriptors)
+            {
+                Assert.That(MetaDrawSettings.SpectrumDescription[descriptor.DisplayName + ": "], Is.True);
+            }
+        }
+
+        [Test]
+        public static void TestDeselectAllSpectrumDescriptorsCommandDeselectsAll()
+        {
+            MetaDrawSettings.ResetSettings();
+            var vm = new MetaDrawSettingsViewModel(false);
+
+            for (int i = 0; i < vm.SpectrumDescriptors.Count; i++)
+            {
+                vm.SpectrumDescriptors[i].IsSelected = i % 2 == 0;
+            }
+
+            Assert.That(vm.SpectrumDescriptors.Any(p => p.IsSelected));
+
+            vm.DeselectAllSpectrumDescriptorsCommand.Execute(null);
+
+            Assert.That(vm.SpectrumDescriptors.All(p => !p.IsSelected));
+            foreach (var descriptor in vm.SpectrumDescriptors)
+            {
+                Assert.That(MetaDrawSettings.SpectrumDescription[descriptor.DisplayName + ": "], Is.False);
+            }
+        }
     }
 }
   
