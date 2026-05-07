@@ -532,11 +532,12 @@ namespace GuiFunctions
                     }
                 }
 
-                string sequence = psm.IsPeptide()
-                    ? !(psm as PsmFromTsv).UniqueSequence.IsNullOrEmptyOrWhiteSpace()
-                        ? illegalInFileName.Replace((psm as PsmFromTsv).UniqueSequence, string.Empty)
-                        : illegalInFileName.Replace(psm.FullSequence, string.Empty)
+                var rawSequence = psm.IsPeptide()
+                    ? (!(psm as PsmFromTsv).UniqueSequence.IsNullOrEmptyOrWhiteSpace()
+                        ? (psm as PsmFromTsv).UniqueSequence
+                        : psm.FullSequence)
                     : psm.FullSequence;
+                string sequence = illegalInFileName.Replace(rawSequence, string.Empty);
 
                 if (sequence.Length > 30)
                 {
