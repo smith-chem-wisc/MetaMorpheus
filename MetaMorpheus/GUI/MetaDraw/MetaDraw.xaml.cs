@@ -305,25 +305,37 @@ namespace MetaMorpheusGUI
             double maxDisplayedPerRow = (int)Math.Round((UpperSequenceAnnotaiton.ActualWidth - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0) + 7;
             MetaDrawSettings.SequenceAnnotationSegmentPerRow = (int)Math.Floor(maxDisplayedPerRow / (double)(MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
 
-            // draw the annotated spectrum
-            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, sequenceAnnotationCanvas, psm);
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
-
-            // add ptm legend if desired
-            if (MetaDrawSettings.ShowLegend)
+            List<string> errors = null;
+            try
             {
-                int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
-                if (psm.Name.IsNotNullOrEmptyOrWhiteSpace())
+                // draw the annotated spectrum
+                MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas,
+                    sequenceAnnotationCanvas, psm);
+                MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out errors);
+
+                // add ptm legend if desired
+                if (MetaDrawSettings.ShowLegend)
                 {
-                    descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) / (double)SpectrumMatchPlot.MaxCharactersPerDescriptionLine);
+                    int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
+                    if (psm.Name.IsNotNullOrEmptyOrWhiteSpace())
+                    {
+                        descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) /
+                                                                (double)SpectrumMatchPlot
+                                                                    .MaxCharactersPerDescriptionLine);
+                    }
+
+                    if (psm.Accession.Length > 10)
+                        descriptionLineCount++;
+                    double verticalOffset = descriptionLineCount * 1.7 * MetaDrawSettings.SpectrumDescriptionFontSize;
+
+                    PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
+                    ChildScanPtmLegendControl.DataContext = PtmLegend;
+                    SequenceCoveragePtmLegendControl.DataContext = PtmLegend;
                 }
-                if (psm.Accession.Length > 10)
-                    descriptionLineCount++;
-                double verticalOffset = descriptionLineCount * 1.7 * MetaDrawSettings.SpectrumDescriptionFontSize;
-                
-                PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
-                ChildScanPtmLegendControl.DataContext = PtmLegend;
-                SequenceCoveragePtmLegendControl.DataContext = PtmLegend;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error drawing spectrum and sequence: " + ex.Message);
             }
 
             //draw the sequence coverage if not crosslinked
