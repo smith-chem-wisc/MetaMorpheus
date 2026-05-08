@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Omics.Modifications.IO;
@@ -89,6 +90,7 @@ namespace EngineLayer
             SetUpGlobalSettings();
             LoadDissociationTypes();
             LoadAvailableProteomes();
+            LoadDigestionAgents();
         }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml, bool isRna = false)
@@ -392,7 +394,7 @@ namespace EngineLayer
             }
         }
 
-        private static void LoadModifications()
+        private static void LoadModifications() 
         {
             _AllModsKnown = new List<Modification>();
             _AllModTypesKnown = new HashSet<string>();
@@ -427,9 +429,7 @@ namespace EngineLayer
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
-            ProteaseMods = ModificationLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
-            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
-            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
+            // ProteaseMods and digestion dictionaries are initialized in LoadDigestionAgents()
         }
 
         private static void LoadRnaModifications()
@@ -574,6 +574,133 @@ namespace EngineLayer
                     glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
                 }
                 _AllModsKnown.Add(glycan);
+            }
+        }
+        /// <summary>
+        /// Loads protease and RNase digestion agents from mzLib embedded resources.
+        /// The embedded resource is always extracted to proteases.tsv / rnases.tsv,
+        /// ensuring the latest mzLib definitions are used on every startup.
+        /// A separate *_custom.tsv file is created once (header only) for user-defined
+        /// entries. Custom entries are merged in but default entries win on name collisions.
+        /// </summary>
+        private static void LoadDigestionAgents()
+        {
+            // Get protease mods from mzLib's embedded resource
+            ProteaseMods = ProteaseDictionary.LoadEmbeddedProteaseMods();
+
+            // --- Proteases ---
+            string proteasesDir = Path.Combine(DataDir, @"ProteolyticDigestion");
+            string proteasesPath = Path.Combine(proteasesDir, @"proteases.tsv");
+            string proteasesCustomPath = Path.Combine(proteasesDir, @"proteases_custom.tsv");
+
+            if (!Directory.Exists(proteasesDir))
+            {
+                Directory.CreateDirectory(proteasesDir);
+            }
+
+            // Always overwrite from embedded resource to ensure latest definitions
+            ExtractEmbeddedResource(typeof(ProteaseDictionary).Assembly, "proteases.tsv", proteasesPath);
+            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(proteasesPath, ProteaseMods);
+
+            // Create custom file with documentation and header if it doesn't exist yet
+            if (!File.Exists(proteasesCustomPath))
+            {
+                // Extract header comments from the embedded proteases.tsv (everything before the data header)
+                var embeddedLines = File.ReadAllLines(proteasesPath);
+                var customFileLines = new List<string>();
+                bool foundHeader = false;
+                foreach (var line in embeddedLines)
+                {
+                    if (!foundHeader && !line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
+                    {
+                        customFileLines.Add(line);
+                        foundHeader = true;
+                        break;
+                    }
+                    customFileLines.Add(line);
+                }
+                File.WriteAllLines(proteasesCustomPath, customFileLines);
+            }
+
+            // Merge custom entries — defaults win on name collisions
+            var customProteases = ProteaseDictionary.LoadProteaseDictionary(proteasesCustomPath, ProteaseMods);
+            foreach (var kvp in customProteases)
+            {
+                if (!ProteaseDictionary.Dictionary.ContainsKey(kvp.Key))
+                {
+                    ProteaseDictionary.Dictionary[kvp.Key] = kvp.Value;
+                }
+            }
+
+            // --- RNases ---
+            string rnasesDir = Path.Combine(DataDir, @"Digestion");
+            string rnasesPath = Path.Combine(rnasesDir, @"rnases.tsv");
+            string rnasesCustomPath = Path.Combine(rnasesDir, @"rnases_custom.tsv");
+
+            if (!Directory.Exists(rnasesDir))
+            {
+                Directory.CreateDirectory(rnasesDir);
+            }
+
+            // Always overwrite from embedded resource to ensure latest definitions
+            ExtractEmbeddedResource(typeof(RnaseDictionary).Assembly, "rnases.tsv", rnasesPath);
+            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(rnasesPath);
+
+            // Create custom file with documentation and header if it doesn't exist yet
+            if (!File.Exists(rnasesCustomPath))
+            {
+                var embeddedRnaseLines = File.ReadAllLines(rnasesPath);
+                var customRnaseFileLines = new List<string>();
+                foreach (var line in embeddedRnaseLines)
+                {
+                    if (!line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
+                    {
+                        customRnaseFileLines.Add(line);
+                        break;
+                    }
+                    customRnaseFileLines.Add(line);
+                }
+                File.WriteAllLines(rnasesCustomPath, customRnaseFileLines);
+            }
+
+            // Merge custom entries — defaults win on name collisions
+            var customRnases = RnaseDictionary.LoadRnaseDictionary(rnasesCustomPath);
+            foreach (var kvp in customRnases)
+            {
+                if (!RnaseDictionary.Dictionary.ContainsKey(kvp.Key))
+                {
+                    RnaseDictionary.Dictionary[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Extracts an embedded resource from an assembly to a file path.
+        /// </summary>
+        private static void ExtractEmbeddedResource(Assembly assembly, string resourceFileName, string outputPath)
+        {
+            var resourceNames = assembly.GetManifestResourceNames();
+            var suffix = "." + resourceFileName;
+            var resourceName = resourceNames.FirstOrDefault(r =>
+                r.Equals(resourceFileName, StringComparison.OrdinalIgnoreCase) ||
+                r.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+
+            if (resourceName == null)
+            {
+                throw new FileNotFoundException($"Embedded resource '{resourceFileName}' not found in assembly '{assembly.FullName}'");
+            }
+
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream == null)
+                {
+                    throw new InvalidOperationException($"Could not load embedded resource '{resourceName}'");
+                }
+
+                using (var fileStream = File.Create(outputPath))
+                {
+                    stream.CopyTo(fileStream);
+                }
             }
         }
     }
