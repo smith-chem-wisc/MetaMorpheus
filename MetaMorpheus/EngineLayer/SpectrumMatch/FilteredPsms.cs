@@ -165,7 +165,7 @@ namespace EngineLayer.SpectrumMatch
                 {
                     switch(filterType)
                     {
-                        case FilterType.PepQValue:
+                        case FilterType.PepQValue when psm.GetFdrInfo(filterAtPeptideLevel).PEP_QValue != 2:
                             if (psm.GetFdrInfo(filterAtPeptideLevel).PEP_QValue <= qValueThreshold)
                             {
                                 yield return psm;

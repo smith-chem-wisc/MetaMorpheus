@@ -59,8 +59,10 @@ namespace TaskLayer
                 || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom
                 )
             {
+                // RNA uses custom for adducts, we should only run mass diff localization if the user want to 
                 // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
-                Parameters.SearchParameters.DoLocalizationAnalysis = true;
+                if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom && GlobalVariables.AnalyteType != AnalyteType.Oligo)
+                    Parameters.SearchParameters.DoLocalizationAnalysis = true;
             }
             else
             {
@@ -192,21 +194,14 @@ namespace TaskLayer
                 }
             }
 
-            var filteredPsmsForParsimony = FilteredPsms.Filter(Parameters.AllSpectralMatches,
-                commonParams: CommonParameters,
-                includeDecoys: true,
-                includeContaminants: true,
-                includeAmbiguous: false,
-                includeHighQValuePsms: false);
-
             // run parsimony
-            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(filteredPsmsForParsimony, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(Parameters.AllSpectralMatches, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
             // Pass the FilterType and FilterThreshold from the filtered PSMs to ensure consistent filtering criteria
             ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
                 proteinAnalysisResults.ProteinGroups,
-                filteredPsmsForParsimony,
+                Parameters.AllSpectralMatches,
                 Parameters.SearchParameters.NoOneHitWonders,
                 Parameters.SearchParameters.ModPeptidesAreDifferent,
                 mergeIndistinguishableProteinGroups: true,
