@@ -30,6 +30,7 @@ using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
 using EngineLayer.SpectrumMatch;
+using Omics.Fragmentation;
 
 namespace TaskLayer
 {
@@ -153,6 +154,27 @@ namespace TaskLayer
                     )
                 )
             )
+            .ConfigureType<List<MIonLoss>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => string.Join("\t", custom.Select(f => f.Annotation)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(typeName => MIonLoss.AllMIonLosses.GetValueOrDefault(typeName, null))
+                        .Where(t => t != null)
+                        .ToList()
+                    )
+                )
+            )
+            .ConfigureType<IFragmentationParams>(type => type
+                .WithConversionFor<TomlTable>(c => c
+                    .FromToml(tmlTable =>
+                        tmlTable.ContainsKey("ModificationsCanSuppressBaseLossIons")
+                            ? tmlTable.Get<RnaFragmentationParams>()
+                            : tmlTable.Get<FragmentationParams>())))
+            .ConfigureType<RnaFragmentationParams>(type => type
+                .CreateInstance(() => RnaFragmentationParams.Default))
+            .ConfigureType<FragmentationParams>(type => type
+                .CreateInstance(() => new()))
         );
        
 
@@ -519,6 +541,7 @@ namespace TaskLayer
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            Tolerance productMassTolerance_LowRes = fileSpecificParams.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
@@ -526,6 +549,7 @@ namespace TaskLayer
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
                 productMassTolerance: productMassTolerance,
+                productMassTolerance_LowRes: productMassTolerance_LowRes,
                 digestionParams: fileSpecificDigestionParams,
                 separationType: separationType,
 
@@ -559,7 +583,8 @@ namespace TaskLayer
                 addTruncations: commonParams.AddTruncations,
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
                 productDeconParams: commonParams.ProductDeconvolutionParameters,
-                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity);
+                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
+                fragmentationParams: commonParams.FragmentationParameters);
 
             return returnParams;
         }
@@ -1551,6 +1576,30 @@ namespace TaskLayer
                     bioPolymers.RemoveAll(p => ReferenceEquals(p, accessionGroup[i]));
                 }
             }
+        }
+
+        /// <summary>
+        /// Legacy TOML compatibility — when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
+        /// </summary>
+        /// <typeparam name="TTask"></typeparam>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public static TTask ReadTaskTomlWithLowResFallback<TTask>(string filePath) where TTask : MetaMorpheusTask
+        {
+            TomlTable raw = Toml.ReadFile(filePath, tomlConfig);
+            TTask task = raw.Get<TTask>();
+
+            if (raw.ContainsKey(nameof(CommonParameters)))
+            {
+                TomlTable common = raw.Get<TomlTable>(nameof(CommonParameters));
+                if (!common.ContainsKey(nameof(CommonParameters.ProductMassTolerance_LowRes)))
+                {
+                    // Legacy TOML behavior: omitted low-res follows product tolerance
+                    task.CommonParameters.ProductMassTolerance_LowRes = task.CommonParameters.ProductMassTolerance;
+                }
+            }
+
+            return task;
         }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Chemistry;
+using Chromatography.RetentionTimePrediction;
+using Chromatography.RetentionTimePrediction.SSRCalc;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.FdrAnalysis;
 using MathNet.Numerics.Statistics;
@@ -44,7 +46,7 @@ namespace EngineLayer
                 FeatureSelectionSeed = _randomSeed,
                 RandomStart = false
             };
-            
+
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
 
         //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
@@ -58,7 +60,7 @@ namespace EngineLayer
         //The value Tuple is the average and standard deviation, respectively, of the predicted hydrophobicities of the observed peptides eluting at that rounded retention time.
         public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified { get; private set; }
         public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified { get; private set; }
-        public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE  { get; private set; }
+        public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE { get; private set; }
 
         /// <summary>
         /// A dictionary which stores the chimeric ID string in the key and the number of chimeric identifications as the vale
@@ -74,6 +76,7 @@ namespace EngineLayer
         public string OutputFolder { get; }
         public List<SpectralMatch> AllPsms { get; }
         public string SearchType { get; }
+        public IRetentionTimePredictor RetentionTimePredictor { get; }
 
         /// <summary>
         /// This method is used to compute the PEP values for all PSMs in a dataset. 
@@ -88,12 +91,13 @@ namespace EngineLayer
             FileSpecificParametersDictionary = fileSpecificParameters.ToDictionary(p => Path.GetFileName(p.fileName), p => p.fileSpecificParameters);
         }
 
-        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
+        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor? rtPredictor = null)
         {
             // This creates a new list of PSMs, but does not clone the Psms themselves.
             // This allows the PSMs to be modified and the order to be preserved
             AllPsms = psms.OrderByDescending(p => p).ToList();
             TrainingVariables = PsmData.trainingInfos[searchType];
+            RetentionTimePredictor = rtPredictor ?? new SSRCalc3RetentionTimePredictor();
             OutputFolder = outputFolder;
             SearchType = searchType;
             SetFileSpecificParameters(fileSpecificParameters);
@@ -110,7 +114,7 @@ namespace EngineLayer
                 ? SpectralMatchGroup.GroupByBaseSequence(AllPsms)
                 : SpectralMatchGroup.GroupByIndividualPsm(AllPsms);
 
-            if(UsePeptideLevelQValueForTraining && (peptideGroups.Count(g => g.BestMatch.IsDecoy) < 4 || peptideGroups.Count(g => !g.BestMatch.IsDecoy) < 4))
+            if (UsePeptideLevelQValueForTraining && (peptideGroups.Count(g => g.BestMatch.IsDecoy) < 4 || peptideGroups.Count(g => !g.BestMatch.IsDecoy) < 4))
             {
                 // If we don't have enough peptides to train at the peptide level, we will train at the PSM level
                 peptideGroups = SpectralMatchGroup.GroupByIndividualPsm(AllPsms);
@@ -131,9 +135,9 @@ namespace EngineLayer
                     {
                         allGroupsHavePositiveAndNegativeTrainingExamples = false;
                     }
-                
-            });
-            if(!allGroupsHavePositiveAndNegativeTrainingExamples)
+
+                });
+            if (!allGroupsHavePositiveAndNegativeTrainingExamples)
             {
                 return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
             }
@@ -159,13 +163,6 @@ namespace EngineLayer
                 var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(PSMDataGroups[groupIndexNumber]));
                 CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
 
-                //Parallel operation of the following code requires the method to be stored and then read, once for each thread
-                //if not output directory is specified, the model cannot be stored, and we must force single-threaded operation
-                if (OutputFolder != null)
-                {
-                    mlContext.Model.Save(trainedModels[groupIndexNumber], dataView.Schema, Path.Combine(OutputFolder, "model.zip"));
-                }
-
                 //model is trained on peptides but here we can use that to compute PEP for all PSMs
                 int ambiguousPeptidesResolved = Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], SearchType, OutputFolder);
 
@@ -188,11 +185,11 @@ namespace EngineLayer
         {
             FileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(trainingData);
             ChargeStateMode = GetChargeStateMode(trainingData);
-            
+
             if (trainingVariables.Contains("HydrophobicityZScore"))
             {
-                FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = ComputeHydrophobicityValues(trainingData, false);
-                FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeHydrophobicityValues(trainingData,  true);
+                FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = ComputeRetentionTimeEquivalentValues(trainingData, false, RetentionTimePredictor);
+                FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeRetentionTimeEquivalentValues(trainingData, true, RetentionTimePredictor);
                 FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = ComputeMobilityValues(trainingData);
             }
             if (trainingVariables.Contains("ChimeraCount"))
@@ -385,8 +382,6 @@ namespace EngineLayer
             return s.ToString();
         }
 
-        private readonly object _modelLock = new();
-
         public int Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
             MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, string outputFolder)
@@ -394,73 +389,70 @@ namespace EngineLayer
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
             int ambiguousPeptidesResolved = 0;
 
-            //the trained model is not threadsafe. Therefore, to use the same model for each thread saved the model to disk. Then each thread reads its own copy of the model back from disk.
-            //If there is no output folder specified, then this can't happen. We set maxthreads eqaul to one and use the model that gets passed into the method.
-            if (String.IsNullOrEmpty(outputFolder))
+            var predictionEnginePerThread =
+                new ThreadLocal<PredictionEngine<PsmData, TruePositivePrediction>>(
+                    () => mLContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel),
+                    trackAllValues: true);
+
+            try
             {
-                maxThreads = 1;
-            }
-
-            Parallel.ForEach(Partitioner.Create(0, peptideGroupIndices.Count),
-                new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
-                (range, loopState) =>
-                {
-                    // Stop loop if canceled
-                    if (GlobalVariables.StopLoops) { return; }
-
-                    ITransformer threadSpecificTrainedModel;
-                    
-                    if (maxThreads == 1)
+                Parallel.ForEach(Partitioner.Create(0, peptideGroupIndices.Count),
+                    new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
+                    (range, loopState) =>
                     {
-                        threadSpecificTrainedModel = trainedModel;
-                    }
-                    else
-                    {
-                        lock (_modelLock)
+                        // Stop loop if canceled
+                        if (GlobalVariables.StopLoops) { return; }
+
+                        // one prediction engine per thread, because the prediction engine is not thread-safe
+                        var threadPredictionEngine = predictionEnginePerThread.Value;
+
+                        int ambigousPeptidesRemovedinThread = 0;
+
+                        List<int> indiciesOfPeptidesToRemove = new List<int>();
+                        List<double> pepValuePredictions = new List<double>();
+                        for (int i = range.Item1; i < range.Item2; i++)
                         {
-                            threadSpecificTrainedModel = mLContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
-                        }
-                    }
-
-                    // one prediction engine per thread, because the prediction engine is not thread-safe
-                    var threadPredictionEngine = mLContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(threadSpecificTrainedModel);
-
-                    int ambigousPeptidesRemovedinThread = 0;
-
-                    List<int> indiciesOfPeptidesToRemove = new List<int>();
-                    List<double> pepValuePredictions = new List<double>();
-                    for (int i = range.Item1; i < range.Item2; i++)
-                    {
-                        foreach (SpectralMatch psm in peptideGroups[peptideGroupIndices[i]])
-                        {
-                            // I'm not sure what's going one here vis-a-vis disambiguations, but I'm not going to touch it for now
-                            if (psm != null)
+                            foreach (SpectralMatch psm in peptideGroups[peptideGroupIndices[i]])
                             {
-                                indiciesOfPeptidesToRemove.Clear();
-                                pepValuePredictions.Clear();
-
-                                //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
-                                var bestMatchingBioPolymersWithSetMods = psm.BestMatchingBioPolymersWithSetMods.ToList();
-                                foreach (SpectralMatchHypothesis bestMatch in bestMatchingBioPolymersWithSetMods)
+                                // I'm not sure what's going one here vis-a-vis disambiguations, but I'm not going to touch it for now
+                                if (psm != null)
                                 {
-                                    PsmData pd = CreateOnePsmDataEntry(searchType, psm, bestMatch, !bestMatch.IsDecoy);
-                                    var pepValuePrediction = threadPredictionEngine.Predict(pd);
-                                    pepValuePredictions.Add(pepValuePrediction.Probability);
-                                    //A score is available using the variable pepvaluePrediction.Score
+                                    indiciesOfPeptidesToRemove.Clear();
+                                    pepValuePredictions.Clear();
+
+                                    //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
+                                    var bestMatchingBioPolymersWithSetMods = psm.BestMatchingBioPolymersWithSetMods.ToList();
+                                    foreach (SpectralMatchHypothesis bestMatch in bestMatchingBioPolymersWithSetMods)
+                                    {
+                                        PsmData pd = CreateOnePsmDataEntry(searchType, psm, bestMatch, !bestMatch.IsDecoy);
+                                        var pepValuePrediction = threadPredictionEngine.Predict(pd);
+                                        pepValuePredictions.Add(pepValuePrediction.Probability);
+                                        //A score is available using the variable pepvaluePrediction.Score
+                                    }
+
+                                    GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+                                    RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, bestMatchingBioPolymersWithSetMods, ref ambigousPeptidesRemovedinThread);
+
+                                    psm.PsmFdrInfo.PEP = 1 - pepValuePredictions.Max();
+                                    psm.PeptideFdrInfo.PEP = 1 - pepValuePredictions.Max();
                                 }
 
-                                GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-                                RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, bestMatchingBioPolymersWithSetMods, ref ambigousPeptidesRemovedinThread);
-
-                                psm.PsmFdrInfo.PEP = 1 - pepValuePredictions.Max();
-                                psm.PeptideFdrInfo.PEP = 1 - pepValuePredictions.Max();
                             }
-                            
                         }
-                    }
 
-                    Interlocked.Add(ref ambiguousPeptidesResolved, ambigousPeptidesRemovedinThread);
-                });
+                        Interlocked.Add(ref ambiguousPeptidesResolved, ambigousPeptidesRemovedinThread);
+                    });
+            }
+            finally
+            {
+                foreach (var engine in predictionEnginePerThread.Values)
+                {
+                    engine?.Dispose();
+                }
+
+                predictionEnginePerThread.Dispose();
+            }
+
             return ambiguousPeptidesResolved;
         }
 
@@ -541,7 +533,7 @@ namespace EngineLayer
                     missedCleavages = tentativeSpectralMatch.SpecificBioPolymer.MissedCleavages;
                     var fileName = Path.GetFileName(psm.FullFilePath);
                     bool fileIsCzeSeparationType = FileSpecificParametersDictionary.TryGetValue(fileName, out var fileParams) && fileParams.SeparationType == "CZE";
-                     
+
                     if (searchType != "RNA")
                     {
                         if (!fileIsCzeSeparationType)
@@ -550,7 +542,7 @@ namespace EngineLayer
                             var dict = isUnmodified
                                 ? FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified
                                 : FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified;
-                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, dict) * 10.0, 0);
+                            hydrophobicityZscore = (float)Math.Round(GetRetentionTimeEquivalentZscore(psm, tentativeSpectralMatch.SpecificBioPolymer, dict, RetentionTimePredictor) * 10.0, 0);
                         }
                         else
                         {
@@ -695,10 +687,8 @@ namespace EngineLayer
             return psms.Where(p => p.IsDecoy != true && p.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= 0.01).Select(p => p.ScanPrecursorCharge).GroupBy(n => n).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
         }
 
-        public Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeHydrophobicityValues(List<SpectralMatch> psms, bool computeHydrophobicitiesforModifiedPeptides)
+        public Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeRetentionTimeEquivalentValues(List<SpectralMatch> psms, bool computeHydrophobicitiesforModifiedPeptides, IRetentionTimePredictor predictor)
         {
-            SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
-
             //TODO change the tuple so the values have names
             Dictionary<string, Dictionary<int, Tuple<double, double>>> rtHydrophobicityAvgDev = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
@@ -722,7 +712,7 @@ namespace EngineLayer
                         }
                         fullSequences.Add(bestMatch.SpecificBioPolymer.FullSequence);
 
-                        double predictedHydrophobicity = bestMatch.SpecificBioPolymer is PeptideWithSetModifications pep ?  calc.ScoreSequence(pep) : 0;
+                        double predictedHydrophobicity = bestMatch.SpecificBioPolymer is PeptideWithSetModifications pep ? predictor.PredictRetentionTime(pep, out _) ?? 0 : 0;
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
@@ -911,10 +901,9 @@ namespace EngineLayer
             return mobility;
         }
 
-        private static float GetSSRCalcHydrophobicityZScore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d)
+        private static float GetRetentionTimeEquivalentZscore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d, IRetentionTimePredictor predictor)
         {
             //Using SSRCalc3 but probably any number of different calculators could be used instead. One could also use the CE mobility.
-            SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
             double hydrophobicityZscore = double.NaN;
 
             if (d.ContainsKey(Path.GetFileName(psm.FullFilePath)))
@@ -922,7 +911,7 @@ namespace EngineLayer
                 int time = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                 if (d[Path.GetFileName(psm.FullFilePath)].Keys.Contains(time))
                 {
-                    double predictedHydrophobicity = Peptide is PeptideWithSetModifications pep ? calc.ScoreSequence(pep) : 0;
+                    double predictedHydrophobicity = Peptide is PeptideWithSetModifications pep ? predictor.PredictRetentionTime(pep, out _) ?? 0 : 0;
 
                     hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedHydrophobicity) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
                 }

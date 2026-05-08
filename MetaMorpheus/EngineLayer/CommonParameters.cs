@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using Nett;
 using Omics.Digestion;
-using Omics.Fragmentation.Peptide;
 using Transcriptomics.Digestion;
 using EngineLayer.DIA;
+using Transcriptomics;
 
 namespace EngineLayer
 {
@@ -47,7 +47,8 @@ namespace EngineLayer
             bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, 
             Tolerance productMassTolerance = null, 
-            Tolerance precursorMassTolerance = null, 
+            Tolerance precursorMassTolerance = null,
+            Tolerance productMassTolerance_LowRes = null,
             Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, 
             IDigestionParams digestionParams = null, 
@@ -60,7 +61,8 @@ namespace EngineLayer
             DeconvolutionParameters precursorDeconParams = null,
             DeconvolutionParameters productDeconParams = null,
             bool useMostAbundantPrecursorIntensity = true,
-            DIAparameters diaParameters = null)
+            DIAparameters diaParameters = null,
+            IFragmentationParams fragmentationParams = null)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -84,6 +86,7 @@ namespace EngineLayer
             MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1 ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1 : maxThreadsToUsePerFile;
             ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
             PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
+            ProductMassTolerance_LowRes = productMassTolerance_LowRes ?? new AbsoluteTolerance(0.35);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
             DissociationType = dissociationType;
@@ -119,11 +122,13 @@ namespace EngineLayer
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
                 PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
                 ProductDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+                FragmentationParameters = fragmentationParams ?? RnaFragmentationParams.Default;
             }
             else
             {
                 ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
+                FragmentationParameters = fragmentationParams ?? new FragmentationParams();
             }
 
             CustomIons = digestionParams.ProductsFromDissociationType()[DissociationType.Custom];
@@ -157,8 +162,9 @@ namespace EngineLayer
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
+        public Tolerance ProductMassTolerance_LowRes { get; set; }// Use a wider mass tolerance for lower-resolution analyzers (e.g., ion traps). For now, this is an independent parameter used only in glyco tasks and is not modified by the calibration task.
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
-        public bool AddCompIons { get; private set; }
+        public bool AddCompIons { get; set; }
         /// <summary>
         /// Only peptides/PSMs with Q-Value and Q-Value Notch below this threshold are used for quantification and
         /// spectral library generation. If SearchParameters.WriteHighQValuePsms is set to false, only 
@@ -199,6 +205,7 @@ namespace EngineLayer
 
         public bool UseMostAbundantPrecursorIntensity { get; set; }
         public DIAparameters? DIAparameters { get; set; } //only for DIA analysis involving pseudo ms2 scan generation
+        public IFragmentationParams FragmentationParameters { get; set; }
 
         public CommonParameters Clone()
         {
@@ -257,6 +264,7 @@ namespace EngineLayer
                                 TrimMsMsPeaks,
                                 ProductMassTolerance,
                                 PrecursorMassTolerance,
+                                ProductMassTolerance_LowRes,
                                 DeconvolutionMassTolerance,
                                 MaxThreadsToUsePerFile,
                                 DigestionParams.Clone(terminus),
@@ -267,7 +275,10 @@ namespace EngineLayer
                                 MinVariantDepth,
                                 AddTruncations,
                                 PrecursorDeconvolutionParameters, 
-                                ProductDeconvolutionParameters);
+                                ProductDeconvolutionParameters,
+                                UseMostAbundantPrecursorIntensity,
+                                DIAparameters,
+                                FragmentationParameters);
         }
 
         public void SetCustomProductTypes()
