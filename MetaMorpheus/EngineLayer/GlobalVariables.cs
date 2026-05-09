@@ -667,7 +667,7 @@ namespace EngineLayer
                 }
                 catch (Exception e)
                 {
-                    throw new MetaMorpheusException($"Error creating default custom protease file with error message: {e.Message}", e);
+                    throw new MetaMorpheusException($"Error creating default custom rnase file with error message: {e.Message}", e);
                 }
             }
         }
