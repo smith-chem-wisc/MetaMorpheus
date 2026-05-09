@@ -7,13 +7,73 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Transcriptomics.Digestion;
 
 namespace Test.GuiTests
 {
     [TestFixture]
+    [NonParallelizable]
     public static class LoadDigestionAgentsTest
     {
+        private static void InvokeLoadDigestionAgents()
+        {
+            var method = typeof(GlobalVariables).GetMethod("LoadDigestionAgents", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(method, Is.Not.Null, "Could not find GlobalVariables.LoadDigestionAgents via reflection.");
+
+            try
+            {
+                method.Invoke(null, null);
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
+            {
+                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            }
+        }
+
+        private static void BackupPath(string path, out string backupPath, out bool hadExistingFile, out bool hadExistingDirectory)
+        {
+            backupPath = path + ".bak";
+            hadExistingFile = File.Exists(path);
+            hadExistingDirectory = Directory.Exists(path);
+
+            if (File.Exists(backupPath))
+                File.Delete(backupPath);
+            else if (Directory.Exists(backupPath))
+                Directory.Delete(backupPath, true);
+
+            if (hadExistingFile)
+                File.Copy(path, backupPath, overwrite: true);
+            else if (hadExistingDirectory)
+                Directory.Move(path, backupPath);
+        }
+
+        private static void RestorePath(string path, string backupPath, bool hadExistingFile, bool hadExistingDirectory)
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+            else if (Directory.Exists(path))
+                Directory.Delete(path, true);
+
+            if (hadExistingFile)
+                File.Copy(backupPath, path, overwrite: true);
+            else if (hadExistingDirectory)
+                Directory.Move(backupPath, path);
+
+            if (File.Exists(backupPath))
+                File.Delete(backupPath);
+            else if (Directory.Exists(backupPath))
+                Directory.Delete(backupPath, true);
+        }
+
+        private static void DeletePathIfExists(string path)
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+            else if (Directory.Exists(path))
+                Directory.Delete(path, true);
+        }
+
         private static string GetHeaderLine(string[] tsvLines)
         {
             // The TSV files may have comment lines starting with '#' before the header
@@ -69,11 +129,7 @@ namespace Test.GuiTests
             var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
             string header = GetHeaderLine(stream);
 
-            // Back up any existing custom file
-            string backupPath = customPath + ".bak";
-            bool hadExistingCustomFile = File.Exists(customPath);
-            if (hadExistingCustomFile)
-                File.Copy(customPath, backupPath, overwrite: true);
+            BackupPath(customPath, out string backupPath, out bool hadExistingCustomFile, out bool hadExistingCustomDirectory);
 
             try
             {
@@ -95,13 +151,7 @@ namespace Test.GuiTests
             finally
             {
                 // Restore original custom file
-                if (hadExistingCustomFile)
-                    File.Copy(backupPath, customPath, overwrite: true);
-                else if (File.Exists(customPath))
-                    File.Delete(customPath);
-
-                if (File.Exists(backupPath))
-                    File.Delete(backupPath);
+                RestorePath(customPath, backupPath, hadExistingCustomFile, hadExistingCustomDirectory);
 
                 // Reset state
                 GlobalVariables.SetUpGlobalVariables();
@@ -125,10 +175,7 @@ namespace Test.GuiTests
             var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
             string header = GetHeaderLine(stream);
 
-            string backupPath = customPath + ".bak";
-            bool hadExistingCustomFile = File.Exists(customPath);
-            if (hadExistingCustomFile)
-                File.Copy(customPath, backupPath, overwrite: true);
+            BackupPath(customPath, out string backupPath, out bool hadExistingCustomFile, out bool hadExistingCustomDirectory);
 
             try
             {
@@ -154,13 +201,7 @@ namespace Test.GuiTests
             }
             finally
             {
-                if (hadExistingCustomFile)
-                    File.Copy(backupPath, customPath, overwrite: true);
-                else if (File.Exists(customPath))
-                    File.Delete(customPath);
-
-                if (File.Exists(backupPath))
-                    File.Delete(backupPath);
+                RestorePath(customPath, backupPath, hadExistingCustomFile, hadExistingCustomDirectory);
 
                 GlobalVariables.SetUpGlobalVariables();
             }
@@ -183,10 +224,7 @@ namespace Test.GuiTests
             var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
             string header = GetHeaderLine(stream);
 
-            string backupPath = customPath + ".bak";
-            bool hadExistingCustomFile = File.Exists(customPath);
-            if (hadExistingCustomFile)
-                File.Copy(customPath, backupPath, overwrite: true);
+            BackupPath(customPath, out string backupPath, out bool hadExistingCustomFile, out bool hadExistingCustomDirectory);
 
             try
             {
@@ -206,13 +244,7 @@ namespace Test.GuiTests
             }
             finally
             {
-                if (hadExistingCustomFile)
-                    File.Copy(backupPath, customPath, overwrite: true);
-                else if (File.Exists(customPath))
-                    File.Delete(customPath);
-
-                if (File.Exists(backupPath))
-                    File.Delete(backupPath);
+                RestorePath(customPath, backupPath, hadExistingCustomFile, hadExistingCustomDirectory);
 
                 GlobalVariables.SetUpGlobalVariables();
             }
@@ -235,10 +267,7 @@ namespace Test.GuiTests
             var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
             string header = GetHeaderLine(stream);
 
-            string backupPath = customPath + ".bak";
-            bool hadExistingCustomFile = File.Exists(customPath);
-            if (hadExistingCustomFile)
-                File.Copy(customPath, backupPath, overwrite: true);
+            BackupPath(customPath, out string backupPath, out bool hadExistingCustomFile, out bool hadExistingCustomDirectory);
 
             try
             {
@@ -265,13 +294,7 @@ namespace Test.GuiTests
             }
             finally
             {
-                if (hadExistingCustomFile)
-                    File.Copy(backupPath, customPath, overwrite: true);
-                else if (File.Exists(customPath))
-                    File.Delete(customPath);
-
-                if (File.Exists(backupPath))
-                    File.Delete(backupPath);
+                RestorePath(customPath, backupPath, hadExistingCustomFile, hadExistingCustomDirectory);
 
                 GlobalVariables.SetUpGlobalVariables();
             }
@@ -286,10 +309,7 @@ namespace Test.GuiTests
         {
             string customPath = GlobalVariables.CustomProteasePath;
 
-            string backupPath = customPath + ".bak";
-            bool hadExistingCustomFile = File.Exists(customPath);
-            if (hadExistingCustomFile)
-                File.Copy(customPath, backupPath, overwrite: true);
+            BackupPath(customPath, out string backupPath, out bool hadExistingCustomFile, out bool hadExistingCustomDirectory);
 
             try
             {
@@ -311,11 +331,7 @@ namespace Test.GuiTests
             }
             finally
             {
-                if (hadExistingCustomFile)
-                    File.Copy(backupPath, customPath, overwrite: true);
-
-                if (File.Exists(backupPath))
-                    File.Delete(backupPath);
+                RestorePath(customPath, backupPath, hadExistingCustomFile, hadExistingCustomDirectory);
 
                 GlobalVariables.SetUpGlobalVariables();
             }
@@ -330,10 +346,7 @@ namespace Test.GuiTests
         {
             string customPath = GlobalVariables.CustomRnasePath;
 
-            string backupPath = customPath + ".bak";
-            bool hadExistingCustomFile = File.Exists(customPath);
-            if (hadExistingCustomFile)
-                File.Copy(customPath, backupPath, overwrite: true);
+            BackupPath(customPath, out string backupPath, out bool hadExistingCustomFile, out bool hadExistingCustomDirectory);
 
             try
             {
@@ -354,12 +367,98 @@ namespace Test.GuiTests
             }
             finally
             {
-                if (hadExistingCustomFile)
-                    File.Copy(backupPath, customPath, overwrite: true);
+                RestorePath(customPath, backupPath, hadExistingCustomFile, hadExistingCustomDirectory);
 
-                if (File.Exists(backupPath))
-                    File.Delete(backupPath);
+                GlobalVariables.SetUpGlobalVariables();
+            }
+        }
 
+        [Test]
+        public static void TestCustomProteaseLoadCatchIsHitWhenCustomFileIsLocked()
+        {
+            string customPath = GlobalVariables.CustomProteasePath;
+            BackupPath(customPath, out string backupPath, out bool hadExistingFile, out bool hadExistingDirectory);
+
+            try
+            {
+                using var lockedFile = new FileStream(customPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+
+                var ex = Assert.Throws<MetaMorpheusException>(() => InvokeLoadDigestionAgents());
+
+                Assert.That(ex!.Message, Does.Contain("Error loading custom proteases with error message:"));
+                Assert.That(ex.InnerException, Is.Not.Null);
+            }
+            finally
+            {
+                RestorePath(customPath, backupPath, hadExistingFile, hadExistingDirectory);
+                GlobalVariables.SetUpGlobalVariables();
+            }
+        }
+
+        [Test]
+        public static void TestCustomProteaseCreationCatchIsHitWhenCustomPathIsDirectory()
+        {
+            string customPath = GlobalVariables.CustomProteasePath;
+            BackupPath(customPath, out string backupPath, out bool hadExistingFile, out bool hadExistingDirectory);
+
+            try
+            {
+                DeletePathIfExists(customPath);
+                Directory.CreateDirectory(customPath);
+
+                var ex = Assert.Throws<MetaMorpheusException>(() => InvokeLoadDigestionAgents());
+
+                Assert.That(ex!.Message, Does.Contain("Error creating default custom protease file with error message:"));
+                Assert.That(ex.InnerException, Is.Not.Null);
+            }
+            finally
+            {
+                RestorePath(customPath, backupPath, hadExistingFile, hadExistingDirectory);
+                GlobalVariables.SetUpGlobalVariables();
+            }
+        }
+
+        [Test]
+        public static void TestCustomRnaseLoadCatchIsHitWhenCustomFileIsLocked()
+        {
+            string customPath = GlobalVariables.CustomRnasePath;
+            BackupPath(customPath, out string backupPath, out bool hadExistingFile, out bool hadExistingDirectory);
+
+            try
+            {
+                using var lockedFile = new FileStream(customPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+
+                var ex = Assert.Throws<MetaMorpheusException>(() => InvokeLoadDigestionAgents());
+
+                Assert.That(ex!.Message, Does.Contain("Error loading custom rnases with error message:"));
+                Assert.That(ex.InnerException, Is.Not.Null);
+            }
+            finally
+            {
+                RestorePath(customPath, backupPath, hadExistingFile, hadExistingDirectory);
+                GlobalVariables.SetUpGlobalVariables();
+            }
+        }
+
+        [Test]
+        public static void TestCustomRnaseCreationCatchIsHitWhenCustomPathIsDirectory()
+        {
+            string customPath = GlobalVariables.CustomRnasePath;
+            BackupPath(customPath, out string backupPath, out bool hadExistingFile, out bool hadExistingDirectory);
+
+            try
+            {
+                DeletePathIfExists(customPath);
+                Directory.CreateDirectory(customPath);
+
+                var ex = Assert.Throws<MetaMorpheusException>(() => InvokeLoadDigestionAgents());
+
+                Assert.That(ex!.Message, Does.Contain("Error creating default custom rnase file with error message:"));
+                Assert.That(ex.InnerException, Is.Not.Null);
+            }
+            finally
+            {
+                RestorePath(customPath, backupPath, hadExistingFile, hadExistingDirectory);
                 GlobalVariables.SetUpGlobalVariables();
             }
         }
