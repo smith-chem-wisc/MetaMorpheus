@@ -12,6 +12,7 @@ using IDigestionParams = Omics.Digestion.IDigestionParams;
 using Transcriptomics.Digestion;
 using Transcriptomics;
 using EngineLayer.SpectrumMatch;
+using System.Threading;
 
 namespace EngineLayer
 {
@@ -73,7 +74,9 @@ namespace EngineLayer
         {
             ProteinParsimonyResults myAnalysisResults = new ProteinParsimonyResults(this);
 
-            myAnalysisResults.ProteinGroups = RunProteinParsimonyEngine();
+            myAnalysisResults.ProteinGroups = RunProteinParsimonyEngine(out int hypothesesAdded, out int hypothesesRemoved);
+            myAnalysisResults.HypothesesRemoved = hypothesesRemoved;
+            myAnalysisResults.HypothesesAdded = hypothesesAdded;
 
             return myAnalysisResults;
         }
@@ -83,8 +86,11 @@ namespace EngineLayer
         /// Parsimony algorithm based on: https://www.ncbi.nlm.nih.gov/pubmed/14632076 Anal Chem. 2003 Sep 1;75(17):4646-58.
         /// TODO: Note describing that peptide objects with the same sequence are associated with different proteins
         /// </summary>
-        private List<ProteinGroup> RunProteinParsimonyEngine()
+        private List<ProteinGroup> RunProteinParsimonyEngine(out int hypothesesAdded, out int hypothesesRemoved)
         {
+            hypothesesAdded = 0; 
+            hypothesesRemoved = 0;
+
             // parsimonious list of proteins built by this protein parsimony engine
             HashSet<IBioPolymer> parsimoniousProteinList = new();
 
@@ -122,6 +128,7 @@ namespace EngineLayer
                     var sequenceWithPsmsList = sequenceWithPsms.ToList();
 
                     // create new peptide-protein associations as needed
+                    int added = 0;
                     Parallel.ForEach(Partitioner.Create(0, sequenceWithPsmsList.Count),
                         new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
                         (range, loopState) =>
@@ -223,7 +230,8 @@ namespace EngineLayer
                                                 hypothesis.PeptideCumulativeTargetNotch = tentativeMatch.PeptideCumulativeTargetNotch;
                                                 hypothesis.PeptideCumulativeDecoyNotch = tentativeMatch.PeptideCumulativeDecoyNotch;
 
-                                                psm.AddProteinMatch(hypothesis);
+                                                if (psm.AddProteinMatch(hypothesis))
+                                                    Interlocked.Increment(ref added);
                                             }
                                         }
                                     }
@@ -231,6 +239,7 @@ namespace EngineLayer
                             }
                         }
                     );
+                    hypothesesAdded += added;
                 }
             }
 
@@ -444,7 +453,7 @@ namespace EngineLayer
                 // no protein associations are removed)
                 if (psm.BestMatchingBioPolymersWithSetMods.Any(p => parsimoniousProteinList.Contains(p.SpecificBioPolymer.Parent)))
                 {
-                    psm.TrimProteinMatches(parsimoniousProteinList);
+                    hypothesesRemoved += psm.TrimProteinMatches(parsimoniousProteinList);
                 }
             }
 

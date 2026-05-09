@@ -341,34 +341,38 @@ namespace EngineLayer
         /// <summary>
         /// This method is used by protein parsimony to remove PeptideWithSetModifications objects that have non-parsimonious protein associations
         /// </summary>
-        public void TrimProteinMatches(HashSet<IBioPolymer> parsimoniousProteins)
+        public int TrimProteinMatches(HashSet<IBioPolymer> parsimoniousProteins)
         {
+            int removed = 0;
             if (IsDecoy)
             {
                 if (_BestMatchingBioPolymersWithSetMods.Any(p => parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent) && p.SpecificBioPolymer.Parent.IsDecoy))
                 {
-                    _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent));
+                    removed += _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent));
                 }
                 // else do nothing
             }
             else
             {
-                _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent));
+                removed += _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent));
             }
 
             ResolveAllAmbiguities();
+            return removed;
         }
 
         /// <summary>
         /// This method is used by protein parsimony to add PeptideWithSetModifications objects for modification-agnostic parsimony
         /// </summary>
-        public void AddProteinMatch(SpectralMatchHypothesis tentativeSpectralMatch)
+        public bool AddProteinMatch(SpectralMatchHypothesis tentativeSpectralMatch)
         {
             if (!_BestMatchingBioPolymersWithSetMods.Contains(tentativeSpectralMatch))
             {
                 _BestMatchingBioPolymersWithSetMods.Add(tentativeSpectralMatch); 
                 ResolveAllAmbiguities();
+                return true;
             }
+            return false;
         }
 
         #endregion
