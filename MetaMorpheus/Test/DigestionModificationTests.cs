@@ -20,8 +20,8 @@ namespace Test
             string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DigestionTest");
             Directory.CreateDirectory(subFolder);
 
-            string databasePath1 = Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseTests", "ProteaseModTest.fasta");           
-            var protDic = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(GlobalVariables.DataDir, @"ProteolyticDigestion", @"proteases.tsv"), GlobalVariables.ProteaseMods);
+            string databasePath1 = Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseTests", "ProteaseModTest.fasta");
+            var protDic = ProteaseDictionary.Dictionary;
 
             DigestionParams param = new DigestionParams(protease: "CNBr", maxMissedCleavages: 0);
             var proteinList = ProteinDbLoader.LoadProteinFasta(databasePath1, true, DecoyType.None, false, out List<string> errors);
