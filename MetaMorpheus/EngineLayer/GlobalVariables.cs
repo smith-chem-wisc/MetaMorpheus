@@ -18,6 +18,7 @@ using Omics.Modifications.IO;
 using TopDownProteomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
+using System.Security.Cryptography;
 
 namespace EngineLayer
 {
@@ -48,6 +49,8 @@ namespace EngineLayer
         // File locations
         public static string DataDir { get; private set; }
         public static string UserSpecifiedDataDir { get; set; }
+        public static string CustomProteasePath => Path.Combine(DataDir, "proteases_custom.tsv");
+        public static string CustomRnasePath => Path.Combine(DataDir, "rnase_custom.tsv");
 
         public static bool StopLoops { get; set; }
         public static string MetaMorpheusVersion { get; private set; }
@@ -89,6 +92,7 @@ namespace EngineLayer
             SetUpGlobalSettings();
             LoadDissociationTypes();
             LoadAvailableProteomes();
+            LoadDigestionAgents();
         }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml, bool isRna = false)
@@ -427,9 +431,6 @@ namespace EngineLayer
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
-            ProteaseMods = ModificationLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
-            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
-            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
         }
 
         private static void LoadRnaModifications()
@@ -574,6 +575,100 @@ namespace EngineLayer
                     glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
                 }
                 _AllModsKnown.Add(glycan);
+            }
+        }
+
+        private static void LoadDigestionAgents()
+        {
+            if (File.Exists(CustomProteasePath))
+            {
+                try
+                {
+                    var mods = ProteaseDictionary.LoadEmbeddedProteaseMods();
+                    var result = ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, mods);
+                }
+                catch (Exception e)
+                {
+                    throw new MetaMorpheusException($"Error loading custom proteases with error message: {e.Message}", e);
+                }
+            }
+            else
+            {
+                try
+                {
+                    var assembly = typeof(ProteaseDictionary).Assembly;
+
+                    // private hard-coded string path in MzLib
+                    string EmbeddedProteaseResourceName = "Proteomics.ProteolyticDigestion.proteases.tsv"; 
+
+                    var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
+                    var reader = new StreamReader(stream);
+
+                    string fileContent = reader.ReadToEnd();
+                    string[] lines = fileContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    bool foundHeader = false;
+                    using var sw = new StreamWriter(File.Create(CustomProteasePath));
+                    foreach (string line in lines) 
+                    {
+                        if (!foundHeader && !line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
+                        {
+                            sw.WriteLine(line);
+                            foundHeader = true;
+                            break;
+                        }
+                        sw.WriteLine(line);
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new MetaMorpheusException($"Error creating default custom protease file with error message: {e.Message}", e);
+                }
+            }
+
+            if (File.Exists(CustomRnasePath))
+            {
+                try
+                {
+                    var result = RnaseDictionary.LoadAndMergeCustomRnases(CustomRnasePath);
+                }
+                catch (Exception e)
+                {
+                    throw new MetaMorpheusException($"Error loading custom rnases with error message: {e.Message}", e);
+                }
+            }
+            else
+            {
+                try
+                {
+                    var assembly = typeof(RnaseDictionary).Assembly;
+
+                    // private hard-coded string path in MzLib
+                    string EmbeddedProteaseResourceName = "Transcriptomics.Digestion.rnases.tsv";
+
+                    var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
+                    var reader = new StreamReader(stream);
+
+                    string fileContent = reader.ReadToEnd();
+                    string[] lines = fileContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    bool foundHeader = false;
+                    using var sw = new StreamWriter(File.Create(CustomRnasePath));
+                    foreach (string line in lines)
+                    {
+                        if (!foundHeader && !line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
+                        {
+                            sw.WriteLine(line);
+                            foundHeader = true;
+                            break;
+                        }
+                        sw.WriteLine(line);
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new MetaMorpheusException($"Error creating default custom rnase file with error message: {e.Message}", e);
+                }
             }
         }
     }
