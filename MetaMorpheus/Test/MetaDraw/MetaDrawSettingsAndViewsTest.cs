@@ -143,7 +143,7 @@ namespace Test.MetaDraw
             Assert.That(MetaDrawSettings.DataVisualizationColorOrder.Count, Is.EqualTo(reversedColors.Count));
             CollectionAssert.AreEqual(reversedColors.Select(c => c.GetColorName()), MetaDrawSettings.DataVisualizationColorOrder.Select(c => c.GetColorName()));
             Assert.That(snapshot.BioPolymerCoverageFontSize, Is.EqualTo(MetaDrawSettings.BioPolymerCoverageFontSize));
-            Assert.That(snapshot.UseShortIonAnnotationsWhenPossible);
+            Assert.That(snapshot.UseShortIonAnnotationsWhenPossible, Is.EqualTo(MetaDrawSettings.UseShortIonAnnotationsWhenPossible));
 
             colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
