@@ -712,7 +712,7 @@ namespace EngineLayer
                         }
                         fullSequences.Add(bestMatch.SpecificBioPolymer.FullSequence);
 
-                        double predictedHydrophobicity = bestMatch.SpecificBioPolymer is PeptideWithSetModifications pep ? predictor.PredictRetentionTime(pep, out _) ?? 0 : 0;
+                        double predictedHydrophobicity = bestMatch.SpecificBioPolymer is PeptideWithSetModifications pep ? predictor.PredictRetentionTimeEquivalent(pep, out _) ?? 0 : 0;
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
@@ -911,7 +911,7 @@ namespace EngineLayer
                 int time = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                 if (d[Path.GetFileName(psm.FullFilePath)].Keys.Contains(time))
                 {
-                    double predictedHydrophobicity = Peptide is PeptideWithSetModifications pep ? predictor.PredictRetentionTime(pep, out _) ?? 0 : 0;
+                    double predictedHydrophobicity = Peptide is PeptideWithSetModifications pep ? predictor.PredictRetentionTimeEquivalent(pep, out _) ?? 0 : 0;
 
                     hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedHydrophobicity) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
                 }
