@@ -303,6 +303,17 @@ namespace GuiFunctions
             }
         }
 
+
+        // Dictionary for replacing long annotation terms with shorter versions when UseShortIonAnnotationsWhenPossible is enabled
+        private static readonly Dictionary<string, string> _longToShortReplacement = new ()
+        {
+            { "WaterLoss", "-H\u2082O" },
+            { "BaseLoss", "-B" },
+            { "AmmoniaLoss", "-NH\u2083" },
+            { "Dot", "^\u2022" },
+             // Add more replacements as needed
+        };
+
         /// <summary>
         /// Builds the annotation text for a matched fragment ion
         /// </summary>
@@ -319,27 +330,39 @@ namespace GuiFunctions
             // Fragment Number annotation
             if (MetaDrawSettings.SubAndSuperScriptIons)
             {
+                char? previousCharacter = null;
                 foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
                 {
                     if (char.IsDigit(character))
                         peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
                     else switch (character)
                     {
-                        case '-':
-                            peakAnnotationText += "\u208B";
+                        case '-' when previousCharacter is not null && char.IsNumber(previousCharacter.Value):
+                            peakAnnotationText += "\u208B"; // sub scripted Hyphen
                             break;
                         case '[':
                         case ']':
+                            previousCharacter = character;
                             continue;
                         default:
                             peakAnnotationText += character;
                             break;
                     }
+                    previousCharacter = character;
                 }
             }
             else
             {
                 peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
+            }
+
+            if (MetaDrawSettings.UseShortIonAnnotationsWhenPossible)
+            {
+                foreach (var kvp in _longToShortReplacement.Where(kvp => peakAnnotationText.Contains(kvp.Key)))
+                {
+                    // Remove then add: bWaterLoss4 -> b4 -> b4-H20. If we simply replaced it would go bWaterLoss4 -> b-H2O4
+                    peakAnnotationText = peakAnnotationText.Replace(kvp.Key, "") + kvp.Value;
+                }
             }
 
             // Charge annotation
@@ -496,7 +519,7 @@ namespace GuiFunctions
 
             if (MetaDrawSettings.SpectrumDescription["Protein Accession: "])
             {
-                text.Append("Protein Accession: ");
+                text.Append("Accession: ");
                 if (SpectrumMatch.Accession.Length > 10)
                 {
                     text.Append("\r\n   " + SpectrumMatch.Accession);
@@ -509,7 +532,11 @@ namespace GuiFunctions
 
             if (SpectrumMatch.Name != null && MetaDrawSettings.SpectrumDescription["Protein: "])
             {
-                text.Append("Protein: ");
+                if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                    text.Append("Transcript: ");
+                else
+                    text.Append("Protein: ");
+
                 text.Append(SpectrumMatch.Name);
                 text.Append("\r\n");
             }
@@ -574,7 +601,7 @@ namespace GuiFunctions
             if (MetaDrawSettings.SpectrumDescription["Q-Value: "])
             {
                 text.Append("Q-Value: ");
-                text.Append(SpectrumMatch.QValue.ToString("F3"));
+                text.Append(SpectrumMatch.QValue.ToString("E2"));
                 text.Append("\r\n");
             }
 

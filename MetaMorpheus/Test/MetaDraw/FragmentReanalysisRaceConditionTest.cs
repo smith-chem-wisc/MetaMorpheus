@@ -24,6 +24,7 @@ namespace Test.MetaDraw
     internal class FragmentReanalysisRaceConditionTest
     {
         [Test]
+        [NonParallelizable]
         public static void MatchIonsWithNewTypes_ProductsChangedDuringExecution_DoesNotThrow()
         {
             // Load test data similar to TestFragmentationReanalysisViewModel_RematchIons

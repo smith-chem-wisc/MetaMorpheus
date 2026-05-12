@@ -37,6 +37,7 @@ namespace GuiFunctions
         // graphic settings
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
         public static bool DisplayIonAnnotations { get; set; } = true;
+        public static bool UseShortIonAnnotationsWhenPossible { get; set; } = false;
         public static bool AnnotateMzValues { get; set; } = false;
         public static bool AnnotateCharges { get; set; } = true;
         public static bool AnnotationBold { get; set; } = false;
@@ -515,6 +516,7 @@ namespace GuiFunctions
             return new MetaDrawSettingsSnapshot()
             {
                 DisplayIonAnnotations = DisplayIonAnnotations,
+                UseShortIonAnnotationsWhenPossible = UseShortIonAnnotationsWhenPossible,
                 AnnotateMzValues = AnnotateMzValues,
                 AnnotateCharges = AnnotateCharges,
                 AnnotationBold = AnnotationBold,
@@ -573,6 +575,7 @@ namespace GuiFunctions
         {
             flaggedErrorOnRead = false;
             DisplayIonAnnotations = settings.DisplayIonAnnotations;
+            UseShortIonAnnotationsWhenPossible = settings.UseShortIonAnnotationsWhenPossible;
             AnnotateMzValues = settings.AnnotateMzValues;
             AnnotateCharges = settings.AnnotateCharges;
             AnnotationBold = settings.AnnotationBold;

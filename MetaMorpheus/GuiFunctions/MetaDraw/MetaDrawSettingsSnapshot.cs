@@ -16,6 +16,7 @@ namespace GuiFunctions
         public bool AnnotationBold { get; set; } = false;
         public bool DisplayInternalIons { get; set; } = true;
         public bool DisplayInternalIonAnnotations { get; set; } = true;
+        public bool UseShortIonAnnotationsWhenPossible { get; set; } = false;
         public bool SubAndSuperScriptIons { get; set; } = true;
         public bool DrawStationarySequence { get; set; } = true;
         public bool DrawNumbersUnderStationary { get; set; } = true;
