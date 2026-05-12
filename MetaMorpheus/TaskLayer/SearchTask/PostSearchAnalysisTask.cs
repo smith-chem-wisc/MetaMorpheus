@@ -1,34 +1,39 @@
 ﻿using Easy.Common.Extensions;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
 using EngineLayer.ModificationAnalysis;
+using EngineLayer.SpectrumMatch;
 using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
+using MzLibUtil;
+using Omics.BioPolymer;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Omics.Modifications;
+using Omics.SpectrumMatch;
+using PredictionClients.Koina.AbstractClasses;
+using PredictionClients.Koina.SupportedModels.FragmentIntensityModels;
+using PredictionClients.Koina.Util;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers.SpectralLibrary;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
-using Chemistry;
-using EngineLayer.DatabaseLoading;
-using MzLibUtil;
-using Omics.Digestion;
-using Omics.BioPolymer;
-using Omics.Modifications;
-using Omics.SpectrumMatch;
-using EngineLayer.SpectrumMatch;
 using ProteinGroup = FlashLFQ.ProteinGroup;
-
 
 namespace TaskLayer
 {
+    
     public class PostSearchAnalysisTask : MetaMorpheusTask
     {
         public PostSearchAnalysisParameters Parameters { get; set; }
@@ -76,6 +81,7 @@ namespace TaskLayer
                 // just with slightly different precursor masses.
                 Parameters.AllSpectralMatches = Parameters.AllSpectralMatches.OrderByDescending(b => b)
                     .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
+                ComputeSpectrumSimilarity(Parameters.SpectralLibrary);
                 CalculatePsmAndPeptideFdr(Parameters.AllSpectralMatches);
                 DisambiguateSpectralMatches();
             }
@@ -140,6 +146,140 @@ namespace TaskLayer
         }
 
         /// <summary>
+        /// Computes spectral contrast angles for PSMs that don't yet have one.
+        /// For each PSM, we use a real library spectrum when available; otherwise we
+        /// request a predicted spectrum from Prosit and use that. PSMs we can't score
+        /// for any reason are left with SpectralAngle = -1 (the sentinel).
+        /// </summary>
+        internal void ComputeSpectrumSimilarity(SpectralLibrary spectralLibrary)
+        {
+            var psmsToScore = GetSpectralMatchesWithoutComputedSpectralAngle();
+            if (psmsToScore.Count == 0)
+                return;
+
+            // Build a combined lookup: real library spectra take precedence, predicted
+            // spectra fill in the gaps.
+            var lookup = BuildCombinedSpectrumLookup(psmsToScore, spectralLibrary);
+            if (lookup.Count == 0)
+                return;
+
+            foreach (var psm in psmsToScore)
+            {
+                var key = (psm.FullSequence, psm.ScanPrecursorCharge);
+                if (lookup.TryGetValue(key, out var spectrum))
+                {
+                    string result = spectrum.CalculateSpectralAngleOnTheFly(psm.MatchedFragmentIons);
+                    psm.SpectralAngle = double.TryParse(result, out double angle) ? angle : -1;
+                }
+                else
+                {
+                    psm.SpectralAngle = -1;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Builds a (FullSequence, Charge) -> LibrarySpectrum map by merging two
+        /// sources in priority order:
+        ///   1. the real spectral library (if provided), for any PSM whose
+        ///      (sequence, charge) is present there;
+        ///   2. Prosit-predicted spectra for the remaining PSMs.
+        /// Predictions are only requested for what the library doesn't cover, which
+        /// keeps API traffic and runtime down.
+        /// </summary>
+        internal Dictionary<(string, int), LibrarySpectrum> BuildCombinedSpectrumLookup(
+            List<SpectralMatch> psmsToScore,
+            SpectralLibrary spectralLibrary)
+        {
+            var lookup = new Dictionary<(string, int), LibrarySpectrum>();
+
+            // 1. Harvest whatever the real library can give us, keyed by (seq, charge).
+            //    Duplicates in the library collapse to the first occurrence.
+            if (spectralLibrary != null)
+            {
+                foreach (var spectrum in spectralLibrary.GetAllLibrarySpectra())
+                {
+                    var key = (spectrum.Sequence, spectrum.ChargeState);
+                    if (!lookup.ContainsKey(key))
+                        lookup[key] = spectrum;
+                }
+            }
+
+            // 2. Figure out which PSMs the library didn't cover and predict only those.
+            //    Deduplicate on (FullSequence, PrecursorCharge) — different CEs for the
+            //    same peptide/charge would otherwise spawn redundant API calls.
+            var needsPrediction = new Dictionary<(string, int), FragmentIntensityPredictionInput>();
+            foreach (var psm in psmsToScore)
+            {
+                var key = (psm.FullSequence, psm.ScanPrecursorCharge);
+                if (lookup.ContainsKey(key) || needsPrediction.ContainsKey(key))
+                    continue;
+
+                int collisionEnergy = 30;
+                if (psm.Ms2Scan != null
+                    && int.TryParse(psm.Ms2Scan.HcdEnergy, out int parsedEnergy))
+                {
+                    collisionEnergy = parsedEnergy;
+                }
+
+                needsPrediction[key] = new FragmentIntensityPredictionInput(
+                    FullSequence: psm.FullSequence,
+                    PrecursorCharge: psm.ScanPrecursorCharge,
+                    CollisionEnergy: collisionEnergy,
+                    InstrumentType: null,
+                    FragmentationType: null);
+            }
+
+            if (needsPrediction.Count == 0)
+                return lookup;
+
+            // 3. Run the predictions and merge the results in.
+            var model = new Prosit2020IntensityHCD(
+                modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull, fragmentIonMappingMode: FragmentIonMappingMode.MapToInputFullSequence);
+            var inputs = needsPrediction.Values.ToList();
+            model.Predict(inputs);
+
+            // 4. Build a mapping from ValidatedFullSequence back to original FullSequence
+            //    so we can find the right lookup key for each predicted spectrum.
+            var validatedToOriginal = new Dictionary<string, string>();
+            foreach (var prediction in model.Predictions)
+            {
+                if (prediction.ValidatedFullSequence != null)
+                {
+                    validatedToOriginal[prediction.ValidatedFullSequence] = prediction.FullSequence;
+                }
+            }
+
+            var predictedSpectra = model.GenerateLibrarySpectraFromPredictions(
+                new double?[model.Predictions.Count],
+                out _);
+
+            foreach (var spectrum in predictedSpectra)
+            {
+                // The spectrum.Sequence might be in UNIMOD format (ValidatedFullSequence),
+                // but we need to look it up using the original format for consistency
+                // with how PSMs will query the lookup.
+                string originalSequence = validatedToOriginal.GetValueOrDefault(spectrum.Sequence, spectrum.Sequence);
+                var key = (originalSequence, spectrum.ChargeState);
+
+                // Real-library entries already in `lookup` take precedence; only add
+                // predicted spectra where nothing's there yet.
+                if (!lookup.ContainsKey(key))
+                    lookup[key] = spectrum;
+            }
+
+            return lookup;
+        }
+
+        internal List<SpectralMatch> GetSpectralMatchesWithoutComputedSpectralAngle()
+        {
+            // SpectralAngle < 0 is the "not computed" sentinel; 0 is a legitimate
+            // (terrible) score and must not trigger recomputation.
+            return Parameters.AllSpectralMatches
+                .Where(psm => psm.FullSequence != null && psm.SpectralAngle < 0) //TODO allow supported mods
+                .ToList();
+        }
+        /// <summary>
         /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
         /// </summary>
         private void CalculatePsmAndPeptideFdr(List<SpectralMatch> psms, string analysisType = "PSM", bool doPep = true)
@@ -154,7 +294,6 @@ namespace TaskLayer
 
             Status($"Done estimating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} FDR!", Parameters.SearchTaskId);
         }
-
         private void DisambiguateSpectralMatches()
         {
             try
@@ -833,8 +972,7 @@ namespace TaskLayer
                     includeDecoys: false,
                     includeContaminants: false,
                     includeAmbiguous: false,
-                    includeHighQValuePsms: false
-                    );
+                    includeHighQValuePsms: false);
 
 
                 //group psms by peptide and charge, then write highest scoring PSM to dictionary

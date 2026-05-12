@@ -33,4 +33,8 @@
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<InternalsVisibleTo Include="Test" />
+	</ItemGroup>
+
 </Project>
