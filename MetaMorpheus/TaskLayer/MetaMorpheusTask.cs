@@ -614,38 +614,36 @@ namespace TaskLayer
                 fragmentationParams: commonParams.FragmentationParameters,
                 additionalPrecursorDeconParams: commonParams.AdditionalPrecursorDeconvolutionParameters);
 
+            // Attach an external whole-file MS1 deconvolution result as a secondary precursor source
+            // when the file-specific toml supplies a path (auto-discovery happens upstream in RunTask
+            // by stamping the resolved path into fileSpecificParams.Ms1FeatureFilePath). Resolved here
+            // rather than in RunTask so every subclass call site picks it up uniformly.
+            if (!string.IsNullOrWhiteSpace(fileSpecificParams.Ms1FeatureFilePath) &&
+                File.Exists(fileSpecificParams.Ms1FeatureFilePath))
+            {
+                var primary = returnParams.PrecursorDeconvolutionParameters;
+                returnParams.AdditionalPrecursorDeconvolutionParameters = new Readers.FromFileDeconvolutionParameters(
+                    fileSpecificParams.Ms1FeatureFilePath,
+                    primary?.MinAssumedChargeState ?? 1,
+                    primary?.MaxAssumedChargeState ?? 12);
+            }
+
             return returnParams;
         }
 
         /// <summary>
-        /// Resolves an external whole-file MS1 deconvolution result for a spectra file and returns
-        /// the corresponding <see cref="DeconvolutionParameters"/>, or null if nothing was found.
-        /// Resolution order:
-        ///   1. <paramref name="explicitMs1FeatureFilePath"/> if it's set and the file exists.
-        ///   2. Auto-discover &lt;basename&gt;_ms1.feature next to the raw file.
-        /// The returned parameters inherit charge bounds from <paramref name="primaryPrecursorDeconParams"/>
-        /// so the file-features source and the classic-decon source agree on which charges to consider.
+        /// Returns the path to an &lt;basename&gt;_ms1.feature file sitting next to <paramref name="rawFilePath"/>,
+        /// or null if none is present. Used by RunTask to populate <see cref="FileSpecificParameters.Ms1FeatureFilePath"/>
+        /// when the user hasn't supplied one explicitly in a per-file toml.
         /// </summary>
-        private static DeconvolutionParameters ResolveExternalMs1FeatureDeconvolutionParameters(
-            string rawFilePath, string explicitMs1FeatureFilePath, DeconvolutionParameters primaryPrecursorDeconParams)
+        private static string TryFindAdjacentMs1FeatureFile(string rawFilePath)
         {
-            string path = explicitMs1FeatureFilePath;
-            if (string.IsNullOrWhiteSpace(path) && !string.IsNullOrWhiteSpace(rawFilePath))
-            {
-                string directory = Path.GetDirectoryName(rawFilePath);
-                if (directory != null)
-                {
-                    string candidate = Path.Combine(directory,
-                        Path.GetFileNameWithoutExtension(rawFilePath) + "_ms1.feature");
-                    if (File.Exists(candidate)) path = candidate;
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
-
-            int minCharge = primaryPrecursorDeconParams?.MinAssumedChargeState ?? 1;
-            int maxCharge = primaryPrecursorDeconParams?.MaxAssumedChargeState ?? 12;
-            return new Readers.FromFileDeconvolutionParameters(path, minCharge, maxCharge);
+            if (string.IsNullOrWhiteSpace(rawFilePath)) return null;
+            string directory = Path.GetDirectoryName(rawFilePath);
+            if (directory == null) return null;
+            string candidate = Path.Combine(directory,
+                Path.GetFileNameWithoutExtension(rawFilePath) + "_ms1.feature");
+            return File.Exists(candidate) ? candidate : null;
         }
 
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
@@ -673,14 +671,12 @@ namespace TaskLayer
                     string rawFilePath = currentRawDataFilepathList[i];
                     string directory = Directory.GetParent(rawFilePath).ToString();
                     string fileSpecificTomlPath = Path.Combine(directory, Path.GetFileNameWithoutExtension(rawFilePath)) + ".toml";
-                    CommonParameters perFileParams = null;
                     if (File.Exists(fileSpecificTomlPath))
                     {
                         try
                         {
                             TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
-                            perFileParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i]);
                         }
                         catch (MetaMorpheusException e)
                         {
@@ -695,26 +691,26 @@ namespace TaskLayer
                             continue;
                         }
                     }
-                    else // no file-specific toml; start from the shared CommonParameters.
+
+                    // Auto-discover an adjacent <basename>_ms1.feature next to the raw file when the
+                    // per-file toml didn't supply an explicit Ms1FeatureFilePath. Stamping the path into
+                    // fileSettingsList[i] ensures every subclass call to SetAllFileSpecificCommonParams
+                    // sees it; the FromFile DeconvolutionParameters object is then built once inside
+                    // SetAllFileSpecificCommonParams. fileSettingsList[i] may have been null (no per-file
+                    // toml at all) -- create a minimal FileSpecificParameters in that case.
+                    string adjacentMs1FeaturePath = TryFindAdjacentMs1FeatureFile(rawFilePath);
+                    if (adjacentMs1FeaturePath != null)
                     {
-                        perFileParams = CommonParameters;
+                        fileSettingsList[i] ??= new FileSpecificParameters();
+                        if (string.IsNullOrWhiteSpace(fileSettingsList[i].Ms1FeatureFilePath))
+                        {
+                            fileSettingsList[i].Ms1FeatureFilePath = adjacentMs1FeaturePath;
+                        }
                     }
 
-                    // Resolve an optional external whole-file MS1 deconvolution result for this spectra file
-                    // (explicit Ms1FeatureFilePath in the file-specific toml, or auto-discovered <basename>_ms1.feature).
-                    // When found, attach it as a secondary precursor-decon source; the MS2-scan loop will call decon
-                    // a second time with these parameters and merge the envelopes into the same precursor HashSet.
-                    DeconvolutionParameters externalMs1Params = ResolveExternalMs1FeatureDeconvolutionParameters(
-                        rawFilePath, fileSettingsList[i]?.Ms1FeatureFilePath, perFileParams.PrecursorDeconvolutionParameters);
-                    if (externalMs1Params != null)
-                    {
-                        // Clone before mutating if we'd otherwise share the shared CommonParameters across files.
-                        if (ReferenceEquals(perFileParams, CommonParameters))
-                        {
-                            perFileParams = perFileParams.Clone();
-                        }
-                        perFileParams.AdditionalPrecursorDeconvolutionParameters = externalMs1Params;
-                    }
+                    CommonParameters perFileParams = fileSettingsList[i] != null
+                        ? SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])
+                        : CommonParameters;
 
                     FileSpecificParameters.Add((currentRawDataFilepathList[i], perFileParams));
                 }
