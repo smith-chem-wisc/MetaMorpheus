@@ -555,19 +555,17 @@ namespace GuiFunctions
             double maxAbs = Math.Max(maxA, maxB) * 1.3;
 
             var yAxis = Model.Axes[1];
-            yAxis.Minimum = -maxAbs;
-            yAxis.Maximum = maxAbs;
             yAxis.AbsoluteMinimum = -maxAbs * 2;
             yAxis.AbsoluteMaximum = maxAbs * 2;
+            yAxis.Zoom(-maxAbs, maxAbs);
             yAxis.LabelFormatter = DrawnSequence.YAxisLabelFormatter;
 
             double xMin = Math.Min(scanA.ScanWindowRange.Minimum, scanB.ScanWindowRange.Minimum);
             double xMax = Math.Max(scanA.ScanWindowRange.Maximum, scanB.ScanWindowRange.Maximum);
             var xAxis = Model.Axes[0];
-            xAxis.Minimum = xMin;
-            xAxis.Maximum = xMax;
             xAxis.AbsoluteMinimum = xMin - 100;
             xAxis.AbsoluteMaximum = xMax + 100;
+            xAxis.Zoom(xMin, xMax);
         }
 
         protected void AnnotateProperties(LibrarySpectrum librarySpectrum = null)
