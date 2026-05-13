@@ -70,6 +70,8 @@ namespace TaskLayer
                     case nameof(CustomIons):
                         CustomIons = keyValuePair.Value.Get<List<ProductType>>(); break;
 
+                    case nameof(Ms1FeatureFilePath):
+                        Ms1FeatureFilePath = keyValuePair.Value.Get<string>(); break;
 
                     default:
                         throw new MetaMorpheusException("Unrecognized parameter \"" + keyValuePair.Key + "\" in file-specific parameters toml");
@@ -94,6 +96,15 @@ namespace TaskLayer
         public string SeparationType { get; set; }
 
         public List<ProductType> CustomIons { get; set; }
+
+        /// <summary>
+        /// Optional path to an external whole-file MS1 deconvolution result (.ms1.feature or .feature.tsv).
+        /// When set, the features are joined per MS2 scan via mzLib's FromFileDeconvolutionParameters and
+        /// the envelopes are added to the precursor set alongside the classic decon results.
+        /// Leave null to disable. If null and a file named "&lt;basename&gt;_ms1.feature" exists next to the
+        /// raw file, it is auto-discovered.
+        /// </summary>
+        public string Ms1FeatureFilePath { get; set; }
 
         public FileSpecificParameters Clone()
         {

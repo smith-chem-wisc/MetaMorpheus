@@ -275,8 +275,35 @@ namespace TaskLayer
                                     precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double? intensity = null;
-                                    if (commonParameters.UseMostAbundantPrecursorIntensity) 
-                                        intensity = envelope.Peaks.Max(p => p.intensity); 
+                                    if (commonParameters.UseMostAbundantPrecursorIntensity)
+                                        intensity = envelope.Peaks.Max(p => p.intensity);
+
+                                    var fractionalIntensity = envelope.TotalIntensity /
+                                          precursorSpectrum.MassSpectrum.YArray
+                                          [
+                                              precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Minimum)
+                                              ..
+                                              precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Maximum)
+                                          ].Sum();
+
+                                    precursorSet.Add(new(envelope, intensity, fractionalIntensity));
+                                }
+                            }
+
+                            // Additive precursor source: external whole-file MS1 deconvolution result.
+                            // Mirrors the classic-decon foreach above but uses the MsDataScan overload of
+                            // GetIsolatedMassesAndCharges -- mzLib's FromFile algorithm requires an RT anchor,
+                            // and only the MsDataScan overload supplies one (via precursorSpectrum.RetentionTime).
+                            // Envelopes merge into the same precursorSet HashSet that the classic loop and the
+                            // scan-header fallback both write into, so duplicates across sources are deduped.
+                            if (commonParameters.AdditionalPrecursorDeconvolutionParameters != null)
+                            {
+                                foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
+                                    precursorSpectrum, commonParameters.AdditionalPrecursorDeconvolutionParameters))
+                                {
+                                    double? intensity = null;
+                                    if (commonParameters.UseMostAbundantPrecursorIntensity)
+                                        intensity = envelope.Peaks.Max(p => p.intensity);
 
                                     var fractionalIntensity = envelope.TotalIntensity /
                                           precursorSpectrum.MassSpectrum.YArray
@@ -584,9 +611,41 @@ namespace TaskLayer
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
                 productDeconParams: commonParams.ProductDeconvolutionParameters,
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
-                fragmentationParams: commonParams.FragmentationParameters);
+                fragmentationParams: commonParams.FragmentationParameters,
+                additionalPrecursorDeconParams: commonParams.AdditionalPrecursorDeconvolutionParameters);
 
             return returnParams;
+        }
+
+        /// <summary>
+        /// Resolves an external whole-file MS1 deconvolution result for a spectra file and returns
+        /// the corresponding <see cref="DeconvolutionParameters"/>, or null if nothing was found.
+        /// Resolution order:
+        ///   1. <paramref name="explicitMs1FeatureFilePath"/> if it's set and the file exists.
+        ///   2. Auto-discover &lt;basename&gt;_ms1.feature next to the raw file.
+        /// The returned parameters inherit charge bounds from <paramref name="primaryPrecursorDeconParams"/>
+        /// so the file-features source and the classic-decon source agree on which charges to consider.
+        /// </summary>
+        private static DeconvolutionParameters ResolveExternalMs1FeatureDeconvolutionParameters(
+            string rawFilePath, string explicitMs1FeatureFilePath, DeconvolutionParameters primaryPrecursorDeconParams)
+        {
+            string path = explicitMs1FeatureFilePath;
+            if (string.IsNullOrWhiteSpace(path) && !string.IsNullOrWhiteSpace(rawFilePath))
+            {
+                string directory = Path.GetDirectoryName(rawFilePath);
+                if (directory != null)
+                {
+                    string candidate = Path.Combine(directory,
+                        Path.GetFileNameWithoutExtension(rawFilePath) + "_ms1.feature");
+                    if (File.Exists(candidate)) path = candidate;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
+
+            int minCharge = primaryPrecursorDeconParams?.MinAssumedChargeState ?? 1;
+            int maxCharge = primaryPrecursorDeconParams?.MaxAssumedChargeState ?? 12;
+            return new Readers.FromFileDeconvolutionParameters(path, minCharge, maxCharge);
         }
 
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
@@ -614,29 +673,50 @@ namespace TaskLayer
                     string rawFilePath = currentRawDataFilepathList[i];
                     string directory = Directory.GetParent(rawFilePath).ToString();
                     string fileSpecificTomlPath = Path.Combine(directory, Path.GetFileNameWithoutExtension(rawFilePath)) + ".toml";
+                    CommonParameters perFileParams = null;
                     if (File.Exists(fileSpecificTomlPath))
                     {
                         try
                         {
                             TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
-                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])));
+                            perFileParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i]);
                         }
                         catch (MetaMorpheusException e)
                         {
                             //file - specific toml has already been validated in the GUI when the spectra files were added, so...
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
                             Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?");
+                            continue;
                         }
                         catch (KeyNotFoundException e)
                         {
                             Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; please update the proteases.tsv file and restart MetaMorpheus to use this file-specific toml.");
+                            continue;
                         }
                     }
-                    else // just used common parameters for file specific.
+                    else // no file-specific toml; start from the shared CommonParameters.
                     {
-                        FileSpecificParameters.Add((currentRawDataFilepathList[i], CommonParameters));
+                        perFileParams = CommonParameters;
                     }
+
+                    // Resolve an optional external whole-file MS1 deconvolution result for this spectra file
+                    // (explicit Ms1FeatureFilePath in the file-specific toml, or auto-discovered <basename>_ms1.feature).
+                    // When found, attach it as a secondary precursor-decon source; the MS2-scan loop will call decon
+                    // a second time with these parameters and merge the envelopes into the same precursor HashSet.
+                    DeconvolutionParameters externalMs1Params = ResolveExternalMs1FeatureDeconvolutionParameters(
+                        rawFilePath, fileSettingsList[i]?.Ms1FeatureFilePath, perFileParams.PrecursorDeconvolutionParameters);
+                    if (externalMs1Params != null)
+                    {
+                        // Clone before mutating if we'd otherwise share the shared CommonParameters across files.
+                        if (ReferenceEquals(perFileParams, CommonParameters))
+                        {
+                            perFileParams = perFileParams.Clone();
+                        }
+                        perFileParams.AdditionalPrecursorDeconvolutionParameters = externalMs1Params;
+                    }
+
+                    FileSpecificParameters.Add((currentRawDataFilepathList[i], perFileParams));
                 }
 
                 RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList);
@@ -1579,7 +1659,7 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Legacy TOML compatibility — when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
+        /// Legacy TOML compatibility ï¿½ when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
         /// </summary>
         /// <typeparam name="TTask"></typeparam>
         /// <param name="filePath"></param>
