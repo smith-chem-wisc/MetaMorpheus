@@ -206,14 +206,16 @@ namespace Test
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, modPeptidesAreUnique, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults result = (ProteinParsimonyResults)pae.Run();
 
-            // Validate HypothesesAdded and HypothesesRemoved properties are accessible (lines 8-9)
-            Assert.That(result.HypothesesAdded >= 0);
-            Assert.That(result.HypothesesRemoved >= 0);
+            // This fixture adds one missing protein association to each PSM and trims none.
+            Assert.That(result.HypothesesAdded, Is.EqualTo(2));
+            Assert.That(result.HypothesesRemoved, Is.EqualTo(0));
+            Assert.That(psm1.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
+            Assert.That(psm2.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
 
             // Validate ToString() method output (line 26)
             string resultString = result.ToString();
-            Assert.That(resultString.Contains("Hypotheses Added to Spectral Matches"));
-            Assert.That(resultString.Contains("Hypotheses Removed from Spectral Matches"));
+            Assert.That(resultString, Does.Contain("Hypotheses Added to Spectral Matches:       2"));
+            Assert.That(resultString, Does.Contain("Hypotheses Removed from Spectral Matches:   0"));
         }
 
         [Test]
@@ -322,8 +324,8 @@ namespace Test
         [Test]
         public static void TestProteinScoringAndFdrEngine_FilterTypeSelection_QValue()
         {
-            // Test filter type selection when QValueThreshold < PepQValueThreshold
-            // This should set _filterType = FilterType.QValue (lines 33-36)
+            // This PSM passes QValue filtering but fails PepQValue filtering.
+            // With QValueThreshold < PepQValueThreshold, the protein group should survive scoring.
 
             var protein1 = new Protein("PEPTIDEK", "target1");
 
@@ -336,44 +338,37 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
             SpectralMatch psm = new PeptideSpectralMatch(peptides[0], 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
-            psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+            psm.SetFdrValues(0, 0, 0.005, 0, 0, 0.005, 0.2, 0.2);
             psm.ResolveAllAmbiguities();
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psm };
 
-            // Create FilteredPsms with default parameters (PepQValueThreshold >= QValueThreshold by default)
-            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, new CommonParameters());
-
-            // Create CommonParameters with QValueThreshold < PepQValueThreshold
-            // This should trigger FilterType.QValue branch (lines 33-36)
             var commonParams = new CommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.05);
 
-            // Apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, commonParams, null, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, commonParams, null, new List<string>());
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
-            // Create ProteinScoringAndFdrEngine - the constructor should set _filterType = FilterType.QValue
             ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(
                 proteinParsimonyResult.ProteinGroups,
-                filteredPsms.FilteredPsmsList,
+                psms,
                 false,
                 true,
                 true,
-                commonParams,  // Passing params with QValueThreshold < PepQValueThreshold
+                commonParams,
                 null,
                 new List<string>());
 
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
-            // Verify the engine ran successfully with QValue filtering
-            Assert.That(results.SortedAndScoredProteinGroups.Count >= 0);
+            Assert.That(results.SortedAndScoredProteinGroups.Count, Is.EqualTo(1));
+            Assert.That(results.SortedAndScoredProteinGroups.Single().Proteins.Single().Accession, Is.EqualTo("target1"));
         }
 
         [Test]
         public static void TestProteinScoringAndFdrEngine_FilterTypeSelection_PepQValue()
         {
-            // Test filter type selection when QValueThreshold >= PepQValueThreshold
-            // This should set _filterType = FilterType.PepQValue (lines 38-42)
+            // This PSM passes QValue filtering but fails PepQValue filtering.
+            // With PepQValueThreshold < QValueThreshold, scoring should drop the only protein group.
 
             var protein1 = new Protein("PEPTIDEK", "target1");
 
@@ -386,37 +381,29 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
             SpectralMatch psm = new PeptideSpectralMatch(peptides[0], 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
-            psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+            psm.SetFdrValues(0, 0, 0.005, 0, 0, 0.005, 0.2, 0.2);
             psm.ResolveAllAmbiguities();
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psm };
 
-            // Create FilteredPsms with default parameters
-            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, new CommonParameters());
-
-            // Create CommonParameters with QValueThreshold >= PepQValueThreshold
-            // This should trigger FilterType.PepQValue branch (lines 38-42)
             var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01);
 
-            // Apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, commonParams, null, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, commonParams, null, new List<string>());
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
-            // Create ProteinScoringAndFdrEngine - the constructor should set _filterType = FilterType.PepQValue
             ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(
                 proteinParsimonyResult.ProteinGroups,
-                filteredPsms.FilteredPsmsList,
+                psms,
                 false,
                 true,
                 true,
-                commonParams,  // Passing params with PepQValueThreshold < QValueThreshold
+                commonParams,
                 null,
                 new List<string>());
 
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
-            // Verify the engine ran successfully with PepQValue filtering
-            Assert.That(results.SortedAndScoredProteinGroups.Count >= 0);
+            Assert.That(results.SortedAndScoredProteinGroups, Is.Empty);
         }
 
         [Test]

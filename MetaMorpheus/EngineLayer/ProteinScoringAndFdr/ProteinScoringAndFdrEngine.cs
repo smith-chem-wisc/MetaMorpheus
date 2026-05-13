@@ -59,10 +59,12 @@ namespace EngineLayer
         {
             // add each protein groups PSMs
             var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
-            foreach (var psm in psmList.FilterByQValue(false, _filterThreshold, false, _filterType))
+            foreach (var psm in psmList.FilterByQValue(
+                includeHighQValuePsms: false,
+                qValueThreshold: _filterThreshold,
+                filterAtPeptideLevel: false,
+                filterType: _filterType))
             {
-                // Use filter-type-aware threshold check
-
                 if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                 {
                     foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer))
