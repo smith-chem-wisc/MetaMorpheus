@@ -72,7 +72,7 @@ namespace Test
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
@@ -139,7 +139,7 @@ namespace Test
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
@@ -257,7 +257,7 @@ namespace Test
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
@@ -269,10 +269,9 @@ namespace Test
         }
 
         [Test]
-        public static void TestProteinScoringAndFdrEngine_FilteredPsmsConstructorOverload()
+        public static void TestProteinScoringAndFdrEngine_FilteredPsmsListInput()
         {
-            // Test that the constructor overload accepting FilteredPsms object works correctly
-            // This covers lines 19-21 where the FilteredPsms constructor delegates to the main constructor
+            // Test that the engine accepts an explicitly filtered PSM list and runs successfully.
 
             var protein1 = new Protein("PEPTIDEK", "accession1");
             var protein2 = new Protein("PEPTIDEK", "accession2");
@@ -303,11 +302,10 @@ namespace Test
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, new List<string>());
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
 
-            // Create ProteinScoringAndFdrEngine using the FilteredPsms overload (lines 19-21)
-            // This constructor takes FilteredPsms instead of IEnumerable<SpectralMatch>
+            // Create ProteinScoringAndFdrEngine using the explicit filtered PSM list
             ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(
                 proteinParsimonyResult.ProteinGroups,
-                filteredPsms,  // <-- This is the FilteredPsms overload being tested
+                filteredPsms.FilteredPsmsList,
                 false,
                 true,
                 true,
@@ -357,7 +355,7 @@ namespace Test
             // Create ProteinScoringAndFdrEngine - the constructor should set _filterType = FilterType.QValue
             ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(
                 proteinParsimonyResult.ProteinGroups,
-                filteredPsms,
+                filteredPsms.FilteredPsmsList,
                 false,
                 true,
                 true,
@@ -407,7 +405,7 @@ namespace Test
             // Create ProteinScoringAndFdrEngine - the constructor should set _filterType = FilterType.PepQValue
             ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(
                 proteinParsimonyResult.ProteinGroups,
-                filteredPsms,
+                filteredPsms.FilteredPsmsList,
                 false,
                 true,
                 true,
@@ -467,7 +465,7 @@ namespace Test
             // This should trigger the rescue path where non-decoy proteins removed by Picked TDS are added back
             ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(
                 proteinParsimonyResult.ProteinGroups,
-                filteredPsms,
+                filteredPsms.FilteredPsmsList,
                 false,
                 true,
                 true,
@@ -553,7 +551,7 @@ namespace Test
             // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             ProteinScoringAndFdrResults results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             Assert.That(results.SortedAndScoredProteinGroups.Count == 3);

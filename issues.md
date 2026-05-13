@@ -8,7 +8,7 @@ Most of the major review findings appear valid.
 
 The strongest remaining issues are:
 
-- semantic drift in `ProteinScoringAndFdrEngine` from the existing `FilteredPsms` behavior
+- `ProteinScoringAndFdrEngine` still re-filters already-filtered inputs
 - weak new tests that do not verify the intended behavior
 
 The `magic booleans` comment is valid as a maintainability issue, but it is not a correctness bug by itself.
@@ -53,13 +53,14 @@ Notes:
 - File: `MetaMorpheus/EngineLayer/ProteinScoringAndFdr/ProteinScoringAndFdrEngine.cs`
 - Review assessment: Valid
 - Severity: High
+- Status: Finished
 
-The older `FilteredPsms`-based path used `filteredPsms.FilterType` and `filteredPsms.FilterThreshold` directly. The new overload re-derives those values from `CommonParameters`, which can disagree with the actual filtered set that was passed in.
+The older `FilteredPsms`-based path used `filteredPsms.FilterType` and `filteredPsms.FilterThreshold` directly. The new overload re-derived those values from `CommonParameters`, which could disagree with the actual filtered set that was passed in. That constructor path has now been removed.
 
-Potential solution:
+Resolution:
 
-- keep legacy behavior for the `FilteredPsms` overload by reading `filteredPsms.FilterType` and `filteredPsms.FilterThreshold` directly
-- reserve internal re-filtering logic for constructors that truly start from raw PSMs
+- remove the `FilteredPsms` overload entirely
+- update production and test call sites to pass `FilteredPsms.FilteredPsmsList` explicitly when they intend to score an already-filtered set
 
 ### 4. `ProteinScoringAndFdrEngine` re-filters already-filtered inputs
 
@@ -67,7 +68,7 @@ Potential solution:
 - Review assessment: Valid
 - Severity: High
 
-The `FilteredPsms` overload forwards an already-filtered list, but `ScoreProteinGroups` filters again. That is unnecessary work at minimum, and it can become a correctness problem if the constructor-derived filter settings differ from the original `FilteredPsms` settings.
+Callers can now pass an already-filtered list explicitly via `FilteredPsms.FilteredPsmsList`, but `ScoreProteinGroups` still filters that list again. That is unnecessary work at minimum, and it can still become a correctness problem if the engine's `CommonParameters`-derived settings diverge from the list's original filtering semantics.
 
 Potential solution:
 
@@ -140,11 +141,9 @@ Potential solution:
 
 ## Recommended Fix Order
 
-1. Remove or hard-guard the misleading `ProteinParsimonyEngine(FilteredPsms, ...)` overload.
-2. Restore `ProteinScoringAndFdrEngine` compatibility with `FilteredPsms` semantics.
-3. Remove double-filtering on already-filtered inputs.
-4. Strengthen the new tests so they assert exact behavior rather than tautologies.
-5. Clean up the positional-boolean call with named arguments.
+1. Remove double-filtering on already-filtered inputs.
+2. Strengthen the new tests so they assert exact behavior rather than tautologies.
+3. Clean up the positional-boolean call with named arguments.
 
 ## Notes
 
