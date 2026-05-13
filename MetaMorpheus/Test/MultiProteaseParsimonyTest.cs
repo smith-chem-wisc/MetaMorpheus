@@ -79,7 +79,7 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters_Tryp);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
@@ -169,7 +169,7 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters1);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
@@ -249,7 +249,7 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
@@ -342,7 +342,7 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
@@ -436,7 +436,7 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
@@ -502,7 +502,7 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
@@ -596,7 +596,7 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
@@ -714,7 +714,7 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
@@ -854,7 +854,7 @@ namespace Test
 
             FilteredPsms psmsFiltered = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
@@ -929,7 +929,7 @@ namespace Test
 
             FilteredPsms psmsFiltered = FilteredPsms.Filter(psms, commonParameters_tryp);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
@@ -1001,7 +1001,7 @@ namespace Test
 
             FilteredPsms psmsFiltered = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
