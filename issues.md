@@ -8,7 +8,6 @@ Most of the major review findings appear valid.
 
 The strongest remaining issues are:
 
-- `ProteinScoringAndFdrEngine` still re-filters already-filtered inputs
 - weak new tests that do not verify the intended behavior
 
 The `magic booleans` comment is valid as a maintainability issue, but it is not a correctness bug by itself.
@@ -67,26 +66,32 @@ Resolution:
 - File: `MetaMorpheus/EngineLayer/ProteinScoringAndFdr/ProteinScoringAndFdrEngine.cs`
 - Review assessment: Valid
 - Severity: High
+- Status: Finished
 
-Callers can now pass an already-filtered list explicitly via `FilteredPsms.FilteredPsmsList`, but `ScoreProteinGroups` still filters that list again. That is unnecessary work at minimum, and it can still become a correctness problem if the engine's `CommonParameters`-derived settings diverge from the list's original filtering semantics.
+The concern was that already-filtered inputs were being passed into `ProteinScoringAndFdrEngine` and then filtered again. The current production scoring paths now pass the full PSM lists instead:
 
-Potential solution:
+- `PostSearchAnalysisTask` main scoring uses `Parameters.AllSpectralMatches`
+- `PostSearchAnalysisTask` individual-file scoring uses `psmsForThisFile`
+- `PostGlycoSearchAnalysisTask` uses `psms`
 
-- for the `FilteredPsms` overload, use the provided filtered list directly
-- for the raw-list overload, filter once internally and carry that result through scoring
+Resolution:
+
+- update production call sites to pass unfiltered PSM lists into `ProteinScoringAndFdrEngine`
+- keep `FilteredPsms` only for export/reporting paths that need filtered output sets
 
 ### 5. Tie behavior differs from `FilteredPsms`
 
 - File: `MetaMorpheus/EngineLayer/ProteinScoringAndFdr/ProteinScoringAndFdrEngine.cs`
 - Review assessment: Valid
 - Severity: Medium-High
+- Status: Finished
 
-The current logic picks `PepQValue` when thresholds are equal because it uses `if (QValueThreshold < PepQValueThreshold) ... else PepQValue`. Existing `FilteredPsms` behavior keeps ties on `QValue`.
+The constructor logic previously picked `PepQValue` when thresholds were equal. That has been aligned with `FilteredPsms`, which keeps ties on `QValue`.
 
-Potential solution:
+Resolution:
 
-- align the engine logic with `FilteredPsms`
-- better yet, avoid re-deriving this decision where an existing `FilteredPsms` instance already captures it
+- switch the comparison so `PepQValue` is selected only when `PepQValueThreshold < QValueThreshold`
+- keep equal-threshold cases on `QValue`, matching `FilteredPsms`
 
 ### 6. Parsimony reporting test is too weak
 
@@ -141,9 +146,8 @@ Potential solution:
 
 ## Recommended Fix Order
 
-1. Remove double-filtering on already-filtered inputs.
-2. Strengthen the new tests so they assert exact behavior rather than tautologies.
-3. Clean up the positional-boolean call with named arguments.
+1. Strengthen the new tests so they assert exact behavior rather than tautologies.
+2. Clean up the positional-boolean call with named arguments.
 
 ## Notes
 

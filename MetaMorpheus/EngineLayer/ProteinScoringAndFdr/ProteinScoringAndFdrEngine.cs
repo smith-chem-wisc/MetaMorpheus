@@ -26,15 +26,15 @@ namespace EngineLayer
             MergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
             _decoyIdentifiers = proteinGroups.SelectMany(p => p.Proteins.Where(b => b.IsDecoy).Select(b => b.Accession.Split('_')[0])).ToHashSet();
 
-            if (CommonParameters.QValueThreshold < CommonParameters.PepQValueThreshold)
-            {
-                _filterType = FilterType.QValue;
-                _filterThreshold = CommonParameters.QValueThreshold;
-            }
-            else
+            if (CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold)
             {
                 _filterType = FilterType.PepQValue;
                 _filterThreshold = CommonParameters.PepQValueThreshold;
+            }
+            else
+            {
+                _filterType = FilterType.QValue;
+                _filterThreshold = CommonParameters.QValueThreshold;
             }
         }
 
