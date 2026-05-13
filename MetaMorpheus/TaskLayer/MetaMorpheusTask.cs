@@ -305,13 +305,27 @@ namespace TaskLayer
                                     if (commonParameters.UseMostAbundantPrecursorIntensity)
                                         intensity = envelope.Peaks.Max(p => p.intensity);
 
-                                    var fractionalIntensity = envelope.TotalIntensity /
-                                          precursorSpectrum.MassSpectrum.YArray
-                                          [
-                                              precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Minimum)
-                                              ..
-                                              precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Maximum)
-                                          ].Sum();
+                                    // Classic-decon envelopes compute fractionalIntensity as
+                                    //   envelope.TotalIntensity / sum(local MS1 isolation-window YArray)
+                                    // which is a well-defined "what fraction of this scan's isolation
+                                    // window does my envelope explain" because BOTH sides come from the
+                                    // same local MS1 spectrum.
+                                    //
+                                    // FromFile envelopes break that contract: TotalIntensity comes from
+                                    // the external feature file (different intensity scale, summed over
+                                    // an RT window in TopFD/FlashDeconv output, not directly comparable
+                                    // to a single scan's peaks). Dividing it by the local isolation-window
+                                    // sum mixes scales and can produce values >1 or otherwise meaningless
+                                    // ratios, which then propagate as a quality/abundance signal into
+                                    // Ms2ScanWithSpecificMass and downstream scoring.
+                                    //
+                                    // Report fractionalIntensity = 1.0 instead: the user explicitly asked
+                                    // us to trust the external source as a precursor candidate, so we take
+                                    // it at face value rather than weighting it by a number we can't
+                                    // honestly compute. The `intensity` value above (envelope.Peaks single
+                                    // synthetic entry's apex intensity from the feature file) stays the
+                                    // self-reported abundance and is fine to surface as-is.
+                                    var fractionalIntensity = 1.0;
 
                                     precursorSet.Add(new(envelope, intensity, fractionalIntensity));
                                 }
@@ -572,6 +586,41 @@ namespace TaskLayer
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
+            // Resolve an external whole-file MS1 deconvolution result as the secondary precursor source
+            // when the file-specific toml supplies a path (auto-discovery in RunTask stamps the resolved
+            // path into fileSpecificParams.Ms1FeatureFilePath). Resolved before constructing returnParams
+            // so it can flow through the constructor and the property's setter on CommonParameters can
+            // stay private (matching the class-header convention). Charge bounds inherit from commonParams'
+            // primary precursor decon params -- same reference that gets carried through to returnParams
+            // via precursorDeconParams: below.
+            DeconvolutionParameters additionalPrecursorDeconParams = commonParams.AdditionalPrecursorDeconvolutionParameters;
+            if (!string.IsNullOrWhiteSpace(fileSpecificParams.Ms1FeatureFilePath))
+            {
+                if (File.Exists(fileSpecificParams.Ms1FeatureFilePath))
+                {
+                    // PrecursorDeconvolutionParameters is always populated by the CommonParameters
+                    // constructor and the setter is private. Dot-access (not ?.) makes any future
+                    // refactor that nulls it surface as a NullReferenceException in the per-file
+                    // try/catch around this call rather than silently falling back to (1, 12), which
+                    // would strip out envelopes above charge 12 on top-down configs that set 60.
+                    var primary = commonParams.PrecursorDeconvolutionParameters;
+                    additionalPrecursorDeconParams = new Readers.FromFileDeconvolutionParameters(
+                        fileSpecificParams.Ms1FeatureFilePath,
+                        primary.MinAssumedChargeState,
+                        primary.MaxAssumedChargeState);
+                }
+                else
+                {
+                    // User-supplied path but file missing -- search continues with the
+                    // remaining precursor sources (classic decon / scan header), but the
+                    // user needs to know the FromFile source they configured is disabled
+                    // for this file. (Empty Ms1FeatureFilePath stays silent: it's the
+                    // common case where no external source was requested.)
+                    Warn("Ms1FeatureFilePath '" + fileSpecificParams.Ms1FeatureFilePath +
+                         "' not found; external MS1 feature source disabled");
+                }
+            }
+
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
@@ -612,21 +661,7 @@ namespace TaskLayer
                 productDeconParams: commonParams.ProductDeconvolutionParameters,
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
                 fragmentationParams: commonParams.FragmentationParameters,
-                additionalPrecursorDeconParams: commonParams.AdditionalPrecursorDeconvolutionParameters);
-
-            // Attach an external whole-file MS1 deconvolution result as a secondary precursor source
-            // when the file-specific toml supplies a path (auto-discovery happens upstream in RunTask
-            // by stamping the resolved path into fileSpecificParams.Ms1FeatureFilePath). Resolved here
-            // rather than in RunTask so every subclass call site picks it up uniformly.
-            if (!string.IsNullOrWhiteSpace(fileSpecificParams.Ms1FeatureFilePath) &&
-                File.Exists(fileSpecificParams.Ms1FeatureFilePath))
-            {
-                var primary = returnParams.PrecursorDeconvolutionParameters;
-                returnParams.AdditionalPrecursorDeconvolutionParameters = new Readers.FromFileDeconvolutionParameters(
-                    fileSpecificParams.Ms1FeatureFilePath,
-                    primary?.MinAssumedChargeState ?? 1,
-                    primary?.MaxAssumedChargeState ?? 12);
-            }
+                additionalPrecursorDeconParams: additionalPrecursorDeconParams);
 
             return returnParams;
         }
@@ -705,12 +740,36 @@ namespace TaskLayer
                         if (string.IsNullOrWhiteSpace(fileSettingsList[i].Ms1FeatureFilePath))
                         {
                             fileSettingsList[i].Ms1FeatureFilePath = adjacentMs1FeaturePath;
+                            // Surface auto-discovery in the log: an externally-supplied feature file
+                            // can swing PSM counts substantially, and a user who left a stale _ms1.feature
+                            // next to their raw deserves to see in the log that it was picked up.
+                            // Explicit per-file-toml paths skip this branch (the user typed the path,
+                            // they already know it's active).
+                            Log("Found adjacent MS1 feature file '" + adjacentMs1FeaturePath +
+                                "' for " + Path.GetFileName(rawFilePath) +
+                                "; enabling additive FromFile precursor source",
+                                new List<string> { displayName });
                         }
                     }
 
-                    CommonParameters perFileParams = fileSettingsList[i] != null
-                        ? SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])
-                        : CommonParameters;
+                    // Per-file resilience: SetAllFileSpecificCommonParams throws MetaMorpheusException
+                    // for unsupported digestion-param types, and the FromFile construction it now performs
+                    // can throw any IO / parse exception from mzLib's Ms1FeatureFile reader on a corrupt
+                    // feature file. Catch broadly so one bad file degrades to "skip and continue" rather
+                    // than aborting the whole task -- matches the resilience contract the pre-refactor
+                    // master had when SetAllFileSpecificCommonParams was inside the toml-parse try/catch.
+                    CommonParameters perFileParams;
+                    try
+                    {
+                        perFileParams = fileSettingsList[i] != null
+                            ? SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])
+                            : CommonParameters;
+                    }
+                    catch (Exception e)
+                    {
+                        Warn("Problem deriving file-specific parameters for " + Path.GetFileName(rawFilePath) + "; " + e.Message);
+                        continue;
+                    }
 
                     FileSpecificParameters.Add((currentRawDataFilepathList[i], perFileParams));
                 }

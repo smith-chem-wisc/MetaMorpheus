@@ -124,6 +124,10 @@ namespace EngineLayer
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
                 PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
                 ProductDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+                if (AdditionalPrecursorDeconvolutionParameters != null)
+                {
+                    AdditionalPrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+                }
                 FragmentationParameters = fragmentationParams ?? RnaFragmentationParams.Default;
             }
             else
@@ -169,7 +173,7 @@ namespace EngineLayer
         /// primary decon and the optional scan-header info. TomlIgnored because it's resolved at
         /// task-run time from per-file paths, not persisted in the task config.
         /// </summary>
-        [TomlIgnore] public DeconvolutionParameters AdditionalPrecursorDeconvolutionParameters { get; set; }
+        [TomlIgnore] public DeconvolutionParameters AdditionalPrecursorDeconvolutionParameters { get; private set; }
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
