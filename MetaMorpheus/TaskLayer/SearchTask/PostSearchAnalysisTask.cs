@@ -59,10 +59,8 @@ namespace TaskLayer
                 || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom
                 )
             {
-                // RNA uses custom for adducts, we should only run mass diff localization if the user want to 
                 // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
-                if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom && GlobalVariables.AnalyteType != AnalyteType.Oligo)
-                    Parameters.SearchParameters.DoLocalizationAnalysis = true;
+                Parameters.SearchParameters.DoLocalizationAnalysis = true;
             }
             else
             {
