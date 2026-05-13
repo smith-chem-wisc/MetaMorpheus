@@ -289,7 +289,7 @@ namespace EngineLayer
                                 MaxHeterozygousVariants,
                                 MinVariantDepth,
                                 AddTruncations,
-                                PrecursorDeconvolutionParameters,
+                                PrecursorDeconvolutionParameters, 
                                 ProductDeconvolutionParameters,
                                 UseMostAbundantPrecursorIntensity,
                                 DIAparameters,

@@ -275,8 +275,8 @@ namespace TaskLayer
                                     precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double? intensity = null;
-                                    if (commonParameters.UseMostAbundantPrecursorIntensity)
-                                        intensity = envelope.Peaks.Max(p => p.intensity);
+                                    if (commonParameters.UseMostAbundantPrecursorIntensity) 
+                                        intensity = envelope.Peaks.Max(p => p.intensity); 
 
                                     var fractionalIntensity = envelope.TotalIntensity /
                                           precursorSpectrum.MassSpectrum.YArray
