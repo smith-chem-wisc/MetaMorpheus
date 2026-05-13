@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -14,6 +14,7 @@ using Readers;
 using Annotation = OxyPlot.Annotations.Annotation;
 using FontWeights = OxyPlot.FontWeights;
 using HorizontalAlignment = OxyPlot.HorizontalAlignment;
+using LineSeries = OxyPlot.Series.LineSeries;
 using TextAnnotation = OxyPlot.Annotations.TextAnnotation;
 using VerticalAlignment = OxyPlot.VerticalAlignment;
 
@@ -487,6 +488,86 @@ namespace GuiFunctions
             Model.Axes[1].AbsoluteMaximum = -min * 2;
             Model.Axes[1].Zoom(min, -min);
             Model.Axes[1].LabelFormatter = DrawnSequence.YAxisLabelFormatter;
+        }
+
+        /// <summary>
+        /// Draws a second spectrum's raw peaks with inverted (negative) intensities for mirror plot comparison.
+        /// Each peak is drawn as a vertical line from zero to its negated intensity value.
+        /// </summary>
+        protected void DrawInvertedSpectrum(MsDataScan scan)
+        {
+            var yArray = scan.MassSpectrum.YArray;
+            var xArray = scan.MassSpectrum.XArray;
+
+            var invertedSeries = new LineSeries
+            {
+                Color = MetaDrawSettings.UnannotatedPeakColor,
+                StrokeThickness = MetaDrawSettings.StrokeThicknessUnannotated,
+                LineStyle = LineStyle.Solid
+            };
+
+            for (int i = 0; i < xArray.Length; i++)
+            {
+                double mz = xArray[i];
+                double intensity = -yArray[i];
+                invertedSeries.Points.Add(new DataPoint(mz - 0.0001, 0));
+                invertedSeries.Points.Add(new DataPoint(mz, intensity));
+                invertedSeries.Points.Add(new DataPoint(mz + 0.0001, 0));
+            }
+            Model.Series.Add(invertedSeries);
+        }
+
+        /// <summary>
+        /// Mirrors a set of fragment ions below the zero axis (negative Y) for mirror plot comparison.
+        /// Creates new MatchedFragmentIon objects with negated intensities and annotates them
+        /// using the existing annotation pipeline with useLiteralPassedValues.
+        /// </summary>
+        protected void AnnotateMirrorIons(bool isBetaPeptide, List<MatchedFragmentIon> mirrorIons)
+        {
+            var mirroredIons = new List<MatchedFragmentIon>(mirrorIons.Count);
+            foreach (var ion in mirrorIons)
+            {
+                var product = new Product(
+                    ion.NeutralTheoreticalProduct.ProductType,
+                    ion.NeutralTheoreticalProduct.Terminus,
+                    ion.NeutralTheoreticalProduct.NeutralMass,
+                    ion.NeutralTheoreticalProduct.FragmentNumber,
+                    ion.NeutralTheoreticalProduct.ResiduePosition,
+                    ion.NeutralTheoreticalProduct.NeutralLoss);
+
+                mirroredIons.Add(new MatchedFragmentIon(product, ion.Mz,
+                    -ion.Intensity, ion.Charge));
+            }
+
+            AnnotateMatchedIons(isBetaPeptide, mirroredIons, useLiteralPassedValues: true);
+        }
+
+        /// <summary>
+        /// Adjusts plot axes to accommodate a mirror plot with two spectra:
+        /// Y-axis is made symmetric around zero covering both scans' max intensities,
+        /// X-axis covers the union of both scan windows.
+        /// Applies YAxisLabelFormatter for absolute-value display on negative labels.
+        /// </summary>
+        protected void AdjustMirrorAxes(MsDataScan scanA, MsDataScan scanB)
+        {
+            double maxA = scanA.MassSpectrum.YArray.Max();
+            double maxB = scanB.MassSpectrum.YArray.Max();
+            double maxAbs = Math.Max(maxA, maxB) * 1.3;
+
+            var yAxis = Model.Axes[1];
+            yAxis.Minimum = -maxAbs;
+            yAxis.Maximum = maxAbs;
+            yAxis.AbsoluteMinimum = -maxAbs * 2;
+            yAxis.AbsoluteMaximum = maxAbs * 2;
+            yAxis.LabelFormatter = DrawnSequence.YAxisLabelFormatter;
+
+            double xMin = Math.Min(scanA.ScanWindowRange.Minimum, scanB.ScanWindowRange.Minimum);
+            double xMax = Math.Max(scanA.ScanWindowRange.Maximum, scanB.ScanWindowRange.Maximum);
+            var xAxis = Model.Axes[0];
+            xAxis.Minimum = xMin;
+            xAxis.Maximum = xMax;
+            xAxis.AbsoluteMinimum = xMin - 100;
+            xAxis.AbsoluteMaximum = xMax + 100;
         }
 
         protected void AnnotateProperties(LibrarySpectrum librarySpectrum = null)
