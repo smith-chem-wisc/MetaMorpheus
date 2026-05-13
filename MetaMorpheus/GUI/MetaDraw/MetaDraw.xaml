@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaMorpheusGUI.MetaDraw"
+<Window x:Class="MetaMorpheusGUI.MetaDraw"
         x:Name="MetaDrawWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -702,6 +702,13 @@
                      d:DataContext="{d:DesignInstance metaDraw:ChimeraAnalysisTabViewModel, IsDesignTimeCreatable=True}"
                      DataContext="{Binding ChimeraAnalysisTabViewModel, RelativeSource={RelativeSource AncestorType=Window}}">
                 <local:ChimeraAnalysisTabView x:Name="ChimeraAnalysisTabView" />
+            </TabItem>
+
+            <!-- Mirror Plot tab -->
+            <TabItem Header="{Binding TabHeader}" IsEnabled="{Binding IsTabEnabled}" Background="DarkGray"
+                     d:DataContext="{d:DesignInstance metaDraw:MirrorPlotTabViewModel, IsDesignTimeCreatable=True}"
+                     DataContext="{Binding MirrorPlotTabViewModel, RelativeSource={RelativeSource AncestorType=Window}}">
+                <local:MirrorPlotTabView x:Name="MirrorPlotTabView" />
             </TabItem>
 
             <!--Deconvolution Exploration tab-->

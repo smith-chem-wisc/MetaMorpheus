@@ -44,6 +44,7 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
         public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
+        public MirrorPlotTabViewModel MirrorPlotTabViewModel { get; set; }
         public DeconExplorationTabViewModel DeconExplorationViewModel { get; set; }
         public BioPolymerTabViewModel BioPolymerTabViewModel { get; set; }
 
@@ -61,6 +62,7 @@ namespace MetaMorpheusGUI
 
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
             ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel();
+            MirrorPlotTabViewModel = new MirrorPlotTabViewModel();
             DeconExplorationViewModel = new DeconExplorationTabViewModel(MetaDrawLogic);
 
             propertyView = new DataTable();
@@ -510,6 +512,7 @@ namespace MetaMorpheusGUI
             {
                 MetaDrawLogic.FilterPsms();
                 ChimeraAnalysisTabViewModel.ProcessChimeraData(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles);
+                MirrorPlotTabViewModel.ProcessMirrorData(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles);
 
                 foreach (var group in BioPolymerTabViewModel.AllGroups)
                 {
@@ -566,6 +569,7 @@ namespace MetaMorpheusGUI
                 loadPsms: true,
                 loadLibraries: true,
                 chimeraTabViewModel: ChimeraAnalysisTabViewModel,
+                mirrorPlotTabViewModel: MirrorPlotTabViewModel,
                 bioPolymerTabViewModel: BioPolymerTabViewModel,
                 deconExplorationTabViewModel: DeconExplorationViewModel,
                 fragmentationReanalysisViewModel: FragmentationReanalysisViewModel);

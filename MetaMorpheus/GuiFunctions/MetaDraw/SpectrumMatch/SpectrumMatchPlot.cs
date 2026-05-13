@@ -463,7 +463,9 @@ namespace GuiFunctions
                 sumOfLibraryIntensities += libraryIon.Intensity;
             }
 
-            double multiplier = -1 * sumOfMatchedIonIntensities / sumOfLibraryIntensities;
+            double multiplier = sumOfLibraryIntensities == 0
+                ? -1
+                : -1 * sumOfMatchedIonIntensities / sumOfLibraryIntensities;
 
             List<MatchedFragmentIon> mirroredLibraryIons = new List<MatchedFragmentIon>();
 
@@ -717,6 +719,144 @@ namespace GuiFunctions
                 Font = "Arial",
                 FontSize = MetaDrawSettings.SpectrumDescriptionFontSize,
                 TextColor = OxyColors.Black, 
+            };
+
+            Model.Annotations.Add(annotation);
+        }
+
+        internal void AnnotatePropertiesBottom(SpectrumMatchFromTsv psm)
+        {
+            StringBuilder text = new StringBuilder();
+            if (MetaDrawSettings.SpectrumDescription["Precursor Charge: "])
+            {
+                text.Append("Precursor Charge: ");
+                text.Append(psm.PrecursorCharge);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Precursor Mass: "])
+            {
+                text.Append("Precursor Mass: ");
+                text.Append(psm.PrecursorMass.ToString("F3"));
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Theoretical Mass: "])
+            {
+                text.Append("Theoretical Mass: ");
+                text.Append(
+                    double.TryParse(psm.MonoisotopicMassString, NumberStyles.Any, CultureInfo.InvariantCulture,
+                        out var monoMass)
+                        ? monoMass.ToString("F3")
+                        : psm.MonoisotopicMassString);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Protein Accession: "])
+            {
+                text.Append("Accession: ");
+                if (psm.Accession.Length > 10)
+                {
+                    text.Append("\r\n   " + psm.Accession);
+                }
+                else
+                    text.Append(psm.Accession);
+
+                text.Append("\r\n");
+            }
+
+            if (psm.Name != null && MetaDrawSettings.SpectrumDescription["Protein: "])
+            {
+                if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                    text.Append("Transcript: ");
+                else
+                    text.Append("Protein: ");
+
+                text.Append(psm.Name);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Retention Time: "])
+            {
+                text.Append("Retention Time: ");
+                text.Append(psm.RetentionTime);
+                text.Append("\r\n");
+            }
+
+            if (psm.OneOverK0 != null && MetaDrawSettings.SpectrumDescription["1/K\u2080: "])
+            {
+                text.Append("1/K\u2080: ");
+                text.Append(psm.OneOverK0);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "])
+            {
+                text.Append("Decoy/Contaminant/Target: ");
+                text.Append(psm.DecoyContamTarget);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Sequence Length: "])
+            {
+                text.Append("Sequence Length: ");
+                text.Append(psm.BaseSeq.Length.ToString("F3").Split('.')[0]);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Ambiguity Level: "])
+            {
+                text.Append("Ambiguity Level: ");
+                text.Append(psm.AmbiguityLevel);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Score: "])
+            {
+                text.Append("Score: ");
+                text.Append(psm.Score.ToString("F3"));
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Q-Value: "])
+            {
+                text.Append("Q-Value: ");
+                text.Append(psm.QValue.ToString("E2"));
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["PEP: "])
+            {
+                text.Append("PEP: ");
+                text.Append(psm.PEP.ToString("F3"));
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["PEP Q-Value: "])
+            {
+                text.Append("PEP Q-Value: ");
+                text.Append(psm.PEP_QValue.ToString("F3"));
+                text.Append("\r\n");
+            }
+
+            double fontSize = MetaDrawSettings.SpectrumDescriptionFontSize;
+            string annotationText = text.ToString();
+            double averageCharWidth = 0.48;
+            int maxLineLength = Math.Min(annotationText.Split('\n').Max(line => line.Length), MaxCharactersPerDescriptionLine);
+            double estimatedWidth = fontSize * averageCharWidth * maxLineLength;
+            double xOffset = -estimatedWidth - 10 - (fontSize / 3);
+
+            var annotation = new PlotTextAnnotation()
+            {
+                Text = text.ToString(),
+                XPosition = PlotTextAnnotation.RelativeToX.Right,
+                YPosition = PlotTextAnnotation.RelativeToY.Bottom,
+                FontWeight = 450,
+                X = xOffset,
+                Y = 10,
+                Font = "Arial",
+                FontSize = MetaDrawSettings.SpectrumDescriptionFontSize,
+                TextColor = OxyColors.Black,
             };
 
             Model.Annotations.Add(annotation);

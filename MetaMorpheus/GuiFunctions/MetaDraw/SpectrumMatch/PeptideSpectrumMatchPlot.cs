@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using MassSpectrometry;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +19,7 @@ namespace GuiFunctions
     public class PeptideSpectrumMatchPlot : SpectrumMatchPlot
     {
         public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, SpectrumMatchFromTsv sm, MsDataScan scan,
-            List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null, bool stationarySequence = false)
+            List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null, bool stationarySequence = false, List<MatchedFragmentIon> mirrorIons = null)
             : base(plotView, sm, scan, matchedFragmentIons)
         {
             if (annotateProperties)
@@ -39,6 +39,11 @@ namespace GuiFunctions
             if (librarySpectrum != null)
             {
                 AnnotateLibraryIons(isBetaPeptide: false, librarySpectrum.MatchedFragmentIons);
+            }
+
+            if (mirrorIons != null)
+            {
+                AnnotateLibraryIons(isBetaPeptide: false, mirrorIons);
             }
 
             RefreshChart();
