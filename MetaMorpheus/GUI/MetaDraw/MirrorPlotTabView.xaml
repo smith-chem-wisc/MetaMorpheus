@@ -117,6 +117,8 @@
         <!-- Export Bar -->
         <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5"
                     Orientation="Horizontal" HorizontalAlignment="Right" Margin="4">
+            <CheckBox Content="Relative Intensity" IsChecked="{Binding UseRelativeIntensity}"
+                      VerticalContentAlignment="Center" Margin="0,0,10,0" />
             <ComboBox ItemsSource="{Binding ExportTypes, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
                       SelectedItem="{Binding ExportType, Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}}"
                       HorizontalContentAlignment="Center" VerticalContentAlignment="Center"

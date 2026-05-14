@@ -61,6 +61,18 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
 
     public Dictionary<string, MsDataFile> MsDataFiles { get; private set; }
 
+    private bool _useRelativeIntensity;
+    public bool UseRelativeIntensity
+    {
+        get => _useRelativeIntensity;
+        set
+        {
+            _useRelativeIntensity = value;
+            OnPropertyChanged(nameof(UseRelativeIntensity));
+            RefreshPlot();
+        }
+    }
+
     public ICommand ExportCommand { get; set; }
 
     public MirrorPlotTabViewModel(string exportDirectory = null)
@@ -97,14 +109,30 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
         if (scanA == null || scanB == null)
             return;
 
+        var ionsA = SelectedLeftPsm.MatchedIons;
+        var ionsB = SelectedRightPsm.MatchedIons;
+
+        if (UseRelativeIntensity)
+        {
+            double maxA = scanA.MassSpectrum.YArray.Max();
+            double maxB = scanB.MassSpectrum.YArray.Max();
+            if (maxA > 0 && maxB > 0)
+            {
+                scanA = NormalizeScan(scanA, maxA);
+                scanB = NormalizeScan(scanB, maxB);
+                ionsA = NormalizeIons(ionsA, maxA);
+                ionsB = NormalizeIons(ionsB, maxB);
+            }
+        }
+
         var plotViewRef = MirrorPlotView;
         if (plotViewRef == null)
             return;
 
         MirrorPlot = new MirrorSpectrumMatchPlot(
             plotViewRef,
-            SelectedLeftPsm, scanA, SelectedLeftPsm.MatchedIons,
-            SelectedRightPsm, scanB, SelectedRightPsm.MatchedIons,
+            SelectedLeftPsm, scanA, ionsA,
+            SelectedRightPsm, scanB, ionsB,
             annotateProperties: true);
     }
 
@@ -188,4 +216,52 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
     public OxyPlot.Wpf.PlotView MirrorPlotView { get; set; }
     public Canvas TopCanvasExport { get; set; }
     public Canvas BottomCanvasExport { get; set; }
+
+    private static MsDataScan NormalizeScan(MsDataScan original, double maxIntensity)
+    {
+        var xArray = original.MassSpectrum.XArray;
+        var normalizedY = new double[xArray.Length];
+        for (int i = 0; i < xArray.Length; i++)
+            normalizedY[i] = original.MassSpectrum.YArray[i] / maxIntensity * 100.0;
+
+        var spectrum = new MzSpectrum(xArray, normalizedY, false);
+        return new MsDataScan(spectrum, original.OneBasedScanNumber, original.MsnOrder,
+            original.IsCentroid, original.Polarity, original.RetentionTime,
+            original.ScanWindowRange, original.ScanFilter, original.MzAnalyzer,
+            original.TotalIonCurrent, original.InjectionTime, original.NoiseData,
+            original.NativeId, original.SelectedIonMZ, original.SelectedIonChargeStateGuess,
+            original.SelectedIonIntensity, original.IsolationMz, original.IsolationWidth,
+            original.DissociationType, original.OneBasedPrecursorScanNumber,
+            original.SelectedIonMonoisotopicGuessMz, original.HcdEnergy,
+            original.ScanDescription, original.CompensationVoltage);
+    }
+
+    private static List<MatchedFragmentIon> NormalizeIons(List<MatchedFragmentIon> ions, double maxIntensity)
+    {
+        var normalized = new List<MatchedFragmentIon>(ions.Count);
+        foreach (var ion in ions)
+        {
+            var product = new Product(
+                ion.NeutralTheoreticalProduct.ProductType,
+                ion.NeutralTheoreticalProduct.Terminus,
+                ion.NeutralTheoreticalProduct.NeutralMass,
+                ion.NeutralTheoreticalProduct.FragmentNumber,
+                ion.NeutralTheoreticalProduct.ResiduePosition,
+                ion.NeutralTheoreticalProduct.NeutralLoss);
+
+            double normalizedIntensity = ion.Intensity / maxIntensity * 100.0;
+
+            if (ion is MatchedFragmentIonWithEnvelope envIon)
+            {
+                normalized.Add(new MatchedFragmentIonWithEnvelope(product, ion.Mz,
+                    normalizedIntensity, ion.Charge, envIon.Envelope));
+            }
+            else
+            {
+                normalized.Add(new MatchedFragmentIon(product, ion.Mz,
+                    normalizedIntensity, ion.Charge));
+            }
+        }
+        return normalized;
+    }
 }
