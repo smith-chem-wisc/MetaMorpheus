@@ -24,9 +24,12 @@ namespace EngineLayer
     /// to the corresponding BioPolymerGroup base properties. Consumers should gradually migrate to
     /// the base class names.
     ///
-    /// Score() and CalculateSequenceCoverage() are overridden (via new) because they access
-    /// MetaMorpheus-specific SpectralMatch members (GetAminoAcidCoverage, BestMatchingBioPolymersWithSetMods,
-    /// FragmentCoveragePositionInPeptide) that are not on the ISpectralMatch interface.
+    /// Score() is handled entirely by the base class.
+    /// CalculateSequenceCoverage() and GetTabSeparatedHeader() are hidden (via new) because
+    /// CalculateSequenceCoverage() accesses MetaMorpheus-specific SpectralMatch members
+    /// (GetAminoAcidCoverage, BestMatchingBioPolymersWithSetMods, FragmentCoveragePositionInPeptide)
+    /// that are not on the ISpectralMatch interface, and GetTabSeparatedHeader() uses
+    /// MetaMorpheus-specific column names and includes BestPeptidePEP.
     /// </summary>
     public class ProteinGroup : BioPolymerGroup
     {
@@ -385,17 +388,7 @@ namespace EngineLayer
 
         #endregion
 
-        #region Scoring and Coverage
-
-        /// <summary>
-        /// Computes protein group score as the sum of the best score per unique base sequence.
-        /// Overrides base to use MetaMorpheus-specific scoring logic.
-        /// </summary>
-        public new void Score()
-        {
-            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.BaseSequence)
-                .Select(p => p.Select(x => x.Score).Max()).Sum();
-        }
+        #region Coverage
 
         /// <summary>
         /// Computes sequence coverage using MetaMorpheus-specific SpectralMatch members

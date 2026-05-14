@@ -584,6 +584,8 @@ namespace TaskLayer
                         }
                         proteinGroup.IntensitiesByFile = intensities;
                     }
+
+                    proteinGroup.SampleGroupResults = null;
                 }
             }
         }
