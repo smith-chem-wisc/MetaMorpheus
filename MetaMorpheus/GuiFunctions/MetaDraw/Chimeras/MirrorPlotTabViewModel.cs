@@ -48,8 +48,8 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
         }
     }
 
-    private PeptideSpectrumMatchPlot _mirrorPlot;
-    public PeptideSpectrumMatchPlot MirrorPlot
+    private MirrorSpectrumMatchPlot _mirrorPlot;
+    public MirrorSpectrumMatchPlot MirrorPlot
     {
         get => _mirrorPlot;
         set
@@ -75,7 +75,6 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
     {
         MsDataFiles = dataFiles;
         AllFilteredPsms.Clear();
-
         foreach (var psm in allPsms)
         {
             AllFilteredPsms.Add(psm);
@@ -102,15 +101,11 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
         if (plotViewRef == null)
             return;
 
-        MirrorPlot = new PeptideSpectrumMatchPlot(
+        MirrorPlot = new MirrorSpectrumMatchPlot(
             plotViewRef,
-            SelectedLeftPsm,
-            scanA,
-            SelectedLeftPsm.MatchedIons,
-            annotateProperties: false,
-            mirrorIons: SelectedRightPsm.MatchedIons);
-
-        MirrorPlot.AnnotatePropertiesBottom(SelectedRightPsm);
+            SelectedLeftPsm, scanA, SelectedLeftPsm.MatchedIons,
+            SelectedRightPsm, scanB, SelectedRightPsm.MatchedIons,
+            annotateProperties: true);
     }
 
     public void ExportPlot()

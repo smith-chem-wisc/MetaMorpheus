@@ -28,13 +28,14 @@ namespace GuiFunctions
         {
             DrawInvertedSpectrum(scanB);
 
-            AnnotateMirrorIons(isBetaPeptide: false, ionsB);
+            AnnotateMirrorIons(isBetaPeptide: false, ionsB, psmB, scanB);
 
             AdjustMirrorAxes(scanA, scanB);
 
             if (annotateProperties)
             {
                 AnnotateProperties();
+                AnnotatePropertiesBottom(psmB);
             }
 
             RefreshChart();

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -21,7 +21,7 @@ public class MassSpectrumPlot : Plot
 {
     private const int MultiLineAnnotationPixelSpacing = 18;
     public PlotView PlotView { get; protected set; }
-    public MsDataScan Scan { get; private set; }
+    public MsDataScan Scan { get; internal set; }
     public MassSpectrumPlot(PlotView plotView, MsDataScan scan) : base(plotView)
     {
         PlotView = plotView;

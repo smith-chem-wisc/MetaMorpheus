@@ -1,11 +1,9 @@
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
-using System.Windows;
-using System.Windows.Controls;
 
 namespace MetaMorpheusGUI
 {
-    public partial class MirrorPlotTabView : UserControl
+    public partial class MirrorPlotTabView : System.Windows.Controls.UserControl
     {
         public MirrorPlotTabView()
         {
@@ -22,23 +20,23 @@ namespace MetaMorpheusGUI
             };
         }
 
-        private void LeftDataGrid_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        private void LeftDataGrid_SelectedCellsChanged(object sender, System.Windows.Controls.SelectedCellsChangedEventArgs e)
         {
             if (DataContext is MirrorPlotTabViewModel vm && vm.SelectedLeftPsm != null && vm.SelectedRightPsm != null)
             {
-                RebuildSequences(vm);
+                DrawSequences(vm);
             }
         }
 
-        private void RightDataGrid_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        private void RightDataGrid_SelectedCellsChanged(object sender, System.Windows.Controls.SelectedCellsChangedEventArgs e)
         {
             if (DataContext is MirrorPlotTabViewModel vm && vm.SelectedLeftPsm != null && vm.SelectedRightPsm != null)
             {
-                RebuildSequences(vm);
+                DrawSequences(vm);
             }
         }
 
-        private void RebuildSequences(MirrorPlotTabViewModel vm)
+        private void DrawSequences(MirrorPlotTabViewModel vm)
         {
             TopSequenceCanvas.Children.Clear();
             BottomSequenceCanvas.Children.Clear();

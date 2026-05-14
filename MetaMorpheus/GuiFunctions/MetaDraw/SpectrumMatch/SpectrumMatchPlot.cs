@@ -524,7 +524,7 @@ namespace GuiFunctions
         /// Creates new MatchedFragmentIon objects with negated intensities and annotates them
         /// using the existing annotation pipeline with useLiteralPassedValues.
         /// </summary>
-        protected void AnnotateMirrorIons(bool isBetaPeptide, List<MatchedFragmentIon> mirrorIons)
+        protected void AnnotateMirrorIons(bool isBetaPeptide, List<MatchedFragmentIon> mirrorIons, SpectrumMatchFromTsv bottomPsm, MsDataScan mirrorScan)
         {
             var mirroredIons = new List<MatchedFragmentIon>(mirrorIons.Count);
             foreach (var ion in mirrorIons)
@@ -537,8 +537,19 @@ namespace GuiFunctions
                     ion.NeutralTheoreticalProduct.ResiduePosition,
                     ion.NeutralTheoreticalProduct.NeutralLoss);
 
-                mirroredIons.Add(new MatchedFragmentIon(product, ion.Mz,
-                    -ion.Intensity, ion.Charge));
+                mirroredIons.Add(new MatchedFragmentIonWithEnvelope(product, ion.Mz,
+                    -ion.Intensity, ion.Charge, null));
+            }
+
+            if (MetaDrawSettings.AnnotateIsotopicEnvelopes && mirrorScan != null)
+            {
+                var savedScan = Scan;
+                var savedPsm = SpectrumMatch;
+                Scan = mirrorScan;
+                SpectrumMatch = bottomPsm;
+                PopulateEnvelopesForScanIfNeeded(mirrorScan, mirroredIons);
+                Scan = savedScan;
+                SpectrumMatch = savedPsm;
             }
 
             AnnotateMatchedIons(isBetaPeptide, mirroredIons, useLiteralPassedValues: true);

@@ -61,13 +61,19 @@
 
         <!-- Center: Mirror Plot with Sequence Canvas Overlays -->
         <Grid Grid.Column="2" Grid.Row="0">
-            <oxy:PlotView x:Name="MirrorPlotView" FontSize="16" FontStretch="Expanded" Margin="0" />
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <Canvas x:Name="TopSequenceCanvas" VerticalAlignment="Top" HorizontalAlignment="Left"
+            <Canvas Grid.Row="0" x:Name="TopSequenceCanvas"
                     Height="60" Margin="110,6,0,0" Background="Transparent" />
 
-            <Canvas x:Name="BottomSequenceCanvas" VerticalAlignment="Bottom" HorizontalAlignment="Left"
-                    Height="60" Margin="110,0,0,6" Background="Transparent" />
+            <oxy:PlotView Grid.Row="1" x:Name="MirrorPlotView" FontSize="16" FontStretch="Expanded" Margin="0" />
+
+            <Canvas Grid.Row="2" x:Name="BottomSequenceCanvas"
+                    Height="60" Margin="110,6,0,0" Background="Transparent" />
         </Grid>
 
         <!-- Splitter -->
