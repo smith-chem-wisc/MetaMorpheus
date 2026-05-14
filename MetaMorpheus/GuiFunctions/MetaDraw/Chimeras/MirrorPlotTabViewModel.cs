@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using GuiFunctions;
 using MassSpectrometry;
 using Omics.Fragmentation;
@@ -114,8 +112,10 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
 
         if (UseRelativeIntensity)
         {
-            double maxA = scanA.MassSpectrum.YArray.Max();
-            double maxB = scanB.MassSpectrum.YArray.Max();
+            var yArrayA = scanA.MassSpectrum.YArray;
+            var yArrayB = scanB.MassSpectrum.YArray;
+            double maxA = yArrayA.Max();
+            double maxB = yArrayB.Max();
             if (maxA > 0 && maxB > 0)
             {
                 scanA = NormalizeScan(scanA, maxA);
@@ -143,74 +143,17 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
 
     public void ExportPlot()
     {
-        if (MirrorPlot == null || TopCanvasExport == null || BottomCanvasExport == null)
+        if (MirrorPlot == null)
             return;
 
-        string path = Path.Combine(ExportDirectory,
-            $"MirrorPlot_{SelectedLeftPsm?.Ms2ScanNumber}_{SelectedRightPsm?.Ms2ScanNumber}.{MetaDrawSettings.ExportType.ToLower()}");
+        string directoryPath = Path.Combine(ExportDirectory, "MetaDrawExport",
+            DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        Directory.CreateDirectory(directoryPath);
 
-        double width = 700;
-        double height = 370;
-        double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
+        string path = Path.Combine(directoryPath,
+            $"MirrorPlot_Scan{SelectedLeftPsm?.Ms2ScanNumber}_vs_Scan{SelectedRightPsm?.Ms2ScanNumber}.{MetaDrawSettings.ExportType.ToLower()}");
 
-        string tempModelPath = Path.Combine(Path.GetDirectoryName(path), Path.GetRandomFileName() + "." + MetaDrawSettings.ExportType);
-        string tempTopSeqPath = Path.Combine(Path.GetDirectoryName(path), Path.GetRandomFileName() + "_topSeq.png");
-        string tempBottomSeqPath = Path.Combine(Path.GetDirectoryName(path), Path.GetRandomFileName() + "_bottomSeq.png");
-
-        List<System.Drawing.Bitmap> bitmaps = new();
-        List<Point> points = new();
-
-        MirrorPlot.ExportToPng(tempModelPath, (int)width, (int)height);
-        bitmaps.Add(new System.Drawing.Bitmap(tempModelPath));
-        points.Add(new Point(0, 0));
-
-        RenderCanvasToFile(TopCanvasExport, tempTopSeqPath, dpiScale);
-        System.Drawing.Bitmap topBitmap = new(tempTopSeqPath);
-        bitmaps.Add(topBitmap);
-        var topOffset = (Vector)TopCanvasExport.GetType()
-            .GetProperty("VisualOffset", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .GetValue(TopCanvasExport);
-        points.Add(new Point(topOffset.X, topOffset.Y));
-
-        RenderCanvasToFile(BottomCanvasExport, tempBottomSeqPath, dpiScale);
-        System.Drawing.Bitmap bottomBitmap = new(tempBottomSeqPath);
-        bitmaps.Add(bottomBitmap);
-        var bottomOffset = (Vector)BottomCanvasExport.GetType()
-            .GetProperty("VisualOffset", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .GetValue(BottomCanvasExport);
-        points.Add(new Point(bottomOffset.X, bottomOffset.Y));
-
-        System.Drawing.Bitmap combined = MetaDrawLogic.CombineBitmap(bitmaps, points);
-
-        topBitmap.Dispose();
-        bottomBitmap.Dispose();
-        File.Delete(tempModelPath);
-        File.Delete(tempTopSeqPath);
-        File.Delete(tempBottomSeqPath);
-
-        SpectrumMatchPlot.ExportPlot(path, combined, width, height);
-    }
-
-    private static void RenderCanvasToFile(Canvas canvas, string path, double dpiScale)
-    {
-        canvas.Height += 30;
-        canvas.Width += 30;
-        Size size = new((int)canvas.Width, (int)canvas.Height);
-        canvas.Measure(size);
-        canvas.Arrange(new Rect(size));
-
-        RenderTargetBitmap rtb = new(
-            (int)(dpiScale * canvas.Width),
-            (int)(dpiScale * canvas.Height),
-            MetaDrawSettings.CanvasPdfExportDpi,
-            MetaDrawSettings.CanvasPdfExportDpi,
-            PixelFormats.Pbgra32);
-        rtb.Render(canvas);
-
-        PngBitmapEncoder encoder = new();
-        encoder.Frames.Add(BitmapFrame.Create(rtb));
-        using FileStream file = File.Create(path);
-        encoder.Save(file);
+        MirrorPlot.ExportToPng(path, 700, 370);
     }
 
     public OxyPlot.Wpf.PlotView MirrorPlotView { get; set; }
@@ -220,9 +163,10 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
     private static MsDataScan NormalizeScan(MsDataScan original, double maxIntensity)
     {
         var xArray = original.MassSpectrum.XArray;
+        var yArray = original.MassSpectrum.YArray;
         var normalizedY = new double[xArray.Length];
         for (int i = 0; i < xArray.Length; i++)
-            normalizedY[i] = original.MassSpectrum.YArray[i] / maxIntensity * 100.0;
+            normalizedY[i] = yArray[i] / maxIntensity;
 
         var spectrum = new MzSpectrum(xArray, normalizedY, false);
         return new MsDataScan(spectrum, original.OneBasedScanNumber, original.MsnOrder,
@@ -249,7 +193,7 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
                 ion.NeutralTheoreticalProduct.ResiduePosition,
                 ion.NeutralTheoreticalProduct.NeutralLoss);
 
-            double normalizedIntensity = ion.Intensity / maxIntensity * 100.0;
+            double normalizedIntensity = ion.Intensity / maxIntensity;
 
             if (ion is MatchedFragmentIonWithEnvelope envIon)
             {

@@ -122,7 +122,8 @@ public class MassSpectrumPlot : Plot
         if (annotation != null && !annotation.Text.Contains("Miso"))
         {
             var x = annotation.TextPosition.X;
-            var y = annotation.TextPosition.Y + 20;
+            double yOffset = intensity >= 0 ? 20 : -20;
+            var y = annotation.TextPosition.Y + yOffset;
             var splits = annotation.Text.Split('\n');
 
             // Calculate y step for annotation lines based on PlotView's actual height
@@ -130,6 +131,7 @@ public class MassSpectrumPlot : Plot
             double yRange = yAxis != null ? Math.Abs(yAxis.ActualMaximum - yAxis.ActualMinimum) : 1.0;
             double plotHeight = PlotView?.ActualHeight > 0 ? PlotView.ActualHeight : 370.0; // fallback to default height
             double yStep = yRange * (MultiLineAnnotationPixelSpacing / plotHeight); // Convert pixel spacing to y-axis units
+            if (intensity < 0) yStep = -yStep;
 
             for (int j = splits.Length - 1; j >= 0; j--)
             {
