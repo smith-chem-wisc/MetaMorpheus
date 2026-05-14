@@ -28,24 +28,40 @@ namespace EngineLayer
     {
         private int _randomSeed = 42;
 
+        private readonly Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options _customTreeOptions;
+
         /// <summary>
-        /// This method contains the hyper-parameters that will be used when training the machine learning model
+        /// Hyper-parameters for the FastTree PEP model. Returns the custom options supplied to the
+        /// constructor when present (used for hyperparameter exploration), otherwise the defaults.
+        /// Either way, the fixed plumbing fields - column names, single-threading, and the fixed
+        /// seeds that keep training deterministic - are always enforced here, so a caller supplying
+        /// custom options only needs to set the tunable knobs (tree count, leaves, learning rate,
+        /// minimum leaf size, early stopping).
         /// </summary>
-        /// <returns> Options object to be passed in to the FastTree constructor </returns>
-        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions =>
-            new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
+        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions
+        {
+            get
             {
-                NumberOfThreads = 1,
-                NumberOfTrees = 400,
-                MinimumExampleCountPerLeaf = 10,
-                NumberOfLeaves = 20,
-                LearningRate = 0.2,
-                LabelColumnName = "Label",
-                FeatureColumnName = "Features",
-                Seed = _randomSeed,
-                FeatureSelectionSeed = _randomSeed,
-                RandomStart = false
-            };
+                var options = _customTreeOptions ?? new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
+                {
+                    NumberOfTrees = 400,
+                    MinimumExampleCountPerLeaf = 10,
+                    NumberOfLeaves = 20,
+                    // Lowered from 0.2 after a hyperparameter sweep: at 0.2 the model is overconfident
+                    // (stochastic infinite LogLoss) and iterative retraining degrades its calibration;
+                    // 0.05 gives the best peptide yield and roughly halves LogLoss. See the
+                    // fastTreeOptions methodology doc for the evidence.
+                    LearningRate = 0.05,
+                };
+                options.NumberOfThreads = 1;
+                options.LabelColumnName = "Label";
+                options.FeatureColumnName = "Features";
+                options.Seed = _randomSeed;
+                options.FeatureSelectionSeed = _randomSeed;
+                options.RandomStart = false;
+                return options;
+            }
+        }
 
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
 
@@ -125,7 +141,7 @@ namespace EngineLayer
             FileSpecificParametersDictionary = fileSpecificParameters.ToDictionary(p => Path.GetFileName(p.fileName), p => p.fileSpecificParameters);
         }
 
-        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor? rtPredictor = null, bool iterativeTraining = false, int maxTrainingIterations = 3)
+        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor? rtPredictor = null, bool iterativeTraining = false, int maxTrainingIterations = 3, Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options customTreeOptions = null)
         {
             // This creates a new list of PSMs, but does not clone the Psms themselves.
             // This allows the PSMs to be modified and the order to be preserved
@@ -142,6 +158,7 @@ namespace EngineLayer
             UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Distinct().Count(seq => seq.IsNotNullOrEmpty()) >= 100;
             IterativeTraining = iterativeTraining;
             MaxTrainingIterations = Math.Max(1, maxTrainingIterations);
+            _customTreeOptions = customTreeOptions;
         }
 
         public string ComputePEPValuesForAllPSMs()

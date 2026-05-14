@@ -491,6 +491,21 @@
     <None Update="TestData\TaGe_SA_A549_3_snip.mzML">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\FastTreeSnips\20100609_Velos1_TaGe_SA_293_2_snip_16173-16526.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\FastTreeSnips\20100609_Velos1_TaGe_SA_293_3_snip_14279-14594.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\FastTreeSnips\20100609_Velos1_TaGe_SA_293_4_snip_11989-12231.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\FastTreeSnips\20100609_Velos1_TaGe_SA_293_5_snip_11883-12145.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\FastTreeSnips\BottomUpSnips_prunedDb.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
