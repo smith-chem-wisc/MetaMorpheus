@@ -74,6 +74,9 @@
 
             <Canvas Grid.Row="2" x:Name="BottomSequenceCanvas"
                     Height="60" Margin="110,6,0,0" Background="Transparent" />
+
+            <local:SettingsButtonControl HorizontalAlignment="Left" VerticalAlignment="Top"
+                Panel.ZIndex="1" Margin="4,4,0,0" Width="40" Height="40"/>
         </Grid>
 
         <!-- Splitter -->

@@ -108,6 +108,11 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
             annotateProperties: true);
     }
 
+    public void RefreshPlot()
+    {
+        RebuildMirrorPlot();
+    }
+
     public void ExportPlot()
     {
         if (MirrorPlot == null || TopCanvasExport == null || BottomCanvasExport == null)

@@ -256,18 +256,21 @@ namespace GuiFunctions
             var envelope = envIon.Envelope!;
             var product = envIon.NeutralTheoreticalProduct;
 
+            double intensitySign = (useLiteralPassedValues && envIon.Intensity < 0) ? -1 : 1;
+
             // Find the tallest peak in the envelope
-            var tallestPeak = envelope.Peaks.MaxBy(p => p.intensity);
+            var tallestPeak = envelope.Peaks.MaxBy(p => p.intensity * intensitySign);
             if (tallestPeak.intensity == 0)
                 return;
 
             // Annotate all peaks in the envelope
             foreach (var (envMz, envIntensity) in envelope.Peaks)
             {
+                double displayIntensity = envIntensity * intensitySign;
                 bool isTallest = Math.Abs(envMz - tallestPeak.mz) < 0.001 && Math.Abs(envIntensity - tallestPeak.intensity) < 0.001;
 
                 // Draw peak marker (colored)
-                DrawPeak(envMz, envIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, null);
+                DrawPeak(envMz, displayIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, null);
 
                 // Draw TEXT annotation only on tallest peak
                 if (isTallest)
@@ -290,8 +293,8 @@ namespace GuiFunctions
                         FontSize = MetaDrawSettings.AnnotatedFontSize,
                         FontWeight = MetaDrawSettings.AnnotationBold ? FontWeights.Bold : 2.0,
                         StrokeThickness = 0,
-                        TextPosition = new DataPoint(envMz, envIntensity),
-                        TextVerticalAlignment = envIntensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom,
+                        TextPosition = new DataPoint(envMz, displayIntensity),
+                        TextVerticalAlignment = displayIntensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom,
                         TextHorizontalAlignment = HorizontalAlignment.Center,
                     };
 
@@ -299,7 +302,7 @@ namespace GuiFunctions
                         ? HiddenAnnotationColor
                         : ionColor;
 
-                    DrawPeak(envMz, envIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
+                    DrawPeak(envMz, displayIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
                 }
             }
         }
@@ -857,6 +860,11 @@ namespace GuiFunctions
             double estimatedWidth = fontSize * averageCharWidth * maxLineLength;
             double xOffset = -estimatedWidth - 10 - (fontSize / 3);
 
+            double lineSpacing = 1.2;
+            double lineHeight = fontSize * lineSpacing;
+            int lineCount = annotationText.Split('\n').Length;
+            double textHeight = lineCount * lineHeight;
+
             var annotation = new PlotTextAnnotation()
             {
                 Text = text.ToString(),
@@ -864,7 +872,7 @@ namespace GuiFunctions
                 YPosition = PlotTextAnnotation.RelativeToY.Bottom,
                 FontWeight = 450,
                 X = xOffset,
-                Y = 10,
+                Y = -(textHeight + 15),
                 Font = "Arial",
                 FontSize = MetaDrawSettings.SpectrumDescriptionFontSize,
                 TextColor = OxyColors.Black,

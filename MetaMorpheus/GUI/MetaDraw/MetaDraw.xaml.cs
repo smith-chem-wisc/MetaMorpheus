@@ -537,6 +537,11 @@ namespace MetaMorpheusGUI
                 ChimeraAnalysisTabViewModel.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(ChimeraAnalysisTabView.ms2ChimeraPlot, selectedChimeraGroup);
                 ChimeraAnalysisTabViewModel.ChimeraDrawnSequence = new ChimeraDrawnSequence(ChimeraAnalysisTabView.chimeraSequenceCanvas, selectedChimeraGroup, ChimeraAnalysisTabViewModel);
             }
+
+            if (MirrorPlotTabViewModel.SelectedLeftPsm != null && MirrorPlotTabViewModel.SelectedRightPsm != null)
+            {
+                MirrorPlotTabViewModel.RefreshPlot();
+            }
         }
 
         private async void loadFilesButton_Click(object sender, RoutedEventArgs e)
