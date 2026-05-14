@@ -20,6 +20,7 @@ namespace GuiFunctions;
 public class MassSpectrumPlot : Plot
 {
     private const int MultiLineAnnotationPixelSpacing = 18;
+    private const int AnnotationPixelSpacing = 20;
     public PlotView PlotView { get; protected set; }
     public MsDataScan Scan { get; internal set; }
     public MassSpectrumPlot(PlotView plotView, MsDataScan scan) : base(plotView)
@@ -122,15 +123,24 @@ public class MassSpectrumPlot : Plot
         if (annotation != null && !annotation.Text.Contains("Miso"))
         {
             var x = annotation.TextPosition.X;
-            double yOffset = intensity >= 0 ? 20 : -20;
+
+            // Calculate y offset in data-coordinates (converted from pixels) so annotations
+            // stay at a consistent visual distance from the peak tip regardless of data scale.
+            var yAxis = Model.Axes.FirstOrDefault(a => a.Position == AxisPosition.Left);
+            double yRange = yAxis != null ? Math.Abs(yAxis.ActualMaximum - yAxis.ActualMinimum) : 1.0;
+            double plotHeight = PlotView?.ActualHeight > 0 ? PlotView.ActualHeight : 370.0;
+            double yPixelOffset = AnnotationPixelSpacing; // pixels
+
+            double direction = intensity >= 0 ? 1 : -1;
+            double yOffset = yRange * (yPixelOffset * direction / plotHeight);
+            // Cap offset so annotations never float more than 20% of peak height away
+            double yOffsetCap = Math.Abs(intensity) * 0.2;
+            if (Math.Abs(yOffset) > yOffsetCap)
+                yOffset = yOffsetCap * direction;
             var y = annotation.TextPosition.Y + yOffset;
             var splits = annotation.Text.Split('\n');
 
-            // Calculate y step for annotation lines based on PlotView's actual height
-            var yAxis = Model.Axes.FirstOrDefault(a => a.Position == AxisPosition.Left);
-            double yRange = yAxis != null ? Math.Abs(yAxis.ActualMaximum - yAxis.ActualMinimum) : 1.0;
-            double plotHeight = PlotView?.ActualHeight > 0 ? PlotView.ActualHeight : 370.0; // fallback to default height
-            double yStep = yRange * (MultiLineAnnotationPixelSpacing / plotHeight); // Convert pixel spacing to y-axis units
+            double yStep = yRange * (MultiLineAnnotationPixelSpacing / plotHeight);
             if (intensity < 0) yStep = -yStep;
 
             for (int j = splits.Length - 1; j >= 0; j--)

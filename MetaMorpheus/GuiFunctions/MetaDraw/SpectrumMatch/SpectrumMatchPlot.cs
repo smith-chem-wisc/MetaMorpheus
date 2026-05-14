@@ -258,8 +258,8 @@ namespace GuiFunctions
 
             double intensitySign = (useLiteralPassedValues && envIon.Intensity < 0) ? -1 : 1;
 
-            // Find the tallest peak in the envelope
-            var tallestPeak = envelope.Peaks.MaxBy(p => p.intensity * intensitySign);
+            // Find the tallest peak in the envelope (by absolute intensity)
+            var tallestPeak = envelope.Peaks.MaxBy(p => p.intensity);
             if (tallestPeak.intensity == 0)
                 return;
 
