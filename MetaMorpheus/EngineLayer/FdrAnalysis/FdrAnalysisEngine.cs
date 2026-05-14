@@ -401,7 +401,9 @@ namespace EngineLayer.FdrAnalysis
                 _ => "standard"
             };
 
-            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder).ComputePEPValuesForAllPSMs();
+            bool iterativeTraining = fileSpecificParameters.Any(t => t.fileSpecificParameters.IterativePepTraining);
+
+            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder, iterativeTraining: iterativeTraining).ComputePEPValuesForAllPSMs();
         }
 
         /// <summary>

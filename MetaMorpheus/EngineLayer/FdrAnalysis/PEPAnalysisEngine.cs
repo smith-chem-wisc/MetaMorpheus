@@ -28,24 +28,40 @@ namespace EngineLayer
     {
         private int _randomSeed = 42;
 
+        private readonly Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options _customTreeOptions;
+
         /// <summary>
-        /// This method contains the hyper-parameters that will be used when training the machine learning model
+        /// Hyper-parameters for the FastTree PEP model. Returns the custom options supplied to the
+        /// constructor when present (used for hyperparameter exploration), otherwise the defaults.
+        /// Either way, the fixed plumbing fields - column names, single-threading, and the fixed
+        /// seeds that keep training deterministic - are always enforced here, so a caller supplying
+        /// custom options only needs to set the tunable knobs (tree count, leaves, learning rate,
+        /// minimum leaf size, early stopping).
         /// </summary>
-        /// <returns> Options object to be passed in to the FastTree constructor </returns>
-        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions =>
-            new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
+        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions
+        {
+            get
             {
-                NumberOfThreads = 1,
-                NumberOfTrees = 400,
-                MinimumExampleCountPerLeaf = 10,
-                NumberOfLeaves = 20,
-                LearningRate = 0.2,
-                LabelColumnName = "Label",
-                FeatureColumnName = "Features",
-                Seed = _randomSeed,
-                FeatureSelectionSeed = _randomSeed,
-                RandomStart = false
-            };
+                var options = _customTreeOptions ?? new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
+                {
+                    NumberOfTrees = 400,
+                    MinimumExampleCountPerLeaf = 10,
+                    NumberOfLeaves = 20,
+                    // Lowered from 0.2 after a hyperparameter sweep: at 0.2 the model is overconfident
+                    // (stochastic infinite LogLoss) and iterative retraining degrades its calibration;
+                    // 0.05 gives the best peptide yield and roughly halves LogLoss. See the
+                    // fastTreeOptions methodology doc for the evidence.
+                    LearningRate = 0.05,
+                };
+                options.NumberOfThreads = 1;
+                options.LabelColumnName = "Label";
+                options.FeatureColumnName = "Features";
+                options.Seed = _randomSeed;
+                options.FeatureSelectionSeed = _randomSeed;
+                options.RandomStart = false;
+                return options;
+            }
+        }
 
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
 
@@ -79,6 +95,40 @@ namespace EngineLayer
         public IRetentionTimePredictor RetentionTimePredictor { get; }
 
         /// <summary>
+        /// When true, after the first cross-fit fit the positive training pool is re-selected
+        /// using PEP-derived q-values and the model is retrained, repeating until the positive
+        /// pool stabilizes or <see cref="MaxTrainingIterations"/> is reached. When false, PEP
+        /// training is single-pass (the historical behavior).
+        /// </summary>
+        public bool IterativeTraining { get; }
+
+        /// <summary>
+        /// Hard upper bound on the number of training iterations when <see cref="IterativeTraining"/>
+        /// is true. Ignored when iterative training is off (a single pass always runs).
+        /// </summary>
+        public int MaxTrainingIterations { get; }
+
+        /// <summary>
+        /// Positive (target) training-pool size recorded once per training iteration, in order.
+        /// Always has at least one entry after <see cref="ComputePEPValuesForAllPSMs"/> runs.
+        /// </summary>
+        public List<int> PositivePoolCountPerIteration { get; } = new List<int>();
+
+        /// <summary>
+        /// Per-fold PEP-derived q-value maps used to re-select positive training examples on the
+        /// most recent relabeling step. Each fold's map is keyed exclusively by that fold's PSMs,
+        /// and the maps are pairwise disjoint — fold k is relabeled only from predictions of the
+        /// model trained on folds != k, never from a single global PEP. Null until a relabel runs.
+        /// </summary>
+        internal List<Dictionary<SpectralMatch, double>> PerFoldRelabelPepQValues { get; private set; }
+
+        /// <summary>
+        /// Fractional change in positive-pool size below which iterative training is considered
+        /// converged and stops early.
+        /// </summary>
+        internal const double ConvergenceThreshold = 0.01;
+
+        /// <summary>
         /// This method is used to compute the PEP values for all PSMs in a dataset. 
         /// </summary>
         /// <param name="psms"></param>
@@ -91,7 +141,7 @@ namespace EngineLayer
             FileSpecificParametersDictionary = fileSpecificParameters.ToDictionary(p => Path.GetFileName(p.fileName), p => p.fileSpecificParameters);
         }
 
-        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor? rtPredictor = null)
+        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor? rtPredictor = null, bool iterativeTraining = false, int maxTrainingIterations = 3, Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options customTreeOptions = null)
         {
             // This creates a new list of PSMs, but does not clone the Psms themselves.
             // This allows the PSMs to be modified and the order to be preserved
@@ -106,6 +156,9 @@ namespace EngineLayer
             QValueCutoff = Math.Max(fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min(), minQ);
             // If we have more than 100 peptides, we will train on the peptide level. Otherwise, we will train on the PSM level
             UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Distinct().Count(seq => seq.IsNotNullOrEmpty()) >= 100;
+            IterativeTraining = iterativeTraining;
+            MaxTrainingIterations = Math.Max(1, maxTrainingIterations);
+            _customTreeOptions = customTreeOptions;
         }
 
         public string ComputePEPValuesForAllPSMs()
@@ -123,57 +176,163 @@ namespace EngineLayer
 
             int numGroups = 4;
             List<int>[] peptideGroupIndices = GetPeptideGroupIndices(peptideGroups, numGroups);
-            IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
-            bool allGroupsHavePositiveAndNegativeTrainingExamples = true;
-            Parallel.ForEach(
-                Enumerable.Range(0, numGroups),
-                new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
-                group => {
-                    PSMDataGroups[group] = CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[group]);
-                    if (!PSMDataGroups[group].Any(p => p.Label) || !PSMDataGroups[group].Any(p => !p.Label))
-                    {
-                        allGroupsHavePositiveAndNegativeTrainingExamples = false;
-                    }
 
-                });
-            if (!allGroupsHavePositiveAndNegativeTrainingExamples)
-            {
-                return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
-            }
+            // When iterative training is off, a single pass runs and the result is identical to the
+            // historical single-pass pipeline. When on, the positive training pool is re-selected from
+            // PEP-derived q-values after each fit and the model retrained, up to MaxTrainingIterations
+            // or until the positive pool stabilizes (see ConvergenceThreshold).
+            int maxIterations = IterativeTraining ? MaxTrainingIterations : 1;
 
-            MLContext mlContext = new MLContext(seed: _randomSeed);
-            TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
-
-            var trainer = mlContext.BinaryClassification.Trainers.FastTree(BGDTreeOptions);
-            var pipeline = mlContext.Transforms.Concatenate("Features", TrainingVariables)
-                .Append(trainer);
-
-            List<CalibratedBinaryClassificationMetrics> allMetrics = new List<CalibratedBinaryClassificationMetrics>();
+            MLContext mlContext = null;
+            TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = null;
+            List<CalibratedBinaryClassificationMetrics> allMetrics = null;
             int sumOfAllAmbiguousPeptidesResolved = 0;
+            int positiveTrainingCount = 0;
+            int negativeTrainingCount = 0;
 
-            for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
+            for (int iteration = 0; iteration < maxIterations; iteration++)
             {
-                List<int> allGroupIndexes = Enumerable.Range(0, numGroups).ToList();
-                allGroupIndexes.RemoveAt(groupIndexNumber);
+                // Build the labeled training data for this iteration. Iteration 0 labels positives by
+                // raw-score q-value (the historical rule); later iterations relabel from the previous
+                // iteration's per-fold, cross-fit-isolated PEP q-values held in PerFoldRelabelPepQValues.
+                IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
+                bool allGroupsHavePositiveAndNegativeTrainingExamples = true;
+                Parallel.ForEach(
+                    Enumerable.Range(0, numGroups),
+                    new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
+                    group => {
+                        PSMDataGroups[group] = CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[group], PerFoldRelabelPepQValues?[group]);
+                        if (!PSMDataGroups[group].Any(p => p.Label) || !PSMDataGroups[group].Any(p => !p.Label))
+                        {
+                            allGroupsHavePositiveAndNegativeTrainingExamples = false;
+                        }
 
-                //concat doesn't work in a loop, therefore I had to hard code the concat to group 3 out of 4 lists. if the const int numGroups value is changed, then the concat has to be changed accordingly.
-                IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[allGroupIndexes[0]].Concat(PSMDataGroups[allGroupIndexes[1]].Concat(PSMDataGroups[allGroupIndexes[2]])));
-                trainedModels[groupIndexNumber] = pipeline.Fit(dataView);
-                var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(PSMDataGroups[groupIndexNumber]));
-                CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
+                    });
 
-                //model is trained on peptides but here we can use that to compute PEP for all PSMs
-                int ambiguousPeptidesResolved = Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], SearchType, OutputFolder);
+                if (!allGroupsHavePositiveAndNegativeTrainingExamples)
+                {
+                    if (iteration == 0)
+                    {
+                        return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
+                    }
+                    // A relabeling step left a fold without both classes. Keep the previous iteration's
+                    // models, finish by removing ambiguous peptides with them, and stop iterating.
+                    sumOfAllAmbiguousPeptidesResolved = 0;
+                    for (int k = 0; k < numGroups; k++)
+                    {
+                        sumOfAllAmbiguousPeptidesResolved += Compute_PSM_PEP(peptideGroups, peptideGroupIndices[k], mlContext, trainedModels[k], SearchType, OutputFolder, removeAmbiguous: true);
+                    }
+                    break;
+                }
 
-                allMetrics.Add(metrics);
-                sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
+                positiveTrainingCount = PSMDataGroups.SelectMany(p => p).Count(p => p.Label);
+                negativeTrainingCount = PSMDataGroups.SelectMany(p => p).Count(p => !p.Label);
+                PositivePoolCountPerIteration.Add(positiveTrainingCount);
+
+                // Converged once the positive pool barely moves between iterations.
+                bool converged = iteration > 0
+                    && HasConverged(PositivePoolCountPerIteration[iteration - 1], positiveTrainingCount);
+                bool isFinalPass = converged || iteration == maxIterations - 1;
+
+                mlContext = new MLContext(seed: _randomSeed);
+                trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
+
+                var trainer = mlContext.BinaryClassification.Trainers.FastTree(BGDTreeOptions);
+                var pipeline = mlContext.Transforms.Concatenate("Features", TrainingVariables)
+                    .Append(trainer);
+
+                allMetrics = new List<CalibratedBinaryClassificationMetrics>();
+                sumOfAllAmbiguousPeptidesResolved = 0;
+
+                for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
+                {
+                    // Train on every fold except the held-out one, then predict the held-out fold. This
+                    // cross-fit structure means each PSM's PEP comes from a model that never saw it.
+                    IEnumerable<int> trainingFolds = Enumerable.Range(0, numGroups).Where(g => g != groupIndexNumber);
+                    IDataView dataView = mlContext.Data.LoadFromEnumerable(trainingFolds.SelectMany(g => PSMDataGroups[g]));
+                    trainedModels[groupIndexNumber] = pipeline.Fit(dataView);
+                    var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(PSMDataGroups[groupIndexNumber]));
+                    CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
+
+                    // Ambiguous-peptide removal mutates the PSM, so it is deferred to the final pass.
+                    int ambiguousPeptidesResolved = Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], SearchType, OutputFolder, removeAmbiguous: isFinalPass);
+
+                    allMetrics.Add(metrics);
+                    sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
+                }
+
+                if (isFinalPass)
+                {
+                    break;
+                }
+
+                // Prepare the next iteration's relabeling: one PEP q-value map per fold, each computed
+                // only from that fold's held-out cross-fit PEPs. Fold k is therefore relabeled solely
+                // from the model trained on folds != k, never from a single global PEP.
+                PerFoldRelabelPepQValues = ComputePerFoldPepQValues(peptideGroups, peptideGroupIndices);
             }
 
-            int positiveTrainingCount = PSMDataGroups.SelectMany(p => p).Count(p => p.Label);
-            int negativeTrainingcount = PSMDataGroups.SelectMany(p => p).Count(p => !p.Label);
+            return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved, positiveTrainingCount, negativeTrainingCount, QValueCutoff, PositivePoolCountPerIteration);
+        }
 
-            return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
+        /// <summary>
+        /// True when the positive training pool changed by less than <see cref="ConvergenceThreshold"/>
+        /// (as a fraction of the previous pool) between two iterations. Iterative training stops once
+        /// this holds, since further relabeling would no longer meaningfully move the training set.
+        /// </summary>
+        internal static bool HasConverged(int previousPositiveCount, int currentPositiveCount)
+        {
+            return Math.Abs(currentPositiveCount - previousPositiveCount)
+                   < ConvergenceThreshold * Math.Max(1, previousPositiveCount);
+        }
+
+        /// <summary>
+        /// Computes one PEP-derived q-value map per cross-fit fold. Each fold's map is built strictly
+        /// from that fold's own held-out PEP predictions (a standard target/decoy q-value, monotonized),
+        /// so the maps are pairwise disjoint and fold k is relabeled only from the model trained on
+        /// folds != k. This is what preserves cross-fit isolation across training iterations.
+        /// </summary>
+        internal List<Dictionary<SpectralMatch, double>> ComputePerFoldPepQValues(List<SpectralMatchGroup> peptideGroups, List<int>[] peptideGroupIndices)
+        {
+            var perFold = new List<Dictionary<SpectralMatch, double>>(peptideGroupIndices.Length);
+            foreach (List<int> foldIndices in peptideGroupIndices)
+            {
+                // Best match per full sequence in this fold - the same units CreatePsmData labels on.
+                List<SpectralMatch> foldMatches = foldIndices
+                    .SelectMany(idx => peptideGroups[idx].GetBestMatches())
+                    .Where(psm => psm != null)
+                    .OrderBy(psm => psm.GetFdrInfo(UsePeptideLevelQValueForTraining).PEP)
+                    .ToList();
+
+                // First pass, best PEP to worst: running raw target/decoy FDR.
+                double cumulativeTarget = 0;
+                double cumulativeDecoy = 0;
+                var rawFdr = new double[foldMatches.Count];
+                for (int i = 0; i < foldMatches.Count; i++)
+                {
+                    if (foldMatches[i].IsDecoy)
+                    {
+                        cumulativeDecoy++;
+                    }
+                    else
+                    {
+                        cumulativeTarget++;
+                    }
+                    rawFdr[i] = cumulativeDecoy / Math.Max(cumulativeTarget, 1);
+                }
+
+                // Second pass, worst to best: monotonize the raw FDR into q-values.
+                var qValueByMatch = new Dictionary<SpectralMatch, double>(foldMatches.Count);
+                double qValue = 1.0;
+                for (int i = foldMatches.Count - 1; i >= 0; i--)
+                {
+                    qValue = Math.Min(qValue, rawFdr[i]);
+                    qValueByMatch[foldMatches[i]] = qValue;
+                }
+                perFold.Add(qValueByMatch);
+            }
+            return perFold;
         }
 
         /// <summary>
@@ -257,8 +416,16 @@ namespace EngineLayer
         }
 
 
+        /// <summary>
+        /// Builds the labeled training rows for one cross-fit fold. A non-decoy match is labeled
+        /// positive when its q-value is at or below <see cref="QValueCutoff"/>. On the first training
+        /// iteration <paramref name="pepQValueForRelabeling"/> is null and the raw-score q-value is
+        /// used (the historical rule); on later iterations it carries this fold's PEP-derived
+        /// q-values so positives are re-selected from the model's own ranking.
+        /// </summary>
         public IEnumerable<PsmData> CreatePsmData(string searchType,
-            List<SpectralMatchGroup> peptideGroups, List<int> peptideGroupIndices)
+            List<SpectralMatchGroup> peptideGroups, List<int> peptideGroupIndices,
+            Dictionary<SpectralMatch, double> pepQValueForRelabeling = null)
         {
             List<PsmData> psmDataList = new List<PsmData>();
 
@@ -267,6 +434,13 @@ namespace EngineLayer
                 int modCount = 0;
                 foreach (var psm in peptideGroups[peptideGroupIndices[i]].GetBestMatches().Where(psm => psm != null))
                 {
+                    // First iteration: label by raw-score q-value. Later iterations: label by this
+                    // fold's PEP-derived q-value from the previous fit. A match missing from the
+                    // relabel map (should not happen) is treated as mid-confidence and excluded.
+                    double qValueForLabeling = pepQValueForRelabeling == null
+                        ? psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue
+                        : (pepQValueForRelabeling.TryGetValue(psm, out double pepQ) ? pepQ : double.MaxValue);
+
                     PsmData newPsmData = new PsmData();
                     if (searchType == "crosslink" && ((CrosslinkSpectralMatch)psm)?.BetaPeptide != null)
                     {
@@ -278,7 +452,7 @@ namespace EngineLayer
                             label = false;
                             newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First(), label);
                         }
-                        else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && csm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
+                        else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && qValueForLabeling <= QValueCutoff)
                         {
                             label = true;
                             newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First(), label);
@@ -302,7 +476,7 @@ namespace EngineLayer
                                 newPsmData = CreateOnePsmDataEntry(searchType, psm, bestMatch, label);
                             }
                             else if (!bestMatch.SpecificBioPolymer.Parent.IsDecoy
-                                && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
+                                && qValueForLabeling <= QValueCutoff)
                             {
                                 label = true;
                                 newPsmData = CreateOnePsmDataEntry(searchType, psm, bestMatch, label);
@@ -324,7 +498,7 @@ namespace EngineLayer
         }
 
         public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved,
-            int positiveTrainingCount, int negativeTrainingCount, double qValueCutoff)
+            int positiveTrainingCount, int negativeTrainingCount, double qValueCutoff, List<int> positivePoolPerIteration = null)
 
         {
             List<double> accuracy = allMetrics.Select(m => m.Accuracy).ToList();
@@ -378,13 +552,24 @@ namespace EngineLayer
             s.AppendLine("*       Q-Value Cutoff for Training Targets:  " + qValueCutoff);
             s.AppendLine("*       Targets Used for Training:  " + positiveTrainingCount);
             s.AppendLine("*       Decoys Used for Training:  " + negativeTrainingCount);
+            if (positivePoolPerIteration != null && positivePoolPerIteration.Count > 0)
+            {
+                s.AppendLine("*       Training Iterations Run:  " + positivePoolPerIteration.Count);
+                s.AppendLine("*       Positive Training Pool Per Iteration:  " + string.Join(", ", positivePoolPerIteration));
+            }
             s.AppendLine("************************************************************");
             return s.ToString();
         }
 
+        /// <summary>
+        /// Applies a trained cross-fit model to a held-out fold, writing each PSM's PEP. When
+        /// <paramref name="removeAmbiguous"/> is true, ambiguous peptide hypotheses scoring well
+        /// below the best are also pruned from the PSM. Pruning mutates the PSM, so iterative
+        /// training defers it to the final pass; the PEP value itself is unaffected by the flag.
+        /// </summary>
         public int Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
-            MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, string outputFolder)
+            MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, string outputFolder, bool removeAmbiguous = true)
         {
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
             int ambiguousPeptidesResolved = 0;
@@ -430,11 +615,17 @@ namespace EngineLayer
                                         //A score is available using the variable pepvaluePrediction.Score
                                     }
 
-                                    GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-                                    RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, bestMatchingBioPolymersWithSetMods, ref ambigousPeptidesRemovedinThread);
-
+                                    // PEP is 1 - the best hypothesis probability. Pruning only ever
+                                    // drops hypotheses below that best, so it leaves the PEP unchanged
+                                    // and can be safely skipped on non-final iterations.
                                     psm.PsmFdrInfo.PEP = 1 - pepValuePredictions.Max();
                                     psm.PeptideFdrInfo.PEP = 1 - pepValuePredictions.Max();
+
+                                    if (removeAmbiguous)
+                                    {
+                                        GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+                                        RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, bestMatchingBioPolymersWithSetMods, ref ambigousPeptidesRemovedinThread);
+                                    }
                                 }
 
                             }

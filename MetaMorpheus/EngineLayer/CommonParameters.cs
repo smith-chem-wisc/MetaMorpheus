@@ -62,7 +62,8 @@ namespace EngineLayer
             DeconvolutionParameters productDeconParams = null,
             bool useMostAbundantPrecursorIntensity = true,
             DIAparameters diaParameters = null,
-            IFragmentationParams fragmentationParams = null)
+            IFragmentationParams fragmentationParams = null,
+            bool iterativePepTraining = false)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -99,6 +100,7 @@ namespace EngineLayer
             MinVariantDepth = minVariantDepth;
             AddTruncations = addTruncations;
             DIAparameters = diaParameters;
+            IterativePepTraining = iterativePepTraining;
 
             // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
             if (deconvolutionMaxAssumedChargeState > 0) // positive mode
@@ -183,6 +185,13 @@ namespace EngineLayer
         /// when training the GBDT model for PEP. 
         /// </summary>
         public double QValueCutoffForPepCalculation { get; set; }
+        /// <summary>
+        /// When true, the PEP model is trained iteratively: after the first cross-fit fit,
+        /// positive training examples are re-selected using PEP-derived q-values and the model
+        /// is retrained, repeating until the positive pool stabilizes or a max iteration count
+        /// is reached. When false (default), PEP training is single-pass.
+        /// </summary>
+        public bool IterativePepTraining { get; private set; }
         public IDigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
         public int? NumberOfPeaksToKeepPerWindow { get; private set; }
@@ -278,7 +287,8 @@ namespace EngineLayer
                                 ProductDeconvolutionParameters,
                                 UseMostAbundantPrecursorIntensity,
                                 DIAparameters,
-                                FragmentationParameters);
+                                FragmentationParameters,
+                                IterativePepTraining);
         }
 
         public void SetCustomProductTypes()
