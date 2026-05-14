@@ -584,7 +584,8 @@ namespace TaskLayer
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
                 productDeconParams: commonParams.ProductDeconvolutionParameters,
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
-                fragmentationParams: commonParams.FragmentationParameters);
+                fragmentationParams: commonParams.FragmentationParameters,
+                iterativePepTraining: commonParams.IterativePepTraining);
 
             return returnParams;
         }
@@ -1579,7 +1580,7 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Legacy TOML compatibility — when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
+        /// Legacy TOML compatibility ï¿½ when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
         /// </summary>
         /// <typeparam name="TTask"></typeparam>
         /// <param name="filePath"></param>
