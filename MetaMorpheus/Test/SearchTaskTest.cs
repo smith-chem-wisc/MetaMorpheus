@@ -303,6 +303,103 @@ namespace Test
             }
         }
 
+        // Malformed exp design (Normalize=false) -> quant skipped, protein-groups TSV has no dynamic quant columns.
+        // Filename remains AllQuantifiedProteinGroups.tsv because it's driven by DoLabelFreeQuantification, not by quant success.
+        [Test]
+        public static void PostSearchMalformedExperimentalDesignSkipsQuant()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = false,
+                    DoParsimony = true
+                },
+                CommonParameters = new(precursorDeconParams: new IsoDecDeconvolutionParameters())
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMalformedExpDesign");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string mzmlPath = Path.Combine(inputFolder, "PrunedDbSpectra.mzml");
+            string fastaPath = Path.Combine(inputFolder, "DbForPrunedDb.fasta");
+            string expDesignPath = Path.Combine(inputFolder, "ExperimentalDesign.tsv");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzmlPath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), fastaPath, true);
+
+            // Lists an unrelated file so ReadExperimentalDesign emits errors.
+            using (StreamWriter w = new StreamWriter(expDesignPath))
+            {
+                w.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
+                w.WriteLine("UnrelatedFile.mzml\tcondition\t1\t1\t1");
+            }
+
+            try
+            {
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(fastaPath, false) }, new List<string> { mzmlPath }, "normal");
+
+                Assert.That(File.Exists(Path.Combine(outputFolder, "AllQuantifiedPeptides.tsv")), Is.False);
+
+                string pgPath = Path.Combine(outputFolder, "AllQuantifiedProteinGroups.tsv");
+                Assert.That(File.Exists(pgPath), Is.True);
+                var lines = File.ReadAllLines(pgPath);
+                Assert.That(lines.Length, Is.GreaterThan(1));
+                var header = lines[0];
+                Assert.That(header.Contains("SpectralCount_"), Is.False);
+                Assert.That(header.Contains("Intensity_"), Is.False);
+                Assert.That(header.Contains("CountOccupancy_"), Is.False);
+                Assert.That(header.Contains("IntensityOccupancy_"), Is.False);
+                Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True);
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
+        // No exp design + Normalize=false -> defaults built, LFQ runs, dynamic columns appear.
+        // Complements PostSearchNormalizeTest (no exp design + Normalize=true -> skip).
+        [Test]
+        public static void PostSearchNoExpDesignNoNormalizeRunsQuant()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = false,
+                    DoParsimony = true
+                },
+                CommonParameters = new(precursorDeconParams: new IsoDecDeconvolutionParameters())
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNoExpDesignNoNormalize");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string mzmlPath = Path.Combine(inputFolder, "PrunedDbSpectra.mzml");
+            string fastaPath = Path.Combine(inputFolder, "DbForPrunedDb.fasta");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzmlPath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), fastaPath, true);
+
+            try
+            {
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(fastaPath, false) }, new List<string> { mzmlPath }, "normal");
+
+                string pgPath = Path.Combine(outputFolder, "AllQuantifiedProteinGroups.tsv");
+                Assert.That(File.Exists(pgPath), Is.True);
+                var lines = File.ReadAllLines(pgPath);
+                Assert.That(lines.Length, Is.GreaterThan(1));
+                var header = lines[0];
+
+                Assert.That(header.Contains("SpectralCount_"), Is.True);
+                Assert.That(header.Contains("CountOccupancy_"), Is.True);
+                Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True);
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
         /// <summary>
         /// Test that we don't get a crash if protein groups are not constructed
         /// </summary>

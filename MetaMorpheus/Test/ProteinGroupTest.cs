@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using FlashLFQ;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
@@ -123,7 +124,123 @@ namespace Test
             string[] rowEntries = pgRow.Split("\t");
             Assert.That(headerFields.Length, Is.EqualTo(rowEntries.Length));
             Assert.That(Regex.Matches(pgHeader, @"\t").Count, Is.EqualTo(Regex.Matches(pgRow, @"\t").Count));
-        }   
+        }
+
+        // No upstream quant setup -> no dynamic columns in header or row.
+        [Test]
+        public static void TestProteinGroupNoDynamicColumnsWhenSampleGroupResultsNotPopulated()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot1 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1 }, new HashSet<IBioPolymerWithSetMods> { pwsm1 });
+
+            Assert.That(pg.SampleGroupResults, Is.Null);
+
+            string header = pg.GetTabSeparatedHeader();
+            string row = pg.ToString();
+
+            Assert.That(header.Contains("SpectralCount_"), Is.False);
+            Assert.That(header.Contains("Intensity_"), Is.False);
+            Assert.That(header.Contains("CountOccupancy_"), Is.False);
+            Assert.That(header.Contains("IntensityOccupancy_"), Is.False);
+            Assert.That(header.Split('\t').Length, Is.EqualTo(row.Split('\t').Length));
+
+            // Header/row generation must not lazy-populate.
+            Assert.That(pg.SampleGroupResults, Is.Null);
+        }
+
+        // FilesForQuantification + IntensitiesByFile + populate -> all 4 column families appear,
+        // one per sample group, with matching header/row tab counts.
+        [Test]
+        public static void TestProteinGroupDynamicColumnsWithIntensitiesPopulated()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot1 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1 }, new HashSet<IBioPolymerWithSetMods> { pwsm1 });
+
+            var fileA = new SpectraFileInfo(@"X:\fakeA.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0);
+            var fileB = new SpectraFileInfo(@"X:\fakeB.mzML", condition: "", biorep: 1, fraction: 0, techrep: 0);
+            pg.FilesForQuantification = new List<SpectraFileInfo> { fileA, fileB };
+            pg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>
+            {
+                { fileA, 100.0 },
+                { fileB, 200.0 }
+            };
+
+            pg.PopulateSampleGroupResults();
+
+            string header = pg.GetTabSeparatedHeader();
+            string row = pg.ToString();
+            string[] headerFields = header.Split('\t');
+
+            Assert.That(headerFields.Length, Is.EqualTo(row.Split('\t').Length));
+            Assert.That(headerFields.Count(h => h.StartsWith("SpectralCount_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("Intensity_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("CountOccupancy_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("IntensityOccupancy_")), Is.EqualTo(2));
+        }
+
+        // FilesForQuantification set without IntensitiesByFile -> only count-based dynamic columns.
+        [Test]
+        public static void TestProteinGroupCountOnlyColumnsWhenNoIntensities()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot1 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1 }, new HashSet<IBioPolymerWithSetMods> { pwsm1 });
+
+            var fileA = new SpectraFileInfo(@"X:\fakeA.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0);
+            pg.FilesForQuantification = new List<SpectraFileInfo> { fileA };
+
+            pg.PopulateSampleGroupResults();
+
+            string header = pg.GetTabSeparatedHeader();
+            string row = pg.ToString();
+
+            Assert.That(header.Contains("SpectralCount_"), Is.True);
+            Assert.That(header.Contains("CountOccupancy_"), Is.True);
+            Assert.That(header.Contains("Intensity_"), Is.False);
+            Assert.That(header.Contains("IntensityOccupancy_"), Is.False);
+            Assert.That(header.Split('\t').Length, Is.EqualTo(row.Split('\t').Length));
+        }
+
+        // Mutating FilesForQuantification/IntensitiesByFile (as SilacConversions does) invalidates
+        // SampleGroupResults; the post-mutation populate must reflect the new file list.
+        [Test]
+        public static void TestProteinGroupPopulateSampleGroupsReflectsPostSilacState()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot1 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1 }, new HashSet<IBioPolymerWithSetMods> { pwsm1 });
+
+            var light = new SpectraFileInfo(@"X:\sample_light.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0);
+            pg.FilesForQuantification = new List<SpectraFileInfo> { light };
+            pg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { light, 100.0 } };
+
+            var heavy = new SpectraFileInfo(@"X:\sample_heavy.mzML", condition: "", biorep: 1, fraction: 0, techrep: 0);
+            pg.FilesForQuantification = new List<SpectraFileInfo> { light, heavy };
+            pg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>
+            {
+                { light, 100.0 },
+                { heavy, 250.0 }
+            };
+            Assert.That(pg.SampleGroupResults, Is.Null);
+
+            pg.PopulateSampleGroupResults();
+
+            string header = pg.GetTabSeparatedHeader();
+            string row = pg.ToString();
+            string[] headerFields = header.Split('\t');
+
+            Assert.That(headerFields.Count(h => h.StartsWith("SpectralCount_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("Intensity_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("CountOccupancy_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("IntensityOccupancy_")), Is.EqualTo(2));
+            Assert.That(headerFields.Length, Is.EqualTo(row.Split('\t').Length));
+        }
 
         [Test]
         public static void ProteinGroupMergeTest()
