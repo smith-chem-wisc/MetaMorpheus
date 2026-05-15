@@ -286,7 +286,7 @@ namespace TaskLayer
                 }
 
                 // construct file info for FlashLFQ
-                List<SpectraFileInfo> spectraFileInfo = null;
+                List<SpectraFileInfo> spectraFileInfo;
 
                 // get experimental design info
                 string pathToFirstSpectraFile = Directory.GetParent(Parameters.CurrentRawFileList.First()).FullName;
@@ -310,18 +310,16 @@ namespace TaskLayer
 
                     if (errors.Any())
                     {
-                        Warn("Error reading experimental design file: " + errors.First() + ". Falling back to default experimental design.");
-                        spectraFileInfo = null;
+                        Warn("Error reading experimental design file: " + errors.First() + ". Skipping quantification");
+                        return;
                     }
                 }
-
-                if (Parameters.SearchParameters.Normalize && (spectraFileInfo == null || !File.Exists(assumedExperimentalDesignPath)))
+                else if (Parameters.SearchParameters.Normalize)
                 {
-                    Warn("Could not find or parse experimental design file at " + assumedExperimentalDesignPath + ", which is required for normalization. Skipping quantification");
+                    Warn("Could not find experimental design file at " + assumedExperimentalDesignPath + ", which is required for normalization. Skipping quantification");
                     return;
                 }
-
-                if (spectraFileInfo == null || !spectraFileInfo.Any())
+                else
                 {
                     spectraFileInfo = new List<SpectraFileInfo>();
 
@@ -623,9 +621,6 @@ namespace TaskLayer
                                     : 0);
                         }
                         proteinGroup.IntensitiesByFile = intensities;
-
-                        // Reset cached SampleGroupResults so it re-populates with the updated intensity data.
-                        proteinGroup.SampleGroupResults = null;
                     }
                 }
 
@@ -634,6 +629,16 @@ namespace TaskLayer
                 {
                     SilacConversions.SilacConversionsPostQuantification(allSilacLabels, startLabel, endLabel, spectraFileInfo, ProteinGroups, Parameters.ListOfDigestionParams,
                         Parameters.FlashLfqResults, Parameters.AllSpectralMatches.Cast<PeptideSpectralMatch>().ToList(), Parameters.SearchParameters.ModsToWriteSelection, quantifyUnlabeledPeptides);
+                }
+
+                // Populate SampleGroupResults AFTER all quant-state mutation (including SILAC
+                // re-labeling) so every PG carries the same dynamic-column schema for the writer.
+                if (ProteinGroups != null)
+                {
+                    foreach (var proteinGroup in ProteinGroups)
+                    {
+                        proteinGroup.PopulateSampleGroupResults();
+                    }
                 }
             }
             catch (Exception e)
@@ -1160,12 +1165,12 @@ namespace TaskLayer
                     sb.Append(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults).Trim());
                     sb.Append('\t');
 
-                    if (psm.ReporterIonIntensities != null && psm.ReporterIonIntensities.Length > 0)
+                    if (psm.IsobaricMassTagReporterIonIntensities != null && psm.IsobaricMassTagReporterIonIntensities.Length > 0)
                     {
-                        for (int i = 0; i < psm.ReporterIonIntensities.Length; i++)
+                        for (int i = 0; i < psm.IsobaricMassTagReporterIonIntensities.Length; i++)
                         {
                             if (i > 0) sb.Append('\t');
-                            sb.Append(psm.ReporterIonIntensities[i].ToString("F1", CultureInfo.InvariantCulture));
+                            sb.Append(psm.IsobaricMassTagReporterIonIntensities[i].ToString("F1", CultureInfo.InvariantCulture));
                         }
                     }
                     else

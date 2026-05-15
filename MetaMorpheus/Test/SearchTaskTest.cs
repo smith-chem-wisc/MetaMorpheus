@@ -264,31 +264,43 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalizationExperDesign");
             string experimentalDesignFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
-            using (StreamWriter output = new StreamWriter(experimentalDesignFile))
-            {
-                output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
-                output.WriteLine("PrunedDbSpectra.mzml" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
-            }
             DbForTask db = new DbForTask(myDatabase, false);
 
-            // run the task
-            Directory.CreateDirectory(folderPath);
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            try
+            {
+                using (StreamWriter output = new StreamWriter(experimentalDesignFile))
+                {
+                    output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
+                    output.WriteLine("PrunedDbSpectra.mzml" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
+                }
 
-            Directory.Delete(folderPath, true);
+                // run the task
+                Directory.CreateDirectory(folderPath);
+                searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            // delete the exper design and try again. this should skip quantification
-            File.Delete(experimentalDesignFile);
+                Directory.Delete(folderPath, true);
 
-            // run the task
-            Directory.CreateDirectory(folderPath);
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+                // delete the exper design and try again. this should skip quantification
+                File.Delete(experimentalDesignFile);
 
-            // PSMs should be present but no quant output
-            Assert.That(!File.Exists(Path.Combine(folderPath, "AllQuantifiedPeptides.tsv")));
-            Assert.That(File.Exists(Path.Combine(folderPath, "AllPSMs.psmtsv")));
+                // run the task
+                Directory.CreateDirectory(folderPath);
+                searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            Directory.Delete(folderPath, true);
+                // PSMs should be present but no quant output
+                Assert.That(!File.Exists(Path.Combine(folderPath, "AllQuantifiedPeptides.tsv")));
+                Assert.That(File.Exists(Path.Combine(folderPath, "AllPSMs.psmtsv")));
+
+                Directory.Delete(folderPath, true);
+            }
+            finally
+            {
+                // Always remove the ExperimentalDesign.tsv we wrote into shared TestData\, even
+                // on assertion/exception, so subsequent tests in the same suite run don't pick
+                // up a stale file (which would silently break quantification for them).
+                if (File.Exists(experimentalDesignFile)) File.Delete(experimentalDesignFile);
+                if (Directory.Exists(folderPath)) Directory.Delete(folderPath, true);
+            }
         }
 
         /// <summary>

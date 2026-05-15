@@ -27,7 +27,7 @@ namespace EngineLayer
             DigestionParams = commonParameters.DigestionParams;
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = -1;
-            ReporterIonIntensities = scan.IsobaricMassTagReporterIonIntensities;
+            IsobaricMassTagReporterIonIntensities = scan.IsobaricMassTagReporterIonIntensities;
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons);
         }
@@ -88,7 +88,7 @@ namespace EngineLayer
         /// PrecursorScanIntensity for LFQ, or null if neither is populated.
         /// </summary>
         double[]? ISpectralMatch.Intensities =>
-            ReporterIonIntensities ??
+            IsobaricMassTagReporterIonIntensities ??
             (PrecursorScanIntensity > 0 ? new[] { PrecursorScanIntensity } : null);
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace EngineLayer
         /// Null if multiplex quantification wasn't performed.
         /// Array order matches the reporter ion order defined by the mass tag modification.
         /// </summary>
-        public double[]? ReporterIonIntensities { get; private set; }
+        public double[]? IsobaricMassTagReporterIonIntensities { get; private set; }
 
         public IEnumerable<SpectralMatchHypothesis> BestMatchingBioPolymersWithSetMods
         {

@@ -395,20 +395,6 @@ namespace TaskLayer
         {
             if (!Parameters.GlycoSearchParameters.DoQuantification)
             {
-                // Always set FilesForQuantification before writing the TSV so that
-                // PopulateSampleGroupResults() uses the consistent first branch (keyed
-                // on the full searched-file list) rather than the per-PSM else branch.
-                var spectraFileInfoForGroups = Parameters.CurrentRawFileList
-                    .Select((f, i) => new SpectraFileInfo(f, "", i, 0, 0))
-                    .ToList<SpectraFileInfo>();
-                if (ProteinGroups != null)
-                {
-                    foreach (var pg in ProteinGroups)
-                    {
-                        if (pg.FilesForQuantification == null)
-                            pg.FilesForQuantification = spectraFileInfoForGroups;
-                    }
-                }
                 return;
             }
 
@@ -585,7 +571,10 @@ namespace TaskLayer
                         proteinGroup.IntensitiesByFile = intensities;
                     }
 
-                    proteinGroup.SampleGroupResults = null;
+                    // Populate SampleGroupResults from the shared spectraFileInfo so
+                    // every PG carries the same dynamic-column schema. Without this, the writer
+                    // would have no way to produce uniform headers/rows.
+                    proteinGroup.PopulateSampleGroupResults();
                 }
             }
         }

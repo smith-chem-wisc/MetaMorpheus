@@ -232,9 +232,16 @@ namespace Test
                 }
             };
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2) };
-            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
-            string fastaName = @"TestData\DbForPrunedDb.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedGeneration");
+
+            // Copy inputs into a clean per-test folder so QuantificationAnalysis does not pick up
+            // a stale ExperimentalDesign.tsv left in the shared TestData\ directory by other tests.
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string mzmlName = Path.Combine(inputFolder, "PrunedDbSpectra.mzml");
+            string fastaName = Path.Combine(inputFolder, "DbForPrunedDb.fasta");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzmlName, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), fastaName, true);
 
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
@@ -274,6 +281,57 @@ namespace Test
                 "pos71[Oxidation on S,info:fraction=0.1899(1.279E+05/6.736E+05)]|pos71[Oxidation on S,info:fraction=0.1899(1.279E+05/6.736E+05)]"));
 
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestGetIdentifiedPeptidesOutputOnAllBranches()
+        {
+            // Arrange: one protein with two peptides that differ only by a mod
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif);
+            var mod = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed",
+                _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146);
+
+            var oneBasedMods = new Dictionary<int, List<Modification>> { { 2, new List<Modification> { mod } } };
+            var protein = new Protein("MCPEPTIDE", "prot1", oneBasedModifications: oneBasedMods);
+
+            var modsOnPwsm1 = new Dictionary<int, Modification> { { 2, mod } };
+            var pwsm1 = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 9,
+                CleavageSpecificity.Full, "", 0, modsOnPwsm1, 0);   // FullSequence != BaseSequence
+            var pwsm2 = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 9,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            var pg = new EngineLayer.ProteinGroup(
+                new HashSet<IBioPolymer> { protein },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1, pwsm2 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1, pwsm2 });
+
+            // Branch 1: labels == null, DisplayModsOnPeptides == false → BaseSequence
+            pg.DisplayModsOnPeptides = false;
+            pg.GetIdentifiedPeptidesOutput(null);
+            var tsv1 = pg.ToString();
+            Assert.That(tsv1, Does.Contain(pwsm1.BaseSequence));
+            Assert.That(tsv1.Split('\t')[4], Does.Not.Contain("[")); // unique-peptides column has no mod notation
+
+            // Branch 2: labels == null, DisplayModsOnPeptides == true → FullSequence (includes mod)
+            pg.DisplayModsOnPeptides = true;
+            pg.GetIdentifiedPeptidesOutput(null);
+            var tsv2 = pg.ToString();
+            Assert.That(tsv2, Does.Contain(pwsm1.FullSequence));
+
+            // SILAC branches: use an empty label list (labels != null)
+            var labels = new List<SilacLabel>();
+
+            // Branch 3: labels != null, DisplayModsOnPeptides == false → light BaseSequence
+            pg.DisplayModsOnPeptides = false;
+            Assert.DoesNotThrow(() => pg.GetIdentifiedPeptidesOutput(labels));
+            var tsv3 = pg.ToString();
+            Assert.That(tsv3.Split('\t')[4], Is.Not.Empty); // unique-peptides column populated
+
+            // Branch 4: labels != null, DisplayModsOnPeptides == true → light FullSequence
+            pg.DisplayModsOnPeptides = true;
+            Assert.DoesNotThrow(() => pg.GetIdentifiedPeptidesOutput(labels));
+            var tsv4 = pg.ToString();
+            Assert.That(tsv4.Split('\t')[4], Is.Not.Empty);
         }
     }
 }

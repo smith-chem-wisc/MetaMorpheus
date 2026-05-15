@@ -209,9 +209,10 @@ namespace EngineLayer
             sb.Append("Sequence Coverage with Mods" + '\t');
             sb.Append("Fragment Sequence Coverage" + '\t');
 
-            // Quantification and occupancy columns from base SampleGroupResult system
-            if (SampleGroupResults.IsNullOrEmpty()) PopulateSampleGroupResults();
-
+            // Quantification and occupancy columns from base SampleGroupResult system.
+            // Dynamic columns appear only when SampleGroupResults has been explicitly populated
+            // upstream (e.g., LFQ-success path). Workflows that return early from quantification
+            // leave it null/empty and emit only the static columns.
             if (SampleGroupResults != null)
             {
                 foreach (var group in SampleGroupResults)
@@ -322,9 +323,9 @@ namespace EngineLayer
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", FragmentSequenceCoverageDisplayList)));
             sb.Append("\t");
 
-            // Quantification and occupancy from base SampleGroupResult system
-            if (SampleGroupResults.IsNullOrEmpty()) PopulateSampleGroupResults();
-
+            // Quantification and occupancy from base SampleGroupResult system.
+            // Mirrors the header: dynamic columns appear only when SampleGroupResults has been
+            // populated upstream so header and rows stay consistent within a file.
             if (SampleGroupResults != null)
             {
                 bool isProteinLevel = GroupType == BioPolymerGroupType.Parent;
@@ -594,7 +595,10 @@ namespace EngineLayer
                     }
                 }
 
-                subsetPg.FilesForQuantification = new List<SpectraFileInfo> { spectraFileInfo };
+                if (spectraFileInfo != null)
+                {
+                    subsetPg.FilesForQuantification = new List<SpectraFileInfo> { spectraFileInfo };
+                }
             }
 
             if (IntensitiesByFile == null || spectraFileInfo == null)
