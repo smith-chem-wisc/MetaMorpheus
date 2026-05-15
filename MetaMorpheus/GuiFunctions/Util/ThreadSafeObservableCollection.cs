@@ -51,10 +51,11 @@ public class ThreadSafeObservableCollection<T> : ObservableCollection<T>, IEnume
     }
 
     // ── Snapshot enumeration ─────────────────────────────────────────────────
-    // Explicit interface implementation ensures LINQ (which dispatches through
-    // IEnumerable<T>) gets the snapshot enumerator, not the base class one.
+    // `new` hides Collection<T>.GetEnumerator so plain foreach on the concrete type also gets
+    // the snapshot. Callers that statically type as the base ObservableCollection<T>/Collection<T>
+    // will still see the live enumerator and can hit InvalidOperationException under mutation.
 
-    IEnumerator<T> IEnumerable<T>.GetEnumerator()
+    public new IEnumerator<T> GetEnumerator()
     {
         T[] snapshot;
         lock (_lock)
@@ -62,8 +63,7 @@ public class ThreadSafeObservableCollection<T> : ObservableCollection<T>, IEnume
         return ((IEnumerable<T>)snapshot).GetEnumerator();
     }
 
-    IEnumerator IEnumerable.GetEnumerator() =>
-        ((IEnumerable<T>)this).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     // ── UI-thread marshalling ─────────────────────────────────────────────────
 
