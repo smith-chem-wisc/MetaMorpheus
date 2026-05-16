@@ -20,8 +20,6 @@ public class MultipleDeconParamsViewModel : DeconParamsViewModel
         DeconvolutionType.IsoDecDeconvolution
     };
 
-    public ObservableCollection<Polarity> Polarities { get; } = [.. Enum.GetValues<Polarity>().Skip(1).Take(2)];
-
     public DeconvolutionType SelectedAddType
     {
         get => _selectedAddType;
@@ -73,12 +71,12 @@ public class MultipleDeconParamsViewModel : DeconParamsViewModel
         }
     }
 
-    public Polarity SharedPolarity
+    public new Polarity Polarity
     {
-        get => Polarity;
+        get => base.Polarity;
         set
         {
-            Polarity = value;
+            base.Polarity = value;
             foreach (var sub in _subParameters)
                 sub.Polarity = value;
         }

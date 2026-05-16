@@ -60,7 +60,6 @@
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <Label Content="Max Assumed Charge State:" Grid.Column="0" Grid.Row="0" />
@@ -84,11 +83,6 @@
                             </TextBlock>
                         </TextBox.ToolTip>
                     </local:IntegerTexBoxControl>
-
-                    <Label Content="Polarity:" Grid.Column="0" Grid.Row="1" />
-                    <ComboBox Grid.Column="1" Grid.Row="1" Width="100" Height="25"
-                              ItemsSource="{Binding Polarities}"
-                              SelectedItem="{Binding SharedPolarity}" />
                 </Grid>
             </GroupBox>
 
