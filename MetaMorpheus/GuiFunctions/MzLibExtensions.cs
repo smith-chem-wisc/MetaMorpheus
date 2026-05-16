@@ -40,17 +40,18 @@ namespace GuiFunctions
         public static DeconParamsViewModel ToViewModel(this DeconvolutionParameters parameters)
         {
             if (parameters is ClassicDeconvolutionParameters classicParams)
-            {
                 return new ClassicDeconParamsViewModel(classicParams);
-            }
-            else if (parameters is IsoDecDeconvolutionParameters isoParams)
-            {
+            
+            if (parameters is IsoDecDeconvolutionParameters isoParams)
                 return new IsoDecDeconParamsViewModel(isoParams);
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            
+            if (parameters is MultipleDeconParameters multipleParams)
+                return new MultipleDeconParamsViewModel(multipleParams);
+
+            //if (parameters is FromFileDeconvolutionParameters file)
+            //    return new FromFileDeconvolutionParametersViewModel(file);
+
+            throw new NotImplementedException();
         }
 
         public static DeconvolutionParameters GetDefaultDeconParams(this DeconvolutionType type, AnalyteType? analyteType = null, bool isPrecursor = true)
@@ -59,8 +60,14 @@ namespace GuiFunctions
 
             switch (type)
             {
+                case DeconvolutionType.FromFile:
                 case DeconvolutionType.ExampleNewDeconvolutionTemplate:
                     return null;
+
+                // Default to only classic
+                case DeconvolutionType.Multiple:
+                    var inner = DeconvolutionType.ClassicDeconvolution.GetDefaultDeconParams(analyteType, isPrecursor);
+                    return new MultipleDeconParameters([inner], inner.MinAssumedChargeState, inner.MaxAssumedChargeState, inner.Polarity, inner.AverageResidueModel); e.ClassicDeconvolution.GetDefaultDeconParams(analyteType, isPrecursor)], 0, 0);
 
                 case DeconvolutionType.ClassicDeconvolution:
 
