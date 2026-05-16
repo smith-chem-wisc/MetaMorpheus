@@ -2,7 +2,7 @@ using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
 
-namespace Test.GuiTests;
+namespace Test.GuiTests.Deconvolution;
 
 [TestFixture]
 public class DeconParamsViewModelTest
