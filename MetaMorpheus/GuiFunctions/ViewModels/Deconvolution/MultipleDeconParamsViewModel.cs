@@ -10,6 +10,7 @@ public class MultipleDeconParamsViewModel : DeconParamsViewModel
 {
     private MultipleDeconParameters _parameters;
     private readonly ObservableCollection<DeconParamsViewModel> _subParameters;
+    private DeconvolutionType _selectedAddType = DeconvolutionType.ClassicDeconvolution;
 
     public ObservableCollection<DeconParamsViewModel> SubParameters => _subParameters;
 
@@ -18,6 +19,18 @@ public class MultipleDeconParamsViewModel : DeconParamsViewModel
         DeconvolutionType.ClassicDeconvolution,
         DeconvolutionType.IsoDecDeconvolution
     };
+
+    public ObservableCollection<Polarity> Polarities { get; } = [.. Enum.GetValues<Polarity>().Skip(1).Take(2)];
+
+    public DeconvolutionType SelectedAddType
+    {
+        get => _selectedAddType;
+        set
+        {
+            _selectedAddType = value;
+            OnPropertyChanged(nameof(SelectedAddType));
+        }
+    }
 
     public override DeconvolutionParameters Parameters
     {

@@ -67,7 +67,7 @@ namespace GuiFunctions
                 // Default to only classic
                 case DeconvolutionType.Multiple:
                     var inner = DeconvolutionType.ClassicDeconvolution.GetDefaultDeconParams(analyteType, isPrecursor);
-                    return new MultipleDeconParameters([inner], inner.MinAssumedChargeState, inner.MaxAssumedChargeState, inner.Polarity, inner.AverageResidueModel); e.ClassicDeconvolution.GetDefaultDeconParams(analyteType, isPrecursor)], 0, 0);
+                    return new MultipleDeconParameters([inner], inner.MinAssumedChargeState, inner.MaxAssumedChargeState, inner.Polarity, inner.AverageResidueModel, inner.ExpectedIsotopeSpacing);
 
                 case DeconvolutionType.ClassicDeconvolution:
 
