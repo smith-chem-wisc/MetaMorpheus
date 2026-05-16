@@ -8,6 +8,45 @@
              d:DesignHeight="600" d:DesignWidth="800">
     <UserControl.Resources>
         <local:DeconvolutionTypeToControlConverter x:Key="DeconTypeToControlConverter"/>
+
+        <Style x:Key="CircleRemoveButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Content" Value="X"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse Fill="Red" Width="18" Height="18"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Content="{TemplateBinding Content}"
+                                              TextElement.Foreground="White"
+                                              TextElement.FontSize="11"
+                                              TextElement.FontWeight="Bold"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SubParamGroupBoxStyle" TargetType="GroupBox">
+            <Setter Property="Margin" Value="0 0 0 10"/>
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource CircleRemoveButtonStyle}"
+                                    Click="RemoveSubType_Click" Tag="{Binding}" />
+                            <TextBlock Text="{Binding}" VerticalAlignment="Center" FontWeight="Bold" Margin="5 0 0 0" />
+                        </StackPanel>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="10">
@@ -64,17 +103,8 @@
             <ItemsControl ItemsSource="{Binding SubParameters}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <GroupBox Margin="0 0 0 10" Header="{Binding}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-                                <Button Grid.Row="0" Content="X" Width="22" Height="22"
-                                        HorizontalAlignment="Right" Margin="0 0 5 5"
-                                        Click="RemoveSubType_Click" Tag="{Binding}" />
-                                <ContentControl Grid.Row="1" Content="{Binding Converter={StaticResource DeconTypeToControlConverter}}" />
-                            </Grid>
+                        <GroupBox Header="{Binding}" Style="{StaticResource SubParamGroupBoxStyle}">
+                            <ContentControl Content="{Binding Converter={StaticResource DeconTypeToControlConverter}}" />
                         </GroupBox>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
