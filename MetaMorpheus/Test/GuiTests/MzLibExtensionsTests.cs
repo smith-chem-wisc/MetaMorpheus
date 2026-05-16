@@ -67,6 +67,51 @@ public class MzLibExtensionsTests
     }
 
     [Test]
+    public void ToViewModel_WithMultipleDeconParameters_ReturnsMultipleDeconParamsViewModel()
+    {
+        var inner = new ClassicDeconvolutionParameters(1, 12, 4, 3);
+        var multipleParams = new MultipleDeconParameters(
+            [inner],
+            inner.MinAssumedChargeState,
+            inner.MaxAssumedChargeState,
+            inner.Polarity,
+            inner.AverageResidueModel,
+            inner.ExpectedIsotopeSpacing);
+
+        var result = multipleParams.ToViewModel();
+
+        Assert.That(result, Is.InstanceOf<MultipleDeconParamsViewModel>());
+        Assert.That(result.DeconvolutionType, Is.EqualTo(DeconvolutionType.Multiple));
+    }
+
+    [Test]
+    public void GetDefaultDeconParams_UnknownType_ReturnsNull()
+    {
+        var result = ((DeconvolutionType)999).GetDefaultDeconParams();
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public void GetDefaultDeconParams_MultipleType_ReturnsMultipleDeconParameters()
+    {
+        var result = DeconvolutionType.Multiple.GetDefaultDeconParams();
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Is.InstanceOf<MultipleDeconParameters>());
+        Assert.That(result.DeconvolutionType, Is.EqualTo(DeconvolutionType.Multiple));
+    }
+
+    [Test]
+    public void GetDefaultViewModel_MultipleType_ReturnsMultipleDeconParamsViewModel()
+    {
+        var result = DeconvolutionType.Multiple.GetDefaultViewModel();
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Is.InstanceOf<MultipleDeconParamsViewModel>());
+        Assert.That(result.DeconvolutionType, Is.EqualTo(DeconvolutionType.Multiple));
+    }
+
+    [Test]
     public void MajorityWithin_ReturnsTrue_WhenMajorityWithinRange()
     {
         var range = new MzRange(10, 20);

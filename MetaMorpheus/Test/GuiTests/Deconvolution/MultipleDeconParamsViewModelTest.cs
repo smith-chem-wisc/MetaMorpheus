@@ -161,4 +161,75 @@ public class MultipleDeconParamsViewModelTest
     {
         Assert.That(_viewModel.Parameters, Is.InstanceOf<MultipleDeconParameters>());
     }
+
+    [Test]
+    public void SharedMinAssumedChargeState_Get_ReturnsMinAssumedChargeState()
+    {
+        _viewModel.MinAssumedChargeState = 3;
+        Assert.That(_viewModel.SharedMinAssumedChargeState, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void SharedMaxAssumedChargeState_Get_ReturnsMaxAssumedChargeState()
+    {
+        _viewModel.MaxAssumedChargeState = 15;
+        Assert.That(_viewModel.SharedMaxAssumedChargeState, Is.EqualTo(15));
+    }
+
+    [Test]
+    public void SelectedAddType_Set_UpdatesValue()
+    {
+        _viewModel.SelectedAddType = DeconvolutionType.IsoDecDeconvolution;
+        Assert.That(_viewModel.SelectedAddType, Is.EqualTo(DeconvolutionType.IsoDecDeconvolution));
+    }
+
+    [Test]
+    public void SelectedAddType_Set_TriggersPropertyChanged()
+    {
+        bool triggered = false;
+        _viewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(MultipleDeconParamsViewModel.SelectedAddType))
+                triggered = true;
+        };
+
+        _viewModel.SelectedAddType = DeconvolutionType.IsoDecDeconvolution;
+
+        Assert.That(triggered, Is.True);
+    }
+
+    [Test]
+    public void Parameters_Setter_FiresPropertyChanged()
+    {
+        bool triggered = false;
+        _viewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(MultipleDeconParamsViewModel.Parameters))
+                triggered = true;
+        };
+
+        _viewModel.AddSubType(DeconvolutionType.IsoDecDeconvolution);
+
+        Assert.That(triggered, Is.True);
+    }
+
+    [Test]
+    public void RemoveSubType_RebuildsParametersCorrectly()
+    {
+        _viewModel.AddSubType(DeconvolutionType.IsoDecDeconvolution);
+        _viewModel.Polarity = Polarity.Negative;
+        _viewModel.SharedMinAssumedChargeState = -10;
+        _viewModel.SharedMaxAssumedChargeState = -5;
+
+        _viewModel.RemoveSubType(_viewModel.SubParameters.Last());
+
+        Assert.That(_viewModel.MinAssumedChargeState, Is.EqualTo(-10));
+        Assert.That(_viewModel.MaxAssumedChargeState, Is.EqualTo(-5));
+        Assert.That(_viewModel.Polarity, Is.EqualTo(Polarity.Negative));
+        Assert.That(_viewModel.SubParameters.Count, Is.EqualTo(1));
+        var sub = _viewModel.SubParameters.Single();
+        Assert.That(sub.MinAssumedChargeState, Is.EqualTo(-10));
+        Assert.That(sub.MaxAssumedChargeState, Is.EqualTo(-5));
+        Assert.That(sub.Polarity, Is.EqualTo(Polarity.Negative));
+    }
 }
