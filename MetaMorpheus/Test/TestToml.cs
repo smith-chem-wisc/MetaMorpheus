@@ -294,6 +294,131 @@ namespace Test
         }
 
         [Test]
+        public static void TestFileSpecificDeconvolutionParams()
+        {
+            string sourceMzml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string sourceDb = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
+            string tempDirClassicToml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TempDeconClassic_Toml");
+            string tempDirClassicDirect = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TempDeconClassic_Direct");
+            string tempDirIsoDecToml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TempDeconIsoDec_Toml");
+            string tempDirIsoDecDirect = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TempDeconIsoDec_Direct");
+            string outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestDeconvOutput");
+
+            try
+            {
+                Directory.CreateDirectory(tempDirClassicToml);
+                Directory.CreateDirectory(tempDirClassicDirect);
+                Directory.CreateDirectory(tempDirIsoDecToml);
+                Directory.CreateDirectory(tempDirIsoDecDirect);
+
+                string mzmlClassicToml = Path.Combine(tempDirClassicToml, "PrunedDbSpectra.mzml");
+                string mzmlClassicDirect = Path.Combine(tempDirClassicDirect, "PrunedDbSpectra.mzml");
+                string mzmlIsoDecToml = Path.Combine(tempDirIsoDecToml, "PrunedDbSpectra.mzml");
+                string mzmlIsoDecDirect = Path.Combine(tempDirIsoDecDirect, "PrunedDbSpectra.mzml");
+
+                File.Copy(sourceMzml, mzmlClassicToml, true);
+                File.Copy(sourceMzml, mzmlClassicDirect, true);
+                File.Copy(sourceMzml, mzmlIsoDecToml, true);
+                File.Copy(sourceMzml, mzmlIsoDecDirect, true);
+
+                // Write Classic file-specific TOML
+                FileSpecificParameters fspClassic = new FileSpecificParameters
+                {
+                    PrecursorDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                    ProductDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 10, 4, 3)
+                };
+                Toml.WriteFile(fspClassic, Path.Combine(tempDirClassicToml, "PrunedDbSpectra.toml"), MetaMorpheusTask.tomlConfig);
+
+                // Write IsoDec file-specific TOML
+                FileSpecificParameters fspIsoDec = new FileSpecificParameters
+                {
+                    PrecursorDeconvolutionParameters = new IsoDecDeconvolutionParameters(),
+                    ProductDeconvolutionParameters = new IsoDecDeconvolutionParameters()
+                };
+                Toml.WriteFile(fspIsoDec, Path.Combine(tempDirIsoDecToml, "PrunedDbSpectra.toml"), MetaMorpheusTask.tomlConfig);
+
+                // ===== Classic deconv params =====
+
+                // Direct: task has Classic params, no toml
+                SearchTask classicDirect = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        precursorDeconParams: new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                        productDeconParams: new ClassicDeconvolutionParameters(1, 10, 4, 3))
+                };
+                var engineClassicDirect = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("ClassicDirect", classicDirect) },
+                    new List<string> { mzmlClassicDirect },
+                    new List<DbForTask> { new DbForTask(sourceDb, false) },
+                    outputDir);
+                engineClassicDirect.Run();
+
+                // Via TOML: task has IsoDec params, but toml overrides to Classic
+                SearchTask classicFromToml = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        precursorDeconParams: new IsoDecDeconvolutionParameters(),
+                        productDeconParams: new IsoDecDeconvolutionParameters())
+                };
+                var engineClassicFromToml = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("ClassicFromToml", classicFromToml) },
+                    new List<string> { mzmlClassicToml },
+                    new List<DbForTask> { new DbForTask(sourceDb, false) },
+                    outputDir);
+                engineClassicFromToml.Run();
+
+                var resultsClassicD = File.ReadAllLines(Path.Combine(outputDir, @"ClassicDirect\AllPSMs.psmtsv"));
+                var resultsClassicT = File.ReadAllLines(Path.Combine(outputDir, @"ClassicFromToml\AllPSMs.psmtsv"));
+                Assert.That(resultsClassicT.SequenceEqual(resultsClassicD),
+                    "Classic deconv results: file-specific TOML approach should match direct approach");
+
+                // ===== IsoDec deconv params =====
+
+                // Direct: task has IsoDec params, no toml
+                SearchTask isoDecDirect = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        precursorDeconParams: new IsoDecDeconvolutionParameters(),
+                        productDeconParams: new IsoDecDeconvolutionParameters())
+                };
+                var engineIsoDecDirect = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("IsoDecDirect", isoDecDirect) },
+                    new List<string> { mzmlIsoDecDirect },
+                    new List<DbForTask> { new DbForTask(sourceDb, false) },
+                    outputDir);
+                engineIsoDecDirect.Run();
+
+                // Via TOML: task has Classic params, but toml overrides to IsoDec
+                SearchTask isoDecFromToml = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        precursorDeconParams: new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                        productDeconParams: new ClassicDeconvolutionParameters(1, 10, 4, 3))
+                };
+                var engineIsoDecFromToml = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("IsoDecFromToml", isoDecFromToml) },
+                    new List<string> { mzmlIsoDecToml },
+                    new List<DbForTask> { new DbForTask(sourceDb, false) },
+                    outputDir);
+                engineIsoDecFromToml.Run();
+
+                var resultsIsoDecD = File.ReadAllLines(Path.Combine(outputDir, @"IsoDecDirect\AllPSMs.psmtsv"));
+                var resultsIsoDecT = File.ReadAllLines(Path.Combine(outputDir, @"IsoDecFromToml\AllPSMs.psmtsv"));
+                Assert.That(resultsIsoDecT.SequenceEqual(resultsIsoDecD),
+                    "IsoDec deconv results: file-specific TOML approach should match direct approach");
+            }
+            finally
+            {
+                if (Directory.Exists(tempDirClassicToml)) Directory.Delete(tempDirClassicToml, true);
+                if (Directory.Exists(tempDirClassicDirect)) Directory.Delete(tempDirClassicDirect, true);
+                if (Directory.Exists(tempDirIsoDecToml)) Directory.Delete(tempDirIsoDecToml, true);
+                if (Directory.Exists(tempDirIsoDecDirect)) Directory.Delete(tempDirIsoDecDirect, true);
+                if (Directory.Exists(outputDir)) Directory.Delete(outputDir, true);
+            }
+        }
+
+        [Test]
         public static void TestDigestionParamsTomlReadingWriting()
         {
             var digestionParams = new DigestionParams("top-down", 4, 5, 12345, 2012,

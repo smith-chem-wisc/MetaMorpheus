@@ -70,6 +70,10 @@ namespace TaskLayer
                     case nameof(CustomIons):
                         CustomIons = keyValuePair.Value.Get<List<ProductType>>(); break;
 
+                    case nameof(PrecursorDeconvolutionParameters):
+                        PrecursorDeconvolutionParameters = keyValuePair.Value.Get<DeconvolutionParameters>(); break;
+                    case nameof(ProductDeconvolutionParameters):
+                        ProductDeconvolutionParameters = keyValuePair.Value.Get<DeconvolutionParameters>(); break;
 
                     default:
                         throw new MetaMorpheusException("Unrecognized parameter \"" + keyValuePair.Key + "\" in file-specific parameters toml");
@@ -94,6 +98,9 @@ namespace TaskLayer
         public string SeparationType { get; set; }
 
         public List<ProductType> CustomIons { get; set; }
+
+        public DeconvolutionParameters PrecursorDeconvolutionParameters { get; set; }
+        public DeconvolutionParameters ProductDeconvolutionParameters { get; set; }
 
         public FileSpecificParameters Clone()
         {

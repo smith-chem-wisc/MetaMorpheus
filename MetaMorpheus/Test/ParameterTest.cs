@@ -44,6 +44,8 @@ namespace Test
             Assert.That(fsp.DigestionAgent, Is.EqualTo(fspClone.DigestionAgent));
             Assert.That(fsp.SeparationType, Is.EqualTo(fspClone.SeparationType));
             CollectionAssert.AreEqual(fsp.CustomIons, fspClone.CustomIons);
+            Assert.That(fsp.PrecursorDeconvolutionParameters, Is.EqualTo(fspClone.PrecursorDeconvolutionParameters));
+            Assert.That(fsp.ProductDeconvolutionParameters, Is.EqualTo(fspClone.ProductDeconvolutionParameters));
             GlobalVariables.AnalyteType = AnalyteType.Peptide;
         }
 
@@ -137,6 +139,8 @@ namespace Test
             Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
             Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
             Assert.That(updatedParameters.CustomIons, Is.EqualTo(notDefaultParameters.CustomIons));
+            Assert.That(updatedParameters.PrecursorDeconvolutionParameters, Is.EqualTo(notDefaultParameters.PrecursorDeconvolutionParameters));
+            Assert.That(updatedParameters.ProductDeconvolutionParameters, Is.EqualTo(notDefaultParameters.ProductDeconvolutionParameters));
 
             FileSpecificParameters basicFileSpecificParameters = new FileSpecificParameters
             {
@@ -179,6 +183,8 @@ namespace Test
             Assert.That(((DigestionParams)updatedParameters.DigestionParams).InitiatorMethionineBehavior, Is.EqualTo(((DigestionParams)notDefaultParameters.DigestionParams).InitiatorMethionineBehavior));
             Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
             Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
+            Assert.That(updatedParameters.PrecursorDeconvolutionParameters, Is.EqualTo(notDefaultParameters.PrecursorDeconvolutionParameters));
+            Assert.That(updatedParameters.ProductDeconvolutionParameters, Is.EqualTo(notDefaultParameters.ProductDeconvolutionParameters));
 
         }
 
@@ -270,6 +276,8 @@ namespace Test
             Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
             Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
             Assert.That(updatedParameters.CustomIons, Is.EqualTo(notDefaultParameters.CustomIons));
+            Assert.That(updatedParameters.PrecursorDeconvolutionParameters, Is.EqualTo(notDefaultParameters.PrecursorDeconvolutionParameters));
+            Assert.That(updatedParameters.ProductDeconvolutionParameters, Is.EqualTo(notDefaultParameters.ProductDeconvolutionParameters));
 
             FileSpecificParameters basicFileSpecificParameters = new FileSpecificParameters
             {
@@ -311,6 +319,8 @@ namespace Test
             Assert.That(updatedParameters.MaxThreadsToUsePerFile, Is.EqualTo(notDefaultParameters.MaxThreadsToUsePerFile));
             Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
             Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
+            Assert.That(updatedParameters.PrecursorDeconvolutionParameters, Is.EqualTo(notDefaultParameters.PrecursorDeconvolutionParameters));
+            Assert.That(updatedParameters.ProductDeconvolutionParameters, Is.EqualTo(notDefaultParameters.ProductDeconvolutionParameters));
         }
 
 
