@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics;
@@ -9,9 +10,10 @@ using Readers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Chemistry;
+using System.Runtime.InteropServices.WindowsRuntime;
 using Transcriptomics;
 using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
 
 namespace GuiFunctions
 {
@@ -20,6 +22,12 @@ namespace GuiFunctions
     /// </summary>
     public static class MzLibExtensions
     {
+
+        public static DeconParamsViewModel GetDefaultViewModel(this DeconvolutionType deconvolutionType, AnalyteType? analyteType = null, bool isPrecursor = true)
+        {
+            var defaultParams = deconvolutionType.GetDefaultDeconParams(analyteType, isPrecursor);
+            return defaultParams.ToViewModel();
+        }
 
         /// <summary>
         /// Converts the given <see cref="DeconvolutionParameters"/> to a <see cref="DeconParamsViewModel"/>.
@@ -43,6 +51,75 @@ namespace GuiFunctions
             {
                 throw new NotImplementedException();
             }
+        }
+
+        public static DeconvolutionParameters GetDefaultDeconParams(this DeconvolutionType type, AnalyteType? analyteType = null, bool isPrecursor = true)
+        {
+            analyteType ??= GlobalVariables.AnalyteType;
+
+            switch (type)
+            {
+                case DeconvolutionType.ExampleNewDeconvolutionTemplate:
+                    return null;
+
+                case DeconvolutionType.ClassicDeconvolution:
+
+                    // Precursor
+                    if (isPrecursor)
+                    {
+                        return analyteType switch
+                        {
+                            AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                            AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 60, 4, 3),
+                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-20, -1, 4, 3, Polarity.Negative,
+                                new OxyriboAveragine()),
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                    }
+                    else
+                    {
+                        return analyteType switch
+                        {
+                            AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 10, 4, 3),
+                            AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 10, 4, 3),
+                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-10, -1, 4, 3, Polarity.Negative,
+                                new OxyriboAveragine()),
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                    }
+
+                case DeconvolutionType.IsoDecDeconvolution:
+
+                    // Precursor
+                    if (isPrecursor)
+                    {
+                        return analyteType switch
+                        {
+                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters() { MaxAssumedChargeState = 12 },
+                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters()
+                                { MaxAssumedChargeState = 60 },
+                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative)
+                                { MaxAssumedChargeState = -20, MinAssumedChargeState = -1 },
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                    }
+                    else
+                    {
+                        return analyteType switch
+                        {
+                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false)
+                                { MaxAssumedChargeState = 10 },
+                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false)
+                                { MaxAssumedChargeState = 10 },
+                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative,
+                                    reportMultipleMonoisos: false)
+                                { MaxAssumedChargeState = -10, MinAssumedChargeState = -1 },
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                    }
+            }
+
+            return null;
         }
 
         public static bool IsCrossLinkedPeptide(this SpectrumMatchFromTsv sm)
