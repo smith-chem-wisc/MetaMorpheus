@@ -347,4 +347,52 @@ public class DeconHostViewModelTests
             Assert.That(productParams.MaxAssumedChargeState, Is.EqualTo(newMaxCharge));
         }
     }
+
+    [Test]
+    public void Constructor_IncludesMultipleDecon_PrecursorList()
+    {
+        var viewModel = new DeconHostViewModel();
+        var multipleVm = viewModel.PrecursorDeconvolutionParametersList
+            .FirstOrDefault(vm => vm.DeconvolutionType == DeconvolutionType.Multiple);
+
+        Assert.That(multipleVm, Is.Not.Null);
+        Assert.That(multipleVm, Is.InstanceOf<MultipleDeconParamsViewModel>());
+        Assert.That(multipleVm.ToString(), Is.EqualTo("Multiple"));
+    }
+
+    [Test]
+    public void Constructor_IncludesMultipleDecon_ProductList()
+    {
+        var viewModel = new DeconHostViewModel();
+        var multipleVm = viewModel.ProductDeconvolutionParametersList
+            .FirstOrDefault(vm => vm.DeconvolutionType == DeconvolutionType.Multiple);
+
+        Assert.That(multipleVm, Is.Not.Null);
+        Assert.That(multipleVm, Is.InstanceOf<MultipleDeconParamsViewModel>());
+        Assert.That(multipleVm.ToString(), Is.EqualTo("Multiple"));
+    }
+
+    [Test]
+    public void Constructor_MultipleDecon_HasOneClassicSubParameter()
+    {
+        var viewModel = new DeconHostViewModel();
+        var multipleVm = (MultipleDeconParamsViewModel)viewModel.PrecursorDeconvolutionParametersList
+            .First(vm => vm.DeconvolutionType == DeconvolutionType.Multiple);
+
+        Assert.That(multipleVm.SubParameters.Count, Is.EqualTo(1));
+        Assert.That(multipleVm.SubParameters.Single().DeconvolutionType, Is.EqualTo(DeconvolutionType.ClassicDeconvolution));
+    }
+
+    [Test]
+    public void Constructor_MultipleDecon_SubParameterChargeMatchesShared()
+    {
+        var viewModel = new DeconHostViewModel();
+        var multipleVm = (MultipleDeconParamsViewModel)viewModel.PrecursorDeconvolutionParametersList
+            .First(vm => vm.DeconvolutionType == DeconvolutionType.Multiple);
+
+        var sub = multipleVm.SubParameters.Single();
+        Assert.That(sub.MinAssumedChargeState, Is.EqualTo(multipleVm.MinAssumedChargeState));
+        Assert.That(sub.MaxAssumedChargeState, Is.EqualTo(multipleVm.MaxAssumedChargeState));
+        Assert.That(sub.Polarity, Is.EqualTo(multipleVm.Polarity));
+    }
 }
