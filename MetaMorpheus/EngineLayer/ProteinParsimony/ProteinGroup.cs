@@ -241,7 +241,7 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
 
-            // protein accessions
+            // list of protein accession numbers
             sb.Append(ProteinGroupName);
             sb.Append("\t");
 
@@ -255,12 +255,12 @@ namespace EngineLayer
                 ListOfProteinsOrderedByAccession.Select(p => p.Organism).Distinct())));
             sb.Append("\t");
 
-            // full names
+            // list of protein names
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|",
                 ListOfProteinsOrderedByAccession.Select(p => p.FullName).Distinct())));
             sb.Append("\t");
 
-            // masses
+            // list of masses
             var sequences = ListOfProteinsOrderedByAccession.Select(p => p.BaseSequence).Distinct();
             List<double> masses = new List<double>();
             foreach (var sequence in sequences)
@@ -284,14 +284,15 @@ namespace EngineLayer
             sb.Append("" + Proteins.Count);
             sb.Append("\t");
 
-            // unique peptides
+            // list of unique peptides
             if (UniquePeptidesOutput != null)
             {
                 sb.Append(GlobalVariables.CheckLengthOfOutput(UniquePeptidesOutput));
             }
+
             sb.Append("\t");
 
-            // shared peptides
+            // list of shared peptides
             if (SharedPeptidesOutput != null)
             {
                 sb.Append(GlobalVariables.CheckLengthOfOutput(SharedPeptidesOutput));
@@ -312,14 +313,20 @@ namespace EngineLayer
                 sb.Append("" + UniquePeptides.Select(p => p.FullSequence).Distinct().Count());
             sb.Append("\t");
 
-            // sequence coverage
+            // sequence coverage percent
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|",
                 SequenceCoverageFraction.Select(p => string.Format("{0:0.#####}", p)))));
             sb.Append("\t");
+
+            // sequence coverage
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SequenceCoverageDisplayList)));
             sb.Append("\t");
+
+            // sequence coverage with mods
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SequenceCoverageDisplayListWithMods)));
             sb.Append("\t");
+
+            // fragment sequence coverage
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", FragmentSequenceCoverageDisplayList)));
             sb.Append("\t");
 
@@ -356,11 +363,11 @@ namespace EngineLayer
                 }
             }
 
-            // number of PSMs
+            // number of PSMs for listed peptides
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
 
-            // decoy/contaminant/target
+            // isDecoy
             if (IsDecoy)
                 sb.Append("D");
             else if (IsContaminant)
@@ -369,19 +376,27 @@ namespace EngineLayer
                 sb.Append("T");
             sb.Append("\t");
 
-            // cumulative target/decoy
+            // cumulative target
             sb.Append(CumulativeTarget);
             sb.Append("\t");
+
+            // cumulative decoy
             sb.Append(CumulativeDecoy);
             sb.Append("\t");
 
-            // q value, best peptide score, best peptide q value, best peptide PEP
+            // q value
             sb.Append(QValue);
             sb.Append("\t");
+
+            // best peptide score
             sb.Append(BestPeptideScore);
             sb.Append("\t");
+
+            // best peptide q value
             sb.Append(BestPeptideQValue);
             sb.Append("\t");
+
+            // best peptide PEP
             sb.Append(BestPeptidePEP);
 
             return sb.ToString();
@@ -410,6 +425,7 @@ namespace EngineLayer
 
             foreach (var psm in AllPsmsBelowOnePercentFDR.OfType<SpectralMatch>())
             {
+                // null BaseSequence means that the amino acid sequence is ambiguous; do not use these to calculate sequence coverage
                 if (psm.BaseSequence != null)
                 {
                     psm.GetAminoAcidCoverage();
@@ -417,10 +433,12 @@ namespace EngineLayer
                     foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods
                         .Select(p => p.SpecificBioPolymer).DistinctBy(pep => pep.FullSequence))
                     {
+                        // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
                         if (Proteins.Contains(peptide.Parent))
                         {
                             proteinsWithUnambigSeqPsms[peptide.Parent].Add(peptide);
 
+                            // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
                             if (peptide.FullSequence != null)
                             {
                                 proteinsWithPsmsWithLocalizedMods[peptide.Parent].Add(peptide);
@@ -430,45 +448,57 @@ namespace EngineLayer
                 }
             }
 
-            // Fragment-level coverage
+            //Calculate sequence coverage at the amino acid level by looking at fragment specific coverage
+            //loop through proteins
             foreach (IBioPolymer protein in ListOfProteinsOrderedByAccession)
             {
+                //create a hash set for storing covered one-based residue numbers of protein
                 HashSet<int> coveredResiduesInProteinOneBased = new();
 
+                //loop through PSMs
                 foreach (SpectralMatch psm in AllPsmsBelowOnePercentFDR.OfType<SpectralMatch>()
                     .Where(psm => psm.BaseSequence != null))
                 {
+                    //Calculate the covered bases within the psm. This is one based numbering for the peptide only
                     psm.GetAminoAcidCoverage();
                     if (psm.FragmentCoveragePositionInPeptide == null) continue;
 
+                    //loop through each peptide within the psm
                     IEnumerable<IBioPolymerWithSetMods> pwsms = psm.BestMatchingBioPolymersWithSetMods
                         .Select(p => p.SpecificBioPolymer)
                         .Where(p => p.Parent.Accession == protein.Accession);
 
                     foreach (var pwsm in pwsms)
                     {
+                        //create a hashset to store the covered residues for the peptide, converted to the corresponding indices of the protein
                         HashSet<int> coveredResiduesInPeptide = new();
+                        //add the peptide start position within the protein to each covered index of the psm
                         foreach (var position in psm.FragmentCoveragePositionInPeptide)
                         {
-                            coveredResiduesInPeptide.Add(position + pwsm.OneBasedStartResidue - 1);
+                            coveredResiduesInPeptide.Add(position + pwsm.OneBasedStartResidue - 1); //subtract one because these are both one based
                         }
+
+                        //Add the peptide specific positions, to the overall hashset for the protein
                         coveredResiduesInProteinOneBased.UnionWith(coveredResiduesInPeptide);
                     }
                 }
 
+                // create upper/lowercase string
                 char[] fragmentCoverageArray = protein.BaseSequence.ToLower().ToCharArray();
                 foreach (var residue in coveredResiduesInProteinOneBased)
                 {
                     fragmentCoverageArray[residue - 1] = char.ToUpper(fragmentCoverageArray[residue - 1]);
                 }
+
                 FragmentSequenceCoverageDisplayList.Add(new string(fragmentCoverageArray));
             }
 
-            // Peptide-level coverage
+            //Calculates the coverage at the peptide level... if a peptide is present all of the AAs in the peptide are covered
             foreach (var protein in ListOfProteinsOrderedByAccession)
             {
                 HashSet<int> coveredOneBasedResidues = new HashSet<int>();
 
+                // get residue numbers of each peptide in the protein and identify them as observed if the sequence is unambiguous
                 foreach (var peptide in proteinsWithUnambigSeqPsms[protein])
                 {
                     for (int i = peptide.OneBasedStartResidue; i <= peptide.OneBasedEndResidue; i++)
@@ -477,19 +507,27 @@ namespace EngineLayer
                     }
                 }
 
+                // calculate sequence coverage percent
                 double seqCoverageFract = (double)coveredOneBasedResidues.Count / protein.Length;
+
+                // add the percent coverage
                 SequenceCoverageFraction.Add(seqCoverageFract);
 
+                // convert the observed amino acids to upper case if they are unambiguously observed
                 string sequenceCoverageDisplay = protein.BaseSequence.ToLower();
                 var coverageArray = sequenceCoverageDisplay.ToCharArray();
                 foreach (var obsResidueLocation in coveredOneBasedResidues)
                 {
                     coverageArray[obsResidueLocation - 1] = char.ToUpper(coverageArray[obsResidueLocation - 1]);
                 }
+
                 sequenceCoverageDisplay = new string(coverageArray);
+
+                // add the coverage display
                 SequenceCoverageDisplayList.Add(sequenceCoverageDisplay);
 
-                // Mods in sequence coverage display
+                // put mods in the sequence coverage display
+                // get mods to display in sequence (only unambiguously identified mods)
                 var modsOnThisProtein = new HashSet<KeyValuePair<int, Modification>>();
                 foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
                 {
@@ -566,7 +604,7 @@ namespace EngineLayer
             {
                 spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath)
                     .FirstOrDefault();
-
+                //check that file name wasn't changed (can occur in SILAC searches)
                 if (!MzLibUtil.ClassExtensions.IsNullOrEmpty(silacLabels) && spectraFileInfo == null)
                 {
                     foreach (SilacLabel label in silacLabels)
@@ -582,7 +620,7 @@ namespace EngineLayer
                         }
                     }
 
-                    // if still no hits, might be SILAC turnover
+                    //if still no hits, might be SILAC turnover
                     if (spectraFileInfo == null)
                     {
                         string filepathWithoutExtension = Path.Combine(Path.GetDirectoryName(fullFilePath),
@@ -623,12 +661,12 @@ namespace EngineLayer
         /// </summary>
         public bool Equals(ProteinGroup grp)
         {
-            if (grp == null)
+            //Check for null and compare run-time types.
+            if (grp == null) 
             {
                 return false;
             }
-            else if (!this.ListOfProteinsOrderedByAccession.Select(a => a.Accession).ToList()
-                .SequenceEqual(grp.ListOfProteinsOrderedByAccession.Select(a => a.Accession).ToList()))
+            else if (!this.ListOfProteinsOrderedByAccession.Select(a=>a.Accession).ToList().SequenceEqual(grp.ListOfProteinsOrderedByAccession.Select(a => a.Accession).ToList()))
             {
                 return false;
             }

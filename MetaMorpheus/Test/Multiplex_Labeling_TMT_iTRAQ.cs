@@ -176,18 +176,18 @@ namespace Test
 
             // We're going to create a fake MsDataScan that contains all fragment ions for PEPTIDEK and all TMT reporter ions
             // The TMT reporter ions will have intensities that mimic the isotopic distribution predicted by the Averagine Model
-
+           
             List<double> allIonMzs = fragments.Select(m => m.NeutralMass.ToMz(1)).OrderBy(m => m).ToList();
-
+            
             double[] mzArray = allIonMzs.ToArray();
             double[] intensityArray = new double[mzArray.Length];
 
             // Corresponding to                 126, 127N, 127C, 128N, 128C, 129N, 129C, 130N, 130C, 131N, 131C
-            var tmtIntensities = new double[] { 92, 92, 8, 12, 92, 92, 16, 20, 2, 3, 5 };
+            var tmtIntensities = new double[] {  92,   92,    8,    12,  92,   92,    16,    20,    2,   3,   5 };
 
             for (int i = 0; i < intensityArray.Length; i++)
             {
-                if (i < tmtIntensities.Length)
+                if(i < tmtIntensities.Length)
                 {
                     intensityArray[i] = tmtIntensities[i];
                 }
@@ -199,9 +199,9 @@ namespace Test
 
             // Create a MS1 scan
             var ms1Spectrum = new MzSpectrum(new double[] { peptide.MonoisotopicMass.ToMz(2), (peptide.MonoisotopicMass + Constants.C13MinusC12).ToMz(2) }, new double[] { 10000, 5000 }, false);
-            var ms1Scan = new MsDataScan(ms1Spectrum, 1, 1, true, Polarity.Positive, 1.0, new MzRange(100, 2000),
+            var ms1Scan = new MsDataScan(ms1Spectrum, 1, 1, true, Polarity.Positive, 1.0, new MzRange(100, 2000), 
                 scanFilter: "",
-                MZAnalyzerType.Orbitrap,
+                MZAnalyzerType.Orbitrap, 
                 totalIonCurrent: 1000,
                 null,
                 noiseData: null,
@@ -216,13 +216,13 @@ namespace Test
             var ms2Spectrum = new MzSpectrum(mzArray, intensityArray, false);
             var ms2Scan = new MsDataScan(ms2Spectrum, 2, 2, true, Polarity.Positive, 1.1, new MzRange(100, 2000),
                 scanFilter: "", MZAnalyzerType.Orbitrap,
-                totalIonCurrent: 1000, null, null, "scan=2",
-                selectedIonMz: peptide.MonoisotopicMass.ToMz(2),
+                totalIonCurrent: 1000, null, null, "scan=2", 
+                selectedIonMz: peptide.MonoisotopicMass.ToMz(2), 
                 selectedIonChargeStateGuess: 2,
-                selectedIonIntensity: 10000,
-                isolationMZ: peptide.MonoisotopicMass.ToMz(2),
+                selectedIonIntensity: 10000, 
+                isolationMZ: peptide.MonoisotopicMass.ToMz(2), 
                 isolationWidth: 2.2,
-                DissociationType.HCD, 1,
+                DissociationType.HCD, 1, 
                 selectedIonMonoisotopicGuessMz: peptide.MonoisotopicMass.ToMz(2));
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtOutput");
@@ -277,9 +277,9 @@ namespace Test
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
             string mzmlName = @"TMT_test\VA084TQ_6.mzML";
-            string fastaName = @"TMT_test\mouseTMT.fasta";
+            string fastaName =  @"TMT_test\mouseTMT.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtOutput");
-            if (Directory.Exists(outputFolder))
+            if(Directory.Exists(outputFolder))
                 Directory.Delete(outputFolder, true);
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
@@ -291,7 +291,7 @@ namespace Test
             string[] ionLabelsInHeader = header[^11..]; // Last 11 columns should be the TMT labels
             Assert.That(ionLabelsInHeader, Is.EquivalentTo(new string[]
                 { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" }));
-
+            
             double channelSum127N = 0;
             for (int i = 1; i < peaksResults.Length; i++)
             {
@@ -317,7 +317,7 @@ namespace Test
 
             try
             {
-                if (Directory.Exists(outputFolder))
+                if(Directory.Exists(outputFolder))
                     Directory.Delete(outputFolder, true);
 
                 var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
@@ -421,7 +421,7 @@ namespace Test
             Assert.That(peaksResults.Length == 2);
 
             ionLabelsInHeader = peaksResults[0].Trim().Split('\t')[^4..];
-            Assert.That(ionLabelsInHeader, Is.EquivalentTo(new string[] { "115", "116", "117", "118" }));
+            Assert.That(ionLabelsInHeader, Is.EquivalentTo(new string[] {"115", "116", "117", "118"}));
 
             ionSum = peaksResults[1].Trim().Split('\t')[^4..].Select(s => double.Parse(s)).Sum();
             Assert.That(ionSum, Is.EqualTo(115537).Within(1));
@@ -615,7 +615,7 @@ namespace Test
             Assert.That(psm.PeptideDescription, Is.EqualTo("full"));
             Assert.That(psm.ProteinAccession, Is.EqualTo("Q99LF4"));
 
-            Directory.Delete(outputFolder, true);
+            Directory.Delete(outputFolder,true);
         }
         [Test]
         public static void TestDoNotCountDiagnosticIonsInScore_LowCID()
@@ -632,7 +632,7 @@ namespace Test
 
             for (int i = 0; i < sorted_theoretical_product_masses_for_this_peptide.Length; i++)
             {
-                if (i != 11)
+                if(i != 11)
                 {
                     productsWithLocalizedMassDiff.Add(new Product(ProductType.b, FragmentationTerminus.Both, sorted_theoretical_product_masses_for_this_peptide[i], 1, 1, 0));
                 }
@@ -974,7 +974,7 @@ namespace Test
         {
             // This test simulates what happens in SearchTask when IsobaricMassTag.GetIsobaricMassTag returns null
             // The actual SearchTask code throws MetaMorpheusException in this case
-
+            
             string invalidModId = "InvalidModification";
             var massTag = IsobaricMassTag.GetIsobaricMassTag(invalidModId);
 
