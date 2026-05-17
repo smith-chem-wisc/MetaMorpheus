@@ -14,6 +14,11 @@ using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
 using Transcriptomics;
+using EngineLayer.ModernSearch;
+using EngineLayer.Indexing;
+using System.IO;
+using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -256,7 +261,9 @@ namespace Test
             ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, filteredPsms, false, false, true, new CommonParameters(), null, new List<string>());
             f.Run();
 
-            Assert.That(proteinGroups.First().ModsInfo[0], Is.EqualTo("#aa5[resMod on S,info:occupancy=0.67(2/3)];#aa10[iModOne on I,info:occupancy=0.33(2/6)];#aa10[iModTwo on I,info:occupancy=0.33(2/6)]"));
+            // Occupancy is now computed by BioPolymerGroup.PopulateSampleGroupResults().
+            // Without FlashLFQ, SampleGroupResults should be null or empty.
+            Assert.That(proteinGroups.First().SampleGroupResults, Is.Null);
         }
 
         [Test]

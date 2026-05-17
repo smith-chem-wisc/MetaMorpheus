@@ -73,6 +73,7 @@ namespace TaskLayer
                     if (Parameters.GlycoSearchParameters.DoParsimony)
                     {
                         GlycoProteinAnalysis(fspList, individualFileFolderPath, individualFileFolder); //Creat the proteinGroups file 
+                        WriteProteinResults(individualFileFolderPath, individualFileFolder);
                     }
                     
                     foreach (GlycoSpectralMatch gsm in fspList) //maybe this needs to be the filterd list???
@@ -157,6 +158,11 @@ namespace TaskLayer
             
             QuantificationAnalysis();
             WriteQuantificationResults();
+
+            if (glycoSearchParameters.DoParsimony)
+            {
+                WriteProteinResults(OutputFolder, null, MyTaskResults);
+            }
 
             if (Parameters.GlycoSearchParameters.WritePrunedDataBase)
             {
@@ -319,7 +325,6 @@ namespace TaskLayer
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
             Status("Done constructing protein groups!", Parameters.SearchTaskId);
-            WriteProteinResults(outputFolder, individualFileFolder, myTaskResults);
          
         }
         private void GlycoAccessionAnalysis(List<GlycoSpectralMatch> gsms, string individualFileFolderPath, string individualFileFolder = null)
@@ -457,7 +462,8 @@ namespace TaskLayer
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
 
-                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(v => v.FullSequence != null))
+                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.OfType<SpectralMatch>()
+                        .Where(v => v.FullSequence != null))
                     {
                         if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
                         {
@@ -520,7 +526,8 @@ namespace TaskLayer
             var flashLFQIdentifications = new List<Identification>();
             foreach (var spectraFile in psmsGroupedByFile)
             {
-                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
+                var rawfileinfo = spectraFileInfo.FirstOrDefault(p => p.FullFilePathWithExtension.Equals(spectraFile.Key));
+                if (rawfileinfo == null) continue;
 
                 foreach (var psm in spectraFile)
                 {
@@ -544,25 +551,30 @@ namespace TaskLayer
                 Parameters.FlashLfqResults = FlashLfqEngine.Run();
             }
 
-            // get protein intensity back from FlashLFQ
-            if (ProteinGroups != null && Parameters.FlashLfqResults != null)
+            // Propagate quantification data to protein groups
+            if (ProteinGroups != null)
             {
                 foreach (var proteinGroup in ProteinGroups)
                 {
                     proteinGroup.FilesForQuantification = spectraFileInfo;
-                    proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
 
-                    foreach (var spectraFile in proteinGroup.FilesForQuantification)
+                    if (Parameters.FlashLfqResults != null)
                     {
-                        if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
+                        var intensities = new Dictionary<SpectraFileInfo, double>();
+                        foreach (var spectraFile in spectraFileInfo)
                         {
-                            proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
+                            intensities.Add(spectraFile,
+                                Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup)
+                                    ? flashLfqProteinGroup.GetIntensity(spectraFile)
+                                    : 0);
                         }
-                        else
-                        {
-                            proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
-                        }
+                        proteinGroup.IntensitiesByFile = intensities;
                     }
+
+                    // Populate SampleGroupResults from the shared spectraFileInfo so
+                    // every PG carries the same dynamic-column schema. Without this, the writer
+                    // would have no way to produce uniform headers/rows.
+                    proteinGroup.PopulateSampleGroupResults();
                 }
             }
         }
@@ -590,11 +602,8 @@ namespace TaskLayer
                             file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
                         WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
                             file.Key.FilenameWithoutExtension + "_QuantifiedPeptides", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
-                        if (true)
-                        {
-                            WriteProteinQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
-                                file.Key.FilenameWithoutExtension + "_QuantifiedProteins", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
-                        }
+                        WriteProteinQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
+                            file.Key.FilenameWithoutExtension + "_QuantifiedProteins", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
                     }
                 }
             }

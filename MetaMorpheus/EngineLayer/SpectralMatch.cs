@@ -7,6 +7,7 @@ using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
 using Omics;
+using Omics.SpectralMatch;
 using System;
 using Omics.Digestion;
 using EngineLayer.CrosslinkSearch;
@@ -14,7 +15,7 @@ using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer
 {
-    public abstract class SpectralMatch : IComparable<SpectralMatch>
+    public abstract class SpectralMatch : ISpectralMatch, IComparable<SpectralMatch>
     {
         public const double ToleranceForScoreDifferentiation = 1e-9;
 
@@ -22,32 +23,11 @@ namespace EngineLayer
         {
             _BestMatchingBioPolymersWithSetMods = new List<SpectralMatchHypothesis>();
             ScanIndex = scanIndex;
-            FullFilePath = scan.FullFilePath;
-            ScanNumber = scan.OneBasedScanNumber;
-            PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
-            ScanRetentionTime = scan.RetentionTime;
-            ScanExperimentalPeaks = scan.NumPeaks;
-            PrecursorScanIntensity = scan.PrecursorIntensity;
-            TotalIonCurrent = scan.TotalIonCurrent;
-            ScanPrecursorCharge = scan.PrecursorCharge;
-            ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
-            ScanPrecursorMass = scan.PrecursorMass;
-            PrecursorScanEnvelopePeakCount = scan.PrecursorEnvelopePeakCount;
-            PrecursorFractionalIntensity = scan.PrecursorFractionalIntensity;
+            ScanMetadata = scan.ScanMetadata;
             DigestionParams = commonParameters.DigestionParams;
-            NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = -1;
             IsobaricMassTagReporterIonIntensities = scan.IsobaricMassTagReporterIonIntensities;
-
-            if (scan.TheScan is TimsDataScan timsScan)
-            {
-                ScanOneOverK0 = timsScan.OneOverK0;
-            }
-            else
-            {
-                ScanOneOverK0 = null; // this is only used for ion mobility data, so it can be null
-            }
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons);
         }
@@ -68,19 +48,74 @@ namespace EngineLayer
         public int PsmCount { get; internal set; }
         public Dictionary<string, int> ModsIdentified { get; private set; } // these should never be null under normal circumstances
         public List<double> LocalizedScores { get; internal set; }
-        public int ScanNumber { get; }
-        public int? PrecursorScanNumber { get; }
-        public double ScanRetentionTime { get; }
-        public int ScanExperimentalPeaks { get; }
-        public double TotalIonCurrent { get; }
-        public int ScanPrecursorCharge { get; }
-        public double ScanPrecursorMonoisotopicPeakMz { get; }
-        public double PrecursorScanIntensity { get; }
-        public int PrecursorScanEnvelopePeakCount { get; }
-        public double PrecursorFractionalIntensity { get; }
-        public double ScanPrecursorMass { get; }
-        public double? ScanOneOverK0 { get; set; } // this is only used for ion mobility data, so it can be null
-        public string FullFilePath { get; private set; }
+
+        #region Scan metadata — delegated to ScanMetadata record
+
+        /// <summary>
+        /// Lightweight, immutable snapshot of scan and precursor metadata.
+        /// Replaces the individual scan-derived fields that were previously unpacked
+        /// from Ms2ScanWithSpecificMass during construction.
+        /// </summary>
+        public ScanMetadata ScanMetadata { get; }
+
+        // Pass-through properties for backwards compatibility.
+        // Callers can be migrated to ScanMetadata.* over time.
+        public int ScanNumber => ScanMetadata.OneBasedScanNumber;
+        public int? PrecursorScanNumber => ScanMetadata.OneBasedPrecursorScanNumber;
+        public double ScanRetentionTime => ScanMetadata.RetentionTime;
+        public int ScanExperimentalPeaks => ScanMetadata.NumPeaks;
+        public double TotalIonCurrent => ScanMetadata.TotalIonCurrent;
+        public int ScanPrecursorCharge => ScanMetadata.PrecursorCharge;
+        public double ScanPrecursorMonoisotopicPeakMz => ScanMetadata.PrecursorMonoisotopicPeakMz;
+        public double PrecursorScanIntensity => ScanMetadata.PrecursorIntensity;
+        public int PrecursorScanEnvelopePeakCount => ScanMetadata.PrecursorEnvelopePeakCount;
+        public double PrecursorFractionalIntensity => ScanMetadata.PrecursorFractionalIntensity;
+        public double ScanPrecursorMass => ScanMetadata.PrecursorMass;
+        public double? ScanOneOverK0 => ScanMetadata.OneOverK0;
+        public string FullFilePath => ScanMetadata.FullFilePath;
+        public string NativeId => ScanMetadata.NativeId;
+
+        #endregion
+
+        #region ISpectralMatch explicit interface implementations
+
+        /// <summary>Maps to <see cref="ScanNumber"/> for ISpectralMatch compatibility.</summary>
+        int ISpectralMatch.OneBasedScanNumber => ScanNumber;
+
+        /// <summary>
+        /// Consolidates quantification intensities for ISpectralMatch compatibility.
+        /// Returns ReporterIonIntensities if available (isobaric), a singleton array of
+        /// PrecursorScanIntensity for LFQ, or null if neither is populated.
+        /// </summary>
+        double[]? ISpectralMatch.Intensities =>
+            IsobaricMassTagReporterIonIntensities ??
+            (PrecursorScanIntensity > 0 ? new[] { PrecursorScanIntensity } : null);
+
+        /// <summary>
+        /// Returns the identified biopolymers (peptides/proteoforms) for ISpectralMatch compatibility.
+        /// Unwraps SpectralMatchHypothesis to the underlying IBioPolymerWithSetMods.
+        /// </summary>
+        public IEnumerable<IBioPolymerWithSetMods> GetIdentifiedBioPolymersWithSetMods() =>
+            BestMatchingBioPolymersWithSetMods.Select(h => h.SpecificBioPolymer);
+
+        public int CompareTo(ISpectralMatch? other)
+        {
+            if (other is null) return 1;
+            if (other is SpectralMatch mm) return CompareTo(mm);
+            // Fallback: compare by score descending
+            return Score.CompareTo(other.Score);
+        }
+
+        public bool Equals(ISpectralMatch? other)
+        {
+            if (other is null) return false;
+            return FullFilePath == other.FullFilePath
+                && ScanNumber == other.OneBasedScanNumber
+                && FullSequence == other.FullSequence;
+        }
+
+        #endregion
+
         /// <summary>
         /// Refers to the index of the Ms2ScanWithSpecificMass in an array of Ms2ScansWithSpecificMass that is sorted by precursor mass
         /// </summary>
@@ -103,7 +138,6 @@ namespace EngineLayer
 
         public double Score { get; private set; }
         public double SpectralAngle { get; set; }
-        public string NativeId; // this is a property of the scan. used for mzID writing
 
         public double DeltaScore { get { return (Score - RunnerUpScore); } }
 
@@ -158,8 +192,9 @@ namespace EngineLayer
         protected List<SpectralMatchHypothesis> _BestMatchingBioPolymersWithSetMods;
 
         /// <summary>
-        /// An array containing the intensities of the reporter ions for isobaric mass tags. 
-        /// If multiplex quantification wasn't performed, this will be null
+        /// An array containing the intensities of the reporter ions for isobaric mass tags (TMT, iTRAQ, diLeu, etc.).
+        /// Null if multiplex quantification wasn't performed.
+        /// Array order matches the reporter ion order defined by the mass tag modification.
         /// </summary>
         public double[]? IsobaricMassTagReporterIonIntensities { get; private set; }
 
@@ -381,6 +416,10 @@ namespace EngineLayer
             BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.SpecificBioPolymer.BaseSequence)).ResolvedValue;
             FullSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.SpecificBioPolymer.FullSequence)).ResolvedValue;
 
+            // Scan metadata is an immutable record — safe to share the reference
+            ScanMetadata = psm.ScanMetadata;
+            ScanIndex = psm.ScanIndex;
+
             ModsChemicalFormula = psm.ModsChemicalFormula;
             Notch = psm.Notch;
             BioPolymerWithSetModsLength = psm.BioPolymerWithSetModsLength;
@@ -394,16 +433,6 @@ namespace EngineLayer
             PsmCount = psm.PsmCount;
             ModsIdentified = psm.ModsIdentified;
             LocalizedScores = psm.LocalizedScores;
-            ScanNumber = psm.ScanNumber;
-            PrecursorScanNumber = psm.PrecursorScanNumber;
-            ScanRetentionTime = psm.ScanRetentionTime;
-            ScanExperimentalPeaks = psm.ScanExperimentalPeaks;
-            TotalIonCurrent = psm.TotalIonCurrent;
-            ScanPrecursorCharge = psm.ScanPrecursorCharge;
-            ScanPrecursorMonoisotopicPeakMz = psm.ScanPrecursorMonoisotopicPeakMz;
-            ScanPrecursorMass = psm.ScanPrecursorMass;
-            FullFilePath = psm.FullFilePath;
-            ScanIndex = psm.ScanIndex;
             FdrInfo = psm.FdrInfo;
             Score = psm.Score;
             RunnerUpScore = psm.RunnerUpScore;
