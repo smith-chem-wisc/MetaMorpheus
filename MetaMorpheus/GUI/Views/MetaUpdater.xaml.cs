@@ -72,6 +72,10 @@ namespace MetaMorpheusGUI
             try
             {
                 var tempDownloadLocation = Path.Combine(Path.GetTempPath(), "MetaMorpheusInstaller.msi");
+                if (File.Exists(tempDownloadLocation))
+                {
+                    File.Delete(tempDownloadLocation);
+                }
 
                 // download the installer
                 HttpResponseMessage urlResponse = Task.Run(() => client.GetAsync(uri)).Result;

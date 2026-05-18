@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using MassSpectrometry;
-using MzLibUtil;
 
 namespace GuiFunctions;
 
@@ -127,8 +126,6 @@ public abstract class DeconParamsViewModel : BaseViewModel
         }
     }
 
-
-    public Tolerance DeconvolutionTolerance { get; protected set; }
     public override string ToString() => DeconvolutionType.ToString();
 
     public override int GetHashCode()

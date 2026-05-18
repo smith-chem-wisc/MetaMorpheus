@@ -1,7 +1,10 @@
-﻿using Chemistry;
+﻿global using obo = Omics.Modifications.IO.obo;
+using Chemistry;
+using Easy.Common.Extensions;
+using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using Nett;
-using Proteomics;
+using Omics.Modifications;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -11,16 +14,17 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using Omics.Modifications;
+using Omics.Modifications.IO;
 using TopDownProteomics;
-using UsefulProteomicsDatabases;
-using Easy.Common.Extensions;
 using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
+using System.Security.Cryptography;
 
 namespace EngineLayer
 {
     public static class GlobalVariables
     {
+        public static string DecoyIdentifier { get; set; } = "DECOY";
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
         public static List<string> AcceptedDatabaseFormats { get; private set; }
@@ -45,13 +49,15 @@ namespace EngineLayer
         // File locations
         public static string DataDir { get; private set; }
         public static string UserSpecifiedDataDir { get; set; }
+        public static string CustomProteasePath => Path.Combine(DataDir, "proteases_custom.tsv");
+        public static string CustomRnasePath => Path.Combine(DataDir, "rnase_custom.tsv");
 
         public static bool StopLoops { get; set; }
         public static string MetaMorpheusVersion { get; private set; }
         public static GlobalSettings GlobalSettings { get; set; }
         public static IEnumerable<Modification> UnimodDeserialized { get; private set; }
         public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
-        public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; private set; }
+        public static obo PsiModDeserialized { get; private set; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<Modification> AllRnaModsKnown { get { return _AllRnaModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
@@ -86,10 +92,14 @@ namespace EngineLayer
             SetUpGlobalSettings();
             LoadDissociationTypes();
             LoadAvailableProteomes();
+            LoadDigestionAgents();
         }
 
-        public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
+        public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml, bool isRna = false)
         {
+            var allMods = isRna ? _AllRnaModsKnown : _AllModsKnown;
+            var modTypes = isRna ? _AllRnaModTypesKnown : _AllModTypesKnown;
+
             foreach (var mod in modifications)
             {
                 if (string.IsNullOrEmpty(mod.ModificationType) || string.IsNullOrEmpty(mod.IdWithMotif))
@@ -97,13 +107,13 @@ namespace EngineLayer
                     ErrorsReadingMods.Add(mod.ToString() + Environment.NewLine + " has null or empty modification type");
                     continue;
                 }
-                if (AllModsKnown.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType) && !b.Equals(mod)))
+                if (allMods.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType) && !b.Equals(mod)))
                 {
                     if (modsAreFromTheTopOfProteinXml)
                     {
-                        _AllModsKnown.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && p.ModificationType.Equals(mod.ModificationType) && !p.Equals(mod));
-                        _AllModsKnown.Add(mod);
-                        _AllModTypesKnown.Add(mod.ModificationType);
+                        allMods.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && p.ModificationType.Equals(mod.ModificationType) && !p.Equals(mod));
+                        allMods.Add(mod);
+                        modTypes.Add(mod.ModificationType);
                     }
                     else
                     {
@@ -112,23 +122,23 @@ namespace EngineLayer
                     }
                     continue;
                 }
-                else if (AllModsKnown.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType)))
+                if (allMods.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType)))
                 {
                     // same ID, same mod type, and same mod properties; continue and don't output an error message
                     // this could result from reading in an XML database with mods annotated at the top
                     // that are already loaded in MetaMorpheus
                     continue;
                 }
-                else if (AllModsKnown.Any(m => m.IdWithMotif == mod.IdWithMotif))
+                if (allMods.Any(m => m.IdWithMotif == mod.IdWithMotif))
                 {
                     // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
                     // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
                     // so we don't know which mod to use, causing unnecessary ambiguity
                     if (modsAreFromTheTopOfProteinXml)
                     {
-                        _AllModsKnown.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && !p.Equals(mod));
-                        _AllModsKnown.Add(mod);
-                        _AllModTypesKnown.Add(mod.ModificationType);
+                        allMods.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && !p.Equals(mod));
+                        allMods.Add(mod);
+                        modTypes.Add(mod.ModificationType);
                     }
                     else if (!mod.ModificationType.Equals("Unimod"))
                     {
@@ -136,12 +146,10 @@ namespace EngineLayer
                     }
                     continue;
                 }
-                else
-                {
-                    // no errors! add the mod
-                    _AllModsKnown.Add(mod);
-                    _AllModTypesKnown.Add(mod.ModificationType);
-                }
+
+                // no errors! add the mod
+                allMods.Add(mod);
+                modTypes.Add(mod.ModificationType);
             }
         }
 
@@ -402,7 +410,14 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
-                AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
+                if (modFile.Contains("glyco.txt"))
+                {
+                    // Glycan modifications are handled separately in LoadGlycans()
+                    continue;
+                }
+                if (modFile.Contains("Rna"))
+                    continue;
+                AddMods(ModificationLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
@@ -416,9 +431,6 @@ namespace EngineLayer
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
-            ProteaseMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
-            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
-            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
         }
 
         private static void LoadRnaModifications()
@@ -435,10 +447,14 @@ namespace EngineLayer
             using (var reader = new StreamReader(stream))
             {
                 string fileContent = reader.ReadToEnd();
-                foreach (var mod in PtmListLoader.ReadModsFromString(fileContent, out var errors))
-                {
-                    _AllRnaModsKnown.Add(mod);
-                }
+                var mods = ModificationLoader.ReadModsFromString(fileContent, out var errors);
+                AddMods(mods, false, true);
+            }
+
+            var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
+            if (File.Exists(customModsPath))
+            {
+                AddMods(ModificationLoader.ReadModsFromFile(customModsPath, out var errorMods), false, true);
             }
 
             // populate mod types and dictionary
@@ -475,6 +491,7 @@ namespace EngineLayer
                     {
                         AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                     }
+                    _AllModsKnown.Add(glycan);
                 }
             }
             foreach (var path in NGlycanDatabasePaths)
@@ -486,8 +503,10 @@ namespace EngineLayer
                     {
                         AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                     }
+                    _AllModsKnown.Add(glycan);
                 }
             }
+            LoadTxtGlycan();
         }
 
         private static void LoadDissociationTypes()
@@ -523,6 +542,133 @@ namespace EngineLayer
             if (File.Exists(settingsPath))
             {
                 GlobalSettings = Toml.ReadFile<GlobalSettings>(settingsPath);
+            }
+        }
+
+        /// <summary>
+        /// Convert glyco.txt into Glycan objects and add them to AllModsKnown.
+        /// </summary>
+        private static void LoadTxtGlycan()
+        {
+            string glycoFile = Path.Combine(DataDir, @"Mods", "glyco.txt");
+            var glycoMods = ModificationLoader.ReadModsFromFile(glycoFile, out var errorMods);
+            foreach (var glycoMod in glycoMods)
+            {
+                var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+
+                // If we cannot parse the glycan string, we add the glycoMod as a normal modification.
+                if (kind.Sum(p => p) == 0)
+                {
+                    _AllModsKnown.Add(glycoMod);
+                    continue;
+                }
+
+                Glycan glycan;
+                if (glycoMod.ModificationType == "N-linked glycosylation")
+                {
+                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.N_glycan);
+                    glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
+                }
+                else
+                {
+                    glycan = new Glycan(kind, glycoMod.Target.ToString(), GlycanType.O_glycan);
+                    glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
+                }
+                _AllModsKnown.Add(glycan);
+            }
+        }
+
+        private static void LoadDigestionAgents()
+        {
+            if (File.Exists(CustomProteasePath))
+            {
+                try
+                {
+                    var mods = ProteaseDictionary.LoadEmbeddedProteaseMods();
+                    var result = ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, mods);
+                }
+                catch (Exception e)
+                {
+                    throw new MetaMorpheusException($"Error loading custom proteases with error message: {e.Message}", e);
+                }
+            }
+            else
+            {
+                try
+                {
+                    var assembly = typeof(ProteaseDictionary).Assembly;
+
+                    // private hard-coded string path in MzLib
+                    string EmbeddedProteaseResourceName = "Proteomics.ProteolyticDigestion.proteases.tsv"; 
+
+                    var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
+                    var reader = new StreamReader(stream);
+
+                    string fileContent = reader.ReadToEnd();
+                    string[] lines = fileContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    bool foundHeader = false;
+                    using var sw = new StreamWriter(File.Create(CustomProteasePath));
+                    foreach (string line in lines) 
+                    {
+                        if (!foundHeader && !line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
+                        {
+                            sw.WriteLine(line);
+                            foundHeader = true;
+                            break;
+                        }
+                        sw.WriteLine(line);
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new MetaMorpheusException($"Error creating default custom protease file with error message: {e.Message}", e);
+                }
+            }
+
+            if (File.Exists(CustomRnasePath))
+            {
+                try
+                {
+                    var result = RnaseDictionary.LoadAndMergeCustomRnases(CustomRnasePath);
+                }
+                catch (Exception e)
+                {
+                    throw new MetaMorpheusException($"Error loading custom rnases with error message: {e.Message}", e);
+                }
+            }
+            else
+            {
+                try
+                {
+                    var assembly = typeof(RnaseDictionary).Assembly;
+
+                    // private hard-coded string path in MzLib
+                    string EmbeddedProteaseResourceName = "Transcriptomics.Digestion.rnases.tsv";
+
+                    var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
+                    var reader = new StreamReader(stream);
+
+                    string fileContent = reader.ReadToEnd();
+                    string[] lines = fileContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    bool foundHeader = false;
+                    using var sw = new StreamWriter(File.Create(CustomRnasePath));
+                    foreach (string line in lines)
+                    {
+                        if (!foundHeader && !line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
+                        {
+                            sw.WriteLine(line);
+                            foundHeader = true;
+                            break;
+                        }
+                        sw.WriteLine(line);
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new MetaMorpheusException($"Error creating default custom rnase file with error message: {e.Message}", e);
+                }
             }
         }
     }

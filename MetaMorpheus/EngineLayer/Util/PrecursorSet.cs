@@ -24,7 +24,8 @@ namespace EngineLayer.Util
     {
         private static ListPool<Precursor> _listPool = new(8);
         public const double MzScaleFactor = 100.0; // Used to convert m/z to an integer key by multiplying and rounding
-        public readonly Tolerance Tolerance;
+        public double ExpectedIsotopicPeakSpacing { get; }
+        public readonly Tolerance DeconPeakTolerance;
         /// <summary>
         /// This dictionary contains precursors indexed by their integer representation.
         /// The integer representation is calculated as the rounded m/z value multiplied by 100.
@@ -34,15 +35,19 @@ namespace EngineLayer.Util
         /// <summary>
         /// Initializes a new instance of the <see cref="PrecursorSet"/> class.
         /// </summary>
-        /// <param name="mzTolerance">
+        /// <param name="deconPeakTolerance">
         /// The m/z tolerance for determining if two precursors are considered equivalent.
         /// Must be positive.
         /// </param>
-        public PrecursorSet(Tolerance tolerance)
+        /// <param name="expectedIsotopicPeakSpacing">The expected spacing between isotopic peaks. Used when stitching split envelopes.</param>
+        public PrecursorSet(Tolerance deconPeakTolerance, double expectedIsotopicPeakSpacing = Constants.C13MinusC12)
         {
-            Tolerance = tolerance;
+            DeconPeakTolerance = deconPeakTolerance;
             PrecursorDictionary = new Dictionary<int, List<Precursor>>();
+            ExpectedIsotopicPeakSpacing = expectedIsotopicPeakSpacing;
         }
+
+        public PrecursorSet(CommonParameters commonParams) : this(commonParams.DeconvolutionMassTolerance, commonParams.PrecursorDeconvolutionParameters.ExpectedIsotopeSpacing) { }
 
         /// <summary>
         /// Indicates whether the set has been modified since the last sanitization.
@@ -98,7 +103,7 @@ namespace EngineLayer.Util
             {
                 if(PrecursorDictionary.TryGetValue(i, out var precursorsInBucket))
                 {
-                    if (precursorsInBucket.Any(existingPrecursor => existingPrecursor.Equals(precursor, Tolerance)))
+                    if (precursorsInBucket.Any(existingPrecursor => existingPrecursor.Equals(precursor, DeconPeakTolerance)))
                     {
                         return true;
                     }
@@ -123,17 +128,36 @@ namespace EngineLayer.Util
             var allPrecursors = _listPool.Get();
             allPrecursors.AddRange(PrecursorDictionary.Values.SelectMany(list => list));
 
-            MergeSplitEnvelopes(in allPrecursors, Tolerance);
-            RemoveLowHarmonics(in allPrecursors, Tolerance);
+            MergeSplitEnvelopes(in allPrecursors, DeconPeakTolerance, ExpectedIsotopicPeakSpacing);
+            RemoveLowHarmonics(in allPrecursors, DeconPeakTolerance);
             RemoveDuplicates(in allPrecursors); 
             RepopulateDictionary(in allPrecursors); // Call this one last as it cleans and repopulates the dictionary
 
             _listPool.Return(allPrecursors);
             IsDirty = false;
-            _listPool.Return(allPrecursors);
         }
 
-        #region Santization 
+        public void Clear()
+        {
+            foreach (var kvp in PrecursorDictionary)
+            {
+                kvp.Value.Clear();
+            }
+            PrecursorDictionary.Clear();
+            IsDirty = false;
+        }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the precursors in the set.
+        /// </summary>
+        public IEnumerator<Precursor> GetEnumerator()
+        {
+            if (IsDirty)
+                Sanitize();
+            return PrecursorDictionary.SelectMany(kvp => kvp.Value).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public void RepopulateDictionary(in List<Precursor> allPrecursors)
         {
@@ -145,6 +169,7 @@ namespace EngineLayer.Util
             }
         }
 
+        #region Remove Duplicates 
 
         /// <summary>
         /// Currently only takes the first, future work would be to merge them
@@ -155,7 +180,7 @@ namespace EngineLayer.Util
             var uniquePrecursors = _listPool.Get();
             foreach (var precursor in allPrecursors)
             {
-                bool isDuplicate = uniquePrecursors.Any(existing => precursor.Equals(existing, Tolerance));
+                bool isDuplicate = uniquePrecursors.Any(existing => precursor.Equals(existing, DeconPeakTolerance));
                 if (!isDuplicate)
                 {
                     uniquePrecursors.Add(precursor);
@@ -166,14 +191,18 @@ namespace EngineLayer.Util
             _listPool.Return(uniquePrecursors);
         }
 
+        #endregion
+
+        #region Merge Split Envelopes
+
         /// <summary>
         /// Cleans up precursors and merges those that should be a part of the same envelope. 
         /// Handles:
         ///   1) Split envelopes (two partial envelopes that are actually sequential)
         ///   2) Single-peak orphans (e.g., absCharge=1 and Peaks.Count == 1) that sit one expectedIsotopicSpacing away
-        /// Criterion: last peak of left and first peak of right are separated by ~ (C13-C12)/absCharge within Tolerance.
+        /// Criterion: last peak of left and first peak of right are separated by ~ (C13-C12)/absCharge within PrecursorMassTolerance.
         /// </summary>
-        public static void MergeSplitEnvelopes(in List<Precursor> allPrecursors, Tolerance tolerance)
+        public static void MergeSplitEnvelopes(in List<Precursor> allPrecursors, Tolerance tolerance, double expectedSpacing)
         {
             if (allPrecursors == null || allPrecursors.Count < 2)
                 return;
@@ -190,7 +219,7 @@ namespace EngineLayer.Util
                 list.Clear();
                 int charge = g.Key;
                 int absCharge = Math.Abs(charge);
-                double spacing = Constants.C13MinusC12 / absCharge;
+                double spacing = expectedSpacing / absCharge;
 
                 // Order by monoisotopic m/z then envelope lowest m/z so "left" is the earlier envelope
                 list.AddRange(g.OrderBy(p => p.MonoisotopicPeakMz)
@@ -251,75 +280,11 @@ namespace EngineLayer.Util
             }
 
             _listPool.Return(list);
-            }
-
-        /// <summary>
-        /// Harmonics occur when a precursor appears at absCharge and also at an integer divisor of absCharge due to peak skipping (e.g., 15 vs 5).
-        /// We keep the higher charge and remove the lower if they project to each other's m/absCharge within Tolerance.
-        /// </summary>
-        public static void RemoveLowHarmonics(in List<Precursor> allPrecursors, Tolerance tolerance)
-            {
-            if (allPrecursors == null || allPrecursors.Count < 2)
-                return;
-
-            var toRemove = new HashSet<Precursor>();
-            var ordered = _listPool.Get();
-            ordered.AddRange(allPrecursors
-                .OrderBy(p => p.MonoisotopicPeakMz.ToMass(Math.Abs(p.Charge))));
-
-            for (int i = 0; i < ordered.Count; i++)
-            {
-                var high = ordered[i];
-                int zhi = Math.Abs(high.Charge);
-                if (zhi < 2) continue;
-
-                var highPeaks = high.Envelope?.Peaks;
-                if (highPeaks == null || highPeaks.Count < 2) continue;
-
-                for (int j = 0; j < ordered.Count; j++)
-                {
-                    if (i == j) continue;
-                    var low = ordered[j];
-                    int zlo = Math.Abs(low.Charge);
-                    if (zlo < 2 || zhi % zlo != 0 || zlo == zhi) continue;
-
-                    var lowPeaks = low.Envelope?.Peaks;
-                    if (lowPeaks == null || lowPeaks.Count < 2) continue;
-
-                    int step = zhi / zlo;
-                    int maxStart = highPeaks.Count / 2;
-
-                    // Try to align lowPeaks to any subsequence of highPeaks with correct spacing
-                    for (int start = 0; start < maxStart; start++)
-                    {
-                        int matches = 0;
-                        for (int k = 0; k < lowPeaks.Count; k++)
-                        {
-                            int highIdx = start + k * step;
-                            if (highIdx >= highPeaks.Count) break;
-                            if (tolerance.Within(lowPeaks[k].mz, highPeaks[highIdx].mz))
-                                matches++;
-                        }
-
-                        // If majority of low's peaks match, mark as harmonic
-                        if (matches >= lowPeaks.Count / 2 && matches > 1)
-                        {
-                            toRemove.Add(low);
-                            break; // No need to check other alignments
-                        }
-                    }
-                }
-            }
-
-            if (toRemove.Count > 0)
-                allPrecursors.RemoveAll(toRemove.Contains);
-
-            _listPool.Return(ordered);
         }
 
         /// <summary>
         /// True if 'right' begins exactly one isotopic step after 'left' (sequential boundary),
-        /// tested using the configured Tolerance: Within(leftLast + expectedIsotopicSpacing, rightFirst).
+        /// tested using the configured PrecursorMassTolerance: Within(leftLast + expectedIsotopicSpacing, rightFirst).
         /// </summary>
         public static bool AreSequentialAtSpacing(Precursor left, Precursor right, double expectedIsotopicSpacing, Tolerance tolerance)
         {
@@ -338,9 +303,10 @@ namespace EngineLayer.Util
             foreach (var pk in rightEnvelope.Peaks)
                 if (pk.mz < rightFirst) rightFirst = pk.mz;
 
-            // "Correct expectedIsotopicSpacing" evaluated in m/absCharge space with your Tolerance
+            // "Correct expectedIsotopicSpacing" evaluated in m/absCharge space with your PrecursorMassTolerance
             return tolerance.Within(leftLast + expectedIsotopicSpacing, rightFirst);
         }
+
 
         // Merge right into left by creating a *new* IsotopicEnvelope with stitched peaks
         public static Precursor MergePrecursors(Precursor left, Precursor right, int charge, Tolerance tolerance)
@@ -401,26 +367,72 @@ namespace EngineLayer.Util
 
         #endregion
 
-        public void Clear()
-        {
-            foreach (var kvp in PrecursorDictionary)
-            {
-                kvp.Value.Clear();
-            }
-            PrecursorDictionary.Clear();
-            IsDirty = false;
-        }
-
+        #region Harmonics Filtering 
         /// <summary>
-        /// Returns an enumerator that iterates through the precursors in the set.
+        /// Harmonics occur when a precursor appears at absCharge and also at an integer divisor of absCharge due to peak skipping (e.g., 15 vs 5).
+        /// We keep the higher charge and remove the lower if they project to each other's m/absCharge within PrecursorMassTolerance.
         /// </summary>
-        public IEnumerator<Precursor> GetEnumerator()
+        public static void RemoveLowHarmonics(in List<Precursor> allPrecursors, Tolerance tolerance)
         {
-            if (IsDirty)
-                Sanitize();
-            return PrecursorDictionary.SelectMany(kvp => kvp.Value).GetEnumerator();
+            if (allPrecursors == null || allPrecursors.Count < 2)
+                return;
+
+            var toRemove = new HashSet<Precursor>();
+            var ordered = _listPool.Get();
+            ordered.AddRange(allPrecursors
+                .OrderBy(p => p.MonoisotopicPeakMz.ToMass(Math.Abs(p.Charge))));
+
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                var high = ordered[i];
+                int zhi = Math.Abs(high.Charge);
+                if (zhi < 2) continue;
+
+                var highPeaks = high.Envelope?.Peaks;
+                if (highPeaks == null || highPeaks.Count < 2) continue;
+
+                for (int j = 0; j < ordered.Count; j++)
+                {
+                    if (i == j) continue;
+                    var low = ordered[j];
+                    int zlo = Math.Abs(low.Charge);
+                    if (zlo < 2 || zhi % zlo != 0 || zlo == zhi) continue;
+
+                    var lowPeaks = low.Envelope?.Peaks;
+                    if (lowPeaks == null || lowPeaks.Count < 2) continue;
+
+                    int step = zhi / zlo;
+                    int maxStart = highPeaks.Count / 2;
+
+                    // Try to align lowPeaks to any subsequence of highPeaks with correct spacing
+                    for (int start = 0; start < maxStart; start++)
+                    {
+                        int matches = 0;
+                        for (int k = 0; k < lowPeaks.Count; k++)
+                        {
+                            int highIdx = start + k * step;
+                            if (highIdx >= highPeaks.Count) break;
+                            if (tolerance.Within(lowPeaks[k].mz, highPeaks[highIdx].mz))
+                                matches++;
+                        }
+
+                        // If majority of low's peaks match, mark as harmonic
+                        if (matches >= lowPeaks.Count / 2 && matches > 1)
+                        {
+                            toRemove.Add(low);
+                            break; // No need to check other alignments
+                        }
+                    }
+                }
+            }
+
+            if (toRemove.Count > 0)
+                allPrecursors.RemoveAll(toRemove.Contains);
+
+            _listPool.Return(ordered);
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        #endregion
+
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -92,8 +93,8 @@ public class MetaDrawDataLoaderTests
     public void ProcessBioPolymerTab_LoadsDatabase()
     {
         var bioPolymerTab = new BioPolymerTabViewModel(logic, "C:\\Export");
-        bioPolymerTab.DatabasePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
-            @"TestData\TaGe_SA_A549_3_snip.fasta");
+        bioPolymerTab.DatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory,
+            @"TestData\TaGe_SA_A549_3_snip.fasta"));
         logic.AllSpectralMatches.Add(new DummySpectralmatch());
         loader.GetType().GetMethod("ProcessBioPolymerTab", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             ?.Invoke(loader, new object[] { bioPolymerTab, "C:\\Export", CancellationToken.None });
@@ -223,7 +224,7 @@ public class MetaDrawDataLoaderTests
         logic.SpectraFilePaths.Add(specFile2);
         logic.SpectralMatchResultFilePaths.Add(smPath);
         var bioTab = new BioPolymerTabViewModel(logic, "C:\\Export");
-        bioTab.DatabasePath = dbPath;
+        bioTab.DatabasePaths.Add(dbPath);
         var deconTab = new DeconExplorationTabViewModel(logic);
         var chimeraTab = new ChimeraAnalysisTabViewModel("C:\\Export");
 
@@ -242,5 +243,99 @@ public class MetaDrawDataLoaderTests
         Assert.That(bioTab.IsTabEnabled, Is.True);
         Assert.That(deconTab.IsTabEnabled, Is.True);
         Assert.That(chimeraTab.IsTabEnabled, Is.True);
+    }
+
+    [Test]
+    public async Task TryLoadProseAndSearchToml_InvalidToml_CatchesException_ReturnsFalse()
+    {
+        // Create a temporary directory structure with an invalid TOML file
+        string tempBaseDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        string taskSettingsDir = Path.Combine(tempBaseDir, "Task Settings");
+        string searchResultsDir = Path.Combine(tempBaseDir, "SearchTask");
+        
+        try
+        {
+            Directory.CreateDirectory(taskSettingsDir);
+            Directory.CreateDirectory(searchResultsDir);
+            
+            // Create an invalid/corrupted TOML file
+            string invalidTomlPath = Path.Combine(taskSettingsDir, "SearchTaskconfig.toml");
+            File.WriteAllText(invalidTomlPath, "This is not valid TOML content {{ invalid syntax");
+            
+            // Create a dummy PSM file path that points to the search results directory
+            string dummyPsmPath = Path.Combine(searchResultsDir, "dummy.psmtsv");
+            File.WriteAllText(dummyPsmPath, "dummy content");
+            
+            // Set up the logic with the PSM file path
+            logic.SpectralMatchResultFilePaths.Add(dummyPsmPath);
+            
+            // Call the method directly
+            var result = await loader.TryLoadProseAndSearchToml(null, null, null);
+            
+            // Assert that the method caught the exception and returned false flags
+            Assert.That(result.SearchParams, Is.False, "SearchParams should be false when TOML parsing fails");
+            Assert.That(result.FragmentationParams, Is.False, "FragmentationParams should be false when TOML parsing fails");
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(tempBaseDir))
+            {
+                Directory.Delete(tempBaseDir, true);
+            }
+            logic.SpectralMatchResultFilePaths.Clear();
+        }
+    }
+
+    [Test]
+    public async Task TryLoadProseAndSearchToml_InvalidProseFile_CatchesException_ReturnsFalse()
+    {
+        // Create a temporary directory structure with valid TOML but invalid prose
+        string tempBaseDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        string taskSettingsDir = Path.Combine(tempBaseDir, "Task Settings");
+        string searchResultsDir = Path.Combine(tempBaseDir, "SearchResults");
+        
+        try
+        {
+            Directory.CreateDirectory(taskSettingsDir);
+            Directory.CreateDirectory(searchResultsDir);
+            
+            // Create a valid TOML file with minimal search parameters
+            string validTomlPath = Path.Combine(taskSettingsDir, "SearchResultsconfig.toml");
+            File.WriteAllText(validTomlPath, @"
+[SearchParameters]
+SearchTarget = true
+
+[CommonParameters]
+DissociationType = ""HCD""
+");
+            
+            // Create a corrupted prose file that will cause parsing to fail
+            string prosePath = Path.Combine(searchResultsDir, "prose.txt");
+            File.WriteAllText(prosePath, "Invalid prose content that will cause parsing errors");
+            
+            // Create a dummy PSM file
+            string dummyPsmPath = Path.Combine(searchResultsDir, "dummy.psmtsv");
+            File.WriteAllText(dummyPsmPath, "dummy content");
+            
+            // Set up the logic with the PSM file path
+            logic.SpectralMatchResultFilePaths.Add(dummyPsmPath);
+            
+            // Call the method directly
+            var result = await loader.TryLoadProseAndSearchToml(null, null, null);
+            
+            // The method should complete without throwing - if it catches exceptions properly
+            // Note: Database loading might fail due to invalid prose, but method shouldn't throw
+            Assert.That(result.Database, Is.False, "Database should be false when prose parsing fails");
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(tempBaseDir))
+            {
+                Directory.Delete(tempBaseDir, true);
+            }
+            logic.SpectralMatchResultFilePaths.Clear();
+        }
     }
 }

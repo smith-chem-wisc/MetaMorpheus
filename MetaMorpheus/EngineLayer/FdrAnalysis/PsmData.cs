@@ -40,6 +40,14 @@ namespace EngineLayer.FdrAnalysis
                     "PrecursorChargeDiffToMode", "DeltaScore", "AlphaIntensity", "BetaIntensity",
                     "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra"
                 }
+            },
+            {
+                "RNA",
+                new []
+                { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", 
+                    "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian","MissedCleavagesCount",
+                    "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount"
+                }
             }
         }.ToImmutableDictionary();
 

@@ -38,8 +38,9 @@ namespace EngineLayer
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = -1;
+            IsobaricMassTagReporterIonIntensities = scan.IsobaricMassTagReporterIonIntensities;
 
-            if(scan.TheScan is TimsDataScan timsScan)
+            if (scan.TheScan is TimsDataScan timsScan)
             {
                 ScanOneOverK0 = timsScan.OneOverK0;
             }
@@ -90,10 +91,9 @@ namespace EngineLayer
         {
             get => PsmFdrInfo;
             set => PsmFdrInfo = value;
-
         }
-        public FdrInfo PsmFdrInfo { get;  set; }
-        public FdrInfo PeptideFdrInfo { get;  set; }
+        public FdrInfo PsmFdrInfo { get; set; }
+        public FdrInfo PeptideFdrInfo { get; set; }
         public FdrInfo GetFdrInfo(bool peptideLevel)
         {
             return peptideLevel ? PeptideFdrInfo : PsmFdrInfo;
@@ -157,6 +157,12 @@ namespace EngineLayer
 
         protected List<SpectralMatchHypothesis> _BestMatchingBioPolymersWithSetMods;
 
+        /// <summary>
+        /// An array containing the intensities of the reporter ions for isobaric mass tags. 
+        /// If multiplex quantification wasn't performed, this will be null
+        /// </summary>
+        public double[]? IsobaricMassTagReporterIonIntensities { get; private set; }
+
         public IEnumerable<SpectralMatchHypothesis> BestMatchingBioPolymersWithSetMods
         {
             get
@@ -181,10 +187,14 @@ namespace EngineLayer
                     RunnerUpScore = Score;
                 }
                 Score = newScore;
+                Notch = notch;
             }
             else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
                 _BestMatchingBioPolymersWithSetMods.Add(new(notch, pwsm, matchedFragmentIons, newScore));
+
+                if (Notch != notch)
+                    Notch = null;
             }
             else if (newScore - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
@@ -223,6 +233,30 @@ namespace EngineLayer
             ModsIdentified = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.AllModsOneIsNterminus)).ResolvedValue;
             ModsChemicalFormula = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
             Notch = PsmTsvWriter.Resolve(bestMatches.Select(b => b.Notch)).ResolvedValue;
+            if (Notch == null) // notch ambiguous resolve q-value notch fields if possible. 
+            {
+                if (bestMatches.First().QValueNotch != null) // Psm Level FDR has run
+                {
+                    var qNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.QValueNotch!.Value)).ResolvedValue;
+                    if (qNotch != null) // Q-value notches are identical even if the notches are not
+                    {
+                        PsmFdrInfo.QValueNotch = qNotch.Value;
+                        PsmFdrInfo.CumulativeTargetNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.CumulativeTargetNotch!.Value)).ResolvedValue ?? 0;
+                        PsmFdrInfo.CumulativeDecoyNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.CumulativeDecoyNotch!.Value)).ResolvedValue ?? 0;
+                    }
+                }
+
+                if (bestMatches.First().PeptideQValueNotch != null) // Peptide Level FDR has run
+                {
+                    var pepQNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.PeptideQValueNotch!.Value)).ResolvedValue;
+                    if (pepQNotch != null) // Q-value notches are identical even if the notches are not
+                    {
+                        PeptideFdrInfo.QValueNotch = pepQNotch.Value;
+                        PeptideFdrInfo.CumulativeTargetNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.PeptideCumulativeTargetNotch!.Value)).ResolvedValue ?? 0;
+                        PeptideFdrInfo.CumulativeDecoyNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.PeptideCumulativeDecoyNotch!.Value)).ResolvedValue ?? 0;
+                    }
+                }
+            }
 
             //if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
             if (IsDecoy)
@@ -287,7 +321,7 @@ namespace EngineLayer
 
         public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column).Values);
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column).Values.Select(v => v?.Trim() ?? string.Empty));
         }
 
         public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false)

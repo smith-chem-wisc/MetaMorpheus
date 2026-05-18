@@ -118,6 +118,7 @@
                                             <RowDefinition Height="*"/>
                                             <RowDefinition Height="*"/>
                                             <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -133,6 +134,8 @@
                                           Name="ShowInternalIonsCheckBox" Content="Show internal ions" Margin="5" />
                                 <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIonAnnotations}"
                                           Name="ShowInternalIonAnnotationsCheckBox" Content="Display internal ion annotations" Margin="5" />
+                                <CheckBox Grid.Column="0" Grid.Row="5" IsChecked="{Binding AnnotateIsotopicEnvelopes}"
+                                          Name="IsotopicEnvelopeCheckBox" Content="Annotate isotopic envelopes" Margin="5" />
 
                                     </Grid>
 
@@ -384,6 +387,7 @@
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -401,8 +405,10 @@
                                           Content="Show internal ions" Margin="5" />
                             <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIonAnnotations}"
                                           Content="Display internal ion annotations" Margin="5" />
+                            <CheckBox Grid.Column="0" Grid.Row="5" IsChecked="{Binding AnnotateIsotopicEnvelopes}"
+                                          Content="Annotate isotopic envelopes" Margin="5" />
 
-                            <CheckBox Content="Bold ion annotations"  Margin="7 5"  Grid.Column="1" Grid.Row="0" 
+                            <CheckBox Content="Bold ion annotations"  Margin="7 5"  Grid.Column="1" Grid.Row="0"
                                           IsChecked="{Binding AnnotationBold}" />
                             <CheckBox IsChecked="{Binding SubAndSuperScriptIons}" Grid.Column="1" Grid.Row="1" 
                                           Content="Sub/superscripted ion annotations"  Margin="7 5"  />

@@ -5,22 +5,25 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Height="275" Width="545.393"
+        Height="275" Width="545.393" MinHeight="160"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
     <Grid Margin="5,5,5,5">
-        <StackPanel>
+        <Grid>
             <Label Name="Label" Margin="5" Width="600"/>
-            <CheckBox Name="DoNotAskAgainCheckBox" Content="Remember my decision and don't ask me again." HorizontalAlignment="Center">
-                <ToolTipService.ToolTip>
-                    <ToolTip Content="This decision can be changed by editing the file MetaMorpheus/GUIsettings.toml"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
-                </ToolTipService.ToolTip>
-            </CheckBox>
+            
+            <StackPanel VerticalAlignment="Bottom">
+                <CheckBox Name="DoNotAskAgainCheckBox" Content="Remember my decision and don't ask me again." HorizontalAlignment="Center">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="This decision can be changed by editing the file MetaMorpheus/GUIsettings.toml"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                    </ToolTipService.ToolTip>
+                </CheckBox>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Name="YesButton" Content="Yes"  Height="25"  VerticalAlignment="Top" Width="83" Margin="5" Click="YesButton_Click"/>
-                <Button Name="NoButton" Content="No" Height="25"  VerticalAlignment="Top" Width="83" Margin="5" Click="NoButton_Click"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Name="YesButton" Content="Yes"  Height="25"  VerticalAlignment="Top" Width="83" Margin="5" Click="YesButton_Click"/>
+                    <Button Name="NoButton" Content="No" Height="25"  VerticalAlignment="Top" Width="83" Margin="5" Click="NoButton_Click"/>
+                </StackPanel>
             </StackPanel>
-        </StackPanel>
+        </Grid>
     </Grid>
 </Window>

@@ -309,7 +309,7 @@ namespace EngineLayer.GlycoSearch
             Modification[] modifications = new Modification[theModPositions.ModSitePairs.Count];
             for (int i = 0; i < theModPositions.ModSitePairs.Count; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycans[theModPositions.ModSitePairs[i].ModId];
+                modifications[i] = theModPositions.ModSitePairs[i].ModId >=0 ? GlycanBox.GlobalOGlycans[theModPositions.ModSitePairs[i].ModId] : GlycanBox.GlobalNGlycans[theModPositions.ModSitePairs[i].ModId];
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();

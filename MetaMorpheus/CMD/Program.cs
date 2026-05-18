@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using EngineLayer.DatabaseLoading;
 using Omics.Modifications;
 using TaskLayer;
 
@@ -227,7 +228,7 @@ namespace MetaMorpheusCommandLine
                         break;
 
                     case "GlycoSearch":
-                        var GlycoTask = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        var GlycoTask = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(filePath);
                         taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
                         break;
 

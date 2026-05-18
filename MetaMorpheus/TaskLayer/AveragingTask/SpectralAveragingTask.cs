@@ -2,15 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EngineLayer;
-using FlashLFQ;
-using IO.MzML;
+using EngineLayer.DatabaseLoading;
 using MassSpectrometry;
 using SpectralAveraging;
 using Nett;
-using UsefulProteomicsDatabases;
 using Readers;
 using EngineLayer.Util;
 
@@ -59,8 +55,8 @@ namespace TaskLayer
                 // get filename stuff
                 var originalUnaveragedFilepath = currentRawFileList[spectraFileIndex];
                 var originalUnaveragedFilepathWithoutExtenstion = Path.GetFileNameWithoutExtension(originalUnaveragedFilepath);
-                var averagedFilepath = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".mzML");
-                averagedFilepath = PathSafety.MakeSafeOutputPath(averagedFilepath, AveragingSuffix + ".mzML");
+                var averagedFilepath = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".mzML")
+                    .ToSafeOutputPath( AveragingSuffix + ".mzML");
                 var originalFileExtension = GlobalVariables.GetFileExtension(originalUnaveragedFilepath);
                 if (originalFileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase))
                 {

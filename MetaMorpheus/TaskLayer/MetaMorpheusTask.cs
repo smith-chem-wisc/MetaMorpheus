@@ -4,6 +4,15 @@ using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
+using Omics;
+using Omics.BioPolymer;
+using Omics.Digestion;
+using Omics.Modifications;
+using Omics.SpectrumMatch;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
+using Readers.SpectralLibrary;
+using SpectralAveraging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,21 +22,15 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SpectralAveraging;
-using Omics;
-using Omics.Digestion;
-using Omics.Modifications;
-using Omics.SpectrumMatch;
+using EngineLayer.DatabaseLoading;
+using EngineLayer.SpectrumMatch;
 using UsefulProteomicsDatabases;
-using UsefulProteomicsDatabases.Transcriptomics;
-using Proteomics;
-using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
-using Easy.Common.Extensions;
 using EngineLayer.Util;
-using Readers;
-using Readers.SpectralLibrary;
+using EngineLayer.DIA;
+using EngineLayer.SpectrumMatch;
+using Omics.Fragmentation;
 
 namespace TaskLayer
 {
@@ -151,13 +154,34 @@ namespace TaskLayer
                     )
                 )
             )
+            .ConfigureType<List<MIonLoss>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => string.Join("\t", custom.Select(f => f.Annotation)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(typeName => MIonLoss.AllMIonLosses.GetValueOrDefault(typeName, null))
+                        .Where(t => t != null)
+                        .ToList()
+                    )
+                )
+            )
+            .ConfigureType<IFragmentationParams>(type => type
+                .WithConversionFor<TomlTable>(c => c
+                    .FromToml(tmlTable =>
+                        tmlTable.ContainsKey("ModificationsCanSuppressBaseLossIons")
+                            ? tmlTable.Get<RnaFragmentationParams>()
+                            : tmlTable.Get<FragmentationParams>())))
+            .ConfigureType<RnaFragmentationParams>(type => type
+                .CreateInstance(() => RnaFragmentationParams.Default))
+            .ConfigureType<FragmentationParams>(type => type
+                .CreateInstance(() => new()))
         );
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
         [TomlIgnore]
-        public string OutputFolder { get; private set; }
+        public virtual string OutputFolder { get; private set; }
 
         protected MyTaskResults MyTaskResults;
 
@@ -214,7 +238,7 @@ namespace TaskLayer
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
-                    var precursorSet = new PrecursorSet(commonParameters.DeconvolutionMassTolerance);
+                    var precursorSet = new PrecursorSet(commonParameters);
 
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
@@ -290,7 +314,8 @@ namespace TaskLayer
                         // get child scans
                         List<MsDataScan> ms2ChildScans = null;
                         List<MsDataScan> ms3ChildScans = null;
-                        if (commonParameters.MS2ChildScanDissociationType != DissociationType.Unknown || commonParameters.MS3ChildScanDissociationType != DissociationType.Unknown)
+                        if (commonParameters.MS2ChildScanDissociationType != DissociationType.Unknown 
+                            || commonParameters.MS3ChildScanDissociationType != DissociationType.Unknown)
                         {
                             ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
 
@@ -332,15 +357,6 @@ namespace TaskLayer
                                 {
                                     int precursorCharge = 1;
                                     double precursorMz = 0;
-                                    var precursorSpectrum = ms2scan;
-
-                                    //In current situation, do we need to perform the following function. 
-                                    //In some weird data, the MS3 scan has mis-leading precursor mass. 
-                                    //MS3 scan is low res in most of the situation, and the matched ions are not scored in a good way.
-                                    //{
-                                    //    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
-                                    //    ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
-                                    //}
 
                                     if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
                                     {
@@ -379,6 +395,20 @@ namespace TaskLayer
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
+            if (commonParameters.DIAparameters != null)
+            {
+                switch (commonParameters.DIAparameters.AanalysisType)
+                {
+                    case DIAanalysisType.DIA:
+                        var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
+                        return diaEngine.GetPseudoMs2Scans();
+                    case DIAanalysisType.ISD:
+                        var isdEngine = new ISDEngine(myMSDataFile, commonParameters);
+                        return isdEngine.GetPseudoMs2Scans();
+                    default:
+                        throw new NotImplementedException("DIA analysis type not implemented.");
+                }
+            }
             var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
 
             if (scansWithPrecursors.Length == 0)
@@ -418,10 +448,10 @@ namespace TaskLayer
 
                             foreach (var childScan in parentScan.ChildScans)
                             {
-                                if (((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID) ||
-                                (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID))
+                                if (((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID)
+                                    || (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID))
                                 && !childScan.TheScan.MassSpectrum.XcorrProcessed)
-                                {
+                                { 
                                     lock (childScan.TheScan)
                                     {
                                         if (!childScan.TheScan.MassSpectrum.XcorrProcessed)
@@ -451,8 +481,6 @@ namespace TaskLayer
             }
 
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            //var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber)).Select(p=>p.First()).ToArray();
-
             
             for (int i = 0; i < scansWithPrecursors.Length; i++)
             {
@@ -513,6 +541,7 @@ namespace TaskLayer
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            Tolerance productMassTolerance_LowRes = fileSpecificParams.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
@@ -520,6 +549,7 @@ namespace TaskLayer
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
                 productMassTolerance: productMassTolerance,
+                productMassTolerance_LowRes: productMassTolerance_LowRes,
                 digestionParams: fileSpecificDigestionParams,
                 separationType: separationType,
 
@@ -553,7 +583,8 @@ namespace TaskLayer
                 addTruncations: commonParams.AddTruncations,
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
                 productDeconParams: commonParams.ProductDeconvolutionParameters,
-                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity);
+                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
+                fragmentationParams: commonParams.FragmentationParameters);
 
             return returnParams;
         }
@@ -674,75 +705,6 @@ namespace TaskLayer
 
         #region Database Loading
 
-        public List<IBioPolymer> LoadBioPolymers(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
-        {
-            Status($"Loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s...", new List<string> { taskId });
-            int emptyEntries = 0;
-            List<IBioPolymer> bioPolymerList = new();
-            foreach (var db in dbFilenameList.Where(p => !p.IsSpectralLibrary))
-            {
-                if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
-                {
-                    var dbOligoList = LoadOligoDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyOligoEntriesForThisDb, commonParameters);
-                    bioPolymerList = bioPolymerList.Concat(dbOligoList).ToList();
-                    emptyEntries += emptyOligoEntriesForThisDb;
-                }
-                else
-                {
-                    var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
-                    bioPolymerList = bioPolymerList.Concat(dbProteinList).ToList();
-                    emptyEntries += emptyProteinEntriesForThisDb;
-                }
-            }
-            if (!bioPolymerList.Any())
-            {
-                Warn($"Warning: No {GlobalVariables.AnalyteType.GetBioPolymerLabel()} entries were found in the database");
-            }
-            else if (emptyEntries > 0)
-            {
-                Warn("Warning: " + emptyEntries + $" empty {GlobalVariables.AnalyteType.GetBioPolymerLabel()} entries ignored");
-            }
-
-            // We are not generating decoys, so just return the read in database
-            if (!bioPolymerList.Any(p => p.IsDecoy))
-            {
-                Status($"Done loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s", new List<string> { taskId });
-                return bioPolymerList;
-            }
-
-            // Sanitize the decoys
-            // TODO: Fix this so that it accounts for multi-protease searches. Currently, we only consider the first protease
-            // when looking for target/decoy collisions
-            HashSet<string> targetPeptideSequences = new();
-            foreach(var bioPolymer in bioPolymerList.Where(p => !p.IsDecoy))
-            {
-                // When thinking about decoy collisions, we can ignore modifications
-                foreach(var peptide in bioPolymer.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
-                {
-                    targetPeptideSequences.Add(peptide.BaseSequence);
-                }
-            }
-            // Now, we iterate through the decoys and scramble the sequences that correspond to target peptides
-            for(int i = 0; i < bioPolymerList.Count; i++)
-            {
-                if(bioPolymerList[i].IsDecoy)
-                {
-                    var peptidesToReplace = bioPolymerList[i]
-                        .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
-                        .Select(p => p.BaseSequence)
-                        .Where(targetPeptideSequences.Contains)
-                        .ToList();
-                    if(peptidesToReplace.Any())
-                    {
-                        bioPolymerList[i] = DecoySequenceValidator.ScrambleDecoyBioPolymer(bioPolymerList[i], commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
-                    }
-                }
-            }
-
-            Status($"Done loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s", new List<string> { taskId });
-            return bioPolymerList;
-        }
-
         protected SpectralLibrary LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
         {
             Status("Loading spectral libraries...", new List<string> { taskId });
@@ -758,33 +720,6 @@ namespace TaskLayer
 
             Status("Done loading spectral libraries", new List<string> { taskId });
             return lib;
-        }
-
-        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um,
-            out int emptyEntriesCount, CommonParameters commonParameters)
-        {
-            List<string> dbErrors = new List<string>();
-            List<Protein> proteinList = new List<Protein>();
-
-            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
-            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
-
-            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
-            {
-                um = null;
-                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors,
-                    ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, commonParameters.MaxThreadsToUsePerFile, addTruncations: commonParameters.AddTruncations);
-            }
-            else
-            {
-                List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, commonParameters.MaxHeterozygousVariants, commonParameters.MinVariantDepth, addTruncations: commonParameters.AddTruncations);
-            }
-
-            emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
-            return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
         protected void LoadModifications(string taskId, out List<Modification> variableModifications, out List<Modification> fixedModifications, out List<string> localizableModificationTypes)
@@ -826,31 +761,301 @@ namespace TaskLayer
             }
         }
 
-        protected List<RNA> LoadOligoDb(string fileName, bool generateTargets, DecoyType decoyType,
-            List<string> localizeableModificationTypes, bool isContaminant,
-            out Dictionary<string, Modification> unknownMods, out int emptyEntriesCount,
-            CommonParameters commonParameters)
+        protected void WritePrunedDatabase(List<SpectralMatch> allSpectralMatches, List<IBioPolymer> bioPolymersToWrite, Dictionary<string, int> modificationsToWrite, List<DbForTask> inputDatabases, string outputDirectory, string taskId)
         {
-            List<string> dbErrors = new List<string>();
-            List<RNA> rnaList = new List<RNA>();
+            Status("Writing Pruned Database...", new List<string> { taskId });
+            HashSet<Modification> modificationsToWriteIfBoth = new HashSet<Modification>();
+            HashSet<Modification> modificationsToWriteIfInDatabase = new HashSet<Modification>();
+            HashSet<Modification> modificationsToWriteIfObserved = new HashSet<Modification>();
 
-            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
-            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
+            var filteredPsms = FilteredPsms.Filter(allSpectralMatches,
+                CommonParameters,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: false,
+                includeHighQValuePsms: false);
 
-            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
+            var proteinToConfidentBaseSequences = new Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>>();
+
+            // associate all confident PSMs with all possible proteins they could be digest products of (before or after parsimony)
+            foreach (SpectralMatch psm in filteredPsms)
             {
-                unknownMods = null;
-                rnaList = RnaDbLoader.LoadRnaFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors);
-            }
-            else
-            {
-                List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile);
+                var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer);
+
+                foreach (IBioPolymerWithSetMods peptide in myPepsWithSetMods)
+                {
+                    if (proteinToConfidentBaseSequences.TryGetValue(peptide.Parent.ConsensusVariant, out var myPepList))
+                    {
+                        myPepList.Add(peptide);
+                    }
+                    else
+                    {
+                        proteinToConfidentBaseSequences.Add(peptide.Parent.ConsensusVariant, new List<IBioPolymerWithSetMods> { peptide });
+                    }
+                }
             }
 
-            emptyEntriesCount = rnaList.Count(p => p.BaseSequence.Length == 0);
-            return rnaList.Where(p => p.BaseSequence.Length > 0).ToList();
+            // Add user mod selection behavours to Pruned DB
+            foreach (var modType in modificationsToWrite)
+            {
+                foreach (Modification mod in GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)))
+                {
+                    if (modType.Value == 1) // Write if observed and in database
+                    {
+                        modificationsToWriteIfBoth.Add(mod);
+                    }
+                    if (modType.Value == 2) // Write if in database
+                    {
+                        modificationsToWriteIfInDatabase.Add(mod);
+                    }
+                    if (modType.Value == 3) // Write if observed
+                    {
+                        modificationsToWriteIfObserved.Add(mod);
+                    }
+                }
+            }
+
+            //generates dictionary of proteins with only localized modifications
+            var originalModPsms = FilteredPsms.Filter(filteredPsms,
+                CommonParameters,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
+                includeHighQValuePsms: false);
+
+
+            var proteinToConfidentModifiedSequences = new Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>>();
+
+            HashSet<string> modPsmsFullSeq = originalModPsms.Select(p => p.FullSequence).ToHashSet();
+            HashSet<string> originalModPsmsFullSeq = originalModPsms.Select(p => p.FullSequence).ToHashSet();
+            modPsmsFullSeq.ExceptWith(originalModPsmsFullSeq);
+
+            foreach (SpectralMatch psm in originalModPsms)
+            {
+                var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer);
+
+                foreach (IBioPolymerWithSetMods peptide in myPepsWithSetMods)
+                {
+                    if (proteinToConfidentModifiedSequences.TryGetValue(peptide.Parent.ConsensusVariant, out var myPepList))
+                    {
+                        myPepList.Add(peptide);
+                    }
+                    else
+                    {
+                        proteinToConfidentModifiedSequences.Add(peptide.Parent.ConsensusVariant, new List<IBioPolymerWithSetMods> { peptide });
+                    }
+                }
+            }
+
+            Dictionary<IBioPolymer, Dictionary<int, List<Modification>>> proteinsOriginalModifications = new Dictionary<IBioPolymer, Dictionary<int, List<Modification>>>();
+            Dictionary<SequenceVariation, Dictionary<int, List<Modification>>> originalSequenceVariantModifications = new Dictionary<SequenceVariation, Dictionary<int, List<Modification>>>();
+
+            // mods included in pruned database will only be confidently localized mods (peptide's FullSequence != null)
+            foreach (var nonVariantProtein in bioPolymersToWrite.Select(p => p.ConsensusVariant).Distinct())
+            {
+                if (!nonVariantProtein.IsDecoy)
+                {
+                    proteinToConfidentModifiedSequences.TryGetValue(nonVariantProtein, out var psms);
+                    HashSet<(int, Modification, SequenceVariation)> modsObservedOnThisProtein = new HashSet<(int, Modification, SequenceVariation)>(); // sequence variant is null if mod is not on a variant
+                    foreach (IBioPolymerWithSetMods psm in psms ?? new List<IBioPolymerWithSetMods>())
+                    {
+                        foreach (var idxModKV in psm.AllModsOneIsNterminus)
+                        {
+                            int proteinIdx = GetOneBasedIndexInProtein(idxModKV.Key, psm);
+                            SequenceVariation relevantVariant = psm.Parent.AppliedSequenceVariations.FirstOrDefault(sv => VariantApplication.IsSequenceVariantModification(sv, proteinIdx));
+                            SequenceVariation unappliedVariant =
+                                relevantVariant == null ? null : // it's not a sequence variant mod
+                                    psm.Parent.SequenceVariations.FirstOrDefault(sv => sv.Description != null && sv.Description.Equals(relevantVariant.Description));
+                            modsObservedOnThisProtein.Add((VariantApplication.RestoreModificationIndex(psm.Parent, proteinIdx), idxModKV.Value, unappliedVariant));
+                        }
+                    }
+
+                    IDictionary<(SequenceVariation, int), List<Modification>> modsToWrite = new Dictionary<(SequenceVariation, int), List<Modification>>();
+
+                    //Add if observed (regardless if in database)
+                    foreach (var observedMod in modsObservedOnThisProtein)
+                    {
+                        var tempMod = observedMod.Item2;
+
+                        if (modificationsToWriteIfObserved.Contains(tempMod))
+                        {
+                            var svIdxKey = (observedMod.Item3, observedMod.Item1);
+                            if (!modsToWrite.ContainsKey(svIdxKey))
+                            {
+                                modsToWrite.Add(svIdxKey, new List<Modification> { observedMod.Item2 });
+                            }
+                            else
+                            {
+                                modsToWrite[svIdxKey].Add(observedMod.Item2);
+                            }
+                        }
+                    }
+
+                    // Add modification if in database (two cases: always or if observed)
+                    foreach (var modkv in nonVariantProtein.OneBasedPossibleLocalizedModifications)
+                    {
+                        foreach (var mod in modkv.Value)
+                        {
+                            //Add if always In Database or if was observed and in database and not set to not include
+                            if (modificationsToWriteIfInDatabase.Contains(mod) ||
+                                (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, null))))
+                            {
+                                if (!modsToWrite.ContainsKey((null, modkv.Key)))
+                                {
+                                    modsToWrite.Add((null, modkv.Key), new List<Modification> { mod });
+                                }
+                                else
+                                {
+                                    modsToWrite[(null, modkv.Key)].Add(mod);
+                                }
+                            }
+                        }
+                    }
+
+                    //TODO add unit test here
+                    // Add variant modification if in database (two cases: always or if observed)
+                    foreach (SequenceVariation sv in nonVariantProtein.SequenceVariations)
+                    {
+                        foreach (var modkv in sv.OneBasedModifications)
+                        {
+                            foreach (var mod in modkv.Value)
+                            {
+                                //Add if always In Database or if was observed and in database and not set to not include
+                                if (modificationsToWriteIfInDatabase.Contains(mod) ||
+                                    (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, sv))))
+                                {
+                                    if (!modsToWrite.ContainsKey((sv, modkv.Key)))
+                                    {
+                                        modsToWrite.Add((sv, modkv.Key), new List<Modification> { mod });
+                                    }
+                                    else
+                                    {
+                                        modsToWrite[(sv, modkv.Key)].Add(mod);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    var oldMods = nonVariantProtein.OneBasedPossibleLocalizedModifications.ToDictionary(p => p.Key, v => v.Value);
+                    if (proteinsOriginalModifications.ContainsKey(nonVariantProtein.ConsensusVariant))
+                    {
+                        foreach (var entry in oldMods)
+                        {
+                            if (proteinsOriginalModifications[nonVariantProtein.ConsensusVariant].ContainsKey(entry.Key))
+                            {
+                                proteinsOriginalModifications[nonVariantProtein.ConsensusVariant][entry.Key].AddRange(entry.Value);
+                            }
+                            else
+                            {
+                                proteinsOriginalModifications[nonVariantProtein.ConsensusVariant].Add(entry.Key, entry.Value);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        proteinsOriginalModifications.Add(nonVariantProtein.ConsensusVariant, oldMods);
+                    }
+
+                    // adds confidently localized and identified mods
+                    nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
+                    foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 == null))
+                    {
+                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(kvp.Key.Item2, kvp.Value);
+                    }
+                    foreach (var sv in nonVariantProtein.SequenceVariations)
+                    {
+                        var oldVariantModifications = sv.OneBasedModifications.ToDictionary(p => p.Key, v => v.Value);
+                        if (originalSequenceVariantModifications.ContainsKey(sv))
+                        {
+                            foreach (var entry in oldVariantModifications)
+                            {
+                                if (originalSequenceVariantModifications[sv].ContainsKey(entry.Key))
+                                {
+                                    originalSequenceVariantModifications[sv][entry.Key].AddRange(entry.Value);
+                                }
+                                else
+                                {
+                                    originalSequenceVariantModifications[sv].Add(entry.Key, entry.Value);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            originalSequenceVariantModifications.Add(sv, oldVariantModifications);
+                        }
+
+                        sv.OneBasedModifications.Clear();
+                        foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
+                        {
+                            sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
+                        }
+                    }
+                }
+            }
+
+            //writes all proteins
+            if (inputDatabases.Any(b => !b.IsContaminant))
+            {
+                string outputXMLdbFullName = Path.Combine(outputDirectory, string.Join("-", inputDatabases.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), bioPolymersToWrite.Select(p => p.ConsensusVariant).Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
+            }
+            if (inputDatabases.Any(b => b.IsContaminant))
+            {
+                string outputXMLdbFullNameContaminants = Path.Combine(outputDirectory, string.Join("-", inputDatabases.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), bioPolymersToWrite.Select(p => p.ConsensusVariant).Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
+            }
+
+            //writes only detected proteins
+            if (inputDatabases.Any(b => !b.IsContaminant))
+            {
+                string outputXMLdbFullName = Path.Combine(outputDirectory, string.Join("-", inputDatabases.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
+            }
+            if (inputDatabases.Any(b => b.IsContaminant))
+            {
+                string outputXMLdbFullNameContaminants = Path.Combine(outputDirectory, string.Join("-", inputDatabases.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
+            }
+
+            foreach (var nonVariantProtein in bioPolymersToWrite.Select(p => p.ConsensusVariant).Distinct())
+            {
+                if (!nonVariantProtein.IsDecoy)
+                {
+                    nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
+                    foreach (var originalMod in proteinsOriginalModifications[nonVariantProtein.ConsensusVariant])
+                    {
+                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(originalMod.Key, originalMod.Value);
+                    }
+                    foreach (var sv in nonVariantProtein.SequenceVariations)
+                    {
+                        sv.OneBasedModifications.Clear();
+                        foreach (var originalVariantMods in originalSequenceVariantModifications[sv])
+                        {
+                            sv.OneBasedModifications.Add(originalVariantMods.Key, originalVariantMods.Value);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Pruned Database Helper
+        private static int GetOneBasedIndexInProtein(int oneIsNterminus, IBioPolymerWithSetMods peptideWithSetModifications)
+        {
+            if (oneIsNterminus == 1)
+            {
+                return peptideWithSetModifications.OneBasedStartResidue;
+            }
+            if (oneIsNterminus == peptideWithSetModifications.Length + 2)
+            {
+                return peptideWithSetModifications.OneBasedEndResidue;
+            }
+            return peptideWithSetModifications.OneBasedStartResidue + oneIsNterminus - 2;
         }
 
         #endregion
@@ -986,6 +1191,25 @@ namespace TaskLayer
                 }
             }
             return false;
+        }
+
+        protected void EngineCrashed(string engineName, Exception e)
+        {
+            var outPath = Path.Combine(OutputFolder, $"{engineName}_crash.txt");
+            e.Data.Add("folder", OutputFolder);
+            using (StreamWriter file = new StreamWriter(outPath))
+            {
+                file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
+                file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
+                file.Write("e: " + e);
+                file.Write("e.Message: " + e.Message);
+                file.Write("e.InnerException: " + e.InnerException);
+                file.Write("e.Source: " + e.Source);
+                file.Write("e.StackTrace: " + e.StackTrace);
+                file.Write("e.TargetSite: " + e.TargetSite);
+            }
+
+            Warn($"{engineName} engine Crashed! Error written to {outPath}");
         }
 
         private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
@@ -1274,6 +1498,7 @@ namespace TaskLayer
             where TBioPolymer : IBioPolymer
         {
             List<TBioPolymer> toRemove = new();
+            bioPolymers.RemoveAll(p => p == null);
             foreach (var accessionGroup in bioPolymers.GroupBy(p => p.Accession)
                          .Where(group => group.Count() > 1) // only keep the ones with multiple entries sharing an accession
                          .Select(group => group.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count) // order by mods then truncation products (this is what was here before)
@@ -1351,6 +1576,30 @@ namespace TaskLayer
                     bioPolymers.RemoveAll(p => ReferenceEquals(p, accessionGroup[i]));
                 }
             }
+        }
+
+        /// <summary>
+        /// Legacy TOML compatibility — when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
+        /// </summary>
+        /// <typeparam name="TTask"></typeparam>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public static TTask ReadTaskTomlWithLowResFallback<TTask>(string filePath) where TTask : MetaMorpheusTask
+        {
+            TomlTable raw = Toml.ReadFile(filePath, tomlConfig);
+            TTask task = raw.Get<TTask>();
+
+            if (raw.ContainsKey(nameof(CommonParameters)))
+            {
+                TomlTable common = raw.Get<TomlTable>(nameof(CommonParameters));
+                if (!common.ContainsKey(nameof(CommonParameters.ProductMassTolerance_LowRes)))
+                {
+                    // Legacy TOML behavior: omitted low-res follows product tolerance
+                    task.CommonParameters.ProductMassTolerance_LowRes = task.CommonParameters.ProductMassTolerance;
+                }
+            }
+
+            return task;
         }
     }
 }

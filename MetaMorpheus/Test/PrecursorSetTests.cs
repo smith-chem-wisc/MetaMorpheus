@@ -29,7 +29,7 @@ namespace Test
         public void Constructor_InitializesProperties()
         {
             // Assert
-            Assert.That(_precursorSet.Tolerance, Is.EqualTo(_tolerance));
+            Assert.That(_precursorSet.DeconPeakTolerance, Is.EqualTo(_tolerance));
             Assert.That(_precursorSet.Count, Is.EqualTo(0));
             Assert.That(_precursorSet.PrecursorDictionary, Is.Not.Null);
             Assert.That(_precursorSet.PrecursorDictionary.Count, Is.EqualTo(0));
@@ -378,28 +378,28 @@ namespace Test
             // Check all properties
             Assert.That(p1.MonoisotopicPeakMz, Is.EqualTo(p2.MonoisotopicPeakMz));
             Assert.That(p1.Charge, Is.EqualTo(p2.Charge));
-            Assert.That(p1.MonoIsotopicMass, Is.EqualTo(p2.MonoIsotopicMass).Within(1e-6));
+            Assert.That(p1.MonoisotopicMass, Is.EqualTo(p2.MonoisotopicMass).Within(1e-6));
             Assert.That(p1.Intensity, Is.EqualTo(p2.Intensity).Within(1e-6));
             Assert.That(p1.EnvelopePeakCount, Is.EqualTo(p2.EnvelopePeakCount));
             Assert.That(p1.FractionalIntensity, Is.EqualTo(p2.FractionalIntensity));
 
             Assert.That(p1.MonoisotopicPeakMz, Is.EqualTo(p3.MonoisotopicPeakMz));
             Assert.That(p1.Charge, Is.EqualTo(p3.Charge));
-            Assert.That(p1.MonoIsotopicMass, Is.EqualTo(p3.MonoIsotopicMass).Within(1e-6));
+            Assert.That(p1.MonoisotopicMass, Is.EqualTo(p3.MonoisotopicMass).Within(1e-6));
             Assert.That(p1.Intensity, Is.EqualTo(p3.Intensity).Within(1e-6));
             Assert.That(p1.EnvelopePeakCount, Is.EqualTo(p3.EnvelopePeakCount));
             Assert.That(p1.FractionalIntensity, Is.EqualTo(p3.FractionalIntensity));
 
             Assert.That(p1.MonoisotopicPeakMz, Is.EqualTo(p4.MonoisotopicPeakMz));
             Assert.That(p1.Charge, Is.EqualTo(p4.Charge));
-            Assert.That(p1.MonoIsotopicMass, Is.EqualTo(p4.MonoIsotopicMass).Within(1e-6));
+            Assert.That(p1.MonoisotopicMass, Is.EqualTo(p4.MonoisotopicMass).Within(1e-6));
             Assert.That(p1.Intensity, Is.EqualTo(p4.Intensity).Within(1e-6));
             Assert.That(p1.EnvelopePeakCount, Is.EqualTo(p4.EnvelopePeakCount));
             Assert.That(p1.FractionalIntensity, Is.EqualTo(p4.FractionalIntensity));
 
             Assert.That(p1.MonoisotopicPeakMz, Is.EqualTo(p5.MonoisotopicPeakMz));
             Assert.That(p1.Charge, Is.EqualTo(p5.Charge));
-            Assert.That(p1.MonoIsotopicMass, Is.EqualTo(p5.MonoIsotopicMass).Within(1e-6));
+            Assert.That(p1.MonoisotopicMass, Is.EqualTo(p5.MonoisotopicMass).Within(1e-6));
             Assert.That(p1.Intensity, Is.EqualTo(p5.Intensity).Within(1e-6));
             Assert.That(p1.EnvelopePeakCount, Is.EqualTo(p5.EnvelopePeakCount));
             Assert.That(p1.FractionalIntensity, Is.EqualTo(p5.FractionalIntensity));
@@ -557,7 +557,7 @@ namespace Test
 
             Assert.That(mergedPrecursor.MonoisotopicPeakMz, Is.EqualTo(originalPrecursor.MonoisotopicPeakMz).Within(1e-6));
             Assert.That(mergedPrecursor.Charge, Is.EqualTo(originalPrecursor.Charge));
-            Assert.That(mergedPrecursor.Mass, Is.EqualTo(originalPrecursor.Mass).Within(1e-6));
+            Assert.That(mergedPrecursor.MonoisotopicMass, Is.EqualTo(originalPrecursor.MonoisotopicMass).Within(1e-6));
             Assert.That(mergedPrecursor.Intensity, Is.EqualTo(originalPrecursor.Intensity).Within(1e-6));
             Assert.That(mergedPrecursor.EnvelopePeakCount, Is.EqualTo(originalPrecursor.EnvelopePeakCount));
             Assert.That(mergedPrecursor.FractionalIntensity, Is.EqualTo(originalPrecursor.FractionalIntensity));
@@ -587,26 +587,26 @@ namespace Test
             var precursor2 = new Precursor(envelope2);
 
             List<Precursor> toMerge = new List<Precursor> { precursor1, precursor2, precursorToNotMerge };
-            PrecursorSet.MergeSplitEnvelopes(in toMerge, new PpmTolerance(5));
+            PrecursorSet.MergeSplitEnvelopes(in toMerge, new PpmTolerance(5), Constants.C13MinusC12);
 
             Assert.That(toMerge.Count, Is.EqualTo(2), "Should have merged two precursors into one");
             var mergedPrecursor = toMerge.First(p => p != precursorToNotMerge);
             Assert.That(mergedPrecursor.MonoisotopicPeakMz, Is.EqualTo(originalPrecursor.MonoisotopicPeakMz).Within(1e-6));
             Assert.That(mergedPrecursor.Charge, Is.EqualTo(originalPrecursor.Charge));
-            Assert.That(mergedPrecursor.Mass, Is.EqualTo(originalPrecursor.Mass).Within(1e-6));
+            Assert.That(mergedPrecursor.MonoisotopicMass, Is.EqualTo(originalPrecursor.MonoisotopicMass).Within(1e-6));
             Assert.That(mergedPrecursor.Intensity, Is.EqualTo(originalPrecursor.Intensity).Within(1e-6));
             Assert.That(mergedPrecursor.EnvelopePeakCount, Is.EqualTo(originalPrecursor.EnvelopePeakCount));
             Assert.That(mergedPrecursor.FractionalIntensity, Is.EqualTo(originalPrecursor.FractionalIntensity));
 
             // ensure it works bidirectionally 
             toMerge = new List<Precursor> { precursorToNotMerge, precursor2, precursor1,  };
-            PrecursorSet.MergeSplitEnvelopes(in toMerge, new PpmTolerance(5));
+            PrecursorSet.MergeSplitEnvelopes(in toMerge, new PpmTolerance(5), Constants.C13MinusC12);
 
             Assert.That(toMerge.Count, Is.EqualTo(2), "Should have merged two precursors into one");
             mergedPrecursor = toMerge.First(p => p != precursorToNotMerge);
             Assert.That(mergedPrecursor.MonoisotopicPeakMz, Is.EqualTo(originalPrecursor.MonoisotopicPeakMz).Within(1e-6));
             Assert.That(mergedPrecursor.Charge, Is.EqualTo(originalPrecursor.Charge));
-            Assert.That(mergedPrecursor.Mass, Is.EqualTo(originalPrecursor.Mass).Within(1e-6));
+            Assert.That(mergedPrecursor.MonoisotopicMass, Is.EqualTo(originalPrecursor.MonoisotopicMass).Within(1e-6));
             Assert.That(mergedPrecursor.Intensity, Is.EqualTo(originalPrecursor.Intensity).Within(1e-6));
             Assert.That(mergedPrecursor.EnvelopePeakCount, Is.EqualTo(originalPrecursor.EnvelopePeakCount));
             Assert.That(mergedPrecursor.FractionalIntensity, Is.EqualTo(originalPrecursor.FractionalIntensity));
@@ -649,7 +649,7 @@ namespace Test
             var mergedPrecursor = toMerge.First(p => p != precursorToNotMerge);
             Assert.That(mergedPrecursor.MonoisotopicPeakMz, Is.EqualTo(originalPrecursor.MonoisotopicPeakMz).Within(1e-6));
             Assert.That(mergedPrecursor.Charge, Is.EqualTo(originalPrecursor.Charge));
-            Assert.That(mergedPrecursor.Mass, Is.EqualTo(originalPrecursor.Mass).Within(1e-6));
+            Assert.That(mergedPrecursor.MonoisotopicMass, Is.EqualTo(originalPrecursor.MonoisotopicMass).Within(1e-6));
             Assert.That(mergedPrecursor.Intensity, Is.EqualTo(originalPrecursor.Intensity).Within(1e-6));
             Assert.That(mergedPrecursor.EnvelopePeakCount, Is.EqualTo(originalPrecursor.EnvelopePeakCount));
             Assert.That(mergedPrecursor.FractionalIntensity, Is.EqualTo(originalPrecursor.FractionalIntensity));
@@ -666,7 +666,7 @@ namespace Test
             mergedPrecursor = toMerge.First(p => p != precursorToNotMerge);
             Assert.That(mergedPrecursor.MonoisotopicPeakMz, Is.EqualTo(originalPrecursor.MonoisotopicPeakMz).Within(1e-6));
             Assert.That(mergedPrecursor.Charge, Is.EqualTo(originalPrecursor.Charge));
-            Assert.That(mergedPrecursor.Mass, Is.EqualTo(originalPrecursor.Mass).Within(1e-6));
+            Assert.That(mergedPrecursor.MonoisotopicMass, Is.EqualTo(originalPrecursor.MonoisotopicMass).Within(1e-6));
             Assert.That(mergedPrecursor.Intensity, Is.EqualTo(originalPrecursor.Intensity).Within(1e-6));
             Assert.That(mergedPrecursor.EnvelopePeakCount, Is.EqualTo(originalPrecursor.EnvelopePeakCount));
             Assert.That(mergedPrecursor.FractionalIntensity, Is.EqualTo(originalPrecursor.FractionalIntensity));
@@ -694,7 +694,7 @@ namespace Test
             var precursor2 = new Precursor(envelope2);
 
             List<Precursor> toMerge = new List<Precursor> { precursor1, precursor2 };
-            PrecursorSet.MergeSplitEnvelopes(in toMerge, new PpmTolerance(5));
+            PrecursorSet.MergeSplitEnvelopes(in toMerge, new PpmTolerance(5), Constants.C13MinusC12);
 
             Assert.That(toMerge.Count, Is.EqualTo(2), "Should not have merged two precursors into one");
         }

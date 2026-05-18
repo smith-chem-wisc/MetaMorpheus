@@ -8,6 +8,7 @@ using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using Omics;
 using Omics.Digestion;
 
@@ -47,7 +48,9 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadBioPolymers(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters).Cast<Protein>().ToList();
+            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, XlSearchParameters.DecoyType, true, localizeableModificationTypes);
+            var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
+            List<Protein> proteinList = loadingResults!.BioPolymers.Cast<Protein>().ToList();
             CommonParameters.TotalPartitions = proteinList.Count() / 250;
             if (CommonParameters.TotalPartitions == 0) { CommonParameters.TotalPartitions = 1; }
 

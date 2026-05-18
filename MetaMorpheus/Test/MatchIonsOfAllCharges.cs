@@ -11,6 +11,7 @@ using Proteomics.ProteolyticDigestion;
 using TaskLayer;
 using Chemistry;
 using System;
+using EngineLayer.DatabaseLoading;
 using MassSpectrometry;
 using Nett;
 using NUnit.Framework.Legacy;
@@ -105,7 +106,7 @@ namespace Test
 
             List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
             Protease protease = new Protease("Custom Protease3", CleavageSpecificity.Full, null, null, motifs);
-            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary[protease.Name] = protease;
 
             CommonParameters CommonParameters1 = new CommonParameters(
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1),
@@ -423,6 +424,8 @@ namespace Test
             string raw2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibrary.msp");
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\UpdateLibrary\rawCopy.mzML");
+            if (File.Exists(rawCopy))
+                File.Delete(rawCopy);
             System.IO.File.Copy(raw1, rawCopy);
             EverythingRunnerEngine UpdateLibrary = new(new List<(string, MetaMorpheusTask)> { ("UpdateSpectraFileOutput", task) }, new List<string> { raw1, raw2 }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask( db1,false), new DbForTask(db2, false) }, thisTaskOutputFolder);
 
