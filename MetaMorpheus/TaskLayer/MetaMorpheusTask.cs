@@ -238,7 +238,7 @@ namespace TaskLayer
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
-                    var precursorSet = new PrecursorSet(commonParameters.DeconvolutionMassTolerance);
+                    var precursorSet = new PrecursorSet(commonParameters.DeconvolutionMassTolerance, commonParameters.PrecursorDeconvolutionParameters.ExpectedIsotopeSpacing);
 
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {

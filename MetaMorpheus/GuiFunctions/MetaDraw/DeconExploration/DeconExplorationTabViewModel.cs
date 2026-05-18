@@ -214,7 +214,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
 
         if (ApplyPrecursorFiltering && deconPpmTolerance != null)
         {
-            var set = new PrecursorSet(deconPpmTolerance);
+            var set = new PrecursorSet(deconPpmTolerance, DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters.ExpectedIsotopeSpacing);
             foreach (var envelope in results)
             {
                 if (envelope != null)

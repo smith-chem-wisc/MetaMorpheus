@@ -24,6 +24,7 @@ namespace EngineLayer.Util
     {
         private static ListPool<Precursor> _listPool = new(8);
         public const double MzScaleFactor = 100.0; // Used to convert m/z to an integer key by multiplying and rounding
+        public double ExpectedIsotopicPeakSpacing { get; }
         public readonly Tolerance Tolerance;
         /// <summary>
         /// This dictionary contains precursors indexed by their integer representation.
@@ -38,10 +39,11 @@ namespace EngineLayer.Util
         /// The m/z tolerance for determining if two precursors are considered equivalent.
         /// Must be positive.
         /// </param>
-        public PrecursorSet(Tolerance tolerance)
+        public PrecursorSet(Tolerance tolerance, double expectedIsotopicPeakSpacing = Constants.C13MinusC12)
         {
             Tolerance = tolerance;
             PrecursorDictionary = new Dictionary<int, List<Precursor>>();
+            ExpectedIsotopicPeakSpacing = expectedIsotopicPeakSpacing;
         }
 
         /// <summary>
@@ -123,14 +125,13 @@ namespace EngineLayer.Util
             var allPrecursors = _listPool.Get();
             allPrecursors.AddRange(PrecursorDictionary.Values.SelectMany(list => list));
 
-            MergeSplitEnvelopes(in allPrecursors, Tolerance);
+            MergeSplitEnvelopes(in allPrecursors, Tolerance, ExpectedIsotopicPeakSpacing);
             RemoveLowHarmonics(in allPrecursors, Tolerance);
             RemoveDuplicates(in allPrecursors); 
             RepopulateDictionary(in allPrecursors); // Call this one last as it cleans and repopulates the dictionary
 
             _listPool.Return(allPrecursors);
             IsDirty = false;
-            _listPool.Return(allPrecursors);
         }
 
         #region Santization 
@@ -144,7 +145,6 @@ namespace EngineLayer.Util
                 Add(precursor);
             }
         }
-
 
         /// <summary>
         /// Currently only takes the first, future work would be to merge them
@@ -165,93 +165,6 @@ namespace EngineLayer.Util
             allPrecursors.AddRange(uniquePrecursors);
             _listPool.Return(uniquePrecursors);
         }
-
-        /// <summary>
-        /// Cleans up precursors and merges those that should be a part of the same envelope. 
-        /// Handles:
-        ///   1) Split envelopes (two partial envelopes that are actually sequential)
-        ///   2) Single-peak orphans (e.g., absCharge=1 and Peaks.Count == 1) that sit one expectedIsotopicSpacing away
-        /// Criterion: last peak of left and first peak of right are separated by ~ (C13-C12)/absCharge within Tolerance.
-        /// </summary>
-        public static void MergeSplitEnvelopes(in List<Precursor> allPrecursors, Tolerance tolerance)
-        {
-            if (allPrecursors == null || allPrecursors.Count < 2)
-                return;
-
-            // Only consider items with an envelope
-            var groups = allPrecursors
-                .Where(p => p.Envelope != null && p.Envelope.Peaks.Count > 0)
-                .GroupBy(p => p.Charge);
-
-            var list = _listPool.Get();
-            // We'll rebuild 'allPrecursors' in place by removing mergedPeaks-rights as we go
-            foreach (var g in groups)
-            {
-                list.Clear();
-                int charge = g.Key;
-                int absCharge = Math.Abs(charge);
-                double spacing = Constants.C13MinusC12 / absCharge;
-
-                // Order by monoisotopic m/z then envelope lowest m/z so "left" is the earlier envelope
-                list.AddRange(g.OrderBy(p => p.MonoisotopicPeakMz)
-                    .ThenBy(p => p.Envelope!.Peaks.Min(m => m.mz)));
-
-                bool mergedSomething;
-                do
-                {
-                    mergedSomething = false;
-
-                    for (int i = 0; i < list.Count - 1; i++)
-                    {
-                        var left = list[i];
-
-                        // Try to merge immediate successors while possible
-                        int j = i + 1;
-                        while (j < list.Count)
-                        {
-                            var right = list[j];
-
-                            // Require same absolute charge for stitching
-                            if (Math.Abs(right.Charge) != absCharge)
-                            {
-                                j++;
-                                continue;
-                            }
-
-                            if (AreSequentialAtSpacing(left, right, spacing, tolerance))
-                            {
-                                // Build mergedPeaks envelope
-                                var mergedPrecursor = MergePrecursors(left, right, charge, tolerance);
-
-                                // Remove both from lists
-                                allPrecursors.Remove(left);
-                                allPrecursors.Remove(right);
-                                list.RemoveAt(j); // Remove right first
-                                list.RemoveAt(i); // Remove left
-
-                                // Insert merged precursor at position k
-                                list.Insert(i, mergedPrecursor);
-                                allPrecursors.Add(mergedPrecursor);
-
-                                mergedSomething = true;
-                                // The new merged precursor is now at position k, so the next iteration will use it as 'left'
-                            }
-                            else
-                            {
-                                // Short-circuit if we've moved far beyond plausible adjacency
-                                if (left.Envelope!.Peaks.Max(p => p.mz) - right.Envelope.Peaks.Min(p => p.mz) > 2 * spacing)
-                                    break;
-
-                                j++;
-                            }
-                        }
-                    }
-
-                } while (mergedSomething);
-            }
-
-            _listPool.Return(list);
-            }
 
         /// <summary>
         /// Harmonics occur when a precursor appears at absCharge and also at an integer divisor of absCharge due to peak skipping (e.g., 15 vs 5).
@@ -317,6 +230,97 @@ namespace EngineLayer.Util
             _listPool.Return(ordered);
         }
 
+        #endregion
+
+        #region Merge Split Envelopes
+
+        /// <summary>
+        /// Cleans up precursors and merges those that should be a part of the same envelope. 
+        /// Handles:
+        ///   1) Split envelopes (two partial envelopes that are actually sequential)
+        ///   2) Single-peak orphans (e.g., absCharge=1 and Peaks.Count == 1) that sit one expectedIsotopicSpacing away
+        /// Criterion: last peak of left and first peak of right are separated by ~ (C13-C12)/absCharge within Tolerance.
+        /// </summary>
+        public static void MergeSplitEnvelopes(in List<Precursor> allPrecursors, Tolerance tolerance, double expectedSpacing)
+        {
+            if (allPrecursors == null || allPrecursors.Count < 2)
+                return;
+
+            // Only consider items with an envelope
+            var groups = allPrecursors
+                .Where(p => p.Envelope != null && p.Envelope.Peaks.Count > 0)
+                .GroupBy(p => p.Charge);
+
+            var list = _listPool.Get();
+            // We'll rebuild 'allPrecursors' in place by removing mergedPeaks-rights as we go
+            foreach (var g in groups)
+            {
+                list.Clear();
+                int charge = g.Key;
+                int absCharge = Math.Abs(charge);
+                double spacing = expectedSpacing / absCharge;
+
+                // Order by monoisotopic m/z then envelope lowest m/z so "left" is the earlier envelope
+                list.AddRange(g.OrderBy(p => p.MonoisotopicPeakMz)
+                    .ThenBy(p => p.Envelope!.Peaks.Min(m => m.mz)));
+
+                bool mergedSomething;
+                do
+                {
+                    mergedSomething = false;
+
+                    for (int i = 0; i < list.Count - 1; i++)
+                    {
+                        var left = list[i];
+
+                        // Try to merge immediate successors while possible
+                        int j = i + 1;
+                        while (j < list.Count)
+                        {
+                            var right = list[j];
+
+                            // Require same absolute charge for stitching
+                            if (Math.Abs(right.Charge) != absCharge)
+                            {
+                                j++;
+                                continue;
+                            }
+
+                            if (AreSequentialAtSpacing(left, right, spacing, tolerance))
+                            {
+                                // Build mergedPeaks envelope
+                                var mergedPrecursor = MergePrecursors(left, right, charge, tolerance);
+
+                                // Remove both from lists
+                                allPrecursors.Remove(left);
+                                allPrecursors.Remove(right);
+                                list.RemoveAt(j); // Remove right first
+                                list.RemoveAt(i); // Remove left
+
+                                // Insert merged precursor at position k
+                                list.Insert(i, mergedPrecursor);
+                                allPrecursors.Add(mergedPrecursor);
+
+                                mergedSomething = true;
+                                // The new merged precursor is now at position k, so the next iteration will use it as 'left'
+                            }
+                            else
+                            {
+                                // Short-circuit if we've moved far beyond plausible adjacency
+                                if (left.Envelope!.Peaks.Max(p => p.mz) - right.Envelope.Peaks.Min(p => p.mz) > 2 * spacing)
+                                    break;
+
+                                j++;
+                            }
+                        }
+                    }
+
+                } while (mergedSomething);
+            }
+
+            _listPool.Return(list);
+        }
+
         /// <summary>
         /// True if 'right' begins exactly one isotopic step after 'left' (sequential boundary),
         /// tested using the configured Tolerance: Within(leftLast + expectedIsotopicSpacing, rightFirst).
@@ -341,6 +345,7 @@ namespace EngineLayer.Util
             // "Correct expectedIsotopicSpacing" evaluated in m/absCharge space with your Tolerance
             return tolerance.Within(leftLast + expectedIsotopicSpacing, rightFirst);
         }
+
 
         // Merge right into left by creating a *new* IsotopicEnvelope with stitched peaks
         public static Precursor MergePrecursors(Precursor left, Precursor right, int charge, Tolerance tolerance)
