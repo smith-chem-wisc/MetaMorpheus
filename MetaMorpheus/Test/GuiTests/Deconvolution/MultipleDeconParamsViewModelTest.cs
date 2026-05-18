@@ -100,11 +100,13 @@ public class MultipleDeconParamsViewModelTest
     [Test]
     public void RemoveSubType_BlockWhenOnlyOne()
     {
+        var originalSub = _viewModel.SubParameters.Single();
         Assert.That(_viewModel.SubParameters.Count, Is.EqualTo(1));
 
         _viewModel.RemoveSubType(_viewModel.SubParameters.Single());
 
         Assert.That(_viewModel.SubParameters.Count, Is.EqualTo(1));
+        Assert.That(_viewModel.SubParameters.Single(), Is.SameAs(originalSub), "The remaining sub-parameter should be the same instance, not a replacement.");
     }
 
     [Test]
