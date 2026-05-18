@@ -212,7 +212,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
             results = DeconvoluteIsolationRegion(SelectedMsDataScan, scanToPlot);
         }
 
-        if (ApplyPrecursorFiltering && deconPpmTolerance != null)
+        if (ApplyPrecursorFiltering)
         {
             var set = new PrecursorSet(deconPpmTolerance, DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters.ExpectedIsotopeSpacing);
             foreach (var envelope in results)
