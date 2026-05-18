@@ -626,10 +626,15 @@
   <Fragment>
     <ComponentGroup Id="Appsrc_Glycan_Mods_files" Directory="MetaAppGlycan_ModsFolder">
       <Component Id="RemoveGlycanModsData" Guid="40090707-AEFF-4C5C-9693-F9A11F9D0402" Condition="OVERWRITEAPPDATA">
-        
+
         <RemoveFolder Id="MetaAppGlycan_ModsFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-      </Component>      
+      </Component>
+      <Component Id="Appsrc_Data_MonosaccharidesCustom.tsv" Guid="82338312-33BC-4426-A6D5-E78E35034A50" Condition="OVERWRITEAPPDATA">
+
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_MonosaccharidesCustom.tsv" Name="MonosaccharidesCustom.tsv" Source="$(var.GUI_TargetDir)Glycan_Mods\MonosaccharidesCustom.tsv" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
