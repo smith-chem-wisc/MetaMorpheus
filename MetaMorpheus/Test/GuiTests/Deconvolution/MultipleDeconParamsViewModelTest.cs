@@ -245,17 +245,49 @@ public class MultipleDeconParamsViewModelTest
     [Test]
     public void AddSubType_OnProductHost_UsesProductDefaults()
     {
+        var productInner = new ClassicDeconvolutionParameters(1, 10, 4, 3, Polarity.Positive); // product default
         var productParams = new MultipleDeconParameters(
-            [_innerParams],
-            _innerParams.MinAssumedChargeState,
-            _innerParams.MaxAssumedChargeState,
-            _innerParams.Polarity,
-            _innerParams.AverageResidueModel,
-            _innerParams.ExpectedIsotopeSpacing);
+            [productInner],
+            productInner.MinAssumedChargeState,
+            productInner.MaxAssumedChargeState,
+            productInner.Polarity,
+            productInner.AverageResidueModel,
+            productInner.ExpectedIsotopeSpacing);
         var productVm = new MultipleDeconParamsViewModel(productParams, isPrecursor: false);
 
         productVm.AddSubType(DeconvolutionType.ClassicDeconvolution);
         var added = productVm.SubParameters.Last();
         Assert.That(added.MaxAssumedChargeState, Is.EqualTo(10)); // peptide product default
+    }
+
+    [Test]
+    public void Polarity_SetViaBaseReference_PropagatesToSubParameters()
+    {
+        _viewModel.AddSubType(DeconvolutionType.IsoDecDeconvolution);
+        DeconParamsViewModel baseRef = _viewModel;
+        baseRef.Polarity = Polarity.Negative;
+
+        foreach (var sub in _viewModel.SubParameters)
+            Assert.That(sub.Polarity, Is.EqualTo(Polarity.Negative));
+    }
+
+    [Test]
+    public void RebuildParameters_AfterSubMutation_SubsRemainConsistent()
+    {
+        _viewModel.AddSubType(DeconvolutionType.IsoDecDeconvolution);
+        // Mutate a sub-VM directly (simulating a per-sub binding change)
+        var sub = _viewModel.SubParameters.Last();
+        sub.Polarity = Polarity.Negative;
+        sub.MinAssumedChargeState = 2;
+        sub.MaxAssumedChargeState = 8;
+
+        // RebuildParameters is triggered by RemoveSubType (or AddSubType)
+        _viewModel.RemoveSubType(_viewModel.SubParameters.Last());
+
+        // The remaining sub should be synchronized back to parent shared values
+        var remaining = _viewModel.SubParameters.Single();
+        Assert.That(remaining.Polarity, Is.EqualTo(_viewModel.Polarity));
+        Assert.That(remaining.MinAssumedChargeState, Is.EqualTo(_viewModel.MinAssumedChargeState));
+        Assert.That(remaining.MaxAssumedChargeState, Is.EqualTo(_viewModel.MaxAssumedChargeState));
     }
 }

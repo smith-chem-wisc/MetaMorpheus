@@ -73,7 +73,7 @@ namespace GuiFunctions;
         }
     }
 
-    public new Polarity Polarity
+    public override Polarity Polarity
     {
         get => base.Polarity;
         set
@@ -84,10 +84,10 @@ namespace GuiFunctions;
         }
     }
 
-    public void AddSubType(DeconvolutionType type, bool isPrecursor = true)
+    public void AddSubType(DeconvolutionType type)
     {
         var defaultParams = type.GetDefaultDeconParams(GlobalVariables.AnalyteType, _isPrecursor);
-        var subVm = defaultParams.ToViewModel();
+        var subVm = defaultParams.ToViewModel(_isPrecursor);
         subVm.Polarity = _parameters.Polarity;
         subVm.MinAssumedChargeState = _parameters.MinAssumedChargeState;
         subVm.MaxAssumedChargeState = _parameters.MaxAssumedChargeState;
@@ -106,6 +106,14 @@ namespace GuiFunctions;
 
     private void RebuildParameters()
     {
+        // Ensure shared fields remain consistent across all sub-VMs before rebuilding
+        foreach (var sub in _subParameters)
+        {
+            sub.Polarity = _parameters.Polarity;
+            sub.MinAssumedChargeState = _parameters.MinAssumedChargeState;
+            sub.MaxAssumedChargeState = _parameters.MaxAssumedChargeState;
+        }
+
         _parameters = new MultipleDeconParameters(
             _subParameters.Select(s => s.Parameters),
             _parameters.MinAssumedChargeState,
