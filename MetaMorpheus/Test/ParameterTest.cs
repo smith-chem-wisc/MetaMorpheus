@@ -50,7 +50,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestFileSpecificParametersClone_DeepCopiesDeconvolutionParams()
+        public static void TestFileSpecificParametersClone_CopiesDeconvolutionParams()
         {
             FileSpecificParameters fsp = new FileSpecificParameters
             {
