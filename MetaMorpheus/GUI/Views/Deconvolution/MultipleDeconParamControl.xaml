@@ -65,7 +65,7 @@
                     <Label Content="Max Assumed Charge State:" Grid.Column="0" Grid.Row="0" />
                     <local:IntegerTexBoxControl Grid.Column="1" Grid.Row="0" Width="45"
                                                 Text="{Binding SharedMaxAssumedChargeState}"
-                                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" AllowNegative="False">
+                                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" AllowNegative="True">
                         <TextBox.ToolTip>
                             <TextBlock>
                                 Shared maximum charge state applied to all sub-deconvolution types.
@@ -76,7 +76,7 @@
                     <Label Content="Min Assumed Charge State:" Grid.Column="2" Grid.Row="0" />
                     <local:IntegerTexBoxControl Grid.Column="3" Grid.Row="0" Width="45"
                                                 Text="{Binding SharedMinAssumedChargeState}"
-                                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" AllowNegative="False">
+                                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" AllowNegative="True">
                         <TextBox.ToolTip>
                             <TextBlock>
                                 Shared minimum charge state applied to all sub-deconvolution types.
