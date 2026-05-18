@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -340,7 +340,7 @@ namespace EngineLayer.Util
 
             // For monoisotopic mass: choose the envelope with the most intense peak, as this is what we use to calculate the averagine. 
             double monoMass = referencePrecursor.MonoisotopicMass;
-            int id = referencePrecursor.Envelope?.PrecursorId == null ? referencePrecursor.Envelope!.PrecursorId : -1;
+            int id = referencePrecursor.Envelope?.PrecursorId ?? -1;
 
             // Check if we are using summed intensity or most abundant (set in common params during search). 
             double maxIntensity = referencePrecursor.Envelope.Peaks.Max(p => p.intensity);
