@@ -62,8 +62,7 @@ namespace EngineLayer
             DeconvolutionParameters productDeconParams = null,
             bool useMostAbundantPrecursorIntensity = true,
             DIAparameters diaParameters = null,
-            IFragmentationParams fragmentationParams = null,
-            int minPrecursorPeaks = 3)
+            IFragmentationParams fragmentationParams = null)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -100,7 +99,6 @@ namespace EngineLayer
             MinVariantDepth = minVariantDepth;
             AddTruncations = addTruncations;
             DIAparameters = diaParameters;
-            MinimumPrecursorPeaks = minPrecursorPeaks;
 
             // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
             if (deconvolutionMaxAssumedChargeState > 0) // positive mode
@@ -162,7 +160,6 @@ namespace EngineLayer
         public DeconvolutionParameters PrecursorDeconvolutionParameters { get; private set; }
         public DeconvolutionParameters ProductDeconvolutionParameters { get; private set; }
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
-        public int MinimumPrecursorPeaks { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
         public Tolerance ProductMassTolerance_LowRes { get; set; }// Use a wider mass tolerance for lower-resolution analyzers (e.g., ion traps). For now, this is an independent parameter used only in glyco tasks and is not modified by the calibration task.

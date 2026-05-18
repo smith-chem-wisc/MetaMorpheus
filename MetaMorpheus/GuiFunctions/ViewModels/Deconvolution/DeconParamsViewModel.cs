@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using MassSpectrometry;
-using MzLibUtil;
 
 namespace GuiFunctions;
 
