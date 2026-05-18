@@ -40,7 +40,7 @@ namespace Test.MetaDraw
             MetaDrawSettings.SpectrumDescription["Retention Time: "] = true;
         }
 
-        [Test]
+        [Test, Explicit("Manual local export utility; depends on machine-specific input files.")]
         public void GenerateMirrorPlots()
         {
             // Step 1: Load .osmtsv
