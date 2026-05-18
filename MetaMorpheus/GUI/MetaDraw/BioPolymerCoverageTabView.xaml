@@ -39,7 +39,6 @@
 
                     <Button Name="SelectDatabaseButton"  Content="Select" HorizontalAlignment="Right" DockPanel.Dock="Right"
                         VerticalAlignment="Center" Width="40" Height="26" Margin="5 0"
-                        IsEnabled="{Binding DatabasePath, Converter={local:StringIsNullOrEmptyToBoolConverter}}"
                         Click="SelectDatabaseButton_OnClick" />
 
                     <Label BorderThickness="1">
