@@ -14,6 +14,9 @@ namespace TaskLayer
     {
         public FileSpecificParameters(TomlTable tomlTable)
         {
+            if (tomlTable == null)
+                throw new MetaMorpheusException("File-specific parameters TOML table cannot be null");
+
             foreach (var keyValuePair in tomlTable)
             {
                 switch (keyValuePair.Key)
