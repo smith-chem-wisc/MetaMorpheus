@@ -442,7 +442,6 @@ public class MetaDrawDataLoader
                 bpTabVm.OnPropertyChanged(nameof(bpTabVm.DatabaseName));
                 bpTabVm.OnPropertyChanged(nameof(bpTabVm.DatabasePathsTooltip));
                 loadedDb = true;
-                break;
             }
         }
         catch (Exception) { loadedDb = false; }

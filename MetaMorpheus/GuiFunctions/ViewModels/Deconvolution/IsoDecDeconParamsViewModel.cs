@@ -28,7 +28,6 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         parameters.ReportMulitpleMonoisos = false;
 
         Parameters = parameters;
-        DeconvolutionTolerance = new PpmTolerance(parameters.MatchTolerance);
     }
 
     public bool PhaseResIsFour
@@ -77,7 +76,6 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
                 return;
 
             _parameters.MatchTolerance = value;
-            DeconvolutionTolerance = new PpmTolerance(value);
             OnPropertyChanged(nameof(MatchTolerance));
         }
     }

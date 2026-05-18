@@ -62,8 +62,7 @@ namespace EngineLayer
             DeconvolutionParameters productDeconParams = null,
             bool useMostAbundantPrecursorIntensity = true,
             DIAparameters diaParameters = null,
-            IFragmentationParams fragmentationParams = null)
-            bool useMostAbundantPrecursorIntensity = true,
+            IFragmentationParams fragmentationParams = null,
             int minPrecursorPeaks = 3)
 
         {

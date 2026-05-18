@@ -17,7 +17,6 @@ using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
 using Chemistry;
-using ThermoFisher.CommonCore.Data.Business;
 using Precursor = EngineLayer.Util.Precursor;
 
 namespace GuiFunctions;

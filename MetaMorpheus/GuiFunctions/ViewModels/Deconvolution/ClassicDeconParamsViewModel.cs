@@ -19,7 +19,6 @@ public sealed class ClassicDeconParamsViewModel : DeconParamsViewModel
     public ClassicDeconParamsViewModel(ClassicDeconvolutionParameters parameters)
     {
         Parameters = parameters;
-        DeconvolutionTolerance = new PpmTolerance(parameters.DeconvolutionTolerancePpm);
     }
 
     public double DeconvolutionTolerancePpm
@@ -28,7 +27,6 @@ public sealed class ClassicDeconParamsViewModel : DeconParamsViewModel
         set
         {
             _parameters.DeconvolutionTolerancePpm = value;
-            DeconvolutionTolerance = new PpmTolerance(value);
             OnPropertyChanged(nameof(DeconvolutionTolerancePpm));
         }
     }

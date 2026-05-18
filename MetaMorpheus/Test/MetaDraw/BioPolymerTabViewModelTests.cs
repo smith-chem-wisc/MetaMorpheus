@@ -60,7 +60,6 @@ namespace Test.MetaDraw
             bool nameChanged = false;
             vm.PropertyChanged += (s, e) =>
             {
-                if (e.PropertyName == "DatabasePath") pathChanged = true;
                 if (e.PropertyName == "DatabaseName") nameChanged = true;
             };
             vm.DatabasePaths.Add("C:\\db.fasta");
