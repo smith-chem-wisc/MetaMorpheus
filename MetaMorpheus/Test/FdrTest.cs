@@ -865,5 +865,24 @@ namespace Test
 
             property.SetValue(null, false);
         }
+
+        [Test]
+        public static void FdrAnalysisEngine_GetRTPredictor_UnknownName_ReturnsNull()
+        {
+            // GetRTPredictor's switch falls through to `_ => null` when RTPredictorName
+            // is none of the recognized names. Reflection avoids the heavy
+            // Compute_PEPValue fixture this private static would otherwise need.
+            var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, "GetRTPredictor not found via reflection — signature changed?");
+
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
+            {
+                ("dummy.mzML", new CommonParameters(rtPredictorName: "NotARealPredictor"))
+            };
+
+            var result = method.Invoke(null, new object[] { "standard", fsp });
+            Assert.That(result, Is.Null);
+        }
     }
 }
