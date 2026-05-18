@@ -26,7 +26,7 @@ namespace GuiFunctions
         public static DeconParamsViewModel GetDefaultViewModel(this DeconvolutionType deconvolutionType, AnalyteType? analyteType = null, bool isPrecursor = true)
         {
             var defaultParams = deconvolutionType.GetDefaultDeconParams(analyteType, isPrecursor);
-            return defaultParams.ToViewModel(isPrecursor);
+            return defaultParams?.ToViewModel(isPrecursor);
         }
 
         /// <summary>

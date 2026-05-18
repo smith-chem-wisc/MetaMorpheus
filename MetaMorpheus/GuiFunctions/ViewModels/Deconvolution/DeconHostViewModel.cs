@@ -38,39 +38,35 @@ public class DeconHostViewModel : BaseViewModel
         PrecursorDeconvolutionParametersList = new ObservableCollection<DeconParamsViewModel>();
         ProductDeconvolutionParametersList = new ObservableCollection<DeconParamsViewModel>();
 
+        // FromFile parameters are not supported in the GUI; treat them as null for list construction
+        bool precursorIsFromFile = initialPrecursorParameters?.DeconvolutionType == DeconvolutionType.FromFile;
+        bool productIsFromFile = initialProductParameters?.DeconvolutionType == DeconvolutionType.FromFile;
+
         // populate the lists by adding the default parameters for each deconvolution type or the provided parameters
         foreach (var deconType in Enum.GetValues<DeconvolutionType>())
         {
-            if (deconType == DeconvolutionType.ExampleNewDeconvolutionTemplate)
+            if (deconType == DeconvolutionType.ExampleNewDeconvolutionTemplate || deconType == DeconvolutionType.FromFile)
                 continue;
 
-            try
-            {
-                if (initialPrecursorParameters != null && initialPrecursorParameters.DeconvolutionType == deconType)
-                    PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel(true));
-                else
-                    PrecursorDeconvolutionParametersList.Add(
-                        deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, true));
+            if (initialPrecursorParameters != null && !precursorIsFromFile && initialPrecursorParameters.DeconvolutionType == deconType)
+                PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel(true));
+            else
+                PrecursorDeconvolutionParametersList.Add(
+                    deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, true));
 
-                if (initialProductParameters != null && initialProductParameters.DeconvolutionType == deconType)
-                    ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel(false));
-                else
-                    ProductDeconvolutionParametersList.Add(
-                        deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, false));
-            }
-            catch (NotImplementedException e)
-            {
-                // If a deconvolution type does not have a default parameter set, it will not be added to the list of options in the GUI
-                Console.WriteLine($"No default parameters set for {deconType}, skipping adding it to the deconvolution options in the GUI");
-            }
+            if (initialProductParameters != null && !productIsFromFile && initialProductParameters.DeconvolutionType == deconType)
+                ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel(false));
+            else
+                ProductDeconvolutionParametersList.Add(
+                    deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, false));
         }
 
         // If deconvolution parameters are not set, default to MetaMorpheus defaults
-        PrecursorDeconvolutionParameters = initialPrecursorParameters is null 
+        PrecursorDeconvolutionParameters = (initialPrecursorParameters is null || precursorIsFromFile)
             ? PrecursorDeconvolutionParametersList.First(x => x.DeconvolutionType == DeconvolutionType.ClassicDeconvolution) 
             : PrecursorDeconvolutionParametersList.First(x => x.Parameters == initialPrecursorParameters);
 
-        ProductDeconvolutionParameters = initialProductParameters is null 
+        ProductDeconvolutionParameters = (initialProductParameters is null || productIsFromFile)
             ? ProductDeconvolutionParametersList.First(x => x.DeconvolutionType == DeconvolutionType.ClassicDeconvolution)
             : ProductDeconvolutionParametersList.First(x => x.Parameters == initialProductParameters);
     }

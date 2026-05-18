@@ -112,6 +112,20 @@ public class MzLibExtensionsTests
     }
 
     [Test]
+    public void GetDefaultViewModel_FromFile_ReturnsNull()
+    {
+        var result = DeconvolutionType.FromFile.GetDefaultViewModel();
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public void GetDefaultViewModel_ExampleNewDeconvolutionTemplate_ReturnsNull()
+    {
+        var result = DeconvolutionType.ExampleNewDeconvolutionTemplate.GetDefaultViewModel();
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
     public void MajorityWithin_ReturnsTrue_WhenMajorityWithinRange()
     {
         var range = new MzRange(10, 20);
