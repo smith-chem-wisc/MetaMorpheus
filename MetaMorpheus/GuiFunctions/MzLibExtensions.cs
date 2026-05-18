@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
@@ -26,7 +26,7 @@ namespace GuiFunctions
         public static DeconParamsViewModel GetDefaultViewModel(this DeconvolutionType deconvolutionType, AnalyteType? analyteType = null, bool isPrecursor = true)
         {
             var defaultParams = deconvolutionType.GetDefaultDeconParams(analyteType, isPrecursor);
-            return defaultParams.ToViewModel();
+            return defaultParams.ToViewModel(isPrecursor);
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace GuiFunctions
         /// <exception cref="NotImplementedException">
         /// Thrown when the type of <paramref name="parameters"/> is not supported.
         /// </exception>
-        public static DeconParamsViewModel ToViewModel(this DeconvolutionParameters parameters)
+        public static DeconParamsViewModel ToViewModel(this DeconvolutionParameters parameters, bool isPrecursor = true)
         {
             if (parameters is ClassicDeconvolutionParameters classicParams)
                 return new ClassicDeconParamsViewModel(classicParams);
@@ -46,7 +46,7 @@ namespace GuiFunctions
                 return new IsoDecDeconParamsViewModel(isoParams);
             
             if (parameters is MultipleDeconParameters multipleParams)
-                return new MultipleDeconParamsViewModel(multipleParams);
+                return new MultipleDeconParamsViewModel(multipleParams, isPrecursor);
 
             //if (parameters is FromFileDeconvolutionParameters file)
             //    return new FromFileDeconvolutionParametersViewModel(file);

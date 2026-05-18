@@ -232,4 +232,30 @@ public class MultipleDeconParamsViewModelTest
         Assert.That(sub.MaxAssumedChargeState, Is.EqualTo(-5));
         Assert.That(sub.Polarity, Is.EqualTo(Polarity.Negative));
     }
+
+    [Test]
+    public void AddSubType_OnPrecursorHost_UsesPrecursorDefaults()
+    {
+        // Default constructor isPrecursor = true
+        _viewModel.AddSubType(DeconvolutionType.ClassicDeconvolution);
+        var added = _viewModel.SubParameters.Last();
+        Assert.That(added.MaxAssumedChargeState, Is.EqualTo(12)); // peptide precursor default
+    }
+
+    [Test]
+    public void AddSubType_OnProductHost_UsesProductDefaults()
+    {
+        var productParams = new MultipleDeconParameters(
+            [_innerParams],
+            _innerParams.MinAssumedChargeState,
+            _innerParams.MaxAssumedChargeState,
+            _innerParams.Polarity,
+            _innerParams.AverageResidueModel,
+            _innerParams.ExpectedIsotopeSpacing);
+        var productVm = new MultipleDeconParamsViewModel(productParams, isPrecursor: false);
+
+        productVm.AddSubType(DeconvolutionType.ClassicDeconvolution);
+        var added = productVm.SubParameters.Last();
+        Assert.That(added.MaxAssumedChargeState, Is.EqualTo(10)); // peptide product default
+    }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using EngineLayer;
 using GuiFunctions;
@@ -394,5 +394,33 @@ public class DeconHostViewModelTests
         Assert.That(sub.MinAssumedChargeState, Is.EqualTo(multipleVm.MinAssumedChargeState));
         Assert.That(sub.MaxAssumedChargeState, Is.EqualTo(multipleVm.MaxAssumedChargeState));
         Assert.That(sub.Polarity, Is.EqualTo(multipleVm.Polarity));
+    }
+
+    [Test]
+    public void SetAllPrecursorMaxChargeState_PropagatesToMultipleDeconSubParameters()
+    {
+        var viewModel = new DeconHostViewModel();
+        var multipleVm = (MultipleDeconParamsViewModel)viewModel.PrecursorDeconvolutionParametersList
+            .First(vm => vm.DeconvolutionType == DeconvolutionType.Multiple);
+
+        viewModel.SetAllPrecursorMaxChargeState(25);
+
+        Assert.That(multipleVm.MaxAssumedChargeState, Is.EqualTo(25));
+        foreach (var sub in multipleVm.SubParameters)
+            Assert.That(sub.MaxAssumedChargeState, Is.EqualTo(25));
+    }
+
+    [Test]
+    public void SetAllProductMaxChargeState_PropagatesToMultipleDeconSubParameters()
+    {
+        var viewModel = new DeconHostViewModel();
+        var multipleVm = (MultipleDeconParamsViewModel)viewModel.ProductDeconvolutionParametersList
+            .First(vm => vm.DeconvolutionType == DeconvolutionType.Multiple);
+
+        viewModel.SetAllProductMaxChargeState(7);
+
+        Assert.That(multipleVm.MaxAssumedChargeState, Is.EqualTo(7));
+        foreach (var sub in multipleVm.SubParameters)
+            Assert.That(sub.MaxAssumedChargeState, Is.EqualTo(7));
     }
 }

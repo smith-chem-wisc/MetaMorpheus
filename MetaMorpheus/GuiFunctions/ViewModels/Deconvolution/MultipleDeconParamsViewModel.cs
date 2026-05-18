@@ -6,10 +6,11 @@ using MassSpectrometry;
 
 namespace GuiFunctions;
 
-public class MultipleDeconParamsViewModel : DeconParamsViewModel
+    public class MultipleDeconParamsViewModel : DeconParamsViewModel
 {
     private MultipleDeconParameters _parameters;
     private readonly ObservableCollection<DeconParamsViewModel> _subParameters;
+    private readonly bool _isPrecursor;
     private DeconvolutionType _selectedAddType = DeconvolutionType.ClassicDeconvolution;
 
     public ObservableCollection<DeconParamsViewModel> SubParameters => _subParameters;
@@ -42,9 +43,10 @@ public class MultipleDeconParamsViewModel : DeconParamsViewModel
 
     public override string ToString() => "Multiple";
 
-    public MultipleDeconParamsViewModel(MultipleDeconParameters parameters)
+    public MultipleDeconParamsViewModel(MultipleDeconParameters parameters, bool isPrecursor = true)
     {
         _parameters = parameters;
+        _isPrecursor = isPrecursor;
         _subParameters = new ObservableCollection<DeconParamsViewModel>(
             parameters.Parameters.Select(p => p.ToViewModel()));
     }
@@ -84,7 +86,7 @@ public class MultipleDeconParamsViewModel : DeconParamsViewModel
 
     public void AddSubType(DeconvolutionType type, bool isPrecursor = true)
     {
-        var defaultParams = type.GetDefaultDeconParams(GlobalVariables.AnalyteType, isPrecursor);
+        var defaultParams = type.GetDefaultDeconParams(GlobalVariables.AnalyteType, _isPrecursor);
         var subVm = defaultParams.ToViewModel();
         subVm.Polarity = _parameters.Polarity;
         subVm.MinAssumedChargeState = _parameters.MinAssumedChargeState;

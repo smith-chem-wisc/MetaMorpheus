@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -47,13 +47,13 @@ public class DeconHostViewModel : BaseViewModel
             try
             {
                 if (initialPrecursorParameters != null && initialPrecursorParameters.DeconvolutionType == deconType)
-                    PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel());
+                    PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel(true));
                 else
                     PrecursorDeconvolutionParametersList.Add(
                         deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, true));
 
                 if (initialProductParameters != null && initialProductParameters.DeconvolutionType == deconType)
-                    ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel());
+                    ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel(false));
                 else
                     ProductDeconvolutionParametersList.Add(
                         deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, false));
@@ -105,7 +105,10 @@ public class DeconHostViewModel : BaseViewModel
     {
         foreach (var precursorParams in PrecursorDeconvolutionParametersList)
         {
-            precursorParams.MaxAssumedChargeState = newMaxCharge;
+            if (precursorParams is MultipleDeconParamsViewModel multiVm)
+                multiVm.SharedMaxAssumedChargeState = newMaxCharge;
+            else
+                precursorParams.MaxAssumedChargeState = newMaxCharge;
         }
         OnPropertyChanged(nameof(PrecursorDeconvolutionParametersList));
     }
@@ -114,7 +117,10 @@ public class DeconHostViewModel : BaseViewModel
     {
         foreach (var productParams in ProductDeconvolutionParametersList)
         {
-            productParams.MaxAssumedChargeState = newMaxCharge;
+            if (productParams is MultipleDeconParamsViewModel multiVm)
+                multiVm.SharedMaxAssumedChargeState = newMaxCharge;
+            else
+                productParams.MaxAssumedChargeState = newMaxCharge;
         }
         OnPropertyChanged(nameof(ProductDeconvolutionParametersList));
     }
