@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -47,6 +47,35 @@ namespace Test
             Assert.That(fsp.PrecursorDeconvolutionParameters, Is.EqualTo(fspClone.PrecursorDeconvolutionParameters));
             Assert.That(fsp.ProductDeconvolutionParameters, Is.EqualTo(fspClone.ProductDeconvolutionParameters));
             GlobalVariables.AnalyteType = AnalyteType.Peptide;
+        }
+
+        [Test]
+        public static void TestFileSpecificParametersClone_DeepCopiesDeconvolutionParams()
+        {
+            FileSpecificParameters fsp = new FileSpecificParameters
+            {
+                PrecursorDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                ProductDeconvolutionParameters = new IsoDecDeconvolutionParameters(),
+                CustomIons = new List<ProductType> { ProductType.b, ProductType.y }
+            };
+
+            FileSpecificParameters fspClone = fsp.Clone();
+            Assert.That(fspClone, Is.Not.Null);
+
+            Assert.That(fspClone.PrecursorDeconvolutionParameters, Is.Not.Null);
+            Assert.That(fspClone.PrecursorDeconvolutionParameters, Is.EqualTo(fsp.PrecursorDeconvolutionParameters));
+            Assert.That(fspClone.PrecursorDeconvolutionParameters.MaxAssumedChargeState,
+                Is.EqualTo(fsp.PrecursorDeconvolutionParameters.MaxAssumedChargeState));
+
+            Assert.That(fspClone.ProductDeconvolutionParameters, Is.Not.Null);
+            Assert.That(fspClone.ProductDeconvolutionParameters, Is.EqualTo(fsp.ProductDeconvolutionParameters));
+
+            Assert.That(fspClone.CustomIons, Is.Not.Null);
+            CollectionAssert.AreEqual(fsp.CustomIons, fspClone.CustomIons);
+
+            // Verify clone creates a new list, not sharing the reference
+            fspClone.CustomIons.Add(ProductType.c);
+            Assert.That(fsp.CustomIons.Count, Is.EqualTo(2), "Original's list should not be affected by clone modifications");
         }
 
         [Test]
