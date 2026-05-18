@@ -25,7 +25,7 @@ namespace MetaMorpheusGUI
         {
             if (DataContext is MirrorPlotTabViewModel vm && vm.SelectedLeftPsm != null && vm.SelectedRightPsm != null)
             {
-                DrawSequences(vm);
+                vm.RefreshSequences();
             }
         }
 
@@ -33,30 +33,8 @@ namespace MetaMorpheusGUI
         {
             if (DataContext is MirrorPlotTabViewModel vm && vm.SelectedLeftPsm != null && vm.SelectedRightPsm != null)
             {
-                DrawSequences(vm);
+                vm.RefreshSequences();
             }
-        }
-
-        private void DrawSequences(MirrorPlotTabViewModel vm)
-        {
-            TopSequenceCanvas.Children.Clear();
-            BottomSequenceCanvas.Children.Clear();
-
-            var topSequence = new DrawnSequence(TopSequenceCanvas, vm.SelectedLeftPsm, false);
-            topSequence.AnnotateBaseSequence(
-                vm.SelectedLeftPsm.BaseSeq,
-                vm.SelectedLeftPsm.FullSequence,
-                10,
-                vm.SelectedLeftPsm.MatchedIons,
-                vm.SelectedLeftPsm);
-
-            var bottomSequence = new DrawnSequence(BottomSequenceCanvas, vm.SelectedRightPsm, false);
-            bottomSequence.AnnotateBaseSequence(
-                vm.SelectedRightPsm.BaseSeq,
-                vm.SelectedRightPsm.FullSequence,
-                10,
-                vm.SelectedRightPsm.MatchedIons,
-                vm.SelectedRightPsm);
         }
     }
 }

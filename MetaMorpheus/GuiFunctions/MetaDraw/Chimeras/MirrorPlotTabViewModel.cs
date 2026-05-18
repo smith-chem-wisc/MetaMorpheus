@@ -142,6 +142,35 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
     public void RefreshPlot()
     {
         RebuildMirrorPlot();
+        RefreshSequences();
+    }
+
+    public void RefreshSequences()
+    {
+        TopCanvasExport?.Children.Clear();
+        BottomCanvasExport?.Children.Clear();
+
+        if (TopCanvasExport == null || BottomCanvasExport == null)
+            return;
+
+        if (SelectedLeftPsm == null || SelectedRightPsm == null)
+            return;
+
+        var topSequence = new DrawnSequence(TopCanvasExport, SelectedLeftPsm, false);
+        topSequence.AnnotateBaseSequence(
+            SelectedLeftPsm.BaseSeq,
+            SelectedLeftPsm.FullSequence,
+            10,
+            SelectedLeftPsm.MatchedIons,
+            SelectedLeftPsm);
+
+        var bottomSequence = new DrawnSequence(BottomCanvasExport, SelectedRightPsm, false);
+        bottomSequence.AnnotateBaseSequence(
+            SelectedRightPsm.BaseSeq,
+            SelectedRightPsm.FullSequence,
+            10,
+            SelectedRightPsm.MatchedIons,
+            SelectedRightPsm);
     }
 
     public void ExportPlot()

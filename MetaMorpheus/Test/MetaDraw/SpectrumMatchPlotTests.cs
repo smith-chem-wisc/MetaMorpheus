@@ -342,6 +342,38 @@ namespace Test.MetaDraw
         }
 
         [Test]
+        public void MirrorPlotRefreshPlot_RedrawsSequencesAfterSettingsChange()
+        {
+            MetaDrawSettings.DrawMatchedIons = true;
+
+            var mirrorPlotViewModel = new GuiFunctions.MetaDraw.MirrorPlotTabViewModel
+            {
+                MirrorPlotView = new OxyPlot.Wpf.PlotView(),
+                TopCanvasExport = new Canvas(),
+                BottomCanvasExport = new Canvas()
+            };
+
+            mirrorPlotViewModel.ProcessMirrorData(metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles);
+            mirrorPlotViewModel.SelectedLeftPsm = psm;
+            mirrorPlotViewModel.SelectedRightPsm = psm;
+            mirrorPlotViewModel.RefreshSequences();
+
+            int initialTopChildCount = mirrorPlotViewModel.TopCanvasExport.Children.Count;
+            int initialBottomChildCount = mirrorPlotViewModel.BottomCanvasExport.Children.Count;
+
+            Assert.That(initialTopChildCount, Is.GreaterThan(0));
+            Assert.That(initialBottomChildCount, Is.GreaterThan(0));
+
+            MetaDrawSettings.DrawMatchedIons = false;
+            mirrorPlotViewModel.RefreshPlot();
+
+            Assert.That(mirrorPlotViewModel.TopCanvasExport.Children.Count, Is.LessThan(initialTopChildCount),
+                "RefreshPlot should redraw the top mirror sequence canvas when sequence-display settings change.");
+            Assert.That(mirrorPlotViewModel.BottomCanvasExport.Children.Count, Is.LessThan(initialBottomChildCount),
+                "RefreshPlot should redraw the bottom mirror sequence canvas when sequence-display settings change.");
+        }
+
+        [Test]
         public static void TestCrossLinkSpectrumMatchPlot()
         { 
             // set up file paths
