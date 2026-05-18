@@ -544,12 +544,13 @@ namespace TaskLayer
             Tolerance productMassTolerance_LowRes = fileSpecificParams.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
+
             DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
             DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
 
-            // DoPrecursorDeconvolution flows from CommonParameters (not FSP) — deconv params from FSP are stored
-            // independently and will be used when DoPrecursorDeconvolution is true.
-
+            // DoPrecursorDeconvolution and DoProductDeconvolution flow from CommonParameters only;
+            // file-specific PrecursorDeconvolutionParameters / ProductDeconvolutionParameters are stored
+            // independently and take effect when the corresponding Do* flag is true.
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
@@ -558,8 +559,7 @@ namespace TaskLayer
                 digestionParams: fileSpecificDigestionParams,
                 separationType: separationType,
 
-                // NEED THESE OR THEY'LL BE OVERWRITTEN WITH DEFAULTS — escalar params (including deconv scalars) must be
-                // passed explicitly since CommonParameters constructor pulls defaults for these
+                //NEED THESE OR THEY'LL BE OVERWRITTEN
                 ms2childScanDissociationType: commonParams.MS2ChildScanDissociationType,
                 ms3childScanDissociationType: commonParams.MS3ChildScanDissociationType,
                 doPrecursorDeconvolution: commonParams.DoPrecursorDeconvolution,
