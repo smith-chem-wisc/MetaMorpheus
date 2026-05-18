@@ -243,6 +243,42 @@ namespace Test.MetaDraw
         }
 
         [Test]
+        public void MirrorPlotRelativeIntensity_NormalizesPrePopulatedEnvelopes()
+        {
+            MetaDrawSettings.AnnotateIsotopicEnvelopes = true;
+            MetaDrawSettings.DisplayIonAnnotations = true;
+            MetaDrawSettings.DisplayInternalIons = true;
+
+            var populatedEnvelopePlotView = new OxyPlot.Wpf.PlotView();
+            metadrawLogic.DisplaySpectrumMatch(populatedEnvelopePlotView, psm, parentChildView, out List<string> errors);
+            Assert.That(errors == null || !errors.Any());
+            Assert.That(psm.MatchedIons.OfType<MatchedFragmentIonWithEnvelope>().Any(p => p.Envelope != null), Is.True,
+                "Test setup should populate isotopic envelopes before building the relative-intensity mirror plot.");
+
+            var mirrorPlotViewModel = new GuiFunctions.MetaDraw.MirrorPlotTabViewModel
+            {
+                MirrorPlotView = new OxyPlot.Wpf.PlotView()
+            };
+
+            mirrorPlotViewModel.ProcessMirrorData(metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles);
+            mirrorPlotViewModel.UseRelativeIntensity = true;
+            mirrorPlotViewModel.SelectedLeftPsm = psm;
+            mirrorPlotViewModel.SelectedRightPsm = psm;
+
+            Assert.That(mirrorPlotViewModel.MirrorPlot, Is.Not.Null);
+
+            double maxAbsIntensity = mirrorPlotViewModel.MirrorPlot.Model.Series
+                .OfType<OxyPlot.Series.LineSeries>()
+                .SelectMany(p => p.Points)
+                .Select(p => Math.Abs(p.Y))
+                .DefaultIfEmpty(0)
+                .Max();
+
+            Assert.That(maxAbsIntensity, Is.LessThanOrEqualTo(1.000001),
+                "Relative-intensity mirror plot should normalize already-populated isotopic envelopes.");
+        }
+
+        [Test]
         public static void TestCrossLinkSpectrumMatchPlot()
         { 
             // set up file paths

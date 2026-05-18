@@ -199,8 +199,17 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
 
             if (ion is MatchedFragmentIonWithEnvelope envIon)
             {
+                var normalizedEnvelope = envIon.Envelope is null
+                    ? null
+                    : new IsotopicEnvelope(
+                        envIon.Envelope.Peaks.Select(p => (p.mz, p.intensity / maxIntensity)).ToList(),
+                        envIon.Envelope.MonoisotopicMass,
+                        envIon.Envelope.Charge,
+                        envIon.Envelope.TotalIntensity / maxIntensity,
+                        envIon.Envelope.Peaks.Count);
+
                 normalized.Add(new MatchedFragmentIonWithEnvelope(product, ion.Mz,
-                    normalizedIntensity, ion.Charge, envIon.Envelope));
+                    normalizedIntensity, ion.Charge, normalizedEnvelope));
             }
             else
             {
