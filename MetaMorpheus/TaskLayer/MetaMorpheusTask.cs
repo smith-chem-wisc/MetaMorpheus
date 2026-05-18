@@ -555,7 +555,8 @@ namespace TaskLayer
                 digestionParams: fileSpecificDigestionParams,
                 separationType: separationType,
 
-                //NEED THESE OR THEY'LL BE OVERWRITTEN
+                // NEED THESE OR THEY'LL BE OVERWRITTEN WITH DEFAULTS — escalar params (including deconv scalars) must be
+                // passed explicitly since CommonParameters constructor pulls defaults for these
                 ms2childScanDissociationType: commonParams.MS2ChildScanDissociationType,
                 ms3childScanDissociationType: commonParams.MS3ChildScanDissociationType,
                 doPrecursorDeconvolution: commonParams.DoPrecursorDeconvolution,
