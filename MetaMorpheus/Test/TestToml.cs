@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -416,6 +416,38 @@ namespace Test
                 if (Directory.Exists(tempDirIsoDecDirect)) Directory.Delete(tempDirIsoDecDirect, true);
                 if (Directory.Exists(outputDir)) Directory.Delete(outputDir, true);
             }
+        }
+
+        [Test]
+        public static void TestFileSpecificDeconvolutionParams_ParsesBothTypesFromToml()
+        {
+            // Classic round-trip
+            var fspClassic = new FileSpecificParameters
+            {
+                PrecursorDeconvolutionParameters = new ClassicDeconvolutionParameters(2, 15, 5, 3),
+                ProductDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 8, 4, 2)
+            };
+
+            string tomlClassic = Toml.WriteString(fspClassic, MetaMorpheusTask.tomlConfig);
+            var parsedClassic = new FileSpecificParameters(Toml.ReadString(tomlClassic, MetaMorpheusTask.tomlConfig));
+
+            Assert.That(parsedClassic.PrecursorDeconvolutionParameters, Is.TypeOf<ClassicDeconvolutionParameters>());
+            Assert.That(parsedClassic.PrecursorDeconvolutionParameters.MaxAssumedChargeState, Is.EqualTo(15));
+            Assert.That(parsedClassic.ProductDeconvolutionParameters, Is.TypeOf<ClassicDeconvolutionParameters>());
+            Assert.That(parsedClassic.ProductDeconvolutionParameters.MaxAssumedChargeState, Is.EqualTo(8));
+
+            // IsoDec round-trip
+            var fspIsoDec = new FileSpecificParameters
+            {
+                PrecursorDeconvolutionParameters = new IsoDecDeconvolutionParameters(),
+                ProductDeconvolutionParameters = new IsoDecDeconvolutionParameters()
+            };
+
+            string tomlIsoDec = Toml.WriteString(fspIsoDec, MetaMorpheusTask.tomlConfig);
+            var parsedIsoDec = new FileSpecificParameters(Toml.ReadString(tomlIsoDec, MetaMorpheusTask.tomlConfig));
+
+            Assert.That(parsedIsoDec.PrecursorDeconvolutionParameters, Is.TypeOf<IsoDecDeconvolutionParameters>());
+            Assert.That(parsedIsoDec.ProductDeconvolutionParameters, Is.TypeOf<IsoDecDeconvolutionParameters>());
         }
 
         [Test]
