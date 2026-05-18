@@ -217,6 +217,28 @@ namespace Test
 
         }
 
+        [Test]
+        public static void TestFileSpecificParamsOverridesDeconvParams()
+        {
+            CommonParameters defaultParams = new CommonParameters(
+                precursorDeconParams: new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                productDeconParams: new ClassicDeconvolutionParameters(1, 10, 4, 3));
+
+            var fspOverride = new FileSpecificParameters
+            {
+                PrecursorDeconvolutionParameters = new IsoDecDeconvolutionParameters(),
+                ProductDeconvolutionParameters = new IsoDecDeconvolutionParameters()
+            };
+
+            CommonParameters updated = MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParams, fspOverride);
+
+            Assert.That(updated.PrecursorDeconvolutionParameters, Is.EqualTo(fspOverride.PrecursorDeconvolutionParameters));
+            Assert.That(updated.PrecursorDeconvolutionParameters, Is.Not.EqualTo(defaultParams.PrecursorDeconvolutionParameters),
+                "FSP deconv params should override CP defaults");
+            Assert.That(updated.ProductDeconvolutionParameters, Is.EqualTo(fspOverride.ProductDeconvolutionParameters));
+            Assert.That(updated.ProductDeconvolutionParameters, Is.Not.EqualTo(defaultParams.ProductDeconvolutionParameters));
+        }
+
 
         [Test]
         //This test exists because file specific parameters code has a tendency to overwrite common parameters and make life horrible 
