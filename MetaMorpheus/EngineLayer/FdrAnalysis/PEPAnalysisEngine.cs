@@ -47,6 +47,7 @@ namespace EngineLayer
                     NumberOfTrees = 400,
                     MinimumExampleCountPerLeaf = 10,
                     NumberOfLeaves = 20,
+                    // TODO: change LearningRate to 0.05
                     // Lowered from 0.2 after a hyperparameter sweep: at 0.2 the model is overconfident
                     // (stochastic infinite LogLoss) and iterative retraining degrades its calibration;
                     // 0.05 gives the best peptide yield and roughly halves LogLoss. See the
