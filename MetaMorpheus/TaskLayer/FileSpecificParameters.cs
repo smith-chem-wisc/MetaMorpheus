@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using EngineLayer;
 using MzLibUtil;
 using Nett;
@@ -104,7 +104,22 @@ namespace TaskLayer
 
         public FileSpecificParameters Clone()
         {
-            return (FileSpecificParameters)this.MemberwiseClone();
+            return new FileSpecificParameters
+            {
+                PrecursorMassTolerance = this.PrecursorMassTolerance,
+                ProductMassTolerance = this.ProductMassTolerance,
+                ProductMassTolerance_LowRes = this.ProductMassTolerance_LowRes,
+                DigestionAgent = this.DigestionAgent,
+                MinPeptideLength = this.MinPeptideLength,
+                MaxPeptideLength = this.MaxPeptideLength,
+                MaxMissedCleavages = this.MaxMissedCleavages,
+                MaxModsForPeptide = this.MaxModsForPeptide,
+                DissociationType = this.DissociationType,
+                SeparationType = this.SeparationType,
+                CustomIons = this.CustomIons != null ? new List<ProductType>(this.CustomIons) : null,
+                PrecursorDeconvolutionParameters = this.PrecursorDeconvolutionParameters,
+                ProductDeconvolutionParameters = this.ProductDeconvolutionParameters
+            };
         }
     }
 }
