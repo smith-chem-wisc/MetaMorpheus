@@ -1,9 +1,9 @@
-﻿
-using EngineLayer.GlycoSearch;
+﻿using EngineLayer.GlycoSearch;
 using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
+using EngineLayer.DatabaseLoading;
 using Omics.Modifications;
 
 namespace TaskLayer
@@ -24,5 +24,6 @@ namespace TaskLayer
         public List<string> CurrentRawFileList { get; set; }
         public FlashLfqResults FlashLfqResults { get; set; }
         public string IndividualResultsOutputFolder { get; set; }
+        public List<Protein> BioPolymerList { get; set; }
     }
 }

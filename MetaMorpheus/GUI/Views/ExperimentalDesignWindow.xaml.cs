@@ -1,11 +1,11 @@
 ﻿using EngineLayer;
-using FlashLFQ;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using MassSpectrometry;
 
 namespace MetaMorpheusGUI
 {

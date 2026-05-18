@@ -7,6 +7,7 @@ using EngineLayer;
 using MassSpectrometry;
 using Omics.Modifications;
 using System.Linq;
+using EngineLayer.FdrAnalysis;
 
 namespace Test;
 
@@ -14,11 +15,11 @@ namespace Test;
 public class GptmdFilterTests
 {
     // Helper to create a dummy PeptideWithSetModifications
-    private PeptideWithSetModifications DummyPeptide() => new("PEPTIDE", []);
-    private Modification DummyMod() => new("a", "a", "a", "a", DummyMotif(), "Anywhere.", null, 20);
-    private ModificationMotif DummyMotif() => ModificationMotif.TryGetMotif("X", out var motif) ? motif : null;
+    public static PeptideWithSetModifications DummyPeptide(bool isDecoy = false) => new("PEPTIDE", [], p: new Proteomics.Protein("PEPTIDE", "a", isDecoy: isDecoy));
+    private static Modification DummyMod() => new("a", "a", "a", "a", DummyMotif(), "Anywhere.", null, 20);
+    private static ModificationMotif DummyMotif() => ModificationMotif.TryGetMotif("X", out var motif) ? motif : null;
     // Helper to create a dummy SpectralMatch
-    private SpectralMatch DummySpectralMatch() => new PeptideSpectralMatch(DummyPeptide(), 0, 0, 0,
+    public static SpectralMatch DummySpectralMatch(double score = 5, int notch = 0, bool isDecoy=false) => new PeptideSpectralMatch(DummyPeptide(isDecoy), notch, score, 0,
         new Ms2ScanWithSpecificMass(
             new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true,
                 MassSpectrometry.Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN,
@@ -27,7 +28,10 @@ public class GptmdFilterTests
             (new Proteomics.AminoAcidPolymer.Peptide(DummyPeptide().BaseSequence).MonoisotopicMass + 21.981943)
             .ToMz(1), 1, "filepath", new CommonParameters())
         ,
-        new(), new List<MatchedFragmentIon>());
+        new(), new List<MatchedFragmentIon>())
+    {
+        PsmFdrInfo = new FdrInfo(), PeptideFdrInfo = new FdrInfo()
+    };
 
     // Helper to create a dummy MatchedFragmentIon
     private MatchedFragmentIon CreateIon(FragmentationTerminus terminus, int fragmentNumber, int residuePosition)

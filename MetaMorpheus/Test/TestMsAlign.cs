@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Chemistry;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;

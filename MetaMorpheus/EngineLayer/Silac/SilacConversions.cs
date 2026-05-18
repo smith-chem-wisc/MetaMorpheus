@@ -6,9 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Omics.Modifications;
-using Omics;
 using Omics.Digestion;
 using EngineLayer.SpectrumMatch;
+using MassSpectrometry;
 
 namespace EngineLayer
 {

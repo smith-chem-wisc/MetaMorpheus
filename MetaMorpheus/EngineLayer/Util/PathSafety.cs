@@ -116,6 +116,18 @@ namespace EngineLayer.Util
             return result;
         }
 
+        /// <summary>
+        /// Extension method version of <see cref="MakeSafeOutputPath(string, string, int, int)"/>.
+        /// 
+        public static string ToSafeOutputPath(
+            this string pathToValidate,
+            string requiredEnding,
+            int maxPath = DefaultMaxPath,
+            int maxFileName = DefaultMaxFileName)
+        {
+            return MakeSafeOutputPath(pathToValidate, requiredEnding, maxPath, maxFileName);
+        }
+
         private static string EnsureDirWithSeparator(string directory)
         {
             if (string.IsNullOrEmpty(directory))

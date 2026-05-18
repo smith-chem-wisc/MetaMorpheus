@@ -13,6 +13,9 @@ using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Readers;
+using TaskLayer;
+using Transcriptomics;
+using Transcriptomics.Digestion;
 
 namespace GuiFunctions
 {
@@ -22,27 +25,56 @@ namespace GuiFunctions
     public class FragmentationReanalysisViewModel : BaseViewModel
     {
         private readonly bool _isProtein;
+        private static readonly object _fragmentationLock = new();
 
         public FragmentationReanalysisViewModel(bool isProtein = true)
         {
             _isProtein = isProtein;
-            UseInternalIons = false;
-            MinInternalIonLength = 10;
             ProductIonMassTolerance = 20;
+            PossibleProducts = [.. GetPossibleProducts()];
+
+            IEnumerable<DissociationType> values;
+            CommonParameters common;
+            SearchParameters search;
             if (isProtein)
             {
-                DissociationTypes = new ObservableCollection<DissociationType>(Enum.GetValues<DissociationType>()
-                    .Where(p => p != DissociationType.AnyActivationType && Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod) && prod.Count != 0));
-                PossibleProducts = new ObservableCollection<FragmentViewModel>(GetPossibleProducts(_isProtein));
+                values = Enum.GetValues<DissociationType>()
+                    .Where(p => p != DissociationType.AnyActivationType 
+                    && Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod) 
+                    && prod.Count != 0);
                 SelectedDissociationType = DissociationType.HCD;
+                common = new CommonParameters(digestionParams: new DigestionParams(), fragmentationParams: new FragmentationParams());
+                search = new SearchParameters()
+                {
+                    MinAllowedInternalFragmentLength = 0,
+                    MaxFragmentSize = 30000
+                };
             }
             else
             {
-                // TODO: Possible product types for RNA
-                PossibleProducts = new ObservableCollection<FragmentViewModel>(GetPossibleProducts(_isProtein));
-                SelectedDissociationType = DissociationType.LowCID;
+                values = Enum.GetValues<DissociationType>()
+                    .Where(p => p != DissociationType.AnyActivationType
+                                && Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod)
+                                && prod.Count != 0);
+                SelectedDissociationType = DissociationType.CID;
+                common = new CommonParameters(digestionParams: new RnaDigestionParams(), fragmentationParams: new RnaFragmentationParams());
+                search = new RnaSearchParameters()
+                {
+                    MinAllowedInternalFragmentLength = 0,
+                    MaxFragmentSize = 30000
+                };
             }
+            DissociationTypes = [.. values];
 
+            LoadFragmentationParameters(common, search);
+        }
+
+        /// <summary>
+        /// Updates the FragmentationParamsViewModel with parameters loaded from a search TOML
+        /// </summary>
+        public void LoadFragmentationParameters(CommonParameters common, SearchParameters search)
+        {
+            FragmentationParamsViewModel = new(common, search);
         }
 
         private ObservableCollection<FragmentViewModel> _possibleProducts;
@@ -75,34 +107,40 @@ namespace GuiFunctions
             set
             {
                 _selectedDissociationType = value;
-                SetUseForFragmentsBasedUponDissociationType(value, _isProtein);
+                SetUseForFragmentsBasedUponDissociationType(value);
                 OnPropertyChanged(nameof(SelectedDissociationType));
             }
         }
 
-        private int _minInternalIonLength;
-        public int MinInternalIonLength
-        {
-            get => _minInternalIonLength;
-            set { _minInternalIonLength = value; OnPropertyChanged(nameof(MinInternalIonLength)); }
-        }
-
-        private bool _useInternalIons;
-        public bool UseInternalIons
-        {
-            get => _useInternalIons; 
-            set { _useInternalIons = value; OnPropertyChanged(nameof(UseInternalIons)); }
-        }
-
         private double _productIonMassTolerance;
-
         public double ProductIonMassTolerance
         {
             get => _productIonMassTolerance;
             set { _productIonMassTolerance = value; OnPropertyChanged(nameof(ProductIonMassTolerance)); }
         }
 
-        private IEnumerable<FragmentViewModel> GetPossibleProducts(bool isProtein)
+        private bool _matchAllCharges;
+        public bool MatchAllCharges
+        {
+            get => _matchAllCharges;
+            set { _matchAllCharges = value; OnPropertyChanged(nameof(MatchAllCharges)); }
+        }
+
+        private FragmentationParamsViewModel _fragmentationParamsViewModel;
+        /// <summary>
+        /// View model containing fragmentation parameters including M-Ion losses
+        /// </summary>
+        public FragmentationParamsViewModel FragmentationParamsViewModel
+        {
+            get => _fragmentationParamsViewModel;
+            set
+            {
+                _fragmentationParamsViewModel = value;
+                OnPropertyChanged(nameof(FragmentationParamsViewModel));
+            }
+        }
+
+        private IEnumerable<FragmentViewModel> GetPossibleProducts()
         {
             foreach (var product in Enum.GetValues<ProductType>())
             {
@@ -116,7 +154,7 @@ namespace GuiFunctions
                         yield return new FragmentViewModel(false, product);
                         break;
                     case ProductType.d:
-                        if (!isProtein)
+                        if (!_isProtein)
                             yield return new FragmentViewModel(false, product);
                         break;
 
@@ -127,7 +165,7 @@ namespace GuiFunctions
                         yield return new FragmentViewModel(false, product);
                         break;
                     case ProductType.w:
-                        if (!isProtein)
+                        if (!_isProtein)
                             yield return new FragmentViewModel(false, product);
                         break;
 
@@ -142,7 +180,7 @@ namespace GuiFunctions
                     case ProductType.yAmmoniaLoss:
                     case ProductType.zPlusOne:
                     case ProductType.zDot:
-                        if (isProtein)
+                        if (_isProtein)
                             yield return new FragmentViewModel(false, product);
                         break;
 
@@ -161,7 +199,7 @@ namespace GuiFunctions
                     case ProductType.yBaseLoss:
                     case ProductType.zWaterLoss:
                     case ProductType.zBaseLoss:
-                        if (!isProtein)
+                        if (!_isProtein)
                             yield return new FragmentViewModel(false, product);
                         break;
 
@@ -179,65 +217,90 @@ namespace GuiFunctions
             }
         }
 
-        private void SetUseForFragmentsBasedUponDissociationType(DissociationType dissociationType, bool isProtein)
+        private void SetUseForFragmentsBasedUponDissociationType(DissociationType dissociationType)
         {
             ProductType[] dissociationTypeProducts;
             try
             {
-                dissociationTypeProducts = isProtein ?
+                dissociationTypeProducts = _isProtein ?
                     Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[dissociationType].ToArray()
-                    : Omics.Fragmentation.Oligo.DissociationTypeCollection.GetRnaProductTypesFromDissociationType(dissociationType).ToArray();
+                    : Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[dissociationType].ToArray();
             }
             catch (Exception)
             {
                 _selectedDissociationType = DissociationType.HCD;
-                dissociationTypeProducts = isProtein ?
+                dissociationTypeProducts = _isProtein ?
                     Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.HCD].ToArray()
-                    : Omics.Fragmentation.Oligo.DissociationTypeCollection.GetRnaProductTypesFromDissociationType(DissociationType.HCD).ToArray();
+                    : Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.HCD].ToArray();
             }
 
             PossibleProducts.ForEach(product => product.Use = dissociationTypeProducts.Contains(product.ProductType));
         }
 
-        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv smToRematch)
+        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv smToRematch, bool concatOldIonsOfType = true)
         {
             if (smToRematch.FullSequence.Contains('|'))
                 return smToRematch.MatchedIons;
 
             IBioPolymerWithSetMods bioPolymer = smToRematch.ToBioPolymerWithSetMods();
+            IFragmentationParams fragmentationParams = FragmentationParamsViewModel.ToFragmentationParams();
 
             List<Product> terminalProducts = new List<Product>();
-            Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList(); 
-            bioPolymer.Fragment(DissociationType.Custom, FragmentationTerminus.Both, terminalProducts);
-
             List<Product> internalProducts = new List<Product>();
-            if (UseInternalIons && bioPolymer is PeptideWithSetModifications) // internal ions are not currently implemented for RNA
+
+            // Snapshot products before acquiring lock to avoid enumerating collection while it may be modified by UI thread
+            var productsSnapshot = _productsToUse.ToList();
+            // Lock to ensure thread-safe mutation of static DissociationTypeCollection dictionary
+            lock (_fragmentationLock)
             {
-                Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList();
-                bioPolymer.FragmentInternally(DissociationType.Custom, MinInternalIonLength, internalProducts);
+                smToRematch.ProductsFromDissociationType()[DissociationType.Custom] = productsSnapshot;
+                bioPolymer.Fragment(DissociationType.Custom, FragmentationTerminus.Both, terminalProducts, fragmentationParams);
+
+                if (FragmentationParamsViewModel.GenerateInternalIons && bioPolymer is PeptideWithSetModifications) // internal ions are not currently implemented for RNA
+                {
+                    Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = productsSnapshot;
+                    bioPolymer.FragmentInternally(DissociationType.Custom, FragmentationParamsViewModel.MinInternalIonLength, internalProducts, fragmentationParams);
+                }
             }
             var allProducts = terminalProducts.Concat(internalProducts).ToList();
 
-            // TODO: Adjust decon params for when RNA gets incorporated
-            var commonParams = new CommonParameters();
+            // These will either be default or parsed from the search toml leading to the PSMs. 
+            var commonParams = new CommonParameters(
+                precursorDeconParams: MetaDrawSettingsViewModel.Instance.DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters,
+                productDeconParams: MetaDrawSettingsViewModel.Instance.DeconHostViewModel.ProductDeconvolutionParameters.Parameters,
+                deconvolutionMaxAssumedChargeState: _isProtein ? 60 : -60,
+                digestionParams: _isProtein ? new DigestionParams() : new RnaDigestionParams(), // no digestion occurs, just used to set values.
+                fragmentationParams: fragmentationParams
+                );
+
+
             if (Math.Abs(commonParams.ProductMassTolerance.Value - ProductIonMassTolerance) > 0.00001)
                 commonParams.ProductMassTolerance = new PpmTolerance(ProductIonMassTolerance);
 
             var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, smToRematch.PrecursorMz,
                 smToRematch.PrecursorCharge, smToRematch.FileNameWithoutExtension, commonParams);
 
+            var newMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, MatchAllCharges, includeExperimentalEnvelope: true);
+            IEnumerable<MatchedFragmentIon> uniqueMatches = concatOldIonsOfType 
+                ? newMatches.Concat(smToRematch.MatchedIons) 
+                : newMatches;
 
-            var newMatches = MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false);
-            var existingMatches = smToRematch.MatchedIons.Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType));
-            var uniqueMatches = newMatches.Concat(existingMatches)
-                .Distinct(MatchedFragmentIonComparer)
+            uniqueMatches = uniqueMatches.Where(p => productsSnapshot.Contains(p.NeutralTheoreticalProduct.ProductType))
+                .Where(p => Math.Abs(p.MassErrorPpm) <= ProductIonMassTolerance);
+
+            // retain only internal ions
+            if (!FragmentationParamsViewModel.GenerateInternalIons)
+                uniqueMatches = uniqueMatches.Where(p => !p.IsInternalFragment);
+            // retain terminal and internals greater than min length
+            else
+                uniqueMatches = uniqueMatches.Where(p => !p.IsInternalFragment || Math.Abs(p.NeutralTheoreticalProduct.FragmentNumber - p.NeutralTheoreticalProduct.SecondaryFragmentNumber) >= FragmentationParamsViewModel.MinInternalIonLength);
+            return uniqueMatches.Distinct(MatchedFragmentIonComparer)
                 .ToList();
-            return uniqueMatches;
         }
 
         public static readonly IEqualityComparer<MatchedFragmentIon> MatchedFragmentIonComparer = new MatchedFragmentIonEqualityComparer();
 
-        private class MatchedFragmentIonEqualityComparer : IEqualityComparer<MatchedFragmentIon>
+        public class MatchedFragmentIonEqualityComparer : IEqualityComparer<MatchedFragmentIon>
         {
             public bool Equals(MatchedFragmentIon x, MatchedFragmentIon y)
             {
@@ -250,7 +313,8 @@ namespace GuiFunctions
                        && x.NeutralTheoreticalProduct.FragmentNumber == y.NeutralTheoreticalProduct.FragmentNumber
                        && x.NeutralTheoreticalProduct.ProductType == y.NeutralTheoreticalProduct.ProductType
                        && x.NeutralTheoreticalProduct.SecondaryProductType == y.NeutralTheoreticalProduct.SecondaryProductType
-                       && x.NeutralTheoreticalProduct.SecondaryFragmentNumber == y.NeutralTheoreticalProduct.SecondaryFragmentNumber;
+                       && x.NeutralTheoreticalProduct.SecondaryFragmentNumber == y.NeutralTheoreticalProduct.SecondaryFragmentNumber
+                       && x.NeutralTheoreticalProduct.NeutralLoss.Equals(y.NeutralTheoreticalProduct.NeutralLoss);
             }
 
             public int GetHashCode(MatchedFragmentIon obj)
@@ -265,6 +329,7 @@ namespace GuiFunctions
                 hash = hash * 23 + (obj.NeutralTheoreticalProduct.SecondaryProductType?.GetHashCode() ?? 0);
                 if (obj.NeutralTheoreticalProduct.SecondaryFragmentNumber != null)
                     hash = hash * 23 + obj.NeutralTheoreticalProduct.SecondaryFragmentNumber.GetHashCode();
+                hash = hash * 23 + obj.NeutralTheoreticalProduct.NeutralLoss.GetHashCode();
 
                 return hash;
             }

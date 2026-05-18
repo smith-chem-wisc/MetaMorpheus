@@ -9,6 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using EngineLayer.DatabaseLoading;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -42,12 +43,12 @@ namespace Test
             Assert.That(allResults[14], Is.EqualTo("All MS2 Scans: 294"));
             Assert.That(allResults[16], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with q-value <= 0.01: 214"));
             Assert.That(allResults[17], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with q-value <= 0.01: 174"));
-            Assert.That(allResults[18], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 165"));
+            Assert.That(allResults[18], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with q-value <= 0.01: 165"));
             Assert.That(allResults[19], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
             Assert.That(allResults[20], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
             Assert.That(allResults[22], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with q-value <= 0.01: 214"));
             Assert.That(allResults[23], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with q-value <= 0.01: 174"));
-            Assert.That(allResults[24], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165"));
+            Assert.That(allResults[24], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with q-value <= 0.01: 165"));
             Assert.That(allResults[25], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
             Assert.That(allResults[26], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
 
@@ -62,13 +63,13 @@ namespace Test
 
             Assert.That(results[11], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with q-value <= 0.01: 214"));
             Assert.That(results[12], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with q-value <= 0.01: 174"));
-            Assert.That(results[13], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 165"));
+            Assert.That(results[13], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with q-value <= 0.01: 165"));
             Assert.That(results[14], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
             Assert.That(results[15], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
 
             Assert.That(results[17], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with q-value <= 0.01: 214"));
             Assert.That(results[18], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with q-value <= 0.01: 174"));
-            Assert.That(results[19], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165"));
+            Assert.That(results[19], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with q-value <= 0.01: 165"));
             Assert.That(results[20], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
             Assert.That(results[21], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
 
@@ -97,6 +98,9 @@ namespace Test
         public static void AllResultsAndResultsTxtContainsCorrectValues_PepQValue_BottomUp()
         {
             //First test that AllResults and Results display correct numbers of peptides and psms with pep q-value filter on
+            // Note: PEP Q-value filtering typically yields fewer PSMs, peptides, and protein groups than Q-value filtering
+            // (e.g., 145 protein groups here vs. 165 with Q-value filtering) because PEP is a more stringent per-PSM
+            // confidence metric that considers additional features beyond just target-decoy competition.
             EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue, out var testCase);
             string outputFolder = testCase.OutputDirectory;
             var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
@@ -104,19 +108,19 @@ namespace Test
 
             Assert.That(allResults[10], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 382"));
             Assert.That(allResults[11], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
-            Assert.That(allResults[12], Is.EqualTo("All target protein groups with q-value <= 0.01 (1% FDR): 140"));
+            Assert.That(allResults[12], Is.EqualTo("All target protein groups with pep q-value <= 0.01: 145"));
             Assert.That(allResults[13], Is.EqualTo("All Precursors: 1070"));
             Assert.That(allResults[14], Is.EqualTo("All MS2 Scans: 294"));
 
             Assert.That(allResults[16], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 190"));
             Assert.That(allResults[17], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 153"));
-            Assert.That(allResults[18], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 140"));
+            Assert.That(allResults[18], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with pep q-value <= 0.01: 145"));
             Assert.That(allResults[19], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
             Assert.That(allResults[20], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
 
             Assert.That(allResults[22], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 190"));
             Assert.That(allResults[23], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 153"));
-            Assert.That(allResults[24], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 140"));
+            Assert.That(allResults[24], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with pep q-value <= 0.01: 145"));
             Assert.That(allResults[25], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
             Assert.That(allResults[26], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
 
@@ -126,19 +130,19 @@ namespace Test
 
             Assert.That(results[5], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 382"));
             Assert.That(results[6], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
-            Assert.That(results[7], Is.EqualTo("All target protein groups with q-value <= 0.01 (1% FDR): 140"));
+            Assert.That(results[7], Is.EqualTo("All target protein groups with pep q-value <= 0.01: 145"));
             Assert.That(results[8], Is.EqualTo("All Precursors: 1070"));
             Assert.That(results[9], Is.EqualTo("All MS2 Scans: 294"));
 
             Assert.That(results[11], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 190"));
             Assert.That(results[12], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 153"));
-            Assert.That(results[13], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 140"));
+            Assert.That(results[13], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with pep q-value <= 0.01: 145"));
             Assert.That(results[14], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
             Assert.That(results[15], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
 
             Assert.That(results[17], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 190"));
             Assert.That(results[18], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 153"));
-            Assert.That(results[19], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 140"));
+            Assert.That(results[19], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with pep q-value <= 0.01: 145"));
             Assert.That(results[20], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
             Assert.That(results[21], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
         }
@@ -196,20 +200,31 @@ namespace Test
             // The Q-Value test case and the PEP-Q value test case represent the same data ran twice
             // These assert staments compare the outputs of the PepAnalysisEngine for each test case
             // They should be identical!!! If they aren't, then PEP is not reproducible for some reason
-            Assert.That(resultsPepQ[37], Is.EqualTo(resultsQ[37]));
-            Assert.That(resultsPepQ[38], Is.EqualTo(resultsQ[38]));
-            Assert.That(resultsPepQ[39], Is.EqualTo(resultsQ[39]));
-            Assert.That(resultsPepQ[40], Is.EqualTo(resultsQ[40]));
-            Assert.That(resultsPepQ[41], Is.EqualTo(resultsQ[41]));
-            Assert.That(resultsPepQ[42], Is.EqualTo(resultsQ[42]));
-            Assert.That(resultsPepQ[43], Is.EqualTo(resultsQ[43]));
-            Assert.That(resultsPepQ[44], Is.EqualTo(resultsQ[44]));
-            Assert.That(resultsPepQ[45], Is.EqualTo(resultsQ[45]));
-            Assert.That(resultsPepQ[46], Is.EqualTo(resultsQ[46]));
-            Assert.That(resultsPepQ[47], Is.EqualTo(resultsQ[47]));
-            Assert.That(resultsPepQ[48], Is.EqualTo(resultsQ[48]));
-            Assert.That(resultsPepQ[49], Is.EqualTo(resultsQ[49]));
-            Assert.That(resultsPepQ[50], Is.EqualTo(resultsQ[50]));
+            int startIndexQ = resultsQ.IndexOf("Engine type: FdrAnalysisEngine");
+            int startIndexPep = resultsPepQ.IndexOf("Engine type: FdrAnalysisEngine");
+
+            Assert.That(startIndexQ, Is.EqualTo(startIndexPep));
+
+            int starsFound = 0;
+            for (int i = startIndexQ; i < int.MaxValue; i++)
+            {
+                var qLine = resultsQ[i];
+                var pepLine = resultsPepQ[i];
+
+                if (qLine.StartsWith("Time to run"))
+                    continue;
+
+                if (qLine.StartsWith("*****"))
+                {
+                    starsFound++;
+                    if (starsFound == 2)
+                    {
+                        break; // We've reached the end of the PepAnalysisEngine output
+                    }
+                }
+
+                Assert.That(pepLine, Is.EqualTo(qLine), "Outputs of PepAnalysisEngine differ between Q-Value and PEP Q-Value test cases");
+            }
         }
 
         /// <summary>

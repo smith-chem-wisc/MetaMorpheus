@@ -1,0 +1,144 @@
+<Window x:Class="MetaMorpheusGUI.CustomMIonLossWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        Title="Add Custom M-Ion Loss" Height="320" Width="400" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <StackPanel Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5">
+            <!--Loss name-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Name" Width="175"></Label>
+                <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                <TextBox x:Name="nameTextBox" Width="175" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Loss name (required), example: 'Water Loss'"/>
+                    </ToolTipService.ToolTip>
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                            <Style.Resources>
+                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                    <VisualBrush.Visual>
+                                        <Label Content="ex: 'Water Loss'" Foreground="Gray" />
+                                    </VisualBrush.Visual>
+                                </VisualBrush>
+                            </Style.Resources>
+                            <Style.Triggers>
+                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="Text" Value="{x:Null}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter Property="Background" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+            </StackPanel>
+            <!--Annotation-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Annotation" Width="175"></Label>
+                <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                <TextBox Name="annotationTextBox" Width="175" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Annotation (required), example: '-H2O'"/>
+                    </ToolTipService.ToolTip>
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                            <Style.Resources>
+                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                    <VisualBrush.Visual>
+                                        <Label Content="ex: '-H2O'" Foreground="Gray" />
+                                    </VisualBrush.Visual>
+                                </VisualBrush>
+                            </Style.Resources>
+                            <Style.Triggers>
+                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="Text" Value="{x:Null}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter Property="Background" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+            </StackPanel>
+            <!--Chemical Formula-->
+            <StackPanel Orientation="Vertical" Width="370">
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Chemical Formula" Width="175"></Label>
+                    <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                    <TextBox Name="chemicalFormulaTextBox" Width="175" Height="20">
+                        <ToolTipService.ToolTip>
+                            <ToolTip MaxWidth="400">
+                                <TextBlock TextWrapping="Wrap">
+                                    Chemical formula (required), example: 'H2O1'
+                                    <LineBreak/>
+                                    <LineBreak/>
+                                    Note: Use positive values as the formula will be subtracted from the precursor mass.
+                                    <LineBreak/>
+                                    Example: For water loss (-18.01 Da), enter 'H2O1' not '-H2O1'
+                                </TextBlock>
+                            </ToolTip>
+                        </ToolTipService.ToolTip>
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                <Style.Resources>
+                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                        <VisualBrush.Visual>
+                                            <Label Content="ex: 'H2O1'" Foreground="Gray" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="Text" Value="{x:Null}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter Property="Background" Value="White" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </StackPanel>
+            </StackPanel>
+            <!--Mode Selection with CheckBoxes-->
+            <StackPanel Orientation="Vertical" Margin="0,5,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Applicable To" Width="175"></Label>
+                    <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                </StackPanel>
+                <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="3" Padding="5" Width="370" Margin="0,0,0,5">
+                    <StackPanel>
+                        <CheckBox x:Name="proteinModeCheckBox" Content="Protein Mode (Peptides)" Margin="5,2"
+                                  ToolTip="This M-Ion loss will be available when searching protein/peptide data"/>
+                        <CheckBox x:Name="rnaModeCheckBox" Content="RNA Mode (Oligonucleotides)" Margin="5,2"
+                                  ToolTip="This M-Ion loss will be available when searching RNA/oligonucleotide data"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            
+            <TextBlock Margin="5,5,5,5" TextWrapping="Wrap" FontStyle="Italic" Foreground="Gray" FontSize="10">
+                * Required fields. Select at least one applicable mode.
+            </TextBlock>
+        </StackPanel>
+        <!--Save and cancel buttons-->
+        <StackPanel Orientation="Horizontal" Height="35" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+            <Button Name="saveButton" Content="Save Loss" FontSize="13" Margin="5" Width="100" Click="SaveCustomLoss_Click" />
+            <Button Name="cancelButton" Content="Cancel" FontSize="13" Margin="5" Width="100" Click="CancelCustomLoss_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

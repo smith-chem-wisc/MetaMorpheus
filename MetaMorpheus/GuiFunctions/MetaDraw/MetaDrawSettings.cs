@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using Easy.Common.Extensions;
 using Readers;
 using GuiFunctions.MetaDraw;
 using OxyPlot.Wpf;
@@ -57,6 +58,7 @@ namespace GuiFunctions
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double SpectrumDescriptionFontSize { get; set; } = 10;
+        public static bool AnnotateIsotopicEnvelopes { get; set; } = true;
 
         // Chimera Settings
         public static bool DisplayChimeraLegend { get; set; } = true;
@@ -114,6 +116,7 @@ namespace GuiFunctions
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
         public static string[] AmbiguityTypes { get; set; } = { "No Filter", "1", "2A", "2B", "2C", "2D", "3", "4", "5" };
+        public static string[] GroupingProperties { get; set; } = { "None", "Notch", "Precursor Charge", "File Name", "Ambiguity Level", "Missed Cleavages", "OrganismName", "DecoyContamTarget" };
 
         #endregion
 
@@ -141,7 +144,8 @@ namespace GuiFunctions
             if (sm.QValue <= QValueFilter
                  && (sm.QValueNotch == null || sm.QValueNotch <= QValueFilter)
                  && (sm.DecoyContamTarget == "T" || (sm.DecoyContamTarget == "D" && ShowDecoys) || (sm.DecoyContamTarget == "C" && ShowContaminants))
-                 && (!sm.IsCrossLinkedPeptide() || (sm is PsmFromTsv { BetaPeptideBaseSequence: not null } psm && (!psm.GlycanLocalizationLevel.HasValue || psm.GlycanLocalizationLevel.Value >= LocalizationLevelStart && psm.GlycanLocalizationLevel.Value <= LocalizationLevelEnd))))
+                 // Glyco localization level filtering - only applies to glyco psms that have localization levels
+                 && (sm is not GlycoPsmFromTsv { GlycanLocalizationLevel: not null } gly || (gly.GlycanLocalizationLevel.Value >= LocalizationLevelStart && gly.GlycanLocalizationLevel.Value <= LocalizationLevelEnd)))
             {
                 // Ambiguity filtering conditionals, should only be hit if Ambiguity Filtering is selected
                 if (AmbiguityFilter == "No Filter" || sm.AmbiguityLevel == AmbiguityFilter)
@@ -163,6 +167,8 @@ namespace GuiFunctions
             ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
             BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
             ModificationTypeToColor = GlobalVariables.AllModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
+            foreach (var rnaMod in GlobalVariables.AllRnaModsKnown)
+                ModificationTypeToColor.TryAdd(rnaMod.IdWithMotif, OxyColors.Orange);
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
             CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
             BioPolymerCoverageColors = Enum.GetValues<BioPolymerCoverageType>().ToDictionary(p => p, _ => Brushes.LightGray);
@@ -289,6 +295,11 @@ namespace GuiFunctions
             AxisLabelTextSize = 12;
             StrokeThicknessUnannotated = 0.7;
             StrokeThicknessAnnotated = 1.0;
+            AnnotateIsotopicEnvelopes = true;
+            
+            // Reset the new ViewModel structure
+            PlotModelStatParametersViewModel.Instance.LoadFromSnapshot(new PlotModelStatParameters());
+            
             SetDefaultColors();
         }
 
@@ -414,6 +425,33 @@ namespace GuiFunctions
             ModificationTypeToColor["Carbamidomethyl on C"] = OxyColors.Green;
             ModificationTypeToColor["Carbamidomethyl on U"] = OxyColors.Green;
             ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
+
+            GlobalVariables.AllRnaModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange)
+                .ForEach(p => ModificationTypeToColor.TryAdd(p.Key, p.Value));
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Biological").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Plum;
+            }
+
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Metal").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Maroon;
+            }
+
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Digestion Termini").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Teal;
+            }
+
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Standard").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.PowderBlue;
+            }
+
         }
 
         private static void SetDefaultDataVisualizationColors()
@@ -508,6 +546,7 @@ namespace GuiFunctions
                 AxisLabelTextSize = AxisLabelTextSize,
                 StrokeThicknessUnannotated = StrokeThicknessUnannotated,
                 StrokeThicknessAnnotated = StrokeThicknessAnnotated,
+                AnnotateIsotopicEnvelopes = AnnotateIsotopicEnvelopes,
                 SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
                 SuppressMessageBoxes = SuppressMessageBoxes,
                 ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous,
@@ -516,7 +555,14 @@ namespace GuiFunctions
                 DisplayFilteredOnly = DisplayFilteredOnly,
                 DataVisualizationColorOrder = DataVisualizationColorOrder?.Select(c => c.GetColorName()).ToList(),
                 BioPolymerCoverageFontSize = BioPolymerCoverageFontSize,
-                BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList()
+                BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList(),
+                
+                // Save from the new ViewModel structure
+                UseLogScaleYAxis = PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis,
+                GroupingProperty = PlotModelStatParametersViewModel.Instance.GroupingProperty,
+                MinRelativeCutoff = PlotModelStatParametersViewModel.Instance.MinRelativeCutoff,
+                MaxRelativeCutoff = PlotModelStatParametersViewModel.Instance.MaxRelativeCutoff,
+                AllowAmbiguousGroups = PlotModelStatParametersViewModel.Instance.AllowAmbiguousGroups
             };
         }
 
@@ -551,6 +597,7 @@ namespace GuiFunctions
             AxisLabelTextSize = settings.AxisLabelTextSize == 0 ? 12 : settings.AxisLabelTextSize;
             StrokeThicknessUnannotated = settings.StrokeThicknessUnannotated == 0 ? 0.7 : settings.StrokeThicknessUnannotated;
             StrokeThicknessAnnotated = settings.StrokeThicknessAnnotated == 0 ? 1 : settings.StrokeThicknessAnnotated;
+            AnnotateIsotopicEnvelopes = settings.AnnotateIsotopicEnvelopes;
             SpectrumDescriptionFontSize = settings.SpectrumDescriptionFontSize;
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
@@ -560,6 +607,19 @@ namespace GuiFunctions
             NormalizeHistogramToFile = settings.NormalizeHistogramToFile;
             DisplayFilteredOnly = settings.DisplayFilteredOnly;
             BioPolymerCoverageFontSize = settings.BioPolymerCoverageFontSize;
+            
+            // Load into the new ViewModel structure
+            var plotParams = new PlotModelStatParameters
+            {
+                UseLogScaleYAxis = settings.UseLogScaleYAxis,
+                GroupingProperty = settings.GroupingProperty ?? "None",
+                MinRelativeCutoff = settings.MinRelativeCutoff,
+                MaxRelativeCutoff = settings.MaxRelativeCutoff,
+                NormalizeHistogramToFile = settings.NormalizeHistogramToFile,
+                DisplayFilteredOnly = settings.DisplayFilteredOnly,
+                AllowAmbiguousGroups = settings.AllowAmbiguousGroups
+            };
+            PlotModelStatParametersViewModel.Instance.LoadFromSnapshot(plotParams);
 
             try // Product Type Colors
             {

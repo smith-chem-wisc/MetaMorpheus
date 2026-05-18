@@ -89,7 +89,7 @@
                                 <StackPanel Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
                                     <RadioButton x:Name="RbtOGlycoSearch" Content="O-Glycopeptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
                                     <RadioButton x:Name="RbtNGlycoSearch" Visibility="Visible"  Content="N-Glycopeptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
-                                    <RadioButton x:Name="Rbt_N_O_GlycoSearch" Visibility="Hidden"  Content="N-O-Glyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
+                                    <RadioButton x:Name="Rbt_N_O_GlycoSearch" Visibility="Visible"  Content="N-O-Glyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
                             <Grid Grid.Row="1">
@@ -238,23 +238,41 @@
                             <GroupBox Header="Fragment Ion Search Parameters">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="1.5*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal"  Margin="5">
-                                            <Label x:Name="lblPrecusorMsTl"  Content="Precursor mass tolerance" />
+                                            <Label x:Name="lblPrecusorMsTl"  Content="Precursor Mass tolerance" />
                                             <local:DoubleTextBoxControl x:Name="PrecusorMsTlTextBox"  Width="45" />
                                             <ComboBox x:Name="cbbPrecusorMsTl" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
+                                            <Label x:Name="label2_Copy" Content="Product Mass Tolerance (Higher Res)" ToolTipService.ShowDuration="99999" ToolTipService.InitialShowDelay="500">
+                                                <Label.ToolTip>
+                                                    <TextBlock>
+                                                        Mass tolerance used for matching fragment ions in the main MS2 scan.
+                                                        Use this for higher-resolution analyzers (for example, Orbitrap/TOF).
+                                                    </TextBlock>
+                                                </Label.ToolTip>
+                                            </Label>
                                             <local:DoubleTextBoxControl x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
                                             <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="lblChildMs2" Content="Product Mass Tolerance (Lower Res)" ToolTipService.ShowDuration="99999" ToolTipService.InitialShowDelay="500">
+                                                <Label.ToolTip>
+                                                    <TextBlock>
+                                                        Mass tolerance used for matching fragment ions in the MS2 child scan.
+                                                        Use this for lower-resolution analyzers (for example, ion trap).
+                                                    </TextBlock>
+                                                </Label.ToolTip>
+                                            </Label>
+                                            <local:DoubleTextBoxControl x:Name="productMassTolerance_LowResTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
+                                            <ComboBox x:Name="productMassTolerance_LowResComboBox" HorizontalAlignment="Left" />
+                                        </StackPanel>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="2">
+                                    <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="ffdf" Content="Minimum score allowed:" />
                                             <local:IntegerTexBoxControl x:Name="minScoreAllowed" Width="45" />
@@ -476,6 +494,76 @@
                     </StackPanel>
                 </GroupBox>
 
+                <!-- Post-Search Analysis -->
+                <GroupBox Header="Post-Search Analysis" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                    <Expander x:Name="AnalysisExpander" Collapsed="ApmdExpander_Collapsed">
+                        <Expander.Style>
+                            <Style TargetType="Expander">
+                                <Setter Property="Header" Value="{Binding AnalysisExpanderTitle}" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsExpanded" Value="True">
+                                        <Setter Property="Header" Value="Hide" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Expander.Style>
+                        <StackPanel>
+                            <GroupBox Header="Pruned Database Writing">
+                                <StackPanel Margin="5">
+                                    <CheckBox Margin="0 0 0 5" x:Name="WritePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ToolTipService.ToolTip>
+                                            <TextBlock>
+                        This is very uncommon and not recommended for the typical user.
+                        <LineBreak />
+                        This option writes two databases:
+                        <LineBreak />
+                        1) Retain all proteins but only keeps modifications found at a 1% FDR.
+                        <LineBreak />
+                        2) Retain only proteins and modifications found at a 1% FDR.
+                        <LineBreak />
+                        This is intended for further analysis, such as importing into Proteoform Suite to analyse top-down and intact-mass data.
+                                            </TextBlock>
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Mod Type"  Width="1*" Binding="{Binding ModName}" />
+                                            <DataGridTemplateColumn  Header=" Do not Write"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if in DB and Observed"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if in DB"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item4, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if Observed"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center"  GroupName="{Binding ModName}" IsChecked="{Binding Item5, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
+
                 <!--output options-->
                 <GroupBox Header="Output Options" DockPanel.Dock="Top">
                     <StackPanel Orientation="Vertical" Margin="5" Grid.Column="0">
@@ -485,7 +573,6 @@
                         <CheckBox x:Name="WriteSpectrumLibraryCheckBox" Content="Write spectrum library" />
                     </StackPanel>
                 </GroupBox>
-                
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">

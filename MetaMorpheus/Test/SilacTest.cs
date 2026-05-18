@@ -7,6 +7,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using EngineLayer.DatabaseLoading;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -667,7 +668,7 @@ namespace Test
             Assert.That(asdfff.Equals("ASDF[SomeSebuance]GHKASDF"));
 
             //Test no crash in weird situations
-            SilacConversions.SilacConversionsPostQuantification(null, null, null, new List<FlashLFQ.SpectraFileInfo>(), null, new HashSet<IDigestionParams>(), null, new List<PeptideSpectralMatch>(), new Dictionary<string, int>(), true);
+            SilacConversions.SilacConversionsPostQuantification(null, null, null, new List<SpectraFileInfo>(), null, new HashSet<IDigestionParams>(), null, new List<PeptideSpectralMatch>(), new Dictionary<string, int>(), true);
         }
     }
 }

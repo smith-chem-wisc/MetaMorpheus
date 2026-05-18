@@ -28,6 +28,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
+        private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
         private CustomFragmentationWindow CustomFragmentationWindow;
         private DeconHostViewModel DeconHostViewModel;
 
@@ -89,6 +90,15 @@ namespace MetaMorpheusGUI
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
+            productMassTolerance_LowResComboBox.Items.Add("Da");
+            productMassTolerance_LowResComboBox.Items.Add("ppm");
+
+            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
+            {
+                var theModType = new ModTypeForGrid(hm.Key);
+                ModSelectionGridItems.Add(theModType);
+            }
+            ModSelectionGrid.ItemsSource = ModSelectionGridItems;
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
@@ -114,7 +124,6 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GlycoSearchTask task)
         {
-            MetaMorpheusEngine.DetermineAnalyteType(TheTask.CommonParameters);
             RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.OGlycanSearch;
             RbtNGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
@@ -177,6 +186,8 @@ namespace MetaMorpheusGUI
             TxtBoxMaxModPerPep.Text = task.CommonParameters.DigestionParams.MaxMods.ToString(CultureInfo.InvariantCulture);
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            productMassTolerance_LowResTextBox.Text = task.CommonParameters.ProductMassTolerance_LowRes?.Value.ToString(CultureInfo.InvariantCulture);
+            productMassTolerance_LowResComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance_LowRes is AbsoluteTolerance ? 0 : 1;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
@@ -237,6 +248,8 @@ namespace MetaMorpheusGUI
             {
                 ye.VerifyCheckState();
             }
+            WritePrunedDBCheckBox.IsChecked = task._glycoSearchParameters.WritePrunedDataBase;
+            UpdateModSelectionGrid();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -248,7 +261,7 @@ namespace MetaMorpheusGUI
         {
             string fieldNotUsed = "1";
 
-            if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+            if (!TaskValidator.CheckTaskSettingsValidity(PrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, productMassTolerance_LowResTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
                 fieldNotUsed, fieldNotUsed, fieldNotUsed, DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, TxtBoxMaxModPerPep.Text, 
                 fieldNotUsed, null, null, null))
@@ -353,7 +366,32 @@ namespace MetaMorpheusGUI
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
 
-            Tolerance PrecursorMassTolerance;
+            Tolerance ProductMassTolerance_lowRes;
+            var productMassTolerance_LowResToleranceText = productMassTolerance_LowResTextBox.Text;
+            if (string.IsNullOrWhiteSpace(productMassTolerance_LowResToleranceText))
+            {
+                // If no child scan mass tolerance is specified, fall back to product mass tolerance
+                ProductMassTolerance_lowRes = new AbsoluteTolerance(0.35);
+            }
+            else 
+            {
+                // we already validate via non-positive TaskValidator, but this local guard is still useful as defensive programming in case validation flow changes later.
+                if (!double.TryParse(productMassTolerance_LowResToleranceText, NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedChildTolerance) || parsedChildTolerance <= 0) 
+                {
+                    MessageBox.Show("The low-resolution product mass tolerance is invalid. Please enter a positive number.");
+                    return;
+                }
+                if (productMassTolerance_LowResComboBox.SelectedIndex == 0)
+                {
+                    ProductMassTolerance_lowRes = new AbsoluteTolerance(parsedChildTolerance);
+                }
+                else
+                {
+                    ProductMassTolerance_lowRes = new PpmTolerance(parsedChildTolerance);
+                }
+            }
+
+                Tolerance PrecursorMassTolerance;
             if (cbbPrecusorMsTl.SelectedIndex == 0)
             {
                 PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(PrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
@@ -385,6 +423,7 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GlycoSearchTask",
                 productMassTolerance: ProductMassTolerance,
+                productMassTolerance_LowRes: ProductMassTolerance_lowRes,
                 doPrecursorDeconvolution: doPrecursorDeconvolution,
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                 digestionParams: digestionParamsToSave,
@@ -403,6 +442,8 @@ namespace MetaMorpheusGUI
                 precursorDeconParams: precursorDeconvolutionParameters,
                 productDeconParams: productDeconvolutionParameters);
 
+            TheTask._glycoSearchParameters.WritePrunedDataBase = WritePrunedDBCheckBox.IsChecked.Value;
+            SetModSelectionForPrunedDB();
             TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
@@ -535,6 +576,77 @@ namespace MetaMorpheusGUI
             CheckBoxNoOneHitWonders.IsChecked = false;
             ModPepsAreUnique.IsChecked = false;
 
+        }
+
+        private void SetModSelectionForPrunedDB()
+        {
+            TheTask._glycoSearchParameters.ModsToWriteSelection = new Dictionary<string, int>();
+            //checks the grid values for which button is checked then sets paramaters accordingly
+            foreach (var modTypeInGrid in ModSelectionGridItems)
+            {
+                if (modTypeInGrid.Item3)
+                {
+                    TheTask._glycoSearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 1;
+                    continue;
+                }
+                if (modTypeInGrid.Item4)
+                {
+                    TheTask._glycoSearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 2;
+                    continue;
+                }
+                if (modTypeInGrid.Item5)
+                {
+                    TheTask._glycoSearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 3;
+                }
+            }
+        }
+
+        private void UpdateModSelectionGrid()
+        {
+            foreach (var modType in TheTask._glycoSearchParameters.ModsToWriteSelection)
+            {
+                //Key is modification type.
+
+                //Value is integer 0, 1, 2 and 3 interpreted as:
+                //   0:   Do not Write
+                //   1:   Write if in DB and Observed
+                //   2:   Write if in DB
+                //   3:   Write if Observed
+                var huhb = ModSelectionGridItems.FirstOrDefault(b => b.ModName == modType.Key);
+                if (huhb != null)
+                {
+                    switch (modType.Value)
+                    {
+                        case (0):
+                            huhb.Item2 = true;
+                            huhb.Item3 = false;
+                            huhb.Item4 = false;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (1):
+                            huhb.Item2 = false;
+                            huhb.Item3 = true;
+                            huhb.Item4 = false;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (2):
+                            huhb.Item2 = false;
+                            huhb.Item3 = false;
+                            huhb.Item4 = true;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (3):
+                            huhb.Item2 = false;
+                            huhb.Item3 = false;
+                            huhb.Item4 = false;
+                            huhb.Item5 = true;
+                            break;
+                    }
+                }
+            }
         }
     }
 }

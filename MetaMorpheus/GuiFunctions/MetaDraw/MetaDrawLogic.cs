@@ -489,7 +489,7 @@ namespace GuiFunctions
                 {
                     oldMatchedIons = psm.MatchedIons;
                     var scan = GetMs2ScanFromPsm(psm);
-                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm, false);
                     psm.MatchedIons = newIons;
                 }
 
@@ -558,7 +558,7 @@ namespace GuiFunctions
                 {
                     oldMatchedIons = psm.MatchedIons;
                     var scan = GetMs2ScanFromPsm(psm);
-                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm, false);
                     psm.MatchedIons = newIons;
                 }
                 DisplaySequences(stationaryCanvas, null, null, psm);
@@ -720,7 +720,7 @@ namespace GuiFunctions
             {
                 FilteredListOfPsms.Clear();
 
-                foreach (var psm in AllSpectralMatches.Where(p => MetaDrawSettings.FilterAcceptsPsm(p)))
+                foreach (var psm in AllSpectralMatches.Where(MetaDrawSettings.FilterAcceptsPsm))
                 {
                     FilteredListOfPsms.Add(psm);
                 }

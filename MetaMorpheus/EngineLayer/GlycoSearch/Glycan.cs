@@ -45,7 +45,7 @@ namespace EngineLayer
             // Generate the neural loss and diagnostic ions for O_glycan.
             if (type == GlycanType.O_glycan)
             {
-                ModificationType = "O-Glycosylation"; // Set the modification type.
+                ModificationType = "O-linked glycosylation"; // Set the modification type.
                 if (Ions != null)
                 {
                     List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
@@ -58,7 +58,7 @@ namespace EngineLayer
             // Generate the neural loss and diagnostic ions for N_glycan.
             else if (type == GlycanType.N_glycan)
             {
-                ModificationType = "N-Glycosylation"; // Set the modification type.
+                ModificationType = "N-linked glycosylation"; // Set the modification type.
                 if (Ions != null)
                 {
                     List<double> lossMasses = Ions.Where(p=>p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
@@ -218,6 +218,7 @@ namespace EngineLayer
             {"NeuAc", new Tuple<char, int>('A', 2) },
             {"NeuGc", new Tuple<char, int>('G', 3) },
             {"Fuc",  new Tuple<char, int>('F', 4)},
+            {"dHex", new Tuple<char, int>('F', 4)}, // Treat dHex as Fuc
             {"Phospho", new Tuple<char, int>('P', 5)},
             {"Sulfo", new Tuple<char, int>('S', 6) },
             {"Na", new Tuple<char, int>('Y', 7) },

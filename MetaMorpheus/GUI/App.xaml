@@ -2,12 +2,14 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:MetaMorpheusGUI"
+             xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <!--Colors used in the GUI-->
         <!--TODO: store these in a file and read them from disk, to let users style MetaMorpheus?-->
         <SolidColorBrush x:Key="SideBarMainColor" Color="#353b48" />
         <SolidColorBrush x:Key="AccentColor" Color="#0097e6" />
+        <SolidColorBrush x:Key="LightAccentColor" Color="#bdf0ff" />
         <SolidColorBrush x:Key="PurpleAccentColor" Color="#e6aeff" />
         <SolidColorBrush x:Key="SecondaryButtonColor" Color="#504B59" />
         <SolidColorBrush x:Key="BackgroundColor" Color="#f5f6fa" />
@@ -20,6 +22,10 @@
         <Color x:Key="ForegroundDark">#bdbdbd</Color>
         <SolidColorBrush x:Key="ForegroundDarkBrush" Color="{StaticResource ForegroundDark}" />
 
+        <SolidColorBrush x:Key="RnaAccentColor" Color="#a64ef9" />
+        <SolidColorBrush x:Key="RnaLightAccentColor" Color="#FFC4C4FF" />
+        <SolidColorBrush x:Key="RnaSideBarMainColor" Color="#433d49" />
+        
         <!--Default button style for all of MetaMorpheus-->
         <!--<Style TargetType="Button">
             <Setter Property="BorderThickness" Value="0"/>
@@ -100,5 +106,29 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!--Styling for the "important" buttons like add task, add DB, etc.-->
+        <Style x:Key="ImportantButtonStyle" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="200"/>
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
+                    <Setter Property="Background" Value="{StaticResource RnaAccentColor}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Icons -->
+        <BitmapImage x:Key="ProteinIcon" UriSource="Icons/IconProtein.bmp"/>
+        <BitmapImage x:Key="RnaIcon" UriSource="Icons/IconRna.bmp"/>
+        
+        <!-- Converters -->
+        <local:ProteinRnaTerminologyConverter x:Key="ProteinRnaTerminologyConverter"/>
+        <local:CollapseOnRnaModeConverter x:Key="CollapseOnRnaModeConverter"/>
+        <local:CollapseOnProteinModeConverter x:Key="CollapseOnProteinModeConverter"/>
+        <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
     </Application.Resources>
 </Application>

@@ -1,24 +1,27 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using EngineLayer.ClassicSearch;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
+using Omics;
+using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Omics.Digestion;
-using Omics.Modifications;
-using Omics;
-using Readers;
+using Chemistry;
 
 namespace TaskLayer
 {
@@ -85,9 +88,10 @@ namespace TaskLayer
             }
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, 
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
             FileSpecificParameters[] fileSettingsList)
         {
+            MyTaskResults = new(this);
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
@@ -152,16 +156,9 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
-            List<IBioPolymer> bioPolymerList = null;
-            Task<List<IBioPolymer>> proteinLoadingTask = new(() =>
-            {
-                var proteins = LoadBioPolymers(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType,
-                    localizeableModificationTypes,
-                    CommonParameters);
-                SanitizeBioPolymerDatabase(proteins, SearchParameters.TCAmbiguity);
-                return proteins;
-            });
-            proteinLoadingTask.Start();
+            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, SearchParameters.DecoyType, SearchParameters.SearchTarget, localizeableModificationTypes, SearchParameters.TCAmbiguity, SearchParameters.WriteTargetDecoyFasta, OutputFolder);
+            var proteinLoadingTask = dbLoader.RunAsync();
+            List<IBioPolymer> bioPolymerList = null!;
 
             // load spectral libraries
             var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
@@ -186,7 +183,6 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append($"report {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
 
             // start the search task
-            MyTaskResults = new MyTaskResults(this);
             List<SpectralMatch> allPsms = new List<SpectralMatch>();
 
             //generate an array to store category specific fdr values (for speedy semi/nonspecific searches)
@@ -203,7 +199,7 @@ namespace TaskLayer
             object indexLock = new object();
             object psmLock = new object();
 
-            Status("Searching files...", new List<string> { taskId } );
+            Status("Searching files...", new List<string> { taskId });
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>(); // key is filename, value is an int array of length 2, where the first element is the number of MS2 spectra in the file, and the second element is the number of different deconvoluted precursors assigned to those scans
@@ -238,6 +234,15 @@ namespace TaskLayer
                     combinedParams.UseProvidedPrecursorInfo = true;
                 }
 
+                // If we're doing multiplex quantification, and there are MS3 scans, we assume that
+                // MS3 was used for reporter ion detection, and adjust the parameters accordingly
+                if (SearchParameters.DoMultiplexQuantification && myMsDataFile.Scans.Any(s => s.MsnOrder == 3))
+                {
+                    // In most experiments with MS3 scans for reporter ion detection, MS2ChildScanDissociationType is LowCID.
+                    // However, we do not set it here to allow for flexibility in dissociation type selection.
+                    combinedParams.MS3ChildScanDissociationType = DissociationType.HCD;
+                }
+
                 // if another file exists, then begin loading it in while the previous is being searched
                 if (origDataFile != currentRawFileList.Last())
                 {
@@ -257,14 +262,30 @@ namespace TaskLayer
                 switch (proteinLoadingTask.IsCompleted)
                 {
                     case true when bioPolymerList is null: // has finished loading but not been set
-                        bioPolymerList = proteinLoadingTask.Result;
+                        bioPolymerList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
+                        Status("Searching files...", new List<string> { taskId });
                         break;
                     case true when bioPolymerList.Any(): // has finished loading and already been set
                         break;
                     case false: // has not finished loading
                         proteinLoadingTask.Wait();
-                        bioPolymerList = proteinLoadingTask.Result;
+                        bioPolymerList = (proteinLoadingTask.Result as DatabaseLoadingEngineResults).BioPolymers;
+                        Status("Searching files...", new List<string> { taskId });
                         break;
+                }
+
+                if (SearchParameters.DoMultiplexQuantification)
+                {
+                    IsobaricMassTag massTag = IsobaricMassTag.GetIsobaricMassTag(SearchParameters.MultiplexModId);
+                    if (massTag == null) // Should probably warn/update results if null
+                    {
+                        throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + SearchParameters.MultiplexModId);
+                    }
+
+                    foreach (var scan in arrayOfMs2ScansSortedByMass)
+                    {
+                        scan.SetIsobaricMassTagReporterIonIntensities(massTag);
+                    }
                 }
 
                 // modern search
@@ -376,7 +397,25 @@ namespace TaskLayer
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
                             if (GlobalVariables.StopLoops) { break; }
                         }
+
+                        // Calculate spectral angles for non-specific search after each terminus iteration
+                        // This must happen before FDR analysis since spectral angles are used in PEP calculation
+                        // We use paramToUse (not combinedParams) because the FragmentationTerminus is used when 
+                        // generating theoretical fragments for decoy spectra fallback in CalculateSpectralAngles
+                        if (spectralLibrary != null)
+                        {
+                            Status("Calculating spectral library similarity...", thisId);
+                            foreach (var categoryPsms in fileSpecificPsmsSeparatedByFdrCategory)
+                            {
+                                if (categoryPsms != null)
+                                {
+                                    SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, categoryPsms, arrayOfMs2ScansSortedByMass, paramToUse);
+                                }
+                            }
+                            ReportProgress(new ProgressEventArgs(100, "Done with spectral library similarity!", thisId));
+                        }
                     }
+
                     lock (psmLock)
                     {
                         for (int i = 0; i < allCategorySpecificPsms.Length; i++)
@@ -393,11 +432,11 @@ namespace TaskLayer
                 {
                     Status("Starting search...", thisId);
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, bioPolymerList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary, SearchParameters.WriteDigestionProductCountFile);
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, bioPolymerList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId, SearchParameters.WriteSpectralLibrary, SearchParameters.WriteDigestionProductCountFile);
                     var result = newClassicSearchEngine.Run();
 
                     // The same proteins (all of them) get digested with each classic search engine, therefor we only need to calculate this for the first file that runs
-                    if (!collectedDigestionInformation) 
+                    if (!collectedDigestionInformation)
                     {
                         collectedDigestionInformation = true;
                         digestionCountDictionary = (result.MyEngine as ClassicSearchEngine).DigestionCountDictionary;
@@ -413,7 +452,8 @@ namespace TaskLayer
                 }
 
                 // calculate/set spectral angles if there is a spectral library being used
-                if (spectralLibrary != null)
+                // Note: Non-specific search handles spectral angle calculation separately (before adding to allCategorySpecificPsms)
+                if (spectralLibrary != null && SearchParameters.SearchType != SearchType.NonSpecific)
                 {
                     Status("Calculating spectral library similarity...", thisId);
                     SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
@@ -457,7 +497,7 @@ namespace TaskLayer
                 AllSpectralMatches = allPsms,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
-                ListOfDigestionParams = [..fileSpecificCommonParams.Select(p => p.DigestionParams)],
+                ListOfDigestionParams = [.. fileSpecificCommonParams.Select(p => p.DigestionParams)],
                 CurrentRawFileList = currentRawFileList,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,

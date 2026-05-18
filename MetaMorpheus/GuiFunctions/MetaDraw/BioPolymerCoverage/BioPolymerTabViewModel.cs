@@ -1,4 +1,11 @@
-﻿using System;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
+using EngineLayer.DatabaseLoading;
+using MzLibUtil;
+using Omics;
+using Proteomics.ProteolyticDigestion;
+using Readers;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -17,6 +24,7 @@ using MzLibUtil;
 using Omics;
 using Readers;
 using TaskLayer;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
 namespace GuiFunctions.MetaDraw;
@@ -33,7 +41,7 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
         _metaDrawLogic = metaDrawLogic;
         _allBioPolymers = new Dictionary<string, IBioPolymer>();
         AllGroups = new ObservableCollection<BioPolymerGroupViewModel>();
-        DatabasePath = string.Empty;
+        DatabasePaths = new ObservableCollection<string>();
         ExportDirectory = exportDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
         LoadDatabaseCommand = new RelayCommand(LoadDatabase);
@@ -42,6 +50,7 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
 
         BindingOperations.EnableCollectionSynchronization(AllGroups, ThreadLocker);
         BindingOperations.EnableCollectionSynchronization(FilteredGroups, ThreadLocker);
+        BindingOperations.EnableCollectionSynchronization(DatabasePaths, ThreadLocker);
     }
 
     #region Database Loading Handling
@@ -58,28 +67,28 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
         }
     }
 
-    private string _databasePath;
-
-    public string DatabasePath
-    {
-        get => _databasePath;
-        set
-        {
-            _databasePath = value;
-            OnPropertyChanged(nameof(DatabasePath));
-            DatabaseName =PeriodTolerantFilenameWithoutExtension.GetPeriodTolerantFilenameWithoutExtension(_databasePath);
-        }
-    }
-
-    private string _databaseName;
+    public ObservableCollection<string> DatabasePaths { get; set; }
 
     public string DatabaseName
     {
-        get => _databaseName;
-        set
+        get
         {
-            _databaseName = value;
-            OnPropertyChanged(nameof(DatabaseName));
+            if (DatabasePaths.Count == 0)
+                return "Add Database Files...";
+            if (DatabasePaths.Count == 1)
+                return PeriodTolerantFilenameWithoutExtension.GetPeriodTolerantFilenameWithoutExtension(DatabasePaths[0]);
+            return $"{DatabasePaths.Count} databases selected";
+        }
+    }
+
+    // Tooltip text for database paths
+    public string? DatabasePathsTooltip
+    {
+        get
+        {
+            if (DatabasePaths.Count == 0)
+                return null;
+            return string.Join("\n", DatabasePaths);
         }
     }
 
@@ -88,24 +97,27 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
 
     private async void LoadDatabase()
     {
-        if (string.IsNullOrWhiteSpace(DatabasePath))
+        if (DatabasePaths.Count == 0)
             return;
 
         IsLoading = true;
         try
         {
-            // Load biopolymers asynchronously
-            var bioPolymers = await Task.Run(() =>
-                new SearchTask().LoadBioPolymers(
-                    "", new() { new DbForTask(DatabasePath, false) }, true, DecoyType.None, new(), new())
-                .ToDictionary(p => p.Accession, p => p)
-            );
+            // This is needed to set the proper analyte type in the Engine.Run() method. 
+            CommonParameters commonParams = GuiGlobalParamsViewModel.Instance.IsRnaMode
+                ? new(digestionParams: new RnaDigestionParams())
+                : new();
 
-            _allBioPolymers = bioPolymers;
+            // Load biopolymers from all databases asynchronously
+            var dbForTasks = DatabasePaths.Select(p => new DbForTask(p, false)).ToList();
+            var dbLoader = new DatabaseLoadingEngine(commonParams, [], [], dbForTasks, "", DecoyType.None);
+            var loadingResults = await dbLoader.RunAsync();
+
+            _allBioPolymers = (loadingResults as DatabaseLoadingEngineResults)!.BioPolymers.ToDictionary(bp => bp.Accession, bp => bp);
 
             if (_allBioPolymers.Count == 0)
             {
-                MessageBoxHelper.Warn($"No {GlobalVariables.AnalyteType.GetBioPolymerLabel()} loaded from database.");
+                MessageBoxHelper.Warn($"No {GlobalVariables.AnalyteType.GetBioPolymerLabel()} loaded from database(s).");
                 return;
             }
 
@@ -122,10 +134,10 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
 
             if (AllGroups.Count == 0)
             {
-                MessageBoxHelper.Warn($"Database loaded, but no {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s matched by accession.");
+                MessageBoxHelper.Warn($"Database(s) loaded, but no {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s matched by accession.");
             }
         }
-        catch (Exception e) { MessageBoxHelper.Warn($"An error occurred while loading the database:\n{e}"); }
+        catch (Exception e) { MessageBoxHelper.Warn($"An error occurred while loading the database(s):\n{e}"); }
         finally
         {
             IsLoading = false;
@@ -134,11 +146,13 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
 
     private void ResetDatabase()
     {
-        DatabasePath = string.Empty;
-        DatabaseName = string.Empty;
+        DatabasePaths.Clear();
+        OnPropertyChanged(nameof(DatabaseName));
+        OnPropertyChanged(nameof(DatabasePathsTooltip));
         _allBioPolymers.Clear();
         AllGroups.Clear();
         FilteredGroups.Clear();
+        IsDatabaseLoaded = false;
     }
 
     #endregion
@@ -223,7 +237,7 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
                 bool singleLocalization = siteSplits.Length == 1;
 
                 // TODO: Better ambiguity handling for missed cleavages. 
-                var missedCleavageSplits = match.MissedCleavage.Split("|").Select(int.Parse).ToArray();
+                var missedCleavageSplits = match.MissedCleavage?.Split("|").Select(int.Parse).ToArray() ?? new int[] { 0 };
                 int missedCleavages = missedCleavageSplits[0];
 
                 // belongs to single biopolymer and single localization 
@@ -295,7 +309,7 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
             if (processedResults.Count == 0)
                 continue;
 
-            var group = new BioPolymerGroupViewModel(accessionToGroup, bioPolymer.Name, bioPolymer.BaseSequence, processedResults);
+            var group = new BioPolymerGroupViewModel(accessionToGroup, bioPolymer.Name, bioPolymer.BaseSequence, processedResults, Path.GetFileNameWithoutExtension(bioPolymer.DatabaseFilePath));
             AllGroups.Add(group);
         }
 

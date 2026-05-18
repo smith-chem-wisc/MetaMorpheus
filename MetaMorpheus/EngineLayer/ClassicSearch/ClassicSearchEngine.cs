@@ -158,7 +158,7 @@ namespace EngineLayer.ClassicSearch
                                 // check if we've already generated theoretical fragments for this peptide+dissociation type
                                 if (peptideTheorProducts.Count == 0)
                                 {
-                                    specificBioPolymer.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                                    specificBioPolymer.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
                                 }
 
                                 // match theoretical target ions to spectrum
@@ -205,7 +205,7 @@ namespace EngineLayer.ClassicSearch
 
             if (decoyTheoreticalFragments.Count == 0)
             {
-                reversedOnTheFlyDecoy.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, decoyTheoreticalFragments);
+                reversedOnTheFlyDecoy.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, decoyTheoreticalFragments, CommonParameters.FragmentationParameters);
             }
             Ms2ScanWithSpecificMass theScan = ArrayOfSortedMS2Scans[scan.ScanIndex];
             var decoyMatchedIons = MatchFragmentIons(theScan, decoyTheoreticalFragments, CommonParameters,
