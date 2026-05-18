@@ -8,6 +8,9 @@ using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using GuiFunctions;
 using MassSpectrometry;
 using Omics.Fragmentation;
@@ -143,7 +146,7 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
 
     public void ExportPlot()
     {
-        if (MirrorPlot == null)
+        if (MirrorPlot == null || MirrorPlotExportElement == null)
             return;
 
         string directoryPath = Path.Combine(ExportDirectory, "MetaDrawExport",
@@ -153,10 +156,13 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
         string path = Path.Combine(directoryPath,
             $"MirrorPlot_Scan{SelectedLeftPsm?.Ms2ScanNumber}_vs_Scan{SelectedRightPsm?.Ms2ScanNumber}.{MetaDrawSettings.ExportType.ToLower()}");
 
-        MirrorPlot.ExportToPng(path, 700, 370);
+        using var bitmap = RenderFrameworkElementToBitmap(MirrorPlotExportElement);
+        SpectrumMatchPlot.ExportPlot(path, bitmap, bitmap.Width, bitmap.Height);
+        MessageBoxHelper.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
     }
 
     public OxyPlot.Wpf.PlotView MirrorPlotView { get; set; }
+    public FrameworkElement MirrorPlotExportElement { get; set; }
     public Canvas TopCanvasExport { get; set; }
     public Canvas BottomCanvasExport { get; set; }
 
@@ -218,5 +224,48 @@ public class MirrorPlotTabViewModel : MetaDrawTabViewModel
             }
         }
         return normalized;
+    }
+
+    private static System.Drawing.Bitmap RenderFrameworkElementToBitmap(FrameworkElement element)
+    {
+        var dpi = MetaDrawSettings.CanvasPdfExportDpi;
+        var dpiScale = dpi / 96.0;
+
+        int width = (int)Math.Ceiling(element.ActualWidth > 0 ? element.ActualWidth : element.Width);
+        int height = (int)Math.Ceiling(element.ActualHeight > 0 ? element.ActualHeight : element.Height);
+
+        if (width <= 0)
+            width = 700;
+        if (height <= 0)
+            height = 490;
+
+        var size = new Size(width, height);
+        element.Measure(size);
+        element.Arrange(new Rect(size));
+        element.UpdateLayout();
+
+        var renderTargetBitmap = new RenderTargetBitmap(
+            (int)Math.Ceiling(width * dpiScale),
+            (int)Math.Ceiling(height * dpiScale),
+            dpi,
+            dpi,
+            PixelFormats.Pbgra32);
+
+        var drawingVisual = new DrawingVisual();
+        using (var drawingContext = drawingVisual.RenderOpen())
+        {
+            var visualBrush = new VisualBrush(element);
+            drawingContext.DrawRectangle(visualBrush, null, new Rect(new Point(0, 0), size));
+        }
+
+        renderTargetBitmap.Render(drawingVisual);
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
+
+        using var memoryStream = new System.IO.MemoryStream();
+        encoder.Save(memoryStream);
+        using var temporaryBitmap = new System.Drawing.Bitmap(memoryStream);
+        return new System.Drawing.Bitmap(temporaryBitmap);
     }
 }

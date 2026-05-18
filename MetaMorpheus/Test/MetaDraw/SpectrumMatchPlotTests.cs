@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using GuiFunctions;
 using NUnit.Framework;
@@ -276,6 +277,68 @@ namespace Test.MetaDraw
 
             Assert.That(maxAbsIntensity, Is.LessThanOrEqualTo(1.000001),
                 "Relative-intensity mirror plot should normalize already-populated isotopic envelopes.");
+        }
+
+        [Test]
+        public void MirrorPlotExport_UsesSelectedFormatAndIncludesSequences()
+        {
+            MetaDrawSettings.SuppressMessageBoxes = true;
+            MetaDrawSettings.ExportType = "Jpeg";
+
+            string exportRoot = Path.Combine(outputFolder, "MirrorPlotExportTest");
+            Directory.CreateDirectory(exportRoot);
+
+            var mirrorPlotView = new OxyPlot.Wpf.PlotView
+            {
+                Width = 700,
+                Height = 370
+            };
+            var topCanvas = new Canvas { Width = 700, Height = 60 };
+            var bottomCanvas = new Canvas { Width = 700, Height = 60 };
+            var exportGrid = new Grid
+            {
+                Width = 700,
+                Height = 490
+            };
+            exportGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(60) });
+            exportGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(370) });
+            exportGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(60) });
+            Grid.SetRow(topCanvas, 0);
+            Grid.SetRow(mirrorPlotView, 1);
+            Grid.SetRow(bottomCanvas, 2);
+            exportGrid.Children.Add(topCanvas);
+            exportGrid.Children.Add(mirrorPlotView);
+            exportGrid.Children.Add(bottomCanvas);
+
+            var mirrorPlotViewModel = new GuiFunctions.MetaDraw.MirrorPlotTabViewModel(exportRoot)
+            {
+                MirrorPlotView = mirrorPlotView,
+                MirrorPlotExportElement = exportGrid,
+                TopCanvasExport = topCanvas,
+                BottomCanvasExport = bottomCanvas
+            };
+
+            mirrorPlotViewModel.ProcessMirrorData(metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles);
+            mirrorPlotViewModel.SelectedLeftPsm = psm;
+            mirrorPlotViewModel.SelectedRightPsm = psm;
+
+            Assert.That(mirrorPlotViewModel.MirrorPlot, Is.Not.Null);
+
+            mirrorPlotViewModel.ExportPlot();
+
+            string exportDirectory = Path.Combine(exportRoot, "MetaDrawExport", DateTime.Now.ToString("yyyy-MM-dd"));
+            string exportPath = Path.Combine(exportDirectory,
+                $"MirrorPlot_Scan{psm.Ms2ScanNumber}_vs_Scan{psm.Ms2ScanNumber}.jpeg");
+
+            Assert.That(File.Exists(exportPath), Is.True);
+
+            using var exportStream = File.OpenRead(exportPath);
+            Assert.That(exportStream.ReadByte(), Is.EqualTo(0xFF));
+            Assert.That(exportStream.ReadByte(), Is.EqualTo(0xD8));
+
+            using var exportedImage = System.Drawing.Image.FromFile(exportPath);
+            Assert.That(exportedImage.Height, Is.GreaterThan(370),
+                "Mirror plot export should include the sequence canvases in addition to the plot itself.");
         }
 
         [Test]

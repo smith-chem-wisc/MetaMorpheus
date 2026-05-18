@@ -14,6 +14,7 @@ namespace MetaMorpheusGUI
                 if (DataContext is MirrorPlotTabViewModel vm)
                 {
                     vm.MirrorPlotView = MirrorPlotView;
+                    vm.MirrorPlotExportElement = MirrorPlotExportPanel;
                     vm.TopCanvasExport = TopSequenceCanvas;
                     vm.BottomCanvasExport = BottomSequenceCanvas;
                 }
