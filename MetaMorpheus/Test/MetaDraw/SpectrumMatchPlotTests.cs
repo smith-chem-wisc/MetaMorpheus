@@ -215,6 +215,34 @@ namespace Test.MetaDraw
         }
 
         [Test]
+        public void MirrorPlotRelativeIntensity_PreservesInternalIonClassification()
+        {
+            MetaDrawSettings.DisplayIonAnnotations = true;
+            MetaDrawSettings.DisplayInternalIons = false;
+            MetaDrawSettings.DisplayInternalIonAnnotations = true;
+
+            var mirrorPlotViewModel = new GuiFunctions.MetaDraw.MirrorPlotTabViewModel
+            {
+                MirrorPlotView = new OxyPlot.Wpf.PlotView()
+            };
+
+            mirrorPlotViewModel.ProcessMirrorData(metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles);
+            mirrorPlotViewModel.UseRelativeIntensity = true;
+            mirrorPlotViewModel.SelectedLeftPsm = psm;
+            mirrorPlotViewModel.SelectedRightPsm = psm;
+
+            Assert.That(mirrorPlotViewModel.MirrorPlot, Is.Not.Null);
+
+            var annotationTexts = mirrorPlotViewModel.MirrorPlotView.Model.Annotations
+                .OfType<TextAnnotation>()
+                .Select(p => p.Text)
+                .ToList();
+
+            Assert.That(annotationTexts.Any(p => p.Contains("yIb")), Is.False,
+                "Relative-intensity mirror plot should keep internal ions hidden when internal ion display is disabled.");
+        }
+
+        [Test]
         public static void TestCrossLinkSpectrumMatchPlot()
         { 
             // set up file paths

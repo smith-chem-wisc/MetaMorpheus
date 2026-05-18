@@ -538,7 +538,9 @@ namespace GuiFunctions
                     ion.NeutralTheoreticalProduct.NeutralMass,
                     ion.NeutralTheoreticalProduct.FragmentNumber,
                     ion.NeutralTheoreticalProduct.ResiduePosition,
-                    ion.NeutralTheoreticalProduct.NeutralLoss);
+                    ion.NeutralTheoreticalProduct.NeutralLoss,
+                    ion.NeutralTheoreticalProduct.SecondaryProductType,
+                    ion.NeutralTheoreticalProduct.SecondaryFragmentNumber);
 
                 mirroredIons.Add(new MatchedFragmentIonWithEnvelope(product, ion.Mz,
                     -ion.Intensity, ion.Charge, null));
