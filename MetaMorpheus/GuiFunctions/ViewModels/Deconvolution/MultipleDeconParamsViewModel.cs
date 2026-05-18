@@ -49,6 +49,16 @@ namespace GuiFunctions;
         _isPrecursor = isPrecursor;
         _subParameters = new ObservableCollection<DeconParamsViewModel>(
             parameters.Parameters.Select(p => p.ToViewModel()));
+
+        // When base Min/MaxAssumedChargeState change (e.g., from recommended settings),
+        // also notify the UI that the shared wrapper properties have changed
+        PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == nameof(MinAssumedChargeState))
+                OnPropertyChanged(nameof(SharedMinAssumedChargeState));
+            if (e.PropertyName == nameof(MaxAssumedChargeState))
+                OnPropertyChanged(nameof(SharedMaxAssumedChargeState));
+        };
     }
 
     public int SharedMinAssumedChargeState

@@ -273,4 +273,34 @@ public class MultipleDeconParamsViewModelTest
             Assert.That(sub.Polarity, Is.EqualTo(Polarity.Negative));
     }
 
+    [Test]
+    public void MinAssumedChargeState_DirectChange_FiresSharedPropertyChanged()
+    {
+        bool sharedMinFired = false;
+        _viewModel.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == nameof(_viewModel.SharedMinAssumedChargeState))
+                sharedMinFired = true;
+        };
+
+        _viewModel.MinAssumedChargeState = 5;
+
+        Assert.That(sharedMinFired, Is.True);
+    }
+
+    [Test]
+    public void MaxAssumedChargeState_DirectChange_FiresSharedPropertyChanged()
+    {
+        bool sharedMaxFired = false;
+        _viewModel.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == nameof(_viewModel.SharedMaxAssumedChargeState))
+                sharedMaxFired = true;
+        };
+
+        _viewModel.MaxAssumedChargeState = 8;
+
+        Assert.That(sharedMaxFired, Is.True);
+    }
+
 }
