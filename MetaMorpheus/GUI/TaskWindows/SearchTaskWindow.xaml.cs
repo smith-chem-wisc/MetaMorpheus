@@ -196,6 +196,9 @@ namespace MetaMorpheusGUI
         {
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
+                if (digestionParams.DigestionAgent.Name == "top-down")
+                    GlobalVariables.AnalyteType = AnalyteType.Proteoform;
+
                 ProteaseComboBox.SelectedItem = digestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
                 //do these in if statements so as not to trigger the change
                 if (task.SearchParameters.SearchType == SearchType.NonSpecific && digestionParams.SearchModeType == CleavageSpecificity.None)
