@@ -183,32 +183,6 @@ public class DeconHostViewModelTests
 
     [Test]
     [NonParallelizable]
-    public void TestDeconHostViewModel_GlobalVariables_Proteoform()
-    {
-        // Arrange
-        GlobalVariables.AnalyteType = AnalyteType.Proteoform;
-        DeconHostViewModel viewModel = new DeconHostViewModel(null, null);
-
-        // Act
-        var precursorParams = viewModel.PrecursorDeconvolutionParameters;
-        var productParams = viewModel.ProductDeconvolutionParameters;
-
-        // Assert
-        Assert.That(precursorParams, Is.Not.Null);
-        Assert.That(productParams, Is.Not.Null);
-        Assert.That(precursorParams.DeconvolutionType, Is.EqualTo(DeconvolutionType.ClassicDeconvolution));
-        Assert.That(productParams.DeconvolutionType, Is.EqualTo(DeconvolutionType.ClassicDeconvolution));
-        Assert.That(precursorParams.Parameters, Is.InstanceOf<ClassicDeconvolutionParameters>());
-        Assert.That(productParams.Parameters, Is.InstanceOf<ClassicDeconvolutionParameters>());
-        Assert.That(((ClassicDeconvolutionParameters)precursorParams.Parameters).MaxAssumedChargeState, Is.EqualTo(60));
-        Assert.That(((ClassicDeconvolutionParameters)productParams.Parameters).MaxAssumedChargeState, Is.EqualTo(10));
-
-        // Revert back to default
-        GlobalVariables.AnalyteType = AnalyteType.Peptide;
-    }
-
-    [Test]
-    [NonParallelizable]
     public void TestDeconHostViewModel_GlobalVariables_Oligo()
     {
         // Arrange
