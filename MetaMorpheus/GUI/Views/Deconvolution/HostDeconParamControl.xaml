@@ -100,6 +100,7 @@
                 <!-- Precursor Decon Type ComboBox -->
                 <ComboBox Grid.Column="2" x:Name="PrecursorDeconvolutionTypeComboBox" Width="100" Height="30"
                           VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                          IsEnabled="{Binding DoPrecursorDeconvolution}"
                           ItemsSource="{Binding PrecursorDeconvolutionParametersList}"
                           SelectedItem="{Binding PrecursorDeconvolutionParameters}"
                           Visibility="{Binding DisplayDeconSelectionComboBox, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -115,11 +116,13 @@
             <!-- Specific Precursor Parameters -->
             <ContentControl Grid.Row="1" Margin="5" x:Name="PrecursorSpecificParams" Content="{
                         Binding PrecursorDeconvolutionParameters,
-                        Converter={StaticResource DeconTypeToControlConverter }}" />
+                        Converter={StaticResource DeconTypeToControlConverter }}"
+                            IsEnabled="{Binding DoPrecursorDeconvolution}" />
 
             <!-- Specific Product Parameters -->
             <Expander Grid.Row="2" Header="MS2 Deconvolution" 
-                      Visibility="{Binding ShowMs2Section, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                      Visibility="{Binding ShowMs2Section, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                      IsEnabled="{Binding DoPrecursorDeconvolution}">
                 <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="10">
                     <StackPanel>
                         <Grid HorizontalAlignment="Right">
