@@ -273,23 +273,4 @@ public class MultipleDeconParamsViewModelTest
             Assert.That(sub.Polarity, Is.EqualTo(Polarity.Negative));
     }
 
-    [Test]
-    public void RebuildParameters_AfterSubMutation_SubsRemainConsistent()
-    {
-        _viewModel.AddSubType(DeconvolutionType.IsoDecDeconvolution);
-        // Mutate a sub-VM directly (simulating a per-sub binding change)
-        var sub = _viewModel.SubParameters.Last();
-        sub.Polarity = Polarity.Negative;
-        sub.MinAssumedChargeState = 2;
-        sub.MaxAssumedChargeState = 8;
-
-        // RebuildParameters is triggered by RemoveSubType (or AddSubType)
-        _viewModel.RemoveSubType(_viewModel.SubParameters.Last());
-
-        // The remaining sub should be synchronized back to parent shared values
-        var remaining = _viewModel.SubParameters.Single();
-        Assert.That(remaining.Polarity, Is.EqualTo(_viewModel.Polarity));
-        Assert.That(remaining.MinAssumedChargeState, Is.EqualTo(_viewModel.MinAssumedChargeState));
-        Assert.That(remaining.MaxAssumedChargeState, Is.EqualTo(_viewModel.MaxAssumedChargeState));
-    }
 }

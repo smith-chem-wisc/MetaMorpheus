@@ -106,14 +106,6 @@ namespace GuiFunctions;
 
     private void RebuildParameters()
     {
-        // Ensure shared fields remain consistent across all sub-VMs before rebuilding
-        foreach (var sub in _subParameters)
-        {
-            sub.Polarity = _parameters.Polarity;
-            sub.MinAssumedChargeState = _parameters.MinAssumedChargeState;
-            sub.MaxAssumedChargeState = _parameters.MaxAssumedChargeState;
-        }
-
         _parameters = new MultipleDeconParameters(
             _subParameters.Select(s => s.Parameters),
             _parameters.MinAssumedChargeState,
