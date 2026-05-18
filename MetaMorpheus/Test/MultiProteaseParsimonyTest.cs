@@ -889,7 +889,7 @@ namespace Test
             }
 
             CommonParameters commonParameters_tryp = new CommonParameters(digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 1));
-            CommonParameters commonParameters_LysC = new CommonParameters(digestionParams: new DigestionParams(protease: "Lys-C (don't cleave before proline)", minPeptideLength: 1));
+            CommonParameters commonParameters_LysC = new CommonParameters(digestionParams: new DigestionParams(protease: "Lys-C|P", minPeptideLength: 1));
 
             PeptideWithSetModifications pepABCK_1T = new PeptideWithSetModifications(protein: p.ElementAt(0), digestionParams: commonParameters_tryp.DigestionParams, oneBasedStartResidueInProtein: 2, oneBasedEndResidueInProtein: 4, cleavageSpecificity: CleavageSpecificity.Full, peptideDescription: "ABCK", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
             PeptideWithSetModifications pepABCK_2T = new PeptideWithSetModifications(protein: p.ElementAt(1), digestionParams: commonParameters_tryp.DigestionParams, oneBasedStartResidueInProtein: 6, oneBasedEndResidueInProtein: 8, cleavageSpecificity: CleavageSpecificity.Full, peptideDescription: "ABCK", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);

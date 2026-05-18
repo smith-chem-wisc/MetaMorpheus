@@ -32,13 +32,13 @@ namespace Test.PredictedRetentionTimeTests
                 new PeptideWithSetModifications("MRAGESTARK", null, p: protein),
             };
 
-            IReadOnlyDictionary<string, double?> predictions = _predictor.PredictRetentionTimes(peptides);
+            var predictions = _predictor.PredictRetentionTimeEquivalents(peptides);
 
             Assert.That(predictions.Count, Is.EqualTo(peptides.Length));
-            foreach (var kvp in predictions)
+            foreach (var prediction in predictions)
             {
-                Assert.That(kvp.Value.HasValue, Is.True, $"{kvp.Key} returned null");
-                Assert.That(double.IsFinite(kvp.Value.Value), Is.True);
+                Assert.That(prediction.PredictedValue.HasValue, Is.True, $"{prediction.Peptide.FullSequence} returned null");
+                Assert.That(double.IsFinite(prediction.PredictedValue.Value), Is.True);
             }
         }
 
