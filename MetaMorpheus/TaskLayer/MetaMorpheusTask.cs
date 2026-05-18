@@ -547,6 +547,9 @@ namespace TaskLayer
             DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
             DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
 
+            // DoPrecursorDeconvolution flows from CommonParameters (not FSP) — deconv params from FSP are stored
+            // independently and will be used when DoPrecursorDeconvolution is true.
+
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
