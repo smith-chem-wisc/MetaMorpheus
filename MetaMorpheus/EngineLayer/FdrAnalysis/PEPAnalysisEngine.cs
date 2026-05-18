@@ -51,7 +51,7 @@ namespace EngineLayer
                     // (stochastic infinite LogLoss) and iterative retraining degrades its calibration;
                     // 0.05 gives the best peptide yield and roughly halves LogLoss. See the
                     // fastTreeOptions methodology doc for the evidence.
-                    LearningRate = 0.05,
+                    LearningRate = 0.2,
                 };
                 options.NumberOfThreads = 1;
                 options.LabelColumnName = "Label";
