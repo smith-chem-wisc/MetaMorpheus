@@ -180,15 +180,43 @@ namespace EngineLayer.Util
             var uniquePrecursors = _listPool.Get();
             foreach (var precursor in allPrecursors)
             {
-                bool isDuplicate = uniquePrecursors.Any(existing => precursor.Equals(existing, DeconPeakTolerance));
-                if (!isDuplicate)
+                int duplicateIndex = uniquePrecursors.FindIndex(existing => precursor.Equals(existing, DeconPeakTolerance));
+                if (duplicateIndex < 0)
                 {
                     uniquePrecursors.Add(precursor);
+                }
+                else if (IsBetterRepresentative(precursor, uniquePrecursors[duplicateIndex]))
+                {
+                    uniquePrecursors[duplicateIndex] = precursor;
                 }
             }
             allPrecursors.Clear();
             allPrecursors.AddRange(uniquePrecursors);
             _listPool.Return(uniquePrecursors);
+        }
+
+        private static bool IsBetterRepresentative(Precursor candidate, Precursor existing)
+        {
+            if ((candidate.Envelope != null) != (existing.Envelope != null))
+                return candidate.Envelope != null;
+
+            int envelopePeakCountComparison = candidate.EnvelopePeakCount.CompareTo(existing.EnvelopePeakCount);
+            if (envelopePeakCountComparison != 0)
+                return envelopePeakCountComparison > 0;
+
+            int intensityComparison = candidate.Intensity.CompareTo(existing.Intensity);
+            if (intensityComparison != 0)
+                return intensityComparison > 0;
+
+            int fractionalIntensityComparison = Nullable.Compare(candidate.FractionalIntensity, existing.FractionalIntensity);
+            if (fractionalIntensityComparison != 0)
+                return fractionalIntensityComparison > 0;
+
+            int chargeComparison = Math.Abs(candidate.Charge).CompareTo(Math.Abs(existing.Charge));
+            if (chargeComparison != 0)
+                return chargeComparison > 0;
+
+            return candidate.MonoisotopicPeakMz < existing.MonoisotopicPeakMz;
         }
 
         #endregion
@@ -251,6 +279,9 @@ namespace EngineLayer.Util
                             {
                                 // Build mergedPeaks envelope
                                 var mergedPrecursor = MergePrecursors(left, right, charge, tolerance);
+                                var equivalentExistingPrecursor = allPrecursors.FirstOrDefault(p => !ReferenceEquals(p, left)
+                                                                                                    && !ReferenceEquals(p, right)
+                                                                                                    && mergedPrecursor.Equals(p, tolerance));
 
                                 // Remove both from lists
                                 allPrecursors.Remove(left);
@@ -258,9 +289,16 @@ namespace EngineLayer.Util
                                 list.RemoveAt(j); // Remove right first
                                 list.RemoveAt(i); // Remove left
 
-                                // Insert merged precursor at position k
-                                list.Insert(i, mergedPrecursor);
-                                allPrecursors.Add(mergedPrecursor);
+                                // Reuse an equivalent full precursor when one already exists instead of replacing it with a synthetic merge.
+                                if (equivalentExistingPrecursor != null && IsBetterRepresentative(equivalentExistingPrecursor, mergedPrecursor))
+                                {
+                                    list.Insert(i, equivalentExistingPrecursor);
+                                }
+                                else
+                                {
+                                    list.Insert(i, mergedPrecursor);
+                                    allPrecursors.Add(mergedPrecursor);
+                                }
 
                                 mergedSomething = true;
                                 // The new merged precursor is now at position k, so the next iteration will use it as 'left'
