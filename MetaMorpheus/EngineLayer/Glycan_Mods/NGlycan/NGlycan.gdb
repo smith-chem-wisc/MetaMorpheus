@@ -1,3 +1,85 @@
+# ============================================================================
+# GLYCAN DATABASE FILE (composition format)
+# ============================================================================
+# Lines starting with '#' are comments and are ignored by the parser.
+# Blank lines are also ignored. Indentation before '#' is allowed.
+#
+# DISCOVERY
+# ----------------------------------------------------------------------------
+# MetaMorpheus scans the Glycan_Mods/NGlycan/ folder (inside the install
+# directory) at startup. Every file in that folder is offered in the
+# Glyco Search task's "N-Glycan Database" dropdown by its filename. Pick
+# this file there to search against it.
+#
+# ============================================================================
+# LINE FORMAT (composition)
+# ============================================================================
+# One glycan per data line. Only the text before the first TAB is parsed,
+# so additional tab-separated columns (e.g. a short name or a mass) are
+# tolerated and ignored.
+#
+# Syntax:
+#     <Monosaccharide>(<count>)<Monosaccharide>(<count>)...
+#
+# Order does not matter. Monosaccharides with zero count are omitted.
+#
+# Examples:
+#     HexNAc(2)Hex(5)                       core mannose-5
+#     HexNAc(2)Hex(5)NeuAc(1)               sialylated
+#     HexNAc(4)Hex(5)NeuAc(2)Fuc(1)         biantennary, fucosylated
+#
+# An alternative STRUCTURE format (example: (N(H(A))(N(H(A))(F))) ) is
+# also accepted in glycan files, but EVERY line of a single file must use
+# the SAME format. The parser auto-detects format from the first
+# non-comment, non-blank line. Do not mix formats within one file.
+#
+# ============================================================================
+# RECOGNIZED MONOSACCHARIDE TOKENS
+# ============================================================================
+#   Composition name    Single-char code (used in structure format)
+#   ------------------  -------------------------------------------
+#   Hex                 H
+#   HexNAc              N
+#   NeuAc               A
+#   NeuGc               G
+#   Fuc (or dHex)       F
+#   Phospho             P
+#   Sulfo               S
+#   Na                  Y
+#   Ac                  C
+#   Xylose              X
+#   Kdn                 K
+#
+# Any token outside this set will cause a load error.
+#
+# ============================================================================
+# AUTOMATIC EXPANSION (you do not write these out yourself)
+# ============================================================================
+# For each composition listed below, MetaMorpheus automatically:
+#   - Generates ONE entry targeting motif Asn-X-Ser (Nxs) and a SECOND
+#     entry targeting Asn-X-Thr (Nxt). Do not duplicate rows for the two
+#     motifs.
+#   - Generates neutral-loss masses, Y-ions, and diagnostic oxonium ions
+#     from the composition. You do NOT need to enumerate fragments.
+#
+# ============================================================================
+# ADDING YOUR OWN CUSTOM GLYCANS
+# ============================================================================
+# Two options:
+#
+#  (a) Append new composition lines below this header. They will be loaded
+#      the next time MetaMorpheus starts.
+#
+#  (b) Create a new file with any name and a .gdb (or .txt) extension in
+#      this same Glycan_Mods/NGlycan/ folder, then restart MetaMorpheus.
+#      It will appear in the Glyco Search task dropdown alongside this
+#      one. Copy this header into your new file so readers know the format.
+#
+# You can use '#' on any line to comment your additions.
+#
+# ============================================================================
+# GLYCAN DEFINITIONS
+# ============================================================================
 HexNAc(1)
 HexNAc(1)Fuc(1)
 HexNAc(2)

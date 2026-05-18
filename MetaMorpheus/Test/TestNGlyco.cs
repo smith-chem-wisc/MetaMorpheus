@@ -311,7 +311,245 @@ namespace Test
             var overlap = glycanIonmass.Intersect(ionMass).Count();
 
             Assert.That(overlap == 15);
-     
+
+        }
+
+        [Test]
+        public static void LoadKindGlycan_SkipsCommentsAndBlankLines()
+        {
+            string[] body =
+            {
+                "HexNAc(2)Hex(5)NeuAc(1)Fuc(1)",
+                "HexNAc(2)Hex(3)",
+                "HexNAc(4)Hex(5)NeuAc(2)"
+            };
+
+            string[] decorated =
+            {
+                "# Composition-format custom glycan database",
+                "# Lines starting with '#' are comments. Blank lines are also ignored.",
+                "",
+                body[0],
+                "   # indented comment should also be skipped",
+                "",
+                body[1],
+                "\t",
+                body[2],
+                "# trailing comment"
+            };
+
+            string plainPath = Path.GetTempFileName();
+            string decoratedPath = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllLines(plainPath, body);
+                File.WriteAllLines(decoratedPath, decorated);
+
+                var plain = GlycanDatabase.LoadGlycan(plainPath, false, false).ToList();
+                var fromDecorated = GlycanDatabase.LoadGlycan(decoratedPath, false, false).ToList();
+
+                Assert.That(fromDecorated.Count, Is.EqualTo(plain.Count));
+                CollectionAssert.AreEqual(
+                    plain.Select(g => g.Composition).ToList(),
+                    fromDecorated.Select(g => g.Composition).ToList());
+                CollectionAssert.AreEqual(
+                    plain.Select(g => g.Mass).ToList(),
+                    fromDecorated.Select(g => g.Mass).ToList());
+            }
+            finally
+            {
+                File.Delete(plainPath);
+                File.Delete(decoratedPath);
+            }
+        }
+
+        [Test]
+        public static void LoadStructureGlycan_SkipsCommentsAndBlankLines()
+        {
+            string[] body =
+            {
+                "(N(H(A))(N(H(A))(F)))",
+                "(N(H)(N(H)))",
+                "(N(H(A)))"
+            };
+
+            string[] decorated =
+            {
+                "# Structure-format custom glycan database",
+                "# Lines starting with '#' are comments.",
+                "",
+                body[0],
+                "  # indented comment",
+                body[1],
+                "",
+                body[2]
+            };
+
+            string plainPath = Path.GetTempFileName();
+            string decoratedPath = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllLines(plainPath, body);
+                File.WriteAllLines(decoratedPath, decorated);
+
+                // N-glycan (isOGlycan = false): each line produces two glycans (Nxs, Nxt).
+                var plain = GlycanDatabase.LoadGlycan(plainPath, false, false).ToList();
+                var fromDecorated = GlycanDatabase.LoadGlycan(decoratedPath, false, false).ToList();
+
+                Assert.That(fromDecorated.Count, Is.EqualTo(plain.Count));
+                Assert.That(fromDecorated.Count, Is.EqualTo(body.Length * 2));
+                CollectionAssert.AreEqual(
+                    plain.Select(g => g.IdWithMotif).ToList(),
+                    fromDecorated.Select(g => g.IdWithMotif).ToList());
+            }
+            finally
+            {
+                File.Delete(plainPath);
+                File.Delete(decoratedPath);
+            }
+        }
+
+        [Test]
+        public static void LoadGlycan_CommentOnlyFileYieldsNoGlycans()
+        {
+            string[] lines =
+            {
+                "# This file has no glycan rows.",
+                "",
+                "# Just comments."
+            };
+
+            string path = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllLines(path, lines);
+                var loaded = GlycanDatabase.LoadGlycan(path, false, true).ToList();
+                Assert.That(loaded, Is.Empty);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadKindGlycan_UnknownTokenThrowsWithFileAndLineNumber()
+        {
+            string[] lines =
+            {
+                "# Custom glycan file with a bad row",
+                "HexNAc(2)Hex(5)",
+                "HexNAc(1)Wibble(2)" // line 3 -- Wibble is not a recognized monosaccharide
+            };
+
+            string path = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllLines(path, lines);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadGlycan(path, false, false).ToList());
+
+                Assert.That(ex.Message, Does.Contain(Path.GetFileName(path)));
+                Assert.That(ex.Message, Does.Contain("line 3"));
+                Assert.That(ex.Message, Does.Contain("HexNAc(1)Wibble(2)"));
+                Assert.That(ex.InnerException, Is.Not.Null);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadGlycan_CustomFileRoundTripsThroughEngineSelectionAndIonGeneration()
+        {
+            // Mirror the way GlycoSearchEngine selects and loads a custom database:
+            //   GlobalVariables.OGlycanDatabasePaths.Where(p => Path.GetFileName(p) == _oglycanDatabase).First()
+            //   GlycanDatabase.LoadGlycan(path, ToGenerateIons: true, IsOGlycan: true)
+            // and verify a commented custom file flows end-to-end through that pipeline.
+
+            string tempDir = Path.Combine(Path.GetTempPath(), "GlycoRoundTrip_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string customFileName = "RoundTrip_OGlycan_Custom.gdb";
+            string customPath = Path.Combine(tempDir, customFileName);
+
+            string[] lines =
+            {
+                "# round-trip custom glycan template",
+                "",
+                "HexNAc(1)",        // single GalNAc -> 2 entries (S, T)
+                "HexNAc(1)Hex(1)",  // core-1        -> 2 entries (S, T)
+                "# trailing comment ignored"
+            };
+            File.WriteAllLines(customPath, lines);
+
+            bool addedToGlobals = false;
+            try
+            {
+                if (!GlobalVariables.OGlycanDatabasePaths.Contains(customPath))
+                {
+                    GlobalVariables.OGlycanDatabasePaths.Add(customPath);
+                    addedToGlobals = true;
+                }
+
+                string selectedPath = GlobalVariables.OGlycanDatabasePaths
+                    .Where(p => Path.GetFileName(p) == customFileName).First();
+                var glycans = GlycanDatabase.LoadGlycan(selectedPath, true, true).ToArray();
+
+                // 2 source rows x 2 motifs (S, T) = 4 yielded glycans, in row-then-motif order.
+                Assert.That(glycans.Length, Is.EqualTo(4));
+                Assert.That(glycans.Select(g => g.Composition).ToArray(),
+                    Is.EqualTo(new[] { "N1", "N1", "H1N1", "H1N1" }));
+                Assert.That(glycans.Select(g => g.Target.ToString()).ToArray(),
+                    Is.EqualTo(new[] { "S", "T", "S", "T" }));
+
+                for (int i = 0; i < glycans.Length; i++)
+                {
+                    Assert.That(glycans[i].GlyId, Is.EqualTo(i + 1));
+                    Assert.That(glycans[i].Type, Is.EqualTo(GlycanType.O_glycan));
+                    Assert.That(glycans[i].Ions, Is.Not.Null);
+                    Assert.That(glycans[i].Ions.Count, Is.GreaterThan(0)); // ToGenerateIons=true must populate child ions
+                }
+            }
+            finally
+            {
+                if (addedToGlobals)
+                {
+                    GlobalVariables.OGlycanDatabasePaths.Remove(customPath);
+                }
+                File.Delete(customPath);
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+
+        [Test]
+        public static void LoadStructureGlycan_UnknownCharThrowsWithFileAndLineNumber()
+        {
+            string[] lines =
+            {
+                "# Custom structure file with a bad row",
+                "",
+                "(N(H(A)))",
+                "(N(Z))" // line 4 -- Z is not a recognized monosaccharide code
+            };
+
+            string path = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllLines(path, lines);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadGlycan(path, false, true).ToList());
+
+                Assert.That(ex.Message, Does.Contain(Path.GetFileName(path)));
+                Assert.That(ex.Message, Does.Contain("line 4"));
+                Assert.That(ex.Message, Does.Contain("(N(Z))"));
+                Assert.That(ex.Message, Does.Contain("'Z'"));
+                Assert.That(ex.InnerException, Is.InstanceOf<FormatException>());
+            }
+            finally
+            {
+                File.Delete(path);
+            }
         }
     }
 }

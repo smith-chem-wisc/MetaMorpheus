@@ -24,10 +24,14 @@ namespace EngineLayer
             bool isKind = true;
             using (StreamReader lines = new StreamReader(filePath))
             {
-                while(lines.Peek() != -1)
+                while (lines.Peek() != -1)
                 {
                     string line = lines.ReadLine();
-                    if (!line.Contains("HexNAc"))  // use the first line to determine the format (kind / structure) of glycan database.
+                    if (IsCommentOrBlank(line)) // Skip comment (#) and blank lines so they don't drive format detection.
+                    {
+                        continue;
+                    }
+                    if (!line.Contains("HexNAc")) // Use the first content line to determine the format (kind / structure) of glycan database.
                     {
                         isKind = false;
                     }
@@ -58,16 +62,33 @@ namespace EngineLayer
             using (StreamReader lines = new StreamReader(filePath))
             {
                 int id = 1;
+                int lineNumber = 0;
                 while (lines.Peek() != -1)
                 {
-                    string line = lines.ReadLine().Split('\t').First();
+                    string rawLine = lines.ReadLine();
+                    lineNumber++;
+                    if (IsCommentOrBlank(rawLine)) // Skip header/comment (#) and blank lines.
+                    {
+                        continue;
+                    }
+                    string line = rawLine.Split('\t').First();
 
                     if (!(line.Contains("HexNAc") || line.Contains("Hex"))) // Make sure the line is a glycan line. The line should contain HexNAc or Hex.
                     {
                         continue;
                     }
 
-                    var kind = String2Kind(line);  // Convert the database string to kind[] format (byte array).
+                    byte[] kind;
+                    try
+                    {
+                        kind = String2Kind(line);  // Convert the database string to kind[] format (byte array).
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new MetaMorpheusException(
+                            $"Could not parse glycan composition in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{rawLine}\". {ex.Message}",
+                            ex);
+                    }
 
                     if (IsOGlycan) // Load the oGlycan with two different motifs : S and T
                     {
@@ -144,18 +165,66 @@ namespace EngineLayer
             using (StreamReader glycans = new StreamReader(filePath))
             {
                 int id = 1;
+                int lineNumber = 0;
                 while (glycans.Peek() != -1)
                 {
                     string line = glycans.ReadLine();   // Read the line from the database file. Ex. (N(H(A))(A))
+                    lineNumber++;
+
+                    if (IsCommentOrBlank(line)) // Skip header/comment (#) and blank lines so they don't get fed to Struct2Glycan.
+                    {
+                        continue;
+                    }
 
                     // For each glycan, two versions will be generated:
                     // For O-glycan, one modified on serine (S), and the other on threonine (T).
                     // For N-glycan, one modified on N-glycosylation on motif Asn-X-Ser(Nxs), and the other on Asn-X-Thr(Nxt).
-                    foreach (var glycan in Glycan.Struct2Glycan(line, id, IsOGlycan)) // Modify the line to handle multiple Glycan objects returned by Struct2Glycan.  
+                    // Parse inside try/catch so a malformed line is reported with file + line number;
+                    // yield after the try (C# disallows yield inside a try with a catch).
+                    List<Glycan> parsed;
+                    try
+                    {
+                        string trimmed = line.Trim();
+                        ValidateStructureLine(trimmed);
+                        parsed = Glycan.Struct2Glycan(trimmed, id, IsOGlycan).ToList();
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new MetaMorpheusException(
+                            $"Could not parse glycan structure in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{line}\". {ex.Message}",
+                            ex);
+                    }
+
+                    foreach (var glycan in parsed)
                     {
                         yield return glycan;
                     }
                     id = id + 2; // Each line will generate two glycan objects
+                }
+            }
+        }
+
+        // A line is treated as a comment if its first non-whitespace character is '#'.
+        // Blank/whitespace-only lines are also skipped so users can space out their database files.
+        private static bool IsCommentOrBlank(string line)
+        {
+            return string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith("#");
+        }
+
+        // Valid characters in structure-format lines: parens plus the 11 single-char monosaccharide codes.
+        // Struct2Glycan silently miscounts unknown chars (no entry in CharMassDic), so we pre-validate
+        // to give the user a clear error instead of a silently wrong glycan mass.
+        private static readonly HashSet<char> ValidStructureChars = new HashSet<char>
+            { '(', ')', 'H', 'N', 'A', 'G', 'F', 'P', 'S', 'Y', 'C', 'X', 'K' };
+
+        private static void ValidateStructureLine(string trimmedLine)
+        {
+            foreach (char c in trimmedLine)
+            {
+                if (!ValidStructureChars.Contains(c))
+                {
+                    throw new FormatException(
+                        $"Unrecognized character '{c}' in glycan structure. Allowed: parentheses and one of HNAGFPSYCXK.");
                 }
             }
         }
