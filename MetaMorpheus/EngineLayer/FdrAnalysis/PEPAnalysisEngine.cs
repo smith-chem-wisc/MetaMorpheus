@@ -28,34 +28,24 @@ namespace EngineLayer
     {
         private int _randomSeed = 42;
 
-        private readonly Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options _customTreeOptions;
-
         /// <summary>
-        /// Hyper-parameters for the FastTree PEP model. Returns custom options supplied to the
-        /// constructor when present, otherwise the defaults. The fixed plumbing fields - column
-        /// names, single-threading, and the deterministic seeds - are always enforced here.
+        /// This method contains the hyper-parameters that will be used when training the machine learning model
         /// </summary>
-        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions
-        {
-            get
+        /// <returns> Options object to be passed in to the FastTree constructor </returns>
+        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions =>
+            new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
             {
-                var options = _customTreeOptions ?? new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
-                {
-                    NumberOfTrees = 400,
-                    MinimumExampleCountPerLeaf = 10,
-
-                    NumberOfLeaves = 20,
-                    LearningRate = 0.2,
-                };
-                options.NumberOfThreads = 1;
-                options.LabelColumnName = "Label";
-                options.FeatureColumnName = "Features";
-                options.Seed = _randomSeed;
-                options.FeatureSelectionSeed = _randomSeed;
-                options.RandomStart = false;
-                return options;
-            }
-        }
+                NumberOfThreads = 1,
+                NumberOfTrees = 400,
+                MinimumExampleCountPerLeaf = 10,
+                NumberOfLeaves = 20,
+                LearningRate = 0.2,
+                LabelColumnName = "Label",
+                FeatureColumnName = "Features",
+                Seed = _randomSeed,
+                FeatureSelectionSeed = _randomSeed,
+                RandomStart = false
+            };
 
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
 
@@ -135,7 +125,7 @@ namespace EngineLayer
             FileSpecificParametersDictionary = fileSpecificParameters.ToDictionary(p => Path.GetFileName(p.fileName), p => p.fileSpecificParameters);
         }
 
-        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor? rtPredictor = null, bool iterativeTraining = false, int maxTrainingIterations = 3, Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options customTreeOptions = null)
+        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor? rtPredictor = null, bool iterativeTraining = false, int maxTrainingIterations = 3)
         {
             // This creates a new list of PSMs, but does not clone the Psms themselves.
             // This allows the PSMs to be modified and the order to be preserved
@@ -152,7 +142,6 @@ namespace EngineLayer
             UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Distinct().Count(seq => seq.IsNotNullOrEmpty()) >= 100;
             IterativeTraining = iterativeTraining;
             MaxTrainingIterations = Math.Max(1, maxTrainingIterations);
-            _customTreeOptions = customTreeOptions;
         }
 
         public string ComputePEPValuesForAllPSMs()
