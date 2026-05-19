@@ -269,7 +269,13 @@ namespace EngineLayer
         // Blank/whitespace-only lines are also skipped so users can space out their database files.
         private static bool IsCommentOrBlank(string line)
         {
-            return string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith("#");
+            if (string.IsNullOrWhiteSpace(line))
+                return true;
+            // Microsoft Excel sometimes wraps lines in double-quotes when saving as TSV/CSV.
+            // A comment line that originally starts with '#' may appear as "# MY COMMENT after
+            // a round-trip through Excel.  Strip a leading '"' before checking for '#'.
+            string trimmed = line.TrimStart().TrimStart('"');
+            return trimmed.StartsWith("#");
         }
 
         // Valid characters in structure-format lines: parens plus any single-char monosaccharide
