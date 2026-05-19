@@ -455,7 +455,8 @@ namespace MetaMorpheusGUI
 
             if (!TaskValidator.CheckTaskSettingsValidity(
                 PrecursorMassToleranceTextBox.Text, 
-                ProductMassToleranceTextBox.Text, 
+                ProductMassToleranceTextBox.Text,
+                null, // no low-res product mass tolerance in search task
                 MissedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, 
                 MinPeptideLengthTextBox.Text, 
