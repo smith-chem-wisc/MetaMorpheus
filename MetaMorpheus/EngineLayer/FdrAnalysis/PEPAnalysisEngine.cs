@@ -31,12 +31,9 @@ namespace EngineLayer
         private readonly Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options _customTreeOptions;
 
         /// <summary>
-        /// Hyper-parameters for the FastTree PEP model. Returns the custom options supplied to the
-        /// constructor when present (used for hyperparameter exploration), otherwise the defaults.
-        /// Either way, the fixed plumbing fields - column names, single-threading, and the fixed
-        /// seeds that keep training deterministic - are always enforced here, so a caller supplying
-        /// custom options only needs to set the tunable knobs (tree count, leaves, learning rate,
-        /// minimum leaf size, early stopping).
+        /// Hyper-parameters for the FastTree PEP model. Returns custom options supplied to the
+        /// constructor when present, otherwise the defaults. The fixed plumbing fields - column
+        /// names, single-threading, and the deterministic seeds - are always enforced here.
         /// </summary>
         public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions
         {
@@ -46,12 +43,8 @@ namespace EngineLayer
                 {
                     NumberOfTrees = 400,
                     MinimumExampleCountPerLeaf = 10,
+
                     NumberOfLeaves = 20,
-                    // TODO: change LearningRate to 0.05
-                    // Lowered from 0.2 after a hyperparameter sweep: at 0.2 the model is overconfident
-                    // (stochastic infinite LogLoss) and iterative retraining degrades its calibration;
-                    // 0.05 gives the best peptide yield and roughly halves LogLoss. See the
-                    // fastTreeOptions methodology doc for the evidence.
                     LearningRate = 0.2,
                 };
                 options.NumberOfThreads = 1;

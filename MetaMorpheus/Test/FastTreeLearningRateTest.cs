@@ -16,14 +16,10 @@ using UsefulProteomicsDatabases;
 namespace Test
 {
     /// <summary>
-    /// Integration test for the tuned FastTree PEP learning-rate default. Searches four ~2-minute
-    /// snips cut from the retention-time heart of the BottomUp runs (a medium ~1,000-MS2 dataset),
-    /// then runs the PEP pipeline twice - at the historical learning rate 0.2 and the tuned default
-    /// 0.05 - and shows the tuned rate is markedly better calibrated (lower LogLoss) at no cost in
-    /// target peptides at PEP q-value &lt; 0.01.
-    ///
-    /// The full hyperparameter sweep and the cross-dataset-size evidence behind the 0.2 -> 0.05
-    /// change are written up in docs/PEP_FastTree_Options_Methodology.md.
+    /// Integration test that compares two FastTree PEP learning rates (0.2 and 0.05). Searches four
+    /// ~2-minute snips cut from the retention-time heart of the BottomUp runs (a medium ~1,000-MS2
+    /// dataset), runs the PEP pipeline at each rate, and checks that the lower rate produces a
+    /// better-calibrated model (lower LogLoss) at no cost in target peptides at PEP q-value &lt; 0.01.
     /// </summary>
     [TestFixture]
     public static class FastTreeLearningRateTest
@@ -62,8 +58,8 @@ namespace Test
         [Test]
         public static void LowerLearningRate_ImprovesCalibration_AtNoCostInPeptides()
         {
-            var high = EvaluatePep(learningRate: 0.2);   // the historical default
-            var low = EvaluatePep(learningRate: 0.05);   // the tuned default (PepAnalysisEngine.BGDTreeOptions)
+            var high = EvaluatePep(learningRate: 0.2);
+            var low = EvaluatePep(learningRate: 0.05);
 
             TestContext.WriteLine(
                 $"lr=0.20: {high.peptideCount} target peptides (PEP q<{PepQValueThreshold}), LogLoss {high.logLoss:F4}");
