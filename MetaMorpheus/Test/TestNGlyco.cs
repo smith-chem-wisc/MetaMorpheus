@@ -531,5 +531,106 @@ namespace Test
                 File.Delete(glycanPath);
             }
         }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_TooFewColumnsThrowsWithFileAndLineNumber()
+        {
+            // Comments and a valid row first; the bad row at line 4 has only 2 tab-separated
+            // columns. The loader requires at least Name / SingleCharCode / MonoisotopicMass.
+            string tsv = string.Join(Environment.NewLine, new[]
+            {
+                "# Custom monosaccharide file with one malformed row",
+                "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription",
+                "HexA\tU\t176.03209\t\tHexuronic acid",
+                "Pent\tT"  // line 4 -- missing MonoisotopicMass column
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadCustomMonosaccharides(path));
+
+                Assert.That(ex.Message, Does.Contain(Path.GetFileName(path)));
+                Assert.That(ex.Message, Does.Contain("line 4"));
+                Assert.That(ex.Message, Does.Contain("Expected at least 3 tab-separated columns"));
+                // The raw line content should be in the message so the user can find it.
+                Assert.That(ex.Message, Does.Contain("Pent"));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_MultiCharCodeRejectedWithFileAndLineNumber()
+        {
+            // The SingleCharCode column must be exactly one character. A two-character value
+            // ("UU") is caught BEFORE Glycan.RegisterCustomMonosaccharide is called, so the
+            // error message comes from GlycanDatabase, not from the inner ArgumentException.
+            string tsv = string.Join(Environment.NewLine, new[]
+            {
+                "Name\tSingleCharCode\tMonoisotopicMass",
+                "HexA\tU\t176.03209",
+                "Pent\tTT\t132.04226"  // line 3 -- two-char code is invalid
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadCustomMonosaccharides(path));
+
+                Assert.That(ex.Message, Does.Contain(Path.GetFileName(path)));
+                Assert.That(ex.Message, Does.Contain("line 3"));
+                Assert.That(ex.Message, Does.Contain("SingleCharCode must be exactly one character"));
+                Assert.That(ex.Message, Does.Contain("\"TT\""));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_NonNumericDiagnosticIonThrowsWithFileAndLineNumber()
+        {
+            // The diagnostic-ion column is a comma-separated list of decimal m/z values.
+            // A non-numeric entry partway through the list should be caught and reported with
+            // the offending entry quoted.
+            string tsv = string.Join(Environment.NewLine, new[]
+            {
+                "# Custom monosaccharide file",
+                "",
+                "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription",
+                "HexA\tU\t176.03209\t175.02482,oops,157.01425\tHas a bad diagnostic ion"  // line 4
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadCustomMonosaccharides(path));
+
+                Assert.That(ex.Message, Does.Contain(Path.GetFileName(path)));
+                Assert.That(ex.Message, Does.Contain("line 4"));
+                Assert.That(ex.Message, Does.Contain("DiagnosticIonMasses"));
+                Assert.That(ex.Message, Does.Contain("\"oops\""));
+                // The two well-formed diagnostic ions surrounding "oops" should not appear in
+                // the registry -- the throw must happen before RegisterCustomMonosaccharide.
+                Assert.That(Glycan.NameCharDic.ContainsKey("HexA"), Is.False);
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
     }
 }
