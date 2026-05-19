@@ -709,7 +709,8 @@ namespace Test
                 "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch",
                 "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity",
                 "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide",
-                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle"
+                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle",
+                "PredictedRTZScore"
             };
             Assert.That(trainingInfoStandard, Is.EqualTo(expectedTrainingInfoStandard));
 
@@ -734,7 +735,8 @@ namespace Test
             List<string> negativeAttributes = new List<string>
             {
                 "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity",
-                "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "IsInter", "IsIntra", "ChimeraCount"
+                "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "IsInter", "IsIntra", "ChimeraCount",
+                "PredictedRTZScore"
             };
 
             foreach (string attribute in positiveAttributes)
@@ -777,9 +779,10 @@ namespace Test
                 MostAbundantPrecursorPeakIntensity = 25,
                 PrecursorFractionalIntensity = 26,
                 InternalIonCount = 27,
+                PredictedRTZScore = 28,
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22\t28";
             Assert.That(pd.ToString("standard"), Is.EqualTo(standardToString));
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27";
