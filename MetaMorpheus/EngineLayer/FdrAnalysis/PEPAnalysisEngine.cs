@@ -29,6 +29,20 @@ namespace EngineLayer
         private int _randomSeed = 42;
 
         /// <summary>
+        /// Memoizes the feature kernel produced by <see cref="CreateOnePsmDataEntry"/> per
+        /// <see cref="SpectralMatchHypothesis"/>. Every feature it writes is invariant for the
+        /// lifetime of this engine (PSM-intrinsic, hypothesis-intrinsic, or sourced from
+        /// constructor-time dictionaries like <see cref="FileSpecificMedianFragmentMassErrors"/>
+        /// and the file-specific hydrophobicity dictionaries). Only Label varies between calls,
+        /// and only training-set membership varies between iterations. The cache lets
+        /// CreateOnePsmDataEntry short-circuit the heavy hydrophobicity-z-score + fragment-mass-
+        /// error work on every call after the first, both across training iterations and within
+        /// a single iteration's CreatePsmData -> Compute_PSM_PEP sequence.
+        /// </summary>
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<SpectralMatchHypothesis, PsmData> _featureCache
+            = new System.Collections.Concurrent.ConcurrentDictionary<SpectralMatchHypothesis, PsmData>();
+
+        /// <summary>
         /// This method contains the hyper-parameters that will be used when training the machine learning model
         /// </summary>
         /// <returns> Options object to be passed in to the FastTree constructor </returns>
@@ -632,6 +646,18 @@ namespace EngineLayer
 
         public PsmData CreateOnePsmDataEntry(string searchType, SpectralMatch psm, SpectralMatchHypothesis tentativeSpectralMatch, bool label)
         {
+            // Cache hit: every feature this method writes is iteration-invariant for a given
+            // hypothesis (see _featureCache docs). Only Label changes between calls, so a
+            // field-copy with the current Label reproduces what the heavy path would have
+            // produced. We still set psm.PsmData_forPEPandPercolator so the Percolator-output
+            // side effect downstream (PostSearchAnalysisTask) is unchanged.
+            if (_featureCache.TryGetValue(tentativeSpectralMatch, out PsmData cached))
+            {
+                PsmData reused = CloneWithLabel(cached, label);
+                psm.PsmData_forPEPandPercolator = reused;
+                return reused;
+            }
+
             double normalizationFactor = tentativeSpectralMatch.SpecificBioPolymer.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
             float internalMatchingFragmentCount = 0;
@@ -816,7 +842,57 @@ namespace EngineLayer
                 InternalIonCount = internalMatchingFragmentCount,
             };
 
+            // Memoize the freshly computed entry so later calls for the same hypothesis (later
+            // training iterations, or the same iteration's prediction pass) skip the heavy work.
+            _featureCache.TryAdd(tentativeSpectralMatch, psm.PsmData_forPEPandPercolator);
+
             return psm.PsmData_forPEPandPercolator;
+        }
+
+        /// <summary>
+        /// Shallow field-copy of a cached <see cref="PsmData"/> with a fresh <paramref name="label"/>.
+        /// PsmData carries only primitive fields, so a plain object initializer is a safe and cheap
+        /// "clone". A copy is required (rather than mutating the cached instance) because callers
+        /// in different iterations or prediction-vs-training contexts use different Label values
+        /// and may run concurrently with respect to the cache.
+        /// </summary>
+        private static PsmData CloneWithLabel(PsmData source, bool label)
+        {
+            return new PsmData
+            {
+                TotalMatchingFragmentCount = source.TotalMatchingFragmentCount,
+                Intensity = source.Intensity,
+                PrecursorChargeDiffToMode = source.PrecursorChargeDiffToMode,
+                DeltaScore = source.DeltaScore,
+                Notch = source.Notch,
+                ModsCount = source.ModsCount,
+                AbsoluteAverageFragmentMassErrorFromMedian = source.AbsoluteAverageFragmentMassErrorFromMedian,
+                MissedCleavagesCount = source.MissedCleavagesCount,
+                Ambiguity = source.Ambiguity,
+                LongestFragmentIonSeries = source.LongestFragmentIonSeries,
+                ComplementaryIonCount = source.ComplementaryIonCount,
+                HydrophobicityZScore = source.HydrophobicityZScore,
+                IsVariantPeptide = source.IsVariantPeptide,
+
+                AlphaIntensity = source.AlphaIntensity,
+                BetaIntensity = source.BetaIntensity,
+                LongestFragmentIonSeries_Alpha = source.LongestFragmentIonSeries_Alpha,
+                LongestFragmentIonSeries_Beta = source.LongestFragmentIonSeries_Beta,
+                IsDeadEnd = source.IsDeadEnd,
+                IsLoop = source.IsLoop,
+                IsInter = source.IsInter,
+                IsIntra = source.IsIntra,
+
+                Label = label,
+
+                SpectralAngle = source.SpectralAngle,
+                HasSpectralAngle = source.HasSpectralAngle,
+                PeaksInPrecursorEnvelope = source.PeaksInPrecursorEnvelope,
+                ChimeraCount = source.ChimeraCount,
+                MostAbundantPrecursorPeakIntensity = source.MostAbundantPrecursorPeakIntensity,
+                PrecursorFractionalIntensity = source.PrecursorFractionalIntensity,
+                InternalIonCount = source.InternalIonCount,
+            };
         }
 
         public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<SpectralMatchHypothesis> allPeptides, ref int ambiguousPeptidesRemovedCount)
