@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using GuiFunctions;
 using NUnit.Framework;
@@ -212,6 +213,164 @@ namespace Test.MetaDraw
 
             var annotation = ((TextAnnotation)plotView.Model.Annotations[testCase.FragmentIndex]);
             Assert.That(annotation.TextColor, Is.EqualTo(testCase.ExpectedColor));
+        }
+
+        [Test]
+        public void MirrorPlotRelativeIntensity_PreservesInternalIonClassification()
+        {
+            MetaDrawSettings.DisplayIonAnnotations = true;
+            MetaDrawSettings.DisplayInternalIons = false;
+            MetaDrawSettings.DisplayInternalIonAnnotations = true;
+
+            var mirrorPlotViewModel = new GuiFunctions.MetaDraw.MirrorPlotTabViewModel
+            {
+                MirrorPlotView = new OxyPlot.Wpf.PlotView()
+            };
+
+            mirrorPlotViewModel.ProcessMirrorData(metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles);
+            mirrorPlotViewModel.UseRelativeIntensity = true;
+            mirrorPlotViewModel.SelectedLeftPsm = psm;
+            mirrorPlotViewModel.SelectedRightPsm = psm;
+
+            Assert.That(mirrorPlotViewModel.MirrorPlot, Is.Not.Null);
+
+            var annotationTexts = mirrorPlotViewModel.MirrorPlotView.Model.Annotations
+                .OfType<TextAnnotation>()
+                .Select(p => p.Text)
+                .ToList();
+
+            Assert.That(annotationTexts.Any(p => p.Contains("yIb")), Is.False,
+                "Relative-intensity mirror plot should keep internal ions hidden when internal ion display is disabled.");
+        }
+
+        [Test]
+        public void MirrorPlotRelativeIntensity_NormalizesPrePopulatedEnvelopes()
+        {
+            MetaDrawSettings.AnnotateIsotopicEnvelopes = true;
+            MetaDrawSettings.DisplayIonAnnotations = true;
+            MetaDrawSettings.DisplayInternalIons = true;
+
+            var populatedEnvelopePlotView = new OxyPlot.Wpf.PlotView();
+            metadrawLogic.DisplaySpectrumMatch(populatedEnvelopePlotView, psm, parentChildView, out List<string> errors);
+            Assert.That(errors == null || !errors.Any());
+            Assert.That(psm.MatchedIons.OfType<MatchedFragmentIonWithEnvelope>().Any(p => p.Envelope != null), Is.True,
+                "Test setup should populate isotopic envelopes before building the relative-intensity mirror plot.");
+
+            var mirrorPlotViewModel = new GuiFunctions.MetaDraw.MirrorPlotTabViewModel
+            {
+                MirrorPlotView = new OxyPlot.Wpf.PlotView()
+            };
+
+            mirrorPlotViewModel.ProcessMirrorData(metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles);
+            mirrorPlotViewModel.UseRelativeIntensity = true;
+            mirrorPlotViewModel.SelectedLeftPsm = psm;
+            mirrorPlotViewModel.SelectedRightPsm = psm;
+
+            Assert.That(mirrorPlotViewModel.MirrorPlot, Is.Not.Null);
+
+            double maxAbsIntensity = mirrorPlotViewModel.MirrorPlot.Model.Series
+                .OfType<OxyPlot.Series.LineSeries>()
+                .SelectMany(p => p.Points)
+                .Select(p => Math.Abs(p.Y))
+                .DefaultIfEmpty(0)
+                .Max();
+
+            Assert.That(maxAbsIntensity, Is.LessThanOrEqualTo(1.000001),
+                "Relative-intensity mirror plot should normalize already-populated isotopic envelopes.");
+        }
+
+        [Test]
+        public void MirrorPlotExport_UsesSelectedFormatAndIncludesSequences()
+        {
+            MetaDrawSettings.SuppressMessageBoxes = true;
+            MetaDrawSettings.ExportType = "Jpeg";
+
+            string exportRoot = Path.Combine(outputFolder, "MirrorPlotExportTest");
+            Directory.CreateDirectory(exportRoot);
+
+            var mirrorPlotView = new OxyPlot.Wpf.PlotView
+            {
+                Width = 700,
+                Height = 370
+            };
+            var topCanvas = new Canvas { Width = 700, Height = 60 };
+            var bottomCanvas = new Canvas { Width = 700, Height = 60 };
+            var exportGrid = new Grid
+            {
+                Width = 700,
+                Height = 490
+            };
+            exportGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(60) });
+            exportGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(370) });
+            exportGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(60) });
+            Grid.SetRow(topCanvas, 0);
+            Grid.SetRow(mirrorPlotView, 1);
+            Grid.SetRow(bottomCanvas, 2);
+            exportGrid.Children.Add(topCanvas);
+            exportGrid.Children.Add(mirrorPlotView);
+            exportGrid.Children.Add(bottomCanvas);
+
+            var mirrorPlotViewModel = new GuiFunctions.MetaDraw.MirrorPlotTabViewModel(exportRoot)
+            {
+                MirrorPlotView = mirrorPlotView,
+                MirrorPlotExportElement = exportGrid,
+                TopCanvasExport = topCanvas,
+                BottomCanvasExport = bottomCanvas
+            };
+
+            mirrorPlotViewModel.ProcessMirrorData(metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles);
+            mirrorPlotViewModel.SelectedLeftPsm = psm;
+            mirrorPlotViewModel.SelectedRightPsm = psm;
+
+            Assert.That(mirrorPlotViewModel.MirrorPlot, Is.Not.Null);
+
+            mirrorPlotViewModel.ExportPlot();
+
+            string exportDirectory = Path.Combine(exportRoot, "MetaDrawExport", DateTime.Now.ToString("yyyy-MM-dd"));
+            string exportPath = Path.Combine(exportDirectory,
+                $"MirrorPlot_Scan{psm.Ms2ScanNumber}_vs_Scan{psm.Ms2ScanNumber}.jpeg");
+
+            Assert.That(File.Exists(exportPath), Is.True);
+
+            using var exportStream = File.OpenRead(exportPath);
+            Assert.That(exportStream.ReadByte(), Is.EqualTo(0xFF));
+            Assert.That(exportStream.ReadByte(), Is.EqualTo(0xD8));
+
+            using var exportedImage = System.Drawing.Image.FromFile(exportPath);
+            Assert.That(exportedImage.Height, Is.GreaterThan(370),
+                "Mirror plot export should include the sequence canvases in addition to the plot itself.");
+        }
+
+        [Test]
+        public void MirrorPlotRefreshPlot_RedrawsSequencesAfterSettingsChange()
+        {
+            MetaDrawSettings.DrawMatchedIons = true;
+
+            var mirrorPlotViewModel = new GuiFunctions.MetaDraw.MirrorPlotTabViewModel
+            {
+                MirrorPlotView = new OxyPlot.Wpf.PlotView(),
+                TopCanvasExport = new Canvas(),
+                BottomCanvasExport = new Canvas()
+            };
+
+            mirrorPlotViewModel.ProcessMirrorData(metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles);
+            mirrorPlotViewModel.SelectedLeftPsm = psm;
+            mirrorPlotViewModel.SelectedRightPsm = psm;
+            mirrorPlotViewModel.RefreshSequences();
+
+            int initialTopChildCount = mirrorPlotViewModel.TopCanvasExport.Children.Count;
+            int initialBottomChildCount = mirrorPlotViewModel.BottomCanvasExport.Children.Count;
+
+            Assert.That(initialTopChildCount, Is.GreaterThan(0));
+            Assert.That(initialBottomChildCount, Is.GreaterThan(0));
+
+            MetaDrawSettings.DrawMatchedIons = false;
+            mirrorPlotViewModel.RefreshPlot();
+
+            Assert.That(mirrorPlotViewModel.TopCanvasExport.Children.Count, Is.LessThan(initialTopChildCount),
+                "RefreshPlot should redraw the top mirror sequence canvas when sequence-display settings change.");
+            Assert.That(mirrorPlotViewModel.BottomCanvasExport.Children.Count, Is.LessThan(initialBottomChildCount),
+                "RefreshPlot should redraw the bottom mirror sequence canvas when sequence-display settings change.");
         }
 
         [Test]
@@ -485,6 +644,111 @@ namespace Test.MetaDraw
                 a.TextColor == OxyColor.FromArgb(0, 0, 0, 1)).ToList();
             
             Console.WriteLine($"Total annotations: {textAnnotations.Count}, Hidden: {hiddenAnnotations.Count}");
+        }
+
+        [Test]
+        public void TestUseShortIonAnnotationsWhenPossible_ReplacesLongNames()
+        {
+            MetaDrawSettings.DisplayInternalIons = true;
+            MetaDrawSettings.DisplayInternalIonAnnotations = true;
+            MetaDrawSettings.DisplayIonAnnotations = true;
+            MetaDrawSettings.AnnotateCharges = false;
+            MetaDrawSettings.AnnotateMzValues = false;
+            MetaDrawSettings.SubAndSuperScriptIons = false;
+            MetaDrawSettings.UseShortIonAnnotationsWhenPossible = true;
+
+            int originalCount = psm.MatchedIons.Count;
+            var ionToCopy = psm.MatchedIons.First();
+
+            var ionsToAdd = new List<MatchedFragmentIon>
+            {
+                CreateSyntheticNeutralLossIon(ionToCopy, ProductType.bWaterLoss),
+                CreateSyntheticNeutralLossIon(ionToCopy, ProductType.bBaseLoss),
+                CreateSyntheticNeutralLossIon(ionToCopy, ProductType.bAmmoniaLoss),
+                CreateSyntheticNeutralLossIon(ionToCopy, ProductType.zDot),
+            };
+
+            psm.MatchedIons.AddRange(ionsToAdd);
+
+            try
+            {
+                var testPlotView = new OxyPlot.Wpf.PlotView();
+                metadrawLogic.DisplaySpectrumMatch(testPlotView, psm, parentChildView, out List<string> errors);
+                Assert.That(errors == null || !errors.Any());
+
+                var annotationTexts = testPlotView.Model.Annotations
+                    .OfType<TextAnnotation>()
+                    .Select(p => p.Text)
+                    .ToList();
+
+                Assert.That(annotationTexts.Any(p => p.Contains("-H₂O")), "Expected WaterLoss replacement to -H₂O");
+                Assert.That(annotationTexts.Any(p => p.Contains("-B")), "Expected BaseLoss replacement to -B");
+                Assert.That(annotationTexts.Any(p => p.Contains("-NH₃")), "Expected AmmoniaLoss replacement to -NH₃");
+                Assert.That(annotationTexts.Any(p => p.Contains("^•")), "Expected Dot replacement to ^•");
+
+                Assert.That(annotationTexts.All(p => !p.Contains("WaterLoss")));
+                Assert.That(annotationTexts.All(p => !p.Contains("BaseLoss")));
+                Assert.That(annotationTexts.All(p => !p.Contains("AmmoniaLoss")));
+                Assert.That(annotationTexts.All(p => !p.Contains("Dot")));
+            }
+            finally
+            {
+                psm.MatchedIons.RemoveRange(originalCount, psm.MatchedIons.Count - originalCount);
+                MetaDrawSettings.UseShortIonAnnotationsWhenPossible = false;
+            }
+        }
+
+        [Test]
+        public void TestUseShortIonAnnotationsWhenPossible_WithSubAndSuperScriptIons()
+        {
+            MetaDrawSettings.DisplayInternalIons = true;
+            MetaDrawSettings.DisplayInternalIonAnnotations = true;
+            MetaDrawSettings.DisplayIonAnnotations = true;
+            MetaDrawSettings.AnnotateCharges = false;
+            MetaDrawSettings.AnnotateMzValues = false;
+            MetaDrawSettings.SubAndSuperScriptIons = true;
+            MetaDrawSettings.UseShortIonAnnotationsWhenPossible = true;
+
+            int originalCount = psm.MatchedIons.Count;
+            var ionToCopy = psm.MatchedIons.First();
+            psm.MatchedIons.Add(CreateSyntheticNeutralLossIon(ionToCopy, ProductType.bWaterLoss));
+
+            try
+            {
+                var testPlotView = new OxyPlot.Wpf.PlotView();
+                metadrawLogic.DisplaySpectrumMatch(testPlotView, psm, parentChildView, out List<string> errors);
+                Assert.That(errors == null || !errors.Any());
+
+                var annotationTexts = testPlotView.Model.Annotations
+                    .OfType<TextAnnotation>()
+                    .Select(p => p.Text)
+                    .ToList();
+
+                Assert.That(annotationTexts.Any(p => p.Contains("b₁-H₂O")), "Expected bWaterLoss to render as b₁-H₂O with sub/superscript mode");
+            }
+            finally
+            {
+                psm.MatchedIons.RemoveRange(originalCount, psm.MatchedIons.Count - originalCount);
+                MetaDrawSettings.UseShortIonAnnotationsWhenPossible = false;
+            }
+        }
+
+        private static MatchedFragmentIon CreateSyntheticNeutralLossIon(MatchedFragmentIon sourceIon, ProductType productType)
+        {
+            var sourceProduct = sourceIon.NeutralTheoreticalProduct;
+            var product = new Product(productType,
+                sourceProduct.Terminus,
+                sourceProduct.NeutralMass,
+                sourceProduct.FragmentNumber,
+                sourceProduct.ResiduePosition,
+                sourceProduct.NeutralLoss,
+                sourceProduct.SecondaryProductType,
+                sourceProduct.SecondaryFragmentNumber);
+
+            return new MatchedFragmentIon(product,
+                product.NeutralMass.ToMz(sourceIon.Charge),
+                sourceIon.Intensity,
+                sourceIon.Charge);
         }
     }
 }
