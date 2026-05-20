@@ -51,14 +51,20 @@ public class DeconHostViewModel : BaseViewModel
             if (initialPrecursorParameters != null && !precursorIsFromFile && initialPrecursorParameters.DeconvolutionType == deconType)
                 PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel(true));
             else
-                PrecursorDeconvolutionParametersList.Add(
-                    deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, true));
+            {
+                var vm = deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, true);
+                if (vm != null)
+                    PrecursorDeconvolutionParametersList.Add(vm);
+            }
 
             if (initialProductParameters != null && !productIsFromFile && initialProductParameters.DeconvolutionType == deconType)
                 ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel(false));
             else
-                ProductDeconvolutionParametersList.Add(
-                    deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, false));
+            {
+                var vm = deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, false);
+                if (vm != null)
+                    ProductDeconvolutionParametersList.Add(vm);
+            }
         }
 
         // If deconvolution parameters are not set, default to MetaMorpheus defaults

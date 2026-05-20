@@ -48,7 +48,7 @@ namespace GuiFunctions;
         _parameters = parameters;
         _isPrecursor = isPrecursor;
         _subParameters = new ObservableCollection<DeconParamsViewModel>(
-            parameters.Parameters.Select(p => p.ToViewModel()));
+            parameters.Parameters.Select(p => p.ToViewModel(_isPrecursor)));
 
         // When base Min/MaxAssumedChargeState change (e.g., from recommended settings),
         // also notify the UI that the shared wrapper properties have changed
@@ -66,9 +66,8 @@ namespace GuiFunctions;
         get => MinAssumedChargeState;
         set
         {
-            MinAssumedChargeState = value;
-            foreach (var sub in _subParameters)
-                sub.MinAssumedChargeState = value;
+            if (TrySetAllSubParameters(s => s.MinAssumedChargeState, (s, v) => s.MinAssumedChargeState = v, value))
+                MinAssumedChargeState = value;
         }
     }
 
@@ -77,10 +76,29 @@ namespace GuiFunctions;
         get => MaxAssumedChargeState;
         set
         {
-            MaxAssumedChargeState = value;
-            foreach (var sub in _subParameters)
-                sub.MaxAssumedChargeState = value;
+            if (TrySetAllSubParameters(s => s.MaxAssumedChargeState, (s, v) => s.MaxAssumedChargeState = v, value))
+                MaxAssumedChargeState = value;
         }
+    }
+
+    /// <summary>
+    /// Attempts to set a charge state value on all sub-parameters.
+    /// If any sub-parameter rejects the value (e.g. due to validation), 
+    /// all subs are rolled back to their original values and the shared value is not updated.
+    /// </summary>
+    private bool TrySetAllSubParameters(Func<DeconParamsViewModel, int> getter, Action<DeconParamsViewModel, int> setter, int value)
+    {
+        var oldValues = _subParameters.Select(getter).ToArray();
+        foreach (var sub in _subParameters)
+            setter(sub, value);
+
+        if (_subParameters.All(s => getter(s) == value))
+            return true;
+
+        // Rollback: one or more subs rejected the value
+        for (int i = 0; i < _subParameters.Count; i++)
+            setter(_subParameters[i], oldValues[i]);
+        return false;
     }
 
     public override Polarity Polarity
@@ -124,6 +142,8 @@ namespace GuiFunctions;
             _parameters.AverageResidueModel,
             _parameters.ExpectedIsotopeSpacing);
         OnPropertyChanged(nameof(Parameters));
+        OnPropertyChanged(nameof(SharedMinAssumedChargeState));
+        OnPropertyChanged(nameof(SharedMaxAssumedChargeState));
     }
 
 }

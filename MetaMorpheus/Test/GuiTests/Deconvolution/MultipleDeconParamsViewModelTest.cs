@@ -236,30 +236,46 @@ public class MultipleDeconParamsViewModelTest
     }
 
     [Test]
-    public void AddSubType_OnPrecursorHost_UsesPrecursorDefaults()
+    public void AddSubType_OnPrecursorHost_InheritsSharedValues()
     {
-        // Default constructor isPrecursor = true
-        _viewModel.AddSubType(DeconvolutionType.ClassicDeconvolution);
-        var added = _viewModel.SubParameters.Last();
-        Assert.That(added.MaxAssumedChargeState, Is.EqualTo(12)); // peptide precursor default
+        // Construct with shared Max deliberately different from precursor default (12)
+        // to prove the test is not vacuous (would pass even if _isPrecursor were ignored)
+        var innerParams = new ClassicDeconvolutionParameters(1, 5, 4, 3, Polarity.Positive);
+        var parameters = new MultipleDeconParameters(
+            [innerParams],
+            innerParams.MinAssumedChargeState,
+            innerParams.MaxAssumedChargeState,
+            innerParams.Polarity,
+            innerParams.AverageResidueModel,
+            innerParams.ExpectedIsotopeSpacing);
+        var vm = new MultipleDeconParamsViewModel(parameters, isPrecursor: true);
+
+        vm.AddSubType(DeconvolutionType.ClassicDeconvolution);
+        var added = vm.SubParameters.Last();
+        // AddSubType copies the host's shared values to the new sub
+        Assert.That(added.MaxAssumedChargeState, Is.EqualTo(5));
+        Assert.That(added.MinAssumedChargeState, Is.EqualTo(1));
     }
 
     [Test]
-    public void AddSubType_OnProductHost_UsesProductDefaults()
+    public void AddSubType_OnProductHost_InheritsSharedValues()
     {
-        var productInner = new ClassicDeconvolutionParameters(1, 10, 4, 3, Polarity.Positive); // product default
-        var productParams = new MultipleDeconParameters(
-            [productInner],
-            productInner.MinAssumedChargeState,
-            productInner.MaxAssumedChargeState,
-            productInner.Polarity,
-            productInner.AverageResidueModel,
-            productInner.ExpectedIsotopeSpacing);
-        var productVm = new MultipleDeconParamsViewModel(productParams, isPrecursor: false);
+        // Construct with shared Max deliberately different from product default (10)
+        var innerParams = new ClassicDeconvolutionParameters(1, 7, 4, 3, Polarity.Positive);
+        var parameters = new MultipleDeconParameters(
+            [innerParams],
+            innerParams.MinAssumedChargeState,
+            innerParams.MaxAssumedChargeState,
+            innerParams.Polarity,
+            innerParams.AverageResidueModel,
+            innerParams.ExpectedIsotopeSpacing);
+        var vm = new MultipleDeconParamsViewModel(parameters, isPrecursor: false);
 
-        productVm.AddSubType(DeconvolutionType.ClassicDeconvolution);
-        var added = productVm.SubParameters.Last();
-        Assert.That(added.MaxAssumedChargeState, Is.EqualTo(10)); // peptide product default
+        vm.AddSubType(DeconvolutionType.ClassicDeconvolution);
+        var added = vm.SubParameters.Last();
+        // AddSubType copies the host's shared values to the new sub
+        Assert.That(added.MaxAssumedChargeState, Is.EqualTo(7));
+        Assert.That(added.MinAssumedChargeState, Is.EqualTo(1));
     }
 
     [Test]
