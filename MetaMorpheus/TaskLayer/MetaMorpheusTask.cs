@@ -275,8 +275,8 @@ namespace TaskLayer
                                     precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double? intensity = null;
-                                    if (commonParameters.UseMostAbundantPrecursorIntensity) 
-                                        intensity = envelope.Peaks.Max(p => p.intensity); 
+                                    if (commonParameters.UseMostAbundantPrecursorIntensity)
+                                        intensity = envelope.Peaks.Max(p => p.intensity);
 
                                     var fractionalIntensity = envelope.TotalIntensity /
                                           precursorSpectrum.MassSpectrum.YArray
@@ -286,7 +286,15 @@ namespace TaskLayer
                                               precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Maximum)
                                           ].Sum();
 
-                                    precursorSet.Add(new(envelope, intensity, fractionalIntensity));
+                                    // Method-agnostic envelope-quality score from mzLib (idempotent: caches on the
+                                    // envelope, so re-asking the same envelope is cheap).
+                                    double genericScore = envelope.GetOrComputeGenericScore(
+                                        commonParameters.PrecursorDeconvolutionParameters);
+
+                                    precursorSet.Add(new Precursor(envelope, intensity, fractionalIntensity)
+                                    {
+                                        DeconvolutionScore = genericScore
+                                    });
                                 }
                             }
                         }
@@ -330,7 +338,8 @@ namespace TaskLayer
                             // assign precursor for this MS2 scan
                             var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.MonoisotopicPeakMz,
                                 precursor.Charge, fullFilePath, commonParameters, neutralExperimentalFragments,
-                                precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity);
+                                precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity,
+                                precursor.DeconvolutionScore);
 
                             // assign precursors for MS2 child scans
                             if (ms2ChildScans != null)
