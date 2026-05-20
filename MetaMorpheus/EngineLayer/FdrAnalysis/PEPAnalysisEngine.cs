@@ -640,6 +640,7 @@ namespace EngineLayer
                 MostAbundantPrecursorPeakIntensity = mostAbundantPrecursorPeakIntensity,
                 PrecursorFractionalIntensity = fractionalIntensity,
                 InternalIonCount = internalMatchingFragmentCount,
+                PrecursorDeconvolutionScore = (float)psm.PrecursorScanDeconvolutionScore,
             };
 
             return psm.PsmData_forPEPandPercolator;
