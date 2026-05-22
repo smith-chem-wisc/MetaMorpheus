@@ -99,8 +99,14 @@ namespace EngineLayer.Truncation
                 newMods[newLength + 2] = cTermMod;
             }
 
+            // The peptide Description is emitted verbatim in the standard psmtsv "Description" column
+            // (decision #13), mirroring existing proteolysis-product descriptors like "chain(2-121)".
+            string truncationDescription =
+                (chopFromN > 0 ? TruncationPass3.NTerminalTruncation : TruncationPass3.CTerminalTruncation)
+                + $"({newStart}-{newEnd})";
+
             return new PeptideWithSetModifications(parent.Protein, parent.DigestionParams, newStart, newEnd,
-                CleavageSpecificity.Full, "truncation", 0, newMods, newMods.Count);
+                CleavageSpecificity.Full, truncationDescription, 0, newMods, newMods.Count);
         }
     }
 }
