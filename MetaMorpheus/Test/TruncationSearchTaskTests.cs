@@ -114,6 +114,40 @@ namespace Test
             File.Delete(tomlPath);
         }
 
+        [Test]
+        public void PerfLogger_ParsesRunFolderConvention()
+        {
+            var (phase, dataset, label) = PerfLogger.ParseRunFolderName("2026-05-22_Phase4_KaulichSPE_snippetFromFile");
+            Assert.That(phase, Is.EqualTo("Phase4"));
+            Assert.That(dataset, Is.EqualTo("KaulichSPE"));
+            Assert.That(label, Is.EqualTo("snippetFromFile"));
+
+            // Non-conforming names degrade gracefully.
+            var (phase2, dataset2, label2) = PerfLogger.ParseRunFolderName("TruncationE2E");
+            Assert.That(phase2, Is.EqualTo("Manual"));
+            Assert.That(dataset2, Is.EqualTo(""));
+            Assert.That(label2, Is.EqualTo(""));
+        }
+
+        [Test]
+        public void PerfLogger_WritesHeaderOnceThenAppends()
+        {
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "perf_log_unit.tsv");
+            if (File.Exists(path)) File.Delete(path);
+
+            PerfLogger.Append(path, new TruncationPerfMetrics { NPsmsEmitted = 5, NTruncationsNterm = 3 });
+            PerfLogger.Append(path, new TruncationPerfMetrics { NPsmsEmitted = 9, NTruncationsCterm = 2 });
+
+            string[] lines = File.ReadAllLines(path);
+            Assert.That(lines.Length, Is.EqualTo(3), "Expected one header + two data rows.");
+            Assert.That(lines[0].Split('\t'), Does.Contain("n_psms_emitted"));
+            int col = System.Array.IndexOf(lines[0].Split('\t'), "n_psms_emitted");
+            Assert.That(lines[1].Split('\t')[col], Is.EqualTo("5"));
+            Assert.That(lines[2].Split('\t')[col], Is.EqualTo("9"));
+
+            File.Delete(path);
+        }
+
         /// <summary>
         /// Phase 3.3 gate: a run list of [SearchTask, TruncationSearchTask] executes end-to-end through
         /// EverythingRunnerEngine without throwing, and the truncation task — fed the upstream search's
@@ -140,6 +174,9 @@ namespace Test
             // CommonParameters so MS2 deconvolution + the intact-skip tolerance match Pass 1.
             truncationTask.TruncationSearchParameters.UpstreamSearchTaskId = "Task1-SearchTask";
             truncationTask.CommonParameters = Toml.ReadFile<SearchTask>(topDownSearchToml, MetaMorpheusTask.tomlConfig).CommonParameters;
+            // Also exercise the optional perf-log path (03_Benchmarks).
+            string perfLogPath = Path.Combine(outDirectory, "perf_log.tsv");
+            truncationTask.TruncationSearchParameters.PerfLogPath = perfLogPath;
 
             var taskList = new List<(string, MetaMorpheusTask)>
             {
@@ -173,6 +210,17 @@ namespace Test
             // Truncation type rides the Description column (#13); the inherited intact match is "full-length" (#4a).
             Assert.That(psmLines.Skip(1).Any(line => line.Contains(TruncationPass3.FullLength)),
                 Is.True, "Expected an inherited full-length row in the truncation PSM output.");
+
+            // Perf log got one TruncationSearchTask row (header + >=1 data row).
+            Assert.That(File.Exists(perfLogPath), Is.True, "perf_log.tsv was not written.");
+            string[] perfLines = File.ReadAllLines(perfLogPath);
+            Assert.That(perfLines.Length, Is.GreaterThanOrEqualTo(2));
+            string[] perfHeader = perfLines[0].Split('\t');
+            int taskTypeCol = System.Array.IndexOf(perfHeader, "task_type");
+            int nPsmsCol = System.Array.IndexOf(perfHeader, "n_psms_emitted");
+            string[] perfRow = perfLines[1].Split('\t');
+            Assert.That(perfRow[taskTypeCol], Is.EqualTo("TruncationSearchTask"));
+            Assert.That(int.Parse(perfRow[nPsmsCol]), Is.EqualTo(psmLines.Length - 1), "perf n_psms_emitted should match the PSM TSV row count.");
 
             Directory.Delete(outDirectory, true);
         }
