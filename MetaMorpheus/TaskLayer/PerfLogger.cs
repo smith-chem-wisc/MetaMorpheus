@@ -120,6 +120,8 @@ namespace TaskLayer
         {
             try
             {
+                // The running assembly lives inside the truncation-search worktree (e.g. CMD\bin\...),
+                // so git resolves the branch HEAD from there.
                 string dir = AppContext.BaseDirectory;
                 string commit = RunGit(dir, "rev-parse --short HEAD")?.Trim() ?? "";
                 string status = RunGit(dir, "status --porcelain");
@@ -134,8 +136,11 @@ namespace TaskLayer
 
         private static string RunGit(string workingDir, string args)
         {
-            var psi = new ProcessStartInfo("git", "-C \"" + workingDir + "\" " + args)
+            // Use WorkingDirectory rather than `-C "<dir>"`: AppContext.BaseDirectory ends in a separator,
+            // and a trailing backslash before a closing quote escapes the quote on Windows.
+            var psi = new ProcessStartInfo("git", args)
             {
+                WorkingDirectory = workingDir,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
