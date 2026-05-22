@@ -12,9 +12,18 @@ namespace TaskLayer
     public class TaskChainContext
     {
         private readonly Dictionary<string, object> _results = new();
+        private readonly List<string> _depositOrder = new();
 
         /// <summary>Store <paramref name="result"/> under <paramref name="taskId"/>, overwriting any prior value.</summary>
-        public void Deposit<T>(string taskId, T result) => _results[taskId] = result;
+        public void Deposit<T>(string taskId, T result)
+        {
+            if (!_results.ContainsKey(taskId))
+            {
+                _depositOrder.Add(taskId);
+            }
+
+            _results[taskId] = result;
+        }
 
         /// <summary>
         /// Retrieve a previously deposited result of type <typeparamref name="T"/> for
@@ -26,6 +35,26 @@ namespace TaskLayer
             {
                 result = typed;
                 return true;
+            }
+
+            result = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Retrieve the most recently deposited result assignable to <typeparamref name="T"/>, regardless
+        /// of task id. Lets a consumer (e.g. <see cref="TruncationSearchTask"/>) pick up the preceding
+        /// task's output in a run list without being configured with that task's exact id.
+        /// </summary>
+        public bool TryGetMostRecent<T>(out T result)
+        {
+            for (int i = _depositOrder.Count - 1; i >= 0; i--)
+            {
+                if (_results[_depositOrder[i]] is T typed)
+                {
+                    result = typed;
+                    return true;
+                }
             }
 
             result = default;

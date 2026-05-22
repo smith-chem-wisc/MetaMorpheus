@@ -156,15 +156,21 @@ namespace TaskLayer
         /// </summary>
         private bool TryIngestFromContext(out List<SpectralMatch> pass1Psms)
         {
-            string upstreamId = TruncationSearchParameters.UpstreamSearchTaskId;
-            if (upstreamId != null && TaskChainContext != null
-                && TaskChainContext.TryGet(upstreamId, out pass1Psms) && pass1Psms != null)
+            pass1Psms = null;
+            if (TaskChainContext == null)
             {
-                return true;
+                return false;
             }
 
-            pass1Psms = null;
-            return false;
+            string upstreamId = TruncationSearchParameters.UpstreamSearchTaskId;
+
+            // Explicit upstream id when configured; otherwise fall back to the most recent upstream
+            // result in the run list (so a [Search, Truncation] CMD run needs no exact-id wiring).
+            bool found = upstreamId != null
+                ? TaskChainContext.TryGet(upstreamId, out pass1Psms)
+                : TaskChainContext.TryGetMostRecent(out pass1Psms);
+
+            return found && pass1Psms != null;
         }
 
         /// <summary>
