@@ -516,7 +516,14 @@ namespace TaskLayer
                 CommonParameters = CommonParameters,
                 DigestionCountDictionary = digestionCountDictionary
             };
-            return postProcessing.Run();
+            MyTaskResults postSearchResults = postProcessing.Run();
+
+            // Hand the resolved, FDR'd PSM set to a downstream TruncationSearchTask via the shared
+            // in-memory task-chain context (decision #1). The consumer dedups to proteoform level and
+            // applies its own permissive parent filter; no-op when no context/consumer is present.
+            TaskChainContext?.Deposit(taskId, parameters.AllSpectralMatches);
+
+            return postSearchResults;
         }
 
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
