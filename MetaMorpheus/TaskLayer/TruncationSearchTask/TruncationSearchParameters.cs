@@ -25,6 +25,17 @@ namespace TaskLayer
         /// </summary>
         public double ParentQValueThreshold { get; set; } = 0.10;
 
+        /// <summary>
+        /// Notch acceptor used when chopping a parent down to the precursor mass in Pass 3 (decision #80).
+        /// Inherited from the Pass 1 search convention; defaults to the top-down ThreeMM notches so
+        /// precursor isotope errors do not block a chop. Also sets the FDR notch count for the pooled
+        /// analysis.
+        /// </summary>
+        public MassDiffAcceptorType MassDiffAcceptorType { get; set; } = MassDiffAcceptorType.ThreeMM;
+
+        /// <summary>Custom mass-diff-acceptor string, used only when <see cref="MassDiffAcceptorType"/> is Custom.</summary>
+        public string CustomMdac { get; set; } = null;
+
         /// <summary>Custom output-folder name used for benchmark runs (decision #20). Null = default naming.</summary>
         public string CustomOutputFolderName { get; set; } = null;
 

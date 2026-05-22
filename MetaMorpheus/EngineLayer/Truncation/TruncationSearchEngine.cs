@@ -79,6 +79,7 @@ namespace EngineLayer.Truncation
         private readonly CommonParameters _commonParameters;
         private readonly TruncationAcceptor _acceptor;
         private readonly IReadOnlyDictionary<int, double> _pass1TheoreticalMassByScanNumber;
+        private readonly DissociationType[] _dissociationTypes; // index is built over all of these (#5)
         private List<int>[] _fragmentIndex;
 
         /// <summary>Non-fatal anomalies surfaced to the caller (e.g. the MaxFragmentSize exclusion summary, #6).</summary>
@@ -112,7 +113,25 @@ namespace EngineLayer.Truncation
             _commonParameters = commonParameters;
             _acceptor = acceptor;
             _pass1TheoreticalMassByScanNumber = pass1TheoreticalMassByScanNumber;
+
+            // When the dissociation type is Autodetect it is resolved per scan from the scan header
+            // (mirroring ClassicSearchEngine). The index must hold fragments for every type the scans use.
+            _dissociationTypes = _commonParameters.DissociationType != DissociationType.Autodetect
+                ? new[] { _commonParameters.DissociationType }
+                : _scans.Select(ResolveDissociationType).Distinct().ToArray();
         }
+
+        /// <summary>
+        /// Resolves the effective dissociation type for a scan: the fixed CommonParameters type, or — when
+        /// that is Autodetect — the scan-header type (falling back to HCD when the header omits it).
+        /// </summary>
+        public static DissociationType ResolveDissociationType(CommonParameters commonParameters, Ms2ScanWithSpecificMass scan) =>
+            commonParameters.DissociationType != DissociationType.Autodetect
+                ? commonParameters.DissociationType
+                : scan.TheScan.DissociationType ?? DissociationType.HCD;
+
+        private DissociationType ResolveDissociationType(Ms2ScanWithSpecificMass scan) =>
+            ResolveDissociationType(_commonParameters, scan);
 
         public List<TruncationParentSelection> Run()
         {
@@ -152,15 +171,17 @@ namespace EngineLayer.Truncation
                 FragmentationTerminus bestSeries = FragmentationTerminus.None;
                 double bestScore = 0;
 
+                DissociationType dissociationType = ResolveDissociationType(scan);
+
                 foreach (int id in candidateParentIds)
                 {
                     TruncationParent parent = _parents[id];
 
-                    parent.Proteoform.Fragment(_commonParameters.DissociationType, FragmentationTerminus.N, nTermProducts, _commonParameters.FragmentationParameters);
+                    parent.Proteoform.Fragment(dissociationType, FragmentationTerminus.N, nTermProducts, _commonParameters.FragmentationParameters);
                     double nScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan,
                         MetaMorpheusEngine.MatchFragmentIons(scan, nTermProducts, _commonParameters));
 
-                    parent.Proteoform.Fragment(_commonParameters.DissociationType, FragmentationTerminus.C, cTermProducts, _commonParameters.FragmentationParameters);
+                    parent.Proteoform.Fragment(dissociationType, FragmentationTerminus.C, cTermProducts, _commonParameters.FragmentationParameters);
                     double cScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan,
                         MetaMorpheusEngine.MatchFragmentIons(scan, cTermProducts, _commonParameters));
 
@@ -223,21 +244,28 @@ namespace EngineLayer.Truncation
             var products = new List<Product>();
             for (int id = 0; id < _parents.Count; id++)
             {
-                _parents[id].Proteoform.Fragment(_commonParameters.DissociationType, FragmentationTerminus.Both, products, _commonParameters.FragmentationParameters);
-                foreach (Product product in products)
+                foreach (DissociationType dissociationType in _dissociationTypes)
                 {
-                    if (double.IsNaN(product.NeutralMass))
+                    _parents[id].Proteoform.Fragment(dissociationType, FragmentationTerminus.Both, products, _commonParameters.FragmentationParameters);
+                    foreach (Product product in products)
                     {
-                        continue;
-                    }
+                        if (double.IsNaN(product.NeutralMass))
+                        {
+                            continue;
+                        }
 
-                    int bin = (int)Math.Round(product.NeutralMass * FragmentBinsPerDalton);
-                    if (bin < 0 || bin >= _fragmentIndex.Length)
-                    {
-                        continue;
-                    }
+                        int bin = (int)Math.Round(product.NeutralMass * FragmentBinsPerDalton);
+                        if (bin < 0 || bin >= _fragmentIndex.Length)
+                        {
+                            continue;
+                        }
 
-                    (_fragmentIndex[bin] ??= new List<int>()).Add(id);
+                        List<int> binList = _fragmentIndex[bin] ??= new List<int>();
+                        if (binList.Count == 0 || binList[binList.Count - 1] != id)
+                        {
+                            binList.Add(id); // avoid duplicate ids across dissociation types for the same parent
+                        }
+                    }
                 }
             }
         }

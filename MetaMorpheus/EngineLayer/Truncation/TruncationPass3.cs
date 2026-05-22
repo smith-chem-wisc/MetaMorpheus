@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using MassSpectrometry;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 
@@ -32,6 +33,9 @@ namespace EngineLayer.Truncation
         public const string NTerminalTruncation = "N-terminal truncation";
         public const string CTerminalTruncation = "C-terminal truncation";
 
+        /// <summary>Description-column label for a Pass 1 intact match carried into the pooled output (#4a).</summary>
+        public const string FullLength = "full-length";
+
         /// <summary>The terminus chopped is the opposite of the matched ion series.</summary>
         public static FragmentationTerminus TerminusToChop(FragmentationTerminus winningSeries) =>
             winningSeries == FragmentationTerminus.N ? FragmentationTerminus.C : FragmentationTerminus.N;
@@ -53,7 +57,8 @@ namespace EngineLayer.Truncation
 
             // Pass 3 uses BOTH ion series (the single-series scoring of Pass 2 was only for parent selection, #12).
             var products = new List<Product>();
-            chop.TruncatedForm.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both, products, commonParameters.FragmentationParameters);
+            DissociationType dissociationType = TruncationSearchEngine.ResolveDissociationType(commonParameters, winner.Scan);
+            chop.TruncatedForm.Fragment(dissociationType, FragmentationTerminus.Both, products, commonParameters.FragmentationParameters);
             List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(winner.Scan, products, commonParameters);
             double score = MetaMorpheusEngine.CalculatePeptideScore(winner.Scan.TheScan, matchedIons);
 
@@ -67,6 +72,32 @@ namespace EngineLayer.Truncation
                 ProteinAccessions = winner.WinningParent.ProteinAccession,
                 ScanIndex = winner.ScanIndex
             };
+        }
+
+        /// <summary>
+        /// Carries a Pass 1 intact match into the pooled truncation output as a full-length form (#4a/#18):
+        /// rebuilds the matched proteoform with a "full-length" Description (so it rides the standard
+        /// Description column, #13) and re-scores it against the scan at notch 0 with both-series scoring.
+        /// The base/full sequence is unchanged, so proteoform dedup still groups it correctly.
+        /// </summary>
+        public static SpectralMatch InheritAsFullLength(SpectralMatch pass1Psm, Ms2ScanWithSpecificMass scan,
+            int scanIndex, CommonParameters commonParameters)
+        {
+            var source = (PeptideWithSetModifications)pass1Psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
+
+            // Description has no public setter; rebuild via the standard ctor with the full-length label.
+            var fullLength = new PeptideWithSetModifications(source.Protein, source.DigestionParams,
+                source.OneBasedStartResidueInProtein, source.OneBasedEndResidueInProtein,
+                source.CleavageSpecificityForFdrCategory, FullLength, source.MissedCleavages,
+                source.AllModsOneIsNterminus, source.NumFixedMods);
+
+            var products = new List<Product>();
+            DissociationType dissociationType = TruncationSearchEngine.ResolveDissociationType(commonParameters, scan);
+            fullLength.Fragment(dissociationType, FragmentationTerminus.Both, products, commonParameters.FragmentationParameters);
+            List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, products, commonParameters);
+            double score = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan, matchedIons);
+
+            return new PeptideSpectralMatch(fullLength, 0, score, scanIndex, scan, commonParameters, matchedIons);
         }
 
         /// <summary>
