@@ -70,29 +70,30 @@ namespace EngineLayer.Truncation
         }
 
         /// <summary>
-        /// Collapses PSMs that chopped to the same truncated FullSequence for the same scan into one PSM
-        /// (#10), merging their parent protein accessions into a pipe-separated, MetaMorpheus-style list.
+        /// Collapses PSMs that chopped to the same truncated FullSequence for the same scan into one
+        /// <see cref="SpectralMatch"/> (#10): the alternates are added to the representative as ambiguous
+        /// matches (equal score), so the standard writer pipe-merges their parent protein accessions
+        /// natively once <see cref="SpectralMatch.ResolveAllAmbiguities"/> runs.
         /// </summary>
-        public static List<TruncationPsm> CollapseDuplicateTruncations(IEnumerable<TruncationPsm> psms)
+        public static List<SpectralMatch> CollapseDuplicateTruncations(IEnumerable<TruncationPsm> psms)
         {
-            return psms
-                .GroupBy(p => (p.TruncatedForm.FullSequence, p.ScanIndex))
-                .Select(group =>
-                {
-                    TruncationPsm representative = group.First();
-                    string mergedAccessions = string.Join("|",
-                        group.Select(p => p.ProteinAccessions).Distinct().OrderBy(a => a));
+            var collapsed = new List<SpectralMatch>();
 
-                    return new TruncationPsm
-                    {
-                        SpectralMatch = representative.SpectralMatch,
-                        TruncatedForm = representative.TruncatedForm,
-                        TruncationProductType = representative.TruncationProductType,
-                        ProteinAccessions = mergedAccessions,
-                        ScanIndex = representative.ScanIndex
-                    };
-                })
-                .ToList();
+            foreach (var group in psms.GroupBy(p => (p.TruncatedForm.FullSequence, p.ScanIndex)))
+            {
+                List<TruncationPsm> members = group.ToList();
+                SpectralMatch representative = members[0].SpectralMatch;
+
+                for (int i = 1; i < members.Count; i++)
+                {
+                    representative.AddOrReplace(members[i].TruncatedForm, representative.Score,
+                        members[i].SpectralMatch.Notch ?? 0, reportAllAmbiguity: true, new List<MatchedFragmentIon>());
+                }
+
+                collapsed.Add(representative);
+            }
+
+            return collapsed;
         }
     }
 }
