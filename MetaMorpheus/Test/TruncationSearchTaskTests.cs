@@ -68,6 +68,52 @@ namespace Test
             Assert.That(context.TryGet<List<string>>("Task1-SearchTask", out _), Is.False);
         }
 
+        [Test]
+        public void TaskChainContext_TryGetMostRecent_ReturnsLatestAssignable()
+        {
+            var context = new TaskChainContext();
+            var first = new List<string> { "first" };
+            var second = new List<string> { "second" };
+
+            context.Deposit("Task1-SearchTask", first);
+            context.Deposit("Task2-OtherTask", 7);          // wrong type, skipped
+            context.Deposit("Task3-SearchTask", second);
+
+            Assert.That(context.TryGetMostRecent<List<string>>(out var latest), Is.True);
+            Assert.That(latest, Is.SameAs(second));
+
+            var empty = new TaskChainContext();
+            Assert.That(empty.TryGetMostRecent<List<string>>(out var none), Is.False);
+            Assert.That(none, Is.Null);
+        }
+
+        /// <summary>
+        /// The task must round-trip through TOML so CMD can read a run-list TOML (TaskType = "Truncation")
+        /// and dispatch it. Confirms the task type and the truncation-specific settings survive.
+        /// </summary>
+        [Test]
+        public void TruncationSearchTask_TomlRoundTrips()
+        {
+            var task = new TruncationSearchTask();
+            task.TruncationSearchParameters.UpstreamSearchTaskId = "Task1SearchTask";
+            task.TruncationSearchParameters.ParentQValueThreshold = 0.05;
+            task.TruncationSearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.TwoMM;
+
+            string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TruncationRoundTrip.toml");
+            Toml.WriteFile(task, tomlPath, MetaMorpheusTask.tomlConfig);
+
+            // CMD dispatches on this raw string (Program.cs switch).
+            Assert.That(Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig).Get<string>("TaskType"), Is.EqualTo("Truncation"));
+
+            var read = Toml.ReadFile<TruncationSearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+            Assert.That(read.TaskType, Is.EqualTo(MyTask.Truncation));
+            Assert.That(read.TruncationSearchParameters.UpstreamSearchTaskId, Is.EqualTo("Task1SearchTask"));
+            Assert.That(read.TruncationSearchParameters.ParentQValueThreshold, Is.EqualTo(0.05));
+            Assert.That(read.TruncationSearchParameters.MassDiffAcceptorType, Is.EqualTo(MassDiffAcceptorType.TwoMM));
+
+            File.Delete(tomlPath);
+        }
+
         /// <summary>
         /// Phase 3.3 gate: a run list of [SearchTask, TruncationSearchTask] executes end-to-end through
         /// EverythingRunnerEngine without throwing, and the truncation task — fed the upstream search's
