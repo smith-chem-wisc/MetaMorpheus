@@ -146,11 +146,13 @@ namespace Test
             Assert.That(psm1.TruncatedForm.BaseSequence, Is.EqualTo("PEPTIDE"));
             Assert.That(psm2.TruncatedForm.BaseSequence, Is.EqualTo("PEPTIDE"));
 
-            List<TruncationPsm> collapsed = TruncationPass3.CollapseDuplicateTruncations(new[] { psm1, psm2 });
+            List<SpectralMatch> collapsed = TruncationPass3.CollapseDuplicateTruncations(new[] { psm1, psm2 });
 
             Assert.That(collapsed.Count, Is.EqualTo(1));
-            Assert.That(collapsed[0].ProteinAccessions, Is.EqualTo("A1|A2"));
-            Assert.That(collapsed[0].TruncationProductType, Is.EqualTo(TruncationPass3.CTerminalTruncation));
+            collapsed[0].ResolveAllAmbiguities();
+            var accessions = collapsed[0].BestMatchingBioPolymersWithSetMods
+                .Select(b => b.SpecificBioPolymer.Parent.Accession).Distinct().OrderBy(a => a).ToList();
+            Assert.That(accessions, Is.EqualTo(new[] { "A1", "A2" })); // both parents preserved (#10)
         }
 
         [Test]
