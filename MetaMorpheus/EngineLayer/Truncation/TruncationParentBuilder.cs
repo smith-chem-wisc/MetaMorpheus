@@ -63,5 +63,33 @@ namespace EngineLayer.Truncation
             row.PepQValue.HasValue
                 ? row.PepQValue.Value <= parentQValueThreshold
                 : row.NotchQValue <= parentQValueThreshold;
+
+        /// <summary>
+        /// Returns the combined parent list augmented with a fresh reverse decoy for every target that
+        /// does not already have a reverse-decoy counterpart in the input (decision #14). Reuses the
+        /// existing mzLib reversal (<see cref="PeptideWithSetModifications.GetReverseDecoyFromTarget"/>),
+        /// which locks PTMs to residues; decoys are tagged "DECOY_&lt;accession&gt;". Target parents must
+        /// carry a Protein and DigestionParams (the reversal needs them).
+        /// </summary>
+        public static List<TruncationParent> AddReverseDecoys(IReadOnlyList<TruncationParent> parents)
+        {
+            var combined = new List<TruncationParent>(parents);
+            var existingDecoyAccessions = parents.Where(p => p.IsDecoy).Select(p => p.ProteinAccession).ToHashSet();
+
+            foreach (TruncationParent target in parents.Where(p => !p.IsDecoy))
+            {
+                string decoyAccession = "DECOY_" + target.ProteinAccession;
+                if (!existingDecoyAccessions.Add(decoyAccession))
+                {
+                    continue; // a reverse-decoy counterpart already exists (e.g. came from Pass 1)
+                }
+
+                PeptideWithSetModifications decoyProteoform =
+                    target.Proteoform.GetReverseDecoyFromTarget(new int[target.Proteoform.BaseSequence.Length]);
+                combined.Add(new TruncationParent(decoyProteoform, decoyAccession, target.OriginatingId, isDecoy: true));
+            }
+
+            return combined;
+        }
     }
 }
