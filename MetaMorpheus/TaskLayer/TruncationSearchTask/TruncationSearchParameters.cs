@@ -39,6 +39,13 @@ namespace TaskLayer
         /// <summary>Custom output-folder name used for benchmark runs (decision #20). Null = default naming.</summary>
         public string CustomOutputFolderName { get; set; } = null;
 
+        /// <summary>
+        /// Optional path to the rolling, append-only <c>perf_log.tsv</c> (03_Benchmarks.md). When set, the
+        /// task appends one metrics+timing row per run. Null (default) = no perf logging, so ordinary runs
+        /// and tests are unaffected.
+        /// </summary>
+        public string PerfLogPath { get; set; } = null;
+
         /// <summary>Write decoy rows to the output TSVs (decision #17).</summary>
         public bool WriteDecoys { get; set; } = true;
 

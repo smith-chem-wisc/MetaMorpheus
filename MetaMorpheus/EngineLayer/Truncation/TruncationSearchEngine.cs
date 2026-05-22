@@ -88,6 +88,15 @@ namespace EngineLayer.Truncation
         /// <summary>Number of parents excluded because their mass exceeded MaxFragmentSize (decision #6).</summary>
         public int ExcludedOversizedParentCount { get; }
 
+        /// <summary>Wall-clock seconds spent building the fragment index (perf logging, 03_Benchmarks).</summary>
+        public double IndexBuildSeconds { get; private set; }
+
+        /// <summary>Wall-clock seconds spent in the per-scan dual single-series scoring loop.</summary>
+        public double ScoringSeconds { get; private set; }
+
+        /// <summary>Count of parents actually placed in the index (after the oversize exclusion).</summary>
+        public int IndexedParentCount => _parents.Count;
+
         public TruncationSearchEngine(
             IEnumerable<TruncationParent> parents,
             Ms2ScanWithSpecificMass[] scans,
@@ -135,7 +144,10 @@ namespace EngineLayer.Truncation
 
         public List<TruncationParentSelection> Run()
         {
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             BuildFragmentIndex();
+            IndexBuildSeconds = stopwatch.Elapsed.TotalSeconds;
+            stopwatch.Restart();
 
             var results = new List<TruncationParentSelection>(_scans.Length);
             var nTermProducts = new List<Product>();
@@ -218,6 +230,7 @@ namespace EngineLayer.Truncation
                 }
             }
 
+            ScoringSeconds = stopwatch.Elapsed.TotalSeconds;
             return results;
         }
 

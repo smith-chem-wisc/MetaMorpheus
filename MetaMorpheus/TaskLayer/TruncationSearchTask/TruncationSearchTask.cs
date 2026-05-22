@@ -38,10 +38,14 @@ namespace TaskLayer
 
         public TruncationSearchParameters TruncationSearchParameters { get; set; }
 
+        // Set during parent building; reported in the perf log (did PEP, not notch q, drive the #3 filter?).
+        private bool _pepQWasUsedForParents;
+
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList,
             List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
+            var wallStopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             // 1. Ingest the deduped Pass 1 proteoform-level matches (decision #1). The in-memory list
             //    keeps the matched proteoform's Protein + DigestionParams, which Pass 3 chopping and
@@ -59,7 +63,9 @@ namespace TaskLayer
             }
 
             // 2. Augment with reverse decoys (decision #14).
+            int targetAndPass1DecoyParents = parents.Count;
             parents = TruncationParentBuilder.AddReverseDecoys(parents);
+            int decoysGenerated = parents.Count - targetAndPass1DecoyParents;
 
             // 3. Notch acceptor for Pass 3 chopping (decision #80); its notch count drives the pooled FDR.
             MassDiffAcceptor chopAcceptor = SearchTask.GetMassDiffAcceptor(
@@ -75,6 +81,11 @@ namespace TaskLayer
 
             var pooled = new List<SpectralMatch>();
             var myFileManager = new MyFileManager(true);
+
+            // Perf accumulators (03_Benchmarks); parent/oversize counts are identical per file (shared list).
+            var pass3Timings = new TruncationTimings();
+            double pass2IndexSeconds = 0, pass2ScoringSeconds = 0;
+            int totalMs2Scans = 0, indexedParents = 0, oversizeExcluded = 0;
 
             for (int i = 0; i < currentRawFileList.Count; i++)
             {
@@ -102,12 +113,19 @@ namespace TaskLayer
                     Warn(warning);
                 }
 
+                // Distinct raw MS2 scans (scans[] is precursor-expanded: one entry per candidate precursor).
+                totalMs2Scans += scans.Select(s => s.OneBasedScanNumber).Distinct().Count();
+                pass2IndexSeconds += engine.IndexBuildSeconds;
+                pass2ScoringSeconds += engine.ScoringSeconds;
+                indexedParents = engine.IndexedParentCount;
+                oversizeExcluded = engine.ExcludedOversizedParentCount;
+
                 var truncationPsms = new List<TruncationPsm>();
                 foreach (TruncationParentSelection selection in selections)
                 {
                     if (selection.Outcome == TruncationScanOutcome.Winner)
                     {
-                        TruncationPsm psm = TruncationPass3.ScoreTruncation(selection, fileParams, chopAcceptor);
+                        TruncationPsm psm = TruncationPass3.ScoreTruncation(selection, fileParams, chopAcceptor, pass3Timings);
                         if (psm != null)
                         {
                             truncationPsms.Add(psm);
@@ -127,15 +145,83 @@ namespace TaskLayer
 
             // 4. Pooled FDR + PEP over (full-length + truncation) PSMs (decisions #15, #18). An empty pool
             //    (no winners and no inherited intact matches) skips FDR and writes header-only files.
+            var fdrStopwatch = System.Diagnostics.Stopwatch.StartNew();
             List<SpectralMatch> withFdr = pooled.Count == 0
                 ? pooled
                 : TruncationFdr.RunPooledFdr(pooled, CommonParameters,
                     chopAcceptor.NumNotches, FileSpecificParameters, taskId, OutputFolder);
+            double fdrPepSeconds = fdrStopwatch.Elapsed.TotalSeconds;
 
             // 5. Write the two result files (decisions #16, #17). No q/PEP cutoff; decoys/contaminants included.
             WriteOutputs(withFdr, OutputFolder, taskId);
 
+            // 6. Optional perf-log row (03_Benchmarks). No-op unless a path is configured.
+            if (!string.IsNullOrWhiteSpace(TruncationSearchParameters.PerfLogPath))
+            {
+                AppendPerfLog(withFdr, OutputFolder, currentRawFileList.Count, totalMs2Scans,
+                    wallStopwatch.Elapsed.TotalSeconds, pass2IndexSeconds, pass2ScoringSeconds, pass3Timings,
+                    fdrPepSeconds, indexedParents, oversizeExcluded, decoysGenerated);
+            }
+
             return MyTaskResults;
+        }
+
+        /// <summary>Computes the per-run metrics from the written set and appends one perf_log.tsv row.</summary>
+        private void AppendPerfLog(List<SpectralMatch> withFdr, string outputFolder, int nRawFiles, int totalMs2Scans,
+            double wallSeconds, double pass2IndexSeconds, double pass2ScoringSeconds, TruncationTimings pass3Timings,
+            double fdrPepSeconds, int indexedParents, int oversizeExcluded, int decoysGenerated)
+        {
+            List<SpectralMatch> rows = withFdr.Where(p => p != null).ToList();
+            int Truncations(string kind) => rows.Count(p => DescriptionOf(p).Contains(kind));
+            int targetPsmsAtQ(double q) => rows.Count(p => !p.IsDecoy && (p.GetFdrInfo(false)?.QValue ?? 2) <= q);
+            int targetProteoformsAtQ(double q) => rows.Where(p => !p.IsDecoy && (p.GetFdrInfo(true)?.QValueNotch ?? 2) <= q)
+                .Select(p => p.FullSequence).Distinct().Count();
+
+            var metrics = new TruncationPerfMetrics
+            {
+                OutputFolder = outputFolder,
+                NRawFiles = nRawFiles,
+                TotalMs2Scans = totalMs2Scans,
+                TaskWallSeconds = wallSeconds,
+                NPsmsEmitted = rows.Count,
+                NProteoformsEmitted = rows.Select(p => p.FullSequence).Distinct().Count(),
+                NPsmsQ01 = targetPsmsAtQ(0.01),
+                NProteoformsQ01 = targetProteoformsAtQ(0.01),
+                NPsmsQ05 = targetPsmsAtQ(0.05),
+                NProteoformsQ05 = targetProteoformsAtQ(0.05),
+                NTruncationsTotal = Truncations("truncation"),
+                NTruncationsNterm = Truncations(TruncationPass3.NTerminalTruncation),
+                NTruncationsCterm = Truncations(TruncationPass3.CTerminalTruncation),
+                NIntactInherited = Truncations(TruncationPass3.FullLength),
+                NParentsIndexed = indexedParents,
+                NParentsOversizeExcluded = oversizeExcluded,
+                PepQWasUsed = _pepQWasUsedForParents,
+                NDecoysGenerated = decoysGenerated,
+                Pass2IndexSeconds = pass2IndexSeconds,
+                Pass2ScoringSeconds = pass2ScoringSeconds,
+                Pass3ChoppingSeconds = pass3Timings.ChoppingSeconds,
+                Pass3ScoringSeconds = pass3Timings.ScoringSeconds,
+                FdrPepSeconds = fdrPepSeconds
+            };
+
+            // Run metadata from the parent run-folder name (<date>_<phase>_<datasetTag>_<runLabel>).
+            string runFolder = Directory.GetParent(outputFolder)?.Name ?? "";
+            (metrics.Phase, metrics.DatasetTag, metrics.RunLabel) = PerfLogger.ParseRunFolderName(runFolder);
+
+            try
+            {
+                PerfLogger.Append(TruncationSearchParameters.PerfLogPath, metrics);
+            }
+            catch (System.Exception ex)
+            {
+                Warn("Failed to append perf-log row: " + ex.Message);
+            }
+        }
+
+        private static string DescriptionOf(SpectralMatch psm)
+        {
+            var pwsm = psm.BestMatchingBioPolymersWithSetMods.FirstOrDefault()?.SpecificBioPolymer as PeptideWithSetModifications;
+            return pwsm?.Description ?? string.Empty;
         }
 
         /// <summary>Writes AllTruncatedPSMs.psmtsv and AllTruncatedProteoforms.psmtsv (always, even when empty).</summary>
@@ -194,6 +280,13 @@ namespace TaskLayer
                 if (!PassesParentFilter(psm, threshold))
                 {
                     continue;
+                }
+
+                // Record whether the PEP q-value (vs notch q-value) drove inclusion (perf logging).
+                FdrInfo fdr = psm.GetFdrInfo(peptideLevel: true) ?? psm.GetFdrInfo(peptideLevel: false);
+                if (fdr != null && fdr.PEP_QValue != 2)
+                {
+                    _pepQWasUsedForParents = true;
                 }
 
                 foreach (var hypothesis in psm.BestMatchingBioPolymersWithSetMods)

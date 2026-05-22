@@ -44,12 +44,19 @@ namespace EngineLayer.Truncation
         /// Chops, scores, and builds a Pass 3 PSM for one Pass 2 winner, or returns null if no chop
         /// reaches the precursor mass (the scan is then dropped, #9 — no mass-shift absorption).
         /// </summary>
-        public static TruncationPsm ScoreTruncation(TruncationParentSelection winner, CommonParameters commonParameters, MassDiffAcceptor chopAcceptor)
+        public static TruncationPsm ScoreTruncation(TruncationParentSelection winner, CommonParameters commonParameters,
+            MassDiffAcceptor chopAcceptor, TruncationTimings timings = null)
         {
             FragmentationTerminus terminusToChop = TerminusToChop(winner.WinningSeries);
 
+            var stopwatch = timings != null ? System.Diagnostics.Stopwatch.StartNew() : null;
             ChopResult chop = ProteoformChopper.ChopUntilMassMatches(
                 winner.WinningParent.Proteoform, terminusToChop, winner.Scan.PrecursorMass, chopAcceptor);
+            if (timings != null)
+            {
+                timings.ChoppingSeconds += stopwatch.Elapsed.TotalSeconds;
+                stopwatch.Restart();
+            }
             if (chop == null)
             {
                 return null;
@@ -61,6 +68,10 @@ namespace EngineLayer.Truncation
             chop.TruncatedForm.Fragment(dissociationType, FragmentationTerminus.Both, products, commonParameters.FragmentationParameters);
             List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(winner.Scan, products, commonParameters);
             double score = MetaMorpheusEngine.CalculatePeptideScore(winner.Scan.TheScan, matchedIons);
+            if (timings != null)
+            {
+                timings.ScoringSeconds += stopwatch.Elapsed.TotalSeconds;
+            }
 
             var psm = new PeptideSpectralMatch(chop.TruncatedForm, chop.Notch, score, winner.ScanIndex, winner.Scan, commonParameters, matchedIons);
 
