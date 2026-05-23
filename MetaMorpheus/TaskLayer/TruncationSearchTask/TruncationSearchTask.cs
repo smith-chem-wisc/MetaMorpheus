@@ -1,6 +1,9 @@
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.FdrAnalysis;
@@ -53,14 +56,52 @@ namespace TaskLayer
             //    keeps the matched proteoform's Protein + DigestionParams, which Pass 3 chopping and
             //    decoy generation need; the disk path reconstructs them.
             bool haveInMemoryProvenance = TryIngestFromContext(out List<SpectralMatch> pass1Psms);
-            // Database-seeded parents (decision: remove the observed-parent requirement) take precedence;
-            // otherwise seed from the upstream-identified proteoforms (in-memory, else disk). The Pass 1 PSMs
-            // are still ingested above so intact matches can be inherited as full-length forms (#4a) either way.
-            List<TruncationParent> parents = TruncationSearchParameters.SeedParentsFromDatabase
-                ? BuildParentsFromDatabase(taskId, dbFilenameList)
-                : haveInMemoryProvenance
-                    ? BuildParentsFromPsms(pass1Psms)
-                    : BuildParentsFromDisk();
+
+            // Per-file Pass 1 PSM lookup, used only on the in-memory path to inherit intact matches as
+            // full-length forms (#4a). Disk-ingested parents have no per-scan provenance.
+            ILookup<string, SpectralMatch> pass1ByFile = haveInMemoryProvenance
+                ? pass1Psms.Where(p => p != null).ToLookup(p => p.FullFilePath)
+                : null;
+
+            // Load every file's MS2 scans up front (kept in memory) plus its intact-skip dicts. Hoisted so the
+            // sequence-tag filter can see all scans before parents are built; the engine loop reuses them.
+            var myFileManager = new MyFileManager(true);
+            var loaded = new List<(string Raw, CommonParameters FileParams, Ms2ScanWithSpecificMass[] Scans,
+                Dictionary<int, SpectralMatch> Pass1PsmByScan, Dictionary<int, double> Pass1MassByScan)>();
+            for (int i = 0; i < currentRawFileList.Count; i++)
+            {
+                string rawFilePath = currentRawFileList[i];
+                CommonParameters fileParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i]);
+
+                MsDataFile dataFile = myFileManager.LoadFile(rawFilePath, fileParams);
+                Ms2ScanWithSpecificMass[] scans = GetMs2Scans(dataFile, rawFilePath, fileParams)
+                    .OrderBy(s => s.OneBasedScanNumber).ToArray();
+                myFileManager.DoneWithFile(rawFilePath);
+
+                Dictionary<int, SpectralMatch> pass1PsmByScan = pass1ByFile?[rawFilePath]
+                    .GroupBy(p => p.ScanNumber)
+                    .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p).First());
+                Dictionary<int, double> pass1MassByScan = pass1PsmByScan?
+                    .Where(kv => kv.Value.BioPolymerWithSetModsMonoisotopicMass.HasValue)
+                    .ToDictionary(kv => kv.Key, kv => kv.Value.BioPolymerWithSetModsMonoisotopicMass.Value);
+
+                loaded.Add((rawFilePath, fileParams, scans, pass1PsmByScan, pass1MassByScan));
+            }
+
+            // Build parents: database-seeded (optionally narrowed by the sequence-tag filter, decision: remove
+            // the observed-parent requirement) takes precedence; otherwise seed from the upstream-identified
+            // proteoforms (in-memory, else disk).
+            List<TruncationParent> parents;
+            if (TruncationSearchParameters.SeedParentsFromDatabase)
+            {
+                parents = TruncationSearchParameters.UseSequenceTagFilter
+                    ? BuildParentsFromDatabaseTagFiltered(taskId, dbFilenameList, loaded.SelectMany(f => f.Scans).ToList())
+                    : BuildParentsFromDatabase(taskId, dbFilenameList);
+            }
+            else
+            {
+                parents = haveInMemoryProvenance ? BuildParentsFromPsms(pass1Psms) : BuildParentsFromDisk();
+            }
 
             if (parents.Count == 0)
             {
@@ -80,43 +121,20 @@ namespace TaskLayer
                 TruncationSearchParameters.MassDiffAcceptorType,
                 TruncationSearchParameters.CustomMdac);
 
-            // Per-(file, scan) Pass 1 PSM lookup, used only on the in-memory path to inherit intact
-            // matches as full-length forms (#4a). Disk-ingested parents have no per-scan provenance.
-            ILookup<string, SpectralMatch> pass1ByFile = haveInMemoryProvenance
-                ? pass1Psms.Where(p => p != null).ToLookup(p => p.FullFilePath)
-                : null;
-
             var pooled = new List<SpectralMatch>();
             // Diagnostic: winning parent's 0-based rank in each scan's index match-count ordering (validates
             // the engine's MaxCandidatesToScore cap). Written to CandidateRanks.tsv.
             var winnerRankRows = new List<string>();
-            var myFileManager = new MyFileManager(true);
 
             // Perf accumulators (03_Benchmarks); parent/oversize counts are identical per file (shared list).
             var pass3Timings = new TruncationTimings();
             double pass2IndexSeconds = 0, pass2ScoringSeconds = 0;
             int totalMs2Scans = 0, indexedParents = 0, oversizeExcluded = 0;
 
-            for (int i = 0; i < currentRawFileList.Count; i++)
+            foreach (var file in loaded)
             {
-                string rawFilePath = currentRawFileList[i];
-                CommonParameters fileParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i]);
-
-                MsDataFile dataFile = myFileManager.LoadFile(rawFilePath, fileParams);
-                Ms2ScanWithSpecificMass[] scans = GetMs2Scans(dataFile, rawFilePath, fileParams)
-                    .OrderBy(s => s.OneBasedScanNumber).ToArray();
-                myFileManager.DoneWithFile(rawFilePath);
-
-                // intact-skip dict + Pass 1 PSM lookup for this file (#4a).
-                Dictionary<int, SpectralMatch> pass1PsmByScan = pass1ByFile?[rawFilePath]
-                    .GroupBy(p => p.ScanNumber)
-                    .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p).First());
-                Dictionary<int, double> pass1MassByScan = pass1PsmByScan?
-                    .Where(kv => kv.Value.BioPolymerWithSetModsMonoisotopicMass.HasValue)
-                    .ToDictionary(kv => kv.Key, kv => kv.Value.BioPolymerWithSetModsMonoisotopicMass.Value);
-
-                var engine = new TruncationSearchEngine(parents, scans, fileParams,
-                    new TruncationAcceptor(fileParams.PrecursorMassTolerance), pass1MassByScan,
+                var engine = new TruncationSearchEngine(parents, file.Scans, file.FileParams,
+                    new TruncationAcceptor(file.FileParams.PrecursorMassTolerance), file.Pass1MassByScan,
                     TruncationSearchParameters.MaxParentMass);
                 List<TruncationParentSelection> selections = engine.Run();
                 foreach (string warning in engine.Warnings)
@@ -125,7 +143,7 @@ namespace TaskLayer
                 }
 
                 // Distinct raw MS2 scans (scans[] is precursor-expanded: one entry per candidate precursor).
-                totalMs2Scans += scans.Select(s => s.OneBasedScanNumber).Distinct().Count();
+                totalMs2Scans += file.Scans.Select(s => s.OneBasedScanNumber).Distinct().Count();
                 pass2IndexSeconds += engine.IndexBuildSeconds;
                 pass2ScoringSeconds += engine.ScoringSeconds;
                 indexedParents = engine.IndexedParentCount;
@@ -136,21 +154,21 @@ namespace TaskLayer
                 {
                     if (selection.Outcome == TruncationScanOutcome.Winner)
                     {
-                        TruncationPsm psm = TruncationPass3.ScoreTruncation(selection, fileParams, chopAcceptor, pass3Timings);
+                        TruncationPsm psm = TruncationPass3.ScoreTruncation(selection, file.FileParams, chopAcceptor, pass3Timings);
                         if (psm != null)
                         {
                             truncationPsms.Add(psm);
                         }
-                        winnerRankRows.Add(string.Join("\t", Path.GetFileNameWithoutExtension(rawFilePath),
+                        winnerRankRows.Add(string.Join("\t", Path.GetFileNameWithoutExtension(file.Raw),
                             selection.Scan.OneBasedScanNumber, selection.CandidateRank, selection.CandidatePoolSize,
                             selection.Score.ToString("F3", System.Globalization.CultureInfo.InvariantCulture),
                             psm != null ? 1 : 0));
                     }
                     else if (selection.Outcome == TruncationScanOutcome.IntactInherited
-                             && pass1PsmByScan != null
-                             && pass1PsmByScan.TryGetValue(selection.Scan.OneBasedScanNumber, out SpectralMatch intactHit))
+                             && file.Pass1PsmByScan != null
+                             && file.Pass1PsmByScan.TryGetValue(selection.Scan.OneBasedScanNumber, out SpectralMatch intactHit))
                     {
-                        pooled.Add(TruncationPass3.InheritAsFullLength(intactHit, selection.Scan, selection.ScanIndex, fileParams));
+                        pooled.Add(TruncationPass3.InheritAsFullLength(intactHit, selection.Scan, selection.ScanIndex, file.FileParams));
                     }
                 }
 
@@ -373,6 +391,74 @@ namespace TaskLayer
                 }
             }
 
+            return parents;
+        }
+
+        /// <summary>
+        /// Database-seeded parents, narrowed by the sequence-tag filter (doc §11.2.4): build a k-mer index
+        /// over the database, extract de-novo tags from every scan, take the UNION of tag-supported proteins
+        /// (global-union variant), and digest only those into theoretical parents — keeping the parent set
+        /// far smaller than the whole database without restricting candidates per scan. Tag extraction (over
+        /// scans) and digestion (over candidate proteins) both run in parallel.
+        /// </summary>
+        private List<TruncationParent> BuildParentsFromDatabaseTagFiltered(string taskId, List<DbForTask> dbFilenameList,
+            IReadOnlyList<Ms2ScanWithSpecificMass> allScans)
+        {
+            LoadModifications(taskId, out List<Modification> variableModifications,
+                out List<Modification> fixedModifications, out List<string> localizableModificationTypes);
+
+            var proteins = new List<Protein>();
+            foreach (DbForTask db in dbFilenameList)
+            {
+                proteins.AddRange(DatabaseLoadingEngine.LoadProteinDb(
+                        db.FilePath, generateTargets: true, decoyType: DecoyType.None,
+                        localizableModificationTypes, db.IsContaminant, out _, out _, CommonParameters)
+                    .Where(p => !p.IsDecoy));
+            }
+
+            int tagLength = TruncationSearchParameters.TagLength;
+            int minTagHits = TruncationSearchParameters.MinTagHits;
+            int threads = Math.Max(1, CommonParameters.MaxThreadsToUsePerFile);
+            var index = new ProteinTagIndex(proteins, tagLength, threads);
+            MzLibUtil.Tolerance productTolerance = CommonParameters.ProductMassTolerance;
+            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = threads };
+
+            // Union (over all scans) of proteins supported by the scan's de-novo tags.
+            var perThreadCandidates = new ConcurrentBag<HashSet<int>>();
+            Parallel.ForEach(allScans, parallelOptions, () => new HashSet<int>(), (scan, _, local) =>
+            {
+                if (scan.ExperimentalFragments != null && scan.ExperimentalFragments.Length > 0)
+                {
+                    var masses = new List<double>(scan.ExperimentalFragments.Length);
+                    foreach (var envelope in scan.ExperimentalFragments) masses.Add(envelope.MonoisotopicMass);
+                    HashSet<string> tags = SequenceTagExtractor.ExtractTags(masses, productTolerance, tagLength);
+                    foreach (int id in index.GetCandidateProteinIds(tags, minTagHits)) local.Add(id);
+                }
+                return local;
+            }, local => perThreadCandidates.Add(local));
+
+            var candidateProteinIds = new HashSet<int>();
+            foreach (HashSet<int> set in perThreadCandidates) candidateProteinIds.UnionWith(set);
+
+            Warn($"Sequence-tag filter selected {candidateProteinIds.Count} of {proteins.Count} database proteins " +
+                 $"(tag length {tagLength}, min {minTagHits} tag hits).");
+
+            // Digest only the candidate proteins (in parallel) into theoretical full-length parents.
+            var perThreadParents = new ConcurrentBag<List<TruncationParent>>();
+            Parallel.ForEach(candidateProteinIds, parallelOptions, () => new List<TruncationParent>(), (id, _, local) =>
+            {
+                Protein protein = proteins[id];
+                foreach (PeptideWithSetModifications proteoform in protein
+                    .Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications)
+                    .OfType<PeptideWithSetModifications>())
+                {
+                    local.Add(new TruncationParent(proteoform, protein.Accession, protein.Accession, isDecoy: false));
+                }
+                return local;
+            }, local => perThreadParents.Add(local));
+
+            var parents = new List<TruncationParent>();
+            foreach (List<TruncationParent> list in perThreadParents) parents.AddRange(list);
             return parents;
         }
 
