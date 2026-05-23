@@ -115,6 +115,12 @@ namespace EngineLayer.Truncation
         /// which is the canonical NME form — reported as "N-terminal Met excision" (or "... + acetylation"
         /// when the new N-terminus carries an acetyl), so NME is not miscounted as a truncation.
         /// </summary>
+        /// <summary>Builds the internal/terminal truncated form for a specific (chopFromN, chopFromC) — used by
+        /// the internal search, which finds mass-matching spans by prefix-sum arithmetic and only then builds
+        /// the (few) matches rather than constructing every span.</summary>
+        public static PeptideWithSetModifications BuildTruncatedForm(PeptideWithSetModifications parent, int chopFromN, int chopFromC)
+            => BuildTruncated(parent, chopFromN, chopFromC);
+
         /// <summary>Mass margin (Da) past the lowest acceptable target before the inner C-chop loop stops.</summary>
         private const double InternalChopMassMargin = 50.0;
 

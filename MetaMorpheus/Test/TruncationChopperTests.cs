@@ -306,6 +306,25 @@ namespace Test
             Assert.That(hit.TruncatedForm.Description, Does.StartWith(TruncationPass3.InternalTruncation));
         }
 
+        [Test]
+        public void InternalSearch_RecoversInternalFragment_FromParent()
+        {
+            // Scan = internal fragment P1[6..40] (precursor + its own both-series ladder). The direct internal
+            // search should enumerate it from parent P1, clear the bilateral gate, and report it as internal.
+            var internalForm = MakeProteoform(RepeatTo(AlphabetP1, 50).Substring(5, 35), "P1", null);
+            Ms2ScanWithSpecificMass scan = BuildScan(1, internalForm.MonoisotopicMass,
+                SeriesMasses(internalForm, FragmentationTerminus.Both, _cp), _cp);
+            var parents = new List<TruncationParent> { new TruncationParent(_p1, "P1", "P1", false) };
+
+            List<TruncationPsm> psms = InternalTruncationSearch.Run(parents, new[] { scan }, _cp, _exactAcceptor,
+                minIonsPerTerminus: 2, maxParentMass: 30000);
+
+            Assert.That(psms.Count, Is.EqualTo(1));
+            Assert.That(psms[0].TruncationProductType, Is.EqualTo(TruncationPass3.InternalTruncation));
+            Assert.That(psms[0].TruncatedForm.OneBasedStartResidueInProtein, Is.EqualTo(6));
+            Assert.That(psms[0].TruncatedForm.OneBasedEndResidueInProtein, Is.EqualTo(40));
+        }
+
         // ---------- helpers ----------
 
         // A winning N-terminal-ion series means Pass 3 chops the C-terminus.
