@@ -86,6 +86,17 @@ namespace TaskLayer
         /// </summary>
         public double MaxParentMass { get; set; } = EngineLayer.Truncation.TruncationSearchEngine.DefaultMaxFragmentSize;
 
+        /// <summary>
+        /// Also run a direct internal-fragment search over the parent set (both termini chopped), scored with
+        /// the fragmentation-propensity-weighted C-Score core and judged in its OWN (per-class) FDR, written to
+        /// AllInternalTruncations.psmtsv. Independent of the terminal/intact search. Off by default.
+        /// </summary>
+        public bool SearchInternalTruncations { get; set; } = false;
+
+        /// <summary>Strong bilateral gate for the internal search: minimum matched ions required on EACH new
+        /// terminus (b/c side and y/z side) of an internal candidate before it is scored/kept.</summary>
+        public int InternalMinIonsPerTerminus { get; set; } = 2;
+
         /// <summary>Write decoy rows to the output TSVs (decision #17).</summary>
         public bool WriteDecoys { get; set; } = true;
 

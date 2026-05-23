@@ -197,6 +197,30 @@ namespace TaskLayer
                     chopAcceptor.NumNotches, FileSpecificParameters, taskId, OutputFolder);
             double fdrPepSeconds = fdrStopwatch.Elapsed.TotalSeconds;
 
+            // 4b. Internal-fragment search (separate per-class FDR): a real internal fragment shares no ladder
+            //     with its parent, so it needs a direct search scored on its own b/y ladder (propensity-weighted)
+            //     and judged among internal targets/decoys only — not pooled against the easy intact threshold.
+            if (TruncationSearchParameters.SearchInternalTruncations)
+            {
+                var internalPsms = new List<TruncationPsm>();
+                foreach (var file in loaded)
+                {
+                    internalPsms.AddRange(InternalTruncationSearch.Run(parents, file.Scans, file.FileParams,
+                        chopAcceptor, TruncationSearchParameters.InternalMinIonsPerTerminus,
+                        TruncationSearchParameters.MaxParentMass));
+                }
+
+                List<SpectralMatch> internalPooled = TruncationPass3.CollapseDuplicateTruncations(internalPsms);
+                List<SpectralMatch> internalWithFdr = internalPooled.Count == 0
+                    ? internalPooled
+                    : TruncationFdr.RunPooledFdr(internalPooled, CommonParameters,
+                        chopAcceptor.NumNotches, FileSpecificParameters, taskId, OutputFolder);
+
+                string internalPath = Path.Combine(OutputFolder, "AllInternalTruncations.psmtsv");
+                TruncationOutput.WritePsms(internalWithFdr, internalPath);
+                FinishedWritingFile(internalPath, new List<string> { taskId });
+            }
+
             // 5. Write the two result files (decisions #16, #17). No q/PEP cutoff; decoys/contaminants included.
             WriteOutputs(withFdr, OutputFolder, taskId);
 
