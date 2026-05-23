@@ -46,6 +46,23 @@ namespace TaskLayer
         /// </summary>
         public string PerfLogPath { get; set; } = null;
 
+        /// <summary>
+        /// Seed truncation parents from the DATABASE — theoretical full-length proteoforms generated like a
+        /// top-down search (digest each protein with the configured fixed/variable mods, so annotated PTMs
+        /// ride along) — rather than only from upstream-identified proteoforms. Removes the requirement that a
+        /// truncation's parent be observed intact, at the cost of a much larger Pass 2 search. Single-terminus
+        /// only (internal truncations are not generated here). Off by default.
+        /// </summary>
+        public bool SeedParentsFromDatabase { get; set; } = false;
+
+        /// <summary>
+        /// Maximum parent proteoform monoisotopic mass (Da) placed in the Pass 2 index (decision #6); heavier
+        /// parents are excluded. Defaults to the search convention (30 kDa). RAISE this for database-seeded
+        /// runs so large proteins — whose small fragments populate an LMW fraction but whose intact form is
+        /// never observed — can still be chopped down to a matching truncation.
+        /// </summary>
+        public double MaxParentMass { get; set; } = EngineLayer.Truncation.TruncationSearchEngine.DefaultMaxFragmentSize;
+
         /// <summary>Write decoy rows to the output TSVs (decision #17).</summary>
         public bool WriteDecoys { get; set; } = true;
 

@@ -7,9 +7,11 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.Truncation;
 using MassSpectrometry;
 using Omics;
+using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -51,13 +53,18 @@ namespace TaskLayer
             //    keeps the matched proteoform's Protein + DigestionParams, which Pass 3 chopping and
             //    decoy generation need; the disk path reconstructs them.
             bool haveInMemoryProvenance = TryIngestFromContext(out List<SpectralMatch> pass1Psms);
-            List<TruncationParent> parents = haveInMemoryProvenance
-                ? BuildParentsFromPsms(pass1Psms)
-                : BuildParentsFromDisk();
+            // Database-seeded parents (decision: remove the observed-parent requirement) take precedence;
+            // otherwise seed from the upstream-identified proteoforms (in-memory, else disk). The Pass 1 PSMs
+            // are still ingested above so intact matches can be inherited as full-length forms (#4a) either way.
+            List<TruncationParent> parents = TruncationSearchParameters.SeedParentsFromDatabase
+                ? BuildParentsFromDatabase(taskId, dbFilenameList)
+                : haveInMemoryProvenance
+                    ? BuildParentsFromPsms(pass1Psms)
+                    : BuildParentsFromDisk();
 
             if (parents.Count == 0)
             {
-                Warn("TruncationSearchTask found no Pass 1 proteoforms to seed the search; writing empty result files.");
+                Warn("TruncationSearchTask found no proteoforms to seed the search; writing empty result files.");
                 WriteOutputs(new List<SpectralMatch>(), OutputFolder, taskId);
                 return MyTaskResults;
             }
@@ -80,6 +87,9 @@ namespace TaskLayer
                 : null;
 
             var pooled = new List<SpectralMatch>();
+            // Diagnostic: winning parent's 0-based rank in each scan's index match-count ordering (validates
+            // the engine's MaxCandidatesToScore cap). Written to CandidateRanks.tsv.
+            var winnerRankRows = new List<string>();
             var myFileManager = new MyFileManager(true);
 
             // Perf accumulators (03_Benchmarks); parent/oversize counts are identical per file (shared list).
@@ -106,7 +116,8 @@ namespace TaskLayer
                     .ToDictionary(kv => kv.Key, kv => kv.Value.BioPolymerWithSetModsMonoisotopicMass.Value);
 
                 var engine = new TruncationSearchEngine(parents, scans, fileParams,
-                    new TruncationAcceptor(fileParams.PrecursorMassTolerance), pass1MassByScan);
+                    new TruncationAcceptor(fileParams.PrecursorMassTolerance), pass1MassByScan,
+                    TruncationSearchParameters.MaxParentMass);
                 List<TruncationParentSelection> selections = engine.Run();
                 foreach (string warning in engine.Warnings)
                 {
@@ -130,6 +141,10 @@ namespace TaskLayer
                         {
                             truncationPsms.Add(psm);
                         }
+                        winnerRankRows.Add(string.Join("\t", Path.GetFileNameWithoutExtension(rawFilePath),
+                            selection.Scan.OneBasedScanNumber, selection.CandidateRank, selection.CandidatePoolSize,
+                            selection.Score.ToString("F3", System.Globalization.CultureInfo.InvariantCulture),
+                            psm != null ? 1 : 0));
                     }
                     else if (selection.Outcome == TruncationScanOutcome.IntactInherited
                              && pass1PsmByScan != null
@@ -154,6 +169,11 @@ namespace TaskLayer
 
             // 5. Write the two result files (decisions #16, #17). No q/PEP cutoff; decoys/contaminants included.
             WriteOutputs(withFdr, OutputFolder, taskId);
+
+            // Diagnostic side file: per-scan winning-parent rank in the index match-count ordering.
+            string ranksPath = Path.Combine(OutputFolder, "CandidateRanks.tsv");
+            File.WriteAllLines(ranksPath,
+                new[] { "File\tScanNumber\tCandidateRank\tCandidatePoolSize\tScore\tProducedTruncation" }.Concat(winnerRankRows));
 
             // 6. Optional perf-log row (03_Benchmarks). No-op unless a path is configured.
             if (!string.IsNullOrWhiteSpace(TruncationSearchParameters.PerfLogPath))
@@ -315,6 +335,45 @@ namespace TaskLayer
             }
 
             return fdr.PEP_QValue != 2 ? fdr.PEP_QValue <= threshold : fdr.QValueNotch <= threshold;
+        }
+
+        /// <summary>
+        /// Database-seeded parents: generate theoretical full-length proteoforms from the protein database the
+        /// same way a top-down search does — load each protein (targets only; the truncation search makes its
+        /// own reverse decoys) and digest it with the configured fixed/variable mods, so XML-annotated PTMs and
+        /// variable mods ride along. This removes the requirement that a truncation's parent be identified
+        /// intact (the dominant recall ceiling). Oversized parents are filtered later by the engine's
+        /// <see cref="TruncationSearchParameters.MaxParentMass"/>.
+        /// </summary>
+        private List<TruncationParent> BuildParentsFromDatabase(string taskId, List<DbForTask> dbFilenameList)
+        {
+            LoadModifications(taskId, out List<Modification> variableModifications,
+                out List<Modification> fixedModifications, out List<string> localizableModificationTypes);
+
+            var parents = new List<TruncationParent>();
+            foreach (DbForTask db in dbFilenameList)
+            {
+                IEnumerable<Protein> proteins = DatabaseLoadingEngine.LoadProteinDb(
+                    db.FilePath, generateTargets: true, decoyType: DecoyType.None,
+                    localizableModificationTypes, db.IsContaminant, out _, out _, CommonParameters);
+
+                foreach (Protein protein in proteins)
+                {
+                    if (protein.IsDecoy)
+                    {
+                        continue;
+                    }
+
+                    foreach (PeptideWithSetModifications proteoform in protein
+                        .Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications)
+                        .OfType<PeptideWithSetModifications>())
+                    {
+                        parents.Add(new TruncationParent(proteoform, protein.Accession, protein.Accession, isDecoy: false));
+                    }
+                }
+            }
+
+            return parents;
         }
 
         /// <summary>
