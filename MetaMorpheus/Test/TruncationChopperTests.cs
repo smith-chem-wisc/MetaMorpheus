@@ -290,6 +290,22 @@ namespace Test
             Assert.That(result.TruncatedForm.Description, Does.StartWith(TruncationPass3.NTerminalMetExcisionPlusAcetyl));
         }
 
+        [Test]
+        public void ChopInternal_RecoversInternalSpan_LabeledInternal()
+        {
+            // P1[6..40]: 5 residues chopped from the N-terminus AND 10 from the C-terminus -> internal fragment.
+            double target = MakeProteoform(RepeatTo(AlphabetP1, 50).Substring(5, 35), "x", null).MonoisotopicMass;
+
+            List<ChopResult> results = ProteoformChopper.ChopInternalCandidates(_p1, target, _exactAcceptor);
+            ChopResult hit = results.FirstOrDefault(r => r.TruncatedForm.OneBasedStartResidueInProtein == 6
+                                                       && r.TruncatedForm.OneBasedEndResidueInProtein == 40);
+
+            Assert.That(hit, Is.Not.Null, "internal span 6-40 not recovered");
+            Assert.That(hit.ResiduesChopped, Is.EqualTo(15));        // 5 from N + 10 from C
+            Assert.That(hit.Notch, Is.EqualTo(0));
+            Assert.That(hit.TruncatedForm.Description, Does.StartWith(TruncationPass3.InternalTruncation));
+        }
+
         // ---------- helpers ----------
 
         // A winning N-terminal-ion series means Pass 3 chops the C-terminus.

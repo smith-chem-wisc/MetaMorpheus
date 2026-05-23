@@ -115,9 +115,51 @@ namespace EngineLayer.Truncation
         /// which is the canonical NME form — reported as "N-terminal Met excision" (or "... + acetylation"
         /// when the new N-terminus carries an acetyl), so NME is not miscounted as a truncation.
         /// </summary>
+        /// <summary>Mass margin (Da) past the lowest acceptable target before the inner C-chop loop stops.</summary>
+        private const double InternalChopMassMargin = 50.0;
+
+        /// <summary>
+        /// Enumerates INTERNAL truncations of <paramref name="parent"/> (both termini lost: chopFromN≥1 AND
+        /// chopFromC≥1, keeping ≥1 residue) whose mass matches <paramref name="targetMass"/> at an allowed
+        /// notch. Keeps the full-length proteoform as the parent (no DB-wide subsequence search). For a fixed
+        /// N-chop the mass decreases monotonically in the C-chop, so the inner loop stops once the form is
+        /// lighter than any acceptable target — near-linear in length. The caller scores each candidate.
+        /// </summary>
+        public static List<ChopResult> ChopInternalCandidates(PeptideWithSetModifications parent, double targetMass,
+            MassDiffAcceptor massDiffAcceptor)
+        {
+            int length = parent.BaseSequence.Length;
+            var results = new List<ChopResult>();
+
+            for (int chopFromN = 1; chopFromN <= length - 2; chopFromN++)
+            {
+                for (int chopFromC = 1; chopFromN + chopFromC <= length - 1; chopFromC++)
+                {
+                    PeptideWithSetModifications truncated = BuildTruncated(parent, chopFromN, chopFromC);
+                    double mass = truncated.MonoisotopicMass;
+
+                    int notch = massDiffAcceptor.Accepts(targetMass, mass);
+                    if (notch >= 0)
+                    {
+                        results.Add(new ChopResult(truncated, chopFromN + chopFromC, FragmentationTerminus.None, notch));
+                    }
+                    else if (mass + InternalChopMassMargin < targetMass)
+                    {
+                        break; // already too light; removing more C-terminal residues cannot reach the target
+                    }
+                }
+            }
+
+            return results;
+        }
+
         private static string ClassifyChop(PeptideWithSetModifications parent, int chopFromN, int chopFromC,
             Dictionary<int, Modification> newMods)
         {
+            if (chopFromN > 0 && chopFromC > 0)
+            {
+                return TruncationPass3.InternalTruncation;
+            }
             if (chopFromN == 0)
             {
                 return TruncationPass3.CTerminalTruncation;
