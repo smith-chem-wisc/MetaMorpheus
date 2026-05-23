@@ -229,6 +229,67 @@ namespace Test
             Assert.That(psm.TruncatedForm.OneBasedStartResidueInProtein, Is.EqualTo(6));
         }
 
+        [Test]
+        public void ChopFromNTerm_SingleInitiatorMet_LabeledMetExcision()
+        {
+            // Clean removal of the initiator Met (1 residue, parent starts at protein pos 1 with M) is NME,
+            // not a 1-residue N-terminal truncation (#13).
+            var parent = MakeProteoform("MDEKRHSTNQGVLIF", "MX", null);
+            double target = MakeProteoform("DEKRHSTNQGVLIF", "x", null).MonoisotopicMass;
+
+            ChopResult result = ProteoformChopper.ChopUntilMassMatches(parent, FragmentationTerminus.N, target, _exactAcceptor);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.ResiduesChopped, Is.EqualTo(1));
+            Assert.That(result.TruncatedForm.Description, Does.StartWith(TruncationPass3.NTerminalMetExcision));
+            Assert.That(result.TruncatedForm.Description, Does.Not.StartWith(TruncationPass3.NTerminalTruncation));
+        }
+
+        [Test]
+        public void ChopFromNTerm_SingleNonMet_IsNTerminalTruncation()
+        {
+            // One residue chopped from the N-terminus, but it is not the initiator Met -> real truncation.
+            var parent = MakeProteoform("ADEKRHSTNQGVLIF", "AX", null);
+            double target = MakeProteoform("DEKRHSTNQGVLIF", "x", null).MonoisotopicMass;
+
+            ChopResult result = ProteoformChopper.ChopUntilMassMatches(parent, FragmentationTerminus.N, target, _exactAcceptor);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.ResiduesChopped, Is.EqualTo(1));
+            Assert.That(result.TruncatedForm.Description, Does.StartWith(TruncationPass3.NTerminalTruncation));
+        }
+
+        [Test]
+        public void ChopFromNTerm_MetPlusMoreResidues_IsNTerminalTruncation()
+        {
+            // Initiator Met plus additional residues removed -> a real N-terminal truncation, not NME.
+            var parent = MakeProteoform("MDEKRHSTNQGVLIF", "MX", null);
+            double target = MakeProteoform("HSTNQGVLIF", "x", null).MonoisotopicMass; // residues 6-15 (chopped M,D,E,K,R)
+
+            ChopResult result = ProteoformChopper.ChopUntilMassMatches(parent, FragmentationTerminus.N, target, _exactAcceptor);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.ResiduesChopped, Is.EqualTo(5));
+            Assert.That(result.TruncatedForm.Description, Does.StartWith(TruncationPass3.NTerminalTruncation));
+        }
+
+        [Test]
+        public void ChopFromNTerm_MetExcisionWithAcetyl_LabeledMetExcisionPlusAcetyl()
+        {
+            // Parent M-A(acetyl)-...; chopping the initiator Met yields the Met-excised, N-acetylated form.
+            var acetyl = MakeAcetyl();
+            var parent = MakeProteoform("MADEKRHSTNQGVLIF", "MAcX",
+                new Dictionary<int, Modification> { { 3, acetyl } });   // acetyl on parent residue 2 (A) -> key 3
+            double target = MakeProteoform("ADEKRHSTNQGVLIF", "x",
+                new Dictionary<int, Modification> { { 2, acetyl } }).MonoisotopicMass; // acetyl on residue 1 -> key 2
+
+            ChopResult result = ProteoformChopper.ChopUntilMassMatches(parent, FragmentationTerminus.N, target, _exactAcceptor);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.ResiduesChopped, Is.EqualTo(1));
+            Assert.That(result.TruncatedForm.Description, Does.StartWith(TruncationPass3.NTerminalMetExcisionPlusAcetyl));
+        }
+
         // ---------- helpers ----------
 
         // A winning N-terminal-ion series means Pass 3 chops the C-terminus.

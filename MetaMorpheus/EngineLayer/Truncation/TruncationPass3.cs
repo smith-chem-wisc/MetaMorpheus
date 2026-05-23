@@ -33,6 +33,16 @@ namespace EngineLayer.Truncation
         public const string NTerminalTruncation = "N-terminal truncation";
         public const string CTerminalTruncation = "C-terminal truncation";
 
+        /// <summary>
+        /// Canonical initiator-methionine excision (#13) — a standard N-terminal form, NOT a truncation.
+        /// Distinguished so a clean 1-Met chop is not miscounted as an N-terminal truncation (Chen 2019:
+        /// ~17% of reported "truncations" were plain NME, another ~13% NME + N-acetyl).
+        /// </summary>
+        public const string NTerminalMetExcision = "N-terminal Met excision";
+
+        /// <summary>Initiator-Met excision plus N-acetylation on the new N-terminus (#13).</summary>
+        public const string NTerminalMetExcisionPlusAcetyl = "N-terminal Met excision + acetylation";
+
         /// <summary>Description-column label for a Pass 1 intact match carried into the pooled output (#4a).</summary>
         public const string FullLength = "full-length";
 
@@ -79,10 +89,24 @@ namespace EngineLayer.Truncation
             {
                 SpectralMatch = psm,
                 TruncatedForm = chop.TruncatedForm,
-                TruncationProductType = terminusToChop == FragmentationTerminus.N ? NTerminalTruncation : CTerminalTruncation,
+                TruncationProductType = LabelFor(chop.TruncatedForm),
                 ProteinAccessions = winner.WinningParent.ProteinAccession,
                 ScanIndex = winner.ScanIndex
             };
+        }
+
+        /// <summary>
+        /// Reads the truncation-type label from the chopped form's Description prefix (set by the chopper),
+        /// so the PSM's product type stays consistent with what was written to the Description column —
+        /// including the NME / NME+acetyl classifications (#13). Longer prefixes are tested first.
+        /// </summary>
+        private static string LabelFor(PeptideWithSetModifications truncatedForm)
+        {
+            string description = truncatedForm.Description ?? string.Empty;
+            if (description.StartsWith(NTerminalMetExcisionPlusAcetyl)) return NTerminalMetExcisionPlusAcetyl;
+            if (description.StartsWith(NTerminalMetExcision)) return NTerminalMetExcision;
+            if (description.StartsWith(NTerminalTruncation)) return NTerminalTruncation;
+            return CTerminalTruncation;
         }
 
         /// <summary>

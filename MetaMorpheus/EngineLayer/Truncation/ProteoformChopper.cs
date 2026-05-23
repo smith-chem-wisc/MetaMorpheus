@@ -101,12 +101,54 @@ namespace EngineLayer.Truncation
 
             // The peptide Description is emitted verbatim in the standard psmtsv "Description" column
             // (decision #13), mirroring existing proteolysis-product descriptors like "chain(2-121)".
-            string truncationDescription =
-                (chopFromN > 0 ? TruncationPass3.NTerminalTruncation : TruncationPass3.CTerminalTruncation)
-                + $"({newStart}-{newEnd})";
+            // A clean initiator-Met excision is labeled as such, not as a 1-residue N-terminal truncation.
+            string truncationDescription = ClassifyChop(parent, chopFromN, chopFromC, newMods) + $"({newStart}-{newEnd})";
 
             return new PeptideWithSetModifications(parent.Protein, parent.DigestionParams, newStart, newEnd,
                 CleavageSpecificity.Full, truncationDescription, 0, newMods, newMods.Count);
+        }
+
+        /// <summary>
+        /// Classifies a chop into a Description label (#13). A C-terminal chop is a C-terminal truncation.
+        /// An N-terminal chop is a true N-terminal truncation UNLESS it is a clean removal of exactly the
+        /// initiator methionine (one residue, from a parent that starts at protein position 1 with Met),
+        /// which is the canonical NME form — reported as "N-terminal Met excision" (or "... + acetylation"
+        /// when the new N-terminus carries an acetyl), so NME is not miscounted as a truncation.
+        /// </summary>
+        private static string ClassifyChop(PeptideWithSetModifications parent, int chopFromN, int chopFromC,
+            Dictionary<int, Modification> newMods)
+        {
+            if (chopFromN == 0)
+            {
+                return TruncationPass3.CTerminalTruncation;
+            }
+
+            bool isInitiatorMetExcision = chopFromN == 1 && chopFromC == 0
+                && parent.OneBasedStartResidueInProtein == 1
+                && parent.BaseSequence.Length > 0 && parent.BaseSequence[0] == 'M';
+            if (isInitiatorMetExcision)
+            {
+                return HasNTerminalAcetyl(newMods)
+                    ? TruncationPass3.NTerminalMetExcisionPlusAcetyl
+                    : TruncationPass3.NTerminalMetExcision;
+            }
+
+            return TruncationPass3.NTerminalTruncation;
+        }
+
+        /// <summary>True if the truncated form carries an acetyl at its N-terminus (mod key 1) or first
+        /// residue (mod key 2) — used to label NME + acetylation (#13).</summary>
+        private static bool HasNTerminalAcetyl(Dictionary<int, Modification> newMods)
+        {
+            foreach (KeyValuePair<int, Modification> kv in newMods)
+            {
+                if (kv.Key <= 2 && kv.Value != null
+                    && (kv.Value.OriginalId ?? string.Empty).IndexOf("acetyl", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
