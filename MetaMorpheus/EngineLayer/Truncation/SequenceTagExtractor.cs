@@ -62,13 +62,23 @@ namespace EngineLayer.Truncation
                     double gap = masses[j] - mi;
                     if (gap < MinResidueMass - 0.5) continue;
                     if (gap > MaxResidueMass + 0.5) break; // sorted: no larger residue-sized gap from i
+                    // Emit an edge only when the gap matches EXACTLY ONE residue within the window. Gaps that
+                    // are ambiguous (two residues in range, e.g. K vs Q at high mass) are dropped rather than
+                    // guessed — high precision over recall, so spurious tags do not select the whole database.
                     double window = peakTolI + (tolerance.GetMaximumValue(masses[j]) - masses[j]);
+                    char matched = '\0';
+                    int matchCount = 0;
                     foreach (var (aa, mass) in Residues)
                     {
                         if (Math.Abs(gap - mass) <= window)
                         {
-                            edges[i].Add((j, Normalize(aa)));
+                            matched = Normalize(aa);
+                            if (++matchCount > 1) break;
                         }
+                    }
+                    if (matchCount == 1)
+                    {
+                        edges[i].Add((j, matched));
                     }
                 }
             }
