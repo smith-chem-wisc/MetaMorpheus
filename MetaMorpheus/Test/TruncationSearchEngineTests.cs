@@ -284,6 +284,33 @@ namespace Test
             Assert.That(parents[0].ProteinAccession, Is.EqualTo("A"));
         }
 
+        [Test]
+        public void PerScanRestriction_ExcludesParentFromDisallowedProtein()
+        {
+            // A C-terminal truncation of P1 (N-series ions) that would normally win for P1.
+            string p1Seq = RepeatTo(AlphabetP1, 50);
+            var p1 = BuildTopDownProteoform(p1Seq, "P1");
+            var p1ToResidue40 = BuildTopDownProteoform(p1Seq.Substring(0, 40), "x");
+            var scan = BuildScan(1, p1ToResidue40.MonoisotopicMass, SeriesMasses(p1ToResidue40, FragmentationTerminus.N));
+            var scans = new[] { scan };
+            var parents = new List<TruncationParent> { new(p1, "P1", "P1", false) };
+
+            // Allowed set for this scan EXCLUDES P1 -> the only candidate is filtered out -> no winner.
+            var disallow = new Dictionary<Ms2ScanWithSpecificMass, HashSet<string>> { { scan, new HashSet<string>() } };
+            var excluded = new TruncationSearchEngine(parents, scans, _cp,
+                new TruncationAcceptor(_cp.PrecursorMassTolerance), null,
+                TruncationSearchEngine.DefaultMaxFragmentSize, disallow).Run();
+            Assert.That(excluded[0].Outcome, Is.EqualTo(TruncationScanOutcome.NoWinner));
+
+            // Allowed set INCLUDES P1 -> P1 wins (N-terminal-ion series, C-terminus chopped).
+            var allow = new Dictionary<Ms2ScanWithSpecificMass, HashSet<string>> { { scan, new HashSet<string> { "P1" } } };
+            var allowed = new TruncationSearchEngine(parents, scans, _cp,
+                new TruncationAcceptor(_cp.PrecursorMassTolerance), null,
+                TruncationSearchEngine.DefaultMaxFragmentSize, allow).Run();
+            Assert.That(allowed[0].Outcome, Is.EqualTo(TruncationScanOutcome.Winner));
+            Assert.That(allowed[0].WinningParent.ProteinAccession, Is.EqualTo("P1"));
+        }
+
         // ---------- fixture helpers ----------
 
         private static string RepeatTo(string alphabet, int length)

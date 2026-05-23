@@ -64,6 +64,14 @@ namespace TaskLayer
         /// </summary>
         public bool UseSequenceTagFilter { get; set; } = false;
 
+        /// <summary>
+        /// With the sequence-tag filter on, score each scan ONLY against parents from its own tag-selected
+        /// proteins (per-scan restriction) rather than the global union. Gives per-scan selectivity and stops a
+        /// scan being won by a protein its own tags did not support (the winner-competition loss). Off = global
+        /// union. Requires <see cref="UseSequenceTagFilter"/>.
+        /// </summary>
+        public bool UsePerScanTagRestriction { get; set; } = false;
+
         /// <summary>Length (residues) of the de-novo sequence tags and the matching protein k-mer index.</summary>
         public int TagLength { get; set; } = 4;
 

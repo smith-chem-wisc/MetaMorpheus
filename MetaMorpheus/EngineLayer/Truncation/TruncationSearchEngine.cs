@@ -101,6 +101,12 @@ namespace EngineLayer.Truncation
         private List<int>[] _nIndex; // N-series (b/c) fragment-mass bin -> ids of parents with a fragment there
         private List<int>[] _cIndex; // C-series (y/z) fragment-mass bin -> ids of parents with a fragment there
 
+        // Optional per-scan candidate restriction (tag-filter per-scan mode): a scan is scored only against
+        // parents whose underlying (DECOY-stripped) protein accession is in the scan's allowed set, so a scan
+        // cannot be won by a protein its own sequence tags did not support. Null = no restriction (default).
+        private readonly IReadOnlyDictionary<Ms2ScanWithSpecificMass, HashSet<string>> _allowedAccessionsByScan;
+        private static readonly HashSet<string> NoAllowedProteins = new();
+
         /// <summary>Non-fatal anomalies surfaced to the caller (e.g. the MaxFragmentSize exclusion summary, #6).</summary>
         public List<string> Warnings { get; } = new();
 
@@ -122,7 +128,8 @@ namespace EngineLayer.Truncation
             CommonParameters commonParameters,
             TruncationAcceptor acceptor,
             IReadOnlyDictionary<int, double> pass1TheoreticalMassByScanNumber = null,
-            double maxFragmentSize = DefaultMaxFragmentSize)
+            double maxFragmentSize = DefaultMaxFragmentSize,
+            IReadOnlyDictionary<Ms2ScanWithSpecificMass, HashSet<string>> allowedProteinAccessionsByScan = null)
         {
             var allParents = parents.ToList();
 
@@ -141,6 +148,7 @@ namespace EngineLayer.Truncation
             _commonParameters = commonParameters;
             _acceptor = acceptor;
             _pass1TheoreticalMassByScanNumber = pass1TheoreticalMassByScanNumber;
+            _allowedAccessionsByScan = allowedProteinAccessionsByScan;
 
             // A single series scores 1 + intensityFraction (<2) per matched ion, so a parent matching fewer
             // than floor(ScoreCutoff/2)+1 fragments in a series can never reach ScoreCutoff and is safe to
@@ -289,6 +297,12 @@ namespace EngineLayer.Truncation
             var cCount = new Dictionary<int, int>();
             var countedBins = new HashSet<int>();
 
+            // Per-scan candidate restriction (null = none). An empty set means the scan's tags supported no
+            // protein, so it gets no candidates.
+            HashSet<string> allowed = _allowedAccessionsByScan == null
+                ? null
+                : (_allowedAccessionsByScan.TryGetValue(scan, out HashSet<string> s) ? s : NoAllowedProteins);
+
             foreach (IsotopicEnvelope envelope in scan.ExperimentalFragments)
             {
                 double experimentalMass = envelope.MonoisotopicMass;
@@ -303,8 +317,8 @@ namespace EngineLayer.Truncation
                         continue; // each fragment-mass bin contributes at most once per parent per scan
                     }
 
-                    Tally(_nIndex, b, scan.PrecursorMass, nCount);
-                    Tally(_cIndex, b, scan.PrecursorMass, cCount);
+                    Tally(_nIndex, b, scan.PrecursorMass, nCount, allowed);
+                    Tally(_cIndex, b, scan.PrecursorMass, cCount, allowed);
                 }
             }
 
@@ -334,8 +348,8 @@ namespace EngineLayer.Truncation
             return shortlist;
         }
 
-        /// <summary>Increments the match count for every precursor-acceptable parent in <paramref name="index"/> bin.</summary>
-        private void Tally(List<int>[] index, int bin, double precursorMass, Dictionary<int, int> count)
+        /// <summary>Increments the match count for every precursor-acceptable, scan-allowed parent in the bin.</summary>
+        private void Tally(List<int>[] index, int bin, double precursorMass, Dictionary<int, int> count, HashSet<string> allowed)
         {
             if (bin < 0 || bin >= index.Length)
             {
@@ -350,12 +364,32 @@ namespace EngineLayer.Truncation
 
             foreach (int id in binList)
             {
-                // The acceptor excludes parents lighter than the scan precursor — they cannot be truncated up to it (#7).
-                if (_acceptor.Accepts(precursorMass, _parents[id].MonoisotopicMass) >= 0)
+                // The acceptor excludes parents lighter than the scan precursor — they cannot be truncated up to it (#7);
+                // the per-scan filter (if any) excludes parents whose protein the scan's tags did not support.
+                if (_acceptor.Accepts(precursorMass, _parents[id].MonoisotopicMass) >= 0 && IsScanAllowed(id, allowed))
                 {
                     count[id] = (count.TryGetValue(id, out int v) ? v : 0) + 1;
                 }
             }
+        }
+
+        /// <summary>
+        /// Per-scan restriction test: a parent is allowed when there is no restriction (<paramref name="allowed"/>
+        /// is null), or its underlying target protein accession (stripping any DECOY_ prefix so a target and its
+        /// reverse decoy are allowed together, preserving FDR balance) is in the scan's allowed set.
+        /// </summary>
+        private bool IsScanAllowed(int id, HashSet<string> allowed)
+        {
+            if (allowed == null)
+            {
+                return true;
+            }
+            string accession = _parents[id].ProteinAccession ?? string.Empty;
+            if (accession.StartsWith("DECOY_", StringComparison.Ordinal))
+            {
+                accession = accession.Substring("DECOY_".Length);
+            }
+            return allowed.Contains(accession);
         }
 
         /// <summary>
