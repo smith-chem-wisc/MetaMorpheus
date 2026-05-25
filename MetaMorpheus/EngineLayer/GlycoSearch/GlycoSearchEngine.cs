@@ -14,7 +14,7 @@ namespace EngineLayer.GlycoSearch
     public class GlycoSearchEngine : ModernSearchEngine
     {
         public static readonly double ToleranceForMassDifferentiation = 1e-9;
-        private readonly int OxoniumIon204Index = 9;               // Check Glycan.AllOxoniumIons
+        private readonly int OxoniumIon204Index = OxoniumIonReservedIndices.HexNAc204; // Check Glycan.AllOxoniumIons
         protected readonly List<GlycoSpectralMatch>[] GlobalGsms;  // Why don't we call it GlobalGsms?
 
         private GlycoSearchType GlycoSearchType;
@@ -381,13 +381,13 @@ namespace EngineLayer.GlycoSearch
 
             psmGlyco.LocalizationGraphs = localizationGraphs;
 
-            if (oxoniumIonIntensities[5] <= 0.00000001)
+            if (oxoniumIonIntensities[OxoniumIonReservedIndices.R144] <= 0.00000001)
             {
                 psmGlyco.R138vs144 = 100000000;
             }
             else
             {
-                psmGlyco.R138vs144 = oxoniumIonIntensities[4] / oxoniumIonIntensities[5]; // if the ratio is high, that means the glycan is more likely to be N-glycan. Oppsitely, ration is small means close to O-glycan.
+                psmGlyco.R138vs144 = oxoniumIonIntensities[OxoniumIonReservedIndices.R138] / oxoniumIonIntensities[OxoniumIonReservedIndices.R144]; // if the ratio is high, that means the glycan is more likely to be N-glycan. Oppsitely, ration is small means close to O-glycan.
             }
 
             return psmGlyco;
@@ -578,13 +578,13 @@ namespace EngineLayer.GlycoSearch
                     psmGlyco.Rank = ind;
                     psmGlyco.NGlycanLocalizations = new List<int> { bestSite - 1 }; //TO DO: ambiguity modification site
 
-                    if (oxoniumIonIntensities[5] <= 0.00000001)
+                    if (oxoniumIonIntensities[OxoniumIonReservedIndices.R144] <= 0.00000001)
                     {
                         psmGlyco.R138vs144 = 100000000;
                     }
                     else
                     {
-                        psmGlyco.R138vs144 = oxoniumIonIntensities[4] / oxoniumIonIntensities[5];
+                        psmGlyco.R138vs144 = oxoniumIonIntensities[OxoniumIonReservedIndices.R138] / oxoniumIonIntensities[OxoniumIonReservedIndices.R144];
                     }
 
                     possibleMatches.Add(psmGlyco);
