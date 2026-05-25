@@ -206,6 +206,29 @@ namespace Test
         }
 
         [Test]
+        public void DiagonsticFilter_UndersizedInputs_GuardsTreatAsAbsentAndDoNotThrow()
+        {
+            // Defensive guards: a custom ion index past the end of the intensity array, or a custom
+            // monosaccharide index past the end of glycanBox.Kind, must be treated as "absent" rather
+            // than throwing IndexOutOfRange. Here both are undersized; with neither observed nor present
+            // the strict rule accepts.
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { Ion512 });
+
+                double[] tooShortIntensities = new double[Glycan.AllOxoniumIons.Length]; // no custom slot
+                var boxShortKind = BoxWithKind(new byte[2]);                              // shorter than custom index
+
+                Assert.That(GlycoPeptides.DiagonsticFilter(tooShortIntensities, boxShortKind), Is.True);
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+            }
+        }
+
+        [Test]
         public void LoadCustomMonosaccharides_DiagnosticIonsColumn_RoundTripsIntoCustomOxoniumIons()
         {
             string tsv = string.Join("\n", new[]
