@@ -490,10 +490,10 @@ namespace EngineLayer.GlycoSearch
         /// <returns >True : The Oglycan pass the filter, False : The OGl</returns>
         public static bool DiagonsticFilter(double[] oxoniumIonsintensities, GlycanBox glycanBox)
         {
-            double HexNAc_diagnostic = oxoniumIonsintensities[4];
-            double NeuAc_diagnostic1 = oxoniumIonsintensities[10];
-            double NeuAc_diagnostic2 = oxoniumIonsintensities[12];
-            double HexNAcPlusHex_diagnostic = oxoniumIonsintensities[14];
+            double HexNAc_diagnostic = oxoniumIonsintensities[OxoniumIonReservedIndices.R138];
+            double NeuAc_diagnostic1 = oxoniumIonsintensities[OxoniumIonReservedIndices.NeuAc274];
+            double NeuAc_diagnostic2 = oxoniumIonsintensities[OxoniumIonReservedIndices.NeuAc292];
+            double HexNAcPlusHex_diagnostic = oxoniumIonsintensities[OxoniumIonReservedIndices.HexHexNAc366];
 
             //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
             if (NeuAc_diagnostic1 / HexNAc_diagnostic > 0.02 && NeuAc_diagnostic2 / HexNAc_diagnostic > 0.02)
