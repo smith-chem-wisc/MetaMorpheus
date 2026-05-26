@@ -387,5 +387,38 @@ namespace Test
 
         }
 
+        [Test]
+        public static void IsCommentOrBlank_ExcelQuotedHashLine_IsTreatedAsComment()
+        {
+            // When a file containing '#'-prefixed comment lines is saved through Microsoft Excel,
+            // Excel may prepend a double-quote so the line looks like  "# MY COMMENT  instead of
+            // # MY COMMENT.  GlycanDatabase.IsCommentOrBlank must recognise both forms.
+
+            var method = typeof(GlycanDatabase).GetMethod(
+                "IsCommentOrBlank",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.That(method, Is.Not.Null, "IsCommentOrBlank method not found via reflection.");
+
+            // Helper to invoke the private method
+            bool Invoke(string line) => (bool)method.Invoke(null, new object[] { line });
+
+            // Standard comment lines — must remain comments
+            Assert.That(Invoke("# plain comment"),         Is.True,  "Plain '#' line should be a comment.");
+            Assert.That(Invoke("  # indented comment"),    Is.True,  "Indented '#' line should be a comment.");
+
+            // Excel-wrapped comment lines — the fix under test
+            Assert.That(Invoke("\"# Excel-wrapped comment"),   Is.True, "Excel-quoted '#' line should be a comment.");
+            Assert.That(Invoke("  \"# indented Excel-quoted"), Is.True, "Indented Excel-quoted '#' line should be a comment.");
+
+            // Blank / whitespace lines — must still be treated as blank
+            Assert.That(Invoke(""),    Is.True, "Empty string should be blank.");
+            Assert.That(Invoke("   "), Is.True, "Whitespace-only string should be blank.");
+
+            // Data lines — must NOT be treated as comments
+            Assert.That(Invoke("HexNAc(2)Hex(5)"), Is.False, "Data line should not be a comment.");
+            Assert.That(Invoke("Name\tA\t176.03"),  Is.False, "Header line should not be a comment.");
+        }
+
     }
 }
