@@ -62,7 +62,8 @@ namespace EngineLayer
             DeconvolutionParameters productDeconParams = null,
             bool useMostAbundantPrecursorIntensity = true,
             DIAparameters diaParameters = null,
-            IFragmentationParams fragmentationParams = null)
+            IFragmentationParams fragmentationParams = null,
+            DeconvolutionParameters additionalPrecursorDeconParams = null)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -99,6 +100,7 @@ namespace EngineLayer
             MinVariantDepth = minVariantDepth;
             AddTruncations = addTruncations;
             DIAparameters = diaParameters;
+            AdditionalPrecursorDeconvolutionParameters = additionalPrecursorDeconParams;
 
             // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
             if (deconvolutionMaxAssumedChargeState > 0) // positive mode
@@ -122,6 +124,10 @@ namespace EngineLayer
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>();
                 PrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
                 ProductDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+                if (AdditionalPrecursorDeconvolutionParameters != null)
+                {
+                    AdditionalPrecursorDeconvolutionParameters.AverageResidueModel = new OxyriboAveragine();
+                }
                 FragmentationParameters = fragmentationParams ?? RnaFragmentationParams.Default;
             }
             else
@@ -159,6 +165,15 @@ namespace EngineLayer
         }
         public DeconvolutionParameters PrecursorDeconvolutionParameters { get; private set; }
         public DeconvolutionParameters ProductDeconvolutionParameters { get; private set; }
+        /// <summary>
+        /// Optional second precursor deconvolution source used additively alongside
+        /// <see cref="PrecursorDeconvolutionParameters"/>. Populated from an external whole-file MS1
+        /// deconvolution result via <see cref="FileSpecificParameters.Ms1FeatureFilePath"/>; envelopes
+        /// from this source are merged into the same precursor HashSet (and thus dedup'd) as the
+        /// primary decon and the optional scan-header info. TomlIgnored because it's resolved at
+        /// task-run time from per-file paths, not persisted in the task config.
+        /// </summary>
+        [TomlIgnore] public DeconvolutionParameters AdditionalPrecursorDeconvolutionParameters { get; private set; }
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
@@ -278,7 +293,8 @@ namespace EngineLayer
                                 ProductDeconvolutionParameters,
                                 UseMostAbundantPrecursorIntensity,
                                 DIAparameters,
-                                FragmentationParameters);
+                                FragmentationParameters,
+                                AdditionalPrecursorDeconvolutionParameters);
         }
 
         public void SetCustomProductTypes()
