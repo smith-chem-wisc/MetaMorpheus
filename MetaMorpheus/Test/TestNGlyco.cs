@@ -311,7 +311,326 @@ namespace Test
             var overlap = glycanIonmass.Intersect(ionMass).Count();
 
             Assert.That(overlap == 15);
-     
+
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_RoundTripsThroughCompositionAndMass()
+        {
+            // Register HexA (hexuronic acid, residue mass 176.03209 Da). Verify the loader
+            // makes it parseable in composition-format glycan files, that Kind[] gets the right
+            // count at the custom slot, that GetMass uses the custom mass, and that
+            // GetKindString round-trips the custom code.
+
+            string tsv = string.Join(Environment.NewLine, new[]
+            {
+                "# comment line ignored",
+                "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription",
+                "",
+                "HexA\tU\t176.03209\t\tHexuronic acid"
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                GlycanDatabase.LoadCustomMonosaccharides(path);
+
+                Assert.That(Glycan.KindCapacity, Is.EqualTo(12)); // 11 built-ins + 1 custom
+                Assert.That(Glycan.NameCharDic.ContainsKey("HexA"));
+                Assert.That(Glycan.NameCharDic["HexA"].Item1, Is.EqualTo('U'));
+                Assert.That(Glycan.NameCharDic["HexA"].Item2, Is.EqualTo(11));
+                Assert.That(Glycan.CharMassDic['U'], Is.EqualTo(17603209));
+
+                byte[] kind = GlycanDatabase.String2Kind("HexNAc(2)Hex(5)HexA(1)");
+                Assert.That(kind.Length, Is.EqualTo(12));
+                Assert.That(kind[0], Is.EqualTo(5));   // Hex
+                Assert.That(kind[1], Is.EqualTo(2));   // HexNAc
+                Assert.That(kind[11], Is.EqualTo(1));  // HexA
+
+                int expectedMass = 2 * 20307937 + 5 * 16205282 + 1 * 17603209;
+                Assert.That(Glycan.GetMass(kind), Is.EqualTo(expectedMass));
+
+                // GetKindString writes built-ins first (H..K) then customs at their slot order.
+                Assert.That(Glycan.GetKindString(kind), Is.EqualTo("H5N2U1"));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_CommentsBlanksAndHeaderRowAreSkipped()
+        {
+            string tsv = string.Join(Environment.NewLine, new[]
+            {
+                "# only one real entry should be registered",
+                "",
+                "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription",
+                "# another comment",
+                "Pent\tT\t132.04226\t\tGeneric pentose",
+                ""
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                GlycanDatabase.LoadCustomMonosaccharides(path);
+
+                Assert.That(Glycan.KindCapacity, Is.EqualTo(12));
+                Assert.That(Glycan.NameCharDic.ContainsKey("Pent"));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_NameCollisionThrowsWithFileAndLineNumber()
+        {
+            // "HexNAc" is a built-in; redefining it must fail.
+            string tsv = "HexNAc\tU\t999.99999\t\tWill collide";
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadCustomMonosaccharides(path));
+                Assert.That(ex.Message, Does.Contain(Path.GetFileName(path)));
+                Assert.That(ex.Message, Does.Contain("line 1"));
+                Assert.That(ex.Message, Does.Contain("HexNAc"));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_CharCollisionThrows()
+        {
+            // 'N' is the built-in single-char code for HexNAc; reusing it must fail.
+            string tsv = "Foo\tN\t100.0\t\tCollides with HexNAc";
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadCustomMonosaccharides(path));
+                Assert.That(ex.Message, Does.Contain("'N'"));
+                Assert.That(ex.Message, Does.Contain("line 1"));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_NonLetterCodeRejected()
+        {
+            string tsv = "Foo\t1\t100.0\t\tDigit is not a letter";
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadCustomMonosaccharides(path));
+                Assert.That(ex.Message, Does.Contain("ASCII letter"));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_NonNumericMassThrows()
+        {
+            string tsv = "Foo\tU\tnot-a-number\t\tBad mass";
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadCustomMonosaccharides(path));
+                Assert.That(ex.Message, Does.Contain("MonoisotopicMass"));
+                Assert.That(ex.Message, Does.Contain("not-a-number"));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_DiagnosticIonsEmittedWhenPresent()
+        {
+            string tsv = "HexA\tU\t176.03209\t175.02482,157.01425\tHexuronic acid";
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                GlycanDatabase.LoadCustomMonosaccharides(path);
+
+                byte[] kind = GlycanDatabase.String2Kind("HexNAc(2)HexA(1)");
+                var glycan = new Glycan(null, Glycan.GetMass(kind), kind, null, false, "Nxs", GlycanType.N_glycan);
+
+                int expectedIon1 = (int)Math.Round(175.02482 * 1E5);
+                int expectedIon2 = (int)Math.Round(157.01425 * 1E5);
+                Assert.That(glycan.GlycanDiagnosticIons.Contains(expectedIon1));
+                Assert.That(glycan.GlycanDiagnosticIons.Contains(expectedIon2));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_CustomCodeAcceptedInStructureFormat()
+        {
+            // Register HexA. A structure-format glycan file using 'U' must now parse without the
+            // "Unrecognized character" validator error (which would have fired before registration).
+
+            string monoTsv = "HexA\tU\t176.03209\t\tHexuronic acid";
+            string monoPath = Path.GetTempFileName();
+            string glycanPath = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(monoPath, monoTsv);
+                GlycanDatabase.LoadCustomMonosaccharides(monoPath);
+
+                File.WriteAllText(glycanPath, "(N(H)(U))" + Environment.NewLine);
+                var glycans = GlycanDatabase.LoadGlycan(glycanPath, false, false).ToList();
+
+                Assert.That(glycans.Count, Is.EqualTo(2)); // Nxs + Nxt motif duplication
+                int expectedMass = 1 * 20307937 + 1 * 16205282 + 1 * 17603209;
+                Assert.That(glycans[0].Mass, Is.EqualTo(expectedMass));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(monoPath);
+                File.Delete(glycanPath);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_TooFewColumnsThrowsWithFileAndLineNumber()
+        {
+            // Comments and a valid row first; the bad row at line 4 has only 2 tab-separated
+            // columns. The loader requires at least Name / SingleCharCode / MonoisotopicMass.
+            string tsv = string.Join(Environment.NewLine, new[]
+            {
+                "# Custom monosaccharide file with one malformed row",
+                "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription",
+                "HexA\tU\t176.03209\t\tHexuronic acid",
+                "Pent\tT"  // line 4 -- missing MonoisotopicMass column
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadCustomMonosaccharides(path));
+
+                Assert.That(ex.Message, Does.Contain(Path.GetFileName(path)));
+                Assert.That(ex.Message, Does.Contain("line 4"));
+                Assert.That(ex.Message, Does.Contain("Expected at least 3 tab-separated columns"));
+                // The raw line content should be in the message so the user can find it.
+                Assert.That(ex.Message, Does.Contain("Pent"));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_MultiCharCodeRejectedWithFileAndLineNumber()
+        {
+            // The SingleCharCode column must be exactly one character. A two-character value
+            // ("UU") is caught BEFORE Glycan.RegisterCustomMonosaccharide is called, so the
+            // error message comes from GlycanDatabase, not from the inner ArgumentException.
+            string tsv = string.Join(Environment.NewLine, new[]
+            {
+                "Name\tSingleCharCode\tMonoisotopicMass",
+                "HexA\tU\t176.03209",
+                "Pent\tTT\t132.04226"  // line 3 -- two-char code is invalid
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadCustomMonosaccharides(path));
+
+                Assert.That(ex.Message, Does.Contain(Path.GetFileName(path)));
+                Assert.That(ex.Message, Does.Contain("line 3"));
+                Assert.That(ex.Message, Does.Contain("SingleCharCode must be exactly one character"));
+                Assert.That(ex.Message, Does.Contain("\"TT\""));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void LoadCustomMonosaccharides_NonNumericDiagnosticIonThrowsWithFileAndLineNumber()
+        {
+            // The diagnostic-ion column is a comma-separated list of decimal m/z values.
+            // A non-numeric entry partway through the list should be caught and reported with
+            // the offending entry quoted.
+            string tsv = string.Join(Environment.NewLine, new[]
+            {
+                "# Custom monosaccharide file",
+                "",
+                "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription",
+                "HexA\tU\t176.03209\t175.02482,oops,157.01425\tHas a bad diagnostic ion"  // line 4
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+                var ex = Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.LoadCustomMonosaccharides(path));
+
+                Assert.That(ex.Message, Does.Contain(Path.GetFileName(path)));
+                Assert.That(ex.Message, Does.Contain("line 4"));
+                Assert.That(ex.Message, Does.Contain("DiagnosticIonMasses"));
+                Assert.That(ex.Message, Does.Contain("\"oops\""));
+                // The two well-formed diagnostic ions surrounding "oops" should not appear in
+                // the registry -- the throw must happen before RegisterCustomMonosaccharide.
+                Assert.That(Glycan.NameCharDic.ContainsKey("HexA"), Is.False);
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.Delete(path);
+            }
         }
     }
 }
