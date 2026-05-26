@@ -7,6 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using GuiFunctions.MetaDraw;
 using Readers;
+using System.Windows.Input;
+using Easy.Common.Extensions;
 
 namespace GuiFunctions
 {
@@ -86,6 +88,12 @@ namespace GuiFunctions
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
         public static string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
+
+        public bool UseShortIonAnnotationsWhenPossible
+        {
+            get => MetaDrawSettings.UseShortIonAnnotationsWhenPossible;
+            set { MetaDrawSettings.UseShortIonAnnotationsWhenPossible = value; OnPropertyChanged(nameof(UseShortIonAnnotationsWhenPossible)); }
+        }
 
         public bool ShowDecoys
         {
@@ -332,6 +340,9 @@ namespace GuiFunctions
                 Initialization = Task.CompletedTask;
             }
 
+            SelectAllSpectrumDescriptorsCommand = new RelayCommand(SelectAllSpectrumDescriptors);
+            DeselectAllSpectrumDescriptorsCommand = new RelayCommand(DeselectAllSpectrumDescriptors);
+
             // This defaults to classic decon, and we set the charge to ensure it will work for top-down and bottom-up.
             // This is not the best approach, in the future we could try to locate the search toml when loading in a psm file and use those decon params. 
             DeconHostViewModel = new();
@@ -354,6 +365,17 @@ namespace GuiFunctions
             LoadBioPolymerCoverageColors();
             await Task.Delay(100);
         }
+
+        #endregion
+
+        #region Commands
+
+        public ICommand SelectAllSpectrumDescriptorsCommand { get; set; }
+        public ICommand DeselectAllSpectrumDescriptorsCommand { get; set; }
+
+        private void SelectAllSpectrumDescriptors() => SpectrumDescriptors.ForEach(p => p.IsSelected = true);
+        private void DeselectAllSpectrumDescriptors() => SpectrumDescriptors.ForEach(p => p.IsSelected = false);
+
 
         #endregion
 
@@ -464,6 +486,17 @@ namespace GuiFunctions
         public void LoadPTMs()
         {
             var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType);
+            foreach (var group in modGroups)
+            {
+                var theModType = new ModTypeForTreeViewModel(group.Key, false);
+                _Modifications.Add(theModType);
+                foreach (var mod in group)
+                {
+                    theModType.Children.Add(new ModForTreeViewModel(mod.ToString(), false, mod.IdWithMotif, false, theModType));
+                }
+            }
+
+            modGroups = GlobalVariables.AllRnaModsKnown.GroupBy(b => b.ModificationType);
             foreach (var group in modGroups)
             {
                 var theModType = new ModTypeForTreeViewModel(group.Key, false);
