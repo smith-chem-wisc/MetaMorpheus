@@ -24,6 +24,7 @@ namespace EngineLayer
             _BestMatchingBioPolymersWithSetMods = new List<SpectralMatchHypothesis>();
             ScanIndex = scanIndex;
             ScanMetadata = scan.ScanMetadata;
+            PrecursorScanDeconvolutionScore = scan.PrecursorDeconvolutionScore;
             DigestionParams = commonParameters.DigestionParams;
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = -1;
@@ -75,6 +76,13 @@ namespace EngineLayer
         public string FullFilePath => ScanMetadata.FullFilePath;
         public string NativeId => ScanMetadata.NativeId;
 
+        /// <summary>
+        /// Method-agnostic envelope-quality score in [0, 1] from mzLib's DeconvolutionScorer for
+        /// the precursor envelope of this PSM. 0 indicates no envelope was computed or the
+        /// envelope is maximally bad; higher = better-shaped Averagine match.
+        /// </summary>
+        public double PrecursorScanDeconvolutionScore { get; }
+
         #endregion
 
         #region ISpectralMatch explicit interface implementations
@@ -115,7 +123,6 @@ namespace EngineLayer
         }
 
         #endregion
-
         /// <summary>
         /// Refers to the index of the Ms2ScanWithSpecificMass in an array of Ms2ScansWithSpecificMass that is sorted by precursor mass
         /// </summary>
@@ -419,6 +426,7 @@ namespace EngineLayer
             // Scan metadata is an immutable record — safe to share the reference
             ScanMetadata = psm.ScanMetadata;
             ScanIndex = psm.ScanIndex;
+            PrecursorScanDeconvolutionScore = psm.PrecursorScanDeconvolutionScore;
 
             ModsChemicalFormula = psm.ModsChemicalFormula;
             Notch = psm.Notch;

@@ -468,6 +468,12 @@ namespace EngineLayer
 
         private static void LoadGlycans()
         {
+            // Custom monosaccharides must be registered FIRST so any custom tokens are recognized
+            // by the glycan-database parsers below. The file is optional; if it does not exist,
+            // LoadCustomMonosaccharides is a no-op.
+            string customMonosaccharidePath = Path.Combine(DataDir, @"Glycan_Mods", "MonosaccharidesCustom.tsv");
+            GlycanDatabase.LoadCustomMonosaccharides(customMonosaccharidePath);
+
             OGlycanDatabasePaths = new List<string>();
             NGlycanDatabasePaths = new List<string>();
 
