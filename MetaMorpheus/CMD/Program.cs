@@ -209,32 +209,32 @@ namespace MetaMorpheusCommandLine
                 {
                     case "Search":
                         var searchTask = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "SearchTask", searchTask));
+                        taskList.Add(("Task" + (i + 1) + "-SearchTask", searchTask));
                         break;
 
                     case "Calibrate":
                         var calibrationTask = Toml.ReadFile<CalibrationTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "CalibrationTask", calibrationTask));
+                        taskList.Add(("Task" + (i + 1) + "-CalibrationTask", calibrationTask));
                         break;
 
                     case "Gptmd":
                         var GptmdTask = Toml.ReadFile<GptmdTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "GptmdTask", GptmdTask));
+                        taskList.Add(("Task" + (i + 1) + "-GptmdTask", GptmdTask));
                         break;
 
                     case "XLSearch":
                         var XlTask = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "XLSearchTask", XlTask));
+                        taskList.Add(("Task" + (i + 1) + "-XLSearchTask", XlTask));
                         break;
 
                     case "GlycoSearch":
                         var GlycoTask = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(filePath);
-                        taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
+                        taskList.Add(("Task" + (i + 1) + "-GlycoSearchTask", GlycoTask));
                         break;
 
                     case "Average":
                         var AveragingTask = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
+                        taskList.Add(("Task" + (i + 1) + "-AveragingTask", AveragingTask));
                         break;
 
                     default:
