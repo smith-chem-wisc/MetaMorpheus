@@ -117,6 +117,7 @@ namespace Test.MetaDraw
             var reversedColors = MetaDrawSettings.DataVisualizationColorOrder.Reverse<OxyColor>().ToList();
             snapshot.DataVisualizationColorOrder = [..reversedColors.Select(c => c.GetColorName())];
             snapshot.BioPolymerCoverageFontSize = 3;
+            snapshot.UseShortIonAnnotationsWhenPossible = true;
 
             MetaDrawSettings.LoadSettings(snapshot, out bool flaggedError);
             Assert.That(!flaggedError);
@@ -142,6 +143,7 @@ namespace Test.MetaDraw
             Assert.That(MetaDrawSettings.DataVisualizationColorOrder.Count, Is.EqualTo(reversedColors.Count));
             CollectionAssert.AreEqual(reversedColors.Select(c => c.GetColorName()), MetaDrawSettings.DataVisualizationColorOrder.Select(c => c.GetColorName()));
             Assert.That(snapshot.BioPolymerCoverageFontSize, Is.EqualTo(MetaDrawSettings.BioPolymerCoverageFontSize));
+            Assert.That(snapshot.UseShortIonAnnotationsWhenPossible, Is.EqualTo(MetaDrawSettings.UseShortIonAnnotationsWhenPossible));
 
             colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
@@ -974,6 +976,50 @@ namespace Test.MetaDraw
                 // Assert: The static settings are updated accordingly
                 Assert.That(MetaDrawSettings.SpectrumDescription[descVm.DisplayName + ": "], Is.EqualTo(newValue));
                 Assert.That(descVm.IsSelected, Is.EqualTo(newValue));
+            }
+        }
+
+        [Test]
+        public static void TestSelectAllSpectrumDescriptorsCommandSelectsAll()
+        {
+            MetaDrawSettings.ResetSettings();
+            var vm = new MetaDrawSettingsViewModel(false);
+
+            for (int i = 0; i < vm.SpectrumDescriptors.Count; i++)
+            {
+                vm.SpectrumDescriptors[i].IsSelected = i % 2 == 0;
+            }
+
+            Assert.That(vm.SpectrumDescriptors.Any(p => !p.IsSelected));
+
+            vm.SelectAllSpectrumDescriptorsCommand.Execute(null);
+
+            Assert.That(vm.SpectrumDescriptors.All(p => p.IsSelected));
+            foreach (var descriptor in vm.SpectrumDescriptors)
+            {
+                Assert.That(MetaDrawSettings.SpectrumDescription[descriptor.DisplayName + ": "], Is.True);
+            }
+        }
+
+        [Test]
+        public static void TestDeselectAllSpectrumDescriptorsCommandDeselectsAll()
+        {
+            MetaDrawSettings.ResetSettings();
+            var vm = new MetaDrawSettingsViewModel(false);
+
+            for (int i = 0; i < vm.SpectrumDescriptors.Count; i++)
+            {
+                vm.SpectrumDescriptors[i].IsSelected = i % 2 == 0;
+            }
+
+            Assert.That(vm.SpectrumDescriptors.Any(p => p.IsSelected));
+
+            vm.DeselectAllSpectrumDescriptorsCommand.Execute(null);
+
+            Assert.That(vm.SpectrumDescriptors.All(p => !p.IsSelected));
+            foreach (var descriptor in vm.SpectrumDescriptors)
+            {
+                Assert.That(MetaDrawSettings.SpectrumDescription[descriptor.DisplayName + ": "], Is.False);
             }
         }
     }
