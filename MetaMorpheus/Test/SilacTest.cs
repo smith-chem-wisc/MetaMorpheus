@@ -677,5 +677,40 @@ namespace Test
             //Test no crash in weird situations
             SilacConversions.SilacConversionsPostQuantification(null, null, null, new List<SpectraFileInfo>(), null, new HashSet<IDigestionParams>(), null, new List<PeptideSpectralMatch>(), new Dictionary<string, int>(), true);
         }
+
+        /// <summary>
+        /// Verifies that the SILAC clone constructor preserves IsobaricMassTagReporterIonIntensities
+        /// and PeptideFdrInfo, both of which were previously dropped during cloning.
+        /// Regression guard for the ptm_stoich branch fixes.
+        /// </summary>
+        [Test]
+        public static void TestSilacClonePreservesQuantAndFdrData()
+        {
+            var protein = new Protein("PEPTIDE", "ACCESSION");
+            var pwsm = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 7, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var scan = new Ms2ScanWithSpecificMass(
+                new TestDataFile(pwsm, "quadratic").GetOneBasedScan(2), 100, 1, null, new CommonParameters());
+
+            var psm = new PeptideSpectralMatch(pwsm, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+
+            // Set fields that the clone constructor must preserve
+            var reporterIons = new double[] { 100.0, 200.0, 300.0 };
+            typeof(PeptideSpectralMatch).BaseType.GetProperty("IsobaricMassTagReporterIonIntensities", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+                .SetValue(psm, reporterIons);
+            psm.PeptideFdrInfo = new FdrInfo { QValue = 0.05, PEP = 0.1 };
+
+            // Clone (SILAC path)
+            var clone = psm.Clone(new List<SpectralMatchHypothesis>
+            {
+                new SpectralMatchHypothesis(0, pwsm, new List<MatchedFragmentIon>(), 10)
+            });
+
+            // Assertions
+            Assert.That(clone.IsobaricMassTagReporterIonIntensities, Is.EqualTo(reporterIons));
+            Assert.That(clone.PeptideFdrInfo, Is.Not.Null);
+            Assert.That(clone.PeptideFdrInfo.QValue, Is.EqualTo(0.05));
+            Assert.That(clone.PeptideFdrInfo.PEP, Is.EqualTo(0.1));
+        }
     }
 }

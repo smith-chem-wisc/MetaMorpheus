@@ -427,6 +427,7 @@ namespace EngineLayer
             ScanMetadata = psm.ScanMetadata;
             ScanIndex = psm.ScanIndex;
             PrecursorScanDeconvolutionScore = psm.PrecursorScanDeconvolutionScore;
+            IsobaricMassTagReporterIonIntensities = psm.IsobaricMassTagReporterIonIntensities;
 
             ModsChemicalFormula = psm.ModsChemicalFormula;
             Notch = psm.Notch;
@@ -442,6 +443,7 @@ namespace EngineLayer
             ModsIdentified = psm.ModsIdentified;
             LocalizedScores = psm.LocalizedScores;
             FdrInfo = psm.FdrInfo;
+            PeptideFdrInfo = psm.PeptideFdrInfo;
             Score = psm.Score;
             RunnerUpScore = psm.RunnerUpScore;
             IsDecoy = psm.IsDecoy;
