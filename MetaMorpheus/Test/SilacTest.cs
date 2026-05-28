@@ -1,6 +1,12 @@
 ﻿using EngineLayer;
+using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
-using NUnit.Framework; 
+using NUnit.Framework;
+using Omics;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Omics.Modifications;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
@@ -8,11 +14,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using EngineLayer.DatabaseLoading;
-using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Omics;
-using Omics.Digestion;
 
 namespace Test
 {
