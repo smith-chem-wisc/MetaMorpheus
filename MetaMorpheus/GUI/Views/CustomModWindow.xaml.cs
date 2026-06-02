@@ -10,6 +10,7 @@ using Proteomics;
 using System.Globalization;
 using GuiFunctions;
 using Omics.Modifications;
+using Omics.Modifications.IO;
 
 namespace MetaMorpheusGUI
 {
@@ -143,7 +144,7 @@ namespace MetaMorpheusGUI
             {
                 List<string> temp = new List<string> { modification.ToString(), @"//" };
                 File.WriteAllLines(tempPath, temp);
-                var parsedMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(tempPath, out var errors);
+                var parsedMods = ModificationLoader.ReadModsFromFile(tempPath, out var errors);
 
                 if (parsedMods.Count() != 1)
                 {

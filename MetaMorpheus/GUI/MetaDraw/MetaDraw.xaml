@@ -585,53 +585,103 @@
                                 </DockPanel>
                             </DockPanel>
 
-                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left" x:Name="PlotFilterCheckBoxes" Margin="3" >
-                                <CheckBox Content="Filtered Only?" 
-                                          IsChecked="{Binding Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Path=DisplayFilteredOnly}" 
-                                          Checked="DataVisualizationFilters_OnChecked"
-                                          Unchecked="DataVisualizationFilters_OnChecked"
-                                          Margin="10 0"/>
-                                <CheckBox Content="Normalize to File?" 
-                                          IsChecked="{Binding Source={x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}, Path=NormalizeHistogramToFile}"
-                                          Checked="DataVisualizationFilters_OnChecked"
-                                          Unchecked="DataVisualizationFilters_OnChecked"
-                                          Margin="10 0"/>
-                            </StackPanel>
+                            <Grid Grid.Row="3" HorizontalAlignment="Stretch" Margin="3" VerticalAlignment="Bottom">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Checkboxes Row -->
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0 2">
+                                    <CheckBox Content="Filtered Only?" 
+                                              IsChecked="{Binding Path=DisplayFilteredOnly, Source={x:Static metaDraw:PlotModelStatParametersViewModel.Instance}}" 
+                                              Checked="DataVisualizationFilters_OnChecked"
+                                              Unchecked="DataVisualizationFilters_OnChecked"
+                                              Margin="5 0"/>
+                                    <CheckBox Content="Normalize to File?" 
+                                              IsChecked="{Binding Path=NormalizeHistogramToFile, Source={x:Static metaDraw:PlotModelStatParametersViewModel.Instance}}"
+                                              Checked="DataVisualizationFilters_OnChecked"
+                                              Unchecked="DataVisualizationFilters_OnChecked"
+                                              Margin="5 0"/>
+                                    <CheckBox Content="Log Scale Y-Axis?" 
+                                              IsChecked="{Binding Path=UseLogScaleYAxis, Source={x:Static metaDraw:PlotModelStatParametersViewModel.Instance}}"
+                                              Checked="DataVisualizationFilters_OnChecked"
+                                              Unchecked="DataVisualizationFilters_OnChecked"
+                                              Margin="5 0"/>
+                                </StackPanel>
+
+                                <!-- Grouping and Cutoff Controls -->
+                                <Grid Grid.Row="1" Margin="0 5 0 0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Group By:" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Row="0" Grid.Column="1" Width="150" Margin="5 2" HorizontalAlignment="Left"
+                                              ItemsSource="{Binding Path=GroupingProperties, Source={x:Static metaDraw:PlotModelStatParametersViewModel.Instance}}"
+                                              SelectedItem="{Binding Path=GroupingProperty, Source={x:Static metaDraw:PlotModelStatParametersViewModel.Instance}}"
+                                              SelectionChanged="DataVisualizationFilters_OnChecked"/>
+
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Min Relative Cutoff (%):" VerticalAlignment="Center"
+                                           ToolTip="Minimum percentage of maximum count for bins to be displayed (0-100)"/>
+                                    <local:DoubleTextBoxControl Grid.Row="1" Grid.Column="1" Width="150" Margin="5 2" HorizontalAlignment="Left"
+                                             Text="{Binding Path=MinRelativeCutoff, Source={x:Static metaDraw:PlotModelStatParametersViewModel.Instance}, UpdateSourceTrigger=LostFocus}"
+                                             LostFocus="DataVisualizationFilters_OnChecked"
+                                             LowerBound="0" UpperBound="100"
+                                             ToolTip="Enter a value between 0 and 100"/>
+
+                                    <Label Grid.Row="2" Grid.Column="0" Content="Max Relative Cutoff (%):" VerticalAlignment="Center"
+                                           ToolTip="Maximum percentage of maximum count for bins to be displayed (0-100)"/>
+                                    <local:DoubleTextBoxControl Grid.Row="2" Grid.Column="1" Width="150" Margin="5 2" HorizontalAlignment="Left"
+                                             Text="{Binding Path=MaxRelativeCutoff, Source={x:Static metaDraw:PlotModelStatParametersViewModel.Instance}, UpdateSourceTrigger=LostFocus}"
+                                             LostFocus="DataVisualizationFilters_OnChecked"
+                                             LowerBound="0" UpperBound="100"
+                                             ToolTip="Enter a value between 0 and 100"/>
+                                </Grid>
+                            </Grid>
 
                             <!--List of plot options-->
                             <GroupBox Header="Plot Type" Name="plotType" Grid.Row="4">
                                 <ListView x:Name="plotsListBox" ItemsSource="{Binding}" SelectionChanged ="PlotSelected" MaxHeight="400"/>
                             </GroupBox>
 
-                            <DockPanel Grid.Row="5" Margin="2">
-                                <Button Content="Export to PDF" Width="100" Click="CreatePlotPdf_Click" />
+                            <DockPanel Grid.Row="5" Margin="2" HorizontalAlignment="Center">
+                                <Button Content="Export to PDF" Width="100" Click="CreatePlotPdf_Click" Margin="5 0" />
+                                <Button Content="Export to Text" Width="100" Click="CreatePlotText_Click" Margin="5 0" />
                             </DockPanel>
                         </Grid>
 
                         <!--Loading progress popup-->
                         <Popup IsOpen="False" x:Name="prgsFeedStat" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center" Grid.ColumnSpan="3" Margin="168.884,230,658.275,231.6" Grid.Column="3">
-                            <Border Background="LightGray" CornerRadius="2" Height="78" Width="298" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <StackPanel Height="78" Background="LightGray">
-                                    <Label x:Name="prgsTextStat" FontSize="20"></Label>
-                                    <ProgressBar IsIndeterminate="True" Height="20"></ProgressBar>
-                                </StackPanel>
-                            </Border>
-                        </Popup>
+                                <Border Background="LightGray" CornerRadius="2" Height="78" Width="298" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <StackPanel Height="78" Background="LightGray">
+                                        <Label x:Name="prgsTextStat" FontSize="20"></Label>
+                                        <ProgressBar IsIndeterminate="True" Height="20"></ProgressBar>
+                                    </StackPanel>
+                                </Border>
+                            </Popup>
 
                         <!--Moveable splitter-->
                         <GridSplitter Grid.Column="1" 
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Stretch"
-                          Background="Silver"
-                          Width="2"/>
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Stretch"
+                            Background="Silver"
+                            Width="2"/>
 
                         <!--Plot-->
                         <Grid Grid.Column="2">
                             <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" SizeChanged="PlotViewStat_SizeChanged" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" />
 
                             <local:SettingsButtonControl Height="52" x:Name="DataVisualizationSettingsButton" 
-                                                         HorizontalAlignment="Left" VerticalAlignment="Top"
-                                                         Panel.ZIndex="1" SelectedTabIndex="3" />
+                                                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                            Panel.ZIndex="1" SelectedTabIndex="3" />
                         </Grid>
                     </Grid>
                 </DockPanel>

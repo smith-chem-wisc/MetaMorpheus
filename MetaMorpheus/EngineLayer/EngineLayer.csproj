@@ -33,7 +33,7 @@
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="9.9.902" />
+    <PackageReference Include="mzLib" Version="9.9.16" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
     <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
@@ -74,8 +74,8 @@
     <None Update="Data\unimod.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Digestion\rnases.tsv">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Update="Glycan_Mods\MonosaccharidesCustom.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Glycan_Mods\NGlycan\NGlycan.gdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -120,9 +120,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Mods\Tmt.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="ProteolyticDigestion\proteases.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Proteomes\availableUniProtProteomes.txt.gz">

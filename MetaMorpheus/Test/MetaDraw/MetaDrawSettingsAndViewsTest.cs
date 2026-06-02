@@ -117,6 +117,7 @@ namespace Test.MetaDraw
             var reversedColors = MetaDrawSettings.DataVisualizationColorOrder.Reverse<OxyColor>().ToList();
             snapshot.DataVisualizationColorOrder = [..reversedColors.Select(c => c.GetColorName())];
             snapshot.BioPolymerCoverageFontSize = 3;
+            snapshot.UseShortIonAnnotationsWhenPossible = true;
 
             MetaDrawSettings.LoadSettings(snapshot, out bool flaggedError);
             Assert.That(!flaggedError);
@@ -142,6 +143,7 @@ namespace Test.MetaDraw
             Assert.That(MetaDrawSettings.DataVisualizationColorOrder.Count, Is.EqualTo(reversedColors.Count));
             CollectionAssert.AreEqual(reversedColors.Select(c => c.GetColorName()), MetaDrawSettings.DataVisualizationColorOrder.Select(c => c.GetColorName()));
             Assert.That(snapshot.BioPolymerCoverageFontSize, Is.EqualTo(MetaDrawSettings.BioPolymerCoverageFontSize));
+            Assert.That(snapshot.UseShortIonAnnotationsWhenPossible, Is.EqualTo(MetaDrawSettings.UseShortIonAnnotationsWhenPossible));
 
             colorValues = MetaDrawSettings.ProductTypeToColor
                 .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
@@ -719,6 +721,54 @@ namespace Test.MetaDraw
         }
 
         [Test]
+        public static void TestMetaDrawSettingsViewModelPlotModelStatWrappedProperties()
+        {
+            MetaDrawSettings.ResetSettings();
+            var viewModel = new MetaDrawSettingsViewModel(false);
+            var parametersVm = PlotModelStatParametersViewModel.Instance;
+
+            bool originalUseLog = parametersVm.UseLogScaleYAxis;
+            string originalGrouping = parametersVm.GroupingProperty;
+            double originalMin = parametersVm.MinRelativeCutoff;
+            double originalMax = parametersVm.MaxRelativeCutoff;
+
+            try
+            {
+                viewModel.UseLogScaleYAxis = !originalUseLog;
+                Assert.That(viewModel.UseLogScaleYAxis, Is.EqualTo(!originalUseLog));
+                Assert.That(parametersVm.UseLogScaleYAxis, Is.EqualTo(viewModel.UseLogScaleYAxis));
+
+                string newGrouping = viewModel.GroupingProperties.FirstOrDefault(g => g != originalGrouping) ?? originalGrouping;
+                viewModel.GroupingProperty = newGrouping;
+                Assert.That(viewModel.GroupingProperty, Is.EqualTo(newGrouping));
+                Assert.That(parametersVm.GroupingProperty, Is.EqualTo(newGrouping));
+
+                const double testMax = 80.0;
+                viewModel.MaxRelativeCutoff = testMax;
+                Assert.That(viewModel.MaxRelativeCutoff, Is.EqualTo(testMax));
+                Assert.That(parametersVm.MaxRelativeCutoff, Is.EqualTo(testMax));
+
+                const double testMin = 15.0;
+                viewModel.MinRelativeCutoff = testMin;
+                Assert.That(viewModel.MinRelativeCutoff, Is.EqualTo(testMin));
+                Assert.That(parametersVm.MinRelativeCutoff, Is.EqualTo(testMin));
+
+                const double relativeCutoff = 10.0;
+                viewModel.RelativeIntensityCutoff = relativeCutoff;
+                Assert.That(viewModel.RelativeIntensityCutoff, Is.EqualTo(relativeCutoff));
+                Assert.That(viewModel.MinRelativeCutoff, Is.EqualTo(relativeCutoff));
+                Assert.That(parametersVm.MinRelativeCutoff, Is.EqualTo(relativeCutoff));
+            }
+            finally
+            {
+                viewModel.UseLogScaleYAxis = originalUseLog;
+                viewModel.GroupingProperty = originalGrouping;
+                viewModel.MaxRelativeCutoff = originalMax;
+                viewModel.RelativeIntensityCutoff = originalMin;
+            }
+        }
+
+        [Test]
         public static void TestModTypeForTreeView()
         {
             var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType).ToList();
@@ -926,6 +976,50 @@ namespace Test.MetaDraw
                 // Assert: The static settings are updated accordingly
                 Assert.That(MetaDrawSettings.SpectrumDescription[descVm.DisplayName + ": "], Is.EqualTo(newValue));
                 Assert.That(descVm.IsSelected, Is.EqualTo(newValue));
+            }
+        }
+
+        [Test]
+        public static void TestSelectAllSpectrumDescriptorsCommandSelectsAll()
+        {
+            MetaDrawSettings.ResetSettings();
+            var vm = new MetaDrawSettingsViewModel(false);
+
+            for (int i = 0; i < vm.SpectrumDescriptors.Count; i++)
+            {
+                vm.SpectrumDescriptors[i].IsSelected = i % 2 == 0;
+            }
+
+            Assert.That(vm.SpectrumDescriptors.Any(p => !p.IsSelected));
+
+            vm.SelectAllSpectrumDescriptorsCommand.Execute(null);
+
+            Assert.That(vm.SpectrumDescriptors.All(p => p.IsSelected));
+            foreach (var descriptor in vm.SpectrumDescriptors)
+            {
+                Assert.That(MetaDrawSettings.SpectrumDescription[descriptor.DisplayName + ": "], Is.True);
+            }
+        }
+
+        [Test]
+        public static void TestDeselectAllSpectrumDescriptorsCommandDeselectsAll()
+        {
+            MetaDrawSettings.ResetSettings();
+            var vm = new MetaDrawSettingsViewModel(false);
+
+            for (int i = 0; i < vm.SpectrumDescriptors.Count; i++)
+            {
+                vm.SpectrumDescriptors[i].IsSelected = i % 2 == 0;
+            }
+
+            Assert.That(vm.SpectrumDescriptors.Any(p => p.IsSelected));
+
+            vm.DeselectAllSpectrumDescriptorsCommand.Execute(null);
+
+            Assert.That(vm.SpectrumDescriptors.All(p => !p.IsSelected));
+            foreach (var descriptor in vm.SpectrumDescriptors)
+            {
+                Assert.That(MetaDrawSettings.SpectrumDescription[descriptor.DisplayName + ": "], Is.False);
             }
         }
     }

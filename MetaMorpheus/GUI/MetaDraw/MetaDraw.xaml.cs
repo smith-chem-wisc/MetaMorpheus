@@ -56,7 +56,7 @@ namespace MetaMorpheusGUI
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
-            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
+            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel(!GuiGlobalParamsViewModel.Instance.IsRnaMode);
             AdditionalFragmentIonControl.LinkMetaDraw(this);
 
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
@@ -305,25 +305,37 @@ namespace MetaMorpheusGUI
             double maxDisplayedPerRow = (int)Math.Round((UpperSequenceAnnotaiton.ActualWidth - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0) + 7;
             MetaDrawSettings.SequenceAnnotationSegmentPerRow = (int)Math.Floor(maxDisplayedPerRow / (double)(MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
 
-            // draw the annotated spectrum
-            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, sequenceAnnotationCanvas, psm);
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
-
-            // add ptm legend if desired
-            if (MetaDrawSettings.ShowLegend)
+            List<string> errors = null;
+            try
             {
-                int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
-                if (psm.Name.IsNotNullOrEmptyOrWhiteSpace())
+                // draw the annotated spectrum
+                MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas,
+                    sequenceAnnotationCanvas, psm);
+                MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out errors);
+
+                // add ptm legend if desired
+                if (MetaDrawSettings.ShowLegend)
                 {
-                    descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) / (double)SpectrumMatchPlot.MaxCharactersPerDescriptionLine);
+                    int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
+                    if (psm.Name.IsNotNullOrEmptyOrWhiteSpace())
+                    {
+                        descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) /
+                                                                (double)SpectrumMatchPlot
+                                                                    .MaxCharactersPerDescriptionLine);
+                    }
+
+                    if (psm.Accession.Length > 10)
+                        descriptionLineCount++;
+                    double verticalOffset = descriptionLineCount * 1.7 * MetaDrawSettings.SpectrumDescriptionFontSize;
+
+                    PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
+                    ChildScanPtmLegendControl.DataContext = PtmLegend;
+                    SequenceCoveragePtmLegendControl.DataContext = PtmLegend;
                 }
-                if (psm.Accession.Length > 10)
-                    descriptionLineCount++;
-                double verticalOffset = descriptionLineCount * 1.4 * MetaDrawSettings.SpectrumDescriptionFontSize;
-                
-                PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
-                ChildScanPtmLegendControl.DataContext = PtmLegend;
-                SequenceCoveragePtmLegendControl.DataContext = PtmLegend;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error drawing spectrum and sequence: " + ex.Message);
             }
 
             //draw the sequence coverage if not crosslinked
@@ -555,7 +567,8 @@ namespace MetaMorpheusGUI
                 loadLibraries: true,
                 chimeraTabViewModel: ChimeraAnalysisTabViewModel,
                 bioPolymerTabViewModel: BioPolymerTabViewModel,
-                deconExplorationTabViewModel: DeconExplorationViewModel);
+                deconExplorationTabViewModel: DeconExplorationViewModel,
+                fragmentationReanalysisViewModel: FragmentationReanalysisViewModel);
             dataGridScanNums.IsEnabled = true;
 
             if (errors.Any())
@@ -576,8 +589,6 @@ namespace MetaMorpheusGUI
                 plotTypes.Remove("Histogram of Hydrophobicity scores");
                 plotTypes.Remove("Predicted RT vs. Observed RT");
             }
-            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel = new FragmentationReanalysisViewModel(!isRna);
-
 
             ToggleButtonsEnabled(true);
         }
@@ -805,6 +816,39 @@ namespace MetaMorpheusGUI
             MessageBoxHelper.Show(MetaDrawSettings.ExportType + " Created at " + Path.Combine(fileDirectory, fileName) + "!");
         }
 
+        private void CreatePlotText_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItem = plotsListBox.SelectedItem;
+            if (selectedItem == null) { MessageBox.Show("Select a plot type to export!"); return; }
+            if (!MetaDrawLogic.SpectralMatchResultFilePaths.Any()) { MessageBox.Show("No PSMs are loaded!"); return; }
+            if (selectSourceFileListBox.SelectedItems.Count == 0) { MessageBox.Show("Please select a source file."); return; }
+
+            var plot = plotViewStat.DataContext as PlotModelStat;
+            if (plot == null || plot.PlotData == null || plot.PlotData.Count == 0)
+            {
+                MessageBox.Show("No plot data available to export.");
+                return;
+            }
+
+            var plotName = selectedItem as string;
+            var fileDirectory = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
+                    DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            var fileName = plotName;
+            if (PlotModelStatParametersViewModel.Instance.DisplayFilteredOnly)
+                fileName += "_filtered";
+            if (PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile)
+                fileName += "_normalizedToFile";
+            if (PlotModelStatParametersViewModel.Instance.GroupingProperty != "None")
+                fileName += $"_by{PlotModelStatParametersViewModel.Instance.GroupingProperty}";
+            fileName += ".tsv";
+
+            if (!Directory.Exists(fileDirectory)) Directory.CreateDirectory(fileDirectory);
+
+            var fullPath = Path.Combine(fileDirectory, fileName);
+            plot.ExportToText(fullPath);
+            MessageBoxHelper.Show("Text file created at " + fullPath);
+        }
+
         private async void PlotSelected(object sender, SelectionChangedEventArgs e)
         {
             var listview = sender as ListView;
@@ -845,7 +889,8 @@ namespace MetaMorpheusGUI
             PlotModelStat plot = null;
             try
             {
-                plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF));
+                plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF, 
+                    PlotModelStatParametersViewModel.Instance.GetParameters()));
             }
             catch (Exception ex)
             {
@@ -1011,6 +1056,7 @@ namespace MetaMorpheusGUI
             }
 
             wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
+            List<MatchedFragmentIon> oldMatchedIons = null;
             SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
             if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
             {
@@ -1026,6 +1072,13 @@ namespace MetaMorpheusGUI
                 {
                     MetaDrawSettings.DrawMatchedIons = false;
                 }
+                
+                // Apply refragmentation if persist is enabled
+                if (FragmentationReanalysisViewModel.Persist)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm, false);
+                }
             }
             SetSequenceDrawingPositionSettings(true);
             object obj = new object();
@@ -1039,6 +1092,10 @@ namespace MetaMorpheusGUI
             {
                 AmbiguousSequenceOptionBox.Visibility = Visibility.Hidden;
             }
+
+            // put the original ions back in place if they were altered
+            if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                psm.MatchedIons = oldMatchedIons;
         }
 
         #region Sequence Annotaiton Chunk Controls
@@ -1243,10 +1300,10 @@ namespace MetaMorpheusGUI
         /// Replaces matched fragment ions on a psm with new ion types after a quick search
         /// </summary>
         /// <param name="psm"></param>
-        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm)
+        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm, bool concatOldIonsOfType = false)
         {
             var scan = MetaDrawLogic.GetMs2ScanFromPsm(psm);
-            var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm);
+            var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm, concatOldIonsOfType);
             psm.MatchedIons = newIons;
         }
 

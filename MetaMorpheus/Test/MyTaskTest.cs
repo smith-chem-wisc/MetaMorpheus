@@ -20,6 +20,7 @@ using EngineLayer.DatabaseLoading;
 using EngineLayer.FdrAnalysis;
 using Omics.BioPolymer;
 using Chemistry;
+using Omics.Modifications.IO;
 
 namespace Test
 {
@@ -30,7 +31,7 @@ namespace Test
         public static void TestEverythingRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww), false);
+                GlobalVariables.AddMods(ModificationLoader.ReadModsFromFile(modFile, out var fmww), false);
 
             CalibrationTask task1 = new()
             {
@@ -189,7 +190,7 @@ namespace Test
         public static void TestMultipleFilesRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww), false);
+                GlobalVariables.AddMods(ModificationLoader.ReadModsFromFile(modFile, out var fmww), false);
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -666,7 +667,7 @@ namespace Test
             File.WriteAllLines(filePath, new string[] { modToWrite });
 
             // read the mod
-            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath, out var fmww), false);
+            GlobalVariables.AddMods(ModificationLoader.ReadModsFromFile(filePath, out var fmww), false);
             Assert.That(GlobalVariables.AllModsKnown.Where(v => v.IdWithMotif == "Hydroxyproline on P").Count() == 1);
 
             // should have an error message...
