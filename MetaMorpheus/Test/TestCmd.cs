@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using EngineLayer;
 using MetaMorpheusCommandLine;
+using Nett;
+using TaskLayer;
 
 namespace Test
 {
@@ -253,6 +255,54 @@ namespace Test
             finally
             {
                 // Cleanup
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// The CMD dispatches each task toml by its "TaskType" string (the switch in
+        /// Program.Run). This locks in the contract that makes CircularSearch runnable
+        /// from the command line: GenerateDefaultTaskTomls emits a CircularSearchTask.toml
+        /// whose TaskType is exactly "CircularSearch" (the case label the switch matches)
+        /// and which deserializes back to a CircularSearchTask via the shared tomlConfig.
+        /// </summary>
+        [Test]
+        public static void CircularSearchTask_GeneratedTomlDispatchesAndRoundTrips()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCircularSearchTomlDispatch");
+
+            try
+            {
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                CommandLineSettings.GenerateDefaultTaskTomls(tempFolder);
+
+                string tomlPath = Path.Combine(tempFolder, "CircularSearchTask.toml");
+                Assert.That(File.Exists(tomlPath), Is.True,
+                    "GenerateDefaultTaskTomls must emit a CircularSearchTask.toml template.");
+
+                // The CMD dispatch switch matches on this exact discriminator string.
+                var table = Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig);
+                Assert.That(table.Get<string>("TaskType"), Is.EqualTo("CircularSearch"),
+                    "TaskType must be \"CircularSearch\" so the CMD switch routes the toml.");
+
+                // The case body reads it back as a CircularSearchTask via tomlConfig.
+                var task = Toml.ReadFile<CircularSearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+                Assert.That(task, Is.Not.Null);
+                Assert.That(task.TaskType, Is.EqualTo(MyTask.CircularSearch));
+                Assert.That(task.CircularSearchParameters, Is.Not.Null,
+                    "Round-tripped task must retain its CircularSearchParameters.");
+                Assert.That(task.CircularSearchParameters.MinInternalFragmentLength, Is.EqualTo(3),
+                    "A circular-specific parameter must survive the toml round-trip.");
+            }
+            finally
+            {
                 if (Directory.Exists(tempFolder))
                 {
                     Directory.Delete(tempFolder, true);
