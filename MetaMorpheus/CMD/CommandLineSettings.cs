@@ -191,6 +191,9 @@ namespace MetaMorpheusCommandLine
 
                 GlycoSearchTask glyco = new GlycoSearchTask();
                 Toml.WriteFile(glyco, Path.Combine(folderLocation, @"GlycoSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                CircularSearchTask circular = new CircularSearchTask();
+                Toml.WriteFile(circular, Path.Combine(folderLocation, @"CircularSearchTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {
