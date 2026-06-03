@@ -163,8 +163,10 @@ namespace TaskLayer
                 }
             }
 
-            // ── Mass-difference acceptor ──────────────────────────────────────
-            var massDiffAcceptor = GetMassDiffAcceptor(
+            // Base acceptor — used only for its (tolerance-independent) notch count in
+            // the pooled FDR step. The per-file candidate acceptor is built inside the
+            // spectra-file loop from the combined (file-specific) precursor tolerance.
+            var baseMassDiffAcceptor = GetMassDiffAcceptor(
                 CommonParameters.PrecursorMassTolerance,
                 CircularSearchParameters.MassDiffAcceptorType,
                 CircularSearchParameters.CustomMdac);
@@ -208,6 +210,15 @@ namespace TaskLayer
                     [taskId, "Individual Spectra Files", origDataFile]);
 
                 var combinedParams = allFileParams[spectraFileIndex];
+
+                // File-specific parameters override base parameters: build the precursor
+                // mass-difference acceptor from the (possibly file-specific) combined
+                // precursor tolerance, not the base CommonParameters. This is what lets an
+                // auto-loaded file-specific toml (e.g. calibrated tolerances) take effect.
+                var massDiffAcceptor = GetMassDiffAcceptor(
+                    combinedParams.PrecursorMassTolerance,
+                    CircularSearchParameters.MassDiffAcceptorType,
+                    CircularSearchParameters.CustomMdac);
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -268,7 +279,7 @@ namespace TaskLayer
             Status("Calculating FDR...", taskId);
 
             new FdrAnalysisEngine(
-                allPsms, massDiffAcceptor.NumNotches,
+                allPsms, baseMassDiffAcceptor.NumNotches,
                 CommonParameters, FileSpecificParameters,
                 [taskId]).Run();
 

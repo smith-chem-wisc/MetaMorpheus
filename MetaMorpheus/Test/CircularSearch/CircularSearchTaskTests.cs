@@ -107,6 +107,70 @@ namespace Test.CircularSearch
         }
 
         /// <summary>
+        /// Like <see cref="WriteMgfForSequence"/>, but the written precursor m/z is shifted
+        /// by <paramref name="precursorPpmOffset"/> ppm while the fragment peaks stay exact.
+        /// Used to probe precursor mass-tolerance behaviour.
+        /// </summary>
+        private static string WriteMgfForSequenceWithPrecursorOffset(
+            string mgfPath,
+            string canonicalSequence,
+            int maxMissedCleavages,
+            double precursorPpmOffset,
+            out double theoreticalPrecursorMass)
+        {
+            var protein = new CircularProtein(canonicalSequence, "tmp");
+            var digestionParams = new DigestionParams(
+                protease: "trypsin",
+                maxMissedCleavages: maxMissedCleavages,
+                minPeptideLength: 1);
+
+            var circularPeptide = protein
+                .Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .OfType<CircularPeptideWithSetModifications>()
+                .FirstOrDefault()
+                ?? throw new InvalidOperationException(
+                    $"No CircularPeptideWithSetModifications for '{canonicalSequence}'.");
+
+            theoreticalPrecursorMass = circularPeptide.MonoisotopicMass;
+            double shiftedPrecursorMass =
+                theoreticalPrecursorMass * (1.0 + precursorPpmOffset * 1e-6);
+
+            var fragmentProducts = new List<Omics.Fragmentation.Product>();
+            circularPeptide.FragmentInternally(
+                DissociationType.HCD, minLengthOfFragments: 3, fragmentProducts);
+
+            using var sw = new StreamWriter(mgfPath);
+            sw.WriteLine("BEGIN IONS");
+            sw.WriteLine(FormattableString.Invariant($"PEPMASS={shiftedPrecursorMass + Proton:F6}"));
+            sw.WriteLine("CHARGE=1+");
+            sw.WriteLine("SCANS=1");
+            sw.WriteLine("RTINSECONDS=60");
+            foreach (double nm in fragmentProducts.Select(p => p.NeutralMass).Distinct())
+                sw.WriteLine(FormattableString.Invariant($"{nm + Proton:F6} 1000000"));
+            sw.WriteLine("END IONS");
+
+            return mgfPath;
+        }
+
+        /// <summary>
+        /// Writes a file-specific toml next to a spectra file. MetaMorpheusTask auto-discovers
+        /// &lt;spectrafile-basename&gt;.toml in the spectra file's directory and applies it as a
+        /// per-file override of the base CommonParameters.
+        /// </summary>
+        private static void WriteFileSpecificToml(
+            string spectraFilePath, double precursorPpm, double productPpm)
+        {
+            string tomlPath = Path.Combine(
+                Path.GetDirectoryName(spectraFilePath)!,
+                Path.GetFileNameWithoutExtension(spectraFilePath) + ".toml");
+            // Matches the canonical "±X PPM" tolerance format MetaMorpheus writes/parses.
+            string content =
+                FormattableString.Invariant($"PrecursorMassTolerance = \"±{precursorPpm:F4} PPM\"") + "\n" +
+                FormattableString.Invariant($"ProductMassTolerance = \"±{productPpm:F4} PPM\"") + "\n";
+            File.WriteAllText(tomlPath, content);
+        }
+
+        /// <summary>
         /// Constructs and runs an <see cref="EverythingRunnerEngine"/> for a single
         /// <see cref="CircularSearchTask"/> against one MGF and one or more FASTA files.
         /// Output lands in <paramref name="outputDir"/>.
@@ -368,6 +432,73 @@ namespace Test.CircularSearch
                             $"WriteHighQValuePsms=false.");
                     }
                 }
+            }
+            finally { Directory.Delete(dir, recursive: true); }
+        }
+
+        /// <summary>
+        /// Regression: an auto-loaded file-specific toml must OVERRIDE the base precursor
+        /// tolerance used for circular-search candidate selection.
+        ///
+        /// A precursor is written 20 ppm off the true peptide mass. With a wide base
+        /// tolerance (±50 ppm) and no file-specific toml, the match is accepted (sanity).
+        /// Adding a file-specific toml with a tight ±5 ppm tolerance must reject it. Before
+        /// the fix the mass-difference acceptor was built once from the base tolerance, so
+        /// the file-specific value was ignored and the match still appeared.
+        /// </summary>
+        [Test]
+        public static void FileSpecificPrecursorTolerance_OverridesBaseTolerance()
+        {
+            string dir = MakeTempDir(nameof(FileSpecificPrecursorTolerance_OverridesBaseTolerance));
+            try
+            {
+                var protein = new CircularProtein("AFYRHTQESG", "CYC0003R00");
+                string canonical = protein.BaseSequence;
+
+                const double precursorPpmOffset = 20.0;
+                string mgfPath = WriteMgfForSequenceWithPrecursorOffset(
+                    Path.Combine(dir, "synthetic.mgf"), canonical,
+                    maxMissedCleavages: 2, precursorPpmOffset, out _);
+
+                string fastaPath = WriteFasta(
+                    Path.Combine(dir, "synthetic.fasta"),
+                    new[] { ("CYC0003R00", "CYC0003R00_SYNTH", canonical) });
+
+                CircularSearchTask WideBaseTask() => new CircularSearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        dissociationType: DissociationType.HCD,
+                        precursorMassTolerance: new PpmTolerance(50),   // base: WIDE
+                        productMassTolerance: new PpmTolerance(20),
+                        scoreCutoff: 1,
+                        digestionParams: new DigestionParams(
+                            protease: "trypsin", maxMissedCleavages: 2, minPeptideLength: 1)),
+                    CircularSearchParameters = new CircularSearchParameters
+                    {
+                        MassDiffAcceptorType = MassDiffAcceptorType.Exact
+                    }
+                };
+
+                var dbs = new List<DbForTask> { new DbForTask(fastaPath, isContaminant: false) };
+
+                // 1) No file-specific toml: base ±50 ppm accepts the 20-ppm-off precursor.
+                string out1 = Path.Combine(dir, "run1");
+                Directory.CreateDirectory(out1);
+                RunTask(out1, dbs, mgfPath, WideBaseTask());
+                var (h1, r1) = ReadOutputTsv(out1);
+                int targets1 = r1.Count(row => GetColumn(h1, row, "Decoy/Contaminant/Target") == "T");
+                Assert.That(targets1, Is.GreaterThan(0),
+                    "Sanity: base ±50 ppm should accept the 20-ppm-off precursor and yield a target PSM.");
+
+                // 2) Add a file-specific toml at ±5 ppm: must override base and reject the match.
+                WriteFileSpecificToml(mgfPath, precursorPpm: 5.0, productPpm: 20.0);
+                string out2 = Path.Combine(dir, "run2");
+                Directory.CreateDirectory(out2);
+                RunTask(out2, dbs, mgfPath, WideBaseTask());
+                var (h2, r2) = ReadOutputTsv(out2);
+                int targets2 = r2.Count(row => GetColumn(h2, row, "Decoy/Contaminant/Target") == "T");
+                Assert.That(targets2, Is.EqualTo(0),
+                    "File-specific ±5 ppm must override base ±50 ppm and reject the 20-ppm-off precursor.");
             }
             finally { Directory.Delete(dir, recursive: true); }
         }
