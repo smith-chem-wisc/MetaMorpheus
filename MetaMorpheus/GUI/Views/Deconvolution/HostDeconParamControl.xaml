@@ -121,8 +121,7 @@
 
             <!-- Specific Product Parameters -->
             <Expander Grid.Row="2" Header="MS2 Deconvolution" 
-                      Visibility="{Binding ShowMs2Section, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}" 
-                      IsEnabled="{Binding DoPrecursorDeconvolution}">
+                      Visibility="{Binding ShowMs2Section, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="10">
                     <StackPanel>
                         <Grid HorizontalAlignment="Right">
