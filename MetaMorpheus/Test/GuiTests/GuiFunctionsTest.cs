@@ -1,4 +1,4 @@
-﻿using GuiFunctions.Databases;
+using GuiFunctions.Databases;
 using NUnit.Framework;
 using Proteomics;
 using System;
@@ -47,18 +47,19 @@ namespace Test.GuiTests
         // Occasionally the downloaded files will change, and thus the expected result will need to be updated.
         // To verify, download the database and count the number of entries.
         // The expected result will be double the number of entries, due to decoys - 9/1/23 NB
+        // UP000001207 = Bacillus phage phi29 (Reference proteome, 24 reviewed, 3 unreviewed, 2 isoforms) - 6/11/26 NB
         [Test]
-        [TestCase("UP000000280", true, true, true, true, "1.fasta.gz", 160)] // Reviewed, isoforms, XML, compressed don't let the name fool you, this is actually XML
-        [TestCase("UP000000280", true, true, true, false, "2.fasta", 160)] // Reviewed, isoforms, XML, uncompressed don't let the name fool you, this is actually XML
-        [TestCase("UP000000280", true, true, false, true, "3.fasta.gz", 50)]
-        [TestCase("UP000000280", true, false, true, true, "4.xml.gz", 160)]
-        [TestCase("UP000000280", false, true, true, true, "5.fasta.gz", 2)]
-        [TestCase("UP000000280", true, true, false, false, "6.fasta", 50)]
-        [TestCase("UP000000280", true, false, true, false, "7.xml", 160)]
-        [TestCase("UP000000280", false, true, true, false, "8.fasta", 2)]
-        [TestCase("UP000000280", true, false, false, false, "9.fasta", 50)]
-        [TestCase("UP000000280", false, false, true, false, "10.xml", 2)]
-        [TestCase("UP000000280", false, false, false, false, "11.fasta", 2)]
+        [TestCase("UP000001207", true, true, true, true, "1.fasta.gz", 48)] // reviewed=true XML: 24*2
+        [TestCase("UP000001207", true, true, true, false, "2.fasta", 48)] // same
+        [TestCase("UP000001207", true, true, false, true, "3.fasta.gz", 52)] // reviewed=true FASTA+isoforms: (24+2)*2
+        [TestCase("UP000001207", true, false, true, true, "4.xml.gz", 48)] // reviewed=true XML: 24*2
+        [TestCase("UP000001207", false, true, true, true, "5.fasta.gz", 54)] // all XML: 27*2
+        [TestCase("UP000001207", true, true, false, false, "6.fasta", 52)] // reviewed=true FASTA+isoforms: (24+2)*2
+        [TestCase("UP000001207", true, false, true, false, "7.xml", 48)] // reviewed=true XML: 24*2
+        [TestCase("UP000001207", false, true, true, false, "8.fasta", 54)] // all XML: 27*2
+        [TestCase("UP000001207", true, false, false, false, "9.fasta", 48)] // reviewed=true FASTA: 24*2
+        [TestCase("UP000001207", false, false, true, false, "10.xml", 54)] // all XML: 27*2
+        [TestCase("UP000001207", false, false, false, false, "11.fasta", 54)] // all FASTA: 27*2
         public static async Task UniprotHtmlQueryTest(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed,
            string testName, int listCount)
         {
@@ -93,7 +94,7 @@ namespace Test.GuiTests
             if (xmlFormat)
             {
                 reader = ProteinDbLoader.LoadProteinXML(proteinDbLocation: filePath, generateTargets: true, decoyType: DecoyType.Reverse,
-                    allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out var unknownMod);
+                    allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out var unknownMod, maxHeterozygousVariants: 0);
             }
             else
             {
