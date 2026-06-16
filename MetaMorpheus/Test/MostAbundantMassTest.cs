@@ -19,7 +19,7 @@ namespace Test
         private static readonly AverageResidue Averagine = new Averagine();
 
         [Test]
-        public static void Acceptor_PinsExactMonoisotopic_AndRejectsOffByOne()
+        public static void Acceptor_OnApexCandidate_GetsNotchZero()
         {
             // A ~15 kDa proteoform: the observed precursor is the most abundant isotopic peak.
             const double peptideMono = 15000.0;
@@ -27,13 +27,32 @@ namespace Test
 
             var acceptor = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(5), Averagine);
 
-            // The correct monoisotopic candidate is accepted (notch 0)...
+            // The candidate whose predicted apex lands exactly on the observed peak is the on-apex
+            // match → notch 0.
             Assert.That(acceptor.Accepts(observedMostAbundant, peptideMono), Is.EqualTo(0));
+        }
 
-            // ...but candidates that are off by ±1 neutron in the monoisotopic mass are rejected,
-            // because their theoretical most-abundant peak no longer lines up with the observed one.
-            Assert.That(acceptor.Accepts(observedMostAbundant, peptideMono + Constants.C13MinusC12), Is.EqualTo(-1));
-            Assert.That(acceptor.Accepts(observedMostAbundant, peptideMono - Constants.C13MinusC12), Is.EqualTo(-1));
+        [Test]
+        public static void Acceptor_ToleratesApexMisprediction_WithinNotchSet_RejectsBeyond()
+        {
+            // The averagine apex can miss the experimental apex by ±1–2 neutrons; the notch set
+            // (default ±2) deliberately accepts those candidates (with a nonzero notch), while
+            // candidates beyond the window are rejected.
+            const double peptideMono = 15000.0;
+            double observedMostAbundant = peptideMono + Averagine.GetMostAbundantOffset(peptideMono);
+            var acceptor = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(5), Averagine, maxApexOffsetNeutrons: 2);
+
+            // ±1 and ±2 neutron apex offsets are accepted (nonzero notch, never the -1 sentinel)...
+            foreach (int k in new[] { -2, -1, 1, 2 })
+            {
+                int notch = acceptor.Accepts(observedMostAbundant, peptideMono - k * Constants.C13MinusC12);
+                Assert.That(notch, Is.GreaterThanOrEqualTo(0).Or.LessThan(-1), $"k={k} should be accepted with a notch != -1");
+            }
+
+            // ...but a +3 neutron offset (beyond the ±2 window) is rejected.
+            Assert.That(acceptor.Accepts(observedMostAbundant, peptideMono - 3 * Constants.C13MinusC12), Is.EqualTo(-1));
+
+            Assert.That(acceptor.NumNotches, Is.EqualTo(5));
         }
 
         [Test]
@@ -50,19 +69,26 @@ namespace Test
         }
 
         [Test]
-        public static void Acceptor_TheoreticalInterval_IsCenteredOnMostAbundantMass()
+        public static void Acceptor_TheoreticalIntervals_SpanApexPlusMinusTwoNeutrons()
         {
             const double peptideMono = 20000.0;
             var tol = new PpmTolerance(5);
-            var acceptor = new MostAbundantMassDiffAcceptor("mostAbundant", tol, Averagine);
+            var acceptor = new MostAbundantMassDiffAcceptor("mostAbundant", tol, Averagine, maxApexOffsetNeutrons: 2);
 
-            double expectedCenter = peptideMono + Averagine.GetMostAbundantOffset(peptideMono);
+            double apex = peptideMono + Averagine.GetMostAbundantOffset(peptideMono);
 
             var intervals = System.Linq.Enumerable.ToList(acceptor.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMono));
-            Assert.That(intervals.Count, Is.EqualTo(1));
-            Assert.That(intervals[0].Notch, Is.EqualTo(0));
-            Assert.That(intervals[0].Minimum, Is.EqualTo(tol.GetMinimumValue(expectedCenter)).Within(1e-6));
-            Assert.That(intervals[0].Maximum, Is.EqualTo(tol.GetMaximumValue(expectedCenter)).Within(1e-6));
+            Assert.That(intervals.Count, Is.EqualTo(5));
+
+            // The on-apex interval (notch 0) is centered on the predicted most-abundant mass.
+            var onApex = intervals.Find(i => i.Notch == 0);
+            Assert.That(onApex, Is.Not.Null);
+            Assert.That(onApex.Minimum, Is.EqualTo(tol.GetMinimumValue(apex)).Within(1e-6));
+            Assert.That(onApex.Maximum, Is.EqualTo(tol.GetMaximumValue(apex)).Within(1e-6));
+
+            // The extreme intervals sit at apex ± 2 neutrons.
+            Assert.That(intervals.Exists(i => i.Contains(apex + 2 * Constants.C13MinusC12)), Is.True);
+            Assert.That(intervals.Exists(i => i.Contains(apex - 2 * Constants.C13MinusC12)), Is.True);
         }
 
         [Test]
