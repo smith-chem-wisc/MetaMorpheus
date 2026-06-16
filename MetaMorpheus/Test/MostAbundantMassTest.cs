@@ -1,3 +1,4 @@
+using System;
 using Chemistry;
 using EngineLayer;
 using MassSpectrometry;
@@ -121,6 +122,29 @@ namespace Test
                 precursorMassToMatch: matchMass);
             Assert.That(mostAbundantScan.PrecursorMassToMatch, Is.EqualTo(matchMass).Within(1e-9));
             Assert.That(mostAbundantScan.PrecursorMass, Is.EqualTo(defaultScan.PrecursorMass).Within(1e-9));
+        }
+
+        [Test]
+        public static void DotAcceptor_AcceptsShiftedCandidateAtApex_AndToleratesApex()
+        {
+            const double peptideMono = 10000.0;
+            const double phospho = 79.96633;
+            int phosphoNotch = (int)Math.Round(phospho * MassDiffAcceptor.NotchScalar);
+            var acc = new MostAbundantDotMassDiffAcceptor("g", new[] { 0.0, phospho }, new PpmTolerance(5), Averagine, 2);
+
+            Assert.That(acc.NumNotches, Is.EqualTo(2));
+
+            // Unmodified candidate at its apex → notch 0.
+            double obsUnmod = peptideMono + Averagine.GetMostAbundantOffset(peptideMono);
+            Assert.That(acc.Accepts(obsUnmod, peptideMono), Is.EqualTo(0));
+
+            // Phospho-shifted candidate at the apex of (peptide + phospho) → the phospho shift's notch.
+            double shiftedMono = peptideMono + phospho;
+            double obsPhospho = shiftedMono + Averagine.GetMostAbundantOffset(shiftedMono);
+            Assert.That(acc.Accepts(obsPhospho, peptideMono), Is.EqualTo(phosphoNotch));
+
+            // A +1 neutron apex misprediction on the phospho candidate is still accepted under the same notch.
+            Assert.That(acc.Accepts(obsPhospho + Constants.C13MinusC12, peptideMono), Is.EqualTo(phosphoNotch));
         }
 
         [Test]

@@ -194,11 +194,24 @@ namespace TaskLayer
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
         {
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalDataFile);
-            MassDiffAcceptor searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
-                new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
-                new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            // In most-abundant mode, find calibration PSMs with the apex acceptor so the search is
+            // consistent with the scan's most-abundant PrecursorMassToMatch. The calibration error
+            // itself is recomputed per-isotope from the identified peptide's theoretical distribution
+            // (DataPointAcquisitionEngine) and is independent of the precursor-matching convention.
+            MassDiffAcceptor searchMode;
+            if (combinedParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
+            {
+                searchMode = new MostAbundantMassDiffAcceptor("mostAbundant", combinedParameters.PrecursorMassTolerance,
+                    combinedParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine());
+            }
+            else
+            {
+                searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
+                    new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
+                    new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            }
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.PrecursorMassToMatch).ToArray();
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
