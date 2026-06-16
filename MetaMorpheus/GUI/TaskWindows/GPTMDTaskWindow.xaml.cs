@@ -210,7 +210,8 @@ namespace MetaMorpheusGUI
 
             foreach (var filter in FilterOptions)
             {
-                filter.IsSelected = TheTask.GptmdParameters.GptmdFilters.Any(f => f.GetType() == filter.Filter.GetType());
+                filter.IsSelected = TheTask.GptmdParameters.GptmdFilters.Any(f => f.GetType() == filter.Filter.GetType())
+                    || (TheTask.GptmdParameters.GptmdFilterTypes?.Contains(filter.Filter.GetType().Name) ?? false);
             }
         }
 
@@ -584,6 +585,8 @@ namespace MetaMorpheusGUI
                 TheTask.GptmdParameters.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
             TheTask.GptmdParameters.GptmdFilters = FilterOptions.Where(f => f.IsSelected).Select(f => f.Filter).ToList();
+            // Also persist the selection in toml-serializable form so it survives a save/load round-trip and CMD runs.
+            TheTask.GptmdParameters.GptmdFilterTypes = FilterOptions.Where(f => f.IsSelected).Select(f => f.Filter.GetType().Name).ToList();
             TheTask.GptmdParameters.WriteDecoys = WriteDecoysCheckBox.IsChecked.Value;
             TheTask.CommonParameters = commonParamsToSave;
 

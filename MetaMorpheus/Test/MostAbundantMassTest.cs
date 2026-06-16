@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Chemistry;
 using EngineLayer;
 using MassSpectrometry;
@@ -145,6 +147,27 @@ namespace Test
 
             // A +1 neutron apex misprediction on the phospho candidate is still accepted under the same notch.
             Assert.That(acc.Accepts(obsPhospho + Constants.C13MinusC12, peptideMono), Is.EqualTo(phosphoNotch));
+        }
+
+        [Test]
+        public static void GptmdFilterTypes_ResolveToActiveFilters_TomlSettable()
+        {
+            // Names (toml-serializable) resolve to filter instances; unknown names are ignored.
+            var p = new GptmdParameters
+            {
+                GptmdFilters = new List<IGptmdFilter>(),
+                GptmdFilterTypes = new List<string> { nameof(ImprovedScoreFilter), "bogus" }
+            };
+            var active = p.GetActiveFilters();
+            Assert.That(active.Any(f => f is ImprovedScoreFilter), Is.True);
+            Assert.That(active.Count, Is.EqualTo(1)); // "bogus" ignored
+
+            // In-memory (GUI) filter + named filter of same type dedupe to one.
+            p.GptmdFilters = new List<IGptmdFilter> { new ImprovedScoreFilter() };
+            Assert.That(p.GetActiveFilters().Count, Is.EqualTo(1));
+
+            // Default (no names, no in-memory filters) → no filtering, every mod added.
+            Assert.That(new GptmdParameters { GptmdFilters = new(), GptmdFilterTypes = new() }.GetActiveFilters(), Is.Empty);
         }
 
         [Test]
