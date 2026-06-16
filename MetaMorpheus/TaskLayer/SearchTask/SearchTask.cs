@@ -36,8 +36,17 @@ namespace TaskLayer
 
         public SearchParameters SearchParameters { get; set; }
 
-        public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac)
+        public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac,
+            PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic, AverageResidue averagineModel = null)
         {
+            // Most-abundant mode matches candidates by their theoretical most-abundant isotopic peak,
+            // which directly solves the off-by-N problem. It replaces (rather than augments) the
+            // missed-monoisotopic notches, so it overrides the MassDiffAcceptorType selection.
+            if (precursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
+            {
+                return new MostAbundantMassDiffAcceptor("mostAbundant", precursorMassTolerance, averagineModel ?? new Averagine());
+            }
+
             switch (massDiffAcceptorType)
             {
                 case MassDiffAcceptorType.Exact:
@@ -216,7 +225,8 @@ namespace TaskLayer
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
-                MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+                MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac,
+                    combinedParams.PrecursorMassMatchMode, combinedParams.PrecursorDeconvolutionParameters?.AverageResidueModel);
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -252,7 +262,10 @@ namespace TaskLayer
                 }
 
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
+                // Sort by the mass used for candidate selection (PrecursorMassToMatch), which equals
+                // PrecursorMass in monoisotopic mode. ClassicSearchEngine binary-searches this same
+                // mass, so the array and the search key must use the same quantity.
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMassToMatch).ToArray();
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 

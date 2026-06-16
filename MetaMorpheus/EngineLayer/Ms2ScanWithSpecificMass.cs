@@ -10,11 +10,17 @@ namespace EngineLayer
     public class Ms2ScanWithSpecificMass
     {
         public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam,
-            IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null)
+            IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null,
+            double? precursorMassToMatch = null)
         {
             PrecursorMonoisotopicPeakMz = precursorMonoisotopicPeakMz;
             PrecursorCharge = precursorCharge;
             PrecursorMass = PrecursorMonoisotopicPeakMz.ToMass(precursorCharge);
+            // Mass used for candidate selection by the MassDiffAcceptor. Defaults to the monoisotopic
+            // PrecursorMass; in most-abundant mode the caller passes the envelope's most-abundant (or,
+            // for unresolved species, average) observed mass. PrecursorMass itself is left unchanged
+            // because it still drives fragment-bin math and precursor mass-error reporting.
+            PrecursorMassToMatch = precursorMassToMatch ?? PrecursorMass;
             PrecursorIntensity = precursorIntensity ?? 1;
             PrecursorEnvelopePeakCount = envelopePeakCount ?? 1;
             PrecursorFractionalIntensity = precursorFractionalIntensity ?? -1;
@@ -41,6 +47,13 @@ namespace EngineLayer
         public MsDataScan TheScan { get; }
         public double PrecursorMonoisotopicPeakMz { get; }
         public double PrecursorMass { get; }
+
+        /// <summary>
+        /// The precursor mass used to select theoretical candidates via the <see cref="EngineLayer.MassDiffAcceptor"/>.
+        /// Equals <see cref="PrecursorMass"/> in monoisotopic mode; in most-abundant mode it is the
+        /// envelope's most-abundant (or average, if unresolved) observed neutral mass.
+        /// </summary>
+        public double PrecursorMassToMatch { get; }
         public int PrecursorCharge { get; }
         public double PrecursorIntensity { get; }
         public int PrecursorEnvelopePeakCount { get; }
