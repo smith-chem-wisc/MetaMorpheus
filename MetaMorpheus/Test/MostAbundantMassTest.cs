@@ -21,12 +21,15 @@ namespace Test
     {
         private static readonly AverageResidue Averagine = new Averagine();
 
+        // Averagine most-abundant offset for a monoisotopic mass (diff-to-monoisotopic at the nearest bin).
+        private static double ApexOffset(double mono) => Averagine.GetDiffToMonoisotopic(Averagine.GetMostIntenseMassIndex(mono));
+
         [Test]
         public static void Acceptor_OnApexCandidate_GetsNotchZero()
         {
             // A ~15 kDa proteoform: the observed precursor is the most abundant isotopic peak.
             const double peptideMono = 15000.0;
-            double observedMostAbundant = peptideMono + Averagine.GetMostAbundantOffset(peptideMono);
+            double observedMostAbundant = peptideMono + ApexOffset(peptideMono);
 
             var acceptor = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(5), Averagine);
 
@@ -42,7 +45,7 @@ namespace Test
             // (default ±2) deliberately accepts those candidates (with a nonzero notch), while
             // candidates beyond the window are rejected.
             const double peptideMono = 15000.0;
-            double observedMostAbundant = peptideMono + Averagine.GetMostAbundantOffset(peptideMono);
+            double observedMostAbundant = peptideMono + ApexOffset(peptideMono);
             var acceptor = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(5), Averagine, maxApexOffsetNeutrons: 2);
 
             // ±1 and ±2 neutron apex offsets are accepted (nonzero notch, never the -1 sentinel)...
@@ -78,7 +81,7 @@ namespace Test
             var tol = new PpmTolerance(5);
             var acceptor = new MostAbundantMassDiffAcceptor("mostAbundant", tol, Averagine, maxApexOffsetNeutrons: 2);
 
-            double apex = peptideMono + Averagine.GetMostAbundantOffset(peptideMono);
+            double apex = peptideMono + ApexOffset(peptideMono);
 
             var intervals = System.Linq.Enumerable.ToList(acceptor.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMono));
             Assert.That(intervals.Count, Is.EqualTo(5));
@@ -137,12 +140,12 @@ namespace Test
             Assert.That(acc.NumNotches, Is.EqualTo(2));
 
             // Unmodified candidate at its apex → notch 0.
-            double obsUnmod = peptideMono + Averagine.GetMostAbundantOffset(peptideMono);
+            double obsUnmod = peptideMono + ApexOffset(peptideMono);
             Assert.That(acc.Accepts(obsUnmod, peptideMono), Is.EqualTo(0));
 
             // Phospho-shifted candidate at the apex of (peptide + phospho) → the phospho shift's notch.
             double shiftedMono = peptideMono + phospho;
-            double obsPhospho = shiftedMono + Averagine.GetMostAbundantOffset(shiftedMono);
+            double obsPhospho = shiftedMono + ApexOffset(shiftedMono);
             Assert.That(acc.Accepts(obsPhospho, peptideMono), Is.EqualTo(phosphoNotch));
 
             // A +1 neutron apex misprediction on the phospho candidate is still accepted under the same notch.

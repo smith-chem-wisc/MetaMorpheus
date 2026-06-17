@@ -49,12 +49,17 @@ namespace EngineLayer
             NumNotches = SortedMassShifts.Length;
         }
 
+        // The averagine most-abundant offset for a monoisotopic mass: the model's diff-to-monoisotopic
+        // at the nearest mass bin. (Composes the existing AverageResidue API.)
+        private double ApexOffset(double monoisotopicMass)
+            => Averagine.GetDiffToMonoisotopic(Averagine.GetMostIntenseMassIndex(monoisotopicMass));
+
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
             for (int j = 0; j < SortedMassShifts.Length; j++)
             {
                 double shiftedMono = peptideMass + SortedMassShifts[j];
-                double apex = shiftedMono + Averagine.GetMostAbundantOffset(shiftedMono);
+                double apex = shiftedMono + ApexOffset(shiftedMono);
                 foreach (int k in ApexOffsetsInNeutrons)
                 {
                     if (Tolerance.Within(scanPrecursorMass, apex + k * Constants.C13MinusC12))
@@ -71,7 +76,7 @@ namespace EngineLayer
             for (int j = 0; j < SortedMassShifts.Length; j++)
             {
                 double shiftedMono = peptideMonoisotopicMass + SortedMassShifts[j];
-                double apex = shiftedMono + Averagine.GetMostAbundantOffset(shiftedMono);
+                double apex = shiftedMono + ApexOffset(shiftedMono);
                 foreach (int k in ApexOffsetsInNeutrons)
                 {
                     double mass = apex + k * Constants.C13MinusC12;
@@ -84,7 +89,7 @@ namespace EngineLayer
         {
             // Indexed (ModernSearch) path; documented near-boundary caveat as in MostAbundantMassDiffAcceptor.
             // GPTMD uses the theory-driven ClassicSearch path, so this is not its primary path.
-            double monoApprox = peptideMonoisotopicMass - Averagine.GetMostAbundantOffset(peptideMonoisotopicMass);
+            double monoApprox = peptideMonoisotopicMass - ApexOffset(peptideMonoisotopicMass);
             for (int j = 0; j < SortedMassShifts.Length; j++)
             {
                 foreach (int k in ApexOffsetsInNeutrons)

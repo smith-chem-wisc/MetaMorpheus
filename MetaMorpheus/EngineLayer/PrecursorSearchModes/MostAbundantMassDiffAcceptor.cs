@@ -63,9 +63,15 @@ namespace EngineLayer
 
         private static int NotchFor(int k) => (int)Math.Round(k * Constants.C13MinusC12 * NotchScalar);
 
+        // The averagine most-abundant offset for a monoisotopic mass: the model's diff-to-monoisotopic
+        // at the nearest mass bin. (Composes the existing AverageResidue API rather than relying on a
+        // dedicated mzLib method.)
+        private double ApexOffset(double monoisotopicMass)
+            => Averagine.GetDiffToMonoisotopic(Averagine.GetMostIntenseMassIndex(monoisotopicMass));
+
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            double apex = peptideMass + Averagine.GetMostAbundantOffset(peptideMass);
+            double apex = peptideMass + ApexOffset(peptideMass);
             foreach (int k in ApexOffsetsInNeutrons) // ordered to prefer k = 0
             {
                 if (Tolerance.Within(scanPrecursorMass, apex + k * Constants.C13MinusC12))
@@ -78,7 +84,7 @@ namespace EngineLayer
 
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromTheoreticalMass(double peptideMonoisotopicMass)
         {
-            double apex = peptideMonoisotopicMass + Averagine.GetMostAbundantOffset(peptideMonoisotopicMass);
+            double apex = peptideMonoisotopicMass + ApexOffset(peptideMonoisotopicMass);
             foreach (int k in ApexOffsetsInNeutrons)
             {
                 double mass = apex + k * Constants.C13MinusC12;
@@ -93,7 +99,7 @@ namespace EngineLayer
             // apex-offset notch. Top-down uses the exact theory-driven ClassicSearch path; this
             // observed-side conversion carries a small near-boundary ambiguity and is only exercised by
             // indexed bottom-up search, which this mode does not target.
-            double monoApprox = peptideMonoisotopicMass - Averagine.GetMostAbundantOffset(peptideMonoisotopicMass);
+            double monoApprox = peptideMonoisotopicMass - ApexOffset(peptideMonoisotopicMass);
             foreach (int k in ApexOffsetsInNeutrons)
             {
                 double mass = monoApprox - k * Constants.C13MinusC12;
