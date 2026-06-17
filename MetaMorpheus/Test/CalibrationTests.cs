@@ -1,5 +1,10 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
+using EngineLayer.Calibration;
 using EngineLayer.DatabaseLoading;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
@@ -718,6 +723,72 @@ namespace Test
                 "A warning should be emitted when non-protein entries are excluded from the search index");
             Assert.That(warnings.Any(w => w.Contains("Only protein sequences are supported by Modern Search")),
                 "Warning should indicate that Modern Search only supports protein sequences");
+        }
+
+        // ── Calibration precursor-tolerance robustness (most-abundant mode) ──────
+
+        private static SpectralMatch BuildPsmWithPrecursorMass(PeptideWithSetModifications pep, double precursorNeutralMass)
+        {
+            var spectrum = new MzSpectrum(new[] { precursorNeutralMass.ToMz(1) }, new[] { 1.0 }, false);
+            var scanData = new MsDataScan(spectrum, 1, 1, true, Polarity.Positive, 1.0, null, "", MZAnalyzerType.Orbitrap, 1.0, null, null, null);
+            var scan = new Ms2ScanWithSpecificMass(scanData, precursorNeutralMass.ToMz(1), 1, "file.raw", new CommonParameters());
+            var psm = new PeptideSpectralMatch(pep, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            return psm;
+        }
+
+        /// <summary>
+        /// Most-abundant precursor matching admits PSMs whose deconvoluted monoisotopic mass is ±1–2
+        /// neutrons from the peptide's monoisotopic mass (the apex notch set). The calibration precursor
+        /// error must strip those whole-neutron offsets so the tolerance estimate reflects the true
+        /// sub-ppm drift, not ~67–134 ppm/neutron spikes (which previously produced runaway tolerances).
+        /// </summary>
+        [Test]
+        public static void CalibrationPrecursorError_StripsNeutronOffsets()
+        {
+            var protein = new Protein("PEPTIDEKPEPTIDEKPEPTIDEK", "ACC");
+            var pep = new PeptideWithSetModifications(protein, new DigestionParams(), 1, protein.BaseSequence.Length,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            double mono = pep.MonoisotopicMass;
+
+            int[] neutronOffsets = { 0, 1, -1, 2, -2 };
+            double[] driftPpm = { 1, 2, 3, 2, 1 };
+            var psms = new List<SpectralMatch>();
+            for (int i = 0; i < neutronOffsets.Length; i++)
+            {
+                double precMass = mono * (1 + driftPpm[i] / 1e6) + neutronOffsets[i] * Constants.C13MinusC12;
+                psms.Add(BuildPsmWithPrecursorMass(pep, precMass));
+            }
+
+            var results = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
+
+            // With neutron offsets stripped, the spread reflects only the few-ppm drift — not the
+            // tens-to-hundreds of ppm those ±1–2 neutron offsets would otherwise introduce.
+            Assert.That(results.PsmPrecursorIqrPpmError, Is.LessThan(5));
+            Assert.That(Math.Abs(results.PsmPrecursorMedianPpmError), Is.LessThan(5));
+        }
+
+        /// <summary>
+        /// Guardrail: calibration must never write a precursor tolerance wider than the one it searched
+        /// with, even if the error distribution is pathologically wide.
+        /// </summary>
+        [Test]
+        public static void Calibration_DoesNotWidenToleranceBeyondSearched()
+        {
+            var protein = new Protein("PEPTIDEKPEPTIDEKPEPTIDEK", "ACC");
+            var pep = new PeptideWithSetModifications(protein, new DigestionParams(), 1, protein.BaseSequence.Length,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            double mono = pep.MonoisotopicMass;
+
+            // Wide sub-neutron precursor-error spread → computed tolerance far exceeds the searched 5 ppm.
+            double[] subNeutronDeltaDa = { -0.05, -0.02, 0.02, 0.05 };
+            var psms = subNeutronDeltaDa.Select(d => BuildPsmWithPrecursorMass(pep, mono + d)).ToList();
+            var results = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
+
+            var cp = new CommonParameters(precursorMassTolerance: new PpmTolerance(5), productMassTolerance: new PpmTolerance(20));
+            CalibrationTask.UpdateCombinedParameters(cp, results);
+
+            Assert.That(cp.PrecursorMassTolerance.Value, Is.LessThanOrEqualTo(5.0));
         }
 
     }
