@@ -35,7 +35,21 @@ namespace EngineLayer.Calibration
             var ms1PpmRange = Ms1List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
             var ms2PpmRange = Ms2List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
 
-            var precursorErrors = psms.Select(p => (p.ScanPrecursorMass - p.BioPolymerWithSetModsMonoisotopicMass.Value) / p.BioPolymerWithSetModsMonoisotopicMass.Value * 1e6).ToList();
+            // Use the neutron-modulo residual of the precursor mass error, not the raw difference. The
+            // raw (ScanPrecursorMass - peptideMonoisotopic) difference includes whole-neutron offsets when
+            // the deconvoluted monoisotopic peak is off by an isotope - common, and intentional, under
+            // most-abundant precursor matching (PrecursorMassMatchMode.MostAbundant), where candidates are
+            // matched on the apex and the reported monoisotopic can be +/-1-2 neutrons away. Those integer
+            // offsets are isotope-assignment errors, not the instrument m/z calibration error; including
+            // them inflated the IQR and made calibration write runaway precursor tolerances (e.g. 1940 ppm).
+            // Stripping the nearest-neutron component yields the true sub-ppm drift and is a no-op for
+            // monoisotopic-matched PSMs (whose difference is already << 1 neutron).
+            var precursorErrors = psms.Select(p =>
+            {
+                double deltaDa = p.ScanPrecursorMass - p.BioPolymerWithSetModsMonoisotopicMass.Value;
+                double residualDa = deltaDa - Math.Round(deltaDa / Constants.C13MinusC12) * Constants.C13MinusC12;
+                return residualDa / p.BioPolymerWithSetModsMonoisotopicMass.Value * 1e6;
+            }).ToList();
             PsmPrecursorIqrPpmError = precursorErrors.InterquartileRange();
             PsmPrecursorMedianPpmError = precursorErrors.Median();
 

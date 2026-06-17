@@ -419,6 +419,13 @@ namespace TaskLayer
         {
             double newPrecursorPpmTolerance = Math.Round(PrecursorMultiplierForToml * acquisitionResults.PsmPrecursorIqrPpmError + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError), 1);
             double newProductPpmTolerance = Math.Round(ProductMultiplierForToml * acquisitionResults.PsmProductIqrPpmError + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1);
+
+            // Guardrail: calibration should tighten tolerances, not widen them. A pathological error
+            // distribution must never write a tolerance wider than the one we searched with, which would
+            // explode the candidate space (and memory) in downstream GPTMD/Search.
+            newPrecursorPpmTolerance = Math.Min(newPrecursorPpmTolerance, combinedParams.PrecursorMassTolerance.Value);
+            newProductPpmTolerance = Math.Min(newProductPpmTolerance, combinedParams.ProductMassTolerance.Value);
+
             UpdateCombinedParameters(combinedParams, newPrecursorPpmTolerance, newProductPpmTolerance);
         }
 
