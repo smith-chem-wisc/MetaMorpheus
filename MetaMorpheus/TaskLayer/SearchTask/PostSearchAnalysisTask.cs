@@ -192,21 +192,13 @@ namespace TaskLayer
                 }
             }
 
-            var filteredPsmsForParsimony = FilteredPsms.Filter(Parameters.AllSpectralMatches,
-                commonParams: CommonParameters,
-                includeDecoys: true,
-                includeContaminants: true,
-                includeAmbiguous: false,
-                includeHighQValuePsms: false);
-
             // run parsimony
-            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(filteredPsmsForParsimony, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(Parameters.AllSpectralMatches, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
-            // Pass the FilterType and FilterThreshold from the filtered PSMs to ensure consistent filtering criteria
             ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
                 proteinAnalysisResults.ProteinGroups,
-                filteredPsmsForParsimony,
+                Parameters.AllSpectralMatches,
                 Parameters.SearchParameters.NoOneHitWonders,
                 Parameters.SearchParameters.ModPeptidesAreDifferent,
                 mergeIndistinguishableProteinGroups: true,
@@ -1032,10 +1024,9 @@ namespace TaskLayer
                     includeHighQValuePsms: false);
                 var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
 
-                // Pass the FilterType and FilterThreshold from the filtered PSMs to ensure consistent filtering criteria
                 ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
                     subsetProteinGroupsForThisFile,
-                    filteredPsmsByFile,
+                    psmsForThisFile,
                     Parameters.SearchParameters.NoOneHitWonders,
                     Parameters.SearchParameters.ModPeptidesAreDifferent,
                     false,
