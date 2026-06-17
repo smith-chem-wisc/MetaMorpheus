@@ -116,7 +116,7 @@ namespace EngineLayer.SpectrumMatch
                     && (includeContaminants || !psm.IsContaminant)
                     && (includeAmbiguous || !psm.BaseSequence.IsNullOrEmpty())
                     && (includeAmbiguousMods || !psm.FullSequence.IsNullOrEmpty()))
-                .FilterByQValue(includeHighQValuePsms, filterThreshold, filterAtPeptideLevel, filterType)
+                .FilterByQValue(includeHighQValuePsms, filterThreshold, filterAtPeptideLevel, filterType, true)
                 .CollapseToPeptides(filterAtPeptideLevel)
                 .ToList();
 
@@ -153,8 +153,14 @@ namespace EngineLayer.SpectrumMatch
             }
         }
 
-        internal static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType)
+        internal static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType, bool filterValidated = false)
         {
+            // If we validate the filter ahead of time, no need for a second iteration through the PSMs to check for the presence of PEP-QValues values. 
+            if (!filterValidated &&  filterType == FilterType.PepQValue && psms.All(p => p.GetFdrInfo(filterAtPeptideLevel) != null && Math.Abs(p.GetFdrInfo(filterAtPeptideLevel).PEP_QValue - 2) < 0.1 ))
+            {
+                filterType = FilterType.QValue;
+            }
+
             foreach (var psm in psms)
             {
                 if (includeHighQValuePsms)
