@@ -238,6 +238,49 @@ namespace Test
             Assert.That(headerFields.Length, Is.EqualTo(row.Split('\t').Length));
         }
 
+        // Guards #2: the protein-group TSV header is emitted once from proteinGroups.First()
+        // (see PostSearchAnalysisTask / PostGlycoSearchAnalysisTask), while each row re-derives its
+        // own dynamic columns. When groups are populated through the normal pipeline path
+        // (IntensitiesByFile always assigned, with zeros where a protein had no measured intensity),
+        // every row's column count must equal the single header's column count.
+        [Test]
+        public static void TestMultipleProteinGroupsHeaderAndRowsHaveSameColumnCount()
+        {
+            Protein protA = new Protein("MEDEEK", "protA");
+            Protein protB = new Protein("MENEEK", "protB");
+            PeptideWithSetModifications pwsmA = new PeptideWithSetModifications(protA, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            PeptideWithSetModifications pwsmB = new PeptideWithSetModifications(protB, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            ProteinGroup pgA = new ProteinGroup(new HashSet<IBioPolymer> { protA },
+                new HashSet<IBioPolymerWithSetMods> { pwsmA }, new HashSet<IBioPolymerWithSetMods> { pwsmA });
+            ProteinGroup pgB = new ProteinGroup(new HashSet<IBioPolymer> { protB },
+                new HashSet<IBioPolymerWithSetMods> { pwsmB }, new HashSet<IBioPolymerWithSetMods> { pwsmB });
+
+            var fileA = new SpectraFileInfo(@"X:\fakeA.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0);
+            var fileB = new SpectraFileInfo(@"X:\fakeB.mzML", condition: "", biorep: 1, fraction: 0, techrep: 0);
+            var files = new List<SpectraFileInfo> { fileA, fileB };
+
+            // pgA has measured intensity in both samples; pgB has none (zeros) -- mirrors how
+            // QuantificationAnalysis always assigns IntensitiesByFile, even for unmeasured proteins.
+            pgA.FilesForQuantification = files;
+            pgA.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { fileA, 100.0 }, { fileB, 200.0 } };
+            pgA.PopulateSampleGroupResults();
+
+            pgB.FilesForQuantification = files;
+            pgB.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { fileA, 0.0 }, { fileB, 0.0 } };
+            pgB.PopulateSampleGroupResults();
+
+            var proteinGroups = new List<ProteinGroup> { pgA, pgB };
+
+            // Header is generated once from the first group, exactly as the writers do.
+            int headerColumnCount = proteinGroups.First().GetTabSeparatedHeader().Split('\t').Length;
+            foreach (var pg in proteinGroups)
+            {
+                Assert.That(pg.ToString().Split('\t').Length, Is.EqualTo(headerColumnCount),
+                    $"Row column count for '{pg.ProteinGroupName}' does not match the header column count.");
+            }
+        }
+
         [Test]
         public static void ProteinGroupMergeTest()
         {
