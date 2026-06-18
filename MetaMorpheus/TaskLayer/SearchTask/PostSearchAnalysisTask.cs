@@ -1322,9 +1322,9 @@ namespace TaskLayer
 
                 foreach (var variant in variants)
                 {
-                    if (variantPWSM.IntersectsAndIdentifiesVariation(variant).identifies == true && variant.Description.IsNotNullOrEmpty())
+                    if (variantPWSM.IntersectsAndIdentifiesVariation(variant).identifies == true)
                     {
-                        if (culture.CompareInfo.IndexOf(variant.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
+                        if (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
                         {
                             if (variant.VariantCallFormatDataString.ReferenceAlleleString.Length == 1 && variant.VariantCallFormatDataString.AlternateAlleleString.Length == 1)
                             {
@@ -1345,7 +1345,7 @@ namespace TaskLayer
                                 MNVmissenseVariants.AddOrCreate(variantPWSM.Protein, variant);
                             }
                         }
-                        else if (culture.CompareInfo.IndexOf(variant.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
+                        else if (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
                         {
                             if (frameshiftIdentified == false)
                             {
@@ -1354,7 +1354,7 @@ namespace TaskLayer
                             }
                             frameshiftVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
-                        else if (culture.CompareInfo.IndexOf(variant.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
+                        else if (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
                         {
                             if (stopGainIdentified == false)
                             {
@@ -1363,7 +1363,7 @@ namespace TaskLayer
                             }
                             stopGainVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
-                        else if ((culture.CompareInfo.IndexOf(variant.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
+                        else if ((culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
                         {
                             if (insertionIdentified == false)
                             {
@@ -1372,7 +1372,7 @@ namespace TaskLayer
                             }
                             insertionVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
-                        else if ((culture.CompareInfo.IndexOf(variant.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
+                        else if ((culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
                         {
                             if (deletionIdentified == false)
                             {
@@ -1381,7 +1381,7 @@ namespace TaskLayer
                             }
                             deletionVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
-                        else if (culture.CompareInfo.IndexOf(variant.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
+                        else if (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
                         {
                             if (stopLossIdentifed == false)
                             {
