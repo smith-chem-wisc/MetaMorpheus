@@ -20,7 +20,6 @@ using UsefulProteomicsDatabases;
 namespace Test.MetaDraw
 {
     [ExcludeFromCodeCoverage]
-    [NonParallelizable]
     internal class FragmentReanalysis
     {
         [Test]

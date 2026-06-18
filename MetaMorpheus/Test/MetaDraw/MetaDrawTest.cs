@@ -2196,7 +2196,6 @@ namespace Test.MetaDraw
         }
 
         [Test]
-        [NonParallelizable]
         public void ExportPlot_RefragmentationWithAdditionalFragmentIons_WritesExpectedIons()
         {
             // Arrange
