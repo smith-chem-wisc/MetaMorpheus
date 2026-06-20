@@ -1,5 +1,4 @@
 ﻿using EngineLayer.SpectrumMatch;
-using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
 using Omics;
@@ -8,7 +7,7 @@ namespace EngineLayer
 {
     public class ProteinScoringAndFdrEngine : MetaMorpheusEngine
     {
-        private readonly IEnumerable<SpectralMatch> _FilteredPsms;
+        private readonly IList<SpectralMatch> _FilteredPsms;
         private readonly bool NoOneHitWonders;
         private readonly bool TreatModPeptidesAsDifferentPeptides;
         private readonly bool MergeIndistinguishableProteinGroups;
@@ -17,17 +16,26 @@ namespace EngineLayer
         private readonly FilterType _filterType;
         private readonly double _filterThreshold;
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, FilteredPsms filteredPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, 
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, IList<SpectralMatch> filteredPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, 
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
-            _FilteredPsms = filteredPsms.FilteredPsmsList;
+            _FilteredPsms = filteredPsms;
             ProteinGroups = proteinGroups;
             NoOneHitWonders = noOneHitWonders;
             TreatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
             MergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
             _decoyIdentifiers = proteinGroups.SelectMany(p => p.Proteins.Where(b => b.IsDecoy).Select(b => b.Accession.Split('_')[0])).ToHashSet();
-            _filterType = filteredPsms.FilterType;
-            _filterThreshold = filteredPsms.FilterThreshold;
+
+            if (CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold)
+            {
+                _filterType = FilterType.PepQValue;
+                _filterThreshold = CommonParameters.PepQValueThreshold;
+            }
+            else
+            {
+                _filterType = FilterType.QValue;
+                _filterThreshold = CommonParameters.QValueThreshold;
+            }
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -51,10 +59,12 @@ namespace EngineLayer
         {
             // add each protein groups PSMs
             var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
-            foreach (var psm in psmList)
+            foreach (var psm in psmList.FilterByQValue(
+                includeHighQValuePsms: false,
+                qValueThreshold: _filterThreshold,
+                filterAtPeptideLevel: false,
+                filterType: _filterType))
             {
-                // Use filter-type-aware threshold check
-
                 if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                 {
                     foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer))

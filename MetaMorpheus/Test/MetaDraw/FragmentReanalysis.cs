@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -34,6 +34,10 @@ namespace Test.MetaDraw
             Assert.That(viewModel.FragmentationParamsViewModel.MinInternalIonLength, Is.EqualTo(0));
             Assert.That(viewModel.DissociationTypes.Count(), Is.EqualTo(7));
             Assert.That(viewModel.ProductIonMassTolerance, Is.EqualTo(20));
+            Assert.That(viewModel.SelectedToleranceUnit, Is.EqualTo("ppm"));
+            Assert.That(viewModel.PossibleToleranceUnits.Count, Is.EqualTo(2));
+            Assert.That(viewModel.PossibleToleranceUnits, Contains.Item("ppm"));
+            Assert.That(viewModel.PossibleToleranceUnits, Contains.Item("Da"));
 
             var productsToUse = viewModel.PossibleProducts.Where(p => p.Use).Select(p => p.ProductType).ToList();
             var hcdProducts = Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.HCD];
@@ -144,6 +148,49 @@ namespace Test.MetaDraw
             // all original ions should be retained
             intersect = internalIonNewIons.Select(p => p.Annotation).Intersect(psmToResearch.MatchedIons.Select(p => p.Annotation));
             Assert.That(intersect.Count(), Is.EqualTo(psmToResearch.MatchedIons.Count));
+
+            // clean up
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestFragmentationReanalysisViewModel_ToleranceUnit()
+        {
+            var viewModel = new FragmentationReanalysisViewModel();
+
+            // run a quick search
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestToleranceUnit");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engineToml.Run();
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
+            var dataFile = MsDataFileReader.GetDataFile(myFile);
+
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            var psmToResearch = parsedPsms.First();
+            var scan = dataFile.GetOneBasedScan(psmToResearch.Ms2ScanNumber);
+
+            // baseline: ppm mode with moderate tolerance
+            viewModel.SelectedToleranceUnit = "ppm";
+            viewModel.ProductIonMassTolerance = 20;
+            viewModel.PossibleProducts.ForEach(p => p.Use = true);
+            var ppmMatches = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
+            Assert.That(ppmMatches.Count, Is.GreaterThan(0), "Should have some matches in ppm mode");
+
+            // switch to Da with same numeric value: 20 Da is far more permissive than 20 ppm
+            viewModel.SelectedToleranceUnit = "Da";
+            var daMatches = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
+            Assert.That(daMatches.Count, Is.GreaterThan(ppmMatches.Count),
+                "20 Da tolerance should match more ions than 20 ppm tolerance");
+
+            // switch back to ppm and verify results match the first ppm run (approx)
+            viewModel.SelectedToleranceUnit = "ppm";
+            var ppmMatchesAgain = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
+            Assert.That(ppmMatchesAgain.Count, Is.EqualTo(ppmMatches.Count),
+                "Switching back to ppm should produce same match count");
 
             // clean up
             Directory.Delete(outputFolder, true);
