@@ -58,6 +58,9 @@
                 <CheckBox  Content="Identified Scans" FontWeight="DemiBold" HorizontalAlignment="Left"
                            VerticalAlignment="Center" 
                            IsChecked="{Binding OnlyIdentifiedScans}"/>
+                <CheckBox Content="Apply Filtering" FontWeight="DemiBold" HorizontalAlignment="Left"
+                          VerticalAlignment="Center" 
+                          IsChecked="{Binding ApplyPrecursorFiltering}"/>
             </StackPanel>
 
             <Grid Grid.Column="0"  Grid.Row="4"  Grid.ColumnSpan="2" >
