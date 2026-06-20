@@ -558,18 +558,18 @@ namespace TaskLayer
                 {
                     proteinGroup.FilesForQuantification = spectraFileInfo;
 
-                    if (Parameters.FlashLfqResults != null)
+                    // Always assign IntensitiesByFile (zeros when FlashLFQ produced no results) so the
+                    // intensity/occupancy columns are written consistently with PostSearchAnalysisTask,
+                    // even when quantification ran but produced no quantifiable identifications.
+                    var intensities = new Dictionary<SpectraFileInfo, double>();
+                    foreach (var spectraFile in spectraFileInfo)
                     {
-                        var intensities = new Dictionary<SpectraFileInfo, double>();
-                        foreach (var spectraFile in spectraFileInfo)
-                        {
-                            intensities.Add(spectraFile,
-                                Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup)
-                                    ? flashLfqProteinGroup.GetIntensity(spectraFile)
-                                    : 0);
-                        }
-                        proteinGroup.IntensitiesByFile = intensities;
+                        intensities.Add(spectraFile,
+                            Parameters.FlashLfqResults?.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup) == true
+                                ? flashLfqProteinGroup.GetIntensity(spectraFile)
+                                : 0);
                     }
+                    proteinGroup.IntensitiesByFile = intensities;
 
                     // Populate SampleGroupResults from the shared spectraFileInfo so
                     // every PG carries the same dynamic-column schema. Without this, the writer
