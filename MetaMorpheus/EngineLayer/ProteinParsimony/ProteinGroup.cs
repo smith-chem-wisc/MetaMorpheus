@@ -95,15 +95,23 @@ namespace EngineLayer
         /// <summary>Maps to <see cref="BioPolymerGroup.ListOfBioPolymersOrderedByAccession"/>.</summary>
         public List<IBioPolymer> ListOfProteinsOrderedByAccession => ListOfBioPolymersOrderedByAccession;
 
-        /// <summary>Maps to <see cref="BioPolymerGroup.SamplesForQuantification"/>. Filtered to SpectraFileInfo.</summary>
-        public List<SpectraFileInfo> FilesForQuantification
+        /// <summary>
+        /// Snapshot view of <see cref="BioPolymerGroup.SamplesForQuantification"/> filtered to SpectraFileInfo.
+        /// The getter returns a fresh read-only copy on every call, so mutating the returned value has no
+        /// effect on the protein group; assign a new collection through the setter to change it.
+        /// </summary>
+        public IReadOnlyList<SpectraFileInfo> FilesForQuantification
         {
             get => SamplesForQuantification?.OfType<SpectraFileInfo>().ToList();
             set => SamplesForQuantification = value?.Cast<ISampleInfo>().ToList();
         }
 
-        /// <summary>Maps to <see cref="BioPolymerGroup.IntensitiesBySample"/>. Keyed by SpectraFileInfo.</summary>
-        public Dictionary<SpectraFileInfo, double> IntensitiesByFile
+        /// <summary>
+        /// Snapshot view of <see cref="BioPolymerGroup.IntensitiesBySample"/> keyed by SpectraFileInfo.
+        /// The getter returns a fresh read-only copy on every call, so mutating the returned value has no
+        /// effect on the protein group; assign a new dictionary through the setter to change it.
+        /// </summary>
+        public IReadOnlyDictionary<SpectraFileInfo, double> IntensitiesByFile
         {
             get => IntensitiesBySample?.ToDictionary(kvp => (SpectraFileInfo)kvp.Key, kvp => kvp.Value);
             set => IntensitiesBySample = value?.ToDictionary(kvp => (ISampleInfo)kvp.Key, kvp => kvp.Value);
