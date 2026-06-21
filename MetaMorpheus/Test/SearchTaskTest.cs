@@ -400,6 +400,73 @@ namespace Test
             }
         }
 
+        // Per-file (individual) protein-group TSVs must carry the same quant/occupancy columns as the
+        // combined AllQuantifiedProteinGroups.tsv, computed from each file's own intensities. Guards the
+        // regression where ConstructSubsetProteinGroup left the subset's SampleGroupResults unpopulated,
+        // silently dropping every quant column from the individual-file output.
+        [Test]
+        public static void PostSearchIndividualFileProteinGroupsHaveQuantColumns()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = false,
+                    DoParsimony = true,
+                    WriteIndividualFiles = true
+                },
+                CommonParameters = new(precursorDeconParams: new IsoDecDeconvolutionParameters())
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestIndividualPgQuantColumns");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string fastaPath = Path.Combine(inputFolder, "DbForPrunedDb.fasta");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), fastaPath, true);
+
+            // Two spectra files so individual-file results are written (requires more than one file).
+            string mzml1 = Path.Combine(inputFolder, "PrunedDbSpectra1.mzml");
+            string mzml2 = Path.Combine(inputFolder, "PrunedDbSpectra2.mzml");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzml1, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzml2, true);
+
+            try
+            {
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(fastaPath, false) },
+                    new List<string> { mzml1, mzml2 }, "normal");
+
+                // Combined file: quant ran, so dynamic columns are present (sanity check).
+                string combinedPath = Path.Combine(outputFolder, "AllQuantifiedProteinGroups.tsv");
+                Assert.That(File.Exists(combinedPath), Is.True);
+                Assert.That(File.ReadAllLines(combinedPath)[0].Contains("Intensity_"), Is.True);
+
+                // Individual-file protein-group TSVs must also carry the quant/occupancy columns,
+                // each computed from that file's own intensity.
+                string individualFolder = Path.Combine(outputFolder, "Individual File Results");
+                var individualPgFiles = Directory.GetFiles(individualFolder, "*_ProteinGroups.tsv");
+                Assert.That(individualPgFiles.Length, Is.EqualTo(2));
+
+                foreach (var pgFile in individualPgFiles)
+                {
+                    var lines = File.ReadAllLines(pgFile);
+                    Assert.That(lines.Length, Is.GreaterThan(1), $"{pgFile} has no data rows");
+                    string header = lines[0];
+
+                    Assert.That(header.Contains("SpectralCount_"), Is.True, $"{pgFile} missing SpectralCount_ column");
+                    Assert.That(header.Contains("Intensity_"), Is.True, $"{pgFile} missing Intensity_ column");
+                    Assert.That(header.Contains("CountOccupancy_"), Is.True, $"{pgFile} missing CountOccupancy_ column");
+                    Assert.That(header.Contains("IntensityOccupancy_"), Is.True, $"{pgFile} missing IntensityOccupancy_ column");
+
+                    // header and every data row must agree on the column count
+                    Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True, $"{pgFile} has inconsistent column counts");
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
         /// <summary>
         /// Test that we don't get a crash if protein groups are not constructed
         /// </summary>

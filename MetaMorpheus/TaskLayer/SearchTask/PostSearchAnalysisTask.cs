@@ -1051,6 +1051,16 @@ namespace TaskLayer
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
+                // Populate per-file quant/occupancy columns on the subset groups so the individual-file
+                // protein group TSV carries the same column schema as the combined file, computed from this
+                // file's own intensities and PSMs. ConstructSubsetProteinGroup only sets FilesForQuantification
+                // when quantification ran, so this is a no-op otherwise (matching the combined-file behavior).
+                foreach (var subsetProteinGroup in subsetProteinGroupsForThisFile)
+                {
+                    if (subsetProteinGroup.FilesForQuantification != null)
+                        subsetProteinGroup.PopulateSampleGroupResults();
+                }
+
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                 {
                     // write summary text
