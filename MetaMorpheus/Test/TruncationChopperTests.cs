@@ -369,6 +369,28 @@ namespace Test
             Assert.That(psms[0].TruncatedForm.OneBasedEndResidueInProtein, Is.EqualTo(40));
         }
 
+        /// <summary>
+        /// When a TruncationTimings is supplied, ScoreTruncation accumulates the chop and score durations
+        /// into it as a pure side channel — it must not change the resulting score. Exercises the optional
+        /// timing-instrumentation branch that the perf-logged engine path uses.
+        /// </summary>
+        [Test]
+        public void ScoreTruncation_PopulatesTimings_WhenProvided()
+        {
+            var truncated = MakeProteoform(RepeatTo(AlphabetP1, 50).Substring(0, 40), "x", null);
+            Ms2ScanWithSpecificMass scan = BuildScan(1, truncated.MonoisotopicMass,
+                SeriesMasses(truncated, FragmentationTerminus.Both, _cp), _cp);
+            var timings = new TruncationTimings();
+
+            TruncationPsm withTimings = TruncationPass3.ScoreTruncation(WinnerChoppingCTerm(_p1, "P1", scan), _cp, _exactAcceptor, timings);
+            TruncationPsm withoutTimings = TruncationPass3.ScoreTruncation(WinnerChoppingCTerm(_p1, "P1", scan), _cp, _exactAcceptor);
+
+            Assert.That(withTimings, Is.Not.Null);
+            Assert.That(timings.ChoppingSeconds, Is.GreaterThanOrEqualTo(0));
+            Assert.That(timings.ScoringSeconds, Is.GreaterThanOrEqualTo(0));
+            Assert.That(withTimings.Score, Is.EqualTo(withoutTimings.Score).Within(1e-9)); // timings are side-channel only
+        }
+
         // ---------- helpers ----------
 
         // A winning N-terminal-ion series means Pass 3 chops the C-terminus.
