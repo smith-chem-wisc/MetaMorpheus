@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using MassSpectrometry;
 
@@ -73,7 +73,7 @@ public abstract class DeconParamsViewModel : BaseViewModel
         }
     }
 
-    public Polarity Polarity
+    public virtual Polarity Polarity
     {
         get => Parameters.Polarity;
         set

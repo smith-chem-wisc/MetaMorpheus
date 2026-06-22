@@ -1,13 +1,8 @@
-﻿using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using GuiFunctions;
+﻿using GuiFunctions;
 using MassSpectrometry;
+using NUnit.Framework;
 
-namespace Test.GuiTests
+namespace Test.GuiTests.Deconvolution
 {
     [TestFixture]
     internal class IsoDecDeconParamsViewModelTest
