@@ -39,6 +39,12 @@ namespace EngineLayer.Truncation
 
             foreach (Pass1ProteoformRow row in rows)
             {
+                // A malformed row with no sequence can't become a parent; skip before Split('|') NREs.
+                if (string.IsNullOrWhiteSpace(row.FullSequence))
+                {
+                    continue;
+                }
+
                 if (!PassesParentFilter(row, parentQValueThreshold))
                 {
                     continue;
@@ -74,22 +80,37 @@ namespace EngineLayer.Truncation
         public static List<TruncationParent> AddReverseDecoys(IReadOnlyList<TruncationParent> parents)
         {
             var combined = new List<TruncationParent>(parents);
-            var existingDecoyAccessions = parents.Where(p => p.IsDecoy).Select(p => p.ProteinAccession).ToHashSet();
+
+            // Track decoys by (decoy accession + reversed FullSequence) so we add at most one decoy per
+            // DISTINCT decoy proteoform — and crucially one per target PROTEOFORM, not one per accession.
+            // A protein with several identified proteoforms (e.g. unmodified + oxidized, or pipe-ambiguity
+            // alternatives) needs a decoy for each: keying on the accession alone generated a single decoy
+            // and left the extra target proteoforms with no decoy counterpart, under-counting decoys and
+            // biasing the pooled target-decoy FDR (review finding #6). Seed the set with any decoys already
+            // present (e.g. decoy hits inherited from Pass 1) so those are not regenerated.
+            var existingDecoys = parents
+                .Where(p => p.IsDecoy)
+                .Select(p => DecoyKey(p.ProteinAccession, p.Proteoform.FullSequence))
+                .ToHashSet();
 
             foreach (TruncationParent target in parents.Where(p => !p.IsDecoy))
             {
                 string decoyAccession = "DECOY_" + target.ProteinAccession;
-                if (!existingDecoyAccessions.Add(decoyAccession))
-                {
-                    continue; // a reverse-decoy counterpart already exists (e.g. came from Pass 1)
-                }
-
                 PeptideWithSetModifications decoyProteoform =
                     target.Proteoform.GetReverseDecoyFromTarget(new int[target.Proteoform.BaseSequence.Length]);
+
+                if (!existingDecoys.Add(DecoyKey(decoyAccession, decoyProteoform.FullSequence)))
+                {
+                    continue; // an identical decoy proteoform already exists (Pass 1, or a duplicate target)
+                }
+
                 combined.Add(new TruncationParent(decoyProteoform, decoyAccession, target.OriginatingId, isDecoy: true));
             }
 
             return combined;
         }
+
+        // Identity of a decoy proteoform for de-duplication: its accession plus its (reversed) full sequence.
+        private static string DecoyKey(string accession, string fullSequence) => accession + "|" + fullSequence;
     }
 }

@@ -49,6 +49,38 @@ namespace Test
             Assert.That(combined.Count(p => p.IsDecoy), Is.EqualTo(1));
         }
 
+        /// <summary>
+        /// Regression for review finding #6: two DISTINCT target proteoforms of the SAME accession A123 —
+        /// full-length unmodified, and full-length oxidized on Met. Proper pooled target-decoy balance
+        /// requires ONE decoy per target proteoform (keyed on the proteoform, not the accession), so the
+        /// oxidized target gets its own oxidation-bearing decoy and the two targets are mirrored 1:1.
+        /// </summary>
+        [Test]
+        public void ReverseDecoy_OneDecoyPerProteoform_NotPerAccession()
+        {
+            var oxidation = MakeOxidation();
+            const string seq = "PEPTMDEK"; // Met at residue 5 -> mod key 6
+
+            var unmod = new TruncationParent(MakeProteoform(seq, "A123", null), "A123", "rowUnmod", isDecoy: false);
+            var oxidized = new TruncationParent(
+                MakeProteoform(seq, "A123", new Dictionary<int, Modification> { { 6, oxidation } }),
+                "A123", "rowOx", isDecoy: false);
+
+            List<TruncationParent> combined = TruncationParentBuilder.AddReverseDecoys(new[] { unmod, oxidized });
+
+            var decoys = combined.Where(p => p.IsDecoy).ToList();
+
+            // One decoy per target proteoform (two), both under the same decoy protein accession.
+            Assert.That(decoys.Count, Is.EqualTo(2));
+            Assert.That(decoys.All(d => d.ProteinAccession == "DECOY_A123"), Is.True);
+
+            // Exactly one decoy carries the (reversed) oxidation — the counterpart of the oxidized
+            // target — and exactly one is unmodified: the targets are mirrored 1:1 on the decoy side.
+            int oxDecoys = decoys.Count(d => d.Proteoform.AllModsOneIsNterminus.Values.Any(m => m.OriginalId == "oxidation"));
+            Assert.That(oxDecoys, Is.EqualTo(1));
+            Assert.That(decoys.Count(d => d.Proteoform.AllModsOneIsNterminus.Count == 0), Is.EqualTo(1));
+        }
+
         // ---------- helpers ----------
 
         private static Modification MakePhospho()
@@ -56,6 +88,13 @@ namespace Test
             ModificationMotif.TryGetMotif("T", out var motif);
             return new Modification(_originalId: "phospho", _modificationType: "testMod", _target: motif,
                 _chemicalFormula: ChemicalFormula.ParseFormula("H1O3P1"), _locationRestriction: "Anywhere.");
+        }
+
+        private static Modification MakeOxidation()
+        {
+            ModificationMotif.TryGetMotif("M", out var motif);
+            return new Modification(_originalId: "oxidation", _modificationType: "testMod", _target: motif,
+                _chemicalFormula: ChemicalFormula.ParseFormula("O1"), _locationRestriction: "Anywhere.");
         }
 
         private static PeptideWithSetModifications MakeProteoform(string sequence, string accession, Dictionary<int, Modification> mods)
