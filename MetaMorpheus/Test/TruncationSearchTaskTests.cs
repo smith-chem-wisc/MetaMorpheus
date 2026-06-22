@@ -19,12 +19,6 @@ namespace Test
     public class TruncationSearchTaskTests
     {
         [Test]
-        public void Scaffolding_TestProjectWired()
-        {
-            Assert.That(true, Is.True);
-        }
-
-        [Test]
         public void TruncationSearchTask_Constructs_WithDefaultParameters()
         {
             var task = new TruncationSearchTask();

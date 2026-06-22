@@ -91,7 +91,13 @@ namespace Test
         public void Acceptor_ProseString_DescribesRule()
         {
             var prose = new TruncationAcceptor(new AbsoluteTolerance(0.5)).ToProseString();
+            // The prose must actually convey the acceptance rule (0 < observed <= theoretical + tolerance),
+            // not merely mention "observed". Assert the structural pieces - both mass terms and both
+            // comparison operators - while staying agnostic to how the tolerance itself renders.
             Assert.That(prose, Does.Contain("observed"));
+            Assert.That(prose, Does.Contain("theoretical"));
+            Assert.That(prose, Does.Contain("0 <"));
+            Assert.That(prose, Does.Contain("<="));
         }
 
         // ---------- Pass 2 engine: synthetic fixture (3 parents, 8 scans) ----------

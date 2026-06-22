@@ -204,6 +204,12 @@ namespace Test
             Assert.That(result.TruncatedForm.AllModsOneIsNterminus[8].OriginalId, Is.EqualTo("cterm-amide"));
         }
 
+        /// <summary>
+        /// Pass-3-level companion to NoMatchScan_ReturnsNull: an unreachable precursor (parent mass - 0.5 Da,
+        /// which no whole-residue chop can hit) must flow through ScoreTruncation as a clean null - not a thrown
+        /// exception and not a fabricated zero-score PSM. This is the guard that keeps unmatchable scans out of
+        /// the results entirely.
+        /// </summary>
         [Test]
         public void ScoreTruncation_ReturnsNull_WhenNoChopMatches()
         {
@@ -214,6 +220,11 @@ namespace Test
             Assert.That(psm, Is.Null);
         }
 
+        /// <summary>
+        /// End-to-end Pass 3: a winning C-terminal ion series chops the N-terminus, and the result must be
+        /// labeled NTerminalTruncation with the correct start residue (6). Verifies the full
+        /// winning-series -> chosen-terminus -> product-type-label chain, not just the chop in isolation.
+        /// </summary>
         [Test]
         public void ScoreTruncation_LabelsNTerminalTruncation()
         {
@@ -229,6 +240,12 @@ namespace Test
             Assert.That(psm.TruncatedForm.OneBasedStartResidueInProtein, Is.EqualTo(6));
         }
 
+        /// <summary>
+        /// Removing exactly the initiator methionine is the canonical co-translational event "Met excision"
+        /// (NME), not an artifactual truncation, so it must be labeled NTerminalMetExcision and explicitly NOT
+        /// NTerminalTruncation. Paired with the non-Met case below to pin the label to the identity of the
+        /// removed residue, not merely the count.
+        /// </summary>
         [Test]
         public void ChopFromNTerm_SingleInitiatorMet_LabeledMetExcision()
         {
@@ -245,6 +262,10 @@ namespace Test
             Assert.That(result.TruncatedForm.Description, Does.Not.StartWith(TruncationPass3.NTerminalTruncation));
         }
 
+        /// <summary>
+        /// Contrast to the initiator-Met case: the same single-residue N-terminal chop, but residue 1 is Ala,
+        /// not Met -> a genuine N-terminal truncation, not NME. Guards the methionine-specificity of the NME label.
+        /// </summary>
         [Test]
         public void ChopFromNTerm_SingleNonMet_IsNTerminalTruncation()
         {
@@ -259,6 +280,11 @@ namespace Test
             Assert.That(result.TruncatedForm.Description, Does.StartWith(TruncationPass3.NTerminalTruncation));
         }
 
+        /// <summary>
+        /// NME is strictly the single initiator methionine. Removing the Met PLUS additional residues is a real
+        /// N-terminal truncation - this guards against a naive "sequence starts with M -> call it NME"
+        /// misclassification.
+        /// </summary>
         [Test]
         public void ChopFromNTerm_MetPlusMoreResidues_IsNTerminalTruncation()
         {
@@ -273,6 +299,11 @@ namespace Test
             Assert.That(result.TruncatedForm.Description, Does.StartWith(TruncationPass3.NTerminalTruncation));
         }
 
+        /// <summary>
+        /// The combined canonical proteoform: initiator-Met excision exposes a residue that is then
+        /// N-terminally acetylated. Must be labeled NTerminalMetExcisionPlusAcetyl. Together with the three
+        /// tests above this completes the four-branch Met / extra-residues / acetyl labeling decision tree.
+        /// </summary>
         [Test]
         public void ChopFromNTerm_MetExcisionWithAcetyl_LabeledMetExcisionPlusAcetyl()
         {
@@ -290,6 +321,12 @@ namespace Test
             Assert.That(result.TruncatedForm.Description, Does.StartWith(TruncationPass3.NTerminalMetExcisionPlusAcetyl));
         }
 
+        /// <summary>
+        /// An internal fragment removes residues from BOTH termini (here 5 from the N-terminus and 10 from the
+        /// C-terminus -> P1[6..40]). ChopInternalCandidates must enumerate the bilateral chop, report the correct
+        /// total residues chopped (15) at the exact notch (0), and label it InternalTruncation. Exercises the
+        /// chopper primitive directly.
+        /// </summary>
         [Test]
         public void ChopInternal_RecoversInternalSpan_LabeledInternal()
         {
@@ -306,6 +343,13 @@ namespace Test
             Assert.That(hit.TruncatedForm.Description, Does.StartWith(TruncationPass3.InternalTruncation));
         }
 
+        /// <summary>
+        /// Engine-level companion to ChopInternal_RecoversInternalSpan: the direct internal search must enumerate
+        /// the internal fragment P1[6..40] from its parent, clear the bilateral ion gate (>= 2 ions per terminus),
+        /// and report exactly one InternalTruncation PSM with the right span. Verifies functional recovery on a
+        /// clean synthetic case; its FDR behavior in dense spectra - the reason this search ships off by default -
+        /// is a system-level property tested elsewhere.
+        /// </summary>
         [Test]
         public void InternalSearch_RecoversInternalFragment_FromParent()
         {
