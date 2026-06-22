@@ -230,9 +230,23 @@ namespace TaskLayer
             WriteOutputs(withFdr, OutputFolder, taskId);
 
             // Diagnostic side file: per-scan winning-parent rank in the index match-count ordering.
-            string ranksPath = Path.Combine(OutputFolder, "CandidateRanks.tsv");
-            File.WriteAllLines(ranksPath,
-                new[] { "File\tScanNumber\tCandidateRank\tCandidatePoolSize\tScore\tProducedTruncation" }.Concat(winnerRankRows));
+            // Opt-in (gated on the same PerfLogPath that enables benchmarking), registered via
+            // FinishedWritingFile, and best-effort so a diagnostic-write failure can't abort an otherwise
+            // successful task (#14).
+            if (!string.IsNullOrWhiteSpace(TruncationSearchParameters.PerfLogPath))
+            {
+                try
+                {
+                    string ranksPath = Path.Combine(OutputFolder, "CandidateRanks.tsv");
+                    File.WriteAllLines(ranksPath,
+                        new[] { "File\tScanNumber\tCandidateRank\tCandidatePoolSize\tScore\tProducedTruncation" }.Concat(winnerRankRows));
+                    FinishedWritingFile(ranksPath, new List<string> { taskId });
+                }
+                catch (Exception ex)
+                {
+                    Warn($"Could not write diagnostic CandidateRanks.tsv: {ex.Message}");
+                }
+            }
 
             // 6. Optional perf-log row (03_Benchmarks). No-op unless a path is configured.
             if (!string.IsNullOrWhiteSpace(TruncationSearchParameters.PerfLogPath))
@@ -362,6 +376,8 @@ namespace TaskLayer
                 }
 
                 // Record whether the PEP q-value (vs notch q-value) drove inclusion (perf logging).
+                // By design this reflects the in-memory parent path only; the disk/db-seeded paths leave the
+                // metric false because PsmFromTsv's PEP column is ambiguous there (#15, intentional).
                 FdrInfo fdr = psm.GetFdrInfo(peptideLevel: true) ?? psm.GetFdrInfo(peptideLevel: false);
                 if (fdr != null && fdr.PEP_QValue != 2)
                 {
@@ -573,6 +589,11 @@ namespace TaskLayer
         /// <summary>Permissive parent filter (#3) for disk rows (PsmFromTsv stores PEP_QValue/QValueNotch).</summary>
         private static bool PassesDiskParentFilter(PsmFromTsv row, double threshold)
         {
+            // 0 is treated as "PEP not computed" alongside the 2 sentinel ON PURPOSE for disk rows:
+            // PsmFromTsv defaults an absent/empty PEP_QValue column to 0, so a disk 0 is ambiguous (absent
+            // column vs a genuine best-possible 0.0) and the two cannot be told apart here. Falling back to
+            // the notch q-value when PEP==0 is the safe choice. Do NOT "simplify" this to `!= 2` only -- that
+            // would pass absent-PEP rows as if q=0 (reviewed: findings #11/#15, intentional wontfix).
             if (row.PEP_QValue != 0 && row.PEP_QValue != 2)
             {
                 return row.PEP_QValue <= threshold;

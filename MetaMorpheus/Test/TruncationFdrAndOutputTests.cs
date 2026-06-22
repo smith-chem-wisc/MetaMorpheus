@@ -79,6 +79,11 @@ namespace Test
                 new List<(string, CommonParameters)> { ("synthetic", _cp) }, "TruncationTask", doPep: true));
 
             Assert.That(result.All(p => p.FdrInfo.QValue >= 0 && p.FdrInfo.QValue <= 1), Is.True);
+
+            // Pin the branch, not just absence-of-throw: a 2-PSM pool can't train PEP, so PEP must be
+            // SKIPPED -- every row keeps the "PEP not computed" sentinel (PEP_QValue == 2), rather than
+            // silently emitting an untrained PEP q-value (#18).
+            Assert.That(result.All(p => p.FdrInfo.PEP_QValue == 2), Is.True);
         }
 
         [Test]

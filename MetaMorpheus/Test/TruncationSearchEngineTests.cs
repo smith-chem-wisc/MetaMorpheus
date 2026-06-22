@@ -214,6 +214,15 @@ namespace Test
             Assert.That(s7.Outcome, Is.EqualTo(TruncationScanOutcome.Winner));
             Assert.That(s7.WinningParent.ProteinAccession, Is.EqualTo("P1"));
             Assert.That(s7.WinningSeries, Is.EqualTo(FragmentationTerminus.N));
+
+            // The opposing-series peaks must not be MATCHED: they can only dilute the intensity-normalized
+            // score (they enlarge the total-intensity denominator), never raise it, and must not change the
+            // integer matched-ion count -- i.e. the score moves by less than one ion. (Verified empirically:
+            // exact equality fails because the two extra peaks shift the normalization by ~0.05; a matched
+            // opposing ion would instead RAISE the score by ~1.) (#17)
+            var s2 = _results[1];
+            Assert.That(s7.Score, Is.LessThanOrEqualTo(s2.Score));
+            Assert.That(s2.Score - s7.Score, Is.LessThan(1.0));
         }
 
         [Test]
