@@ -67,13 +67,15 @@ namespace TaskLayer
         {
             (string commit, bool dirty) = TryGetGitState();
             string inv(double d) => d.ToString("0.###", CultureInfo.InvariantCulture);
+            // Guard against a stray tab/newline in a string cell shifting every later TSV column.
+            string san(string s) => s == null ? "" : s.Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ');
             double peakMb = Process.GetCurrentProcess().PeakWorkingSet64 / 1024.0 / 1024.0;
 
             string[] cells =
             {
                 DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
-                commit, dirty ? "true" : "false", m.Phase, m.TaskType, m.DatasetTag, m.RunLabel,
-                m.OutputFolder, m.NRawFiles.ToString(CultureInfo.InvariantCulture),
+                san(commit), dirty ? "true" : "false", san(m.Phase), san(m.TaskType), san(m.DatasetTag), san(m.RunLabel),
+                san(m.OutputFolder), m.NRawFiles.ToString(CultureInfo.InvariantCulture),
                 m.TotalMs2Scans.ToString(CultureInfo.InvariantCulture), inv(m.TaskWallSeconds), inv(peakMb),
                 m.NPsmsEmitted.ToString(CultureInfo.InvariantCulture), m.NProteoformsEmitted.ToString(CultureInfo.InvariantCulture),
                 m.NPsmsQ01.ToString(CultureInfo.InvariantCulture), m.NProteoformsQ01.ToString(CultureInfo.InvariantCulture),
@@ -152,6 +154,7 @@ namespace TaskLayer
                 return null;
             }
             string output = p.StandardOutput.ReadToEnd();
+            p.StandardError.ReadToEnd(); // drain stderr so a chatty git can't fill the pipe buffer and block WaitForExit
             p.WaitForExit(5000);
             return p.ExitCode == 0 ? output : null;
         }

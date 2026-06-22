@@ -17,10 +17,11 @@ namespace TaskLayer
         /// <summary>Store <paramref name="result"/> under <paramref name="taskId"/>, overwriting any prior value.</summary>
         public void Deposit<T>(string taskId, T result)
         {
-            if (!_results.ContainsKey(taskId))
-            {
-                _depositOrder.Add(taskId);
-            }
+            // Refresh recency on overwrite: a re-deposit under an existing id must count as the most
+            // recent for TryGetMostRecent. Remove-then-add keeps _depositOrder in true deposit order.
+            // (List.Remove is a no-op when the id isn't present yet.)
+            _depositOrder.Remove(taskId);
+            _depositOrder.Add(taskId);
 
             _results[taskId] = result;
         }

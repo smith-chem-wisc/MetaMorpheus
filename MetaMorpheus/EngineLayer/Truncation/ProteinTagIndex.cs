@@ -85,7 +85,9 @@ namespace EngineLayer.Truncation
         public List<int> GetCandidateProteinIds(IEnumerable<string> tags, int minTagHits = 1)
         {
             var hitsPerProtein = new Dictionary<int, int>();
-            foreach (string tag in tags)
+            // Count each DISTINCT query tag at most once; the contract is "distinct query tags",
+            // so a tag repeated in the input must not inflate a protein toward minTagHits.
+            foreach (string tag in new HashSet<string>(tags))
             {
                 if (tag.Length != TagLength) continue;
                 if (!_kmerToProteinIds.TryGetValue(tag, out List<int> ids)) continue;
