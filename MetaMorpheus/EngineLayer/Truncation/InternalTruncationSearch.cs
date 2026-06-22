@@ -26,7 +26,12 @@ namespace EngineLayer.Truncation
     public static class InternalTruncationSearch
     {
         private const double WaterMonoisotopicMass = 18.0105646;
-        private const double NotchSearchWindow = 3.6; // covers up to ±3 monoisotopic notches plus tolerance
+        // Prefix-window half-width for the internal-span mass search, sized to cover up to ±3 monoisotopic
+        // notches plus precursor tolerance. NOTE: this is a fixed constant, NOT derived from the supplied
+        // acceptor — if an acceptor permitting a wider notch span than this is ever used, some valid internal
+        // spans could be missed. The shipped acceptors stay within ±3 notches; widen this constant (or derive
+        // it from the acceptor's notch range) before pairing the internal search with a wider acceptor. (#8)
+        private const double NotchSearchWindow = 3.6;
 
         private static readonly double[] ResidueMass = BuildResidueTable();
 

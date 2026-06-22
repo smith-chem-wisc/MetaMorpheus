@@ -112,6 +112,11 @@ namespace TaskLayer
 
             // Per-scan tag restriction is applied in the engine only when both the tag filter and the per-scan
             // flag are on; otherwise null = no restriction (global-union or non-tag paths).
+            if (TruncationSearchParameters.UsePerScanTagRestriction && perScanAllowed == null)
+            {
+                Warn("UsePerScanTagRestriction is set but has no effect: it requires both SeedParentsFromDatabase " +
+                     "and UseSequenceTagFilter to be enabled. Proceeding without per-scan restriction.");
+            }
             IReadOnlyDictionary<Ms2ScanWithSpecificMass, HashSet<string>> allowedByScan =
                 TruncationSearchParameters.UsePerScanTagRestriction ? perScanAllowed : null;
 

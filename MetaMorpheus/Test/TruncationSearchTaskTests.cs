@@ -95,17 +95,21 @@ namespace Test
 
             string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TruncationRoundTrip.toml");
             Toml.WriteFile(task, tomlPath, MetaMorpheusTask.tomlConfig);
+            try
+            {
+                // CMD dispatches on this raw string (Program.cs switch).
+                Assert.That(Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig).Get<string>("TaskType"), Is.EqualTo("Truncation"));
 
-            // CMD dispatches on this raw string (Program.cs switch).
-            Assert.That(Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig).Get<string>("TaskType"), Is.EqualTo("Truncation"));
-
-            var read = Toml.ReadFile<TruncationSearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
-            Assert.That(read.TaskType, Is.EqualTo(MyTask.Truncation));
-            Assert.That(read.TruncationSearchParameters.UpstreamSearchTaskId, Is.EqualTo("Task1SearchTask"));
-            Assert.That(read.TruncationSearchParameters.ParentQValueThreshold, Is.EqualTo(0.05));
-            Assert.That(read.TruncationSearchParameters.MassDiffAcceptorType, Is.EqualTo(MassDiffAcceptorType.TwoMM));
-
-            File.Delete(tomlPath);
+                var read = Toml.ReadFile<TruncationSearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+                Assert.That(read.TaskType, Is.EqualTo(MyTask.Truncation));
+                Assert.That(read.TruncationSearchParameters.UpstreamSearchTaskId, Is.EqualTo("Task1SearchTask"));
+                Assert.That(read.TruncationSearchParameters.ParentQValueThreshold, Is.EqualTo(0.05));
+                Assert.That(read.TruncationSearchParameters.MassDiffAcceptorType, Is.EqualTo(MassDiffAcceptorType.TwoMM));
+            }
+            finally
+            {
+                File.Delete(tomlPath);
+            }
         }
 
         [Test]
@@ -128,18 +132,22 @@ namespace Test
         {
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "perf_log_unit.tsv");
             if (File.Exists(path)) File.Delete(path);
+            try
+            {
+                PerfLogger.Append(path, new TruncationPerfMetrics { NPsmsEmitted = 5, NTruncationsNterm = 3 });
+                PerfLogger.Append(path, new TruncationPerfMetrics { NPsmsEmitted = 9, NTruncationsCterm = 2 });
 
-            PerfLogger.Append(path, new TruncationPerfMetrics { NPsmsEmitted = 5, NTruncationsNterm = 3 });
-            PerfLogger.Append(path, new TruncationPerfMetrics { NPsmsEmitted = 9, NTruncationsCterm = 2 });
-
-            string[] lines = File.ReadAllLines(path);
-            Assert.That(lines.Length, Is.EqualTo(3), "Expected one header + two data rows.");
-            Assert.That(lines[0].Split('\t'), Does.Contain("n_psms_emitted"));
-            int col = System.Array.IndexOf(lines[0].Split('\t'), "n_psms_emitted");
-            Assert.That(lines[1].Split('\t')[col], Is.EqualTo("5"));
-            Assert.That(lines[2].Split('\t')[col], Is.EqualTo("9"));
-
-            File.Delete(path);
+                string[] lines = File.ReadAllLines(path);
+                Assert.That(lines.Length, Is.EqualTo(3), "Expected one header + two data rows.");
+                Assert.That(lines[0].Split('\t'), Does.Contain("n_psms_emitted"));
+                int col = System.Array.IndexOf(lines[0].Split('\t'), "n_psms_emitted");
+                Assert.That(lines[1].Split('\t')[col], Is.EqualTo("5"));
+                Assert.That(lines[2].Split('\t')[col], Is.EqualTo("9"));
+            }
+            finally
+            {
+                File.Delete(path);
+            }
         }
 
         /// <summary>
@@ -155,68 +163,74 @@ namespace Test
             if (Directory.Exists(outDirectory))
                 Directory.Delete(outDirectory, true);
 
-            // Canonical tiny top-down fixture that actually produces proteoform hits (mirrors the
-            // EverythingRunnerEngine TopDownQValue case): sliced yeast TD data + small yeast DB.
-            string dataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "slicedTDYeast.mzML");
-            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
-            string topDownSearchToml = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TopDownSearchToml.toml");
-
-            var searchTask = Toml.ReadFile<SearchTask>(topDownSearchToml, MetaMorpheusTask.tomlConfig);
-
-            var truncationTask = new TruncationSearchTask();
-            // Consume the upstream search's proteoforms in-memory (#1) and use the same top-down-tuned
-            // CommonParameters so MS2 deconvolution + the intact-skip tolerance match Pass 1.
-            truncationTask.TruncationSearchParameters.UpstreamSearchTaskId = "Task1-SearchTask";
-            truncationTask.CommonParameters = Toml.ReadFile<SearchTask>(topDownSearchToml, MetaMorpheusTask.tomlConfig).CommonParameters;
-            // Also exercise the optional perf-log path (03_Benchmarks).
-            string perfLogPath = Path.Combine(outDirectory, "perf_log.tsv");
-            truncationTask.TruncationSearchParameters.PerfLogPath = perfLogPath;
-
-            var taskList = new List<(string, MetaMorpheusTask)>
+            try
             {
-                ("Task1-SearchTask", searchTask),
-                ("Task2-TruncationSearchTask", truncationTask)
-            };
+                // Canonical tiny top-down fixture that actually produces proteoform hits (mirrors the
+                // EverythingRunnerEngine TopDownQValue case): sliced yeast TD data + small yeast DB.
+                string dataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "slicedTDYeast.mzML");
+                string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
+                string topDownSearchToml = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TopDownSearchToml.toml");
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { dataPath },
-                new List<DbForTask> { new DbForTask(dbPath, false) }, outDirectory);
+                var searchTask = Toml.ReadFile<SearchTask>(topDownSearchToml, MetaMorpheusTask.tomlConfig);
 
-            Assert.DoesNotThrow(() => engine.Run());
+                var truncationTask = new TruncationSearchTask();
+                // Consume the upstream search's proteoforms in-memory (#1) and use the same top-down-tuned
+                // CommonParameters so MS2 deconvolution + the intact-skip tolerance match Pass 1.
+                truncationTask.TruncationSearchParameters.UpstreamSearchTaskId = "Task1-SearchTask";
+                truncationTask.CommonParameters = Toml.ReadFile<SearchTask>(topDownSearchToml, MetaMorpheusTask.tomlConfig).CommonParameters;
+                // Also exercise the optional perf-log path (03_Benchmarks).
+                string perfLogPath = Path.Combine(outDirectory, "perf_log.tsv");
+                truncationTask.TruncationSearchParameters.PerfLogPath = perfLogPath;
 
-            string truncationOutput = Path.Combine(outDirectory, "Task2-TruncationSearchTask");
-            Assert.That(Directory.Exists(truncationOutput), Is.True, "TruncationSearchTask did not produce an output folder.");
+                var taskList = new List<(string, MetaMorpheusTask)>
+                {
+                    ("Task1-SearchTask", searchTask),
+                    ("Task2-TruncationSearchTask", truncationTask)
+                };
 
-            string psmsPath = Path.Combine(truncationOutput, TruncationSearchTask.TruncatedPsmsFileName);
-            string proteoformsPath = Path.Combine(truncationOutput, TruncationSearchTask.TruncatedProteoformsFileName);
-            Assert.That(File.Exists(psmsPath), Is.True, "AllTruncatedPSMs.psmtsv was not written.");
-            Assert.That(File.Exists(proteoformsPath), Is.True, "AllTruncatedProteoforms.psmtsv was not written.");
+                var engine = new EverythingRunnerEngine(taskList, new List<string> { dataPath },
+                    new List<DbForTask> { new DbForTask(dbPath, false) }, outDirectory);
 
-            // Both files carry the standard psmtsv header and the pooled run produced at least one row
-            // (the upstream search's intact match, inherited as a full-length form per #4a).
-            string expectedHeader = SpectralMatch.GetTabSeparatedHeader();
-            string[] psmLines = File.ReadAllLines(psmsPath);
-            string[] proteoformLines = File.ReadAllLines(proteoformsPath);
-            Assert.That(psmLines[0].TrimEnd(), Is.EqualTo(expectedHeader.TrimEnd()));
-            Assert.That(proteoformLines[0].TrimEnd(), Is.EqualTo(expectedHeader.TrimEnd()));
-            Assert.That(psmLines.Length, Is.GreaterThan(1), "Expected at least one pooled PSM row.");
-            Assert.That(proteoformLines.Length, Is.GreaterThan(1), "Expected at least one pooled proteoform row.");
+                Assert.DoesNotThrow(() => engine.Run());
 
-            // Truncation type rides the Description column (#13); the inherited intact match is "full-length" (#4a).
-            Assert.That(psmLines.Skip(1).Any(line => line.Contains(TruncationPass3.FullLength)),
-                Is.True, "Expected an inherited full-length row in the truncation PSM output.");
+                string truncationOutput = Path.Combine(outDirectory, "Task2-TruncationSearchTask");
+                Assert.That(Directory.Exists(truncationOutput), Is.True, "TruncationSearchTask did not produce an output folder.");
 
-            // Perf log got one TruncationSearchTask row (header + >=1 data row).
-            Assert.That(File.Exists(perfLogPath), Is.True, "perf_log.tsv was not written.");
-            string[] perfLines = File.ReadAllLines(perfLogPath);
-            Assert.That(perfLines.Length, Is.GreaterThanOrEqualTo(2));
-            string[] perfHeader = perfLines[0].Split('\t');
-            int taskTypeCol = System.Array.IndexOf(perfHeader, "task_type");
-            int nPsmsCol = System.Array.IndexOf(perfHeader, "n_psms_emitted");
-            string[] perfRow = perfLines[1].Split('\t');
-            Assert.That(perfRow[taskTypeCol], Is.EqualTo("TruncationSearchTask"));
-            Assert.That(int.Parse(perfRow[nPsmsCol]), Is.EqualTo(psmLines.Length - 1), "perf n_psms_emitted should match the PSM TSV row count.");
+                string psmsPath = Path.Combine(truncationOutput, TruncationSearchTask.TruncatedPsmsFileName);
+                string proteoformsPath = Path.Combine(truncationOutput, TruncationSearchTask.TruncatedProteoformsFileName);
+                Assert.That(File.Exists(psmsPath), Is.True, "AllTruncatedPSMs.psmtsv was not written.");
+                Assert.That(File.Exists(proteoformsPath), Is.True, "AllTruncatedProteoforms.psmtsv was not written.");
 
-            Directory.Delete(outDirectory, true);
+                // Both files carry the standard psmtsv header and the pooled run produced at least one row
+                // (the upstream search's intact match, inherited as a full-length form per #4a).
+                string expectedHeader = SpectralMatch.GetTabSeparatedHeader();
+                string[] psmLines = File.ReadAllLines(psmsPath);
+                string[] proteoformLines = File.ReadAllLines(proteoformsPath);
+                Assert.That(psmLines[0].TrimEnd(), Is.EqualTo(expectedHeader.TrimEnd()));
+                Assert.That(proteoformLines[0].TrimEnd(), Is.EqualTo(expectedHeader.TrimEnd()));
+                Assert.That(psmLines.Length, Is.GreaterThan(1), "Expected at least one pooled PSM row.");
+                Assert.That(proteoformLines.Length, Is.GreaterThan(1), "Expected at least one pooled proteoform row.");
+
+                // Truncation type rides the Description column (#13); the inherited intact match is "full-length" (#4a).
+                Assert.That(psmLines.Skip(1).Any(line => line.Contains(TruncationPass3.FullLength)),
+                    Is.True, "Expected an inherited full-length row in the truncation PSM output.");
+
+                // Perf log got one TruncationSearchTask row (header + >=1 data row).
+                Assert.That(File.Exists(perfLogPath), Is.True, "perf_log.tsv was not written.");
+                string[] perfLines = File.ReadAllLines(perfLogPath);
+                Assert.That(perfLines.Length, Is.GreaterThanOrEqualTo(2));
+                string[] perfHeader = perfLines[0].Split('\t');
+                int taskTypeCol = System.Array.IndexOf(perfHeader, "task_type");
+                int nPsmsCol = System.Array.IndexOf(perfHeader, "n_psms_emitted");
+                string[] perfRow = perfLines[1].Split('\t');
+                Assert.That(perfRow[taskTypeCol], Is.EqualTo("TruncationSearchTask"));
+                Assert.That(int.Parse(perfRow[nPsmsCol]), Is.EqualTo(psmLines.Length - 1), "perf n_psms_emitted should match the PSM TSV row count.");
+            }
+            finally
+            {
+                if (Directory.Exists(outDirectory))
+                    Directory.Delete(outDirectory, true);
+            }
         }
     }
 }
