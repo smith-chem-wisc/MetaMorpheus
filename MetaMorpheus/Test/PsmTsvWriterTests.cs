@@ -11,6 +11,7 @@ using Omics.Modifications;
 using Easy.Common.Extensions;
 using EngineLayer.SpectrumMatch;
 using Readers;
+using Readers.ProForma;
 using EngineLayer.FdrAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -516,6 +517,75 @@ namespace Test
             Assert.That(psmStringSplit[qValueNotchIndex], Is.EqualTo("0.040000"));
             Assert.That(psmStringSplit[localizedScoresIndex], Contains.Substring("8.000"));
             Assert.That(psmStringSplit[localizedScoresIndex], Contains.Substring("9.500"));
+        }
+
+        /// <summary>
+        /// Top-down (AnalyteType.Proteoform): the ProForma column is emitted immediately after Full
+        /// Sequence in both header and data row, and carries the proteoform's ProForma 2.0 string.
+        /// Both AllPSMs and AllProteoforms go through this same GetTabSeparatedHeader/ToString path,
+        /// so this covers the column in both output files.
+        /// </summary>
+        [Test]
+        public static void ProForma_TopDownSearch_ColumnFollowsFullSequenceAndCarriesProFormaString()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Proteoform;
+            try
+            {
+                ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
+                Modification oxidation = new Modification(_originalId: "Oxidation", _modificationType: "Common Variable",
+                    _target: motif, _locationRestriction: "Anywhere.",
+                    _chemicalFormula: new ChemicalFormula(ChemicalFormula.ParseFormula("O1")));
+
+                var allModsOneIsNterminus = new Dictionary<int, Modification> { { 2, oxidation } }; // residue 1 (M)
+                Protein protein = new Protein("MPEPTIDEK", "prot_td");
+                PeptideWithSetModifications proteoform = new PeptideWithSetModifications(
+                    protein, new DigestionParams(), 1, 9, CleavageSpecificity.Full, "", 0, allModsOneIsNterminus, 0);
+
+                double mass = 12.0 + proteoform.MonoisotopicMass.ToMz(1);
+                var scan = new Ms2ScanWithSpecificMass(
+                    new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                        0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                    mass, 1, "", new CommonParameters());
+
+                var psm = new PeptideSpectralMatch(proteoform, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                psm.ResolveAllAmbiguities();
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fullSeqIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FullSequence);
+                int proFormaIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ProForma);
+
+                // Column is present and sits immediately after Full Sequence.
+                Assert.That(proFormaIndex, Is.EqualTo(fullSeqIndex + 1));
+
+                string[] rowSplits = psm.ToString(new Dictionary<string, int>()).Split('\t');
+                // Value is the proteoform's canonical ProForma string, carrying the modification descriptor.
+                Assert.That(rowSplits[proFormaIndex], Is.EqualTo(proteoform.ToProFormaString()));
+                Assert.That(rowSplits[proFormaIndex], Does.Contain("[Oxidation]"));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// Bottom-up (AnalyteType.Peptide): the ProForma column must NOT appear in the output header.
+        /// </summary>
+        [Test]
+        public static void ProForma_BottomUpSearch_ColumnAbsent()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
+            try
+            {
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                Assert.That(headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ProForma), Is.EqualTo(-1));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
         }
     }
 }

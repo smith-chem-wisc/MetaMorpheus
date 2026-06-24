@@ -11,6 +11,7 @@ using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
+using Readers.ProForma;
 
 namespace EngineLayer
 {
@@ -198,6 +199,10 @@ namespace EngineLayer
 
             s[SpectrumMatchFromTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : sm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString;
             s[SpectrumMatchFromTsvHeader.FullSequence] = pepWithModsIsNull ? " " : sm.FullSequence != null ? sm.FullSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString;
+            // ProForma 2.0 string, top-down only, immediately after Full Sequence. Gated on the run's
+            // analyte type so the header (sm == null) and the data rows include/exclude the column together.
+            if (GlobalVariables.AnalyteType == AnalyteType.Proteoform)
+                s[SpectrumMatchFromTsvHeader.ProForma] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.ToProFormaString())).ResolvedString;
             s[SpectrumMatchFromTsvHeader.EssentialSequence] = pepWithModsIsNull ? " " : sm.EssentialSequence != null ? sm.EssentialSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
             string geneString = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Parent.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.AmbiguityLevel] = ProteoformLevelClassifier.ClassifyPrSM(s[SpectrumMatchFromTsvHeader.FullSequence], geneString);
