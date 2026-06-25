@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -118,6 +118,15 @@ namespace GuiFunctions
             get => _productIonMassTolerance;
             set { _productIonMassTolerance = value; OnPropertyChanged(nameof(ProductIonMassTolerance)); }
         }
+
+        private string _selectedToleranceUnit = "ppm";
+        public string SelectedToleranceUnit
+        {
+            get => _selectedToleranceUnit;
+            set { _selectedToleranceUnit = value; OnPropertyChanged(nameof(SelectedToleranceUnit)); }
+        }
+
+        public ObservableCollection<string> PossibleToleranceUnits { get; } = ["ppm", "Da"];
 
         private bool _matchAllCharges;
         public bool MatchAllCharges
@@ -274,8 +283,13 @@ namespace GuiFunctions
                 );
 
 
-            if (Math.Abs(commonParams.ProductMassTolerance.Value - ProductIonMassTolerance) > 0.00001)
-                commonParams.ProductMassTolerance = new PpmTolerance(ProductIonMassTolerance);
+            bool valueChanged = Math.Abs(commonParams.ProductMassTolerance.Value - ProductIonMassTolerance) > 0.00001;
+            bool typeChanged = (SelectedToleranceUnit == "Da" && commonParams.ProductMassTolerance is not AbsoluteTolerance)
+                || (SelectedToleranceUnit == "ppm" && commonParams.ProductMassTolerance is not PpmTolerance);
+            if (typeChanged || valueChanged)
+                commonParams.ProductMassTolerance = SelectedToleranceUnit == "ppm"
+                    ? new PpmTolerance(ProductIonMassTolerance)
+                    : new AbsoluteTolerance(ProductIonMassTolerance);
 
             var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, smToRematch.PrecursorMz,
                 smToRematch.PrecursorCharge, smToRematch.FileNameWithoutExtension, commonParams);
@@ -286,7 +300,7 @@ namespace GuiFunctions
                 : newMatches;
 
             uniqueMatches = uniqueMatches.Where(p => productsSnapshot.Contains(p.NeutralTheoreticalProduct.ProductType))
-                .Where(p => Math.Abs(p.MassErrorPpm) <= ProductIonMassTolerance);
+                .Where(p => Math.Abs(SelectedToleranceUnit == "ppm" ? p.MassErrorPpm : p.MassErrorDa) <= ProductIonMassTolerance);
 
             // retain only internal ions
             if (!FragmentationParamsViewModel.GenerateInternalIons)
