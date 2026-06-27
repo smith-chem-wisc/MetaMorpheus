@@ -991,6 +991,7 @@ namespace GuiFunctions
                 "File Name" => psm.FileNameWithoutExtension,
                 "Ambiguity Level" => psm.AmbiguityLevel ?? "1",
                 "Missed Cleavages" => psm.MissedCleavage ?? "0",
+                "Collision Energy" => psm.CollisionEnergy?.ToString(CultureInfo.InvariantCulture) ?? "N/A",
                 "OrganismName" => psm.OrganismName,
                 "DecoyContamTarget" => psm.DecoyContamTarget,
 

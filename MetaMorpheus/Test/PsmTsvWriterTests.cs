@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
@@ -517,5 +517,148 @@ namespace Test
             Assert.That(psmStringSplit[localizedScoresIndex], Contains.Substring("8.000"));
             Assert.That(psmStringSplit[localizedScoresIndex], Contains.Substring("9.500"));
         }
+        #region Collisional Energy Tests
+
+        [Test]
+        public static void TestCollisionalEnergy_ParsedFromScan()
+        {
+            var protein = new Protein("PEPTIDE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, "",
+                    hcdEnergy: "42.00"),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+
+            Assert.That(psm.CollisionalEnergy, Is.EqualTo(42.0));
+        }
+
+        [Test]
+        public static void TestCollisionalEnergy_NullWhenNoHcdEnergy()
+        {
+            var protein = new Protein("PEPTIDE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+
+            Assert.That(psm.CollisionalEnergy, Is.Null);
+        }
+
+        [Test]
+        public static void TestCollisionalEnergy_NullWhenInvalidHcdEnergy()
+        {
+            var protein = new Protein("PEPTIDE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, "",
+                    hcdEnergy: "N/A"),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+
+            Assert.That(psm.CollisionalEnergy, Is.Null);
+        }
+
+        [Test]
+        public static void TestCollisionalEnergy_ColumnInOutputWhenFlagSet()
+        {
+            var protein = new Protein("PEPTIDE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, "",
+                    hcdEnergy: "28"),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+
+            var headerSplits = SpectralMatch.GetTabSeparatedHeader(includeCollisionalEnergyColumn: true).Split('\t');
+            var psmString = psm.ToString(new Dictionary<string, int>(), includeCollisionalEnergyColumn: true);
+            var psmSplits = psmString.Split('\t');
+
+            var collisionEnergyIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.CollisionEnergy);
+            Assert.That(collisionEnergyIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(psmSplits[collisionEnergyIndex], Is.EqualTo("28.00"));
+        }
+
+        [Test]
+        public static void TestCollisionalEnergy_ColumnNotIncludedByDefault()
+        {
+            var protein = new Protein("PEPTIDE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, "",
+                    hcdEnergy: "28"),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+
+            var headerDefault = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+            var headerWithCol = SpectralMatch.GetTabSeparatedHeader(includeCollisionalEnergyColumn: true).Split('\t');
+
+            Assert.That(headerDefault, Does.Not.Contain(SpectrumMatchFromTsvHeader.CollisionEnergy));
+            Assert.That(headerWithCol, Does.Contain(SpectrumMatchFromTsvHeader.CollisionEnergy));
+        }
+
+        [Test]
+        public static void TestCollisionalEnergy_WritesNotAvailable_WhenMissing()
+        {
+            var protein = new Protein("PEPTIDE", "TestProtein");
+            var digestionParams = new DigestionParams();
+            var peptide = new PeptideWithSetModifications(protein, digestionParams, 1, 7,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var mfi = new List<MatchedFragmentIon>();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), mfi);
+
+            var headerSplits = SpectralMatch.GetTabSeparatedHeader(includeCollisionalEnergyColumn: true).Split('\t');
+            var psmString = psm.ToString(new Dictionary<string, int>(), includeCollisionalEnergyColumn: true);
+            var psmSplits = psmString.Split('\t');
+
+            var collisionEnergyIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.CollisionEnergy);
+            Assert.That(collisionEnergyIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(psmSplits[collisionEnergyIndex], Is.EqualTo("N/A"));
+        }
+
+        #endregion
     }
 }
