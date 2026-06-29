@@ -190,5 +190,58 @@ namespace Test
             // Default stays Monoisotopic.
             Assert.That(new CommonParameters().PrecursorMassMatchMode, Is.EqualTo(PrecursorMassMatchMode.Monoisotopic));
         }
+
+        [Test]
+        public static void Acceptor_ObservedIntervals_RecoverCandidateMonoWindows()
+        {
+            // The indexed (ModernSearch) path: GetAllowedPrecursorMassIntervalsFromObservedMass converts
+            // an observed most-abundant mass back to candidate-monoisotopic windows, one per apex notch.
+            const double peptideMono = 20000.0;
+            var tol = new PpmTolerance(5);
+            var acceptor = new MostAbundantMassDiffAcceptor("mostAbundant", tol, Averagine, maxApexOffsetNeutrons: 2);
+
+            double observedApex = peptideMono + ApexOffset(peptideMono);
+            var intervals = acceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(observedApex).ToList();
+            Assert.That(intervals.Count, Is.EqualTo(5));
+
+            // The on-apex window (notch 0) recovers the candidate's true monoisotopic mass.
+            var onApex = intervals.Find(i => i.Notch == 0);
+            Assert.That(onApex, Is.Not.Null);
+            Assert.That(onApex.Contains(peptideMono), Is.True);
+        }
+
+        [Test]
+        public static void DotAcceptor_Intervals_CoverShifts_AndRejectsFarCandidate()
+        {
+            const double peptideMono = 10000.0;
+            const double phospho = 79.96633;
+            var tol = new PpmTolerance(5);
+            var acc = new MostAbundantDotMassDiffAcceptor("g", new[] { 0.0, phospho }, tol, Averagine, maxApexOffsetNeutrons: 1);
+            int phosphoNotch = (int)Math.Round(phospho * MassDiffAcceptor.NotchScalar);
+
+            // 2 shifts × (2·1+1) apex offsets = 6 theoretical windows; the phospho apex is covered.
+            var theo = acc.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMono).ToList();
+            Assert.That(theo.Count, Is.EqualTo(6));
+            double shiftedApex = (peptideMono + phospho) + ApexOffset(peptideMono + phospho);
+            Assert.That(theo.Exists(i => i.Notch == phosphoNotch && i.Contains(shiftedApex)), Is.True);
+
+            // The observed-side conversion recovers the unmodified candidate's mono under notch 0.
+            var obs = acc.GetAllowedPrecursorMassIntervalsFromObservedMass(peptideMono + ApexOffset(peptideMono)).ToList();
+            Assert.That(obs.Count, Is.EqualTo(6));
+            Assert.That(obs.Exists(i => i.Notch == 0 && i.Contains(peptideMono)), Is.True);
+
+            // A candidate far from every shifted apex is rejected.
+            Assert.That(acc.Accepts(peptideMono + 500.0, peptideMono), Is.EqualTo(-1));
+        }
+
+        [Test]
+        public static void GptmdParameters_CreateFilter_ResolvesEveryKnownName_NullOtherwise()
+        {
+            Assert.That(GptmdParameters.CreateFilter(nameof(ImprovedScoreFilter)), Is.TypeOf<ImprovedScoreFilter>());
+            Assert.That(GptmdParameters.CreateFilter(nameof(DualDirectionalIonCoverageFilter)), Is.TypeOf<DualDirectionalIonCoverageFilter>());
+            Assert.That(GptmdParameters.CreateFilter(nameof(UniDirectionalIonCoverageFilter)), Is.TypeOf<UniDirectionalIonCoverageFilter>());
+            Assert.That(GptmdParameters.CreateFilter(nameof(FlankingIonCoverageFilter)), Is.TypeOf<FlankingIonCoverageFilter>());
+            Assert.That(GptmdParameters.CreateFilter("not-a-filter"), Is.Null);
+        }
     }
 }
