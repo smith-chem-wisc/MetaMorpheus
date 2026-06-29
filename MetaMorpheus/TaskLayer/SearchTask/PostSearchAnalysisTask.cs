@@ -154,7 +154,6 @@ namespace TaskLayer
 
             Status($"Done estimating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} FDR!", Parameters.SearchTaskId);
         }
-
         private void DisambiguateSpectralMatches()
         {
             try

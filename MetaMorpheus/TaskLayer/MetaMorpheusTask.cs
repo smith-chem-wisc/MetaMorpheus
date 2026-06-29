@@ -1091,10 +1091,11 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 bool includeOneOverK0Column = psms.Any(p => p.ScanOneOverK0.HasValue);
-                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column));
+                bool includeCollisionalEnergyColumn = psms.Any(p => p.CollisionalEnergy.HasValue);
+                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column, includeCollisionalEnergyColumn));
                 foreach (var psm in psms)
                 {
-                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column));
+                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn));
                 }
             }
         }
