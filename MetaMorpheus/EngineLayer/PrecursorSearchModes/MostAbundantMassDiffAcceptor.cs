@@ -25,8 +25,12 @@ namespace EngineLayer
     /// each match at tight ppm (and FDR controlled per-notch), this acceptor emits a small set of
     /// notches at <c>apex + k·C13</c> for k in [−<see cref="MaxApexOffsetNeutrons"/> ..
     /// +<see cref="MaxApexOffsetNeutrons"/>]. k = 0 is the confident on-apex match; nonzero k are the
-    /// apex-misprediction cases. Notch integers follow the existing DotMassDiffAcceptor convention
-    /// (round(shiftDa · NotchScalar)) so they never collide with the −1 "not accepted" sentinel.
+    /// apex-misprediction cases. Each k maps to a contiguous non-negative notch index (its 0-based
+    /// position in the apex-offset set), so notches are distinct per k, are always ≥ 0 (a negative
+    /// notch would be read as "not accepted" by a <c>notch >= 0</c> guard, e.g. in ModernSearch), and
+    /// never collide with the −1 "not accepted" sentinel. <see cref="MassDiffAcceptor.NumNotches"/> is
+    /// the count of these indices. Per-notch FDR groups PSMs by notch value, so any distinct encoding
+    /// works equally; the contiguous form is just the safe, sign-free choice.
     ///
     /// The scan-side mass is the envelope's most-abundant observed neutral mass (PrecursorMassToMatch).
     /// Isotopically unresolved species would supply an average mass and need
@@ -61,13 +65,15 @@ namespace EngineLayer
             NumNotches = ApexOffsetsInNeutrons.Length;
         }
 
-        private static int NotchFor(int k) => (int)Math.Round(k * Constants.C13MinusC12 * NotchScalar);
+        // Contiguous, non-negative notch id for an apex offset k: its position in the ordered offset
+        // set ({0, -1, 1, -2, 2}). Distinct per k, never negative, never the -1 "not accepted" sentinel.
+        private int NotchFor(int k) => Array.IndexOf(ApexOffsetsInNeutrons, k);
 
         // The averagine most-abundant offset for a monoisotopic mass: the model's diff-to-monoisotopic
         // at the nearest mass bin. (Composes the existing AverageResidue API rather than relying on a
         // dedicated mzLib method.)
         private double ApexOffset(double monoisotopicMass)
-            => Averagine.GetDiffToMonoisotopic(Averagine.GetMostIntenseMassIndex(monoisotopicMass));
+            => monoisotopicMass <= 0 ? 0 : Averagine.GetDiffToMonoisotopic(Averagine.GetMostIntenseMassIndex(monoisotopicMass));
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
@@ -92,14 +98,14 @@ namespace EngineLayer
             }
         }
 
-        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double peptideMonoisotopicMass)
+        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double observedMostAbundantMass)
         {
             // Indexed (ModernSearch) path: convert the observed most-abundant mass back to candidate
             // monoisotopic windows by subtracting the offset evaluated near the observed mass, for each
             // apex-offset notch. Top-down uses the exact theory-driven ClassicSearch path; this
             // observed-side conversion carries a small near-boundary ambiguity and is only exercised by
             // indexed bottom-up search, which this mode does not target.
-            double monoApprox = peptideMonoisotopicMass - ApexOffset(peptideMonoisotopicMass);
+            double monoApprox = observedMostAbundantMass - ApexOffset(observedMostAbundantMass);
             foreach (int k in ApexOffsetsInNeutrons)
             {
                 double mass = monoApprox - k * Constants.C13MinusC12;

@@ -329,9 +329,10 @@ namespace TaskLayer
                         {
                             // In most-abundant mode, select candidates by the experimentally most-detectable
                             // peak (most abundant isotopologue, or the centroid for unresolved high-mass species)
-                            // rather than the often-undetectable monoisotopic peak. Falls back to monoisotopic
-                            // when in monoisotopic mode or when no deconvoluted envelope is available.
-                            double precursorMassToMatch = precursor.MonoisotopicPeakMz.ToMass(precursor.Charge);
+                            // rather than the often-undetectable monoisotopic peak. Left null in monoisotopic
+                            // mode (or when no deconvoluted envelope is available) so Ms2ScanWithSpecificMass
+                            // defaults PrecursorMassToMatch to PrecursorMass from a single source of truth.
+                            double? precursorMassToMatch = null;
                             if (commonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
                                 && precursor.Envelope != null)
                             {

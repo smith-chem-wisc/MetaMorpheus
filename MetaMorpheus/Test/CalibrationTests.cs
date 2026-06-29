@@ -760,7 +760,9 @@ namespace Test
                 psms.Add(BuildPsmWithPrecursorMass(pep, precMass));
             }
 
-            var results = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
+            // Neutron stripping is gated on most-abundant mode (default Monoisotopic keeps the raw error).
+            var results = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0,
+                PrecursorMassMatchMode.MostAbundant);
 
             // With neutron offsets stripped, the spread reflects only the few-ppm drift — not the
             // tens-to-hundreds of ppm those ±1–2 neutron offsets would otherwise introduce.
@@ -785,7 +787,9 @@ namespace Test
             var psms = subNeutronDeltaDa.Select(d => BuildPsmWithPrecursorMass(pep, mono + d)).ToList();
             var results = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
 
-            var cp = new CommonParameters(precursorMassTolerance: new PpmTolerance(5), productMassTolerance: new PpmTolerance(20));
+            // The clamp is gated on most-abundant mode, where the runaway-tolerance risk lives.
+            var cp = new CommonParameters(precursorMassTolerance: new PpmTolerance(5), productMassTolerance: new PpmTolerance(20),
+                precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
             CalibrationTask.UpdateCombinedParameters(cp, results);
 
             Assert.That(cp.PrecursorMassTolerance.Value, Is.LessThanOrEqualTo(5.0));

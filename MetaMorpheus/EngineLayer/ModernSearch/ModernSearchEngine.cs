@@ -345,7 +345,10 @@ namespace EngineLayer.ModernSearch
             List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, CommonParameters);
 
             double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
-            int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
+            // Use PrecursorMassToMatch (the candidate-selection mass) so the final notch is consistent
+            // with the coarse selection above; in most-abundant mode this is the apex mass, not the
+            // monoisotopic PrecursorMass. PrecursorMass still drives fragment math / error reporting.
+            int notch = MassDiffAcceptor.Accepts(scan.PrecursorMassToMatch, peptide.MonoisotopicMass);
 
             bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
             bool scoreImprovement = PeptideSpectralMatches[scanIndex] == null || (thisScore - PeptideSpectralMatches[scanIndex].RunnerUpScore) > -SpectralMatch.ToleranceForScoreDifferentiation;

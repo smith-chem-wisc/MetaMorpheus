@@ -210,7 +210,7 @@ namespace MetaMorpheusGUI
 
             foreach (var filter in FilterOptions)
             {
-                filter.IsSelected = TheTask.GptmdParameters.GptmdFilters.Any(f => f.GetType() == filter.Filter.GetType())
+                filter.IsSelected = (TheTask.GptmdParameters.GptmdFilters?.Any(f => f.GetType() == filter.Filter.GetType()) ?? false)
                     || (TheTask.GptmdParameters.GptmdFilterTypes?.Contains(filter.Filter.GetType().Name) ?? false);
             }
         }

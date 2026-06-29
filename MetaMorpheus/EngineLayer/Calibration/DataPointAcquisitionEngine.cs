@@ -113,7 +113,8 @@ namespace EngineLayer.Calibration
                 numMs1MassChargeCombinationsConsidered,
                 numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
                 numMs2MassChargeCombinationsConsidered,
-                numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks
+                numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
+                CommonParameters.PrecursorMassMatchMode
             );
         }
 

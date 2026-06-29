@@ -198,8 +198,15 @@ namespace TaskLayer
             // consistent with the scan's most-abundant PrecursorMassToMatch. The calibration error
             // itself is recomputed per-isotope from the identified peptide's theoretical distribution
             // (DataPointAcquisitionEngine) and is independent of the precursor-matching convention.
+            // The apex acceptor only works when PrecursorMassToMatch is the deconvoluted most-abundant
+            // mass. Calibration runs with precursor deconvolution off (see ctor), in which case
+            // PrecursorMassToMatch falls back to the monoisotopic mass; matching that against the
+            // averagine apex would mismatch by the full offset (hundreds of ppm at high mass) and find
+            // almost nothing. So only use the apex acceptor when deconvolution is actually on; otherwise
+            // fall back to the standard zero-centered (monoisotopic) acceptor.
             MassDiffAcceptor searchMode;
-            if (combinedParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
+            if (combinedParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
+                && combinedParameters.DoPrecursorDeconvolution)
             {
                 searchMode = new MostAbundantMassDiffAcceptor("mostAbundant", combinedParameters.PrecursorMassTolerance,
                     combinedParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine());
@@ -420,11 +427,16 @@ namespace TaskLayer
             double newPrecursorPpmTolerance = Math.Round(PrecursorMultiplierForToml * acquisitionResults.PsmPrecursorIqrPpmError + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError), 1);
             double newProductPpmTolerance = Math.Round(ProductMultiplierForToml * acquisitionResults.PsmProductIqrPpmError + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1);
 
-            // Guardrail: calibration should tighten tolerances, not widen them. A pathological error
-            // distribution must never write a tolerance wider than the one we searched with, which would
-            // explode the candidate space (and memory) in downstream GPTMD/Search.
-            newPrecursorPpmTolerance = Math.Min(newPrecursorPpmTolerance, combinedParams.PrecursorMassTolerance.Value);
-            newProductPpmTolerance = Math.Min(newProductPpmTolerance, combinedParams.ProductMassTolerance.Value);
+            // Guardrail (most-abundant mode only): the neutron-misassignment error distribution can be
+            // pathologically wide there, and calibration must never write a tolerance wider than the one
+            // it searched with (that would explode the candidate space and memory in downstream
+            // GPTMD/Search). In default Monoisotopic mode the tolerance is left unclamped, preserving the
+            // historical multi-round calibration behavior.
+            if (combinedParams.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
+            {
+                newPrecursorPpmTolerance = Math.Min(newPrecursorPpmTolerance, combinedParams.PrecursorMassTolerance.Value);
+                newProductPpmTolerance = Math.Min(newProductPpmTolerance, combinedParams.ProductMassTolerance.Value);
+            }
 
             UpdateCombinedParameters(combinedParams, newPrecursorPpmTolerance, newProductPpmTolerance);
         }

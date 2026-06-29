@@ -50,9 +50,11 @@ namespace EngineLayer
         }
 
         // The averagine most-abundant offset for a monoisotopic mass: the model's diff-to-monoisotopic
-        // at the nearest mass bin. (Composes the existing AverageResidue API.)
+        // at the nearest mass bin. (Composes the existing AverageResidue API.) Guards against a large
+        // negative shift pushing the shifted mass to/below zero (the averagine model is undefined there),
+        // in which case the shift simply won't match rather than indexing the model out of range.
         private double ApexOffset(double monoisotopicMass)
-            => Averagine.GetDiffToMonoisotopic(Averagine.GetMostIntenseMassIndex(monoisotopicMass));
+            => monoisotopicMass <= 0 ? 0 : Averagine.GetDiffToMonoisotopic(Averagine.GetMostIntenseMassIndex(monoisotopicMass));
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
@@ -85,11 +87,11 @@ namespace EngineLayer
             }
         }
 
-        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double peptideMonoisotopicMass)
+        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double observedMostAbundantMass)
         {
             // Indexed (ModernSearch) path; documented near-boundary caveat as in MostAbundantMassDiffAcceptor.
             // GPTMD uses the theory-driven ClassicSearch path, so this is not its primary path.
-            double monoApprox = peptideMonoisotopicMass - ApexOffset(peptideMonoisotopicMass);
+            double monoApprox = observedMostAbundantMass - ApexOffset(observedMostAbundantMass);
             for (int j = 0; j < SortedMassShifts.Length; j++)
             {
                 foreach (int k in ApexOffsetsInNeutrons)
