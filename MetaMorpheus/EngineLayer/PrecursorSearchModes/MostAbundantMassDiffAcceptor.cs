@@ -33,9 +33,9 @@ namespace EngineLayer
     /// works equally; the contiguous form is just the safe, sign-free choice.
     ///
     /// The scan-side mass is the envelope's most-abundant observed neutral mass (PrecursorMassToMatch).
-    /// Isotopically unresolved species would supply an average mass and need
-    /// <see cref="AverageResidue.GetAverageOffset"/>; that path is deferred to v2 with the unresolved
-    /// charge-determination algorithm, so all envelopes are currently resolved.
+    /// Isotopically unresolved species would instead supply an average (centroid) mass and an
+    /// averagine average offset; that path is future work (the unresolved charge-determination
+    /// algorithm), so all envelopes here are resolved and matched on the most-abundant peak.
     /// </remarks>
     public class MostAbundantMassDiffAcceptor : MassDiffAcceptor
     {
