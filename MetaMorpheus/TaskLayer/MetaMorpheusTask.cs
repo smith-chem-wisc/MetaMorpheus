@@ -338,9 +338,9 @@ namespace TaskLayer
                             double? precursorMassToMatch = null;
                             if (commonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
                                 && precursor.Envelope != null
-                                && precursor.Envelope.MostAbundantObservedMass > 0)
+                                && precursor.Envelope.MostAbundantObservedNeutralMass > 0)
                             {
-                                precursorMassToMatch = precursor.Envelope.MostAbundantObservedMass;
+                                precursorMassToMatch = precursor.Envelope.MostAbundantObservedNeutralMass;
                             }
 
                             // assign precursor for this MS2 scan
