@@ -336,6 +336,58 @@ namespace Test
             Assert.Throws<MetaMorpheusException>(() => new FileSpecificParameters(fileSpecificTomlBad));
         }
 
+        [Test]
+        // CloneWithNewTerminus is used by semi-specific searches; it must carry over the external
+        // MS1 feature (FromFile) precursor source, otherwise the second-terminus pass would silently
+        // drop the additive precursors.
+        public static void CloneWithNewTerminus_PreservesAdditionalPrecursorDeconvolutionParameters()
+        {
+            var additional = new ClassicDeconvolutionParameters(1, 12, 4, 3);
+            CommonParameters common = new CommonParameters(additionalPrecursorDeconParams: additional);
+            Assert.That(common.AdditionalPrecursorDeconvolutionParameters, Is.SameAs(additional)); // precondition
+
+            CommonParameters clone = common.CloneWithNewTerminus(FragmentationTerminus.C);
+
+            Assert.That(clone.AdditionalPrecursorDeconvolutionParameters, Is.SameAs(additional));
+        }
+
+        [Test]
+        [TestCase("")]
+        [TestCase("   ")]
+        // A blank Ms1FeatureFilePath (empty/whitespace) must read as "no external source requested",
+        // not as a configured-but-missing path. SetAllFileSpecificCommonParams guards with
+        // IsNullOrWhiteSpace, so the additional precursor source stays disabled (null).
+        public static void SetAllFileSpecificCommonParams_BlankMs1FeatureFilePath_LeavesAdditionalSourceDisabled(string blankPath)
+        {
+            CommonParameters common = new CommonParameters();
+            Assert.That(common.AdditionalPrecursorDeconvolutionParameters, Is.Null); // precondition
+
+            FileSpecificParameters fsp = new FileSpecificParameters { Ms1FeatureFilePath = blankPath };
+            CommonParameters updated = MetaMorpheusTask.SetAllFileSpecificCommonParams(common, fsp);
+
+            Assert.That(updated.AdditionalPrecursorDeconvolutionParameters, Is.Null);
+        }
+
+        [Test]
+        // The file-specific toml reader gained a Ms1FeatureFilePath case; confirm the value survives
+        // a toml read so a user-configured external feature path is honored.
+        public static void ReadFileSpecificParametersFromToml_Ms1FeatureFilePathRoundTrips()
+        {
+            string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "ms1FeaturePathRoundTrip.toml");
+            string featurePath = "subfolder/myRun_ms1.feature"; // forward slashes: no toml escaping needed
+            File.WriteAllText(tomlPath, "Ms1FeatureFilePath = \"" + featurePath + "\"\n");
+            try
+            {
+                var toml = Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig);
+                FileSpecificParameters fsp = new FileSpecificParameters(toml);
+                Assert.That(fsp.Ms1FeatureFilePath, Is.EqualTo(featurePath));
+            }
+            finally
+            {
+                File.Delete(tomlPath);
+            }
+        }
+
         class BadDigestionParams : IDigestionParams, IEquatable<IDigestionParams>
         {
             public int MaxMissedCleavages { get; set; }
