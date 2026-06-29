@@ -2656,6 +2656,352 @@ namespace Test.MetaDraw
             }
         }
 
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_LeadingPipeDefaultsToOne()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // "|2A" (leading pipe) means the first split part is empty after trim.
+            // NormalizeAmbiguityLevel must return "1" in that case so the bar still appears.
+            // "  |2A" exercises the same branch with surrounding whitespace.
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[] { "|2A", "  |2A", "2A" });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "leadingPipeFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    psms,
+                    psmsByFile);
+
+                var totalsByCategory = plot.PlotData
+                    .Where(row => row.ContainsKey("Category"))
+                    .GroupBy(row => row["Category"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByCategory["1"], Is.EqualTo(2),
+                    "Both '|2A' and '  |2A' should default to category '1'");
+                Assert.That(totalsByCategory["2A"], Is.EqualTo(1),
+                    "Unambiguous '2A' should remain in category '2A'");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_GroupedByPrecursorCharge()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Two PSMs (charge 2) and two PSMs (charge 3) with varied ambiguity levels.
+            // GroupingProperty = "Precursor Charge" forces GetCategoryDictForGroup case 13.
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[] { "1", "2A", "1", "2B" });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileA = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Take(2));
+                var fileB = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Skip(2));
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileA", fileA },
+                    { "FileB", fileB }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "Precursor Charge",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile,
+                    parameters);
+
+                Assert.That(plot.Model.Axes.OfType<PlotCategoryAxis>()
+                    .Any(a => a.Key == "GroupAxis" && a.Title == "Precursor Charge"),
+                    Is.True, "GroupAxis should be created when grouping is enabled for the ambiguity plot");
+                Assert.That(plot.PlotData.All(r => r.ContainsKey(parameters.GroupingProperty)), Is.True,
+                    "Every PlotData row should carry the grouping property");
+                Assert.That(plot.PlotData.Select(r => r[parameters.GroupingProperty]).Distinct().Count(), Is.GreaterThanOrEqualTo(1));
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_LogScaleAndNormalization()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[] { "1", "1", "1", "2A" });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "logScaleFile", psms }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "None",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = true,
+                    UseLogScaleYAxis = true
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    psms,
+                    psmsByFile,
+                    parameters);
+
+                var logAxis = plot.Model.Axes.OfType<OxyPlot.Axes.LogarithmicAxis>().FirstOrDefault();
+                Assert.That(logAxis, Is.Not.Null,
+                    "LogarithmicAxis should be present when UseLogScaleYAxis is true");
+
+                var values = plot.Model.Series
+                    .OfType<PlotColumnSeries>()
+                    .SelectMany(s => s.Items)
+                    .Select(item => item.Value)
+                    .ToList();
+                Assert.That(values, Is.Not.Empty);
+                Assert.That(values.All(v => v <= 1.0 + 1e-6),
+                    "Normalized values should be at most 1.0 (proportion of file total)");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_NotParseableYieldsZero()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Notch values that fail double.TryParse should default to 0.0 via
+            // ParseAmbiguousNotchValues. This also exercises the "else yield return 0.0" branch.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("abc", "BAD_NOTCH_1"),
+                ("notanumber|1.003", "BAD_NOTCH_2"),
+                ("0.000", "GOOD_NOTCH")
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "badNotchFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    psms,
+                    psmsByFile);
+
+                var totalsByBin = plot.PlotData
+                    .Where(row => row.ContainsKey("Bin"))
+                    .GroupBy(row => row["Bin"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByBin["0"], Is.EqualTo(3),
+                    "Both unparseable notches should map to bin 0 (1 from 'abc' + 1 from 'notanumber' + 1 from '0.000')");
+                Assert.That(totalsByBin["1"], Is.EqualTo(1),
+                    "The '1.003' part of 'notanumber|1.003' should still parse and bin to 1");
+                Assert.That(plot.PlotData.Sum(r => int.Parse(r["Value"])), Is.EqualTo(4),
+                    "Total contributions = 3 from unparseable defaults + 1 from good '1.003' + 1 from '0.000'");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_PipeOnlyAndEmptyParts()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // SplitAmbiguousNotch filters empty parts after split. Inputs:
+            //   "|"    -> ["0"] via DefaultIfEmpty after the empty filter strips everything
+            //   "||"   -> same as above
+            //   "|1.003|" -> ["1.003"] (leading and trailing empties stripped)
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("|", "PIPE_ONLY_1"),
+                ("||", "PIPE_ONLY_2"),
+                ("|1.003|", "PIPE_AROUND_VALUE")
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "pipeOnlyFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    psms,
+                    psmsByFile);
+
+                var totalsByBin = plot.PlotData
+                    .Where(row => row.ContainsKey("Bin"))
+                    .GroupBy(row => row["Bin"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByBin["0"], Is.EqualTo(2),
+                    "Both '|' and '||' should fall back to bin 0 (DefaultIfEmpty path)");
+                Assert.That(totalsByBin["1"], Is.EqualTo(1),
+                    "'|1.003|' should produce a single bin-1 contribution (empties filtered)");
+                Assert.That(plot.PlotData.Sum(r => int.Parse(r["Value"])), Is.EqualTo(3),
+                    "Total = 2 (pipe-only fallbacks) + 1 (1.003 from the trimmed middle part)");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_GroupedByPrecursorCharge()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Force the grouping pipeline (GetNumbersFromPsms case 14) for the notch plot.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "AAA"),
+                ("1.003", "BBB"),
+                ("0.000|1.003", "CCC"),
+                ("2.007", "DDD")
+            });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileA = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Take(2));
+                var fileB = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Skip(2));
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileA", fileA },
+                    { "FileB", fileB }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "Precursor Charge",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile,
+                    parameters);
+
+                Assert.That(plot.Model.Axes.OfType<PlotCategoryAxis>()
+                    .Any(a => a.Key == "GroupAxis" && a.Title == "Precursor Charge"),
+                    Is.True, "GroupAxis should appear when grouping is enabled for the notch plot");
+                Assert.That(plot.PlotData.All(r => r.ContainsKey(parameters.GroupingProperty)), Is.True,
+                    "Every PlotData row should carry the grouping property");
+                Assert.That(plot.PlotData.All(r => r.ContainsKey("Bin")), Is.True,
+                    "All rows should still carry a 'Bin' key under the numerical grouping pipeline");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_MinRelativeCutoffFiltersBins()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Notch 0 has 5 PSMs and notch 1 has 1. With MinRelativeCutoff=50,
+            // bins with count < 50% of max (5 * 0.5 = 2.5) should be filtered out,
+            // leaving only bin 0 visible. This exercises the MinRelativeCutoff branch
+            // on the numerical (notch) pipeline.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "A"),
+                ("0.000", "B"),
+                ("0.000", "C"),
+                ("0.000", "D"),
+                ("0.000", "E"),
+                ("1.003", "F")
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "cutoffFile", psms }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "None",
+                    MinRelativeCutoff = 50,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    psms,
+                    psmsByFile,
+                    parameters);
+
+                var totalsByBin = plot.PlotData
+                    .Where(row => row.ContainsKey("Bin"))
+                    .GroupBy(row => row["Bin"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByBin.ContainsKey("0"), Is.True,
+                    "Bin 0 (count 5) should remain above the 50% cutoff");
+                Assert.That(totalsByBin.ContainsKey("1"), Is.False,
+                    "Bin 1 (count 1, below 2.5 cutoff) should be filtered out");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
         private static string WriteNotchPsmTsv(IEnumerable<(string Notch, string BaseSequence)> rows)
         {
             var header = new[]
