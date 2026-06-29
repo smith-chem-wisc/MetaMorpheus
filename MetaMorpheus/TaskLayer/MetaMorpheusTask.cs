@@ -41,7 +41,8 @@ namespace TaskLayer
         Calibrate,
         XLSearch,
         GlycoSearch,
-        Average
+        Average,
+        Truncation
     }
 
     public abstract class MetaMorpheusTask
@@ -182,6 +183,15 @@ namespace TaskLayer
 
         [TomlIgnore]
         public virtual string OutputFolder { get; private set; }
+
+        /// <summary>
+        /// In-memory hand-off shared across the tasks in a run list (01_Architecture.md decision #1).
+        /// Assigned by <see cref="EverythingRunnerEngine"/> before each task runs; a finishing task can
+        /// deposit results that a later task retrieves, avoiding a file round-trip. Null for tasks run
+        /// outside the runner (e.g. directly in tests), in which case consumers fall back to disk.
+        /// </summary>
+        [TomlIgnore]
+        public TaskChainContext TaskChainContext { get; set; }
 
         protected MyTaskResults MyTaskResults;
 
