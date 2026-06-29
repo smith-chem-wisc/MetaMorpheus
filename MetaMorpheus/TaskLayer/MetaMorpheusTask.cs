@@ -335,7 +335,18 @@ namespace TaskLayer
                                     // self-reported abundance and is fine to surface as-is.
                                     var fractionalIntensity = 1.0;
 
-                                    precursorSet.Add(new(envelope, intensity, fractionalIntensity));
+                                    // Score the FromFile envelope on the same method-agnostic scale the
+                                    // classic loop uses (the primary precursor decon params), so FromFile
+                                    // precursors feed a comparable DeconvolutionScore into PEP rather than
+                                    // the default 0. PrecursorDeconvolutionScore is a real PEP feature, so a
+                                    // constant default would systematically mis-weight FromFile precursors.
+                                    double genericScore = envelope.GetOrComputeGenericScore(
+                                        commonParameters.PrecursorDeconvolutionParameters);
+
+                                    precursorSet.Add(new Precursor(envelope, intensity, fractionalIntensity)
+                                    {
+                                        DeconvolutionScore = genericScore
+                                    });
                                 }
                             }
                         }

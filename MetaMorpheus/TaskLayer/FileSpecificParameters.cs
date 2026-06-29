@@ -98,7 +98,7 @@ namespace TaskLayer
         public List<ProductType> CustomIons { get; set; }
 
         /// <summary>
-        /// Optional path to an external whole-file MS1 deconvolution result (.ms1.feature or .feature.tsv).
+        /// Optional path to an external whole-file MS1 deconvolution result (a "&lt;basename&gt;_ms1.feature" file).
         /// When set, the features are joined per MS2 scan via mzLib's FromFileDeconvolutionParameters and
         /// the envelopes are added to the precursor set alongside the classic decon results.
         /// Leave null to disable. If null and a file named "&lt;basename&gt;_ms1.feature" exists next to the
