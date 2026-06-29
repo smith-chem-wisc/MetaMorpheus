@@ -44,6 +44,17 @@
 #                          Leave blank or omit the column for no extra
 #                          diagnostic ions.
 #
+#                          These ions also act as STRICT custom oxonium ions
+#                          when the oxonium-ion filter is enabled (Glyco search
+#                          parameter "Oxonium Ion Filter"). Under that filter a
+#                          candidate is rejected if such an ion is observed in
+#                          the spectrum but the candidate lacks this
+#                          monosaccharide, or if the candidate contains this
+#                          monosaccharide but the ion is absent. Ion prevalence
+#                          depends on collision energy, instrument and glycan
+#                          structure, so validate an ion against your own
+#                          acquisition conditions before relying on it to filter.
+#
 #   5. Description         Optional. Free text for human readers. Ignored by
 #                          the parser. Use it to record source, formula, or
 #                          a note about the residue.
