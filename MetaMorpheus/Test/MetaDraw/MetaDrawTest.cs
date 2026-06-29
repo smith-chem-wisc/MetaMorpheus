@@ -2299,8 +2299,9 @@ namespace Test.MetaDraw
         public static void PlotNamesDoNotChange()
         {
             var plotNames = PlotModelStat.PlotNames;
-            Assert.That(plotNames.Count, Is.EqualTo(15));
+            Assert.That(plotNames.Count, Is.EqualTo(16));
             Assert.That(plotNames, Does.Contain("Histogram of Spectral Match Ambiguity Levels"));
+            Assert.That(plotNames, Does.Contain("Histogram of Notch (Ambiguous PSMs Split Across Notches)"));
         }
 
         [Test, Category("PlotModelStat")]
@@ -2438,6 +2439,258 @@ namespace Test.MetaDraw
             {
                 if (File.Exists(tempFile)) File.Delete(tempFile);
             }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_SplitsAmbiguousAcrossBars()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Notch values are stored as "F3"-formatted doubles in real MetaMorpheus output
+            // (e.g. "0.000", "1.003", "-1.003"), reflecting the C13-C12 isotopic mass shift.
+            // Single-notch PSMs add 1 to their notch bin. Ambiguous (pipe-delimited) PSMs
+            // add 1 to each of their notch bins, so the total count > PSM count.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "PEPTIDER"),
+                ("0.000", "PEPTIDER"),
+                ("1.003", "ANOTHERPEPTIDE"),
+                ("2.007", "THIRDPEPTIDE"),
+                ("0.000|2.007", "AMBBIGUOUSPEP"), // contributes 1 to notch 0 and 1 to notch 2
+                ("1.003|2.007|3.010", "TRIPLYPEP"),// contributes 1 to each of notches 1, 2, 3
+                ("", "DEFAULTNOTCH")               // null/empty should default to "0"
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "notchTestFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    psms,
+                    psmsByFile);
+
+                var totalsByBin = plot.PlotData
+                    .Where(row => row.ContainsKey("Bin"))
+                    .GroupBy(row => row["Bin"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByBin["0"], Is.EqualTo(4), "Bin 0 = 2 single + 1 from '0.000|2.007' + 1 from '' default");
+                Assert.That(totalsByBin["1"], Is.EqualTo(2), "Bin 1 = 1 single + 1 from '1.003|2.007|3.010'");
+                Assert.That(totalsByBin["2"], Is.EqualTo(3), "Bin 2 = 1 single + 1 from '0.000|2.007' + 1 from '1.003|2.007|3.010'");
+                Assert.That(totalsByBin["3"], Is.EqualTo(1), "Bin 3 = 1 from '1.003|2.007|3.010'");
+
+                var categoryAxis = plot.Model.Axes.OfType<PlotCategoryAxis>().First(a => a.Key != "GroupAxis");
+                var labels = categoryAxis.ItemsSource.Cast<string>()
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToList();
+                Assert.That(labels, Is.EqualTo(new[] { "0", "1", "2", "3" }),
+                    "Notch labels should appear in numeric order");
+                Assert.That(categoryAxis.Title, Is.EqualTo("Notch"));
+
+                Assert.That(plot.PlotData.Sum(r => int.Parse(r["Value"])), Is.EqualTo(10),
+                    "Total contributions (1 per part) = 7 PSMs with parts [1,1,1,1,2,3,1]");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_ParsesDoubleFormattedNotches()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Use real-world double notch values. With binSize=1, "1.003" rounds to bin 1
+            // and "0.5" rounds to bin 0 or 1 depending on the half-bin tie-break.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("-1.003", "AAA"),
+                ("-1.003", "BBB"),
+                ("0.000", "CCC"),
+                ("0.000", "DDD"),
+                ("0.000", "EEE"),
+                ("1.003", "FFF"),
+                ("2.007", "GGG"),
+                ("1.003|2.007", "HHH")
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "notchDoubles", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    psms,
+                    psmsByFile);
+
+                var totalsByBin = plot.PlotData
+                    .Where(row => row.ContainsKey("Bin"))
+                    .GroupBy(row => row["Bin"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByBin["-1"], Is.EqualTo(2), "Notch -1.003 should round to bin -1");
+                Assert.That(totalsByBin["0"], Is.EqualTo(3), "Three '0.000' PSMs");
+                Assert.That(totalsByBin["1"], Is.EqualTo(2), "Notch 1.003 = 1 single + 1 from '1.003|2.007'");
+                Assert.That(totalsByBin["2"], Is.EqualTo(2), "Notch 2.007 = 1 single + 1 from '1.003|2.007'");
+
+                Assert.That(plot.PlotData.Sum(r => int.Parse(r["Value"])), Is.EqualTo(9),
+                    "Total = 8 PSMs with parts [1,1,1,1,1,1,1,2]");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_NumericOrderingAcrossFiles()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Mix ambiguous and single-notch PSMs across two files; verify numeric bin ordering.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "AAA"),
+                ("0.000|1.003", "BBB"),
+                ("3.010", "CCC"),
+                ("5.013", "DDD"),
+                ("-1.003|1.003", "EEE")
+            });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileA = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Take(3));
+                var fileB = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Skip(3));
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileA", fileA },
+                    { "FileB", fileB }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile);
+
+                var categoryAxis = plot.Model.Axes.OfType<PlotCategoryAxis>().First(a => a.Key != "GroupAxis");
+                var allBinSlots = categoryAxis.ItemsSource.Cast<string>().ToList();
+
+                Assert.That(allBinSlots.Count, Is.EqualTo(7),
+                    "All integer bins in [-1, 5] should be present (zero-count bins render as empty labels)");
+
+                var visibleLabels = allBinSlots.Where(s => !string.IsNullOrEmpty(s)).ToList();
+                var orderedVisible = visibleLabels
+                    .OrderBy(s => int.Parse(s, System.Globalization.CultureInfo.InvariantCulture))
+                    .ToList();
+                Assert.That(visibleLabels, Is.EqualTo(orderedVisible),
+                    "Visible bin labels should be in numeric order, not lexicographic order");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_GroupsAcrossFiles()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "AAA"),
+                ("0.000|2.007", "BBB"),
+                ("2.007", "CCC"),
+                ("3.010", "DDD")
+            });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileA = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Take(2));
+                var fileB = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Skip(2));
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileA", fileA },
+                    { "FileB", fileB }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "None",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile,
+                    parameters);
+
+                Assert.That(plot.Model.Series.OfType<PlotColumnSeries>().Count(), Is.EqualTo(2));
+                Assert.That(plot.PlotData.Select(r => r["Source File"]).Distinct().OrderBy(s => s).ToList(),
+                    Is.EqualTo(new[] { "FileA", "FileB" }));
+                Assert.That(plot.PlotData.All(r => r.ContainsKey("Bin") && r.ContainsKey("Value") && r.ContainsKey("Total")),
+                    Is.True);
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        private static string WriteNotchPsmTsv(IEnumerable<(string Notch, string BaseSequence)> rows)
+        {
+            var header = new[]
+            {
+                "File Name", "Scan Number", "Scan Retention Time", "Num Experimental Peaks", "Total Ion Current",
+                "Precursor Scan Number", "Precursor Charge", "Precursor MZ", "Precursor Mass", "Score", "Delta Score",
+                "Notch", "Base Sequence", "Full Sequence", "Essential Sequence", "Ambiguity Level",
+                "PSM Count (unambiguous, <0.01 q-value)", "Mods", "Mods Chemical Formulas", "Mods Combined Chemical Formula",
+                "Num Variable Mods", "Missed Cleavages", "Peptide Monoisotopic Mass", "Mass Diff (Da)", "Mass Diff (ppm)",
+                "Protein Accession", "Protein Name", "Gene Name", "Organism Name", "Identified Sequence Variations",
+                "Splice Sites", "Contaminant", "Decoy", "Peptide Description", "Start and End Residues In Protein",
+                "Previous Amino Acid", "Next Amino Acid", "Theoreticals Searched", "Decoy/Contaminant/Target",
+                "Matched Ion Series", "Matched Ion Mass-To-Charge Ratios", "Matched Ion Mass Diff (Da)",
+                "Matched Ion Mass Diff (Ppm)", "Matched Ion Intensities", "Matched Ion Counts", "QValue"
+            };
+
+            var lines = new List<string> { string.Join("\t", header) };
+            int scan = 1;
+            foreach (var (notch, baseSeq) in rows)
+            {
+                lines.Add(string.Join("\t", new[]
+                {
+                    "notchTestFile", scan.ToString(), "1.0", "10", "1000.0",
+                    (scan - 1).ToString(), "2", "500.0", "998.0", "10.0", "5.0",
+                    notch ?? "", baseSeq, baseSeq, baseSeq, "1",
+                    "1", "", "", "", "0", "0", "998.0", "0.0", "0.0",
+                    "P12345", "TestProtein", "gene1", "TestOrganism", "", "", "N", "N", "full", "1-8", "R", "K",
+                    "100", "T", "", "", "", "", "", "", "0.01"
+                }));
+                scan++;
+            }
+
+            var tempFile = Path.Combine(Path.GetTempPath(), "NotchPlotTest_" + Guid.NewGuid().ToString("N") + ".psmtsv");
+            File.WriteAllText(tempFile, string.Join(Environment.NewLine, lines));
+            return tempFile;
         }
 
         private static string WriteAmbiguityLevelPsmTsv(IEnumerable<string> ambiguityLevels)

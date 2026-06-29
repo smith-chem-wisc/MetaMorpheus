@@ -44,7 +44,8 @@ namespace GuiFunctions
             "Histogram of Fragment Ion Types by Count",
             "Histogram of Fragment Ion Types by Intensity",
             "Histogram of Ids by Retention Time",
-            "Histogram of Spectral Match Ambiguity Levels"
+            "Histogram of Spectral Match Ambiguity Levels",
+            "Histogram of Notch (Ambiguous PSMs Split Across Notches)"
         };
 
         public PlotModel Model => privateModel;
@@ -127,6 +128,9 @@ namespace GuiFunctions
                     break;
                 case "Histogram of Spectral Match Ambiguity Levels":
                     histogramPlot(13);
+                    break;
+                case "Histogram of Notch (Ambiguous PSMs Split Across Notches)":
+                    histogramPlot(14);
                     break;
             }
         }
@@ -349,6 +353,23 @@ namespace GuiFunctions
                             .GroupBy(p => NormalizeAmbiguityLevel(p.AmbiguityLevel))
                             .ToDictionary(p => p.Key, p => p.Count());
                         dictsBySourceFile.Add(fileName, result);
+                    }
+                    break;
+                case 14: // Histogram of Notch (ambiguous PSMs contribute to each of their pipe-delimited notches)
+                    xAxisTitle = "Notch";
+                    binSize = 1;
+                    labelAngle = 0;
+                    foreach (var fileName in psmsBySourceFile.Keys)
+                    {
+                        var values = new List<double>();
+                        foreach (var psm in psmsBySourceFile[fileName])
+                        {
+                            foreach (double notch in ParseAmbiguousNotchValues(psm.Notch))
+                                values.Add(notch);
+                        }
+                        numbersBySourceFile.Add(fileName, values);
+                        var results = values.GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
+                        dictsBySourceFile.Add(fileName, results.ToDictionary(p => p.Key.ToString(CultureInfo.InvariantCulture), v => v.Count()));
                     }
                     break;
             }
@@ -1035,6 +1056,7 @@ namespace GuiFunctions
                 8 => GetHydrophobicityScores(psms),
                 9 => psms.Where(p => !p.MissedCleavage.Contains("|")).Select(p => double.Parse(p.MissedCleavage)),
                 12 => psms.Select(p => (double)(int)Math.Round(p.RetentionTime, 0)),
+                14 => psms.SelectMany(p => ParseAmbiguousNotchValues(p.Notch)),
                 _ => Enumerable.Empty<double>()
             };
         }
@@ -1061,6 +1083,28 @@ namespace GuiFunctions
                 this.total = total;
                 this.bin = bin;
                 this.group = group;
+            }
+        }
+
+        private static IEnumerable<string> SplitAmbiguousNotch(string notch)
+        {
+            if (string.IsNullOrWhiteSpace(notch))
+                return new[] { "0" };
+
+            return notch.Split('|')
+                .Select(p => p.Trim())
+                .Where(p => p.Length > 0)
+                .DefaultIfEmpty("0");
+        }
+
+        private static IEnumerable<double> ParseAmbiguousNotchValues(string notch)
+        {
+            foreach (var part in SplitAmbiguousNotch(notch))
+            {
+                if (double.TryParse(part, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
+                    yield return value;
+                else
+                    yield return 0.0;
             }
         }
 
