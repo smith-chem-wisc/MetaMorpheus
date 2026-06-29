@@ -328,19 +328,24 @@ namespace TaskLayer
                         foreach (var precursor in precursorSet)
                         {
                             // In most-abundant mode, select candidates by the experimentally most-detectable
-                            // peak — the most abundant (tallest) isotopologue — rather than the
-                            // often-undetectable monoisotopic peak. Left null in monoisotopic mode, when no
-                            // deconvoluted envelope is available, or when the envelope reports no most-abundant
-                            // peak (the -1 sentinel, e.g. a neutral mass read from a pre-deconvoluted file), so
-                            // Ms2ScanWithSpecificMass defaults PrecursorMassToMatch to PrecursorMass from a
-                            // single source of truth. (Isotopically unresolved high-mass species, which would
-                            // match on the average/centroid mass, are future work.)
+                            // peak rather than the often-undetectable monoisotopic peak: the most abundant
+                            // (tallest) isotopologue for resolved envelopes, or the average/centroid mass for
+                            // isotopically unresolved (high-mass) envelopes. Left null in monoisotopic mode,
+                            // when no deconvoluted envelope is available, or when the envelope reports no
+                            // observed peak (the -1 sentinel), so Ms2ScanWithSpecificMass defaults
+                            // PrecursorMassToMatch to the monoisotopic PrecursorMass from a single source of truth.
+                            // NOTE: the unresolved branch is scaffolding — it selects the average observed mass,
+                            // but the average-vs-average acceptor and unresolved charge determination are not yet
+                            // built, so nothing sets Resolution.Unresolved in production today.
                             double? precursorMassToMatch = null;
                             if (commonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
-                                && precursor.Envelope != null
-                                && precursor.Envelope.MostAbundantObservedMass > 0)
+                                && precursor.Envelope != null)
                             {
-                                precursorMassToMatch = precursor.Envelope.MostAbundantObservedMass;
+                                double selected = precursor.Envelope.Resolution == EnvelopeResolution.Unresolved
+                                    ? precursor.Envelope.AverageObservedMass
+                                    : precursor.Envelope.MostAbundantObservedMass;
+                                if (selected > 0)
+                                    precursorMassToMatch = selected;
                             }
 
                             // assign precursor for this MS2 scan
