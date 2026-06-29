@@ -79,11 +79,11 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters_Tryp);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -169,11 +169,11 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters1);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -249,11 +249,11 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -342,11 +342,11 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -436,11 +436,11 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -502,11 +502,11 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -596,11 +596,11 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -714,11 +714,11 @@ namespace Test
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -854,11 +854,11 @@ namespace Test
 
             FilteredPsms psmsFiltered = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsFiltered, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsFiltered.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -929,11 +929,11 @@ namespace Test
 
             FilteredPsms psmsFiltered = FilteredPsms.Filter(psms, commonParameters_tryp);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsFiltered, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsFiltered.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
@@ -1001,11 +1001,11 @@ namespace Test
 
             FilteredPsms psmsFiltered = FilteredPsms.Filter(psms, commonParameters);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered, false, new CommonParameters(), null, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(psmsFiltered.FilteredPsmsList, false, new CommonParameters(), null, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             // score protein groups and merge indistinguishable ones
-            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsFiltered, false, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsFiltered.FilteredPsmsList, false, true, true, new CommonParameters(), null, new List<string>());
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;

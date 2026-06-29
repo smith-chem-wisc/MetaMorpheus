@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
 using Proteomics;
@@ -11,6 +11,7 @@ using System;
 using Omics.Digestion;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
+using System.Globalization;
 
 namespace EngineLayer
 {
@@ -50,6 +51,16 @@ namespace EngineLayer
                 ScanOneOverK0 = null; // this is only used for ion mobility data, so it can be null
             }
 
+            if (scan.TheScan.HcdEnergy != null
+                && double.TryParse(scan.TheScan.HcdEnergy, NumberStyles.Any, CultureInfo.InvariantCulture, out var ce))
+            {
+                CollisionalEnergy = ce;
+            }
+            else
+            {
+                CollisionalEnergy = null;
+            }
+
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons);
         }
 
@@ -87,6 +98,7 @@ namespace EngineLayer
         public double PrecursorScanDeconvolutionScore { get; }
         public double ScanPrecursorMass { get; }
         public double? ScanOneOverK0 { get; set; } // this is only used for ion mobility data, so it can be null
+        public double? CollisionalEnergy { get; }
         public string FullFilePath { get; private set; }
         /// <summary>
         /// Refers to the index of the Ms2ScanWithSpecificMass in an array of Ms2ScansWithSpecificMass that is sorted by precursor mass
@@ -316,9 +328,9 @@ namespace EngineLayer
 
         #region IO
 
-        public static string GetTabSeparatedHeader(bool includeOneOverK0Column = false)
+        public static string GetTabSeparatedHeader(bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
         {
-            return string.Join("\t", DataDictionary(null, null, includeOneOverK0Column: includeOneOverK0Column).Keys);
+            return string.Join("\t", DataDictionary(null, null, includeOneOverK0Column: includeOneOverK0Column, includeCollisionalEnergyColumn: includeCollisionalEnergyColumn).Keys);
         }
 
         public override string ToString()
@@ -326,15 +338,15 @@ namespace EngineLayer
             return ToString(new Dictionary<string, int>());
         }
 
-        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false)
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column).Values.Select(v => v?.Trim() ?? string.Empty));
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column, includeCollisionalEnergyColumn).Values.Select(v => v?.Trim() ?? string.Empty));
         }
 
-        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false)
+        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
-            PsmTsvWriter.AddBasicMatchData(s, psm, includeOneOverK0Column);
+            PsmTsvWriter.AddBasicMatchData(s, psm, includeOneOverK0Column, includeCollisionalEnergyColumn);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm, writePeptideLevelFdr);
@@ -348,34 +360,38 @@ namespace EngineLayer
         /// <summary>
         /// This method is used by protein parsimony to remove PeptideWithSetModifications objects that have non-parsimonious protein associations
         /// </summary>
-        public void TrimProteinMatches(HashSet<IBioPolymer> parsimoniousProteins)
+        public int TrimProteinMatches(HashSet<IBioPolymer> parsimoniousProteins)
         {
+            int removed = 0;
             if (IsDecoy)
             {
                 if (_BestMatchingBioPolymersWithSetMods.Any(p => parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent) && p.SpecificBioPolymer.Parent.IsDecoy))
                 {
-                    _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent));
+                    removed += _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent));
                 }
                 // else do nothing
             }
             else
             {
-                _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent));
+                removed += _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent));
             }
 
             ResolveAllAmbiguities();
+            return removed;
         }
 
         /// <summary>
         /// This method is used by protein parsimony to add PeptideWithSetModifications objects for modification-agnostic parsimony
         /// </summary>
-        public void AddProteinMatch(SpectralMatchHypothesis tentativeSpectralMatch)
+        public bool AddProteinMatch(SpectralMatchHypothesis tentativeSpectralMatch)
         {
             if (!_BestMatchingBioPolymersWithSetMods.Contains(tentativeSpectralMatch))
             {
                 _BestMatchingBioPolymersWithSetMods.Add(tentativeSpectralMatch); 
                 ResolveAllAmbiguities();
+                return true;
             }
+            return false;
         }
 
         #endregion
@@ -409,6 +425,8 @@ namespace EngineLayer
             ScanPrecursorCharge = psm.ScanPrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = psm.ScanPrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = psm.ScanPrecursorMass;
+            ScanOneOverK0 = psm.ScanOneOverK0;
+            CollisionalEnergy = psm.CollisionalEnergy;
             FullFilePath = psm.FullFilePath;
             ScanIndex = psm.ScanIndex;
             FdrInfo = psm.FdrInfo;

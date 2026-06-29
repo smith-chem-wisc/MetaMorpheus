@@ -120,11 +120,11 @@ namespace Test
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters);
 
             // run parsimony
-            ProteinParsimonyEngine parsimonyEngine = new ProteinParsimonyEngine(filteredPsms, false, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine parsimonyEngine = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, new List<string>());
             var parsimonyResults = (ProteinParsimonyResults)parsimonyEngine.Run();
             var proteinGroups = parsimonyResults.ProteinGroups;
 
-            ProteinScoringAndFdrEngine proteinScoringAndFdrEngine = new ProteinScoringAndFdrEngine(proteinGroups, filteredPsms, true, false, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine proteinScoringAndFdrEngine = new ProteinScoringAndFdrEngine(proteinGroups, filteredPsms.FilteredPsmsList, true, false, true, new CommonParameters(), null, new List<string>());
             var proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)proteinScoringAndFdrEngine.Run();
             proteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
@@ -249,11 +249,11 @@ namespace Test
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParameters, includeContaminants: false);
-            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(filteredPsms, true, new CommonParameters(), null, new List<string> { "ff" });
+            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, true, new CommonParameters(), null, new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, filteredPsms, false, false, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, filteredPsms.FilteredPsmsList, false, false, true, new CommonParameters(), null, new List<string>());
             f.Run();
 
             Assert.That(proteinGroups.First().ModsInfo[0], Is.EqualTo("#aa5[resMod on S,info:occupancy=0.67(2/3)];#aa10[iModOne on I,info:occupancy=0.33(2/6)];#aa10[iModTwo on I,info:occupancy=0.33(2/6)]"));

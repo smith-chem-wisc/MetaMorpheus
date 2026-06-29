@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using OxyPlot;
 using Omics.Fragmentation;
 using System;
@@ -37,6 +37,7 @@ namespace GuiFunctions
         // graphic settings
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
         public static bool DisplayIonAnnotations { get; set; } = true;
+        public static bool UseShortIonAnnotationsWhenPossible { get; set; } = false;
         public static bool AnnotateMzValues { get; set; } = false;
         public static bool AnnotateCharges { get; set; } = true;
         public static bool AnnotationBold { get; set; } = false;
@@ -116,7 +117,7 @@ namespace GuiFunctions
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
         public static string[] AmbiguityTypes { get; set; } = { "No Filter", "1", "2A", "2B", "2C", "2D", "3", "4", "5" };
-        public static string[] GroupingProperties { get; set; } = { "None", "Notch", "Precursor Charge", "File Name", "Ambiguity Level", "Missed Cleavages", "OrganismName", "DecoyContamTarget" };
+        public static string[] GroupingProperties { get; set; } = { "None", "Notch", "Precursor Charge", "File Name", "Ambiguity Level", "Missed Cleavages", "Collision Energy", "OrganismName", "DecoyContamTarget" };
 
         #endregion
 
@@ -515,6 +516,7 @@ namespace GuiFunctions
             return new MetaDrawSettingsSnapshot()
             {
                 DisplayIonAnnotations = DisplayIonAnnotations,
+                UseShortIonAnnotationsWhenPossible = UseShortIonAnnotationsWhenPossible,
                 AnnotateMzValues = AnnotateMzValues,
                 AnnotateCharges = AnnotateCharges,
                 AnnotationBold = AnnotationBold,
@@ -573,6 +575,7 @@ namespace GuiFunctions
         {
             flaggedErrorOnRead = false;
             DisplayIonAnnotations = settings.DisplayIonAnnotations;
+            UseShortIonAnnotationsWhenPossible = settings.UseShortIonAnnotationsWhenPossible;
             AnnotateMzValues = settings.AnnotateMzValues;
             AnnotateCharges = settings.AnnotateCharges;
             AnnotationBold = settings.AnnotationBold;

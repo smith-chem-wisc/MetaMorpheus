@@ -214,6 +214,7 @@ namespace Test.MetaDraw
         [TestCase("Notch")]
         [TestCase("File Name")]
         [TestCase("Ambiguity Level")]
+        [TestCase("Collision Energy")]
         [TestCase("OrganismName")]
         [TestCase("DecoyContamTarget")]
         [TestCase("None")]
