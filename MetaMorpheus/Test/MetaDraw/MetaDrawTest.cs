@@ -2295,11 +2295,189 @@ namespace Test.MetaDraw
             Directory.Delete(tempDir, true);
         }
 
-        [Test] // Ensures no plot names accidently get deleted. 
+        [Test] // Ensures no plot names accidently get deleted.
         public static void PlotNamesDoNotChange()
         {
             var plotNames = PlotModelStat.PlotNames;
-            Assert.That(plotNames.Count, Is.EqualTo(14));
+            Assert.That(plotNames.Count, Is.EqualTo(15));
+            Assert.That(plotNames, Does.Contain("Histogram of Spectral Match Ambiguity Levels"));
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_BuildsAllExpectedCategories()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[]
+            {
+                "1", "1", "1", "1",
+                "2A", "2A", "2A",
+                "2B", "2B",
+                "2C",
+                "2D",
+                "3",
+                "4"
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "ambiguityTestFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    psms,
+                    psmsByFile);
+
+                Assert.That(plot.PlotData, Is.Not.Empty);
+
+                var totalsByCategory = plot.PlotData
+                    .Where(row => row.ContainsKey("Category"))
+                    .GroupBy(row => row["Category"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByCategory["1"], Is.EqualTo(4));
+                Assert.That(totalsByCategory["2A"], Is.EqualTo(3));
+                Assert.That(totalsByCategory["2B"], Is.EqualTo(2));
+                Assert.That(totalsByCategory["2C"], Is.EqualTo(1));
+                Assert.That(totalsByCategory["2D"], Is.EqualTo(1));
+                Assert.That(totalsByCategory["3"], Is.EqualTo(1));
+                Assert.That(totalsByCategory["4"], Is.EqualTo(1));
+                Assert.That(totalsByCategory.Count, Is.EqualTo(7));
+
+                var categoryAxis = plot.Model.Axes.OfType<PlotCategoryAxis>().First(a => a.Key != "GroupAxis");
+                Assert.That(categoryAxis.ItemsSource.Cast<string>().ToList(), Is.EqualTo(new[] { "1", "2A", "2B", "2C", "2D", "3", "4" }));
+                Assert.That(categoryAxis.Title, Is.EqualTo("Ambiguity Level"));
+
+                var columnSeries = plot.Model.Series.OfType<PlotColumnSeries>().Single();
+                Assert.That(columnSeries.Items.Count, Is.EqualTo(7));
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_DefaultsMissingToOne()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[] { null, "", "   ", "1" });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "ambiguityDefaultFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    psms,
+                    psmsByFile);
+
+                var totalForOne = plot.PlotData
+                    .Where(row => row.ContainsKey("Category") && row["Category"] == "1")
+                    .Sum(row => int.Parse(row["Value"]));
+
+                Assert.That(totalForOne, Is.EqualTo(4));
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_GroupsAcrossFiles()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[] { "1", "2A", "2B", "3", "4" });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileA = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Take(3));
+                var fileB = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Skip(3));
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileA", fileA },
+                    { "FileB", fileB }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "None",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile,
+                    parameters);
+
+                Assert.That(plot.Model.Series.OfType<PlotColumnSeries>().Count(), Is.EqualTo(2));
+                Assert.That(plot.PlotData.Select(r => r["Source File"]).Distinct().OrderBy(s => s).ToList(),
+                    Is.EqualTo(new[] { "FileA", "FileB" }));
+                Assert.That(plot.PlotData.All(r => r.ContainsKey("Category") && r.ContainsKey("Value") && r.ContainsKey("Total")),
+                    Is.True);
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        private static string WriteAmbiguityLevelPsmTsv(IEnumerable<string> ambiguityLevels)
+        {
+            var header = new[]
+            {
+                "File Name", "Scan Number", "Scan Retention Time", "Num Experimental Peaks", "Total Ion Current",
+                "Precursor Scan Number", "Precursor Charge", "Precursor MZ", "Precursor Mass", "Score", "Delta Score",
+                "Notch", "Base Sequence", "Full Sequence", "Essential Sequence", "Ambiguity Level",
+                "PSM Count (unambiguous, <0.01 q-value)", "Mods", "Mods Chemical Formulas", "Mods Combined Chemical Formula",
+                "Num Variable Mods", "Missed Cleavages", "Peptide Monoisotopic Mass", "Mass Diff (Da)", "Mass Diff (ppm)",
+                "Protein Accession", "Protein Name", "Gene Name", "Organism Name", "Identified Sequence Variations",
+                "Splice Sites", "Contaminant", "Decoy", "Peptide Description", "Start and End Residues In Protein",
+                "Previous Amino Acid", "Next Amino Acid", "Theoreticals Searched", "Decoy/Contaminant/Target",
+                "Matched Ion Series", "Matched Ion Mass-To-Charge Ratios", "Matched Ion Mass Diff (Da)",
+                "Matched Ion Mass Diff (Ppm)", "Matched Ion Intensities", "Matched Ion Counts", "QValue"
+            };
+
+            var rows = new List<string> { string.Join("\t", header) };
+            int scan = 1;
+            foreach (var amb in ambiguityLevels)
+            {
+                var ambCell = string.IsNullOrEmpty(amb) ? "" : amb;
+                var fullSequence = ambCell == "1" ? "PEPTIDER" : $"PEPTIDER|{ambCell}";
+                var baseSequence = "PEPTIDER";
+                rows.Add(string.Join("\t", new[]
+                {
+                    "ambiguityTestFile", scan.ToString(), "1.0", "10", "1000.0",
+                    (scan - 1).ToString(), "2", "500.0", "998.0", "10.0", "5.0",
+                    "0", baseSequence, fullSequence, baseSequence, ambCell,
+                    "1", "", "", "", "0", "0", "998.0", "0.0", "0.0",
+                    "P12345", "TestProtein", "gene1", "TestOrganism", "", "", "N", "N", "full", "1-8", "R", "K",
+                    "100", "T", "", "", "", "", "", "", "0.01"
+                }));
+                scan++;
+            }
+
+            var tempFile = Path.Combine(Path.GetTempPath(), "AmbiguityPlotTest_" + Guid.NewGuid().ToString("N") + ".psmtsv");
+            File.WriteAllText(tempFile, string.Join(Environment.NewLine, rows));
+            return tempFile;
         }
 
         private static PlotModelStat BuildPlotModelStatForGrouping(

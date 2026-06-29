@@ -43,7 +43,8 @@ namespace GuiFunctions
             "Histogram of Missed Cleavages",
             "Histogram of Fragment Ion Types by Count",
             "Histogram of Fragment Ion Types by Intensity",
-            "Histogram of Ids by Retention Time"
+            "Histogram of Ids by Retention Time",
+            "Histogram of Spectral Match Ambiguity Levels"
         };
 
         public PlotModel Model => privateModel;
@@ -124,6 +125,9 @@ namespace GuiFunctions
                 case "Histogram of Ids by Retention Time":
                     histogramPlot(12);
                     break;
+                case "Histogram of Spectral Match Ambiguity Levels":
+                    histogramPlot(13);
+                    break;
             }
         }
 
@@ -153,7 +157,7 @@ namespace GuiFunctions
             int[] totalCounts;
             int categoriesPerGroup = 0;
             List<string> allGroupKeys = null;
-            bool isCategoryHistogram = plotType == 5 || plotType == 10 || plotType == 11;
+            bool isCategoryHistogram = plotType == 5 || plotType == 10 || plotType == 11 || plotType == 13;
 
             if (isCategoryHistogram)
             {
@@ -336,6 +340,17 @@ namespace GuiFunctions
                         dictsBySourceFile.Add(fileName, result);
                     }
                     break;
+                case 13: // Histogram of Spectral Match Ambiguity Levels
+                    xAxisTitle = "Ambiguity Level";
+                    labelAngle = 0;
+                    foreach (var fileName in psmsBySourceFile.Keys)
+                    {
+                        var result = psmsBySourceFile[fileName]
+                            .GroupBy(p => NormalizeAmbiguityLevel(p.AmbiguityLevel))
+                            .ToDictionary(p => p.Key, p => p.Count());
+                        dictsBySourceFile.Add(fileName, result);
+                    }
+                    break;
             }
 
             return new HistogramRawData(xAxisTitle, yAxisTitle, binSize, labelAngle, numbersBySourceFile, dictsBySourceFile);
@@ -513,6 +528,13 @@ namespace GuiFunctions
                 var psmsWithMods = groupPsms.Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
                 var mods = psmsWithMods.Select(p => p.ToBioPolymerWithSetMods()).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
                 return mods.GroupBy(p => p.IdWithMotif).ToDictionary(p => p.Key, v => v.Count());
+            }
+
+            if (plotType == 13)
+            {
+                return groupPsms
+                    .GroupBy(p => NormalizeAmbiguityLevel(p.AmbiguityLevel))
+                    .ToDictionary(p => p.Key, p => p.Count());
             }
 
             var allMatchedIons = groupPsms.SelectMany(p => p.MatchedIons).ToList();
@@ -1040,6 +1062,15 @@ namespace GuiFunctions
                 this.bin = bin;
                 this.group = group;
             }
+        }
+
+        private static string NormalizeAmbiguityLevel(string ambiguityLevel)
+        {
+            if (string.IsNullOrWhiteSpace(ambiguityLevel))
+                return "1";
+
+            var first = ambiguityLevel.Split('|')[0].Trim();
+            return string.IsNullOrEmpty(first) ? "1" : first;
         }
 
         /// <summary>
