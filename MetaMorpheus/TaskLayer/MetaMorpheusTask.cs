@@ -343,7 +343,7 @@ namespace TaskLayer
                             {
                                 double selected = precursor.Envelope.Resolution == EnvelopeResolution.Unresolved
                                     ? precursor.Envelope.AverageObservedMass
-                                    : precursor.Envelope.MostAbundantObservedMass;
+                                    : precursor.Envelope.MostAbundantObservedNeutralMass;
                                 if (selected > 0)
                                     precursorMassToMatch = selected;
                             }
