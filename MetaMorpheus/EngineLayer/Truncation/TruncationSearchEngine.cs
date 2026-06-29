@@ -233,10 +233,6 @@ namespace EngineLayer.Truncation
                 {
                     TruncationParent parent = _parents[candidateIds[rank]];
 
-                    // Fragment(..) appends; clear so each candidate is rescored only against its own fragments
-                    nTermProducts.Clear();
-                    cTermProducts.Clear();
-
                     parent.Proteoform.Fragment(dissociationType, FragmentationTerminus.N, nTermProducts, _commonParameters.FragmentationParameters);
                     double nScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan,
                         MetaMorpheusEngine.MatchFragmentIons(scan, nTermProducts, _commonParameters));
@@ -437,7 +433,6 @@ namespace EngineLayer.Truncation
                     binsC.Clear();
                     foreach (DissociationType dissociationType in _dissociationTypes)
                     {
-                        products.Clear(); // Fragment(..) appends; clear so this parent's bins come only from its own fragments
                         _parents[id].Proteoform.Fragment(dissociationType, FragmentationTerminus.Both, products, _commonParameters.FragmentationParameters);
                         foreach (Product product in products)
                         {

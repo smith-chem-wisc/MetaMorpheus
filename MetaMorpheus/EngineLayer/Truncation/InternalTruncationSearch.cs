@@ -114,7 +114,6 @@ namespace EngineLayer.Truncation
                             int notch = chopAcceptor.Accepts(precursorMass, form.MonoisotopicMass);
                             if (notch < 0) continue;
 
-                            products.Clear(); // Fragment(..) appends; clear so this span is scored only against its own fragments
                             form.Fragment(dissociationType, FragmentationTerminus.Both, products, commonParameters.FragmentationParameters);
                             List<MatchedFragmentIon> matched = MetaMorpheusEngine.MatchFragmentIons(scan, products, commonParameters);
 
