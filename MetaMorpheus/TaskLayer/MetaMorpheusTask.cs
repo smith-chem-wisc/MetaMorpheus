@@ -425,8 +425,8 @@ namespace TaskLayer
                 return new List<Ms2ScanWithSpecificMass>();
             }
 
-            var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
+            var childScanNumbers = new HashSet<int>(scansWithPrecursors.Where(p => p != null).SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
+            var parentScans = scansWithPrecursors.Where(p => p != null && p.Count > 0 && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
                 .SelectMany(v => v)
                 .OrderBy(p => p.OneBasedScanNumber)
                 .ToArray();
