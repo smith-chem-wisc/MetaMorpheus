@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
 using Proteomics;
@@ -12,6 +12,7 @@ using System;
 using Omics.Digestion;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
+using System.Globalization;
 
 namespace EngineLayer
 {
@@ -29,6 +30,16 @@ namespace EngineLayer
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = -1;
             IsobaricMassTagReporterIonIntensities = scan.IsobaricMassTagReporterIonIntensities;
+
+            if (scan.TheScan.HcdEnergy != null
+                && double.TryParse(scan.TheScan.HcdEnergy, NumberStyles.Any, CultureInfo.InvariantCulture, out var ce))
+            {
+                CollisionalEnergy = ce;
+            }
+            else
+            {
+                CollisionalEnergy = null;
+            }
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons);
         }
@@ -82,6 +93,7 @@ namespace EngineLayer
         /// envelope is maximally bad; higher = better-shaped Averagine match.
         /// </summary>
         public double PrecursorScanDeconvolutionScore { get; }
+        public double? CollisionalEnergy { get; }
 
         #endregion
 
@@ -123,6 +135,7 @@ namespace EngineLayer
         }
 
         #endregion
+
         /// <summary>
         /// Refers to the index of the Ms2ScanWithSpecificMass in an array of Ms2ScansWithSpecificMass that is sorted by precursor mass
         /// </summary>
@@ -351,9 +364,9 @@ namespace EngineLayer
 
         #region IO
 
-        public static string GetTabSeparatedHeader(bool includeOneOverK0Column = false)
+        public static string GetTabSeparatedHeader(bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
         {
-            return string.Join("\t", DataDictionary(null, null, includeOneOverK0Column: includeOneOverK0Column).Keys);
+            return string.Join("\t", DataDictionary(null, null, includeOneOverK0Column: includeOneOverK0Column, includeCollisionalEnergyColumn: includeCollisionalEnergyColumn).Keys);
         }
 
         public override string ToString()
@@ -361,15 +374,15 @@ namespace EngineLayer
             return ToString(new Dictionary<string, int>());
         }
 
-        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false)
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column).Values.Select(v => v?.Trim() ?? string.Empty));
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column, includeCollisionalEnergyColumn).Values.Select(v => v?.Trim() ?? string.Empty));
         }
 
-        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false)
+        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
-            PsmTsvWriter.AddBasicMatchData(s, psm, includeOneOverK0Column);
+            PsmTsvWriter.AddBasicMatchData(s, psm, includeOneOverK0Column, includeCollisionalEnergyColumn);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm, writePeptideLevelFdr);
@@ -446,6 +459,7 @@ namespace EngineLayer
             PsmCount = psm.PsmCount;
             ModsIdentified = psm.ModsIdentified;
             LocalizedScores = psm.LocalizedScores;
+            CollisionalEnergy = psm.CollisionalEnergy;
             FdrInfo = psm.FdrInfo;
             PeptideFdrInfo = psm.PeptideFdrInfo;
             Score = psm.Score;
