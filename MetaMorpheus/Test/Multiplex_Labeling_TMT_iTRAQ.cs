@@ -626,7 +626,7 @@ namespace Test
             //The below theoretical does not accurately represent B-Y ions
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.ProtonMass) - 275.1350, precursorMass + (2 * Constants.ProtonMass) - 258.127, precursorMass + (2 * Constants.ProtonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.ProtonMass) - 147.0764, precursorMass + (2 * Constants.ProtonMass) - 70, precursorMass + (2 * Constants.ProtonMass) - 60, precursorMass + (2 * Constants.ProtonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
             List<Product> productsWithLocalizedMassDiff = new();
-            
+
             //add one diagnostic ion
             productsWithLocalizedMassDiff.Add(new Product(ProductType.D, FragmentationTerminus.Both, sorted_theoretical_product_masses_for_this_peptide[11], 1, 1, 0));
 
@@ -982,6 +982,51 @@ namespace Test
             if (massTag == null)
             {
                 Assert.Throws<MetaMorpheusException>(() => throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + invalidModId));
+            }
+        }
+
+        [Test]
+        public static void TestTmtProteinGroupsHaveNoQuantColumns()
+        {
+            // TMT runs return early from QuantificationAnalysis before FilesForQuantification
+            // is assigned, so protein groups must NOT emit Intensity_/IntensityOccupancy_/
+            // SpectralCount_ columns. This guards against future regressions.
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
+            // DoParsimony must be true to generate protein groups output file
+            searchTask.SearchParameters.DoParsimony = true;
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtNoQuantColumns");
+            var engine = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                new List<string> { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\VA084TQ_6.mzML") },
+                new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta"), false) },
+                outputFolder);
+            try
+            {
+                engine.Run();
+
+                var pgLines = File.ReadAllLines(
+                    Path.Combine(outputFolder, "search", "AllProteinGroups.tsv")).ToList();
+                Assert.That(pgLines.Count, Is.GreaterThan(1), "No protein groups written");
+
+                var header = pgLines[0].Split('\t').ToList();
+
+                // None of the per-file quant column families should appear for TMT
+                Assert.That(header.Any(h => h.StartsWith("Intensity_")), Is.False, "Unexpected Intensity_ column in TMT output");
+                Assert.That(header.Any(h => h.StartsWith("SpectralCount_")), Is.False, "Unexpected SpectralCount_ column in TMT output");
+                Assert.That(header.Any(h => h.StartsWith("IntensityOccupancy_")), Is.False, "Unexpected IntensityOccupancy_ column in TMT output");
+                Assert.That(header.Any(h => h.StartsWith("CountOccupancy_")), Is.False, "Unexpected CountOccupancy_ column in TMT output");
+
+                // All rows must still have consistent column counts
+                Assert.That(pgLines.Select(l => l.Split('\t').Length).AllSame(),
+                    Is.True, "Column count mismatch across protein group rows");
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder))
+                    Directory.Delete(outputFolder, true);
             }
         }
     }

@@ -166,7 +166,7 @@ namespace Test
             string condition = hasDefinedExperimentalDesign ? "TestCondition" : "";
 
             // create the protein database
-            Protein prot = new(peptide, @"");
+            Protein prot = new(peptide, @"test"); // necessary to pass name to protein. otherwise dbloader will do crazy things
             string dbName = Path.Combine(unitTestFolder, "testDB.fasta");
             UsefulProteomicsDatabases.ProteinDbWriter.WriteFastaDatabase(new List<Protein> { prot }, dbName, ">");
 
@@ -233,7 +233,7 @@ namespace Test
 
             // check the intensity column headers
             List<string> splitHeader = lines[0].Split(new char[] { '\t' }).ToList();
-            List<string> intensityColumnHeaders = splitHeader.Where(p => p.Contains("Intensity", StringComparison.OrdinalIgnoreCase)).ToList();
+            List<string> intensityColumnHeaders = splitHeader.Where(p => p.Contains("Intensity_", StringComparison.OrdinalIgnoreCase)).ToList();
 
             Assert.That(intensityColumnHeaders.Count == 2);
 
