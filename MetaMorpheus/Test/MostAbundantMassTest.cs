@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Chemistry;
 using EngineLayer;
@@ -242,6 +243,64 @@ namespace Test
             Assert.That(GptmdParameters.CreateFilter(nameof(UniDirectionalIonCoverageFilter)), Is.TypeOf<UniDirectionalIonCoverageFilter>());
             Assert.That(GptmdParameters.CreateFilter(nameof(FlankingIonCoverageFilter)), Is.TypeOf<FlankingIonCoverageFilter>());
             Assert.That(GptmdParameters.CreateFilter("not-a-filter"), Is.Null);
+        }
+
+        [Test]
+        public static void GptmdParameters_GetActiveFilters_NullCollections_ReturnEmpty()
+        {
+            // Null in-memory and named-filter collections fall back to empty (no filtering, no throw).
+            var p = new GptmdParameters { GptmdFilters = null, GptmdFilterTypes = null };
+            Assert.That(p.GetActiveFilters(), Is.Empty);
+        }
+
+        [Test]
+        public static void Acceptors_ExposeMaxApexOffset_ToString_AndProseString()
+        {
+            var mass = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(5), Averagine, maxApexOffsetNeutrons: 2);
+            Assert.That(mass.MaxApexOffsetNeutrons, Is.EqualTo(2));
+            Assert.That(mass.ToString(), Does.Contain("mostAbundant"));
+            Assert.That(mass.ToProseString(), Does.Contain("most abundant"));
+
+            var dot = new MostAbundantDotMassDiffAcceptor("g", new[] { 0.0, 79.96633 }, new PpmTolerance(5), Averagine, maxApexOffsetNeutrons: 2);
+            Assert.That(dot.MaxApexOffsetNeutrons, Is.EqualTo(2));
+            Assert.That(dot.ToString(), Does.Contain("mostAbundantDot"));
+            Assert.That(dot.ToProseString(), Does.Contain("most abundant"));
+        }
+
+        [Test]
+        public static void Acceptors_NonPositiveCandidateMass_UseZeroApexOffset_DoNotThrow()
+        {
+            // A candidate monoisotopic mass <= 0 must take the guarded ApexOffset branch (return 0,
+            // not index the averagine model out of range). Routed through Accepts(scan, peptideMass).
+            var mass = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(5), Averagine);
+            Assert.That(mass.Accepts(0.0, 0.0), Is.EqualTo(0).Or.EqualTo(-1));
+
+            var dot = new MostAbundantDotMassDiffAcceptor("g", new[] { 0.0 }, new PpmTolerance(5), Averagine);
+            Assert.That(dot.Accepts(0.0, 0.0), Is.EqualTo(0).Or.EqualTo(-1));
+        }
+
+        [Test]
+        public static void GetMs2Scans_MostAbundantMode_DeconvolutesToApexPrecursorMassToMatch()
+        {
+            string origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            var fileManager = new MyFileManager(true);
+
+            var monoParams = new CommonParameters(maxThreadsToUsePerFile: 1, doPrecursorDeconvolution: true,
+                precursorMassMatchMode: PrecursorMassMatchMode.Monoisotopic);
+            var apexParams = new CommonParameters(maxThreadsToUsePerFile: 1, doPrecursorDeconvolution: true,
+                precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+
+            var msDataFile = fileManager.LoadFile(origDataFile, monoParams);
+
+            var monoScans = MetaMorpheusTask.GetMs2Scans(msDataFile, origDataFile, monoParams).ToArray();
+            var apexScans = MetaMorpheusTask.GetMs2Scans(msDataFile, origDataFile, apexParams).ToArray();
+
+            Assert.That(apexScans.Length, Is.GreaterThan(0));
+            // In monoisotopic mode the candidate-selection mass is always the monoisotopic PrecursorMass.
+            Assert.That(monoScans.All(s => Math.Abs(s.PrecursorMassToMatch - s.PrecursorMass) < 1e-6), Is.True);
+            // In most-abundant mode the deconvoluted envelope apex is used, so at least one scan's
+            // PrecursorMassToMatch departs from its monoisotopic PrecursorMass.
+            Assert.That(apexScans.Any(s => Math.Abs(s.PrecursorMassToMatch - s.PrecursorMass) > 1e-6), Is.True);
         }
     }
 }

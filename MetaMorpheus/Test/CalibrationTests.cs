@@ -301,6 +301,34 @@ namespace Test
         }
 
         [Test]
+        public static void CalibrationRunsInMostAbundantMode()
+        {
+            // Exercises the most-abundant calibration path end to end: when PrecursorMassMatchMode is
+            // MostAbundant AND precursor deconvolution is on, calibration selects its PSMs with the apex
+            // (MostAbundantMassDiffAcceptor) acceptor rather than the zero-centered monoisotopic one.
+            // Start from the calibration defaults and flip only the two relevant fields, so all the
+            // calibration-appropriate parameters (digestion, mods, deconvolution settings) stay intact.
+            CalibrationTask calibrationTask = new CalibrationTask();
+            calibrationTask.CommonParameters.DoPrecursorDeconvolution = true;
+            calibrationTask.CommonParameters.PrecursorMassMatchMode = PrecursorMassMatchMode.MostAbundant;
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationMostAbundant");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            Directory.CreateDirectory(outputFolder);
+
+            // The run must complete and produce output; the apex acceptor is constructed during data-point
+            // acquisition regardless of how many PSMs are found.
+            Assert.DoesNotThrow(() =>
+                calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) },
+                    new List<string> { myFile }, "test"));
+            Assert.That(Directory.GetFiles(outputFolder, "*", SearchOption.AllDirectories).Length, Is.GreaterThan(0));
+
+            Directory.Delete(outputFolder, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+        }
+
+        [Test]
         [TestCase("filename1.1.mzML")]
         public static void ExperimentalDesignCalibrationAndSearch(string nonCalibratedFile)
         {
