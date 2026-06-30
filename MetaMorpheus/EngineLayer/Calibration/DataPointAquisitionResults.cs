@@ -21,7 +21,8 @@ namespace EngineLayer.Calibration
             int numMs1MassChargeCombinationsConsidered,
             int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
             int numMs2MassChargeCombinationsConsidered,
-            int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
+            int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
+            PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic)
             : base(dataPointAcquisitionEngine)
         {
             Psms = psms;
@@ -35,7 +36,25 @@ namespace EngineLayer.Calibration
             var ms1PpmRange = Ms1List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
             var ms2PpmRange = Ms2List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
 
-            var precursorErrors = psms.Select(p => (p.ScanPrecursorMass - p.BioPolymerWithSetModsMonoisotopicMass.Value) / p.BioPolymerWithSetModsMonoisotopicMass.Value * 1e6).ToList();
+            // In most-abundant mode only, use the neutron-modulo residual of the precursor mass error
+            // instead of the raw difference. Most-abundant matching admits PSMs whose deconvoluted
+            // monoisotopic peak is off by +/-1-2 neutrons (the apex notch set), so the raw
+            // (ScanPrecursorMass - peptideMonoisotopic) difference carries whole-neutron offsets that are
+            // isotope-assignment errors, not instrument m/z drift; left in, they inflate the IQR and make
+            // calibration write runaway precursor tolerances (e.g. 1940 ppm). In default Monoisotopic mode
+            // the raw difference is used unchanged - baseline calibration behavior is preserved exactly.
+            bool stripNeutronOffsets = precursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
+            var precursorErrors = psms.Select(p =>
+            {
+                double deltaDa = p.ScanPrecursorMass - p.BioPolymerWithSetModsMonoisotopicMass.Value;
+                if (stripNeutronOffsets)
+                {
+                    // AwayFromZero so the nearest-neutron assignment at an exact half-neutron boundary is
+                    // parity-independent (default banker's rounding would snap to the even integer).
+                    deltaDa -= Math.Round(deltaDa / Constants.C13MinusC12, MidpointRounding.AwayFromZero) * Constants.C13MinusC12;
+                }
+                return deltaDa / p.BioPolymerWithSetModsMonoisotopicMass.Value * 1e6;
+            }).ToList();
             PsmPrecursorIqrPpmError = precursorErrors.InterquartileRange();
             PsmPrecursorMedianPpmError = precursorErrors.Median();
 

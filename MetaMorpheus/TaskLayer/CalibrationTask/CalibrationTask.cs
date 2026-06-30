@@ -194,11 +194,31 @@ namespace TaskLayer
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
         {
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalDataFile);
-            MassDiffAcceptor searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
-                new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
-                new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            // In most-abundant mode, find calibration PSMs with the apex acceptor so the search is
+            // consistent with the scan's most-abundant PrecursorMassToMatch. The calibration error
+            // itself is recomputed per-isotope from the identified peptide's theoretical distribution
+            // (DataPointAcquisitionEngine) and is independent of the precursor-matching convention.
+            // The apex acceptor only works when PrecursorMassToMatch is the deconvoluted most-abundant
+            // mass. Calibration runs with precursor deconvolution off (see ctor), in which case
+            // PrecursorMassToMatch falls back to the monoisotopic mass; matching that against the
+            // averagine apex would mismatch by the full offset (hundreds of ppm at high mass) and find
+            // almost nothing. So only use the apex acceptor when deconvolution is actually on; otherwise
+            // fall back to the standard zero-centered (monoisotopic) acceptor.
+            MassDiffAcceptor searchMode;
+            if (combinedParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
+                && combinedParameters.DoPrecursorDeconvolution)
+            {
+                searchMode = new MostAbundantMassDiffAcceptor("mostAbundant", combinedParameters.PrecursorMassTolerance,
+                    combinedParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine());
+            }
+            else
+            {
+                searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
+                    new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
+                    new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            }
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.PrecursorMassToMatch).ToArray();
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
@@ -406,6 +426,18 @@ namespace TaskLayer
         {
             double newPrecursorPpmTolerance = Math.Round(PrecursorMultiplierForToml * acquisitionResults.PsmPrecursorIqrPpmError + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError), 1);
             double newProductPpmTolerance = Math.Round(ProductMultiplierForToml * acquisitionResults.PsmProductIqrPpmError + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1);
+
+            // Guardrail (most-abundant mode only): the neutron-misassignment error distribution can be
+            // pathologically wide there, and calibration must never write a tolerance wider than the one
+            // it searched with (that would explode the candidate space and memory in downstream
+            // GPTMD/Search). In default Monoisotopic mode the tolerance is left unclamped, preserving the
+            // historical multi-round calibration behavior.
+            if (combinedParams.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
+            {
+                newPrecursorPpmTolerance = Math.Min(newPrecursorPpmTolerance, combinedParams.PrecursorMassTolerance.Value);
+                newProductPpmTolerance = Math.Min(newProductPpmTolerance, combinedParams.ProductMassTolerance.Value);
+            }
+
             UpdateCombinedParameters(combinedParams, newPrecursorPpmTolerance, newProductPpmTolerance);
         }
 

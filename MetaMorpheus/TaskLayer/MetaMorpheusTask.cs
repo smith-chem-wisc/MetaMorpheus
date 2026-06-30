@@ -335,11 +335,28 @@ namespace TaskLayer
 
                         foreach (var precursor in precursorSet)
                         {
+                            // In most-abundant mode, select candidates by the experimentally most-detectable
+                            // peak — the most abundant (tallest) isotopologue — rather than the
+                            // often-undetectable monoisotopic peak. Left null in monoisotopic mode, when no
+                            // deconvoluted envelope is available, or when the envelope reports no most-abundant
+                            // peak (the -1 sentinel, e.g. a neutral mass read from a pre-deconvoluted file), so
+                            // Ms2ScanWithSpecificMass defaults PrecursorMassToMatch to PrecursorMass from a
+                            // single source of truth. (Isotopically unresolved high-mass species, which would
+                            // match on the average/centroid mass, are future work.)
+                            double? precursorMassToMatch = null;
+                            if (commonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
+                                && precursor.Envelope != null
+                                && precursor.Envelope.MostAbundantObservedNeutralMass > 0)
+                            {
+                                precursorMassToMatch = precursor.Envelope.MostAbundantObservedNeutralMass;
+                            }
+
                             // assign precursor for this MS2 scan
                             var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.MonoisotopicPeakMz,
                                 precursor.Charge, fullFilePath, commonParameters, neutralExperimentalFragments,
                                 precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity,
-                                precursor.DeconvolutionScore);
+                                precursorMassToMatch: precursorMassToMatch,
+                                precursorDeconvolutionScore: precursor.DeconvolutionScore);
 
                             // assign precursors for MS2 child scans
                             if (ms2ChildScans != null)
@@ -354,7 +371,8 @@ namespace TaskLayer
                                     }
                                     var theChildScan = new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.MonoisotopicPeakMz,
                                         precursor.Charge, fullFilePath, commonParameters, childNeutralExperimentalFragments,
-                                        precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity);
+                                        precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity,
+                                        precursorMassToMatch: precursorMassToMatch);
                                     scan.ChildScans.Add(theChildScan);
                                 }
                             }
@@ -599,7 +617,8 @@ namespace TaskLayer
                 precursorDeconParams: precursorDeconParams,
                 productDeconParams: productDeconParams,
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
-                fragmentationParams: commonParams.FragmentationParameters);
+                fragmentationParams: commonParams.FragmentationParameters,
+                precursorMassMatchMode: commonParams.PrecursorMassMatchMode);
 
             return returnParams;
         }

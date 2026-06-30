@@ -40,7 +40,10 @@ namespace EngineLayer.ClassicSearch
         {
             SpectralMatches = globalPsms;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
-            MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
+            // PrecursorMassToMatch is the candidate-selection mass (equals PrecursorMass in
+            // monoisotopic mode; the most-abundant/average observed mass in most-abundant mode).
+            // The scans are sorted by this same quantity, keeping the binary search valid.
+            MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMassToMatch).ToArray();
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
