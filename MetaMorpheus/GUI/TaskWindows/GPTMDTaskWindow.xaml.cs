@@ -87,7 +87,8 @@ namespace MetaMorpheusGUI
             GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
             DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
                 TheTask.CommonParameters.ProductDeconvolutionParameters,
-                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
+                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution,
+                TheTask.CommonParameters.PrecursorMassMatchMode);
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
                 ProteaseComboBox.SelectedItem = digestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings}
@@ -578,7 +579,8 @@ namespace MetaMorpheusGUI
                     minVariantDepth: minVariantDepth,
                     maxHeterozygousVariants: maxHeterozygousVariants,
                     precursorDeconParams: precursorDeconvolutionParameters,
-                    productDeconParams: productDeconvolutionParameters);
+                    productDeconParams: productDeconvolutionParameters,
+                    precursorMassMatchMode: DeconHostViewModel.PrecursorMassMatchMode);
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in GptmdModTypeForTreeViewObservableCollection)

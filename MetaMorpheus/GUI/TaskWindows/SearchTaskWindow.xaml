@@ -765,6 +765,16 @@
                                         </StackPanel>
                                     </GroupBox>
                                     <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
+                                    <CheckBox x:Name="UseMostAbundantMassCheckBox" Content="Use Most Abundant Mass" Margin="10,0,5,5"
+                                              IsChecked="{Binding ElementName=DeisotopingControl, Path=DataContext.UseMostAbundantMass, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <CheckBox.ToolTip>
+                                            <TextBlock>
+                                                Match precursor candidates by the most abundant observed isotopic mass instead of the monoisotopic mass.
+                                                Recommended for large (&gt;35 kDa) top-down proteoforms, where the monoisotopic peak is often undetectable.
+                                            </TextBlock>
+                                        </CheckBox.ToolTip>
+                                    </CheckBox>
                                     <GroupBox Header="Peak Trimming">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
