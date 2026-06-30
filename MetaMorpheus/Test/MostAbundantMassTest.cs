@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Chemistry;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -277,6 +278,30 @@ namespace Test
 
             var dot = new MostAbundantDotMassDiffAcceptor("g", new[] { 0.0 }, new PpmTolerance(5), Averagine);
             Assert.That(dot.Accepts(0.0, 0.0), Is.EqualTo(0).Or.EqualTo(-1));
+        }
+
+        [Test]
+        public static void GptmdRunsInMostAbundantMode()
+        {
+            // GPTMD end to end in most-abundant mode: the notch/prose acceptors switch to the apex
+            // (MostAbundantDotMassDiffAcceptor) variant. Deconvolution is on by default for GPTMD, so
+            // only the match-mode needs flipping.
+            var gptmdTask = new GptmdTask();
+            gptmdTask.CommonParameters.PrecursorMassMatchMode = PrecursorMassMatchMode.MostAbundant;
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestGptmdMostAbundant");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            Directory.CreateDirectory(outputFolder);
+
+            Assert.DoesNotThrow(() =>
+                gptmdTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) },
+                    new List<string> { myFile }, "test"));
+            Assert.That(Directory.GetFiles(outputFolder, "*", SearchOption.AllDirectories).Length, Is.GreaterThan(0));
+
+            Directory.Delete(outputFolder, true);
+            string taskSettings = Path.Combine(TestContext.CurrentContext.TestDirectory, "Task Settings");
+            if (Directory.Exists(taskSettings)) { Directory.Delete(taskSettings, true); }
         }
 
         [Test]
