@@ -275,8 +275,8 @@ namespace TaskLayer
                                     precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double? intensity = null;
-                                    if (commonParameters.UseMostAbundantPrecursorIntensity) 
-                                        intensity = envelope.Peaks.Max(p => p.intensity); 
+                                    if (commonParameters.UseMostAbundantPrecursorIntensity)
+                                        intensity = envelope.Peaks.Max(p => p.intensity);
 
                                     var fractionalIntensity = envelope.TotalIntensity /
                                           precursorSpectrum.MassSpectrum.YArray
@@ -286,7 +286,15 @@ namespace TaskLayer
                                               precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Maximum)
                                           ].Sum();
 
-                                    precursorSet.Add(new(envelope, intensity, fractionalIntensity));
+                                    // Method-agnostic envelope-quality score from mzLib (idempotent: caches on the
+                                    // envelope, so re-asking the same envelope is cheap).
+                                    double genericScore = envelope.GetOrComputeGenericScore(
+                                        commonParameters.PrecursorDeconvolutionParameters);
+
+                                    precursorSet.Add(new Precursor(envelope, intensity, fractionalIntensity)
+                                    {
+                                        DeconvolutionScore = genericScore
+                                    });
                                 }
                             }
                         }
@@ -347,7 +355,8 @@ namespace TaskLayer
                             var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.MonoisotopicPeakMz,
                                 precursor.Charge, fullFilePath, commonParameters, neutralExperimentalFragments,
                                 precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity,
-                                precursorMassToMatch: precursorMassToMatch);
+                                precursorMassToMatch: precursorMassToMatch,
+                                precursorDeconvolutionScore: precursor.DeconvolutionScore);
 
                             // assign precursors for MS2 child scans
                             if (ms2ChildScans != null)
@@ -563,6 +572,12 @@ namespace TaskLayer
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
+            DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
+            DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
+
+            // DoPrecursorDeconvolution and DoProductDeconvolution flow from CommonParameters only;
+            // file-specific PrecursorDeconvolutionParameters / ProductDeconvolutionParameters are stored
+            // independently and take effect when the corresponding Do* flag is true.
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
@@ -599,8 +614,8 @@ namespace TaskLayer
                 maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
                 minVariantDepth: commonParams.MinVariantDepth,
                 addTruncations: commonParams.AddTruncations,
-                precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
-                productDeconParams: commonParams.ProductDeconvolutionParameters,
+                precursorDeconParams: precursorDeconParams,
+                productDeconParams: productDeconParams,
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode);
@@ -1085,10 +1100,11 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 bool includeOneOverK0Column = psms.Any(p => p.ScanOneOverK0.HasValue);
-                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column));
+                bool includeCollisionalEnergyColumn = psms.Any(p => p.CollisionalEnergy.HasValue);
+                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column, includeCollisionalEnergyColumn));
                 foreach (var psm in psms)
                 {
-                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column));
+                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn));
                 }
             }
         }
@@ -1598,7 +1614,7 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Legacy TOML compatibility � when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
+        /// Legacy TOML compatibility when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
         /// </summary>
         /// <typeparam name="TTask"></typeparam>
         /// <param name="filePath"></param>

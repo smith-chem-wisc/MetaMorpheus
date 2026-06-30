@@ -63,7 +63,8 @@ namespace EngineLayer
             bool useMostAbundantPrecursorIntensity = true,
             DIAparameters diaParameters = null,
             IFragmentationParams fragmentationParams = null,
-            PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic)
+            PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
+            string rtPredictorName = "Chronologer")
 
         {
             TaskDescriptor = taskDescriptor;
@@ -132,6 +133,8 @@ namespace EngineLayer
                 ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
                 FragmentationParameters = fragmentationParams ?? new FragmentationParams();
             }
+
+            RTPredictorName = rtPredictorName;
 
             CustomIons = digestionParams.ProductsFromDissociationType()[DissociationType.Custom];
 
@@ -214,6 +217,7 @@ namespace EngineLayer
         public PrecursorMassMatchMode PrecursorMassMatchMode { get; set; }
         public DIAparameters? DIAparameters { get; set; } //only for DIA analysis involving pseudo ms2 scan generation
         public IFragmentationParams FragmentationParameters { get; set; }
+        public string RTPredictorName { get; private set; }
 
         public CommonParameters Clone()
         {
@@ -287,7 +291,8 @@ namespace EngineLayer
                                 UseMostAbundantPrecursorIntensity,
                                 DIAparameters,
                                 FragmentationParameters,
-                                PrecursorMassMatchMode);
+                                PrecursorMassMatchMode,
+                                RTPredictorName);
         }
 
         public void SetCustomProductTypes()

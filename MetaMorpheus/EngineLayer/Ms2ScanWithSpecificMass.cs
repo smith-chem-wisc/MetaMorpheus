@@ -11,7 +11,8 @@ namespace EngineLayer
     {
         public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam,
             IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null,
-            double? precursorMassToMatch = null)
+            double? precursorMassToMatch = null,
+            double precursorDeconvolutionScore = 0)
         {
             PrecursorMonoisotopicPeakMz = precursorMonoisotopicPeakMz;
             PrecursorCharge = precursorCharge;
@@ -24,6 +25,7 @@ namespace EngineLayer
             PrecursorIntensity = precursorIntensity ?? 1;
             PrecursorEnvelopePeakCount = envelopePeakCount ?? 1;
             PrecursorFractionalIntensity = precursorFractionalIntensity ?? -1;
+            PrecursorDeconvolutionScore = precursorDeconvolutionScore;
             FullFilePath = fullFilePath;
             ChildScans = new List<Ms2ScanWithSpecificMass>();
             NativeId = mzLibScan.NativeId;
@@ -58,6 +60,12 @@ namespace EngineLayer
         public double PrecursorIntensity { get; }
         public int PrecursorEnvelopePeakCount { get; }
         public double PrecursorFractionalIntensity { get; }
+        /// <summary>
+        /// Method-agnostic envelope-quality score in [0, 1] from mzLib's DeconvolutionScorer.
+        /// 0 indicates either a maximally low-quality envelope or that no envelope was
+        /// deconvoluted for this scan (e.g. scan-header-only precursor path).
+        /// </summary>
+        public double PrecursorDeconvolutionScore { get; }
         public string FullFilePath { get; }
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
