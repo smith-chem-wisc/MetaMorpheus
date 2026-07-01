@@ -39,7 +39,7 @@ public class RnaDatabaseLoadingTests
         var results = (DatabaseLoadingEngineResults)loader.Run()!;
         var bioPolymers = results.BioPolymers;
 
-        Assert.That(dbForTask[0].BioPolymerCount, Is.EqualTo(1));   
+        Assert.That(dbForTask[0].BioPolymerCount, Is.EqualTo(1));
         Assert.That(dbForTask[0].TargetCount, Is.EqualTo(1));
         Assert.That(dbForTask[0].DecoyCount, Is.EqualTo(0));
 
@@ -49,7 +49,7 @@ public class RnaDatabaseLoadingTests
     }
 
     [Test]
-    [TestCase(TargetContaminantAmbiguity.RenameProtein, new[] { "20mer1_D1", "20mer1_D2" }, new[] {false, true})]
+    [TestCase(TargetContaminantAmbiguity.RenameProtein, new[] { "20mer1_D1", "20mer1_D2" }, new[] { false, true })]
     [TestCase(TargetContaminantAmbiguity.RemoveTarget, new[] { "20mer1" }, new[] { true })]
     [TestCase(TargetContaminantAmbiguity.RemoveContaminant, new[] { "20mer1" }, new[] { false })]
     public static void DbReadingHandleAccessionCollisions(TargetContaminantAmbiguity type, string[] expectedAccessions, bool[] expectedIsContaminant)
