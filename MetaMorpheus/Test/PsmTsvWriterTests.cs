@@ -20,6 +20,35 @@ namespace Test
     internal static class PsmTsvWriterTests
     {
         [Test]
+        public static void ProFormaColumn_IsWrittenForPeptide()
+        {
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
+            Modification oxidation = new Modification(_originalId: "Oxidation", _modificationType: "testMods",
+                _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491);
+
+            // M is the 3rd residue (one-based) of PEMTIDEK
+            var oneBasedMods = new Dictionary<int, List<Modification>> { { 3, new List<Modification> { oxidation } } };
+            Protein protein = new Protein("PEMTIDEK", "prot1", oneBasedModifications: oneBasedMods);
+            var allModsOneIsNterminus = new Dictionary<int, Modification> { { 4, oxidation } }; // M (0-based index 2) -> key 4
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(protein, new DigestionParams(),
+                1, 8, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus, 0);
+
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[,] { }),
+                0, 0, true, Polarity.Positive, 0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                1000.0, 1, "", new CommonParameters());
+
+            SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+
+            string[] header = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+            Assert.That(header, Does.Contain(SpectrumMatchFromTsvHeader.ProForma));
+
+            int proFormaIndex = header.IndexOf(SpectrumMatchFromTsvHeader.ProForma);
+            string[] row = psm.ToString().Split('\t');
+            Assert.That(row[proFormaIndex], Is.EqualTo("PEM[Oxidation]TIDEK"));
+        }
+
+        [Test]
         public static void ResolveModificationsTest()
         {
             double mass = 12.0 + new PeptideWithSetModifications(new Protein("LNLDLDND", "prot1"),new DigestionParams(),1,8,CleavageSpecificity.Full,"",0, new Dictionary<int, Modification>(),0,null).MonoisotopicMass.ToMz(1);
