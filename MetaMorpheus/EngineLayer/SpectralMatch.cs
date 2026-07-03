@@ -34,6 +34,7 @@ namespace EngineLayer
             ScanPrecursorMass = scan.PrecursorMass;
             PrecursorScanEnvelopePeakCount = scan.PrecursorEnvelopePeakCount;
             PrecursorFractionalIntensity = scan.PrecursorFractionalIntensity;
+            PrecursorScanDeconvolutionScore = scan.PrecursorDeconvolutionScore;
             DigestionParams = commonParameters.DigestionParams;
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
@@ -78,6 +79,12 @@ namespace EngineLayer
         public double PrecursorScanIntensity { get; }
         public int PrecursorScanEnvelopePeakCount { get; }
         public double PrecursorFractionalIntensity { get; }
+        /// <summary>
+        /// Method-agnostic envelope-quality score in [0, 1] from mzLib's DeconvolutionScorer for
+        /// the precursor envelope of this PSM. 0 indicates no envelope was computed or the
+        /// envelope is maximally bad; higher = better-shaped Averagine match.
+        /// </summary>
+        public double PrecursorScanDeconvolutionScore { get; }
         public double ScanPrecursorMass { get; }
         public double? ScanOneOverK0 { get; set; } // this is only used for ion mobility data, so it can be null
         public string FullFilePath { get; private set; }

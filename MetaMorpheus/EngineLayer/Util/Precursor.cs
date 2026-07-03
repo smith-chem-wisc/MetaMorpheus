@@ -96,10 +96,18 @@ public record Precursor
     /// </summary>
     public int EnvelopePeakCount { get; init; }
 
-    /// <summary> 
+    /// <summary>
     /// The fraction of the intensity in the MS1 scan isolation window that is accounted for by this precursor
     /// </summary>
     public double? FractionalIntensity { get; init; }
+
+    /// <summary>
+    /// Method-agnostic envelope-quality score in [0, 1] from mzLib's DeconvolutionScorer, computed
+    /// at deconvolution time. 0 is the sentinel for "no envelope was deconvoluted" (e.g. the
+    /// scan-header-only precursor path) and is also returned by the scorer for a maximally bad
+    /// envelope, so the model cannot distinguish those two cases — accepted limitation for now.
+    /// </summary>
+    public double DeconvolutionScore { get; init; }
 
     public bool Equals(Precursor? other, Tolerance mzTolerance)
     {
