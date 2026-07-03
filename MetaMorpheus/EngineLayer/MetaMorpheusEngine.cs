@@ -359,6 +359,11 @@ namespace EngineLayer
             WarnHandler?.Invoke(this, new StringEventArgs(v, NestedIds));
         }
 
+        protected static void Warn(string v, MetaMorpheusEngine engine)
+        {
+            WarnHandler?.Invoke(engine, new StringEventArgs(v, engine?.NestedIds));
+        }
+
         protected void Status(string v)
         {
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, NestedIds));
