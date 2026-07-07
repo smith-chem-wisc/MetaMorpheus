@@ -9,6 +9,11 @@ using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using TaskLayer;
 
 namespace Test
@@ -170,6 +175,50 @@ namespace Test
 
             // Default stays Monoisotopic.
             Assert.That(new CommonParameters().PrecursorMassMatchMode, Is.EqualTo(PrecursorMassMatchMode.Monoisotopic));
+        }
+
+        [Test]
+        public static void MostAbundantMassErrorPpm_TightOnApex_NullInMonoisotopicMode()
+        {
+            var protein = new Protein("PEPTIDESEQUENCEK", "prot1");
+            var peptide = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 16,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0, null);
+            double mono = peptide.MonoisotopicMass;
+            double apex = mono + ApexOffset(mono); // observed most-abundant lands exactly on the predicted apex
+
+            var msDataScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
+                2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap,
+                double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null,
+                DissociationType.AnyActivationType, 1, null);
+            var noIons = new List<MatchedFragmentIon>();
+
+            // Most-abundant mode: the scan supplies the observed apex as PrecursorMassToMatch; the
+            // monoisotopic PrecursorMz is left as mono. Reported most-abundant error is ~0 (on apex).
+            var maParams = new CommonParameters(precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+            var maScan = new Ms2ScanWithSpecificMass(msDataScan, mono.ToMz(1), 1, "", maParams, precursorMassToMatch: apex);
+            var maPsm = new PeptideSpectralMatch(peptide, 0, 10, 0, maScan, maParams, noIons);
+
+            Assert.That(maPsm.MostAbundantMassErrorPpm, Is.Not.Null);
+            Assert.That(maPsm.MostAbundantMassErrorPpm[0], Is.EqualTo(0).Within(0.5)); // tight, in ppm
+
+            // Monoisotopic mode: no most-abundant error is reported (column omitted).
+            var monoParams = new CommonParameters();
+            var monoScan = new Ms2ScanWithSpecificMass(msDataScan, mono.ToMz(1), 1, "", monoParams);
+            var monoPsm = new PeptideSpectralMatch(peptide, 0, 10, 0, monoScan, monoParams, noIons);
+            Assert.That(monoPsm.MostAbundantMassErrorPpm, Is.Null);
+
+            // The optional column appears in the header only when requested.
+            Assert.That(SpectralMatch.GetTabSeparatedHeader(includeMostAbundantColumn: true),
+                Does.Contain("Most Abundant Mass Diff (ppm)"));
+            Assert.That(SpectralMatch.GetTabSeparatedHeader(), Does.Not.Contain("Most Abundant Mass Diff (ppm)"));
+
+            // End-to-end writer path: the emitted row cell aligns under the new header column and
+            // carries the reported value (row and header stay column-aligned).
+            var header = SpectralMatch.GetTabSeparatedHeader(includeMostAbundantColumn: true).Split('\t');
+            var row = maPsm.ToString(new Dictionary<string, int>(), false, false, false, includeMostAbundantColumn: true).Split('\t');
+            int col = Array.IndexOf(header, "Most Abundant Mass Diff (ppm)");
+            Assert.That(col, Is.GreaterThanOrEqualTo(0));
+            Assert.That(double.Parse(row[col], System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo(0).Within(0.5));
         }
 
         [Test]

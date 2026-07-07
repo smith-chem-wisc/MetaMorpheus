@@ -83,8 +83,16 @@ namespace EngineLayer
         // The averagine most-abundant offset for a monoisotopic mass: the model's diff-to-monoisotopic
         // at the nearest mass bin. (Composes the existing AverageResidue API rather than relying on a
         // dedicated mzLib method.)
-        private double ApexOffset(double monoisotopicMass)
-            => monoisotopicMass <= 0 ? 0 : Averagine.GetDiffToMonoisotopic(Averagine.GetMostIntenseMassIndex(monoisotopicMass));
+        private double ApexOffset(double monoisotopicMass) => AveragineApexOffset(Averagine, monoisotopicMass);
+
+        /// <summary>
+        /// Averagine-predicted mass offset from a monoisotopic mass to its most-abundant isotopologue
+        /// (the "apex"). Exposed statically so candidate selection (this acceptor) and precursor
+        /// mass-error reporting (<see cref="SpectralMatch.MostAbundantMassErrorPpm"/>) share the exact
+        /// same apex model. Returns 0 for non-positive masses, where the averagine model is undefined.
+        /// </summary>
+        public static double AveragineApexOffset(AverageResidue averagine, double monoisotopicMass)
+            => monoisotopicMass <= 0 ? 0 : averagine.GetDiffToMonoisotopic(averagine.GetMostIntenseMassIndex(monoisotopicMass));
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {

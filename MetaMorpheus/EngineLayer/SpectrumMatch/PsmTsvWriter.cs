@@ -20,6 +20,14 @@ namespace EngineLayer
         internal const double ToleranceForDoubleResolutionF2 = 1e-3;
 
         /// <summary>
+        /// Optional psmtsv column header for the most-abundant-mode precursor mass error. Written only
+        /// when a run used most-abundant selection (see <see cref="SpectralMatch.MostAbundantMassErrorPpm"/>).
+        /// A write-only column: mzLib's psmtsv reader maps known headers by name and ignores unknown
+        /// columns, so this is backward-compatible without a mzLib change.
+        /// </summary>
+        internal const string MostAbundantMassDiffPpmHeader = "Most Abundant Mass Diff (ppm)";
+
+        /// <summary>
         /// Resolve Methods()
         /// if all 'values' are the same this returns the one value otherwise you get a separated list of all values in their original order.
         /// for example:
@@ -192,7 +200,7 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch / MassDiffAcceptor.NotchScalar)).ResolvedString;
         }
 
-        internal static void AddPeptideSequenceData(Dictionary<string, string> s, SpectralMatch sm, IReadOnlyDictionary<string, int> ModsToWritePruned)
+        internal static void AddPeptideSequenceData(Dictionary<string, string> s, SpectralMatch sm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool includeMostAbundantColumn = false)
         {
             bool pepWithModsIsNull = sm == null || sm.BestMatchingBioPolymersWithSetMods == null || !sm.BestMatchingBioPolymersWithSetMods.Any();
 
@@ -213,6 +221,8 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.MonoisotopicMass] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
             s[SpectrumMatchFromTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorDa).ResolvedString;
             s[SpectrumMatchFromTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorPpm).ResolvedString;
+            if (includeMostAbundantColumn)
+                s[MostAbundantMassDiffPpmHeader] = pepWithModsIsNull || sm.MostAbundantMassErrorPpm == null ? " " : Resolve(sm.MostAbundantMassErrorPpm).ResolvedString;
             s[SpectrumMatchFromTsvHeader.Accession] = pepWithModsIsNull ? " " : sm.Accession != null ? sm.Accession : Resolve(pepsWithMods.Select(b => b.Parent.Accession), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.Name] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.FullName), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.GeneName] = geneString;
