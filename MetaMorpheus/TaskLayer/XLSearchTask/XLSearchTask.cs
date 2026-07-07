@@ -1,16 +1,17 @@
 ﻿using EngineLayer;
 using EngineLayer.CrosslinkSearch;
+using EngineLayer.DatabaseLoading;
+using EngineLayer.Deconvolution;
 using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
+using Omics;
+using Omics.Digestion;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using EngineLayer.DatabaseLoading;
-using Omics;
-using Omics.Digestion;
 
 namespace TaskLayer
 {
@@ -103,7 +104,7 @@ namespace TaskLayer
 
                 Status("Getting ms2 scans...", thisId);
 
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2ScansWrapByScanNum(myMsDataFile, origDataFile, combinedParams, out List<List<(double, int, double)>> precursorss).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = DeconvolutionEngine.GetMs2ScansWrapByScanNum(myMsDataFile, origDataFile, combinedParams, out List<List<(double, int, double)>> precursorss).ToArray();
 
                 List<CrosslinkSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<CrosslinkSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
 

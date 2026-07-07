@@ -21,6 +21,7 @@ using Easy.Common.Extensions;
 using EngineLayer.DatabaseLoading;
 using Omics.BioPolymer;
 using Readers;
+using EngineLayer.Deconvolution;
 
 namespace Test
 {
@@ -675,13 +676,13 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters();
             var myMsDataFile = myFileManager.LoadFile(filePath, CommonParameters);
 
-            var scansWithPrecursors = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters);
+            var scansWithPrecursors = DeconvolutionEngine.GetGroupedMs2Scans(myMsDataFile, filePath, CommonParameters);
             var Ms2Scan1 = scansWithPrecursors[17][1];
             Assert.That(Math.Abs(2889051 - Ms2Scan1.PrecursorIntensity) <= 10);
             Assert.That(Ms2Scan1.PrecursorEnvelopePeakCount, Is.EqualTo(2)); //might not be the correct number of peaks but use it for now
 
             CommonParameters CommonParameters1 = new CommonParameters(useMostAbundantPrecursorIntensity: false);
-            var scansWithPrecursors1 = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters1);
+            var scansWithPrecursors1 = DeconvolutionEngine.GetGroupedMs2Scans(myMsDataFile, filePath, CommonParameters1);
             var Ms2Scan1_2 = scansWithPrecursors1[17][1];
             Assert.That(Math.Abs(3405218 - Ms2Scan1_2.PrecursorIntensity) <= 10);
 
@@ -693,7 +694,7 @@ namespace Test
 
             //2: use scan header (selectedIonMonoisotopicGuessIntensity) to find precursor info
             CommonParameters CommonParameters2 = new CommonParameters(doPrecursorDeconvolution: false, useProvidedPrecursorInfo: true);
-            var scansWithPrecursors2 = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters2);
+            var scansWithPrecursors2 = DeconvolutionEngine.GetGroupedMs2Scans(myMsDataFile, filePath, CommonParameters2);
             var Ms2Scan2 = scansWithPrecursors2[17][0];
             Assert.That(Math.Abs(1.14554e7 - Ms2Scan2.PrecursorIntensity) <= 1000);
             Assert.That(Ms2Scan2.PrecursorEnvelopePeakCount, Is.EqualTo(1));
@@ -710,7 +711,7 @@ namespace Test
                     null, null, null));
             MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(testMsDataFile, "mzMLWithZeros.mzML", false);
 
-            var scansWithPrecursors3 = MetaMorpheusTask._GetMs2Scans(testMsDataFile, "mzMLWithZeros.mzML", CommonParameters2);
+            var scansWithPrecursors3 = DeconvolutionEngine.GetGroupedMs2Scans(testMsDataFile, "mzMLWithZeros.mzML", CommonParameters2);
             var Ms2Scan3 = scansWithPrecursors3[0][0];
             Assert.That(Ms2Scan3.PrecursorIntensity, Is.EqualTo(1000));
             Assert.That(Ms2Scan3.PrecursorEnvelopePeakCount, Is.EqualTo(1));

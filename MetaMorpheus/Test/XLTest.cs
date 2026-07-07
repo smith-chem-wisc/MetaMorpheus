@@ -26,6 +26,7 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
 using Transcriptomics.Digestion;
+using EngineLayer.Deconvolution;
 
 namespace Test
 {
@@ -183,7 +184,7 @@ namespace Test
 
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFile();
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = MetaMorpheusTask.GetMs2ScansWrapByScanNum(myMsDataFile, null, new CommonParameters(), out List<List<(double, int, double)>> precursorss).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = DeconvolutionEngine.GetMs2ScansWrapByScanNum(myMsDataFile, null, new CommonParameters(), out List<List<(double, int, double)>> precursorss).ToArray();
 
             //Generate crosslinker, which is DSSO here.
             Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSSO").First();
@@ -444,7 +445,7 @@ namespace Test
 
             var myMsDataFile = myFileManager.LoadFile(newFileName, commonParameters2);
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = MetaMorpheusTask.GetMs2ScansWrapByScanNum(myMsDataFile, newFileName, commonParameters2, out List<List<(double, int, double)>> precursorss).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = DeconvolutionEngine.GetMs2ScansWrapByScanNum(myMsDataFile, newFileName, commonParameters2, out List<List<(double, int, double)>> precursorss).ToArray();
 
             //Generate crosslinker, which is DSS here.
             Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSS").First();
@@ -901,7 +902,7 @@ namespace Test
 
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFileDiffSite();
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = MetaMorpheusTask.GetMs2ScansWrapByScanNum(myMsDataFile, null, new CommonParameters(), out List<List<(double, int, double)>> precursorss).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = DeconvolutionEngine.GetMs2ScansWrapByScanNum(myMsDataFile, null, new CommonParameters(), out List<List<(double, int, double)>> precursorss).ToArray();
 
             //Generate crosslinker, which is UserDefined here.
             var crosslinker = xlSearchParameters.Crosslinker;
@@ -1424,7 +1425,7 @@ namespace Test
 
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
 
-            Ms2ScanWithSpecificMass[] scans = MetaMorpheusTask.GetMs2ScansWrapByScanNum(file, spectraFile, commonParameters, out List<List<(double, int, double)>> precursorss).ToArray();
+            Ms2ScanWithSpecificMass[] scans = DeconvolutionEngine.GetMs2ScansWrapByScanNum(file, spectraFile, commonParameters, out List<List<(double, int, double)>> precursorss).ToArray();
 
             Assert.That(scans.First().ChildScans.Count == 1);
             Assert.That(scans.Length == 1);
@@ -1547,7 +1548,7 @@ namespace Test
             var fsp = new List<(string, CommonParameters)>();
             fsp.Add((spectraFile, commonParameters));
 
-            Ms2ScanWithSpecificMass[] scans = MetaMorpheusTask.GetMs2ScansWrapByScanNum(file, spectraFile, commonParameters, out List<List<(double, int, double)>> precursorss).ToArray();
+            Ms2ScanWithSpecificMass[] scans = DeconvolutionEngine.GetMs2ScansWrapByScanNum(file, spectraFile, commonParameters, out List<List<(double, int, double)>> precursorss).ToArray();
 
             Assert.That(scans.First().ChildScans.Count == 4);
             Assert.That(scans.Length == 2);

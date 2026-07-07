@@ -220,19 +220,9 @@ namespace TaskLayer
         public const string SecondFragmentIndexFileName = "secondFragmentIndex.ind";
         public const string PrecursorIndexFileName = "precursorIndex.ind";
 
-        public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
-        {
-            return DeconvolutionEngine.GetGroupedMs2Scans(myMSDataFile, fullFilePath, commonParameters);
-        }
-
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
             return DeconvolutionEngine.GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
-        }
-
-        public static List<Ms2ScanWithSpecificMass> GetMs2ScansWrapByScanNum(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters, out List<List<(double, int, double)>> precursors)
-        {
-            return DeconvolutionEngine.GetMs2ScansWrapByScanNum(myMSDataFile, fullFilePath, commonParameters, out precursors);
         }
 
         public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
