@@ -209,7 +209,8 @@ namespace TaskLayer
                 && combinedParameters.DoPrecursorDeconvolution)
             {
                 searchMode = new MostAbundantMassDiffAcceptor("mostAbundant", combinedParameters.PrecursorMassTolerance,
-                    combinedParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine());
+                    combinedParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine(),
+                    expectedIsotopeSpacing: combinedParameters.PrecursorDeconvolutionParameters?.ExpectedIsotopeSpacing ?? Chemistry.Constants.C13MinusC12);
             }
             else
             {

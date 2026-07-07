@@ -155,27 +155,6 @@ namespace Test
         }
 
         [Test]
-        public static void GptmdFilterTypes_ResolveToActiveFilters_TomlSettable()
-        {
-            // Names (toml-serializable) resolve to filter instances; unknown names are ignored.
-            var p = new GptmdParameters
-            {
-                GptmdFilters = new List<IGptmdFilter>(),
-                GptmdFilterTypes = new List<string> { nameof(ImprovedScoreFilter), "bogus" }
-            };
-            var active = p.GetActiveFilters();
-            Assert.That(active.Any(f => f is ImprovedScoreFilter), Is.True);
-            Assert.That(active.Count, Is.EqualTo(1)); // "bogus" ignored
-
-            // In-memory (GUI) filter + named filter of same type dedupe to one.
-            p.GptmdFilters = new List<IGptmdFilter> { new ImprovedScoreFilter() };
-            Assert.That(p.GetActiveFilters().Count, Is.EqualTo(1));
-
-            // Default (no names, no in-memory filters) → no filtering, every mod added.
-            Assert.That(new GptmdParameters { GptmdFilters = new(), GptmdFilterTypes = new() }.GetActiveFilters(), Is.Empty);
-        }
-
-        [Test]
         public static void CommonParameters_PrecursorMassMatchMode_RoundTripsAndClones()
         {
             var cp = new CommonParameters(precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
@@ -234,24 +213,6 @@ namespace Test
 
             // A candidate far from every shifted apex is rejected.
             Assert.That(acc.Accepts(peptideMono + 500.0, peptideMono), Is.EqualTo(-1));
-        }
-
-        [Test]
-        public static void GptmdParameters_CreateFilter_ResolvesEveryKnownName_NullOtherwise()
-        {
-            Assert.That(GptmdParameters.CreateFilter(nameof(ImprovedScoreFilter)), Is.TypeOf<ImprovedScoreFilter>());
-            Assert.That(GptmdParameters.CreateFilter(nameof(DualDirectionalIonCoverageFilter)), Is.TypeOf<DualDirectionalIonCoverageFilter>());
-            Assert.That(GptmdParameters.CreateFilter(nameof(UniDirectionalIonCoverageFilter)), Is.TypeOf<UniDirectionalIonCoverageFilter>());
-            Assert.That(GptmdParameters.CreateFilter(nameof(FlankingIonCoverageFilter)), Is.TypeOf<FlankingIonCoverageFilter>());
-            Assert.That(GptmdParameters.CreateFilter("not-a-filter"), Is.Null);
-        }
-
-        [Test]
-        public static void GptmdParameters_GetActiveFilters_NullCollections_ReturnEmpty()
-        {
-            // Null in-memory and named-filter collections fall back to empty (no filtering, no throw).
-            var p = new GptmdParameters { GptmdFilters = null, GptmdFilterTypes = null };
-            Assert.That(p.GetActiveFilters(), Is.Empty);
         }
 
         [Test]

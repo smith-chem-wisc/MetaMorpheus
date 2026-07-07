@@ -37,14 +37,16 @@ namespace TaskLayer
         public SearchParameters SearchParameters { get; set; }
 
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac,
-            PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic, AverageResidue averagineModel = null)
+            PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic, AverageResidue averagineModel = null,
+            double expectedIsotopeSpacing = Constants.C13MinusC12)
         {
             // Most-abundant mode matches candidates by their theoretical most-abundant isotopic peak,
             // which directly solves the off-by-N problem. It replaces (rather than augments) the
             // missed-monoisotopic notches, so it overrides the MassDiffAcceptorType selection.
             if (precursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
             {
-                return new MostAbundantMassDiffAcceptor("mostAbundant", precursorMassTolerance, averagineModel ?? new Averagine());
+                return new MostAbundantMassDiffAcceptor("mostAbundant", precursorMassTolerance, averagineModel ?? new Averagine(),
+                    expectedIsotopeSpacing: expectedIsotopeSpacing);
             }
 
             switch (massDiffAcceptorType)
@@ -226,7 +228,8 @@ namespace TaskLayer
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                 MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac,
-                    combinedParams.PrecursorMassMatchMode, combinedParams.PrecursorDeconvolutionParameters?.AverageResidueModel);
+                    combinedParams.PrecursorMassMatchMode, combinedParams.PrecursorDeconvolutionParameters?.AverageResidueModel,
+                    combinedParams.PrecursorDeconvolutionParameters?.ExpectedIsotopeSpacing ?? Constants.C13MinusC12);
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);

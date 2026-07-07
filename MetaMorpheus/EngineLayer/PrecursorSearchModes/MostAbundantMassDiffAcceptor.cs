@@ -23,7 +23,7 @@ namespace EngineLayer
     /// yeast top-down data: a single tight-ppm point at the predicted apex under-identifies badly,
     /// because one neutron is ~67 ppm at 15 kDa). To tolerate that apex misprediction while keeping
     /// each match at tight ppm (and FDR controlled per-notch), this acceptor emits a small set of
-    /// notches at <c>apex + k·C13</c> for k in [−<see cref="MaxApexOffsetNeutrons"/> ..
+    /// notches at <c>apex + k·<see cref="ExpectedIsotopeSpacing"/></c> for k in [−<see cref="MaxApexOffsetNeutrons"/> ..
     /// +<see cref="MaxApexOffsetNeutrons"/>]. k = 0 is the confident on-apex match; nonzero k are the
     /// apex-misprediction cases. Each k maps to a contiguous non-negative notch index (its 0-based
     /// position in the apex-offset set), so notches are distinct per k, are always ≥ 0 (a negative
@@ -42,18 +42,29 @@ namespace EngineLayer
         private readonly Tolerance Tolerance;
         private readonly AverageResidue Averagine;
 
+        /// <summary>
+        /// Mass spacing between adjacent isotopologues (the "+1 neutron" step) used to place the apex
+        /// notches. Sourced from the deconvolution's
+        /// <see cref="MassSpectrometry.DeconvolutionParameters.ExpectedIsotopeSpacing"/> so the acceptor
+        /// matches the spacing the envelope was built with — the C-13/C-12 difference for peptides/
+        /// proteoforms, but overridable for decoy runs (~0.9444 Da) or non-carbon-dominated polymers.
+        /// </summary>
+        private readonly double ExpectedIsotopeSpacing;
+
         /// <summary>Maximum apex misprediction, in neutrons, tolerated on either side of the averagine-predicted apex.</summary>
         public int MaxApexOffsetNeutrons { get; }
 
         // k values ordered by ascending |k| (then sign) so the on-apex (k = 0) match is preferred.
         private readonly int[] ApexOffsetsInNeutrons;
 
-        public MostAbundantMassDiffAcceptor(string fileNameAddition, Tolerance tol, AverageResidue averagine, int maxApexOffsetNeutrons = 2)
+        public MostAbundantMassDiffAcceptor(string fileNameAddition, Tolerance tol, AverageResidue averagine, int maxApexOffsetNeutrons = 2,
+            double expectedIsotopeSpacing = Constants.C13MinusC12)
             : base(fileNameAddition)
         {
             Tolerance = tol;
             Averagine = averagine;
             MaxApexOffsetNeutrons = maxApexOffsetNeutrons;
+            ExpectedIsotopeSpacing = expectedIsotopeSpacing;
 
             var offsets = new List<int> { 0 };
             for (int k = 1; k <= maxApexOffsetNeutrons; k++)
@@ -80,7 +91,7 @@ namespace EngineLayer
             double apex = peptideMass + ApexOffset(peptideMass);
             foreach (int k in ApexOffsetsInNeutrons) // ordered to prefer k = 0
             {
-                if (Tolerance.Within(scanPrecursorMass, apex + k * Constants.C13MinusC12))
+                if (Tolerance.Within(scanPrecursorMass, apex + k * ExpectedIsotopeSpacing))
                 {
                     return NotchFor(k);
                 }
@@ -93,7 +104,7 @@ namespace EngineLayer
             double apex = peptideMonoisotopicMass + ApexOffset(peptideMonoisotopicMass);
             foreach (int k in ApexOffsetsInNeutrons)
             {
-                double mass = apex + k * Constants.C13MinusC12;
+                double mass = apex + k * ExpectedIsotopeSpacing;
                 yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), NotchFor(k));
             }
         }
@@ -108,7 +119,7 @@ namespace EngineLayer
             double monoApprox = observedMostAbundantMass - ApexOffset(observedMostAbundantMass);
             foreach (int k in ApexOffsetsInNeutrons)
             {
-                double mass = monoApprox - k * Constants.C13MinusC12;
+                double mass = monoApprox - k * ExpectedIsotopeSpacing;
                 yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), NotchFor(k));
             }
         }

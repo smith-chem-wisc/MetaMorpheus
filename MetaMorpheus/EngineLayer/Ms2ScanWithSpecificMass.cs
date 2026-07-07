@@ -54,6 +54,14 @@ namespace EngineLayer
         /// The precursor mass used to select theoretical candidates via the <see cref="EngineLayer.MassDiffAcceptor"/>.
         /// Equals <see cref="PrecursorMass"/> in monoisotopic mode; in most-abundant mode it is the
         /// envelope's most-abundant (or average, if unresolved) observed neutral mass.
+        /// <para>
+        /// This is deliberately a separate property rather than an overwrite of <see cref="PrecursorMass"/>:
+        /// candidate selection is the only step that should key off the most-abundant peak. Fragment-bin
+        /// math and the reported precursor mass error must stay on the monoisotopic mass so that (a) the
+        /// error is the monoisotopic-vs-monoisotopic value comparable across search modes, and (b) it is
+        /// not conflated with the ±k-neutron apex offset the acceptor already models per-notch. Collapsing
+        /// the two would report error against a peak that is intentionally N neutrons off the monoisotopic.
+        /// </para>
         /// </summary>
         public double PrecursorMassToMatch { get; }
         public int PrecursorCharge { get; }

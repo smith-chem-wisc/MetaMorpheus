@@ -33,14 +33,25 @@ namespace EngineLayer
         public int MaxApexOffsetNeutrons { get; }
         private readonly int[] ApexOffsetsInNeutrons;
 
+        /// <summary>
+        /// Mass spacing between adjacent isotopologues (the "+1 neutron" step) used to place the apex
+        /// notches. Sourced from the deconvolution's
+        /// <see cref="MassSpectrometry.DeconvolutionParameters.ExpectedIsotopeSpacing"/> so the acceptor
+        /// matches the spacing the envelope was built with — the C-13/C-12 difference for peptides/
+        /// proteoforms, but overridable for decoy runs (~0.9444 Da) or non-carbon-dominated polymers.
+        /// </summary>
+        private readonly double ExpectedIsotopeSpacing;
+
         public MostAbundantDotMassDiffAcceptor(string fileNameAddition, IEnumerable<double> acceptableMassShifts,
-            Tolerance tol, AverageResidue averagine, int maxApexOffsetNeutrons = 2) : base(fileNameAddition)
+            Tolerance tol, AverageResidue averagine, int maxApexOffsetNeutrons = 2,
+            double expectedIsotopeSpacing = Constants.C13MinusC12) : base(fileNameAddition)
         {
             Tolerance = tol;
             Averagine = averagine;
             SortedMassShifts = acceptableMassShifts.OrderBy(Math.Abs).ThenBy(p => p < 0).ToArray();
             ShiftNotches = SortedMassShifts.Select(s => (int)Math.Round(s * NotchScalar)).ToArray();
             MaxApexOffsetNeutrons = maxApexOffsetNeutrons;
+            ExpectedIsotopeSpacing = expectedIsotopeSpacing;
 
             var offsets = new List<int> { 0 };
             for (int k = 1; k <= maxApexOffsetNeutrons; k++) { offsets.Add(-k); offsets.Add(k); }
@@ -64,7 +75,7 @@ namespace EngineLayer
                 double apex = shiftedMono + ApexOffset(shiftedMono);
                 foreach (int k in ApexOffsetsInNeutrons)
                 {
-                    if (Tolerance.Within(scanPrecursorMass, apex + k * Constants.C13MinusC12))
+                    if (Tolerance.Within(scanPrecursorMass, apex + k * ExpectedIsotopeSpacing))
                     {
                         return ShiftNotches[j];
                     }
@@ -81,7 +92,7 @@ namespace EngineLayer
                 double apex = shiftedMono + ApexOffset(shiftedMono);
                 foreach (int k in ApexOffsetsInNeutrons)
                 {
-                    double mass = apex + k * Constants.C13MinusC12;
+                    double mass = apex + k * ExpectedIsotopeSpacing;
                     yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), ShiftNotches[j]);
                 }
             }
@@ -96,7 +107,7 @@ namespace EngineLayer
             {
                 foreach (int k in ApexOffsetsInNeutrons)
                 {
-                    double mass = monoApprox - SortedMassShifts[j] - k * Constants.C13MinusC12;
+                    double mass = monoApprox - SortedMassShifts[j] - k * ExpectedIsotopeSpacing;
                     yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), ShiftNotches[j]);
                 }
             }

@@ -81,7 +81,7 @@ namespace TaskLayer
             // temporary search type for writing prose
             // the actual search type is technically file-specific but we don't allow file-specific notches, so it's safe to do this
             MassDiffAcceptor tempSearchMode = CommonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
-                ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance, CommonParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine())
+                ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance, CommonParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine(), expectedIsotopeSpacing: CommonParameters.PrecursorDeconvolutionParameters?.ExpectedIsotopeSpacing ?? Chemistry.Constants.C13MinusC12)
                 : new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
             ProseCreatedWhileRunning.Append("precursor mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
 
@@ -116,7 +116,7 @@ namespace TaskLayer
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
                 MassDiffAcceptor searchMode = combinedParams.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
-                    ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance, combinedParams.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine())
+                    ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance, combinedParams.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine(), expectedIsotopeSpacing: combinedParams.PrecursorDeconvolutionParameters?.ExpectedIsotopeSpacing ?? Chemistry.Constants.C13MinusC12)
                     : new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance);
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -177,7 +177,7 @@ namespace TaskLayer
             // GPTMD doesn't work as well if you do FDR on a file-by-file basis. Presumably this is because it takes multiple files to get enough PSMs for all the different notches
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
             Dictionary<string, HashSet<Tuple<int, Modification>>> allModDictionary = new();
-            new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary, GptmdParameters.GetActiveFilters()).Run();
+            new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary, GptmdParameters.GptmdFilters).Run();
 
             //Move this text after search because proteins don't get loaded until search begins.
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
