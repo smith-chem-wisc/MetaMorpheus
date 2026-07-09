@@ -44,72 +44,105 @@ namespace Test.GuiTests
             Assert.That(expectedResult, Is.EqualTo(filename));
         }
 
-        // Occasionally the downloaded files will change, and thus the expected result will need to be updated.
-        // To verify, download the database and count the number of entries.
-        // The expected result will be double the number of entries, due to decoys - 9/1/23 NB
-        // UP000001207 = Bacillus phage phi29 (Reference proteome, 24 reviewed, 3 unreviewed, 2 isoforms) - 6/11/26 NB
+        // Verifies GetUniProtHtmlQueryString builds the exact REST URL the GUI submits to
+        // rest.uniprot.org for every reviewed/isoform/format/compressed combination.
+        // This is the offline replacement for the assertions that used to depend on a live
+        // UniProt download; the live download itself is exercised by UniProtDownloadCanary below.
         [Test]
-        [TestCase("UP000001207", true, true, true, true, "1.fasta.gz", 48)] // reviewed=true XML: 24*2
-        [TestCase("UP000001207", true, true, true, false, "2.fasta", 48)] // same
-        [TestCase("UP000001207", true, true, false, true, "3.fasta.gz", 52)] // reviewed=true FASTA+isoforms: (24+2)*2
-        [TestCase("UP000001207", true, false, true, true, "4.xml.gz", 48)] // reviewed=true XML: 24*2
-        [TestCase("UP000001207", false, true, true, true, "5.fasta.gz", 54)] // all XML: 27*2
-        [TestCase("UP000001207", true, true, false, false, "6.fasta", 52)] // reviewed=true FASTA+isoforms: (24+2)*2
-        [TestCase("UP000001207", true, false, true, false, "7.xml", 48)] // reviewed=true XML: 24*2
-        [TestCase("UP000001207", false, true, true, false, "8.fasta", 54)] // all XML: 27*2
-        [TestCase("UP000001207", true, false, false, false, "9.fasta", 48)] // reviewed=true FASTA: 24*2
-        [TestCase("UP000001207", false, false, true, false, "10.xml", 54)] // all XML: 27*2
-        [TestCase("UP000001207", false, false, false, false, "11.fasta", 54)] // all FASTA: 27*2
-        public static async Task UniprotHtmlQueryTest(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed,
-           string testName, int listCount)
+        [TestCase("UP000001207", true, true, true, true, "https://rest.uniprot.org/uniprotkb/stream?compressed=true&format=xml&query=reviewed:true AND proteome:UP000001207")]
+        [TestCase("UP000001207", true, true, true, false, "https://rest.uniprot.org/uniprotkb/stream?format=xml&query=reviewed:true AND proteome:UP000001207")]
+        [TestCase("UP000001207", true, true, false, true, "https://rest.uniprot.org/uniprotkb/stream?compressed=true&format=fasta&includeIsoform=true&query=reviewed:true AND proteome:UP000001207")]
+        [TestCase("UP000001207", true, false, true, true, "https://rest.uniprot.org/uniprotkb/stream?compressed=true&format=xml&query=reviewed:true AND proteome:UP000001207")]
+        [TestCase("UP000001207", false, true, true, true, "https://rest.uniprot.org/uniprotkb/stream?compressed=true&format=xml&query=proteome:UP000001207")]
+        [TestCase("UP000001207", true, true, false, false, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&includeIsoform=true&query=reviewed:true AND proteome:UP000001207")]
+        [TestCase("UP000001207", true, false, true, false, "https://rest.uniprot.org/uniprotkb/stream?format=xml&query=reviewed:true AND proteome:UP000001207")]
+        [TestCase("UP000001207", false, true, true, false, "https://rest.uniprot.org/uniprotkb/stream?format=xml&query=proteome:UP000001207")]
+        [TestCase("UP000001207", true, false, false, false, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&query=reviewed:true AND proteome:UP000001207")]
+        [TestCase("UP000001207", false, false, true, false, "https://rest.uniprot.org/uniprotkb/stream?format=xml&query=proteome:UP000001207")]
+        [TestCase("UP000001207", false, false, false, false, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&query=proteome:UP000001207")]
+        public static void TestGetUniProtHtmlQueryString(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed, string expectedUrl)
         {
-            if (testName.Equals("1.fasta.gz")) // This should only be written once, during the first test case
+            string url = DownloadUniProtDatabaseFunctions.GetUniProtHtmlQueryString(proteomeID, reviewed, isoforms, xmlFormat, compressed);
+            Assert.That(url, Is.EqualTo(expectedUrl));
+        }
+
+        // Offline "local mock" of a downloaded UniProt proteome. Rather than streaming from
+        // rest.uniprot.org (which is unreliable in CI), we load committed UniProtKB-format
+        // fixtures through the same ProteinDbLoader path the download uses and confirm that
+        // targets + reverse decoys are generated (count == 2 * entries). The fixtures live in
+        // DatabaseTests\UniProtMock and contain 3 entries each.
+        [Test]
+        [TestCase(@"DatabaseTests\UniProtMock\phi29_mock_reviewed.xml", true, 6)]   // 3 entries * 2 (target + decoy)
+        [TestCase(@"DatabaseTests\UniProtMock\phi29_mock_reviewed.fasta", false, 6)] // 3 entries * 2 (target + decoy)
+        public static void LoadUniProtProteomeFromLocalFile_GeneratesTargetsAndDecoys(string relativePath, bool xmlFormat, int expectedCount)
+        {
+            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, relativePath);
+
+            List<Protein> reader;
+            if (xmlFormat)
             {
-                Console.WriteLine("Beginning Uniprot HTML query test.");
+                reader = ProteinDbLoader.LoadProteinXML(proteinDbLocation: filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                    allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out _, maxHeterozygousVariants: 0);
+            }
+            else
+            {
+                reader = ProteinDbLoader.LoadProteinFasta(filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                    isContaminant: false, out _);
             }
 
+            Assert.That(reader.Count, Is.EqualTo(expectedCount));
+        }
+
+        // Live canary for the UniProt REST download used by the "Download UniProt Database" GUI.
+        // Marked [Explicit] (and Category "UniProt") so it never runs in an unfiltered `dotnet test`
+        // pass - i.e. it stays out of CI, exactly like the [Category("Koina")] network tests - and
+        // only fires when a developer selects it deliberately. Run it to confirm that
+        // rest.uniprot.org is reachable, that GetUniProtHtmlQueryString still yields a working URL,
+        // and that ProteinDbLoader can parse the response. The assertion is intentionally loose
+        // (proteins parsed > 0) so a UniProt content revision does not turn this into a red herring;
+        // its job is to detect that the pipeline is *working*, not to pin an exact entry count.
+        // UP000001207 = Bacillus phage phi29 (small reference proteome).
+        [Test, Explicit]
+        [Category("UniProt")]
+        [TestCase("UP000001207", true, false, true, true)]   // reviewed, XML, compressed
+        [TestCase("UP000001207", false, false, false, false)] // all, FASTA, uncompressed
+        public static async Task UniProtDownloadCanary(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed)
+        {
             var proteomeURL = DownloadUniProtDatabaseFunctions.GetUniProtHtmlQueryString(proteomeID, reviewed,
                 isoforms, xmlFormat, compressed);
 
-            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, $@"DatabaseTests\{testName}");
-
-            List<Protein> reader = new List<Protein>();
-
-
+            var extension = (xmlFormat ? ".xml" : ".fasta") + (compressed ? ".gz" : "");
+            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, $@"DatabaseTests\uniprot_canary{extension}");
 
             HttpClientHandler handler = new HttpClientHandler(); // without this, the download is very slow
             handler.Proxy = null;
             handler.UseProxy = false;
 
-            var client = new HttpClient(handler); // client for using the REST Api
+            using var client = new HttpClient(handler); // client for using the REST Api
             var response = await client.GetAsync(proteomeURL);
 
-            using (var file = File.Create(filePath)) // saves the file 
+            using (var file = File.Create(filePath)) // saves the file
             {
                 var content = await response.Content.ReadAsStreamAsync();
                 await content.CopyToAsync(file);
             }
 
-
+            List<Protein> reader;
             if (xmlFormat)
             {
                 reader = ProteinDbLoader.LoadProteinXML(proteinDbLocation: filePath, generateTargets: true, decoyType: DecoyType.Reverse,
-                    allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out var unknownMod, maxHeterozygousVariants: 0);
+                    allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out _, maxHeterozygousVariants: 0);
             }
             else
             {
                 reader = ProteinDbLoader.LoadProteinFasta(filePath, generateTargets: true, decoyType: DecoyType.Reverse,
-                    isContaminant: false, out var unknownMod);
+                    isContaminant: false, out _);
             }
 
             File.Delete(filePath);
 
-            if (testName.Equals("11.fasta")) // only triggers for last test cases
-            {
-                Console.WriteLine("Finished with Uniprot HTML query test.");
-            }
-
-            NUnit.Framework.Assert.That(reader.Count == listCount);
+            Assert.That(reader.Count, Is.GreaterThan(0),
+                "UniProt returned no parseable proteins - the REST endpoint may be down or the query URL/format has changed.");
         }
 
         [Test]
