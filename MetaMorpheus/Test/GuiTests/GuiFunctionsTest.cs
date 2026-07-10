@@ -94,56 +94,60 @@ namespace Test.GuiTests
         }
 
         // Live canary for the UniProt REST download used by the "Download UniProt Database" GUI.
-        // Marked [Explicit] (and Category "UniProt") so it never runs in an unfiltered `dotnet test`
-        // pass - i.e. it stays out of CI, exactly like the [Category("Koina")] network tests - and
-        // only fires when a developer selects it deliberately. Run it to confirm that
-        // rest.uniprot.org is reachable, that GetUniProtHtmlQueryString still yields a working URL,
-        // and that ProteinDbLoader can parse the response. The assertion is intentionally loose
-        // (proteins parsed > 0) so a UniProt content revision does not turn this into a red herring;
-        // its job is to detect that the pipeline is *working*, not to pin an exact entry count.
+        // Tagged [Category("ExternalService")] (+ "UniProt") so it runs in the dedicated, non-blocking
+        // external-service CI job rather than the required unit-test run. It confirms rest.uniprot.org
+        // is reachable, that GetUniProtHtmlQueryString still yields a working URL, and that
+        // ProteinDbLoader can parse the response. Via ExternalServiceTestHelper.RunAsync, a UniProt
+        // outage (transport error, 5xx, or the HTTP-200 "Error encountered when streaming data" body)
+        // is reported as Skipped rather than Failed - "we tried, UniProt was down, don't worry" - while
+        // a genuine contract break (nothing parses, URL rejected) still fails. The assertion is
+        // intentionally loose (proteins parsed > 0) so a UniProt content revision is not a red herring.
         // UP000001207 = Bacillus phage phi29 (small reference proteome).
-        [Test, Explicit]
+        [Test]
+        [Category("ExternalService")]
         [Category("UniProt")]
-        [TestCase("UP000001207", true, false, true, true)]   // reviewed, XML, compressed
-        [TestCase("UP000001207", false, false, false, false)] // all, FASTA, uncompressed
-        public static async Task UniProtDownloadCanary(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed)
-        {
-            var proteomeURL = DownloadUniProtDatabaseFunctions.GetUniProtHtmlQueryString(proteomeID, reviewed,
-                isoforms, xmlFormat, compressed);
-
-            var extension = (xmlFormat ? ".xml" : ".fasta") + (compressed ? ".gz" : "");
-            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, $@"DatabaseTests\uniprot_canary{extension}");
-
-            HttpClientHandler handler = new HttpClientHandler(); // without this, the download is very slow
-            handler.Proxy = null;
-            handler.UseProxy = false;
-
-            using var client = new HttpClient(handler); // client for using the REST Api
-            var response = await client.GetAsync(proteomeURL);
-
-            using (var file = File.Create(filePath)) // saves the file
+        [TestCase("UP000001207", true, false, true, false)]   // reviewed, XML
+        [TestCase("UP000001207", false, false, false, false)] // all, FASTA
+        public static Task UniProtDownloadCanary(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed) =>
+            ExternalServiceTestHelper.RunAsync("UniProt", async () =>
             {
-                var content = await response.Content.ReadAsStreamAsync();
-                await content.CopyToAsync(file);
-            }
+                var proteomeURL = DownloadUniProtDatabaseFunctions.GetUniProtHtmlQueryString(proteomeID, reviewed,
+                    isoforms, xmlFormat, compressed);
 
-            List<Protein> reader;
-            if (xmlFormat)
-            {
-                reader = ProteinDbLoader.LoadProteinXML(proteinDbLocation: filePath, generateTargets: true, decoyType: DecoyType.Reverse,
-                    allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out _, maxHeterozygousVariants: 0);
-            }
-            else
-            {
-                reader = ProteinDbLoader.LoadProteinFasta(filePath, generateTargets: true, decoyType: DecoyType.Reverse,
-                    isContaminant: false, out _);
-            }
+                var extension = (xmlFormat ? ".xml" : ".fasta") + (compressed ? ".gz" : "");
+                var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, $@"DatabaseTests\uniprot_canary{extension}");
 
-            File.Delete(filePath);
+                HttpClientHandler handler = new HttpClientHandler(); // without this, the download is very slow
+                handler.Proxy = null;
+                handler.UseProxy = false;
 
-            Assert.That(reader.Count, Is.GreaterThan(0),
-                "UniProt returned no parseable proteins - the REST endpoint may be down or the query URL/format has changed.");
-        }
+                using var client = new HttpClient(handler); // client for using the REST Api
+                var response = await client.GetAsync(proteomeURL);
+
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                // Sniff a text prefix (harmless on gzipped payloads) so a service outage is skipped, not failed.
+                var textPreview = System.Text.Encoding.UTF8.GetString(bytes, 0, Math.Min(bytes.Length, 512));
+                ExternalServiceTestHelper.ThrowIfUnavailable(response, textPreview);
+
+                File.WriteAllBytes(filePath, bytes); // saves the file
+
+                List<Protein> reader;
+                if (xmlFormat)
+                {
+                    reader = ProteinDbLoader.LoadProteinXML(proteinDbLocation: filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                        allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out _, maxHeterozygousVariants: 0);
+                }
+                else
+                {
+                    reader = ProteinDbLoader.LoadProteinFasta(filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                        isContaminant: false, out _);
+                }
+
+                File.Delete(filePath);
+
+                Assert.That(reader.Count, Is.GreaterThan(0),
+                    "UniProt returned no parseable proteins - the REST endpoint may be down or the query URL/format has changed.");
+            });
 
         [Test]
         public static void TestFileLoadingWithDuplicateFiles()
