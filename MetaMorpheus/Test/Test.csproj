@@ -74,6 +74,12 @@
     <None Update="DatabaseTests\Task1-SearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="DatabaseTests\UniProtMock\phi29_mock_reviewed.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="DatabaseTests\UniProtMock\phi29_mock_reviewed.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\11901_AIETD.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
