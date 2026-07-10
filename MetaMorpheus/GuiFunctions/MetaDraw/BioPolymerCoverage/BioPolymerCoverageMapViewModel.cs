@@ -1,4 +1,4 @@
-﻿using GuiFunctions.Util;
+using GuiFunctions.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +12,8 @@ public enum ColorResultsBy
     None,
     CoverageType,
     FileOrigin,
+    PrecursorIntensity,
+    Score,
 }
 
 public class BioPolymerCoverageMapViewModel : BaseViewModel
@@ -61,6 +63,14 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         new SolidColorBrush(Colors.MediumAquamarine)
     });
 
+    private static readonly SolidColorBrush[] ViridisColors = InitViridisPalette();
+
+    private static SolidColorBrush[] InitViridisPalette()
+    {
+        var hex = new[] { "440154","481467","482576","453781","3f4d8a","39568c","2e6f8e","238a8d","20a386","34b679","60c85d","93d443","c7df2b","eddf2b","f8e51d","fce61b","fbdf0e","f6d300","edc600","fde725" };
+        return hex.Select(h => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#" + h))).ToArray();
+    }
+
     private static readonly Dictionary<string, SolidColorBrush> IdentifierToColor = [];
 
     public ColorResultsBy[] AllColorByTypes { get; } = Enum.GetValues<ColorResultsBy>();
@@ -108,6 +118,12 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             IdentifierToColor[identifier] = brush;
         }
         return brush;
+    }
+
+    private SolidColorBrush GetIntensityBrush(double normalizedValue)
+    {
+        int bin = (int)Math.Clamp(normalizedValue * 19, 0, 19);
+        return ViridisColors[bin];
     }
 
     #endregion
@@ -271,8 +287,45 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                 legendY += legendLineHeight + legendSpacing * 0.2;
             }
 
+            bool isIntensityMode = _colorBy is ColorResultsBy.PrecursorIntensity or ColorResultsBy.Score;
+
+            double minVal = 0, maxVal = 0, range = 0, gradientBlockH = 0;
+            if (isIntensityMode)
+            {
+                var vals = filteredResults
+                    .Select(r => _colorBy == ColorResultsBy.PrecursorIntensity
+                        ? r.Match.PrecursorIntensity ?? double.NaN
+                        : r.Match.Score)
+                    .Where(v => !double.IsNaN(v)).ToList();
+                if (vals.Count > 0) { minVal = vals.Min(); maxVal = vals.Max(); }
+                range = maxVal - minVal;
+                if (range < double.Epsilon) range = 1;
+
+                double barWidth = Math.Min(250, usableWidth * 0.6);
+                double barHeight = fontSize * 0.8;
+                double barX = plotMargin + (usableWidth - barWidth) / 2;
+                double barY = legendY + legendSpacing;
+                double bandW = barWidth / 20;
+                for (int i = 0; i < 20; i++)
+                    dc.DrawRectangle(ViridisColors[i], null, new Rect(barX + i * bandW, barY, bandW + 0.5, barHeight));
+
+                string metricName = _colorBy == ColorResultsBy.PrecursorIntensity ? "Precursor Intensity" : "Score";
+                var metricTxt = new FormattedText(metricName, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.DimGray, dpi);
+                dc.DrawText(metricTxt, new Point(barX + (barWidth - metricTxt.Width) / 2, barY - metricTxt.Height - 2));
+
+                var minTxt = new FormattedText($"{minVal:G3}", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.Black, dpi);
+                var maxTxt = new FormattedText($"{maxVal:G3}", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.Black, dpi);
+                dc.DrawText(minTxt, new Point(barX, barY + barHeight + 2));
+                dc.DrawText(maxTxt, new Point(barX + barWidth - maxTxt.Width, barY + barHeight + 2));
+
+                gradientBlockH = barHeight + Math.Max(minTxt.Height, maxTxt.Height) + legendSpacing * 2;
+                legendY += gradientBlockH;
+            }
+
             // --- Offset plot below header block (metrics + legend) ---
-            double headerBlockHeight = bioPolymerNameText.Height + metricsFt.Height + legendSpacing + legendLines.Count * (legendLineHeight + legendSpacing * 0.2);
+            double headerBlockHeight = bioPolymerNameText.Height + metricsFt.Height + legendSpacing
+                + legendLines.Count * (legendLineHeight + legendSpacing * 0.2)
+                + gradientBlockH;
             double plotYOffset = headerTop + headerBlockHeight + legendSpacing;
             var drawnRects = new HashSet<(int row, int startCol, int endCol)>();
 
@@ -352,7 +405,11 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                         roundRight = true;
 
                     // Use a slightly opaque brush for fill
-                    var baseBrush = GetColorBrush(res);
+                    var baseBrush = isIntensityMode
+                        ? GetIntensityBrush(((_colorBy == ColorResultsBy.PrecursorIntensity
+                            ? res.Match.PrecursorIntensity.GetValueOrDefault((minVal + maxVal) / 2)
+                            : res.Match.Score) - minVal) / range)
+                        : GetColorBrush(res);
                     var color = (baseBrush as SolidColorBrush)?.Color ?? Colors.Gray;
                     var brush = new SolidColorBrush(color) { Opacity = 0.75 };
                     brush.Freeze();
@@ -520,6 +577,9 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
     {
         var items = new List<(SolidColorBrush, FormattedText)>();
         if (colorBy == ColorResultsBy.None)
+            return items;
+
+        if (colorBy is ColorResultsBy.PrecursorIntensity or ColorResultsBy.Score)
             return items;
 
         if (colorBy == ColorResultsBy.FileOrigin)
