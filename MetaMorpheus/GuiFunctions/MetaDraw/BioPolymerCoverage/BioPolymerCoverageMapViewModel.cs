@@ -297,6 +297,8 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                         ? r.Match.PrecursorIntensity ?? double.NaN
                         : r.Match.Score)
                     .Where(v => !double.IsNaN(v)).ToList();
+                if (vals.Count == 0 && _colorBy == ColorResultsBy.PrecursorIntensity)
+                    vals = filteredResults.Select(r => r.Match.Score).ToList();
                 if (vals.Count > 0) { minVal = vals.Min(); maxVal = vals.Max(); }
                 range = maxVal - minVal;
                 if (range < double.Epsilon) range = 1;

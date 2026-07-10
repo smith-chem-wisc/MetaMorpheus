@@ -474,13 +474,40 @@ public class BioPolymerCoverageMapViewModelTests
         vm.ColorBy = ColorResultsBy.PrecursorIntensity;
 
         var matchWithIntensity = new DummySpectralmatch();
+        matchWithIntensity.SetScore(200);
         var matchNullIntensity = new DummySpectralmatch();
+        matchNullIntensity.SetScore(100);
         var backingField = typeof(SpectrumMatchFromTsv)
             .GetField("<PrecursorIntensity>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        backingField.SetValue(matchWithIntensity, 500000.0);
         backingField.SetValue(matchNullIntensity, null);
 
         var result1 = new BioPolymerCoverageResultModel(matchWithIntensity, "ABC", 1, 2, BioPolymerCoverageType.Unique);
         var result2 = new BioPolymerCoverageResultModel(matchNullIntensity, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result1, result2 });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    [Test]
+    public void Plotting_WithPrecursorIntensity_AllNull_FallsBackToScore()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(10);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(1000);
+        var backingField = typeof(SpectrumMatchFromTsv)
+            .GetField("<PrecursorIntensity>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        backingField.SetValue(match1, null);
+        backingField.SetValue(match2, null);
+
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
 
         var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result1, result2 });
         vm.Group = group;
