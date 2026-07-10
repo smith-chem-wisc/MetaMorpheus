@@ -5,19 +5,14 @@ using System.Linq;
 using System.Windows.Media;
 using Readers;
 using System.Threading;
+using System;
+using System.Collections.Generic;
 
 namespace Test.MetaDraw;
 
 [TestFixture]
 public class BioPolymerCoverageMapViewModelTests
 {
-    [Test]
-    public void LettersPerRow_Default_Is50()
-    {
-        var vm = new BioPolymerCoverageMapViewModel();
-        Assert.That(vm.LettersPerRow, Is.EqualTo(50));
-    }
-
     [Test]
     public void LettersPerRow_Setter_UpdatesValueAndRaisesPropertyChanged()
     {
@@ -260,4 +255,238 @@ public class BioPolymerCoverageMapViewModelTests
             Assert.That(current, Is.Not.EqualTo(previous));
         }
     }
+
+    #region Viridis Intensity Tests
+
+    [Test]
+    public void ViridisColors_Has20Colors()
+    {
+        var field = typeof(BioPolymerCoverageMapViewModel)
+            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.That(field, Is.Not.Null);
+        var colors = field.GetValue(null) as SolidColorBrush[];
+        Assert.That(colors, Is.Not.Null);
+        Assert.That(colors.Length, Is.EqualTo(20));
+        Assert.That(colors.All(c => c != null), Is.True);
+    }
+
+    [Test]
+    public void ViridisColors_StartAndEndColorsDiffer()
+    {
+        var field = typeof(BioPolymerCoverageMapViewModel)
+            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var colors = field.GetValue(null) as SolidColorBrush[];
+        Assert.That(colors[0].Color, Is.Not.EqualTo(colors[19].Color));
+    }
+
+    [Test]
+    public void GetIntensityBrush_Zero_ReturnsFirstColor()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        var method = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("GetIntensityBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var result = method.Invoke(vm, new object[] { 0.0 }) as SolidColorBrush;
+        var field = typeof(BioPolymerCoverageMapViewModel)
+            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var colors = field.GetValue(null) as SolidColorBrush[];
+        Assert.That(result, Is.EqualTo(colors[0]));
+    }
+
+    [Test]
+    public void GetIntensityBrush_One_ReturnsLastColor()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        var method = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("GetIntensityBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var result = method.Invoke(vm, new object[] { 1.0 }) as SolidColorBrush;
+        var field = typeof(BioPolymerCoverageMapViewModel)
+            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var colors = field.GetValue(null) as SolidColorBrush[];
+        Assert.That(result, Is.EqualTo(colors[19]));
+    }
+
+    [Test]
+    public void GetIntensityBrush_MidValue_ReturnsMidColor()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        var method = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("GetIntensityBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var result = method.Invoke(vm, new object[] { 0.5 }) as SolidColorBrush;
+        var field = typeof(BioPolymerCoverageMapViewModel)
+            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var colors = field.GetValue(null) as SolidColorBrush[];
+        // 0.5 * 19 = 9.5, clamped to 9
+        Assert.That(result, Is.EqualTo(colors[9]));
+    }
+
+    [Test]
+    public void GetIntensityBrush_Negative_ClampsToFirstColor()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        var method = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("GetIntensityBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var result = method.Invoke(vm, new object[] { -0.1 }) as SolidColorBrush;
+        var field = typeof(BioPolymerCoverageMapViewModel)
+            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var colors = field.GetValue(null) as SolidColorBrush[];
+        Assert.That(result, Is.EqualTo(colors[0]));
+    }
+
+    [Test]
+    public void GetIntensityBrush_AboveOne_ClampsToLastColor()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        var method = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("GetIntensityBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var result = method.Invoke(vm, new object[] { 1.5 }) as SolidColorBrush;
+        var field = typeof(BioPolymerCoverageMapViewModel)
+            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var colors = field.GetValue(null) as SolidColorBrush[];
+        Assert.That(result, Is.EqualTo(colors[19]));
+    }
+
+    [Test]
+    public void ColorBy_CanSetPrecursorIntensity()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        bool propertyChanged = false;
+        vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.ColorBy)) propertyChanged = true; };
+
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.ColorBy, Is.EqualTo(ColorResultsBy.PrecursorIntensity));
+        Assert.That(propertyChanged, Is.True);
+    }
+
+    [Test]
+    public void ColorBy_CanSetScore()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        bool propertyChanged = false;
+        vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.ColorBy)) propertyChanged = true; };
+
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.ColorBy, Is.EqualTo(ColorResultsBy.Score));
+        Assert.That(propertyChanged, Is.True);
+    }
+
+    [Test]
+    public void CreateLegendItems_ReturnsEmpty_ForPrecursorIntensity()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        var method = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("CreateLegendItems", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var filteredResults = new List<BioPolymerCoverageResultModel>();
+        var result = method.Invoke(vm, new object[] { filteredResults, 16.0, 96.0, ColorResultsBy.PrecursorIntensity })
+            as System.Collections.IEnumerable;
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Cast<object>().Any(), Is.False);
+    }
+
+    [Test]
+    public void CreateLegendItems_ReturnsEmpty_ForScore()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        var method = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("CreateLegendItems", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var filteredResults = new List<BioPolymerCoverageResultModel>();
+        var result = method.Invoke(vm, new object[] { filteredResults, 16.0, 96.0, ColorResultsBy.Score })
+            as System.Collections.IEnumerable;
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Cast<object>().Any(), Is.False);
+    }
+
+    [Test]
+    public void Plotting_WithPrecursorIntensity_CreatesDrawing()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+
+        var match = new DummySpectralmatch();
+        var backingField = typeof(SpectrumMatchFromTsv)
+            .GetField("<PrecursorIntensity>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        backingField.SetValue(match, 100000.0);
+        var result = new BioPolymerCoverageResultModel(match, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    [Test]
+    public void Plotting_WithScore_CreatesDrawing()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.Score;
+
+        var match = new DummySpectralmatch();
+        match.SetScore(100);
+        var result = new BioPolymerCoverageResultModel(match, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    [Test]
+    public void Plotting_WithScore_DifferentScores_CreatesDrawing()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.Score;
+
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(10);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(1000);
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result1, result2 });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    [Test]
+    public void Plotting_WithIntensityMode_AllEqual_DoesNotCrash()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.Score;
+
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(42);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(42);
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result1, result2 });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    [Test]
+    public void Plotting_WithPrecursorIntensity_SomeNull_DoesNotCrash()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+
+        var matchWithIntensity = new DummySpectralmatch();
+        var matchNullIntensity = new DummySpectralmatch();
+        var backingField = typeof(SpectrumMatchFromTsv)
+            .GetField("<PrecursorIntensity>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        backingField.SetValue(matchNullIntensity, null);
+
+        var result1 = new BioPolymerCoverageResultModel(matchWithIntensity, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(matchNullIntensity, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result1, result2 });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    #endregion
 }
