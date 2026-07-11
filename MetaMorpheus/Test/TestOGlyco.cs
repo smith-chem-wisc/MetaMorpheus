@@ -1682,8 +1682,9 @@ namespace Test
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> folderContents = Directory.GetFiles(Path.Combine(outputFolder,"Task")).Select(p => Path.GetFileName(p)).ToList();
-            string spectrumLibrary = folderContents.Where(p => p.Contains("SpectralLibrary")).FirstOrDefault();
-            Assert.That(spectrumLibrary.Contains(".msp"));
+            // The spectral library is co-written in both the legacy text (.msp) and the binary (.msl) formats.
+            Assert.That(folderContents.Any(p => p.Contains("SpectralLibrary") && p.EndsWith(".msp")));
+            Assert.That(folderContents.Any(p => p.Contains("SpectralLibrary") && p.EndsWith(".msl")));
 
             Directory.Delete(outputFolder, true);
         }
