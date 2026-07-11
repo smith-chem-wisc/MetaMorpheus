@@ -1593,13 +1593,14 @@ namespace Test.MetaDraw
 
             Directory.CreateDirectory(outputFolder);
 
-            // Convert the .msp test libraries to binary .msl for MetaDraw to load.
+            // Convert the .msp test libraries to binary .msl for MetaDraw to load. Dispose each reader
+            // before the SearchTask re-opens the same .msp files (avoids a file-in-use race on Windows CI).
             string mslLibrary1 = Path.Combine(outputFolder, "P16858_target.msl");
             string mslLibrary2 = Path.Combine(outputFolder, "P16858_decoy.msl");
-            Readers.SpectralLibrary.MslWriter.WriteFromLibrarySpectra(mslLibrary1,
-                new Readers.SpectralLibrary.SpectralLibrary(new List<string> { mspLibrary1 }).GetAllLibrarySpectra().ToList());
-            Readers.SpectralLibrary.MslWriter.WriteFromLibrarySpectra(mslLibrary2,
-                new Readers.SpectralLibrary.SpectralLibrary(new List<string> { mspLibrary2 }).GetAllLibrarySpectra().ToList());
+            using (var srcLib = new Readers.SpectralLibrary.SpectralLibrary(new List<string> { mspLibrary1 }))
+                Readers.SpectralLibrary.MslWriter.WriteFromLibrarySpectra(mslLibrary1, srcLib.GetAllLibrarySpectra().ToList());
+            using (var srcLib = new Readers.SpectralLibrary.SpectralLibrary(new List<string> { mspLibrary2 }))
+                Readers.SpectralLibrary.MslWriter.WriteFromLibrarySpectra(mslLibrary2, srcLib.GetAllLibrarySpectra().ToList());
 
             // run search task (libraries supplied as .msp; produces the PSM file MetaDraw displays)
             var searchtask = new SearchTask();
@@ -1614,17 +1615,35 @@ namespace Test.MetaDraw
 
             var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
 
-            // load results into metadraw, pointing the spectral library at the .msl files
+            // Render the same PSM once with the binary .msl libraries and once with the text .msp
+            // libraries, then assert the mirror-plot library-peak counts are equal — proving the .msl
+            // display is lossless/identical to .msp rather than matching a hardcoded literal.
+            int mslMirrorPeaks = CountMetaDrawMirrorPlotLibraryPeaks(spectraFile, psmFile, new List<string> { mslLibrary1, mslLibrary2 });
+            int mspMirrorPeaks = CountMetaDrawMirrorPlotLibraryPeaks(spectraFile, psmFile, new List<string> { mspLibrary1, mspLibrary2 });
+
+            Assert.That(mslMirrorPeaks, Is.EqualTo(mspMirrorPeaks));
+            Assert.That(mslMirrorPeaks, Is.EqualTo(52)); // anchor: matches the sibling .msp test
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        /// <summary>
+        /// Loads a PSM file + spectral libraries into MetaDraw, renders the first filtered PSM, and
+        /// returns the number of library (mirror-plot) peaks drawn. Used to compare .msl vs .msp
+        /// rendering. Asserts a clean load, a non-empty PSM list, and full resource cleanup.
+        /// </summary>
+        private static int CountMetaDrawMirrorPlotLibraryPeaks(string spectraFile, string psmFile, List<string> spectralLibraryPaths)
+        {
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
             metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
-            metadrawLogic.SpectralLibraryPaths.Add(mslLibrary1);
-            metadrawLogic.SpectralLibraryPaths.Add(mslLibrary2);
+            foreach (var libPath in spectralLibraryPaths)
+                metadrawLogic.SpectralLibraryPaths.Add(libPath);
             var errors = metadrawLogic.LoadFiles(true, true);
-
             Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
 
-            // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             var scrollableCanvas = new Canvas();
             var stationaryCanvas = new Canvas();
@@ -1633,23 +1652,21 @@ namespace Test.MetaDraw
             var psm = metadrawLogic.FilteredListOfPsms.First();
 
             MetaDrawSettings.FirstAAonScreenIndex = 0;
-            MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
             metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
             metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
             Assert.That(errors == null || !errors.Any());
 
-            // library peaks (negative intensities in the mirror plot) were drawn from the .msl library —
-            // identical count to the .msp library in TestMetaDrawWithSpectralLibrary, confirming lossless display
-            var plotSeries = plotView.Model.Series;
-            var mirrorPlotPeaks = plotSeries.Where(p => ((LineSeries)p).Points[1].Y < 0).ToList();
-            Assert.That(mirrorPlotPeaks.Count == 52);
+            // library peaks are the negative-intensity series in the mirror plot
+            int mirrorPlotPeaks = plotView.Model.Series.Count(p => ((LineSeries)p).Points[1].Y < 0);
 
-            // clean up resources
             metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
             Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
 
-            // delete output
-            Directory.Delete(outputFolder, true);
+            return mirrorPlotPeaks;
         }
 
         [Test]
