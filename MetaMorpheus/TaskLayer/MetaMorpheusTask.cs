@@ -4,7 +4,6 @@ using EngineLayer.DatabaseLoading;
 using EngineLayer.DIA;
 using EngineLayer.Indexing;
 using EngineLayer.SpectrumMatch;
-using EngineLayer.SpectrumMatch;
 using EngineLayer.Util;
 using MassSpectrometry;
 using MzLibUtil;
@@ -12,6 +11,7 @@ using Nett;
 using Omics;
 using Omics.BioPolymer;
 using Omics.Digestion;
+using Omics.Fragmentation;
 using Omics.Modifications;
 using Omics.SpectralMatch.MslSpectralLibrary;
 using Omics.SpectrumMatch;
@@ -31,10 +31,6 @@ using System.Threading.Tasks;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
-using EngineLayer.Util;
-using EngineLayer.DIA;
-using EngineLayer.SpectrumMatch;
-using Omics.Fragmentation;
 
 namespace TaskLayer
 {
@@ -1105,21 +1101,16 @@ namespace TaskLayer
 					output.WriteLine(x.ToString());
 
 			// Write MSL — skip invalid entries rather than crashing
-			var entries = spectrumLibrary
-				.Select(s => MslLibraryEntry.TryFromLibrarySpectrum(s))
-				.Where(r => r.Success)
-				.Select(r => r.Entry!)
-				.ToList();
 			var results = spectrumLibrary
-	.Select(s => MslLibraryEntry.TryFromLibrarySpectrum(s))
-	.ToList();
+				.Select(s => MslLibraryEntry.TryFromLibrarySpectrum(s))
+				.ToList();
 
 			var failed = results.Where(r => !r.Success).ToList();
 			if (failed.Any())
 				Warn($"MSL library skipped {failed.Count} invalid entries: " +
 					 string.Join("; ", failed.SelectMany(r => r.Errors).Distinct()));
 
-			entries = results.Where(r => r.Success).Select(r => r.Entry!).ToList();
+			var entries = results.Where(r => r.Success).Select(r => r.Entry!).ToList();
 			string mslPath = Path.Combine(outputFolder, "SpectralLibrary_" + startTimeForAllFilenames + ".msl");
 			MslLibrary.Save(mslPath, entries);
 		}
@@ -1135,19 +1126,23 @@ namespace TaskLayer
 					output.WriteLine(x.ToString());
 
 			// Write MSL — skip invalid entries rather than crashing
-			var entries = spectrumLibrary
+			var results = spectrumLibrary
 				.Select(s => MslLibraryEntry.TryFromLibrarySpectrum(s))
-				.Where(r => r.Success)
-				.Select(r => r.Entry!)
 				.ToList();
 
+			var failed = results.Where(r => !r.Success).ToList();
+			if (failed.Any())
+				Warn($"MSL library skipped {failed.Count} invalid entries: " +
+					 string.Join("; ", failed.SelectMany(r => r.Errors).Distinct()));
+
+			var entries = results.Where(r => r.Success).Select(r => r.Entry!).ToList();
 			string mslPath = Path.Combine(outputFolder, "updateSpectralLibrary_" + startTimeForAllFilenames + ".msl");
 			MslLibrary.Save(mslPath, entries);
 
 			return mslPath;
 		}
 
-		protected void ReportProgress(ProgressEventArgs v)
+        protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);
         }
