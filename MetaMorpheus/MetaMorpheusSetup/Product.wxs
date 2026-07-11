@@ -33,8 +33,6 @@
       <ComponentGroupRef Id="Appsrc_Glycan_Mods_files" />
       <ComponentGroupRef Id="Appsrc_NGlycan_files" />
       <ComponentGroupRef Id="Appsrc_OGlycan_files" />
-      <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
-      <ComponentGroupRef Id="Appsrc_Digestion_files" />
       <ComponentGroupRef Id="Appsrc_Proteomes_files" />
       <ComponentGroupRef Id="Appsrc_Contaminants_files" />
       <ComponentGroupRef Id="ExcelDefaults" />
@@ -124,12 +122,6 @@
             <Directory Id="MetaAppOGlycanFolder" Name="OGlycan" />
           </Directory>
 
-          <!--ProteolyticDigestion Folder-->
-          <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
-
-			<!--Digestion Folder-->
-          <Directory Id="MetaAppDigestionFolder" Name="Digestion" />
-			
           <!--Contaminants Folder-->
           <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
 
@@ -202,6 +194,9 @@
 	  <Component Id="src_Chromatography.dll" Guid="e6316c7b-2cf7-4d42-9472-de4ac10fe988">
 		<File Id="src_Chromatography.dll" Name="Chromatography.dll" Source="$(var.GUI_TargetDir)Chromatography.dll" />
 	  </Component>			
+	  <Component Id="src_Quantification.dll" Guid="98d95d9c-a44b-4813-b1d4-2cba0f489cbd">
+	    <File Id="src_Quantification.dll" Name="Quantification.dll" Source="$(var.GUI_TargetDir)Quantification.dll" />
+	  </Component>		
 	  <Component Id="src_Google.Protobuf.dll" Guid="432636b6-b59d-4ac6-8095-8bb6d5f0372d">
 		<File Id="src_Google.Protobuf.dll" Name="Google.Protobuf.dll" Source="$(var.GUI_TargetDir)Google.Protobuf.dll" />
 	  </Component>			
@@ -537,13 +532,6 @@
         <File ReadOnly="no" Id="Appsrc_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
       </Component>
 
-      <!-- ProteaseMods.txt -->
-      <Component Id="Appsrc_Mods_ProteaseMods.txt" Guid="D95A127E-AD27-49CA-91B1-B7BD55B4CFBA" Condition="OVERWRITEAPPDATA">
-        
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-        <File ReadOnly="no" Id="Appsrc_Mods_ProteaseMods.txt" Name="ProteaseMods.txt" Source="$(var.GUI_TargetDir)Mods\ProteaseMods.txt" />
-      </Component>
-
       <!-- substitutions.txt -->
       <Component Id="Appsrc_Mods_substitutions.txt" Guid="f108606b-f9eb-4c3c-893b-7ec33c88a1d1" Condition="OVERWRITEAPPDATA">
         
@@ -576,7 +564,7 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
       <Component Id="Appsrc_Data_NGlycan.gdb" Guid="1AE1B223-9C67-4378-BA07-ABA31BCE4EAB" Condition="OVERWRITEAPPDATA">
-        
+
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_NGlycan.gdb" Name="NGlycan.gdb" Source="$(var.GUI_TargetDir)Glycan_Mods\NGlycan\NGlycan.gdb" />
       </Component>
@@ -592,7 +580,7 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
       <Component Id="Appsrc_Data_OGlycan.gdb" Guid="08054759-2D7E-4760-A174-A53E5A77507F" Condition="OVERWRITEAPPDATA">
-        
+
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_OGlycan.gdb" Name="OGlycan.gdb" Source="$(var.GUI_TargetDir)Glycan_Mods\OGlycan\OGlycan.gdb" />
       </Component>
@@ -628,10 +616,15 @@
   <Fragment>
     <ComponentGroup Id="Appsrc_Glycan_Mods_files" Directory="MetaAppGlycan_ModsFolder">
       <Component Id="RemoveGlycanModsData" Guid="40090707-AEFF-4C5C-9693-F9A11F9D0402" Condition="OVERWRITEAPPDATA">
-        
+
         <RemoveFolder Id="MetaAppGlycan_ModsFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-      </Component>      
+      </Component>
+      <Component Id="Appsrc_Data_MonosaccharidesCustom.tsv" Guid="82338312-33BC-4426-A6D5-E78E35034A50" Condition="OVERWRITEAPPDATA">
+
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_MonosaccharidesCustom.tsv" Name="MonosaccharidesCustom.tsv" Source="$(var.GUI_TargetDir)Glycan_Mods\MonosaccharidesCustom.tsv" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
@@ -684,34 +677,6 @@
         <File ReadOnly="no" Id="Appsrc_SmallYeast.fasta" Name="SmallYeast.fasta" Source="$(var.GUI_TargetDir)Data\SmallYeast.fasta" />
       </Component>
     </ComponentGroup>
-  </Fragment>
-
-  <!--Builds the App ProteolyticDigestion folder-->
-  <Fragment>
-    <ComponentGroup Id="Appsrc_ProteolyticDigestion_files" Directory="MetaAppProteolyticDigestionFolder">
-      <Component Id="RemoveProteolyticDigestion" Condition="OVERWRITEAPPDATA" Guid="C0E85E53-4245-44ED-A3CB-BD5C241FC302">
-        <RemoveFolder Id="MetaAppProteolyticDigestionFolder" On="both" />
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-      <Component Id="Appsrc_ProteolyticDigestion_proteases.tsv" Guid="A3AF0FEB-59EE-4207-9BDB-3B285D1E720E" Condition="OVERWRITEAPPDATA">
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-        <File ReadOnly="no" Id="Appsrc_ProteolyticDigestion_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)ProteolyticDigestion\proteases.tsv" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
-  <!--Builds the App Rnases folder-->
-  <Fragment>
-	  <ComponentGroup Id="Appsrc_Digestion_files" Directory="MetaAppDigestionFolder">
-		  <Component Id="RemoveDigestion" Condition="OVERWRITEAPPDATA" Guid="25CA934F-1A99-49D8-BB94-C52639E21615">
-			  <RemoveFolder Id="MetaAppDigestionFolder" On="both" />
-			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-		  </Component>
-		  <Component Id="Appsrc_Digestion_rnases.tsv" Guid="07709B54-1331-4851-92AD-26116852467C" Condition="OVERWRITEAPPDATA">
-			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-			  <File ReadOnly="no" Id="Appsrc_Digestion_rnases.tsv" Name="rnases.tsv" Source="$(var.GUI_TargetDir)Digestion\rnases.tsv" />
-		  </Component>
-	  </ComponentGroup>
   </Fragment>
 
   <!--Builds the App Contaminants folder-->

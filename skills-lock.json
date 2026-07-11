@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "release-note-generation": {
+      "source": "microsoft/powertoys",
+      "sourceType": "github",
+      "computedHash": "9bb48ca64c5dad125d4dd56935b74928e253f4a0ea7ec55d86bf4f387b9485df"
+    }
+  }
+}

@@ -1,4 +1,5 @@
 ﻿using GuiFunctions;
+using GuiFunctions.MetaDraw;
 using System;
 using System.Linq;
 using System.Windows;
@@ -64,6 +65,7 @@ public partial class SettingsButtonControl : UserControl
         var originalFilter = MetaDrawSettings.DisplayFilteredOnly;
         var originalNormalize = MetaDrawSettings.NormalizeHistogramToFile;
         var ogColorOrder = MetaDrawSettings.DataVisualizationColorOrder.ToList();
+        var originalParams = PlotModelStatParametersViewModel.Instance.GetParameters();
 
         var result = settingsWindow.ShowDialog();
 
@@ -84,9 +86,11 @@ public partial class SettingsButtonControl : UserControl
             args.FilterChanged = true;
         }
 
+        var currentParams = PlotModelStatParametersViewModel.Instance.GetParameters();
         if (originalFilter != MetaDrawSettings.DisplayFilteredOnly
             || originalNormalize != MetaDrawSettings.NormalizeHistogramToFile
-            || !ogColorOrder.SequenceEqual(MetaDrawSettings.DataVisualizationColorOrder))
+            || !ogColorOrder.SequenceEqual(MetaDrawSettings.DataVisualizationColorOrder)
+            || !originalParams.Equals(currentParams))
             args.DataVisualizationChanged = true;
 
         SettingsChanged?.Invoke(this, args);

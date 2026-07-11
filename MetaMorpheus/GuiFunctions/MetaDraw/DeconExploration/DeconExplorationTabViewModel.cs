@@ -189,8 +189,8 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         }
         else
         {
-            min = SelectedMsDataScan.IsolationRange.Minimum - 1;
-            max = SelectedMsDataScan.IsolationRange.Maximum + 1;
+            min = MinMzToPlot > 0 ? MinMzToPlot : SelectedMsDataScan.IsolationRange.Minimum - 1;
+            max = MaxMzToPlot > 0 ? MaxMzToPlot : SelectedMsDataScan.IsolationRange.Maximum + 1;
             isolationRange = SelectedMsDataScan.IsolationRange;
             scanToPlot = SelectedMsDataFile!.GetOneBasedScan(SelectedMsDataScan.OneBasedPrecursorScanNumber!.Value);
             results = DeconvoluteIsolationRegion(SelectedMsDataScan, scanToPlot);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.IO;
 using System.Linq;
@@ -42,6 +43,105 @@ namespace EngineLayer
             else
             {
                 return LoadStructureGlycan(filePath, IsOGlycan);            // open the file of the structure format, example: (N(H(A))(A))
+            }
+        }
+
+        /// <summary>
+        /// Load custom monosaccharide definitions from a tab-separated file and register them with
+        /// Glycan so they are recognized by both glycan-database formats and the structure validator.
+        ///
+        /// File format (tab-separated, one entry per line, header optional):
+        ///   Name  SingleCharCode  MonoisotopicMass  DiagnosticIonMasses  Description
+        ///
+        /// Lines starting with '#' and blank lines are skipped. The header row (a line beginning
+        /// with "Name" followed by a tab) is also skipped if present. Description column is
+        /// optional and ignored. DiagnosticIonMasses is optional and may contain zero or more
+        /// comma-separated decimal m/z values.
+        ///
+        /// Mass values are decimal Daltons (e.g. "176.03209") and are internally scaled by 1e5 to
+        /// match the integer-mass representation used throughout the glycan code. Diagnostic ion
+        /// m/z values are stored as supplied (no hydrogen-mass offset).
+        ///
+        /// A malformed line throws MetaMorpheusException with the file name, line number, raw line
+        /// content, and the specific problem (collision with built-in, bad char, non-numeric mass).
+        /// </summary>
+        public static void LoadCustomMonosaccharides(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                return; // file is optional
+            }
+
+            int lineNumber = 0;
+            using (var reader = new StreamReader(filePath))
+            {
+                while (reader.Peek() != -1)
+                {
+                    string line = reader.ReadLine();
+                    lineNumber++;
+                    if (IsCommentOrBlank(line))
+                    {
+                        continue;
+                    }
+                    // Skip the optional column-header row.
+                    if (line.TrimStart().StartsWith("Name\t", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    string[] cols = line.Split('\t');
+                    if (cols.Length < 3)
+                    {
+                        throw new MetaMorpheusException(
+                            $"Could not parse custom monosaccharide in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{line}\". Expected at least 3 tab-separated columns (Name, SingleCharCode, MonoisotopicMass).");
+                    }
+
+                    string name = cols[0].Trim();
+                    string codeStr = cols[1].Trim();
+                    string massStr = cols[2].Trim();
+                    string ionsStr = cols.Length > 3 ? cols[3].Trim() : string.Empty;
+
+                    if (codeStr.Length != 1)
+                    {
+                        throw new MetaMorpheusException(
+                            $"Could not parse custom monosaccharide in '{Path.GetFileName(filePath)}' at line {lineNumber}: SingleCharCode must be exactly one character, got \"{codeStr}\".");
+                    }
+                    char code = codeStr[0];
+
+                    if (!double.TryParse(massStr, NumberStyles.Float, CultureInfo.InvariantCulture, out double massDa))
+                    {
+                        throw new MetaMorpheusException(
+                            $"Could not parse custom monosaccharide in '{Path.GetFileName(filePath)}' at line {lineNumber}: MonoisotopicMass \"{massStr}\" is not a valid decimal number.");
+                    }
+                    int massScaled = (int)Math.Round(massDa * 1E5);
+
+                    int[] ionsScaled = null;
+                    if (!string.IsNullOrWhiteSpace(ionsStr))
+                    {
+                        var parts = ionsStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        ionsScaled = new int[parts.Length];
+                        for (int i = 0; i < parts.Length; i++)
+                        {
+                            if (!double.TryParse(parts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double ionDa))
+                            {
+                                throw new MetaMorpheusException(
+                                    $"Could not parse custom monosaccharide in '{Path.GetFileName(filePath)}' at line {lineNumber}: DiagnosticIonMasses entry \"{parts[i]}\" is not a valid decimal number.");
+                            }
+                            ionsScaled[i] = (int)Math.Round(ionDa * 1E5);
+                        }
+                    }
+
+                    try
+                    {
+                        Glycan.RegisterCustomMonosaccharide(name, code, massScaled, ionsScaled);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new MetaMorpheusException(
+                            $"Could not register custom monosaccharide in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{line}\". {ex.Message}",
+                            ex);
+                    }
+                }
             }
         }
 
@@ -121,7 +221,7 @@ namespace EngineLayer
         /// <returns> The glycan Kind List ex. [2, 5, 0, 0, 1, 0, 0, 0, 0, 1] </returns>
         public static byte[] String2Kind(string line) 
         {
-            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            byte[] kind = new byte[Glycan.KindCapacity];
             var x = line.Split(new char[] { '(', ')' });
             int i = 0;
             while (i < x.Length - 1)
@@ -148,14 +248,51 @@ namespace EngineLayer
                 {
                     string line = glycans.ReadLine();   // Read the line from the database file. Ex. (N(H(A))(A))
 
+                    // ValidateStructureLine catches characters the parser would otherwise silently
+                    // miscount as zero-mass. It consults the live monosaccharide registry, so any
+                    // codes registered via MonosaccharidesCustom.tsv are accepted here too.
+                    ValidateStructureLine(line.Trim());
+
                     // For each glycan, two versions will be generated:
                     // For O-glycan, one modified on serine (S), and the other on threonine (T).
                     // For N-glycan, one modified on N-glycosylation on motif Asn-X-Ser(Nxs), and the other on Asn-X-Thr(Nxt).
-                    foreach (var glycan in Glycan.Struct2Glycan(line, id, IsOGlycan)) // Modify the line to handle multiple Glycan objects returned by Struct2Glycan.  
+                    foreach (var glycan in Glycan.Struct2Glycan(line, id, IsOGlycan)) // Modify the line to handle multiple Glycan objects returned by Struct2Glycan.
                     {
                         yield return glycan;
                     }
                     id = id + 2; // Each line will generate two glycan objects
+                }
+            }
+        }
+
+        // A line is treated as a comment if its first non-whitespace character is '#'.
+        // Blank/whitespace-only lines are also skipped so users can space out their database files.
+        private static bool IsCommentOrBlank(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                return true;
+            // Microsoft Excel sometimes wraps lines in double-quotes when saving as TSV/CSV.
+            // A comment line that originally starts with '#' may appear as "# MY COMMENT after
+            // a round-trip through Excel.  Strip a leading '"' before checking for '#'.
+            string trimmed = line.TrimStart().TrimStart('"');
+            return trimmed.StartsWith("#");
+        }
+
+        // Valid characters in structure-format lines: parens plus any single-char monosaccharide
+        // code currently registered with Glycan (built-ins + customs loaded from
+        // MonosaccharidesCustom.tsv). Struct2Glycan silently miscounts unknown chars (no entry in
+        // CharMassDic), so we pre-validate to give the user a clear error instead of a silently
+        // wrong glycan mass.
+        private static void ValidateStructureLine(string trimmedLine)
+        {
+            foreach (char c in trimmedLine)
+            {
+                if (c == '(' || c == ')') continue;
+                if (!Glycan.CharMassDic.ContainsKey(c))
+                {
+                    string allowed = string.Concat(Glycan.CharMassDic.Keys);
+                    throw new FormatException(
+                        $"Unrecognized character '{c}' in glycan structure. Allowed: parentheses and one of {allowed}.");
                 }
             }
         }
@@ -187,7 +324,8 @@ namespace EngineLayer
             {
                 if (hexnac_count == 0)
                 {
-                    byte[] startKind = new byte[] { 0, (byte)hexnac_count, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                    byte[] startKind = new byte[Glycan.KindCapacity];
+                    startKind[1] = (byte)hexnac_count;
                     string glycanName = Glycan.GetKindString(startKind);
                     GlycanIon glycanIon = new GlycanIon(glycanName, 8303819, startKind, glycan_mass - 8303819);
                     glycanIons.Add(glycanIon);
@@ -406,7 +544,11 @@ namespace EngineLayer
 
         private static GlycanIon GenerateGlycanIon(byte hexose_count, byte hexnac_count, byte fuc_count, byte xyl_count, int glycan_mass)
         {
-            byte[] ionKind = new byte[] { hexose_count, hexnac_count, 0, 0, fuc_count, 0, 0, 0, 0, xyl_count,0 };
+            byte[] ionKind = new byte[Glycan.KindCapacity];
+            ionKind[0] = hexose_count;
+            ionKind[1] = hexnac_count;
+            ionKind[4] = fuc_count;
+            ionKind[9] = xyl_count;
 
             int ionMass = Glycan.GetMass(ionKind);
 

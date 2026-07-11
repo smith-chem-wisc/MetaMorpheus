@@ -19,6 +19,7 @@ using UsefulProteomicsDatabases;
 using Omics;
 using Omics.BioPolymer;
 using EngineLayer.SpectrumMatch;
+using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
 
 namespace Test
 {
@@ -709,7 +710,8 @@ namespace Test
                 "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch",
                 "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity",
                 "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide",
-                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle"
+                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle",
+                "PrecursorDeconvolutionScore"
             };
             Assert.That(trainingInfoStandard, Is.EqualTo(expectedTrainingInfoStandard));
 
@@ -729,7 +731,8 @@ namespace Test
                 "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore",
                 "LongestFragmentIonSeries", "ComplementaryIonCount", "AlphaIntensity", "BetaIntensity",
                 "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "PeaksInPrecursorEnvelope",
-                "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount"
+                "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount",
+                "PrecursorDeconvolutionScore"
             };
             List<string> negativeAttributes = new List<string>
             {
@@ -777,9 +780,10 @@ namespace Test
                 MostAbundantPrecursorPeakIntensity = 25,
                 PrecursorFractionalIntensity = 26,
                 InternalIonCount = 27,
+                PrecursorDeconvolutionScore = 28,
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22\t28";
             Assert.That(pd.ToString("standard"), Is.EqualTo(standardToString));
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27";
@@ -864,6 +868,50 @@ namespace Test
             Assert.That(ambiguous.BestMatchingBioPolymersWithSetMods.All(p => p.QValueNotch != null), Is.True, "QValueNotch should be set for notch ambiguous hypothesis");
 
             property.SetValue(null, false);
+        }
+
+        [Test]
+        public static void FdrAnalysisEngine_GetRTPredictor_UnknownName_ReturnsNull()
+        {
+            // GetRTPredictor's switch falls through to `_ => null` when RTPredictorName
+            // is none of the recognized names. Reflection avoids the heavy
+            // Compute_PEPValue fixture this private static would otherwise need.
+            var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, "GetRTPredictor not found via reflection — signature changed?");
+
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
+            {
+                ("dummy.mzML", new CommonParameters(rtPredictorName: "NotARealPredictor"))
+            };
+
+            var result = method.Invoke(null, new object[] { "standard", fsp });
+            Assert.That(result, Is.Null);
+        }
+
+        [Test]
+        //[Explicit("Constructs Koina-backed Prosit predictors. Excluded from normal CI; run with: dotnet test --filter Category=Koina")]
+        //[Category("Koina")]
+        [TestCase("Prosit2019iRT", typeof(Prosit2019iRT))]
+        [TestCase("Prosit2020iRTTMT", typeof(Prosit2020iRTTMT))]
+        public static void FdrAnalysisEngine_GetRTPredictor_ReturnsExpectedPrositPredictor(
+            string rtPredictorName, Type expectedType)
+        {
+            // Covers the two Prosit arms of GetRTPredictor's switch. Reflection mirrors
+            // the UnknownName test above and avoids the heavy Compute_PEPValue fixture
+            // this private static would otherwise need.
+            var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, "GetRTPredictor not found via reflection — signature changed?");
+
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
+            {
+                ("dummy.mzML", new CommonParameters(rtPredictorName: rtPredictorName))
+            };
+
+            var result = method.Invoke(null, new object[] { "standard", fsp });
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Is.InstanceOf(expectedType));
         }
     }
 }

@@ -178,6 +178,19 @@ namespace EngineLayer
                     diagnosticIons.Add(29008759 - hydrogenAtomMonoisotopicMass);
                     diagnosticIons.Add(30809816 - hydrogenAtomMonoisotopicMass);
                 }
+                // Custom-monosaccharide diagnostic ions: emitted at the value supplied by the user
+                // in MonosaccharidesCustom.tsv (no hydrogen-mass offset is applied; users provide
+                // observed m/z directly).
+                foreach (var kv in _customDiagnosticIonsByIndex)
+                {
+                    if (kv.Key < Kind.Length && Kind[kv.Key] >= 1)
+                    {
+                        foreach (int ion in kv.Value)
+                        {
+                            diagnosticIons.Add(ion);
+                        }
+                    }
+                }
                 return diagnosticIons;
             }
         }
@@ -187,45 +200,121 @@ namespace EngineLayer
         private static readonly int hydrogenAtomMonoisotopicMass =  Convert.ToInt32(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 1E5);
 
 
-        //Glycan mass dictionary
+        // Master ordered list of monosaccharide slots. Position in this list IS the Kind[] index.
+        // The 11 built-in entries are seeded here; LoadCustomMonosaccharides appends additional
+        // entries at indices 11+. Built-in indices (0..10) are referenced by name in places like
+        // GlycanDiagnosticIons and OGlycanCompositionCombinationChildIons filter rules, so existing
+        // built-in semantics are unchanged by adding customs.
+        //
+        // H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc,
+        // F: C6O4H10 Fucose, P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium, C: Acetyl for Neu5Ac,
+        // X: C5H10O5 Xylose, K: Kdn
+        private static readonly List<(string CanonicalName, char Code, int MassScaled)> _builtInKindEntries =
+            new List<(string, char, int)>
+        {
+            ("Hex",     'H', 16205282),
+            ("HexNAc",  'N', 20307937),
+            ("NeuAc",   'A', 29109542),
+            ("NeuGc",   'G', 30709033),
+            ("Fuc",     'F', 14605791),
+            ("Phospho", 'P',  7996633),
+            ("Sulfo",   'S',  7995681),
+            ("Na",      'Y',  2298977),
+            ("Ac",      'C',  4201056),
+            ("Xylose",  'X', 15005282),
+            ("Kdn",     'K', 25006897),
+        };
+
+        // Active list (built-ins + any loaded customs). Length defines Kind[] capacity.
+        private static List<(string CanonicalName, char Code, int MassScaled)> _kindEntries =
+            new List<(string, char, int)>(_builtInKindEntries);
+
+        // Custom monosaccharides' diagnostic ions (int, scaled by 1e5), keyed by Kind[] index.
+        // Emitted by GlycanDiagnosticIons whenever the glycan has count >= 1 at the custom index.
+        private static Dictionary<int, int[]> _customDiagnosticIonsByIndex = new Dictionary<int, int[]>();
+
+        /// <summary>
+        /// Number of monosaccharide slots in the Kind[] array (built-ins + any registered customs).
+        /// </summary>
+        public static int KindCapacity => _kindEntries.Count;
+
         /// <summary>
         /// Dictionary mapping monosaccharide character codes to their integer mass (scaled by 1e5).
+        /// Rebuilt whenever a custom monosaccharide is registered.
         /// </summary>
-        //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
-        //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium, C:Acetyl for Neu5Ac
-        //X: C5H10O5 Xylose
-        private readonly static Dictionary<char, int> CharMassDic = new Dictionary<char, int> {
-            { 'H', 16205282 },
-            { 'N', 20307937 },
-            { 'A', 29109542 },
-            { 'G', 30709033 },
-            { 'F', 14605791 },
-            { 'P', 7996633 },
-            { 'S', 7995681 },
-            { 'Y', 2298977 },
-            { 'C',  4201056 },
-            { 'X', 15005282 },
-            { 'K', 25006897 },
-        };
+        public static Dictionary<char, int> CharMassDic { get; private set; } = BuildCharMassDic();
 
         /// <summary>
         /// Dictionary mapping monosaccharide names to their character code and index in the Kind array.
+        /// Rebuilt whenever a custom monosaccharide is registered. "dHex" is permanently aliased to "Fuc".
         /// </summary>
-        public readonly static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
+        public static Dictionary<string, Tuple<char, int>> NameCharDic { get; private set; } = BuildNameCharDic();
+
+        private static Dictionary<char, int> BuildCharMassDic()
         {
-            {"Hex", new Tuple<char, int>('H', 0) },
-            {"HexNAc", new Tuple<char, int>('N', 1) },
-            {"NeuAc", new Tuple<char, int>('A', 2) },
-            {"NeuGc", new Tuple<char, int>('G', 3) },
-            {"Fuc",  new Tuple<char, int>('F', 4)},
-            {"dHex", new Tuple<char, int>('F', 4)}, // Treat dHex as Fuc
-            {"Phospho", new Tuple<char, int>('P', 5)},
-            {"Sulfo", new Tuple<char, int>('S', 6) },
-            {"Na", new Tuple<char, int>('Y', 7) },
-            {"Ac", new Tuple<char, int>('C', 8) },
-            {"Xylose", new Tuple<char, int>('X', 9) },
-            {"Kdn", new Tuple<char,int>('K',10)}
-        };
+            var dic = new Dictionary<char, int>(_kindEntries.Count);
+            foreach (var e in _kindEntries)
+            {
+                dic[e.Code] = e.MassScaled;
+            }
+            return dic;
+        }
+
+        private static Dictionary<string, Tuple<char, int>> BuildNameCharDic()
+        {
+            var dic = new Dictionary<string, Tuple<char, int>>(_kindEntries.Count + 1);
+            for (int i = 0; i < _kindEntries.Count; i++)
+            {
+                var e = _kindEntries[i];
+                dic[e.CanonicalName] = Tuple.Create(e.Code, i);
+            }
+            // Preserved built-in alias: dHex -> Fuc (same slot, same code).
+            if (dic.ContainsKey("Fuc"))
+            {
+                dic["dHex"] = dic["Fuc"];
+            }
+            return dic;
+        }
+
+        /// <summary>
+        /// Register a custom monosaccharide. Called by GlycanDatabase.LoadCustomMonosaccharides
+        /// at startup. Appends a new slot at the end of Kind[] (index = KindCapacity-after-add - 1).
+        /// </summary>
+        /// <param name="name">Unique name, must not collide with a built-in or already-registered name.</param>
+        /// <param name="code">Unique single ASCII letter, must not collide with a built-in or already-registered code.</param>
+        /// <param name="massScaled">Monoisotopic mass in Da multiplied by 1e5 (e.g. 176.03209 Da -> 17603209).</param>
+        /// <param name="diagnosticIonsScaled">Optional diagnostic ion m/z values (scaled by 1e5); null or empty for none.</param>
+        public static void RegisterCustomMonosaccharide(string name, char code, int massScaled, int[] diagnosticIonsScaled)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Monosaccharide name must be non-empty.", nameof(name));
+            if (NameCharDic.ContainsKey(name))
+                throw new ArgumentException($"Monosaccharide name '{name}' already exists (built-in or previously-registered).", nameof(name));
+            if (CharMassDic.ContainsKey(code))
+                throw new ArgumentException($"Single-char code '{code}' already exists (built-in or previously-registered).", nameof(code));
+            if (!((code >= 'A' && code <= 'Z') || (code >= 'a' && code <= 'z')))
+                throw new ArgumentException($"Single-char code '{code}' must be an ASCII letter.", nameof(code));
+
+            int newIndex = _kindEntries.Count;
+            _kindEntries.Add((name, code, massScaled));
+            if (diagnosticIonsScaled != null && diagnosticIonsScaled.Length > 0)
+            {
+                _customDiagnosticIonsByIndex[newIndex] = diagnosticIonsScaled;
+            }
+            CharMassDic = BuildCharMassDic();
+            NameCharDic = BuildNameCharDic();
+        }
+
+        /// <summary>
+        /// Removes all registered custom monosaccharides, restoring the built-in 11. Intended for tests.
+        /// </summary>
+        public static void ResetCustomMonosaccharides()
+        {
+            _kindEntries = new List<(string, char, int)>(_builtInKindEntries);
+            _customDiagnosticIonsByIndex = new Dictionary<int, int[]>();
+            CharMassDic = BuildCharMassDic();
+            NameCharDic = BuildNameCharDic();
+        }
 
         /// <summary>
         /// Set of common oxonium ion masses (int, scaled by 1e5) used for initial glycopeptide peak filtering.
@@ -293,7 +382,7 @@ namespace EngineLayer
             }
             if (!isOglycan)
             {
-                glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
+                glycanIons.Add(new GlycanIon(null, 8303819, new byte[KindCapacity], mass - 8303819)); //Cross-ring mass
             }
             glycanIons.Add(new GlycanIon(null, 0, kind, mass)); //That is Y0 ion. The whole glycan dropped from the glycopeptide. Like a netural loss.
 
@@ -542,43 +631,29 @@ namespace EngineLayer
         /// </summary>
         /// <param name="structure"> ex.(N(H(A))(N(H(A))(F))) </param>
         /// <returns> The glycan Mass </returns>
-        private static int GetMass(string structure) 
+        private static int GetMass(string structure)
         {
-            int y = CharMassDic['H'] * structure.Count(p => p == 'H') +
-                CharMassDic['N'] * structure.Count(p => p == 'N') +
-                CharMassDic['A'] * structure.Count(p => p == 'A') +
-                CharMassDic['G'] * structure.Count(p => p == 'G') +
-                CharMassDic['F'] * structure.Count(p => p == 'F') +
-                CharMassDic['P'] * structure.Count(p => p == 'P') +
-                CharMassDic['S'] * structure.Count(p => p == 'S') +
-                CharMassDic['Y'] * structure.Count(p => p == 'Y') +
-                CharMassDic['C'] * structure.Count(p => p == 'C') +
-                CharMassDic['X'] * structure.Count(p => p == 'X') +
-                CharMassDic['K'] * structure.Count(p => p == 'K')
-                ;
+            int y = 0;
+            foreach (var entry in _kindEntries)
+            {
+                y += entry.MassScaled * structure.Count(p => p == entry.Code);
+            }
             return y;
         }
 
         /// <summary>
         /// Get glycan mass by glycan composition
         /// </summary>
-        /// <param name="kind"> [2, 2, 2, 0, 1, 0, 0, 0, 0, 0] </param>
+        /// <param name="kind"> [2, 2, 2, 0, 1, 0, 0, 0, 0, 0, 0, ...] </param>
         /// <returns> The glycan mass </returns>
-        public static int GetMass(byte[] kind) 
+        public static int GetMass(byte[] kind)
         {
-            int mass = CharMassDic['H'] * kind[0] +
-            CharMassDic['N'] * kind[1] +
-            CharMassDic['A'] * kind[2] +
-            CharMassDic['G'] * kind[3] +
-            CharMassDic['F'] * kind[4] +
-            CharMassDic['P'] * kind[5] +
-            CharMassDic['S'] * kind[6] +
-            CharMassDic['Y'] * kind[7] +
-            CharMassDic['C'] * kind[8] +
-            CharMassDic['X'] * kind[9] +
-            CharMassDic['K'] * kind[10]
-            ;
-
+            int mass = 0;
+            int upper = Math.Min(kind.Length, _kindEntries.Count);
+            for (int i = 0; i < upper; i++)
+            {
+                mass += _kindEntries[i].MassScaled * kind[i];
+            }
             return mass;
         }
 
@@ -587,46 +662,35 @@ namespace EngineLayer
         /// Get glycan composition by the structure string
         /// </summary>
         /// <param name="structure"> structure format : (N(H(A))(N(H(A))(F))) </param>
-        /// <returns> The kind List ex [2, 2, 2, 0, 1, 0, 0, 0, 0, 0].</returns>
-        public static byte[] GetKind(string structure) 
+        /// <returns> The kind array, length == KindCapacity. </returns>
+        public static byte[] GetKind(string structure)
         {
-            var kind = new byte[] 
-            { Convert.ToByte(structure.Count(p => p == 'H')),
-                Convert.ToByte(structure.Count(p => p == 'N')),
-                Convert.ToByte(structure.Count(p => p == 'A')),
-                Convert.ToByte(structure.Count(p => p == 'G')),
-                Convert.ToByte(structure.Count(p => p == 'F')),
-                Convert.ToByte(structure.Count(p => p == 'P')),
-                Convert.ToByte(structure.Count(p => p == 'S')),
-                Convert.ToByte(structure.Count(p => p == 'Y')),
-                Convert.ToByte(structure.Count(p => p == 'C')),
-                Convert.ToByte(structure.Count(p => p == 'X')),
-                Convert.ToByte(structure.Count(p => p == 'K'))
-            };
+            var kind = new byte[_kindEntries.Count];
+            for (int i = 0; i < _kindEntries.Count; i++)
+            {
+                kind[i] = Convert.ToByte(structure.Count(p => p == _kindEntries[i].Code));
+            }
             return kind;
         }
 
 
         /// <summary>
-        /// Get glycan composition text from the glycan kind[].
+        /// Get glycan composition text from the glycan kind[]. Slots with zero count are omitted.
         /// </summary>
-        /// <param name="Kind"> ex. [2, 2, 2, 0, 1, 0, 0, 0, 0, 0] </param>
+        /// <param name="Kind"> ex. [2, 2, 2, 0, 1, 0, 0, 0, 0, 0, 0, ...] </param>
         /// <returns> The composition text ex. H2N2A2F1 </returns>
         public static string GetKindString(byte[] Kind)
         {
-            string H = Kind[0]==0 ? "" : "H" + Kind[0].ToString();
-            string N = Kind[1] == 0 ? "" : "N" + Kind[1].ToString();
-            string A = Kind[2] == 0 ? "" : "A" + Kind[2].ToString();
-            string G = Kind[3] == 0 ? "" : "G" + Kind[3].ToString();
-            string F = Kind[4] == 0 ? "" : "F" + Kind[4].ToString();
-            string P = Kind[5] == 0 ? "" : "P" + Kind[5].ToString();
-            string S = Kind[6] == 0 ? "" : "S" + Kind[6].ToString();
-            string Y = Kind[7] == 0 ? "" : "Y" + Kind[7].ToString();
-            string C = Kind[8] == 0 ? "" : "C" + Kind[8].ToString();
-            string X = Kind[9] == 0 ? "" : "X" + Kind[9].ToString();
-            string K = Kind[10] == 0 ? "" : "K" + Kind[10].ToString();
-            string kindString = H + N + A + G + F + P + S + Y + C + X + K;
-            return kindString;
+            var sb = new System.Text.StringBuilder();
+            int upper = Math.Min(Kind.Length, _kindEntries.Count);
+            for (int i = 0; i < upper; i++)
+            {
+                if (Kind[i] != 0)
+                {
+                    sb.Append(_kindEntries[i].Code).Append(Kind[i]);
+                }
+            }
+            return sb.ToString();
         }
 
         #endregion

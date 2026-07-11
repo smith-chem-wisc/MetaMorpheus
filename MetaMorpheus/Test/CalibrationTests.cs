@@ -1,17 +1,21 @@
 ﻿using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using FlashLFQ;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
+using Omics;
+using Omics.Modifications;
+using Proteomics;
+using System;
+using System.Reflection;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TaskLayer;
-using System;
-using EngineLayer.DatabaseLoading;
-using System.Diagnostics;
-using MzLibUtil;
-using Proteomics;
+using Transcriptomics;
 
 
 namespace Test
@@ -49,7 +53,7 @@ namespace Test
             string expectedCalibratedFileName = Path.GetFileNameWithoutExtension(nonCalibratedFilePath) + "-calib.mzML";
             var expectedCalibratedFilePath = Path.Combine(outputFolder, expectedCalibratedFileName);
             var newExperDesign = ExperimentalDesign.ReadExperimentalDesign(newExpDesignPath, new List<string> { expectedCalibratedFilePath }, out var errors);
-            
+
             Assert.That(!errors.Any());
             Assert.That(newExperDesign.Count == 1);
 
@@ -75,15 +79,17 @@ namespace Test
         }
 
         [Test]
-        public static void TestToleranceExpansion()
+        [TestCase(SearchType.Classic)]
+        [TestCase(SearchType.Modern)]
+        public static void TestToleranceExpansion(SearchType searchType)
         {
             // capture warnings
-            var originalOut = Console.Out; 
-            var originalErr = Console.Error; 
-            var sw = new StringWriter(); 
-            var listener = new TextWriterTraceListener(sw) { TraceOutputOptions = TraceOptions.None }; 
-            Trace.Listeners.Add(listener); 
-            Console.SetOut(sw); 
+            var originalOut = Console.Out;
+            var originalErr = Console.Error;
+            var sw = new StringWriter();
+            var listener = new TextWriterTraceListener(sw) { TraceOutputOptions = TraceOptions.None };
+            Trace.Listeners.Add(listener);
+            Console.SetOut(sw);
             Console.SetError(sw);
 
             try
@@ -103,6 +109,7 @@ namespace Test
 
                 // run calibration
                 CalibrationTask calibrationTask = new();
+                calibrationTask.CalibrationParameters.SearchType = searchType;
                 calibrationTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(2);
                 calibrationTask.CommonParameters.ProductMassTolerance = new PpmTolerance(2);
                 calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
@@ -149,7 +156,9 @@ namespace Test
         }
 
         [Test]
-        public static void CalibrationTestNoPsms()
+        [TestCase(SearchType.Classic)]
+        [TestCase(SearchType.Modern)]
+        public static void CalibrationTestNoPsms(SearchType searchType)
         {
             // set up directories
             string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
@@ -170,6 +179,7 @@ namespace Test
 
             // run calibration
             CalibrationTask calibrationTask = new();
+            calibrationTask.CalibrationParameters.SearchType = searchType;
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
 
             // test new experimental design written by calibration
@@ -232,9 +242,12 @@ namespace Test
         }
 
         [Test]
-        public static void CalibrationTestLowRes()
+        [TestCase(SearchType.Classic)]
+        [TestCase(SearchType.Modern)]
+        public static void CalibrationTestLowRes(SearchType searchType)
         {
             CalibrationTask calibrationTask = new CalibrationTask();
+            calibrationTask.CalibrationParameters.SearchType = searchType;
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationLow");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
@@ -309,8 +322,8 @@ namespace Test
 
             // run the tasks
             EverythingRunnerEngine a = new EverythingRunnerEngine(
-                new List<(string, MetaMorpheusTask)> { ("", calibrationTask), ("", searchTask) }, 
-                new List<string> { nonCalibratedFilePath }, 
+                new List<(string, MetaMorpheusTask)> { ("", calibrationTask), ("", searchTask) },
+                new List<string> { nonCalibratedFilePath },
                 new List<DbForTask> { new DbForTask(myDatabase, false) },
                 outputFolder);
 
@@ -368,7 +381,7 @@ namespace Test
         }
 
         [Test]
-        [TestCase("ExpDesFileNotFound","small.mzML", "Experimental design file not found!")]
+        [TestCase("ExpDesFileNotFound", "small.mzML", "Experimental design file not found!")]
         [TestCase("WrongNumberOfCells", "small.mzML", "Error: The experimental design was not formatted correctly. Expected 5 cells, but found 4 on line 2")]
         [TestCase("BioRepNotInteger", "small.mzML", "Error: The experimental design was not formatted correctly. The biorep on line 2 is not an integer")]
         [TestCase("FractionNotInteger", "small.mzML", "Error: The experimental design was not formatted correctly. The fraction on line 2 is not an integer")]
@@ -392,7 +405,7 @@ namespace Test
             string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
             Directory.CreateDirectory(unitTestFolder);
             Directory.CreateDirectory(outputFolder);
-            
+
             // set up original spectra file (input to calibration)
             string nonCalibratedFilePath = Path.Combine(unitTestFolder, "filename1.mzML");
             File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
@@ -400,7 +413,7 @@ namespace Test
             // set up original BAD experimental design (input to calibration)
             string experimentalDesignPath = Path.Combine(unitTestFolder, "ExperimentalDesign.tsv");
             File.Copy(badExperimentalDesignPath, experimentalDesignPath, true);
-            
+
             // protein db
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
 
@@ -410,15 +423,301 @@ namespace Test
 
             bool wasCalled = false;
             MetaMorpheusTask.WarnHandler += (o, e) => wasCalled = true;
-            
+
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
-            
+
             //The original experimental design file is bad so we expect Warn event in "WriteNewExperimentalDesignFile"
             Assert.That(wasCalled);
-            
+
 
             // clean up
             Directory.Delete(unitTestFolder, true);
+        }
+
+        /// <summary>
+        /// Tests that calibration using Modern Search produces the expected output files.
+        /// This is critical because Modern Search uses an indexed database approach (IndexingEngine + ModernSearchEngine)
+        /// rather than the ClassicSearchEngine. We need to verify that the calibration workflow works correctly
+        /// when using this alternative search strategy.
+        /// </summary>
+        [Test]
+        public static void CalibrationWithModernSearchTest()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CalibrationModernSearchTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(unitTestFolder, "testfile.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            // run calibration with Modern Search
+            CalibrationTask calibrationTask = new();
+            calibrationTask.CalibrationParameters.SearchType = SearchType.Modern;
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+
+            // test file-specific toml written by calibration w/ suggested ppm tolerances
+            string expectedTomlName = Path.GetFileNameWithoutExtension(nonCalibratedFilePath) + "-calib.toml";
+            string expectedCalibratedFileName = Path.GetFileNameWithoutExtension(nonCalibratedFilePath) + "-calib.mzML";
+            var expectedCalibratedFilePath = Path.Combine(outputFolder, expectedCalibratedFileName);
+
+            Assert.That(File.Exists(Path.Combine(outputFolder, expectedTomlName)), "Calibration toml file should exist");
+            Assert.That(File.Exists(expectedCalibratedFilePath), "Calibrated mzML file should exist");
+
+            var lines = File.ReadAllLines(Path.Combine(outputFolder, expectedTomlName));
+            var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
+            var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
+
+            Assert.That(double.TryParse(tolerance, out double tol), "Precursor tolerance should be parseable");
+            Assert.That(double.TryParse(tolerance1, out double tol1), "Product tolerance should be parseable");
+            Assert.That(lines[0].Contains("PrecursorMassTolerance"), "First line should contain PrecursorMassTolerance");
+            Assert.That(lines[1].Contains("ProductMassTolerance"), "Second line should contain ProductMassTolerance");
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
+
+        /// <summary>
+        /// Compares calibration results between Classic Search and Modern Search to ensure they produce
+        /// comparable results. This is critical to verify that the Modern Search implementation doesn't
+        /// introduce significant differences in calibration quality. Both search types should find
+        /// similar numbers of PSMs and produce similar mass tolerance recommendations.
+        /// </summary>
+        [Test]
+        public static void CalibrationClassicVsModernSearchComparison()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CalibrationClassicVsModernTest");
+            string classicOutputFolder = Path.Combine(unitTestFolder, @"ClassicOutput");
+            string modernOutputFolder = Path.Combine(unitTestFolder, @"ModernOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(classicOutputFolder);
+            Directory.CreateDirectory(modernOutputFolder);
+
+            // set up original spectra files (need separate copies to avoid file locking issues)
+            string classicFilePath = Path.Combine(unitTestFolder, "classic_test.mzML");
+            string modernFilePath = Path.Combine(unitTestFolder, "modern_test.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), classicFilePath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), modernFilePath, true);
+
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            // run calibration with Classic Search
+            CalibrationTask classicCalibrationTask = new();
+            classicCalibrationTask.CalibrationParameters.SearchType = SearchType.Classic;
+            classicCalibrationTask.RunTask(classicOutputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { classicFilePath }, "classic");
+
+            // run calibration with Modern Search
+            CalibrationTask modernCalibrationTask = new();
+            modernCalibrationTask.CalibrationParameters.SearchType = SearchType.Modern;
+            modernCalibrationTask.RunTask(modernOutputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { modernFilePath }, "modern");
+
+            // verify both produced output files
+            string classicTomlPath = Path.Combine(classicOutputFolder, "classic_test-calib.toml");
+            string modernTomlPath = Path.Combine(modernOutputFolder, "modern_test-calib.toml");
+
+            Assert.That(File.Exists(classicTomlPath), "Classic calibration should produce toml file");
+            Assert.That(File.Exists(modernTomlPath), "Modern calibration should produce toml file");
+
+            // read tolerances from both
+            var classicLines = File.ReadAllLines(classicTomlPath);
+            var modernLines = File.ReadAllLines(modernTomlPath);
+
+            Assert.That(double.TryParse(Regex.Match(classicLines[0], @"\d+\.\d*").Value, out double classicPrecursorTol),
+                "Classic precursor tolerance should be parseable");
+            Assert.That(double.TryParse(Regex.Match(classicLines[1], @"\d+\.\d*").Value, out double classicProductTol),
+                "Classic product tolerance should be parseable");
+            Assert.That(double.TryParse(Regex.Match(modernLines[0], @"\d+\.\d*").Value, out double modernPrecursorTol),
+                "Modern precursor tolerance should be parseable");
+            Assert.That(double.TryParse(Regex.Match(modernLines[1], @"\d+\.\d*").Value, out double modernProductTol),
+                "Modern product tolerance should be parseable");
+
+            // tolerances should be very close — both engines search the same data
+            // and feed into the same calibration math
+            Assert.That(modernPrecursorTol, Is.InRange(classicPrecursorTol * 0.9, classicPrecursorTol * 1.1),
+                $"Modern precursor tolerance ({modernPrecursorTol}) should be within 10% of Classic ({classicPrecursorTol})");
+            Assert.That(modernProductTol, Is.InRange(classicProductTol * 0.9, classicProductTol * 1.1),
+                $"Modern product tolerance ({modernProductTol}) should be within 10% of Classic ({classicProductTol})");
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="CalibrationTask.FilterBiopolymersForModernSearch"/> returns an empty
+        /// protein list and the correct excluded count when the input contains only non-Protein biopolymers.
+        /// GenerateIndexes uses this result to throw an informative MetaMorpheusException directing
+        /// users to Classic Search for non-protein analytes.
+        /// </summary>
+        [Test]
+        public static void FilterBiopolymersForModernSearch_AllNonProtein_ReturnsEmptyWithCorrectCount()
+        {
+            var rnaList = new List<IBioPolymer>
+            {
+                new RNA("GUACUG", "rna_1"),
+                new RNA("AACUGCUAG", "rna_2")
+            };
+
+            var (proteins, excludedCount) = CalibrationTask.FilterBiopolymersForModernSearch(rnaList);
+
+            Assert.That(proteins, Is.Empty,
+                "No proteins should be returned when the input contains only non-protein biopolymers");
+            Assert.That(excludedCount, Is.EqualTo(2),
+                "Excluded count should equal the total number of non-protein entries");
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="CalibrationTask.FilterBiopolymersForModernSearch"/> correctly separates
+        /// a mixed biopolymer list, keeping only Protein entries and reporting the right excluded count.
+        /// GenerateIndexes uses this result to emit a warning when non-protein entries are dropped.
+        /// </summary>
+        [Test]
+        public static void FilterBiopolymersForModernSearch_MixedList_RetainsProteinsAndCountsExcluded()
+        {
+            var protein = new Protein("MKWVTFISLLLLFSSAYSR", "P00001");
+            var rna = new RNA("GUACUG", "rna_1");
+            var mixedList = new List<IBioPolymer> { protein, rna };
+
+            var (proteins, excludedCount) = CalibrationTask.FilterBiopolymersForModernSearch(mixedList);
+
+            Assert.That(proteins.Count, Is.EqualTo(1),
+                "Only the Protein entry should be retained");
+            Assert.That(proteins[0].Accession, Is.EqualTo("P00001"),
+                "The retained protein should be the one from the input list");
+            Assert.That(excludedCount, Is.EqualTo(1),
+                "Excluded count should equal the number of non-protein entries");
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="CalibrationTask.FilterBiopolymersForModernSearch"/> passes through
+        /// an all-protein list with zero excluded entries.
+        /// </summary>
+        [Test]
+        public static void FilterBiopolymersForModernSearch_AllProteins_ReturnsAllWithZeroExcluded()
+        {
+            var proteins = new List<IBioPolymer>
+            {
+                new Protein("MKWVTFISLLLLFSSAYSR", "P00001"),
+                new Protein("ACDEFGHIKLMNPQRSTVWY", "P00002")
+            };
+
+            var (result, excludedCount) = CalibrationTask.FilterBiopolymersForModernSearch(proteins);
+
+            Assert.That(result.Count, Is.EqualTo(2),
+                "All proteins should be retained when input contains only Protein entries");
+            Assert.That(excludedCount, Is.EqualTo(0),
+                "No entries should be excluded when input contains only Protein entries");
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="CalibrationTask.GenerateIndexes(CommonParameters, string)"/> throws a
+        /// <see cref="MetaMorpheusException"/> when the loaded database contains only non-Protein biopolymers,
+        /// and that the message directs the user to Classic Search or a protein database.
+        /// The exception is thrown before any indexing work begins, so no spectra files are needed.
+        /// </summary>
+        [Test]
+        public static void GenerateIndexes_AllNonProteinDatabase_ThrowsMetaMorpheusException()
+        {
+            var calibrationTask = new CalibrationTask();
+            var type = typeof(CalibrationTask);
+
+            type.GetField("_proteinList", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, new List<IBioPolymer>
+                {
+                    new RNA("GUACUG", "rna_1"),
+                    new RNA("AACUGCUAG", "rna_2")
+                });
+            type.GetField("_taskId", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, "testTask");
+
+            var generateIndexes = type.GetMethod("GenerateIndexes",
+                BindingFlags.NonPublic | BindingFlags.Instance,
+                null,
+                new[] { typeof(CommonParameters), typeof(string) },
+                null);
+
+            MetaMorpheusException caughtException = null;
+            try
+            {
+                generateIndexes.Invoke(calibrationTask, new object[] { new CommonParameters(), "testFile" });
+            }
+            catch (TargetInvocationException ex)
+            {
+                caughtException = ex.InnerException as MetaMorpheusException;
+            }
+
+            Assert.That(caughtException, Is.Not.Null,
+                "A MetaMorpheusException should be thrown when the database contains no Protein entries");
+            Assert.That(caughtException.Message, Does.Contain("Modern Search calibration requires protein sequences"),
+                "Exception message should describe the requirement for protein sequences");
+            Assert.That(caughtException.Message, Does.Contain("2 non-protein biopolymer(s) were filtered out"),
+                "Exception message should report the number of excluded non-protein biopolymers");
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="CalibrationTask.GenerateIndexes(CommonParameters, string)"/> emits a
+        /// warning via <see cref="MetaMorpheusTask.WarnHandler"/> when the loaded database contains a mix
+        /// of Protein and non-Protein biopolymers, informing the user that only protein sequences are indexed.
+        /// The warning is emitted before the <see cref="IndexingEngine"/> runs, so any failure in the
+        /// subsequent indexing step does not affect whether the warning was captured.
+        /// </summary>
+        [Test]
+        public static void GenerateIndexes_MixedBiopolymers_EmitsWarnForExcludedNonProteinEntries()
+        {
+            var calibrationTask = new CalibrationTask();
+            var type = typeof(CalibrationTask);
+
+            type.GetField("_proteinList", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, new List<IBioPolymer>
+                {
+                    new Protein("MKWVTFISLLLLFSSAYSR", "P00001"),
+                    new RNA("GUACUG", "rna_1")
+                });
+            type.GetField("_taskId", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, "testTask");
+            type.GetField("_variableModifications", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, new List<Modification>());
+            type.GetField("_fixedModifications", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, new List<Modification>());
+
+            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            type.GetField("_dbFilenameList", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(calibrationTask, new List<DbForTask> { new DbForTask(dbPath, false) });
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> warnHandler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += warnHandler;
+
+            var generateIndexes = type.GetMethod("GenerateIndexes",
+                BindingFlags.NonPublic | BindingFlags.Instance,
+                null,
+                new[] { typeof(CommonParameters), typeof(string) },
+                null);
+
+            try
+            {
+                generateIndexes.Invoke(calibrationTask, new object[] { new CommonParameters(), "testFile" });
+            }
+            catch (TargetInvocationException)
+            {
+                // The warning is emitted before the IndexingEngine runs; any subsequent
+                // failure does not affect whether the warning was captured.
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= warnHandler;
+            }
+
+            Assert.That(warnings.Any(w => w.Contains("1 non-protein biopolymer(s) were excluded from the search index")),
+                "A warning should be emitted when non-protein entries are excluded from the search index");
+            Assert.That(warnings.Any(w => w.Contains("Only protein sequences are supported by Modern Search")),
+                "Warning should indicate that Modern Search only supports protein sequences");
         }
 
     }

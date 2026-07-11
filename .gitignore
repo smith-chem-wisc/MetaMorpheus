@@ -234,4 +234,12 @@ _Pvt_Extensions
 
 # Macintosh files
 **/.DS_Store
+
+# Agents
+/.opencode/
 /AGENTS.md
+/.serena
+/Generated Files
+/.omo
+/MetaMorpheus/CMD/Properties/launchSettings.json
+/MetaMorpheus/GUI/Properties/launchSettings.json

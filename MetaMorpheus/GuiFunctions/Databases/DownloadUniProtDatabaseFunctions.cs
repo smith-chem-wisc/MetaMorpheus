@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -13,14 +13,14 @@ namespace GuiFunctions.Databases
         public static string GetUniProtHtmlQueryString(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed)
         {
             StringBuilder htmlQueryString = new StringBuilder();
-            htmlQueryString.Append("https://rest.uniprot.org/uniprotkb/search?");
+            htmlQueryString.Append("https://rest.uniprot.org/uniprotkb/stream?");
 
             string[] queryArray = new string[4];
 
             queryArray[0] = compressed ? "compressed=true" : null;
             queryArray[1] = xmlFormat ? "format=xml" : "format=fasta";
             queryArray[2] = isoforms && !xmlFormat ? "includeIsoform=true" : null;
-            queryArray[3] = reviewed ? $"query=reviewed:true&proteome:{proteomeID}" : $"query=proteome:{proteomeID}";
+            queryArray[3] = reviewed ? $"query=reviewed:true AND proteome:{proteomeID}" : $"query=proteome:{proteomeID}";
 
             IEnumerable<string> queryArrayReduced = queryArray.Where(x => x != null);
 

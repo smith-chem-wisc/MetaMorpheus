@@ -160,7 +160,7 @@ namespace EngineLayer.Indexing
 
             for (int peptideId = 0; peptideId < peptides.Count; peptideId++)
             {
-                peptides[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, fragments);
+                peptides[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, fragments, CommonParameters.FragmentationParameters);
 
                 foreach (var theoreticalFragment in fragments)
                 {

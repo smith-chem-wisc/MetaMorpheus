@@ -154,20 +154,6 @@
                 <Setter Property="Margin" Value="-3,-2,-2,-2"/>
             </Style>
 
-            <!--Styling for the "important" buttons like add task, add DB, etc.-->
-            <Style x:Key="ImportantButtonStyle" TargetType="Button">
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Width" Value="200"/>
-                <Setter Property="Background" Value="{StaticResource AccentColor}"/>
-                <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
-                <Setter Property="FontSize" Value="12"/>
-                <Style.Triggers>
-                    <DataTrigger Binding="{Binding Source={x:Static guiFunctions:GuiGlobalParamsViewModel.Instance}, Path=IsRnaMode}" Value="True">
-                        <Setter Property="Background" Value="{StaticResource RnaAccentColor}" />
-                    </DataTrigger>
-                </Style.Triggers>
-            </Style>
-
             <!--Styling for the "important" buttons that should disappear in RNA mode-->
             <Style x:Key="ImportantButtonStyleNotForRna" TargetType="Button" BasedOn="{StaticResource ImportantButtonStyle}">
                 <Setter Property="Visibility" Value="Visible" />

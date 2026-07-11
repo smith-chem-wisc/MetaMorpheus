@@ -89,20 +89,7 @@ namespace MetaMorpheusCommandLine
             {
                 if (Directory.Exists(item))
                 {
-                    string[] directoryFiles = Directory.GetFiles(item);
-
-                    foreach (var file in directoryFiles)
-                    {
-                        if (GlobalVariables.AcceptedSpectraFormats.Contains(GlobalVariables.GetFileExtension(file).ToLowerInvariant()))
-                        {
-                            spectraFromDirectories.Add(file);
-
-                            if (Verbosity == VerbosityType.normal)
-                            {
-                                Console.WriteLine("Found spectra file: " + file);
-                            }
-                        }
-                    }
+                    FindSpectraFilesRecursive(item, spectraFromDirectories, Verbosity);
                 }
                 else if (!File.Exists(item))
                 {
@@ -112,14 +99,37 @@ namespace MetaMorpheusCommandLine
 
             Spectra.AddRange(spectraFromDirectories);
 
+            // Correct .tdf/.tdf_bin file paths to their parent .d directory
+            // This handles the case where a user provides a path to a .tdf file directly
+            for (int i = 0; i < Spectra.Count; i++)
+            {
+                string ext = Path.GetExtension(Spectra[i]).ToLowerInvariant();
+                if (ext == ".tdf" || ext == ".tdf_bin")
+                {
+                    string parentDir = Path.GetDirectoryName(Spectra[i]);
+                    if (parentDir != null && 
+                        parentDir.EndsWith(".d", StringComparison.OrdinalIgnoreCase) && 
+                        IsValidTimsTofDirectory(parentDir))
+                    {
+                        Spectra[i] = parentDir;
+                    }
+                }
+            }
+
+            // Remove duplicate spectra entries (can occur if both .tdf and .tdf_bin were specified)
+            Spectra = Spectra.Distinct().ToList();
+
             // remove spectra directories, after their spectra files have been added
-            Spectra.RemoveAll(p => Directory.Exists(p));
+            // but keep .d directories as they are valid timsTOF spectra folders
+            Spectra.RemoveAll(p => Directory.Exists(p) && !p.EndsWith(".d", StringComparison.OrdinalIgnoreCase));
 
             IEnumerable<string> fileNames = Tasks.Concat(Databases).Concat(Spectra);
 
             foreach (string filename in fileNames)
             {
-                if (!File.Exists(filename))
+                // .d folders are directories, so we need to check for both files and .d directories
+                bool isDotDDirectory = filename.EndsWith(".d", StringComparison.OrdinalIgnoreCase) && Directory.Exists(filename);
+                if (!File.Exists(filename) && !isDotDDirectory)
                 {
                     throw new MetaMorpheusException("The following file does not exist: " + filename);
                 }
@@ -186,6 +196,77 @@ namespace MetaMorpheusCommandLine
             {
                 throw new MetaMorpheusException("Default tomls could not be written: " + e.Message);
             }
+        }
+
+        /// <summary>
+        /// Recursively finds spectra files in a directory.
+        /// For .d folders (timsTOF data), only adds them if they are valid (contain required tdf/tsf files).
+        /// If a .d folder is invalid, recurses into it to find nested valid .d folders.
+        /// </summary>
+        private static void FindSpectraFilesRecursive(string path, List<string> spectraFiles, VerbosityType verbosity)
+        {
+            if (File.Exists(path))
+            {
+                if (GlobalVariables.AcceptedSpectraFormats.Contains(GlobalVariables.GetFileExtension(path).ToLowerInvariant()))
+                {
+                    // If a .tdf or .tdf_bin file is found, check if the parent directory is a valid .d folder and add that instead
+                    if (new[] { ".tdf", ".tdf_bin" }.Contains(GlobalVariables.GetFileExtension(path).ToLowerInvariant()))
+                    {
+                        var parentDirectory = Directory.GetParent(path);
+                        if (GlobalVariables.GetFileExtension(parentDirectory.FullName).ToLowerInvariant() == ".d" && IsValidTimsTofDirectory(parentDirectory.FullName))
+                            path = parentDirectory.FullName; // add the .d folder instead of the individual tdf/tsf file
+                    }
+
+                    spectraFiles.Add(path);
+
+                    if (verbosity == VerbosityType.normal)
+                    {
+                        Console.WriteLine("Found spectra file: " + path);
+                    }
+                }
+                return;
+            }
+
+            if (Directory.Exists(path))
+            {
+                // Check if this is a .d folder
+                if (path.EndsWith(".d", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Check if it's a valid timsTOF data folder
+                    if (IsValidTimsTofDirectory(path))
+                    {
+                        spectraFiles.Add(path);
+
+                        if (verbosity == VerbosityType.normal)
+                        {
+                            Console.WriteLine("Found spectra file: " + path);
+                        }
+                        return; // Valid .d folder - don't recurse into it
+                    }
+                    // Invalid .d folder - fall through to recurse and find nested valid .d folders
+                }
+
+                // Recurse into directory
+                foreach (var entry in Directory.EnumerateFileSystemEntries(path))
+                {
+                    FindSpectraFilesRecursive(entry, spectraFiles, verbosity);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks if a .d directory is a valid timsTOF data folder.
+        /// </summary>
+        private static bool IsValidTimsTofDirectory(string directoryPath)
+        {
+            // for data with tims enabled, we need to have both the .tdf and .tdf_bin files
+            if (File.Exists(Path.Combine(directoryPath, "analysis.tdf")) &&
+                File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin")))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
