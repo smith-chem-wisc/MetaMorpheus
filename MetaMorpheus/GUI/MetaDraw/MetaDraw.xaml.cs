@@ -110,8 +110,9 @@ namespace MetaMorpheusGUI
 
             if (GlobalVariables.AcceptedSpectraFormats.Contains(theExtension))
             {
-                // If a bruker timsTof file was selected, we actually want the parent folder
-                if(theExtension == ".tdf" || theExtension == ".tdf_bin")
+                // If a Bruker inner file was selected (.tdf/.tdf_bin for timsTOF, .baf for regular TOF),
+                // we actually want the parent .d folder
+                if(theExtension == ".tdf" || theExtension == ".tdf_bin" || theExtension == ".baf")
                 {
                     filePath = Path.GetDirectoryName(filePath);
                 }

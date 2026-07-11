@@ -19,9 +19,37 @@ namespace Test
             Environment.CurrentDirectory = TestContext.CurrentContext.TestDirectory;
         }
 
+        /// <summary>
+        /// Verifies that a regular (non-tims) centroided Bruker TOF .d folder (identified by
+        /// analysis.baf) loads through MetaMorpheus's file manager and exposes the expected spectra.
+        /// </summary>
+        /// <remarks>
+        /// Only centroid data is covered here. Profile-mode Bruker TOF data currently throws
+        /// IndexOutOfRangeException in mzLib's BrukerFileReader.GetSpectraData when peak filtering
+        /// is applied (which MyFileManager always does); add profile coverage once that mzLib bug is fixed.
+        /// </remarks>
+        [Test]
+        public static void TestBrukerTofFileLoadsThroughMyFileManager()
+        {
+            string dotDPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\centroid_1x_MS1_4x_autoMS2.d");
+            Assert.That(Directory.Exists(dotDPath), Is.True, "Test requires the centroid Bruker TOF .d folder to exist");
+
+            var dataFile = new MyFileManager(true).LoadFile(dotDPath, new CommonParameters());
+
+            Assert.That(dataFile.NumSpectra, Is.EqualTo(5));
+            var secondScan = dataFile.Scans[1];
+            Assert.That(secondScan.MsnOrder, Is.EqualTo(2));
+            Assert.That(secondScan.Polarity, Is.EqualTo(Polarity.Positive));
+            Assert.That(secondScan.DissociationType, Is.EqualTo(DissociationType.CID));
+            Assert.That(secondScan.IsCentroid, Is.True);
+            Assert.That(secondScan.NativeId, Is.EqualTo("scan=2"));
+            Assert.That(secondScan.SelectedIonMZ, Is.EqualTo(721.86865).Within(0.001));
+        }
+
         [Test]
         [TestCase(@"TestData\ok.mgf", @"TestData\okk.xml")]
         [TestCase(@"TestData\snippet.d", @"TestData\gapdh.fasta")]
+        [TestCase(@"TestData\centroid_1x_MS1_4x_autoMS2.d", @"TestData\gapdh.fasta")]
         [TestCase(@"TopDownTestData\JurkatTopDownRep2Fract1_ms2.msalign", @"TestData\gapdh.fasta")]
         public static void TestQuantificationDoesntCrashOnUnsupportedFiles(string filepath, string dbPath)
         {
@@ -54,6 +82,7 @@ namespace Test
         [Test]
         [TestCase(@"TestData\ok.mgf", @"TestData\okk.xml")]
         [TestCase(@"TestData\snippet.d", @"TestData\gapdh.fasta")]
+        [TestCase(@"TestData\centroid_1x_MS1_4x_autoMS2.d", @"TestData\gapdh.fasta")]
         [TestCase(@"TopDownTestData\JurkatTopDownRep2Fract1_ms2.msalign", @"TestData\gapdh.fasta")]
         public static void TestCalibrationDoesntCrashOnUnsupportedFiles(string filepath, string dbPath)
         {
@@ -88,6 +117,7 @@ namespace Test
         [Test]
         [TestCase(@"TestData\ok.mgf", @"TestData\okk.xml")]
         [TestCase(@"TestData\snippet.d", @"TestData\gapdh.fasta")]
+        [TestCase(@"TestData\centroid_1x_MS1_4x_autoMS2.d", @"TestData\gapdh.fasta")]
         [TestCase(@"TopDownTestData\JurkatTopDownRep2Fract1_ms2.msalign", @"TestData\gapdh.fasta")]
         public static void TestAveragingDoesntCrashOnUnsupportedFiles(string filepath, string dbPath)
         {

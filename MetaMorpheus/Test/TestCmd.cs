@@ -259,5 +259,105 @@ namespace Test
                 }
             }
         }
+
+        /// <summary>
+        /// Regression test that a regular (non-tims) Bruker TOF .d folder, identified by an
+        /// analysis.baf file, is discovered as a spectra file when its parent directory is provided.
+        /// </summary>
+        [Test]
+        public static void TestBrukerBafDotDFolderDiscovery()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestBrukerBafDiscovery");
+
+            try
+            {
+                // Clean up if exists from previous failed run
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                // Create a valid regular-TOF .d folder (identified by analysis.baf)
+                string validDotD = Path.Combine(tempFolder, "baf_data.d");
+                Directory.CreateDirectory(validDotD);
+                File.WriteAllText(Path.Combine(validDotD, "analysis.baf"), "fake baf content");
+
+                // Also drop a file inside the .d that must NOT be picked up separately
+                File.WriteAllText(Path.Combine(validDotD, "some_file.mzML"), "<mzML></mzML>");
+
+                var settings = new CommandLineSettings
+                {
+                    _spectra = new[] { tempFolder },
+                    _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                    _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") }
+                };
+
+                settings.ValidateCommandLineSettings();
+
+                Assert.That(settings.Spectra.Count, Is.EqualTo(1), "Should find exactly one spectra entry");
+                Assert.That(settings.Spectra[0], Does.EndWith("baf_data.d"),
+                    "Should discover the regular-TOF .d folder");
+                Assert.That(settings.Spectra.Any(s => s.EndsWith(".mzML")), Is.False,
+                    "Should NOT find the mzML file inside the .d folder");
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Test that when a user provides a path to an analysis.baf file directly,
+        /// the CMD corrects it to use the parent .d directory instead.
+        /// </summary>
+        [Test]
+        public static void TestBafFilePathCorrectedToParentDotDDirectory()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestBafPathCorrection");
+
+            try
+            {
+                // Clean up if exists from previous failed run
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                // Create a valid regular-TOF .d folder (identified by analysis.baf)
+                string validDotD = Path.Combine(tempFolder, "data.d");
+                Directory.CreateDirectory(validDotD);
+
+                string bafFilePath = Path.Combine(validDotD, "analysis.baf");
+                File.WriteAllText(bafFilePath, "fake baf content");
+
+                // User provides the .baf file path directly instead of the .d folder
+                var settings = new CommandLineSettings
+                {
+                    _spectra = new[] { bafFilePath },
+                    _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                    _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") }
+                };
+
+                settings.ValidateCommandLineSettings();
+
+                Assert.That(settings.Spectra.Count, Is.EqualTo(1), "Should have exactly one spectra entry");
+                Assert.That(settings.Spectra[0], Does.EndWith("data.d"),
+                    "Should have corrected the .baf path to the parent .d directory");
+                Assert.That(settings.Spectra[0], Does.Not.Contain("analysis.baf"),
+                    "Should not contain the .baf filename");
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
     }
 }
