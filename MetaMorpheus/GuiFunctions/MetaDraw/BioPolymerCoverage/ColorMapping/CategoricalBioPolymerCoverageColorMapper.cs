@@ -18,6 +18,8 @@ public sealed class CategoricalBioPolymerCoverageColorMapper : BioPolymerCoverag
     private readonly ColorResultsBy _colorBy;
     public override ColorResultsBy ColorBy => _colorBy;
     public override bool IsNumeric => false;
+    public override bool SupportsGradientSelection => false;
+    public override bool SupportsLogScale => false;
 
     public override SolidColorBrush GetBrush(
         BioPolymerCoverageResultModel result,
