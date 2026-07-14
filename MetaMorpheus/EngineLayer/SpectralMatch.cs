@@ -33,7 +33,7 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
-            ScanPrecursorMassToMatch = scan.PrecursorMassToMatch;
+            ScanPrecursorMostAbundantMass = scan.PrecursorMostAbundantMass;
             IsMostAbundantMode = commonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
             PrecursorAveragine = commonParameters.PrecursorDeconvolutionParameters?.AverageResidueModel;
             PrecursorScanEnvelopePeakCount = scan.PrecursorEnvelopePeakCount;
@@ -99,13 +99,19 @@ namespace EngineLayer
         /// envelope is maximally bad; higher = better-shaped Averagine match.
         /// </summary>
         public double PrecursorScanDeconvolutionScore { get; }
+        /// <summary>
+        /// The observed monoisotopic precursor mass, in every search. This property does not change
+        /// meaning with the search type.
+        /// </summary>
         public double ScanPrecursorMass { get; }
         /// <summary>
-        /// The observed precursor mass used for candidate selection: equals <see cref="ScanPrecursorMass"/>
-        /// (monoisotopic) in the default mode, or the envelope's most-abundant (or average) observed mass
-        /// in most-abundant mode. Used to report <see cref="MostAbundantMassErrorPpm"/>.
+        /// The observed neutral mass of the most abundant isotopologue of the precursor envelope, or 0 if
+        /// no envelope was deconvoluted. An observation, populated in every search — the mirror of
+        /// <see cref="Ms2ScanWithSpecificMass.PrecursorMostAbundantMass"/>. Which mass a given search
+        /// matched on is decided by the <see cref="MassDiffAcceptor"/>, not by this class; see
+        /// <see cref="PrecursorMassExtensions.GetPrecursorMassForSearch(SpectralMatch, MassDiffAcceptor)"/>.
         /// </summary>
-        public double ScanPrecursorMassToMatch { get; }
+        public double ScanPrecursorMostAbundantMass { get; }
         /// <summary>True when this match was made in most-abundant precursor-selection mode.</summary>
         public bool IsMostAbundantMode { get; }
         /// <summary>Averagine model of the precursor deconvolution, used to predict the theoretical apex for most-abundant mass-error reporting; null if unavailable.</summary>
@@ -165,7 +171,7 @@ namespace EngineLayer
 
         /// <summary>
         /// Precursor mass error (ppm) between the observed most-abundant isotopic peak
-        /// (<see cref="ScanPrecursorMassToMatch"/>) and the candidate's theoretical most-abundant
+        /// (<see cref="ScanPrecursorMostAbundantMass"/>) and the candidate's theoretical most-abundant
         /// (averagine-apex) mass — the most-abundant-mode analogue of <see cref="PrecursorMassErrorPpm"/>.
         /// Returns null outside most-abundant mode (the psmtsv column is then omitted). A non-tight value
         /// here flags an apex misprediction the notch tolerated, complementing the monoisotopic Mass Diff,
@@ -176,7 +182,7 @@ namespace EngineLayer
         {
             get
             {
-                if (!IsMostAbundantMode || PrecursorAveragine == null)
+                if (!IsMostAbundantMode || PrecursorAveragine == null || ScanPrecursorMostAbundantMass <= 0)
                     return null;
                 return this._BestMatchingBioPolymersWithSetMods.Select(p =>
                 {
@@ -184,7 +190,7 @@ namespace EngineLayer
                         + MostAbundantMassDiffAcceptor.AveragineApexOffset(PrecursorAveragine, p.SpecificBioPolymer.MonoisotopicMass);
                     return theoreticalMostAbundant <= 0
                         ? 0
-                        : Math.Round((this.ScanPrecursorMassToMatch - theoreticalMostAbundant) / theoreticalMostAbundant * 1e6, 2);
+                        : Math.Round((this.ScanPrecursorMostAbundantMass - theoreticalMostAbundant) / theoreticalMostAbundant * 1e6, 2);
                 }).ToList();
             }
         }
@@ -464,7 +470,7 @@ namespace EngineLayer
             ScanPrecursorCharge = psm.ScanPrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = psm.ScanPrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = psm.ScanPrecursorMass;
-            ScanPrecursorMassToMatch = psm.ScanPrecursorMassToMatch;
+            ScanPrecursorMostAbundantMass = psm.ScanPrecursorMostAbundantMass;
             IsMostAbundantMode = psm.IsMostAbundantMode;
             PrecursorAveragine = psm.PrecursorAveragine;
             ScanOneOverK0 = psm.ScanOneOverK0;

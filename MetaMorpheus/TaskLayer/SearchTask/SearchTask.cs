@@ -265,10 +265,10 @@ namespace TaskLayer
                 }
 
                 Status("Getting ms2 scans...", thisId);
-                // Sort by the mass used for candidate selection (PrecursorMassToMatch), which equals
-                // PrecursorMass in monoisotopic mode. ClassicSearchEngine binary-searches this same
-                // mass, so the array and the search key must use the same quantity.
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMassToMatch).ToArray();
+                // Sort by the mass this search selects candidates on, as decided by the acceptor.
+                // ClassicSearchEngine binary-searches that same mass, so the array and the search key
+                // must use the same quantity.
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.GetPrecursorMassForSearch(massDiffAcceptor)).ToArray();
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 

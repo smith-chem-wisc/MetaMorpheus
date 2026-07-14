@@ -134,7 +134,7 @@ namespace TaskLayer
                     nextFileLoadingTask.Start();
                 }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMassToMatch).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.GetPrecursorMassForSearch(searchMode)).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
                 SpectralMatch[] psmArray = new SpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 

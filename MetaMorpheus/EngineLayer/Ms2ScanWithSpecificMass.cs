@@ -11,17 +11,13 @@ namespace EngineLayer
     {
         public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam,
             IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null,
-            double? precursorMassToMatch = null,
+            double? precursorMostAbundantMass = null,
             double precursorDeconvolutionScore = 0)
         {
             PrecursorMonoisotopicPeakMz = precursorMonoisotopicPeakMz;
             PrecursorCharge = precursorCharge;
             PrecursorMass = PrecursorMonoisotopicPeakMz.ToMass(precursorCharge);
-            // Mass used for candidate selection by the MassDiffAcceptor. Defaults to the monoisotopic
-            // PrecursorMass; in most-abundant mode the caller passes the envelope's most-abundant (or,
-            // for unresolved species, average) observed mass. PrecursorMass itself is left unchanged
-            // because it still drives fragment-bin math and precursor mass-error reporting.
-            PrecursorMassToMatch = precursorMassToMatch ?? PrecursorMass;
+            PrecursorMostAbundantMass = precursorMostAbundantMass ?? 0;
             PrecursorIntensity = precursorIntensity ?? 1;
             PrecursorEnvelopePeakCount = envelopePeakCount ?? 1;
             PrecursorFractionalIntensity = precursorFractionalIntensity ?? -1;
@@ -48,22 +44,26 @@ namespace EngineLayer
 
         public MsDataScan TheScan { get; }
         public double PrecursorMonoisotopicPeakMz { get; }
+
+        /// <summary>
+        /// The observed monoisotopic precursor mass, in every search. This property does not change
+        /// meaning with the search type.
+        /// </summary>
         public double PrecursorMass { get; }
 
         /// <summary>
-        /// The precursor mass used to select theoretical candidates via the <see cref="EngineLayer.MassDiffAcceptor"/>.
-        /// Equals <see cref="PrecursorMass"/> in monoisotopic mode; in most-abundant mode it is the
-        /// envelope's most-abundant (or average, if unresolved) observed neutral mass.
+        /// The observed neutral mass of the most abundant (tallest) isotopologue of the precursor envelope,
+        /// or 0 when no envelope was deconvoluted for this precursor (a scan-header precursor, or a neutral
+        /// mass read from a pre-deconvoluted file). Like <see cref="PrecursorMass"/> this is a plain
+        /// observation, populated in every search and never redefined by one: it is what the detector saw,
+        /// not what the current search chose to match on.
         /// <para>
-        /// This is deliberately a separate property rather than an overwrite of <see cref="PrecursorMass"/>:
-        /// candidate selection is the only step that should key off the most-abundant peak. Fragment-bin
-        /// math and the reported precursor mass error must stay on the monoisotopic mass so that (a) the
-        /// error is the monoisotopic-vs-monoisotopic value comparable across search modes, and (b) it is
-        /// not conflated with the ±k-neutron apex offset the acceptor already models per-notch. Collapsing
-        /// the two would report error against a peak that is intentionally N neutrons off the monoisotopic.
+        /// Which of the two a search matches candidates against is decided by the
+        /// <see cref="EngineLayer.MassDiffAcceptor"/> — see
+        /// <see cref="PrecursorMassExtensions.GetPrecursorMassForSearch(Ms2ScanWithSpecificMass, MassDiffAcceptor)"/>.
         /// </para>
         /// </summary>
-        public double PrecursorMassToMatch { get; }
+        public double PrecursorMostAbundantMass { get; }
         public int PrecursorCharge { get; }
         public double PrecursorIntensity { get; }
         public int PrecursorEnvelopePeakCount { get; }

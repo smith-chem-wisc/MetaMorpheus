@@ -194,16 +194,13 @@ namespace TaskLayer
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
         {
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalDataFile);
-            // In most-abundant mode, find calibration PSMs with the apex acceptor so the search is
-            // consistent with the scan's most-abundant PrecursorMassToMatch. The calibration error
+            // In most-abundant mode, find calibration PSMs with the apex acceptor. The calibration error
             // itself is recomputed per-isotope from the identified peptide's theoretical distribution
             // (DataPointAcquisitionEngine) and is independent of the precursor-matching convention.
-            // The apex acceptor only works when PrecursorMassToMatch is the deconvoluted most-abundant
-            // mass. Calibration runs with precursor deconvolution off (see ctor), in which case
-            // PrecursorMassToMatch falls back to the monoisotopic mass; matching that against the
-            // averagine apex would mismatch by the full offset (hundreds of ppm at high mass) and find
-            // almost nothing. So only use the apex acceptor when deconvolution is actually on; otherwise
-            // fall back to the standard zero-centered (monoisotopic) acceptor.
+            // The apex acceptor is only usable when a most-abundant peak was actually observed, which
+            // requires precursor deconvolution. Calibration can run with deconvolution off (see ctor),
+            // and the scans then carry no most-abundant mass at all — so use the standard zero-centered
+            // (monoisotopic) acceptor there, and the scans' monoisotopic mass is what gets matched.
             MassDiffAcceptor searchMode;
             if (combinedParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
                 && combinedParameters.DoPrecursorDeconvolution)
@@ -219,7 +216,7 @@ namespace TaskLayer
                     new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
             }
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.PrecursorMassToMatch).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.GetPrecursorMassForSearch(searchMode)).ToArray();
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });

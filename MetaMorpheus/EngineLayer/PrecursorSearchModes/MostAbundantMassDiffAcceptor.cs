@@ -32,7 +32,9 @@ namespace EngineLayer
     /// the count of these indices. Per-notch FDR groups PSMs by notch value, so any distinct encoding
     /// works equally; the contiguous form is just the safe, sign-free choice.
     ///
-    /// The scan-side mass is the envelope's most-abundant observed neutral mass (PrecursorMassToMatch).
+    /// The scan-side mass is the envelope's most-abundant observed neutral mass
+    /// (<see cref="Ms2ScanWithSpecificMass.PrecursorMostAbundantMass"/>, selected by
+    /// <see cref="PrecursorMassExtensions.GetPrecursorMassForSearch(Ms2ScanWithSpecificMass, MassDiffAcceptor)"/>).
     /// Isotopically unresolved species would instead supply an average (centroid) mass and an
     /// averagine average offset; that path is future work (the unresolved charge-determination
     /// algorithm), so all envelopes here are resolved and matched on the most-abundant peak.
@@ -94,6 +96,8 @@ namespace EngineLayer
         public static double AveragineApexOffset(AverageResidue averagine, double monoisotopicMass)
             => monoisotopicMass <= 0 ? 0 : averagine.GetDiffToMonoisotopic(averagine.GetMostIntenseMassIndex(monoisotopicMass));
 
+        public override bool MatchesMostAbundantPeak => true;
+
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
             double apex = peptideMass + ApexOffset(peptideMass);
@@ -105,6 +109,22 @@ namespace EngineLayer
                 }
             }
             return -1;
+        }
+
+        /// <summary>
+        /// Undoes the two offsets this acceptor allowed between the observed most-abundant peak and the
+        /// candidate's monoisotopic mass: the averagine apex offset, and the k-neutron apex misprediction
+        /// the notch set tolerated. What remains is the observed monoisotopic mass implied by the match —
+        /// so (result - theoretical) is the chemical mass difference, free of isotope-assignment offsets.
+        /// </summary>
+        public override double ToObservedMonoisotopicMass(double observedMostAbundantMass, double theoreticalMonoisotopicMass)
+        {
+            double apexOffset = ApexOffset(theoreticalMonoisotopicMass);
+            // The residual beyond the predicted apex is k neutrons plus a within-tolerance ppm error, so
+            // rounding to the nearest whole isotopologue recovers exactly the k the acceptor matched on.
+            double residual = observedMostAbundantMass - (theoreticalMonoisotopicMass + apexOffset);
+            double k = Math.Round(residual / ExpectedIsotopeSpacing, MidpointRounding.AwayFromZero);
+            return observedMostAbundantMass - apexOffset - k * ExpectedIsotopeSpacing;
         }
 
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromTheoreticalMass(double peptideMonoisotopicMass)
