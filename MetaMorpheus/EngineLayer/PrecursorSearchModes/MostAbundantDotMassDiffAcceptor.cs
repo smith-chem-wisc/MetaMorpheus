@@ -21,11 +21,16 @@ namespace EngineLayer
     /// <see cref="DotMassDiffAcceptor"/>, round(shiftDa · NotchScalar)); the ±k apex intervals for a
     /// given shift all share that shift's notch, since they represent the same modification differing
     /// only by apex misprediction. <see cref="MassDiffAcceptor.NumNotches"/> therefore equals the number
-    /// of shifts, preserving per-shift FDR grouping. Because the notch identifies only the shift, the
-    /// apex offset k cannot be read back from it — <see cref="ToObservedMonoisotopicMass"/> re-derives the
-    /// (shift, k) pair instead, and downstream G-PTM-D mod assignment MUST go through it: the deconvoluted
-    /// monoisotopic mass of an accepted match can be off by whole isotopologues, which would otherwise be
-    /// mistaken for a ~1-2 Da modification.
+    /// of shifts, preserving per-shift FDR grouping.
+    /// <para>
+    /// Downstream G-PTM-D mod assignment MUST NOT read (deconvoluted monoisotopic - theoretical) as a
+    /// modification mass: for an accepted match that difference can carry a whole-isotopologue offset,
+    /// which would be mistaken for a ~1-2 Da modification. Nor can that offset be undone by rounding,
+    /// because the unknown modification mass is folded into the same residual. G-PTM-D instead tests each
+    /// candidate mass (peptide + modification) on its own, apex-to-apex, via
+    /// <see cref="PrecursorMassExtensions.MatchesCandidateMass"/> — the same acceptance test as
+    /// <see cref="Accepts"/>, expressed over the deconvolution parameters.
+    /// </para>
     /// </remarks>
     public class MostAbundantDotMassDiffAcceptor : MassDiffAcceptor
     {
@@ -70,8 +75,6 @@ namespace EngineLayer
         private double ApexOffset(double monoisotopicMass)
             => monoisotopicMass <= 0 ? 0 : Averagine.GetDiffToMonoisotopic(Averagine.GetMostIntenseMassIndex(monoisotopicMass));
 
-        public override bool MatchesMostAbundantPeak => true;
-
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
             for (int j = 0; j < SortedMassShifts.Length; j++)
@@ -87,36 +90,6 @@ namespace EngineLayer
                 }
             }
             return -1;
-        }
-
-        /// <summary>
-        /// Undoes the apex offset and the k-neutron apex misprediction for the (shift, k) pair this
-        /// acceptor matched on, leaving the observed monoisotopic mass implied by the match — so a
-        /// downstream G-PTM-D mod search sees the shift as a chemical mass difference and not as a
-        /// mixture of the shift and a whole-isotopologue offset. The apex offset is evaluated at the
-        /// SHIFTED monoisotopic mass, exactly as <see cref="Accepts"/> does, because a large shift can
-        /// move the candidate into a different averagine apex bin. Falls back to the unshifted apex
-        /// model when no (shift, k) pair matches (the caller is then outside this acceptor's decisions).
-        /// </summary>
-        public override double ToObservedMonoisotopicMass(double observedMostAbundantMass, double theoreticalMonoisotopicMass)
-        {
-            for (int j = 0; j < SortedMassShifts.Length; j++)
-            {
-                double shiftedMono = theoreticalMonoisotopicMass + SortedMassShifts[j];
-                double apexOffset = ApexOffset(shiftedMono);
-                foreach (int k in ApexOffsetsInNeutrons)
-                {
-                    if (Tolerance.Within(observedMostAbundantMass, shiftedMono + apexOffset + k * ExpectedIsotopeSpacing))
-                    {
-                        return observedMostAbundantMass - apexOffset - k * ExpectedIsotopeSpacing;
-                    }
-                }
-            }
-
-            double unshiftedApexOffset = ApexOffset(theoreticalMonoisotopicMass);
-            double residual = observedMostAbundantMass - (theoreticalMonoisotopicMass + unshiftedApexOffset);
-            double nearestK = Math.Round(residual / ExpectedIsotopeSpacing, MidpointRounding.AwayFromZero);
-            return observedMostAbundantMass - unshiftedApexOffset - nearestK * ExpectedIsotopeSpacing;
         }
 
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromTheoreticalMass(double peptideMonoisotopicMass)

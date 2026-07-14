@@ -25,14 +25,6 @@ namespace EngineLayer.Gptmd
         public Dictionary<string, HashSet<Tuple<int, Modification>>> ModDictionary { get; init; }
         private readonly List<IGptmdFilter> Filters;
 
-        /// <summary>
-        /// The acceptor the PSMs were found with. A most-abundant acceptor admits matches whose
-        /// deconvoluted monoisotopic peak is off by whole isotopologues; that offset has to come out of
-        /// the precursor mass before it is read as a modification, or G-PTM-D would hunt for a mod to
-        /// explain a ~1-2 Da isotope-assignment error.
-        /// </summary>
-        private readonly MassDiffAcceptor MassDiffAcceptor;
-
         public GptmdEngine(
             List<SpectralMatch> allIdentifications,
             List<Modification> gptmdModifications,
@@ -42,8 +34,7 @@ namespace EngineLayer.Gptmd
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             List<string> nestedIds,
             Dictionary<string, HashSet<Tuple<int, Modification>>> modDictionary,
-            List<IGptmdFilter> filters = null,
-            MassDiffAcceptor massDiffAcceptor = null)
+            List<IGptmdFilter> filters = null)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllIdentifications = allIdentifications;
@@ -52,7 +43,6 @@ namespace EngineLayer.Gptmd
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
             ModDictionary = modDictionary ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
             Filters = filters ?? new List<IGptmdFilter>();
-            MassDiffAcceptor = massDiffAcceptor;
         }
 
         public static bool ModFits(Modification attemptToLocalize, IBioPolymer protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
@@ -129,15 +119,14 @@ namespace EngineLayer.Gptmd
                         var pepWithSetMods = hypothesis.SpecificBioPolymer;
                         var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Parent.ConsensusVariant;
 
-                        // The observed monoisotopic mass this candidate implies, with any isotope offset the
-                        // acceptor allowed removed. Identical to psm.ScanPrecursorMass for a monoisotopic
-                        // acceptor; in a most-abundant search it is what keeps a whole-isotopologue offset
-                        // from being mistaken for a modification. Candidate-dependent, so it is computed per
-                        // hypothesis rather than once per PSM.
-                        double observedMonoisotopicMass = psm.GetObservedMonoisotopicMass(pepWithSetMods.MonoisotopicMass, MassDiffAcceptor);
-
-                        var possibleModifications = GetPossibleMods(observedMonoisotopicMass, GptmdModifications, Combos,
-                            FilePathToPrecursorMassTolerance[fileName], pepWithSetMods);
+                        // Each candidate mass (peptide + modification) is tested against the observation the way
+                        // this search matches: monoisotopic-to-monoisotopic by default, apex-to-apex within the
+                        // isotopologue apex tolerance in most-abundant mode. Testing per candidate - rather than
+                        // correcting the precursor mass once - is what keeps a modification mass from being
+                        // confused with a whole-isotopologue apex misprediction: both land in the same residual
+                        // and cannot be separated after the fact.
+                        var possibleModifications = GetPossibleMods(psm, GptmdModifications, Combos,
+                            FilePathToPrecursorMassTolerance[fileName], pepWithSetMods, CommonParameters);
 
                         double bestScore = 0;
 
@@ -247,18 +236,34 @@ namespace EngineLayer.Gptmd
                 });
         }
 
-        private static IEnumerable<Modification> GetPossibleMods(double totalMassToGetTo, IEnumerable<Modification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, IBioPolymerWithSetMods peptideWithSetModifications)
+        /// <summary>
+        /// The modifications whose mass the observed precursor supports for this candidate.
+        /// <para>
+        /// Each candidate mass (peptide + already-accumulated shift + modification) is tested against the
+        /// observation via <see cref="PrecursorMassExtensions.MatchesCandidateMass"/>, which applies the
+        /// current search's matching rule: monoisotopic-to-monoisotopic by default, apex-to-apex within the
+        /// isotopologue apex tolerance in most-abundant mode. Previously this compared a single precursor
+        /// mass against each candidate, which in most-abundant mode let a whole-isotopologue apex
+        /// misprediction masquerade as a ~1-2 Da modification.
+        /// </para>
+        /// <paramref name="candidateMassOffset"/> accumulates the shift already committed to by an enclosing
+        /// combo, replacing the old "subtract it from the target mass" recursion — equivalent arithmetic,
+        /// but it keeps the OBSERVED mass untouched so the apex test always sees what was really measured.
+        /// </summary>
+        private static IEnumerable<Modification> GetPossibleMods(SpectralMatch psm, IEnumerable<Modification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, IBioPolymerWithSetMods peptideWithSetModifications, CommonParameters commonParameters, double candidateMassOffset = 0)
         {
+            double peptideMass = peptideWithSetModifications.MonoisotopicMass + candidateMassOffset;
+
             foreach (var Mod in allMods.Where(b => b.ValidModification == true))
             {
                 //TODO: not necessarily here. I think we're creating ambiguity. If we're going to add a gptmd mod to a peptide that already has that mod, then we need info
                 // to suggest that it is at a postion other than that in the database. could be presence of frag for unmodified or presence of frag with modified at alternative location.
-                if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + (double)Mod.MonoisotopicMass))
+                if (psm.MatchesCandidateMass(peptideMass + (double)Mod.MonoisotopicMass, precursorTolerance, commonParameters))
                     yield return Mod;
                 foreach (var modOnPsm in peptideWithSetModifications.AllModsOneIsNterminus.Values.Where(b => b.ValidModification == true))
                     if (modOnPsm.Target.Equals(Mod.Target))
                     {
-                        if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + (double)Mod.MonoisotopicMass - (double)modOnPsm.MonoisotopicMass))
+                        if (psm.MatchesCandidateMass(peptideMass + (double)Mod.MonoisotopicMass - (double)modOnPsm.MonoisotopicMass, precursorTolerance, commonParameters))
                             yield return Mod;
                     }
             }
@@ -268,9 +273,9 @@ namespace EngineLayer.Gptmd
                 var m1 = combo.Item1;
                 var m2 = combo.Item2;
                 var combined = m1 + m2;
-                if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + combined))
+                if (psm.MatchesCandidateMass(peptideMass + combined, precursorTolerance, commonParameters))
                 {
-                    foreach (var mod in GetPossibleMods(totalMassToGetTo - m1, allMods, combos, precursorTolerance, peptideWithSetModifications))
+                    foreach (var mod in GetPossibleMods(psm, allMods, combos, precursorTolerance, peptideWithSetModifications, commonParameters, candidateMassOffset + m1))
                         yield return mod;
                 }
             }

@@ -22,7 +22,7 @@ namespace EngineLayer.Calibration
             int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
             int numMs2MassChargeCombinationsConsidered,
             int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
-            MassDiffAcceptor massDiffAcceptor = null)
+            CommonParameters commonParameters = null)
             : base(dataPointAcquisitionEngine)
         {
             Psms = psms;
@@ -40,13 +40,13 @@ namespace EngineLayer.Calibration
             // search admits PSMs whose deconvoluted monoisotopic peak is off by whole isotopologues (the
             // apex notch set), so the raw (ScanPrecursorMass - peptideMonoisotopic) difference carries
             // those offsets; left in, they inflate the IQR and make calibration write runaway precursor
-            // tolerances (e.g. 1940 ppm). The acceptor removes exactly the offset it allowed, using its
-            // own isotope spacing. For monoisotopic acceptors this is the identity, so baseline
-            // calibration behaviour is preserved exactly.
+            // tolerances (e.g. 1940 ppm). GetObservedMonoisotopicMass removes exactly the offset the search
+            // allowed, using the isotope spacing from the deconvolution parameters. In the default
+            // monoisotopic mode it is the identity, so baseline calibration behaviour is preserved exactly.
             var precursorErrors = psms.Select(p =>
             {
                 double theoreticalMass = p.BioPolymerWithSetModsMonoisotopicMass.Value;
-                double observedMass = p.GetObservedMonoisotopicMass(theoreticalMass, massDiffAcceptor);
+                double observedMass = p.GetObservedMonoisotopicMass(theoreticalMass, commonParameters);
                 return (observedMass - theoreticalMass) / theoreticalMass * 1e6;
             }).ToList();
             PsmPrecursorIqrPpmError = precursorErrors.InterquartileRange();

@@ -20,19 +20,10 @@ namespace EngineLayer.Localization
         private readonly IEnumerable<SpectralMatch> AllResultingIdentifications;
         private readonly MsDataFile MyMsDataFile;
 
-        /// <summary>
-        /// The acceptor the PSMs were found with. A most-abundant acceptor admits matches whose
-        /// deconvoluted monoisotopic peak is off by whole isotopologues, and that offset must be removed
-        /// before the mass difference is localized — otherwise this engine tries to localize a ~1-2 Da
-        /// modification that does not exist.
-        /// </summary>
-        private readonly MassDiffAcceptor MassDiffAcceptor;
-
-        public LocalizationEngine(IEnumerable<SpectralMatch> allResultingIdentifications, MsDataFile myMsDataFile, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, MassDiffAcceptor massDiffAcceptor = null) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public LocalizationEngine(IEnumerable<SpectralMatch> allResultingIdentifications, MsDataFile myMsDataFile, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllResultingIdentifications = allResultingIdentifications;
             MyMsDataFile = myMsDataFile;
-            MassDiffAcceptor = massDiffAcceptor;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -64,7 +55,10 @@ namespace EngineLayer.Localization
                         MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                         Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, CommonParameters);
                         IBioPolymerWithSetMods peptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
-                        double massDifference = psm.GetObservedMonoisotopicMass(peptide.MonoisotopicMass, MassDiffAcceptor) - peptide.MonoisotopicMass;
+                        // A most-abundant search admits matches whose deconvoluted monoisotopic peak is off by
+                        // whole isotopologues; that offset must come out before the difference is localized,
+                        // or this engine localizes a ~1-2 Da modification that does not exist.
+                        double massDifference = psm.GetObservedMonoisotopicMass(peptide.MonoisotopicMass, CommonParameters) - peptide.MonoisotopicMass;
 
                         // this section will iterate through all residues of the peptide and try to localize the mass-diff at each residue and report a score for each residue
                         var localizedScores = new List<double>();

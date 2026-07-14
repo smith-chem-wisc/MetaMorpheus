@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
@@ -216,7 +216,7 @@ namespace TaskLayer
                     new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
             }
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.GetPrecursorMassForSearch(searchMode)).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.GetPrecursorMassForSearch(combinedParameters)).ToArray();
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
@@ -239,7 +239,10 @@ namespace TaskLayer
             }
 
             List<SpectralMatch> allPsms = allPsmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
-                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                // Rank equal-scoring matches by how close the precursor is to the candidate. The isotope
+                // offset a most-abundant search allowed is not "closeness" - left in, it would rank a match
+                // with a 1-neutron apex misprediction behind an inferior one.
+                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, combinedParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                 .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
 
             _ = new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, FileSpecificParameters, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }, doPEP: false).Run();
@@ -271,8 +274,7 @@ namespace TaskLayer
                     CalibrationParameters.MinMS1IsotopicPeaksNeededForConfirmedIdentification,
                     CommonParameters,
                     FileSpecificParameters,
-                    new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension },
-                    searchMode).Run();
+                    new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             return currentResult;
         }

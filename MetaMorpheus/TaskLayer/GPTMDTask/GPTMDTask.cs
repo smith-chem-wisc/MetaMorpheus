@@ -134,7 +134,7 @@ namespace TaskLayer
                     nextFileLoadingTask.Start();
                 }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.GetPrecursorMassForSearch(searchMode)).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.GetPrecursorMassForSearch(combinedParams)).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
                 SpectralMatch[] psmArray = new SpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
@@ -177,7 +177,7 @@ namespace TaskLayer
             // GPTMD doesn't work as well if you do FDR on a file-by-file basis. Presumably this is because it takes multiple files to get enough PSMs for all the different notches
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
             Dictionary<string, HashSet<Tuple<int, Modification>>> allModDictionary = new();
-            new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary, GptmdParameters.GptmdFilters, tempSearchMode).Run();
+            new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary, GptmdParameters.GptmdFilters).Run();
 
             //Move this text after search because proteins don't get loaded until search begins.
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");

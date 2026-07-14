@@ -19,12 +19,6 @@ namespace EngineLayer.Calibration
         private readonly Tolerance ProductMassTolerance;
         private readonly int MinMS1isotopicPeaksNeededForConfirmedIdentification;
 
-        /// <summary>
-        /// The acceptor the calibration PSMs were found with. Needed to strip the isotope offsets it
-        /// allowed out of the precursor mass errors, which must measure instrument drift alone.
-        /// </summary>
-        private readonly MassDiffAcceptor MassDiffAcceptor;
-
         public DataPointAcquisitionEngine(
             List<SpectralMatch> goodIdentifications,
             List<Ms2ScanWithSpecificMass> goodScans,
@@ -34,8 +28,7 @@ namespace EngineLayer.Calibration
             int minMS1isotopicPeaksNeededForConfirmedIdentification,
             CommonParameters commonParameters,
             List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
-            List<string> nestedIds,
-            MassDiffAcceptor massDiffAcceptor = null) : base(commonParameters, fileSpecificParameters, nestedIds)
+            List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             GoodIdentifications = goodIdentifications;
             GoodScans = goodScans;
@@ -43,7 +36,6 @@ namespace EngineLayer.Calibration
             PrecursorMassTolerance = precursorMassTolerance;
             ProductMassTolerance = productMassTolerance;
             MinMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
-            MassDiffAcceptor = massDiffAcceptor;
         }
 
         private readonly object _ms1Lock = new();
@@ -122,7 +114,7 @@ namespace EngineLayer.Calibration
                 numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
                 numMs2MassChargeCombinationsConsidered,
                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
-                MassDiffAcceptor
+                CommonParameters
             );
         }
 

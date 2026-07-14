@@ -100,7 +100,7 @@ namespace EngineLayer.ModernSearch
             // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)	
             // this is just PRELIMINARY precursor-mass filtering	
             // additional checks are made later to ensure that the theoretical precursor mass is acceptable
-            List<AllowedIntervalWithNotch> notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.GetPrecursorMassForSearch(MassDiffAcceptor)).ToList();
+            List<AllowedIntervalWithNotch> notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.GetPrecursorMassForSearch(CommonParameters)).ToList();
             double lowestMassPeptideToLookFor = notches.Min(p => p.Minimum);
             double highestMassPeptideToLookFor = notches.Max(p => p.Maximum);
 
@@ -305,7 +305,7 @@ namespace EngineLayer.ModernSearch
                     // at least one fragment in the scan will get fine-scored.
 
                     // add possible search results to the list of id's (only once)
-                    if (scoringTable[peptideId] == 0 && MassDiffAcceptor.Accepts(scan.GetPrecursorMassForSearch(MassDiffAcceptor), PeptideIndex[peptideId].MonoisotopicMass) >= 0)
+                    if (scoringTable[peptideId] == 0 && MassDiffAcceptor.Accepts(scan.GetPrecursorMassForSearch(CommonParameters), PeptideIndex[peptideId].MonoisotopicMass) >= 0)
                     {
                         peptidesPossiblyObserved.Add(peptideId);
                     }
@@ -324,7 +324,7 @@ namespace EngineLayer.ModernSearch
 
                     // if the peptide has met the score cutoff, add it to the list of peptides 
                     // possibly observed so it can be re-scored with the "fine scoring" algorithm
-                    if (score == byteScoreCutoff && MassDiffAcceptor.Accepts(scan.GetPrecursorMassForSearch(MassDiffAcceptor), PeptideIndex[peptideId].MonoisotopicMass) >= 0)
+                    if (score == byteScoreCutoff && MassDiffAcceptor.Accepts(scan.GetPrecursorMassForSearch(CommonParameters), PeptideIndex[peptideId].MonoisotopicMass) >= 0)
                     {
                         peptidesPossiblyObserved.Add(peptideId);
                     }
@@ -345,9 +345,9 @@ namespace EngineLayer.ModernSearch
             List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, CommonParameters);
 
             double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
-            // Ask the acceptor for the mass it selects on, so the final notch is consistent with the
-            // coarse selection above.
-            int notch = MassDiffAcceptor.Accepts(scan.GetPrecursorMassForSearch(MassDiffAcceptor), peptide.MonoisotopicMass);
+            // Use the mass this search selects on, so the final notch is consistent with the coarse
+            // selection above.
+            int notch = MassDiffAcceptor.Accepts(scan.GetPrecursorMassForSearch(CommonParameters), peptide.MonoisotopicMass);
 
             bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
             bool scoreImprovement = PeptideSpectralMatches[scanIndex] == null || (thisScore - PeptideSpectralMatches[scanIndex].RunnerUpScore) > -SpectralMatch.ToleranceForScoreDifferentiation;
