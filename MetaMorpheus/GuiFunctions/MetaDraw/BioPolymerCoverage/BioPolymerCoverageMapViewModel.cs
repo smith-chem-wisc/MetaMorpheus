@@ -1,3 +1,4 @@
+using CsvHelper.Configuration.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,23 @@ public enum ColorResultsBy
     PrecursorIntensity,
     Score,
 }
+public static class ColorResultsByExtensions
+{
+    public static bool IsNumeric(this ColorResultsBy colorBy)
+    {
+        switch (colorBy)
+        {
+            case ColorResultsBy.PrecursorIntensity:
+            case ColorResultsBy.Score:
+                return true;
+            default:
+                return false;
+        }
+    }
+}
 
 public class BioPolymerCoverageMapViewModel : BaseViewModel
 {
-
     #region Color Handling
 
     public ColorResultsBy[] AllColorByTypes { get; } = Enum.GetValues<ColorResultsBy>();
@@ -32,12 +46,14 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             {
                 _colorBy = value;
                 OnPropertyChanged(nameof(ColorBy));
-                ApplyNumericModeDefaultsIfNeeded(BioPolymerCoverageColorMapperFactory.Create(value));
+                OnPropertyChanged(nameof(IsNumericColorMode));
+                ApplyNumericModeDefaultsIfNeeded(value);
                 Redraw();
             }
         }
     }
 
+    public ColorGradientType[] AllGradients { get; } = Enum.GetValues<ColorGradientType>();
     public ColorGradientType SelectedGradientType
     {
         get => MetaDrawSettings.BioPolymerCoverageGradientType;
@@ -67,19 +83,27 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         }
     }
 
-    private bool _hasAppliedLogDefault;
-    private BioPolymerCoverageColorMapper? _currentColorMapper;
+    public bool IsNumericColorMode => ColorBy.IsNumeric();
 
-    private void ApplyNumericModeDefaultsIfNeeded(BioPolymerCoverageColorMapper mapper)
+
+    private Dictionary<ColorResultsBy, bool> _hasAppliedLogDefault = Enum.GetValues<ColorResultsBy>().ToDictionary(p => p, p => false);
+    private void ApplyNumericModeDefaultsIfNeeded(ColorResultsBy color)
     {
-        if (_hasAppliedLogDefault) return;
-        if (mapper is not NumericBioPolymerCoverageColorMapper numeric) return;
+        if (_hasAppliedLogDefault[color]) 
+            return;
+
+        if (!color.IsNumeric()) 
+            return;
+
+        var numeric = BioPolymerCoverageColorMapperFactory.Create(color);
         _useLogColorScale = numeric.DefaultUseLogScale;
-        _hasAppliedLogDefault = true;
+        _hasAppliedLogDefault[color] = true;
         OnPropertyChanged(nameof(UseLogColorScale));
     }
 
     #endregion
+
+    #region Drawing Properties
 
     private DrawingImage _coverageDrawing;
     public DrawingImage CoverageDrawing
@@ -108,6 +132,8 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         get => _availableWidth;
         set { _availableWidth = value; OnPropertyChanged(nameof(AvailableWidth)); UpdateLettersPerRow(value); }
     }
+
+    #endregion
 
     // Call this from the view when the canvas size changes
     public void UpdateLettersPerRow(double availableWidth)
@@ -147,8 +173,8 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         var rowRectangles = new Dictionary<int, List<(int startCol, int endCol)>>();
         var rowOccupancy = new Dictionary<int, int[]>(); // row -> per-column track usage
 
-        _currentColorMapper = BioPolymerCoverageColorMapperFactory.Create(_colorBy);
-        _currentColorMapper.Prepare(filteredResults, SelectedGradientType, UseLogColorScale);
+        var colorMap = BioPolymerCoverageColorMapperFactory.Create(_colorBy);
+        colorMap.Prepare(filteredResults, SelectedGradientType, UseLogColorScale);
 
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())
@@ -211,7 +237,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             var sepWidth = sep.Width;
 
             double legendY = metricsY + metricsFt.Height + legendSpacing;
-            var legendItems = CreateLegendItems(fontSize, dpi, _currentColorMapper);
+            var legendItems = CreateLegendItems(fontSize, dpi, colorMap);
 
             var legendLines = WrapLegendItems(legendItems, fontSize, usableWidth, sepWidth);
 
@@ -244,8 +270,8 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             }
 
             double gradientBlockH = 0;
-            if (_currentColorMapper.IsNumeric)
-                gradientBlockH = DrawNumericLegend(dc, legendY, plotMargin, usableWidth, legendSpacing, fontSize, dpi, _currentColorMapper, out legendY);
+            if (colorMap.IsNumeric)
+                gradientBlockH = DrawNumericLegend(dc, legendY, plotMargin, usableWidth, legendSpacing, fontSize, dpi, colorMap, out legendY);
 
             // --- Offset plot below header block (metrics + legend) ---
             double headerBlockHeight = bioPolymerNameText.Height + metricsFt.Height + legendSpacing
@@ -330,7 +356,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                         roundRight = true;
 
                     // Use a slightly opaque brush for fill
-                    var baseBrush = _currentColorMapper.GetBrush(res);
+                    var baseBrush = colorMap.GetBrush(res);
                     var color = (baseBrush as SolidColorBrush)?.Color ?? Colors.Gray;
                     var brush = new SolidColorBrush(color) { Opacity = 0.75 };
                     brush.Freeze();
