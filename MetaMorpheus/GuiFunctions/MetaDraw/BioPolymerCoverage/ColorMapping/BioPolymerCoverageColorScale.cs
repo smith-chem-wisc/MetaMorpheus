@@ -1,3 +1,4 @@
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 using System;
 
 namespace GuiFunctions.MetaDraw;

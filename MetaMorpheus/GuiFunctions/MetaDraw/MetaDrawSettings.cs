@@ -11,6 +11,7 @@ using Easy.Common.Extensions;
 using Readers;
 using GuiFunctions.MetaDraw;
 using OxyPlot.Wpf;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {

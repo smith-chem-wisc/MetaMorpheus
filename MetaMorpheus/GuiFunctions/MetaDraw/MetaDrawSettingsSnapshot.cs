@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Readers;
 using GuiFunctions.MetaDraw;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {

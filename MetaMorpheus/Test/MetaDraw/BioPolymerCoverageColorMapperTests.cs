@@ -1,4 +1,5 @@
 using GuiFunctions.MetaDraw;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 using NUnit.Framework;
 using System;
 using System.Linq;

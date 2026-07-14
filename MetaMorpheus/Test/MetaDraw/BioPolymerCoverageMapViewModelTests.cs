@@ -7,6 +7,7 @@ using Readers;
 using System.Threading;
 using System;
 using System.Collections.Generic;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace Test.MetaDraw;
 

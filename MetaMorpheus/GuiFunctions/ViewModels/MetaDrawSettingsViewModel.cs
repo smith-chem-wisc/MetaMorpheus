@@ -9,6 +9,7 @@ using GuiFunctions.MetaDraw;
 using Readers;
 using System.Windows.Input;
 using Easy.Common.Extensions;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {
