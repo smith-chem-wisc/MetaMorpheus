@@ -25,16 +25,25 @@ namespace EngineLayer.Gptmd
         public Dictionary<string, HashSet<Tuple<int, Modification>>> ModDictionary { get; init; }
         private readonly List<IGptmdFilter> Filters;
 
+        /// <summary>
+        /// The acceptor the PSMs were found with. A most-abundant acceptor admits matches whose
+        /// deconvoluted monoisotopic peak is off by whole isotopologues; that offset has to come out of
+        /// the precursor mass before it is read as a modification, or G-PTM-D would hunt for a mod to
+        /// explain a ~1-2 Da isotope-assignment error.
+        /// </summary>
+        private readonly MassDiffAcceptor MassDiffAcceptor;
+
         public GptmdEngine(
-            List<SpectralMatch> allIdentifications, 
-            List<Modification> gptmdModifications, 
-            IEnumerable<Tuple<double, double>> combos, 
-            Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, 
-            CommonParameters commonParameters, 
-            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, 
+            List<SpectralMatch> allIdentifications,
+            List<Modification> gptmdModifications,
+            IEnumerable<Tuple<double, double>> combos,
+            Dictionary<string, Tolerance> filePathToPrecursorMassTolerance,
+            CommonParameters commonParameters,
+            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             List<string> nestedIds,
             Dictionary<string, HashSet<Tuple<int, Modification>>> modDictionary,
-            List<IGptmdFilter> filters = null) 
+            List<IGptmdFilter> filters = null,
+            MassDiffAcceptor massDiffAcceptor = null)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllIdentifications = allIdentifications;
@@ -43,6 +52,7 @@ namespace EngineLayer.Gptmd
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
             ModDictionary = modDictionary ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
             Filters = filters ?? new List<IGptmdFilter>();
+            MassDiffAcceptor = massDiffAcceptor;
         }
 
         public static bool ModFits(Modification attemptToLocalize, IBioPolymer protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
@@ -118,7 +128,15 @@ namespace EngineLayer.Gptmd
                         bestMatches.Clear();
                         var pepWithSetMods = hypothesis.SpecificBioPolymer;
                         var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Parent.ConsensusVariant;
-                        var possibleModifications = GetPossibleMods(precursorMass, GptmdModifications, Combos,
+
+                        // The observed monoisotopic mass this candidate implies, with any isotope offset the
+                        // acceptor allowed removed. Identical to psm.ScanPrecursorMass for a monoisotopic
+                        // acceptor; in a most-abundant search it is what keeps a whole-isotopologue offset
+                        // from being mistaken for a modification. Candidate-dependent, so it is computed per
+                        // hypothesis rather than once per PSM.
+                        double observedMonoisotopicMass = psm.GetObservedMonoisotopicMass(pepWithSetMods.MonoisotopicMass, MassDiffAcceptor);
+
+                        var possibleModifications = GetPossibleMods(observedMonoisotopicMass, GptmdModifications, Combos,
                             FilePathToPrecursorMassTolerance[fileName], pepWithSetMods);
 
                         double bestScore = 0;

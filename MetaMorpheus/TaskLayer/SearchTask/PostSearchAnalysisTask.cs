@@ -229,10 +229,19 @@ namespace TaskLayer
                         Status("Running mass-difference localization analysis...",
                             new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
                         MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams);
+                        // Same acceptor the search used, so the mass difference being localized has any
+                        // isotope offset the acceptor allowed removed from it first.
+                        MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(
+                            combinedParams.PrecursorMassTolerance, Parameters.SearchParameters.MassDiffAcceptorType,
+                            Parameters.SearchParameters.CustomMdac, combinedParams.PrecursorMassMatchMode,
+                            combinedParams.PrecursorDeconvolutionParameters?.AverageResidueModel,
+                            combinedParams.PrecursorDeconvolutionParameters?.ExpectedIsotopeSpacing ?? Constants.C13MinusC12);
+
                         new LocalizationEngine(
                                 Parameters.AllSpectralMatches.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(),
                                 myMsDataFile, combinedParams, this.FileSpecificParameters,
-                                new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile })
+                                new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile },
+                                massDiffAcceptor)
                             .Run();
                         Parameters.MyFileManager.DoneWithFile(origDataFile);
                         ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!",
