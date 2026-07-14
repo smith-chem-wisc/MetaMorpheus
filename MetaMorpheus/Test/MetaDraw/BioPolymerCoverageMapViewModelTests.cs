@@ -133,8 +133,9 @@ public class BioPolymerCoverageMapViewModelTests
         // After setting Group, CoverageDrawing should be non-null
         Assert.That(vm.CoverageDrawing, Is.Not.Null);
 
-        var brushA = mapper.GetBrush(result1, null);
-        var brushB = mapper.GetBrush(result2, null);
+        mapper.Prepare([result1, result2], ColorGradientType.Viridis, false);
+        var brushA = mapper.GetBrush(result1);
+        var brushB = mapper.GetBrush(result2);
         Assert.That(brushA.Color, Is.Not.EqualTo(brushB.Color));
 
         // Legend items should include both files
@@ -146,7 +147,8 @@ public class BioPolymerCoverageMapViewModelTests
         var filteredResults = group.CoverageResults.ToList();
         double fontSize = 16; // typical font size
         double dpi = 96; // typical DPI
-        var legendItems = method.Invoke(vm, new object[] { filteredResults, fontSize, dpi, mapper }) as System.Collections.IEnumerable;
+        mapper.Prepare(filteredResults, ColorGradientType.Viridis, false);
+        var legendItems = method.Invoke(vm, new object[] { fontSize, dpi, mapper }) as System.Collections.IEnumerable;
         Assert.That(legendItems, Is.Not.Null);
 
         var legendLabels = legendItems.Cast<(SolidColorBrush Brush, System.Windows.Media.FormattedText Text)>().Select(li => li.Text.Text).ToList();
@@ -181,7 +183,8 @@ public class BioPolymerCoverageMapViewModelTests
         var filteredResults = group.CoverageResults.ToList();
         double fontSize = 16; // typical font size
         double dpi = 96; // typical DPI
-        var legendItems = method.Invoke(vm, new object[] { filteredResults, fontSize, dpi, mapper }) as System.Collections.IEnumerable;
+        mapper.Prepare(filteredResults, ColorGradientType.Viridis, false);
+        var legendItems = method.Invoke(vm, new object[] { fontSize, dpi, mapper }) as System.Collections.IEnumerable;
         Assert.That(legendItems, Is.Not.Null);
 
         var legendLabels = legendItems.Cast<(SolidColorBrush Brush, System.Windows.Media.FormattedText Text)>().Select(li => li.Text.Text).ToList();
@@ -220,7 +223,8 @@ public class BioPolymerCoverageMapViewModelTests
         var filteredResults = group.CoverageResults.ToList();
         double fontSize = 16; // typical font size
         double dpi = 96; // typical DPI
-        var legendItems = method.Invoke(vm, new object[] { filteredResults, fontSize, dpi, mapper }) as System.Collections.IEnumerable;
+        mapper.Prepare(filteredResults, ColorGradientType.Viridis, false);
+        var legendItems = method.Invoke(vm, new object[] { fontSize, dpi, mapper }) as System.Collections.IEnumerable;
         Assert.That(legendItems, Is.Not.Null);
         Assert.That(legendItems.Cast<object>().Any(), Is.False);
     }
@@ -283,11 +287,10 @@ public class BioPolymerCoverageMapViewModelTests
         var results = new List<BioPolymerCoverageResultModel> { result1, result2 };
 
         var mapper = new AlwaysNullNumericMapper();
-        var ctx = mapper.CreateRenderContext(results, new ViridisColorGradient(), useLogScale: true);
-        Assert.That(ctx, Is.Not.Null);
-        Assert.That(ctx!.EffectiveMapper, Is.InstanceOf<ScoreColorMapper>());
-        Assert.That(ctx.Scale.MinValue, Is.EqualTo(System.Math.Log10(50)).Within(1e-9));
-        Assert.That(ctx.Scale.MaxValue, Is.EqualTo(System.Math.Log10(500)).Within(1e-9));
+        mapper.Prepare(results, ColorGradientType.Viridis, true);
+        Assert.That(mapper.GradientLegendTitle, Is.EqualTo("Score (log10)"));
+        Assert.That(mapper.GradientMinValue, Is.EqualTo(System.Math.Log10(50)).Within(1e-9));
+        Assert.That(mapper.GradientMaxValue, Is.EqualTo(System.Math.Log10(500)).Within(1e-9));
     }
 
     [Test]
@@ -302,10 +305,9 @@ public class BioPolymerCoverageMapViewModelTests
         var results = new List<BioPolymerCoverageResultModel> { result1, result2 };
 
         var mapper = new ScoreColorMapper();
-        var ctx = mapper.CreateRenderContext(results, new ViridisColorGradient(), useLogScale: false);
-        Assert.That(ctx, Is.Not.Null);
-        Assert.That(ctx!.Scale.MinValue, Is.EqualTo(10));
-        Assert.That(ctx.Scale.MaxValue, Is.EqualTo(1000));
+        mapper.Prepare(results, ColorGradientType.Viridis, false);
+        Assert.That(mapper.GradientMinValue, Is.EqualTo(10));
+        Assert.That(mapper.GradientMaxValue, Is.EqualTo(1000));
     }
 
     [Test]
@@ -320,12 +322,10 @@ public class BioPolymerCoverageMapViewModelTests
         var results = new List<BioPolymerCoverageResultModel> { result1, result2 };
 
         var mapper = new ScoreColorMapper();
-        var ctx = mapper.CreateRenderContext(results, new ViridisColorGradient(), useLogScale: true);
-        Assert.That(ctx, Is.Not.Null);
-        Assert.That(ctx!.UseLogScale, Is.True);
-        Assert.That(ctx.Scale.MinValue, Is.EqualTo(1.0).Within(1e-9));
-        Assert.That(ctx.Scale.MaxValue, Is.EqualTo(4.0).Within(1e-9));
-        Assert.That(ctx.LegendTitle, Does.EndWith("(log10)"));
+        mapper.Prepare(results, ColorGradientType.Viridis, true);
+        Assert.That(mapper.GradientMinValue, Is.EqualTo(1.0).Within(1e-9));
+        Assert.That(mapper.GradientMaxValue, Is.EqualTo(4.0).Within(1e-9));
+        Assert.That(mapper.GradientLegendTitle, Does.EndWith("(log10)"));
     }
 
     [Test]
@@ -340,10 +340,9 @@ public class BioPolymerCoverageMapViewModelTests
         var results = new List<BioPolymerCoverageResultModel> { result1, result2 };
 
         var mapper = new ScoreColorMapper();
-        var ctx = mapper.CreateRenderContext(results, new ViridisColorGradient(), useLogScale: true);
-        Assert.That(ctx, Is.Not.Null);
-        Assert.That(ctx!.Scale.MinValue, Is.EqualTo(3.0).Within(1e-9));
-        Assert.That(ctx.Scale.MaxValue, Is.EqualTo(4.0).Within(1e-9));
+        mapper.Prepare(results, ColorGradientType.Viridis, true);
+        Assert.That(mapper.GradientMinValue, Is.EqualTo(3.0).Within(1e-9));
+        Assert.That(mapper.GradientMaxValue, Is.EqualTo(4.0).Within(1e-9));
     }
 
     [Test]
@@ -422,7 +421,8 @@ public class BioPolymerCoverageMapViewModelTests
 
         var filteredResults = new List<BioPolymerCoverageResultModel>();
         var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.PrecursorIntensity);
-        var result = method.Invoke(vm, new object[] { filteredResults, 16.0, 96.0, mapper })
+        mapper.Prepare(filteredResults, ColorGradientType.Viridis, false);
+        var result = method.Invoke(vm, new object[] { 16.0, 96.0, mapper })
             as System.Collections.IEnumerable;
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Cast<object>().Any(), Is.False);
@@ -437,7 +437,8 @@ public class BioPolymerCoverageMapViewModelTests
 
         var filteredResults = new List<BioPolymerCoverageResultModel>();
         var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.Score);
-        var result = method.Invoke(vm, new object[] { filteredResults, 16.0, 96.0, mapper })
+        mapper.Prepare(filteredResults, ColorGradientType.Viridis, false);
+        var result = method.Invoke(vm, new object[] { 16.0, 96.0, mapper })
             as System.Collections.IEnumerable;
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Cast<object>().Any(), Is.False);

@@ -1,5 +1,6 @@
 using GuiFunctions.Util;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Media;
 
 namespace GuiFunctions.MetaDraw;
@@ -49,13 +50,33 @@ public sealed class FileOriginColorMapper : BioPolymerCoverageColorMapper
     });
 
     private readonly Dictionary<string, SolidColorBrush> _identifierToColor = [];
+    private IReadOnlyList<(SolidColorBrush Brush, string Label)> _preparedLegendItems = [];
 
     public override ColorResultsBy ColorBy => ColorResultsBy.FileOrigin;
     public override bool IsNumeric => false;
     public override bool SupportsGradientSelection => false;
     public override bool SupportsLogScale => false;
 
-    public override SolidColorBrush GetBrush(BioPolymerCoverageResultModel result, BioPolymerCoverageColorScale? scale)
+    public override void Prepare(
+        IReadOnlyList<BioPolymerCoverageResultModel> filteredResults,
+        ColorGradientType gradientType,
+        bool useLogScale)
+    {
+        _identifierToColor.Clear();
+        _colorQueue.Reset();
+
+        _preparedLegendItems = filteredResults
+            .GroupBy(r => r.Match.FileName)
+            .Where(g => !string.IsNullOrEmpty(g.Key) && g.Any())
+            .Select(g =>
+            {
+                var label = $"{g.Key} {g.First().Match.GetDigestionProductLabel()}s: {g.Count()}";
+                return (GetBrush(g.First()), label);
+            })
+            .ToList();
+    }
+
+    public override SolidColorBrush GetBrush(BioPolymerCoverageResultModel result)
     {
         var identifier = result?.Match?.FileName;
         if (string.IsNullOrEmpty(identifier))
@@ -69,4 +90,8 @@ public sealed class FileOriginColorMapper : BioPolymerCoverageColorMapper
 
         return brush;
     }
+
+    public override IReadOnlyList<(SolidColorBrush Brush, string Label)> LegendItems => _preparedLegendItems;
+
+
 }

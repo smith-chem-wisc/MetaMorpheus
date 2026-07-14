@@ -1,4 +1,3 @@
-using GuiFunctions.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -69,6 +68,8 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
     }
 
     private bool _hasAppliedLogDefault;
+    private BioPolymerCoverageColorMapper? _currentColorMapper;
+
     private void ApplyNumericModeDefaultsIfNeeded(BioPolymerCoverageColorMapper mapper)
     {
         if (_hasAppliedLogDefault) return;
@@ -146,11 +147,8 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         var rowRectangles = new Dictionary<int, List<(int startCol, int endCol)>>();
         var rowOccupancy = new Dictionary<int, int[]>(); // row -> per-column track usage
 
-        var mapper = BioPolymerCoverageColorMapperFactory.Create(_colorBy);
-        var gradient = ColorGradientFactory.Create(SelectedGradientType);
-        BioPolymerCoverageNumericRenderContext? numericContext = mapper is NumericBioPolymerCoverageColorMapper numericMapper
-            ? numericMapper.CreateRenderContext(filteredResults, gradient, UseLogColorScale)
-            : null;
+        _currentColorMapper = BioPolymerCoverageColorMapperFactory.Create(_colorBy);
+        _currentColorMapper.Prepare(filteredResults, SelectedGradientType, UseLogColorScale);
 
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())
@@ -213,7 +211,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             var sepWidth = sep.Width;
 
             double legendY = metricsY + metricsFt.Height + legendSpacing;
-            var legendItems = CreateLegendItems(filteredResults, fontSize, dpi, mapper);
+            var legendItems = CreateLegendItems(fontSize, dpi, _currentColorMapper);
 
             var legendLines = WrapLegendItems(legendItems, fontSize, usableWidth, sepWidth);
 
@@ -246,8 +244,8 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             }
 
             double gradientBlockH = 0;
-            if (numericContext is not null)
-                gradientBlockH = DrawNumericLegend(dc, legendY, plotMargin, usableWidth, legendSpacing, fontSize, dpi, numericContext!, out legendY);
+            if (_currentColorMapper.IsNumeric)
+                gradientBlockH = DrawNumericLegend(dc, legendY, plotMargin, usableWidth, legendSpacing, fontSize, dpi, _currentColorMapper, out legendY);
 
             // --- Offset plot below header block (metrics + legend) ---
             double headerBlockHeight = bioPolymerNameText.Height + metricsFt.Height + legendSpacing
@@ -332,7 +330,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                         roundRight = true;
 
                     // Use a slightly opaque brush for fill
-                    var baseBrush = GetBrushForResult(res, mapper, numericContext);
+                    var baseBrush = _currentColorMapper.GetBrush(res);
                     var color = (baseBrush as SolidColorBrush)?.Color ?? Colors.Gray;
                     var brush = new SolidColorBrush(color) { Opacity = 0.75 };
                     brush.Freeze();
@@ -493,23 +491,23 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         double legendSpacing,
         double fontSize,
         double dpi,
-        BioPolymerCoverageNumericRenderContext ctx,
+        BioPolymerCoverageColorMapper colorMapper,
         out double newLegendY)
     {
         double barWidth = Math.Min(250, usableWidth * 0.6);
         double barHeight = fontSize * 0.8;
         double barX = plotMargin + (usableWidth - barWidth) / 2;
         double barY = legendY + legendSpacing;
-        var brushes = ctx.Scale.Gradient.GetBrushes();
+        var brushes = colorMapper.GradientBrushes!;
         double bandW = barWidth / brushes.Count;
         for (int i = 0; i < brushes.Count; i++)
             dc.DrawRectangle(brushes[i], null, new Rect(barX + i * bandW, barY, bandW + 0.5, barHeight));
 
-        var metricTxt = new FormattedText(ctx.LegendTitle, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.DimGray, dpi);
+        var metricTxt = new FormattedText(colorMapper.GradientLegendTitle!, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.DimGray, dpi);
         dc.DrawText(metricTxt, new Point(barX + (barWidth - metricTxt.Width) / 2, barY - metricTxt.Height - 2));
 
-        var minTxt = new FormattedText($"{ctx.Scale.MinValue:G3}", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.Black, dpi);
-        var maxTxt = new FormattedText($"{ctx.Scale.MaxValue:G3}", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.Black, dpi);
+        var minTxt = new FormattedText($"{colorMapper.GradientMinValue:G3}", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.Black, dpi);
+        var maxTxt = new FormattedText($"{colorMapper.GradientMaxValue:G3}", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.Black, dpi);
         dc.DrawText(minTxt, new Point(barX, barY + barHeight + 2));
         dc.DrawText(maxTxt, new Point(barX + barWidth - maxTxt.Width, barY + barHeight + 2));
 
@@ -518,73 +516,20 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         return blockH;
     }
 
-    // Preferred legend order
-    private static readonly BioPolymerCoverageType[] LegendOrder =
-    {
-        BioPolymerCoverageType.Unique,
-        BioPolymerCoverageType.UniqueMissedCleavage,
-        BioPolymerCoverageType.TandemRepeat,
-        BioPolymerCoverageType.TandemRepeatMissedCleavage,
-        BioPolymerCoverageType.Shared,
-        BioPolymerCoverageType.SharedMissedCleavage
-    };
-
-    private List<(SolidColorBrush Brush, FormattedText Text)> CreateLegendItems(List<BioPolymerCoverageResultModel> filteredResults, double fontSize, double dpi, BioPolymerCoverageColorMapper mapper)
+    private List<(SolidColorBrush Brush, FormattedText Text)> CreateLegendItems(double fontSize, double dpi, BioPolymerCoverageColorMapper colorMapper)
     {
         var items = new List<(SolidColorBrush, FormattedText)>();
-        if (mapper.ColorBy == ColorResultsBy.None)
-            return items;
-
-        if (mapper.IsNumeric)
-            return items;
-
-        if (mapper.ColorBy == ColorResultsBy.FileOrigin)
+        foreach (var item in colorMapper.LegendItems)
         {
-            var groupsByFile = filteredResults
-                .GroupBy(r => r.Match.FileName)
-                .ToList();
-
-            string unitLabel = filteredResults.FirstOrDefault()?.Match.GetDigestionProductLabel();
-
-            foreach (var group in groupsByFile)
-            {
-                string fileName = group.Key;
-                int count = group.Count();
-                if (string.IsNullOrEmpty(fileName) || count == 0) continue;
-
-                string label = $"{fileName} {unitLabel}s: {count}";
-                var ft = new FormattedText(
-                    label,
-                    System.Globalization.CultureInfo.CurrentCulture,
-                    FlowDirection.LeftToRight,
-                    new Typeface("Segoe UI"),
-                    fontSize * 0.8,
-                    Brushes.Black,
-                    dpi);
-                items.Add((mapper.GetBrush(group.First(), null), ft));
-            }
-            return items;
-        }
-
-        var countsByType = filteredResults.GroupBy(r => r.CoverageType)
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        string unitLabelType = filteredResults.FirstOrDefault()?.Match.GetDigestionProductLabel();
-
-        foreach (var t in LegendOrder)
-        {
-            if (!countsByType.TryGetValue(t, out int count) || count == 0) continue;
-
-            string label = $"{BaseViewModel.AddSpaces(t.ToString())} {unitLabelType}s: {count}";
             var ft = new FormattedText(
-                label,
+                item.Label,
                 System.Globalization.CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 new Typeface("Segoe UI"),
                 fontSize * 0.8,
                 Brushes.Black,
                 dpi);
-            items.Add((MetaDrawSettings.BioPolymerCoverageColors[t], ft));
+            items.Add((item.Brush, ft));
         }
         return items;
     }
@@ -618,39 +563,4 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
 
         return lines;
     }
-
-    private static SolidColorBrush GetBrushForResult(
-        BioPolymerCoverageResultModel result,
-        BioPolymerCoverageColorMapper mapper,
-        BioPolymerCoverageNumericRenderContext? numericContext)
-    {
-        if (numericContext is null)
-            return mapper.GetBrush(result, null);
-
-        var value = numericContext.EffectiveMapper.GetNumericValue(result);
-        if (!NumericBioPolymerCoverageColorMapper.IsRenderable(value, numericContext.UseLogScale))
-            return new SolidColorBrush(Colors.Gray);
-        var transformed = NumericBioPolymerCoverageColorMapper.TransformForRendering(value!.Value, numericContext.UseLogScale);
-        return numericContext.Scale.Gradient.GetBrush(numericContext.Scale.Normalize(transformed));
-    }
-}
-
-public sealed class BioPolymerCoverageNumericRenderContext
-{
-    public BioPolymerCoverageNumericRenderContext(
-        NumericBioPolymerCoverageColorMapper effectiveMapper,
-        BioPolymerCoverageColorScale scale,
-        bool useLogScale,
-        string legendTitle)
-    {
-        EffectiveMapper = effectiveMapper;
-        Scale = scale;
-        UseLogScale = useLogScale;
-        LegendTitle = legendTitle;
-    }
-
-    public NumericBioPolymerCoverageColorMapper EffectiveMapper { get; }
-    public BioPolymerCoverageColorScale Scale { get; }
-    public bool UseLogScale { get; }
-    public string LegendTitle { get; }
 }

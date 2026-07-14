@@ -49,7 +49,8 @@ public class BioPolymerCoverageColorMapperTests
             ColorResultsBy.CoverageType,
             r => Brushes.Red);
         var result = MakeResult(100, 10);
-        Assert.That(mapper.GetBrush(result, null), Is.EqualTo(Brushes.Red));
+        mapper.Prepare([result], ColorGradientType.Viridis, false);
+        Assert.That(mapper.GetBrush(result), Is.EqualTo(Brushes.Red));
     }
 
     [Test]
@@ -62,13 +63,12 @@ public class BioPolymerCoverageColorMapperTests
     [Test]
     public void CategoricalMapper_GetBrush_ScaleIsIgnored()
     {
-        var gradient = new ViridisColorGradient();
-        var scale = new BioPolymerCoverageColorScale(0, 100, gradient);
         var mapper = new CategoricalBioPolymerCoverageColorMapper(
             ColorResultsBy.CoverageType,
             r => Brushes.Blue);
         var result = MakeResult(null, 5);
-        Assert.That(mapper.GetBrush(result, scale), Is.EqualTo(Brushes.Blue));
+        mapper.Prepare([result], ColorGradientType.Viridis, false);
+        Assert.That(mapper.GetBrush(result), Is.EqualTo(Brushes.Blue));
     }
 
     #endregion
@@ -100,21 +100,21 @@ public class BioPolymerCoverageColorMapperTests
     [Test]
     public void PrecursorIntensityMapper_GetBrush_MinValue_ReturnsFirstColor()
     {
-        var gradient = new ViridisColorGradient();
-        var scale = new BioPolymerCoverageColorScale(100, 1000, gradient);
         var mapper = new PrecursorIntensityColorMapper();
         var result = MakeResult(100, 0);
-        Assert.That(mapper.GetBrush(result, scale), Is.EqualTo(gradient.GetBrushes()[0]));
+        var maxResult = MakeResult(1000, 0);
+        mapper.Prepare([result, maxResult], ColorGradientType.Viridis, false);
+        Assert.That(mapper.GetBrush(result), Is.EqualTo(new ViridisColorGradient().GetBrushes()[0]));
     }
 
     [Test]
     public void PrecursorIntensityMapper_GetBrush_MaxValue_ReturnsLastColor()
     {
-        var gradient = new ViridisColorGradient();
-        var scale = new BioPolymerCoverageColorScale(100, 1000, gradient);
         var mapper = new PrecursorIntensityColorMapper();
+        var minResult = MakeResult(100, 0);
         var result = MakeResult(1000, 0);
-        Assert.That(mapper.GetBrush(result, scale), Is.EqualTo(gradient.GetBrushes()[19]));
+        mapper.Prepare([minResult, result], ColorGradientType.Viridis, false);
+        Assert.That(mapper.GetBrush(result), Is.EqualTo(new ViridisColorGradient().GetBrushes()[19]));
     }
 
     [Test]
@@ -128,17 +128,19 @@ public class BioPolymerCoverageColorMapperTests
         backing.SetValue(psm, null);
         var result = new BioPolymerCoverageResultModel(psm, "ABC", 1, 2, BioPolymerCoverageType.Unique);
         var mapper = new PrecursorIntensityColorMapper();
-        var brush = mapper.GetBrush(result, new BioPolymerCoverageColorScale(0, 100, new ViridisColorGradient()));
+        mapper.Prepare([result], ColorGradientType.Viridis, false);
+        var brush = mapper.GetBrush(result);
         Assert.That(brush.Color, Is.EqualTo(Colors.Gray));
     }
 
     [Test]
-    public void PrecursorIntensityMapper_GetBrush_NullScale_ReturnsGray()
+    public void PrecursorIntensityMapper_GetBrush_EmptyPreparedData_UsesFirstGradientColor()
     {
         var mapper = new PrecursorIntensityColorMapper();
         var result = MakeResult(500, 0);
-        var brush = mapper.GetBrush(result, null);
-        Assert.That(brush.Color, Is.EqualTo(Colors.Gray));
+        mapper.Prepare([], ColorGradientType.Viridis, false);
+        var brush = mapper.GetBrush(result);
+        Assert.That(brush, Is.EqualTo(new ViridisColorGradient().GetBrushes()[0]));
     }
 
     #endregion
@@ -170,19 +172,19 @@ public class BioPolymerCoverageColorMapperTests
     [Test]
     public void ScoreMapper_GetBrush_MidValue_UsesNormalizedGradient()
     {
-        var gradient = new ViridisColorGradient();
-        var scale = new BioPolymerCoverageColorScale(0, 100, gradient);
         var mapper = new ScoreColorMapper();
         var result = MakeResult(null, 50);
+        mapper.Prepare([MakeResult(null, 0), result, MakeResult(null, 100)], ColorGradientType.Viridis, false);
         var expectedBin = (int)Math.Clamp(0.5 * 19, 0, 19);
-        Assert.That(mapper.GetBrush(result, scale), Is.EqualTo(gradient.GetBrushes()[expectedBin]));
+        Assert.That(mapper.GetBrush(result), Is.EqualTo(new ViridisColorGradient().GetBrushes()[expectedBin]));
     }
 
     [Test]
     public void ScoreMapper_GetBrush_NullResult_ReturnsGray()
     {
         var mapper = new ScoreColorMapper();
-        var brush = mapper.GetBrush(null!, new BioPolymerCoverageColorScale(0, 100, new ViridisColorGradient()));
+        mapper.Prepare([], ColorGradientType.Viridis, false);
+        var brush = mapper.GetBrush(null!);
         Assert.That(brush.Color, Is.EqualTo(Colors.Gray));
     }
 
@@ -194,7 +196,8 @@ public class BioPolymerCoverageColorMapperTests
     public void PrecursorIntensityMapper_LegendTitle_IsDisplayName()
     {
         var mapper = new PrecursorIntensityColorMapper();
-        Assert.That(mapper.GetLegendTitle(null), Is.EqualTo("Precursor Intensity"));
+        mapper.Prepare([], ColorGradientType.Viridis, false);
+        Assert.That(mapper.GradientLegendTitle, Is.EqualTo("Precursor Intensity"));
     }
 
     [Test]
@@ -203,7 +206,8 @@ public class BioPolymerCoverageColorMapperTests
         var mapper = new CategoricalBioPolymerCoverageColorMapper(
             ColorResultsBy.CoverageType,
             r => Brushes.Black);
-        Assert.That(mapper.GetLegendTitle(null), Is.EqualTo(nameof(ColorResultsBy.CoverageType)));
+        mapper.Prepare([], ColorGradientType.Viridis, false);
+        Assert.That(mapper.LegendItems, Is.Empty);
     }
 
     #endregion

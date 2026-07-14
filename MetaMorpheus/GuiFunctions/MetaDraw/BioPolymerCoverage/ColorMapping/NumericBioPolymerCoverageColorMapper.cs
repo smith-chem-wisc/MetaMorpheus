@@ -14,12 +14,22 @@ public abstract class NumericBioPolymerCoverageColorMapper : BioPolymerCoverageC
     public abstract double? GetNumericValue(BioPolymerCoverageResultModel result);
     public abstract string DisplayName { get; }
     protected virtual NumericBioPolymerCoverageColorMapper? GetFallbackMapper() => null;
+    private NumericBioPolymerCoverageColorMapper _effectiveMapper;
+    private BioPolymerCoverageColorScale? _preparedScale;
+    private bool _preparedUseLogScale;
+    private string? _preparedLegendTitle;
 
-    public BioPolymerCoverageNumericRenderContext CreateRenderContext(
+    protected NumericBioPolymerCoverageColorMapper()
+    {
+        _effectiveMapper = this;
+    }
+
+    public override void Prepare(
         IReadOnlyList<BioPolymerCoverageResultModel> filteredResults,
-        ColorGradient gradient,
+        ColorGradientType gradientType,
         bool useLogScale)
     {
+        var gradient = ColorGradientFactory.Create(gradientType);
         var rawValues = filteredResults
             .Select(GetNumericValue)
             .Where(v => v.HasValue)
@@ -61,22 +71,27 @@ public abstract class NumericBioPolymerCoverageColorMapper : BioPolymerCoverageC
         string title = effectiveMapper.DisplayName;
         if (useLogScale) title += " (log10)";
 
-        return new BioPolymerCoverageNumericRenderContext(effectiveMapper, scale, useLogScale, title);
+        _effectiveMapper = effectiveMapper;
+        _preparedScale = scale;
+        _preparedUseLogScale = useLogScale;
+        _preparedLegendTitle = title;
     }
 
-    public override SolidColorBrush GetBrush(
-        BioPolymerCoverageResultModel result,
-        BioPolymerCoverageColorScale? scale)
+    public override SolidColorBrush GetBrush(BioPolymerCoverageResultModel result)
     {
-        if (scale is null)
+        if (_preparedScale is null)
             return new SolidColorBrush(Colors.Gray);
-        var value = GetNumericValue(result);
-        if (!value.HasValue)
+        var value = _effectiveMapper.GetNumericValue(result);
+        if (!IsRenderable(value, _preparedUseLogScale))
             return new SolidColorBrush(Colors.Gray);
-        return scale.Gradient.GetBrush(scale.Normalize(value.Value));
+        var transformed = TransformForRendering(value!.Value, _preparedUseLogScale);
+        return _preparedScale.Gradient.GetBrush(_preparedScale.Normalize(transformed));
     }
 
-    public override string GetLegendTitle(BioPolymerCoverageColorScale? scale) => DisplayName;
+    public override string? GradientLegendTitle => _preparedLegendTitle;
+    public override IReadOnlyList<SolidColorBrush>? GradientBrushes => _preparedScale?.Gradient.GetBrushes();
+    public override double? GradientMinValue => _preparedScale?.MinValue;
+    public override double? GradientMaxValue => _preparedScale?.MaxValue;
 
     private static List<double> FilterUsableValues(IEnumerable<double> values, bool useLog)
     {

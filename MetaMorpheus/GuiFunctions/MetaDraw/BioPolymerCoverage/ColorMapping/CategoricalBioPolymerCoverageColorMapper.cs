@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows.Media;
 
 namespace GuiFunctions.MetaDraw;
@@ -6,13 +7,17 @@ namespace GuiFunctions.MetaDraw;
 public sealed class CategoricalBioPolymerCoverageColorMapper : BioPolymerCoverageColorMapper
 {
     private readonly Func<BioPolymerCoverageResultModel, SolidColorBrush> _brushSelector;
+    private readonly Func<IReadOnlyList<BioPolymerCoverageResultModel>, IReadOnlyList<(SolidColorBrush Brush, string Label)>> _legendBuilder;
+    private IReadOnlyList<(SolidColorBrush Brush, string Label)> _preparedLegendItems = [];
 
     public CategoricalBioPolymerCoverageColorMapper(
         ColorResultsBy colorBy,
-        Func<BioPolymerCoverageResultModel, SolidColorBrush> brushSelector)
+        Func<BioPolymerCoverageResultModel, SolidColorBrush> brushSelector,
+        Func<IReadOnlyList<BioPolymerCoverageResultModel>, IReadOnlyList<(SolidColorBrush Brush, string Label)>>? legendBuilder = null)
     {
         _colorBy = colorBy;
         _brushSelector = brushSelector ?? throw new ArgumentNullException(nameof(brushSelector));
+        _legendBuilder = legendBuilder ?? (_ => []);
     }
 
     private readonly ColorResultsBy _colorBy;
@@ -21,10 +26,18 @@ public sealed class CategoricalBioPolymerCoverageColorMapper : BioPolymerCoverag
     public override bool SupportsGradientSelection => false;
     public override bool SupportsLogScale => false;
 
-    public override SolidColorBrush GetBrush(
-        BioPolymerCoverageResultModel result,
-        BioPolymerCoverageColorScale? scale)
+    public override void Prepare(
+        IReadOnlyList<BioPolymerCoverageResultModel> filteredResults,
+        ColorGradientType gradientType,
+        bool useLogScale)
+    {
+        _preparedLegendItems = _legendBuilder(filteredResults);
+    }
+
+    public override SolidColorBrush GetBrush(BioPolymerCoverageResultModel result)
     {
         return _brushSelector(result) ?? new SolidColorBrush(Colors.Gray);
     }
+
+    public override IReadOnlyList<(SolidColorBrush Brush, string Label)> LegendItems => _preparedLegendItems;
 }

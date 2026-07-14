@@ -37,7 +37,8 @@ public class BioPolymerCoverageColorMapperFactoryTests
     {
         var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.None);
         var result = MakeResult(null, 10);
-        Assert.That(mapper.GetBrush(result, null).Color, Is.EqualTo(Colors.Gray));
+        mapper.Prepare([result], ColorGradientType.Viridis, false);
+        Assert.That(mapper.GetBrush(result).Color, Is.EqualTo(Colors.Gray));
     }
 
     [Test]
@@ -55,7 +56,8 @@ public class BioPolymerCoverageColorMapperFactoryTests
         var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.CoverageType);
         var result = MakeResult(null, 10);
         var expected = MetaDrawSettings.BioPolymerCoverageColors[BioPolymerCoverageType.Unique];
-        Assert.That(mapper.GetBrush(result, null), Is.EqualTo(expected));
+        mapper.Prepare([result], ColorGradientType.Viridis, false);
+        Assert.That(mapper.GetBrush(result), Is.EqualTo(expected));
     }
 
     [Test]
@@ -72,8 +74,9 @@ public class BioPolymerCoverageColorMapperFactoryTests
     {
         var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.FileOrigin);
         var result = MakeResult(null, 10, fileName: "file1.psmtsv");
-        var first = mapper.GetBrush(result, null);
-        var second = mapper.GetBrush(result, null);
+        mapper.Prepare([result], ColorGradientType.Viridis, false);
+        var first = mapper.GetBrush(result);
+        var second = mapper.GetBrush(result);
         Assert.That(second, Is.EqualTo(first));
     }
 
@@ -82,7 +85,8 @@ public class BioPolymerCoverageColorMapperFactoryTests
     {
         var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.FileOrigin);
         var result = MakeResult(null, 10, fileName: "");
-        Assert.That(mapper.GetBrush(result, null).Color, Is.EqualTo(Colors.Gray));
+        mapper.Prepare([result], ColorGradientType.Viridis, false);
+        Assert.That(mapper.GetBrush(result).Color, Is.EqualTo(Colors.Gray));
     }
 
     [Test]
@@ -91,7 +95,8 @@ public class BioPolymerCoverageColorMapperFactoryTests
         var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.FileOrigin);
         var result1 = MakeResult(null, 10, fileName: "file1.psmtsv");
         var result2 = MakeResult(null, 10, fileName: "file2.psmtsv");
-        Assert.That(mapper.GetBrush(result1, null), Is.Not.EqualTo(mapper.GetBrush(result2, null)));
+        mapper.Prepare([result1, result2], ColorGradientType.Viridis, false);
+        Assert.That(mapper.GetBrush(result1), Is.Not.EqualTo(mapper.GetBrush(result2)));
     }
 
     [Test]
