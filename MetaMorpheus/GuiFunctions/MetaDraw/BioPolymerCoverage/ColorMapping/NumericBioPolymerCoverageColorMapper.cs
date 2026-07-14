@@ -13,6 +13,7 @@ public abstract class NumericBioPolymerCoverageColorMapper : BioPolymerCoverageC
 
     public abstract double? GetNumericValue(BioPolymerCoverageResultModel result);
     public abstract string DisplayName { get; }
+    protected virtual NumericBioPolymerCoverageColorMapper? GetFallbackMapper() => null;
 
     public BioPolymerCoverageNumericRenderContext CreateRenderContext(
         IReadOnlyList<BioPolymerCoverageResultModel> filteredResults,
@@ -25,8 +26,23 @@ public abstract class NumericBioPolymerCoverageColorMapper : BioPolymerCoverageC
             .Select(v => v.Value)
             .ToList();
 
-        var effectiveMapper = this;
+        NumericBioPolymerCoverageColorMapper effectiveMapper = this;
         var usable = FilterUsableValues(rawValues, useLogScale);
+
+        if (usable.Count == 0)
+        {
+            var fallback = GetFallbackMapper();
+            if (fallback is not null)
+            {
+                rawValues = filteredResults
+                    .Select(fallback.GetNumericValue)
+                    .Where(v => v.HasValue)
+                    .Select(v => v.Value)
+                    .ToList();
+                effectiveMapper = fallback;
+                usable = FilterUsableValues(rawValues, useLogScale);
+            }
+        }
 
         var transformed = usable.Select(v => TransformValue(v, useLogScale)).ToList();
         BioPolymerCoverageColorScale scale;

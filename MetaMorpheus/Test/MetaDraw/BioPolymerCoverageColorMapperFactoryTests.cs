@@ -61,30 +61,37 @@ public class BioPolymerCoverageColorMapperFactoryTests
     [Test]
     public void Create_FileOrigin_ReturnsCategoricalMapper()
     {
-        var mapper = BioPolymerCoverageColorMapperFactory.Create(
-            ColorResultsBy.FileOrigin,
-            identifierBrushResolver: id => id == "file1.psmtsv" ? Brushes.Green : Brushes.Red);
-        Assert.That(mapper, Is.InstanceOf<CategoricalBioPolymerCoverageColorMapper>());
+        var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.FileOrigin);
+        Assert.That(mapper, Is.InstanceOf<FileOriginColorMapper>());
         Assert.That(mapper.ColorBy, Is.EqualTo(ColorResultsBy.FileOrigin));
         Assert.That(mapper.IsNumeric, Is.False);
     }
 
     [Test]
-    public void Create_FileOrigin_GetBrush_UsesResolver()
-    {
-        var mapper = BioPolymerCoverageColorMapperFactory.Create(
-            ColorResultsBy.FileOrigin,
-            identifierBrushResolver: id => id == "file1.psmtsv" ? Brushes.Green : Brushes.Red);
-        var result = MakeResult(null, 10, fileName: "file1.psmtsv");
-        Assert.That(mapper.GetBrush(result, null), Is.EqualTo(Brushes.Green));
-    }
-
-    [Test]
-    public void Create_FileOrigin_WithoutResolver_ReturnsGray()
+    public void Create_FileOrigin_GetBrush_UsesStablePerFileColor()
     {
         var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.FileOrigin);
         var result = MakeResult(null, 10, fileName: "file1.psmtsv");
+        var first = mapper.GetBrush(result, null);
+        var second = mapper.GetBrush(result, null);
+        Assert.That(second, Is.EqualTo(first));
+    }
+
+    [Test]
+    public void Create_FileOrigin_EmptyFileName_ReturnsGray()
+    {
+        var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.FileOrigin);
+        var result = MakeResult(null, 10, fileName: "");
         Assert.That(mapper.GetBrush(result, null).Color, Is.EqualTo(Colors.Gray));
+    }
+
+    [Test]
+    public void Create_FileOrigin_DifferentFiles_GetDifferentColors()
+    {
+        var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.FileOrigin);
+        var result1 = MakeResult(null, 10, fileName: "file1.psmtsv");
+        var result2 = MakeResult(null, 10, fileName: "file2.psmtsv");
+        Assert.That(mapper.GetBrush(result1, null), Is.Not.EqualTo(mapper.GetBrush(result2, null)));
     }
 
     [Test]

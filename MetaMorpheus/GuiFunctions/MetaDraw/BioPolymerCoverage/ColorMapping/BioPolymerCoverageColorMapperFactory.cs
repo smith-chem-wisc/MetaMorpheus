@@ -6,9 +6,7 @@ namespace GuiFunctions.MetaDraw;
 public static class BioPolymerCoverageColorMapperFactory
 {
     public static BioPolymerCoverageColorMapper Create(
-        ColorResultsBy colorBy,
-        Func<string, SolidColorBrush>? identifierBrushResolver = null,
-        ColorGradientType gradientType = ColorGradientType.Viridis)
+        ColorResultsBy colorBy)
     {
         switch (colorBy)
         {
@@ -23,9 +21,7 @@ public static class BioPolymerCoverageColorMapperFactory
                     r => MetaDrawSettings.BioPolymerCoverageColors[r.CoverageType]);
 
             case ColorResultsBy.FileOrigin:
-                return new CategoricalBioPolymerCoverageColorMapper(
-                    ColorResultsBy.FileOrigin,
-                    r => identifierBrushResolver?.Invoke(r.Match.FileName) ?? new SolidColorBrush(Colors.Gray));
+                return new FileOriginColorMapper();
 
             case ColorResultsBy.PrecursorIntensity:
                 return new PrecursorIntensityColorMapper();

@@ -21,50 +21,6 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
 
     #region Color Handling
 
-    private static readonly CyclicalQueue<SolidColorBrush> ColorQueue = new(new[]
-    {
-        new SolidColorBrush(Colors.Red),
-        new SolidColorBrush(Colors.Blue),
-        new SolidColorBrush(Colors.Green),
-        new SolidColorBrush(Colors.Orange),
-        new SolidColorBrush(Colors.Purple),
-        new SolidColorBrush(Colors.Teal),
-        new SolidColorBrush(Colors.Brown),
-        new SolidColorBrush(Colors.Pink),
-        new SolidColorBrush(Colors.Yellow),
-        new SolidColorBrush(Colors.Gray),
-        new SolidColorBrush(Colors.Cyan),
-        new SolidColorBrush(Colors.Magenta),
-        new SolidColorBrush(Colors.LimeGreen),
-        new SolidColorBrush(Colors.DarkBlue),
-        new SolidColorBrush(Colors.DarkRed),
-        new SolidColorBrush(Colors.DarkGreen),
-        new SolidColorBrush(Colors.Gold),
-        new SolidColorBrush(Colors.Indigo),
-        new SolidColorBrush(Colors.Olive),
-        new SolidColorBrush(Colors.Maroon),
-        new SolidColorBrush(Colors.Navy),
-        new SolidColorBrush(Colors.Turquoise),
-        new SolidColorBrush(Colors.Violet),
-        new SolidColorBrush(Colors.Sienna),
-        new SolidColorBrush(Colors.Salmon),
-        new SolidColorBrush(Colors.Coral),
-        new SolidColorBrush(Colors.Khaki),
-        new SolidColorBrush(Colors.Plum),
-        new SolidColorBrush(Colors.Peru),
-        new SolidColorBrush(Colors.SteelBlue),
-        new SolidColorBrush(Colors.MediumPurple),
-        new SolidColorBrush(Colors.MediumSeaGreen),
-        new SolidColorBrush(Colors.MediumSlateBlue),
-        new SolidColorBrush(Colors.MediumVioletRed),
-        new SolidColorBrush(Colors.MediumOrchid),
-        new SolidColorBrush(Colors.MediumTurquoise),
-        new SolidColorBrush(Colors.MediumSpringGreen),
-        new SolidColorBrush(Colors.MediumAquamarine)
-    });
-
-    private static readonly Dictionary<string, SolidColorBrush> IdentifierToColor = [];
-
     public ColorResultsBy[] AllColorByTypes { get; } = Enum.GetValues<ColorResultsBy>();
 
     private ColorResultsBy _colorBy = ColorResultsBy.CoverageType;
@@ -77,68 +33,49 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             {
                 _colorBy = value;
                 OnPropertyChanged(nameof(ColorBy));
-                IdentifierToColor.Clear();
-                ColorQueue.Reset();
+                ApplyNumericModeDefaultsIfNeeded(BioPolymerCoverageColorMapperFactory.Create(value));
                 Redraw();
             }
         }
     }
 
-    private BioPolymerCoverageColorMapper CreateColorMapper()
+    public ColorGradientType SelectedGradientType
     {
-        return BioPolymerCoverageColorMapperFactory.Create(
-            _colorBy,
-            identifierBrushResolver: GetColorByIdentifier);
+        get => MetaDrawSettings.BioPolymerCoverageGradientType;
+        set
+        {
+            if (MetaDrawSettings.BioPolymerCoverageGradientType != value)
+            {
+                MetaDrawSettings.BioPolymerCoverageGradientType = value;
+                OnPropertyChanged(nameof(SelectedGradientType));
+                Redraw();
+            }
+        }
     }
 
-    private BioPolymerCoverageColorScale? CreateNumericScale(
-        BioPolymerCoverageColorMapper mapper,
-        List<BioPolymerCoverageResultModel> filteredResults)
+    private bool _useLogColorScale;
+    public bool UseLogColorScale
     {
-        var gradient = ColorGradientFactory.Create(ColorGradientType.Viridis);
-
-        if (mapper is not NumericBioPolymerCoverageColorMapper numericMapper)
-            return null;
-
-        var values = filteredResults
-            .Select(numericMapper.GetNumericValue)
-            .Where(v => v.HasValue)
-            .Select(v => v.Value)
-            .ToList();
-
-        if (values.Count == 0 && numericMapper is PrecursorIntensityColorMapper)
+        get => _useLogColorScale;
+        set
         {
-            numericMapper = new ScoreColorMapper();
-            values = filteredResults
-                .Select(numericMapper.GetNumericValue)
-                .Where(v => v.HasValue)
-                .Select(v => v.Value)
-                .ToList();
+            if (_useLogColorScale != value)
+            {
+                _useLogColorScale = value;
+                OnPropertyChanged(nameof(UseLogColorScale));
+                Redraw();
+            }
         }
-
-        if (values.Count == 0)
-            return new BioPolymerCoverageColorScale(0, 0, gradient);
-
-        double minVal = values.Min();
-        double maxVal = values.Max();
-        double range = maxVal - minVal;
-        if (range < double.Epsilon) range = 1;
-
-        return new BioPolymerCoverageColorScale(minVal, maxVal, gradient);
     }
 
-    // Helper method for FileOrigin coloring
-    private SolidColorBrush GetColorByIdentifier(string identifier)
+    private bool _hasAppliedLogDefault;
+    private void ApplyNumericModeDefaultsIfNeeded(BioPolymerCoverageColorMapper mapper)
     {
-        if (string.IsNullOrEmpty(identifier))
-            return new SolidColorBrush(Colors.Gray);
-
-        if (!IdentifierToColor.TryGetValue(identifier, out var brush))
-        {
-            brush = ColorQueue.Dequeue();
-            IdentifierToColor[identifier] = brush;
-        }
-        return brush;
+        if (_hasAppliedLogDefault) return;
+        if (mapper is not NumericBioPolymerCoverageColorMapper numeric) return;
+        _useLogColorScale = numeric.DefaultUseLogScale;
+        _hasAppliedLogDefault = true;
+        OnPropertyChanged(nameof(UseLogColorScale));
     }
 
     #endregion
@@ -209,8 +146,11 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         var rowRectangles = new Dictionary<int, List<(int startCol, int endCol)>>();
         var rowOccupancy = new Dictionary<int, int[]>(); // row -> per-column track usage
 
-        var mapper = CreateColorMapper();
-        var scale = CreateNumericScale(mapper, filteredResults);
+        var mapper = BioPolymerCoverageColorMapperFactory.Create(_colorBy);
+        var gradient = ColorGradientFactory.Create(SelectedGradientType);
+        BioPolymerCoverageNumericRenderContext? numericContext = mapper is NumericBioPolymerCoverageColorMapper numericMapper
+            ? numericMapper.CreateRenderContext(filteredResults, gradient, UseLogColorScale)
+            : null;
 
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())
@@ -273,7 +213,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             var sepWidth = sep.Width;
 
             double legendY = metricsY + metricsFt.Height + legendSpacing;
-            var legendItems = CreateLegendItems(filteredResults, fontSize, dpi, _colorBy);
+            var legendItems = CreateLegendItems(filteredResults, fontSize, dpi, mapper);
 
             var legendLines = WrapLegendItems(legendItems, fontSize, usableWidth, sepWidth);
 
@@ -306,8 +246,8 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
             }
 
             double gradientBlockH = 0;
-            if (mapper.IsNumeric && scale is not null)
-                gradientBlockH = DrawNumericLegend(dc, legendY, plotMargin, usableWidth, legendSpacing, fontSize, dpi, mapper, scale, out legendY);
+            if (numericContext is not null)
+                gradientBlockH = DrawNumericLegend(dc, legendY, plotMargin, usableWidth, legendSpacing, fontSize, dpi, numericContext!, out legendY);
 
             // --- Offset plot below header block (metrics + legend) ---
             double headerBlockHeight = bioPolymerNameText.Height + metricsFt.Height + legendSpacing
@@ -392,7 +332,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                         roundRight = true;
 
                     // Use a slightly opaque brush for fill
-                    var baseBrush = mapper.GetBrush(res, scale);
+                    var baseBrush = GetBrushForResult(res, mapper, numericContext);
                     var color = (baseBrush as SolidColorBrush)?.Color ?? Colors.Gray;
                     var brush = new SolidColorBrush(color) { Opacity = 0.75 };
                     brush.Freeze();
@@ -553,27 +493,23 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         double legendSpacing,
         double fontSize,
         double dpi,
-        BioPolymerCoverageColorMapper mapper,
-        BioPolymerCoverageColorScale scale,
+        BioPolymerCoverageNumericRenderContext ctx,
         out double newLegendY)
     {
         double barWidth = Math.Min(250, usableWidth * 0.6);
         double barHeight = fontSize * 0.8;
         double barX = plotMargin + (usableWidth - barWidth) / 2;
         double barY = legendY + legendSpacing;
-        var brushes = scale.Gradient.GetBrushes();
+        var brushes = ctx.Scale.Gradient.GetBrushes();
         double bandW = barWidth / brushes.Count;
         for (int i = 0; i < brushes.Count; i++)
             dc.DrawRectangle(brushes[i], null, new Rect(barX + i * bandW, barY, bandW + 0.5, barHeight));
 
-        string metricName = mapper.ColorBy == ColorResultsBy.PrecursorIntensity
-            ? "Precursor Intensity"
-            : mapper.ColorBy.ToString();
-        var metricTxt = new FormattedText(metricName, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.DimGray, dpi);
+        var metricTxt = new FormattedText(ctx.LegendTitle, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.DimGray, dpi);
         dc.DrawText(metricTxt, new Point(barX + (barWidth - metricTxt.Width) / 2, barY - metricTxt.Height - 2));
 
-        var minTxt = new FormattedText($"{scale.MinValue:G3}", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.Black, dpi);
-        var maxTxt = new FormattedText($"{scale.MaxValue:G3}", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.Black, dpi);
+        var minTxt = new FormattedText($"{ctx.Scale.MinValue:G3}", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.Black, dpi);
+        var maxTxt = new FormattedText($"{ctx.Scale.MaxValue:G3}", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), fontSize * 0.7, Brushes.Black, dpi);
         dc.DrawText(minTxt, new Point(barX, barY + barHeight + 2));
         dc.DrawText(maxTxt, new Point(barX + barWidth - maxTxt.Width, barY + barHeight + 2));
 
@@ -593,27 +529,27 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         BioPolymerCoverageType.SharedMissedCleavage
     };
 
-    private List<(SolidColorBrush Brush, FormattedText Text)> CreateLegendItems( List<BioPolymerCoverageResultModel> filteredResults, double fontSize, double dpi, ColorResultsBy colorBy)
+    private List<(SolidColorBrush Brush, FormattedText Text)> CreateLegendItems(List<BioPolymerCoverageResultModel> filteredResults, double fontSize, double dpi, BioPolymerCoverageColorMapper mapper)
     {
         var items = new List<(SolidColorBrush, FormattedText)>();
-        if (colorBy == ColorResultsBy.None)
+        if (mapper.ColorBy == ColorResultsBy.None)
             return items;
 
-        if (colorBy is ColorResultsBy.PrecursorIntensity or ColorResultsBy.Score)
+        if (mapper.IsNumeric)
             return items;
 
-        if (colorBy == ColorResultsBy.FileOrigin)
+        if (mapper.ColorBy == ColorResultsBy.FileOrigin)
         {
-            var countsByFile = filteredResults
+            var groupsByFile = filteredResults
                 .GroupBy(r => r.Match.FileName)
-                .ToDictionary(g => g.Key, g => g.Count());
+                .ToList();
 
             string unitLabel = filteredResults.FirstOrDefault()?.Match.GetDigestionProductLabel();
 
-            foreach (var kvp in countsByFile)
+            foreach (var group in groupsByFile)
             {
-                string fileName = kvp.Key;
-                int count = kvp.Value;
+                string fileName = group.Key;
+                int count = group.Count();
                 if (string.IsNullOrEmpty(fileName) || count == 0) continue;
 
                 string label = $"{fileName} {unitLabel}s: {count}";
@@ -625,7 +561,7 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
                     fontSize * 0.8,
                     Brushes.Black,
                     dpi);
-                items.Add((GetColorByIdentifier(fileName), ft));
+                items.Add((mapper.GetBrush(group.First(), null), ft));
             }
             return items;
         }
@@ -682,4 +618,39 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
 
         return lines;
     }
+
+    private static SolidColorBrush GetBrushForResult(
+        BioPolymerCoverageResultModel result,
+        BioPolymerCoverageColorMapper mapper,
+        BioPolymerCoverageNumericRenderContext? numericContext)
+    {
+        if (numericContext is null)
+            return mapper.GetBrush(result, null);
+
+        var value = numericContext.EffectiveMapper.GetNumericValue(result);
+        if (!NumericBioPolymerCoverageColorMapper.IsRenderable(value, numericContext.UseLogScale))
+            return new SolidColorBrush(Colors.Gray);
+        var transformed = NumericBioPolymerCoverageColorMapper.TransformForRendering(value!.Value, numericContext.UseLogScale);
+        return numericContext.Scale.Gradient.GetBrush(numericContext.Scale.Normalize(transformed));
+    }
+}
+
+public sealed class BioPolymerCoverageNumericRenderContext
+{
+    public BioPolymerCoverageNumericRenderContext(
+        NumericBioPolymerCoverageColorMapper effectiveMapper,
+        BioPolymerCoverageColorScale scale,
+        bool useLogScale,
+        string legendTitle)
+    {
+        EffectiveMapper = effectiveMapper;
+        Scale = scale;
+        UseLogScale = useLogScale;
+        LegendTitle = legendTitle;
+    }
+
+    public NumericBioPolymerCoverageColorMapper EffectiveMapper { get; }
+    public BioPolymerCoverageColorScale Scale { get; }
+    public bool UseLogScale { get; }
+    public string LegendTitle { get; }
 }

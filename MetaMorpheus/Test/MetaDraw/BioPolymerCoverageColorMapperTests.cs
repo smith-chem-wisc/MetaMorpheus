@@ -191,10 +191,10 @@ public class BioPolymerCoverageColorMapperTests
     #region Legend title
 
     [Test]
-    public void PrecursorIntensityMapper_LegendTitle_IsEnumName()
+    public void PrecursorIntensityMapper_LegendTitle_IsDisplayName()
     {
         var mapper = new PrecursorIntensityColorMapper();
-        Assert.That(mapper.GetLegendTitle(null), Is.EqualTo(nameof(ColorResultsBy.PrecursorIntensity)));
+        Assert.That(mapper.GetLegendTitle(null), Is.EqualTo("Precursor Intensity"));
     }
 
     [Test]
