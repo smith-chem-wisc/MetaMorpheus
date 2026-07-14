@@ -755,47 +755,60 @@ namespace Test
 
         // ── Calibration precursor-tolerance robustness (most-abundant mode) ──────
 
-        private static SpectralMatch BuildPsmWithPrecursorMass(PeptideWithSetModifications pep, double precursorNeutralMass)
+        private static SpectralMatch BuildPsmWithPrecursorMass(PeptideWithSetModifications pep, double precursorNeutralMass,
+            double? mostAbundantNeutralMass = null)
         {
             var spectrum = new MzSpectrum(new[] { precursorNeutralMass.ToMz(1) }, new[] { 1.0 }, false);
             var scanData = new MsDataScan(spectrum, 1, 1, true, Polarity.Positive, 1.0, null, "", MZAnalyzerType.Orbitrap, 1.0, null, null, null);
-            var scan = new Ms2ScanWithSpecificMass(scanData, precursorNeutralMass.ToMz(1), 1, "file.raw", new CommonParameters());
+            var scan = new Ms2ScanWithSpecificMass(scanData, precursorNeutralMass.ToMz(1), 1, "file.raw", new CommonParameters(),
+                precursorMostAbundantMass: mostAbundantNeutralMass);
             var psm = new PeptideSpectralMatch(pep, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm.ResolveAllAmbiguities();
             return psm;
         }
 
         /// <summary>
-        /// Most-abundant precursor matching admits PSMs whose deconvoluted monoisotopic mass is ±1–2
-        /// neutrons from the peptide's monoisotopic mass (the apex notch set). The calibration precursor
-        /// error must strip those whole-neutron offsets so the tolerance estimate reflects the true
-        /// sub-ppm drift, not ~67–134 ppm/neutron spikes (which previously produced runaway tolerances).
+        /// Most-abundant precursor matching admits PSMs whose deconvoluted monoisotopic peak is ±1–2
+        /// neutrons off (the apex notch set). Calibration must measure instrument drift, so the acceptor
+        /// strips those whole-isotopologue offsets out of the precursor error — otherwise the IQR is
+        /// inflated by ~67–134 ppm/neutron spikes and calibration writes runaway tolerances.
         /// </summary>
         [Test]
-        public static void CalibrationPrecursorError_StripsNeutronOffsets()
+        public static void CalibrationPrecursorError_StripsIsotopeOffsets_InMostAbundantMode()
         {
             var protein = new Protein("PEPTIDEKPEPTIDEKPEPTIDEK", "ACC");
             var pep = new PeptideWithSetModifications(protein, new DigestionParams(), 1, protein.BaseSequence.Length,
                 CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
             double mono = pep.MonoisotopicMass;
 
+            var averagine = new Averagine();
+            double apex = mono + MostAbundantMassDiffAcceptor.AveragineApexOffset(averagine, mono);
+            var apexAcceptor = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(10), averagine);
+
+            // Each PSM: the envelope's observed apex carries a few ppm of real drift and a k-neutron apex
+            // misprediction. The deconvoluted monoisotopic mass is correspondingly off by k neutrons — which
+            // is exactly the PSM population most-abundant mode exists to rescue.
             int[] neutronOffsets = { 0, 1, -1, 2, -2 };
             double[] driftPpm = { 1, 2, 3, 2, 1 };
             var psms = new List<SpectralMatch>();
             for (int i = 0; i < neutronOffsets.Length; i++)
             {
-                double precMass = mono * (1 + driftPpm[i] / 1e6) + neutronOffsets[i] * Constants.C13MinusC12;
-                psms.Add(BuildPsmWithPrecursorMass(pep, precMass));
+                double observedApex = apex * (1 + driftPpm[i] / 1e6) + neutronOffsets[i] * Constants.C13MinusC12;
+                double deconvolutedMono = mono * (1 + driftPpm[i] / 1e6) + neutronOffsets[i] * Constants.C13MinusC12;
+                psms.Add(BuildPsmWithPrecursorMass(pep, deconvolutedMono, observedApex));
             }
 
-            // Neutron stripping is gated on most-abundant mode (default Monoisotopic keeps the raw error).
             var results = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0,
-                PrecursorMassMatchMode.MostAbundant);
+                apexAcceptor);
 
-            // With neutron offsets stripped, the spread reflects only the few-ppm drift — not the
-            // tens-to-hundreds of ppm those ±1–2 neutron offsets would otherwise introduce.
+            // The spread now reflects only the few-ppm drift, not the ±1–2 neutron offsets.
             Assert.That(results.PsmPrecursorIqrPpmError, Is.LessThan(5));
             Assert.That(Math.Abs(results.PsmPrecursorMedianPpmError), Is.LessThan(5));
+
+            // Control: read with no acceptor (the monoisotopic default), the same PSMs keep their raw
+            // neutron offsets — proving the correction, not the test data, is what tightens the spread.
+            var rawResults = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
+            Assert.That(rawResults.PsmPrecursorIqrPpmError, Is.GreaterThan(50));
         }
 
         /// <summary>

@@ -116,24 +116,68 @@ namespace Test
             Assert.That(def, Is.Not.TypeOf<MostAbundantMassDiffAcceptor>());
         }
 
+        /// <summary>
+        /// The scan stores observations, not search decisions: PrecursorMass is always the monoisotopic
+        /// mass, and PrecursorMostAbundantMass is always the observed apex (0 when none was observed).
+        /// The acceptor — not the scan — decides which of the two a given search selects on.
+        /// </summary>
         [Test]
-        public static void Ms2Scan_PrecursorMassToMatch_DefaultsToPrecursorMass()
+        public static void Ms2Scan_PrecursorMasses_AreObservations_AcceptorSelectsBetweenThem()
         {
             var scan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
                 2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap,
                 double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null,
                 DissociationType.AnyActivationType, 1, null);
 
-            // No precursorMassToMatch supplied → falls back to the monoisotopic PrecursorMass.
-            var defaultScan = new Ms2ScanWithSpecificMass(scan, 1500.0.ToMz(2), 2, "", new CommonParameters());
-            Assert.That(defaultScan.PrecursorMassToMatch, Is.EqualTo(defaultScan.PrecursorMass).Within(1e-9));
+            var monoAcceptor = new SinglePpmAroundZeroSearchMode(5);
+            var apexAcceptor = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(5), Averagine);
 
-            // Explicit precursorMassToMatch is carried through without altering PrecursorMass.
-            double matchMass = defaultScan.PrecursorMass + 5.0;
-            var mostAbundantScan = new Ms2ScanWithSpecificMass(scan, 1500.0.ToMz(2), 2, "", new CommonParameters(),
-                precursorMassToMatch: matchMass);
-            Assert.That(mostAbundantScan.PrecursorMassToMatch, Is.EqualTo(matchMass).Within(1e-9));
-            Assert.That(mostAbundantScan.PrecursorMass, Is.EqualTo(defaultScan.PrecursorMass).Within(1e-9));
+            // No apex observed (e.g. a scan-header precursor): the observation is 0, and BOTH acceptors
+            // select the monoisotopic mass — a most-abundant search cannot invent a peak that wasn't seen.
+            var noEnvelopeScan = new Ms2ScanWithSpecificMass(scan, 1500.0.ToMz(2), 2, "", new CommonParameters());
+            Assert.That(noEnvelopeScan.PrecursorMostAbundantMass, Is.EqualTo(0));
+            Assert.That(noEnvelopeScan.GetPrecursorMassForSearch(monoAcceptor), Is.EqualTo(noEnvelopeScan.PrecursorMass).Within(1e-9));
+            Assert.That(noEnvelopeScan.GetPrecursorMassForSearch(apexAcceptor), Is.EqualTo(noEnvelopeScan.PrecursorMass).Within(1e-9));
+
+            // Apex observed: it is recorded without touching PrecursorMass, which keeps its monoisotopic
+            // meaning. Only the most-abundant acceptor selects the apex.
+            double apexMass = noEnvelopeScan.PrecursorMass + 5.0;
+            var apexScan = new Ms2ScanWithSpecificMass(scan, 1500.0.ToMz(2), 2, "", new CommonParameters(),
+                precursorMostAbundantMass: apexMass);
+            Assert.That(apexScan.PrecursorMass, Is.EqualTo(noEnvelopeScan.PrecursorMass).Within(1e-9));
+            Assert.That(apexScan.PrecursorMostAbundantMass, Is.EqualTo(apexMass).Within(1e-9));
+            Assert.That(apexScan.GetPrecursorMassForSearch(monoAcceptor), Is.EqualTo(apexScan.PrecursorMass).Within(1e-9));
+            Assert.That(apexScan.GetPrecursorMassForSearch(apexAcceptor), Is.EqualTo(apexMass).Within(1e-9));
+        }
+
+        /// <summary>
+        /// The regression behind nbollis's review: a most-abundant search accepts candidates whose
+        /// deconvoluted monoisotopic peak is off by whole isotopologues, so (ScanPrecursorMass -
+        /// peptideMonoisotopic) is NOT a chemical mass difference. Any consumer reading it as one — the
+        /// localization engine, G-PTM-D mod assignment, calibration — must go through the acceptor first,
+        /// or it interprets a ~1-2 Da isotope-assignment offset as a modification.
+        /// </summary>
+        [Test]
+        public static void ToObservedMonoisotopicMass_RemovesApexAndNeutronOffsets([Values(-2, -1, 0, 1, 2)] int neutronOffset)
+        {
+            const double peptideMono = 15000.0;
+            var acceptor = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(5), Averagine);
+
+            // What the detector sees: the apex, mispredicted by k neutrons, plus a little instrument drift.
+            const double driftPpm = 2.0;
+            double observedApex = (peptideMono + ApexOffset(peptideMono)) * (1 + driftPpm / 1e6)
+                                  + neutronOffset * Constants.C13MinusC12;
+            Assert.That(acceptor.Accepts(observedApex, peptideMono), Is.GreaterThanOrEqualTo(0), "should be an accepted match");
+
+            // Undoing the apex offset and the k neutrons leaves the monoisotopic mass plus only the drift,
+            // so the mass difference a downstream engine sees is ~0 — not k * 1.00335 Da.
+            double observedMono = acceptor.ToObservedMonoisotopicMass(observedApex, peptideMono);
+            double massDifferencePpm = (observedMono - peptideMono) / peptideMono * 1e6;
+            Assert.That(massDifferencePpm, Is.EqualTo(driftPpm).Within(0.5));
+
+            // A monoisotopic acceptor is the identity — baseline behaviour is untouched.
+            var monoAcceptor = new SinglePpmAroundZeroSearchMode(5);
+            Assert.That(monoAcceptor.ToObservedMonoisotopicMass(observedApex, peptideMono), Is.EqualTo(observedApex));
         }
 
         [Test]
@@ -192,10 +236,10 @@ namespace Test
                 DissociationType.AnyActivationType, 1, null);
             var noIons = new List<MatchedFragmentIon>();
 
-            // Most-abundant mode: the scan supplies the observed apex as PrecursorMassToMatch; the
-            // monoisotopic PrecursorMz is left as mono. Reported most-abundant error is ~0 (on apex).
+            // Most-abundant mode: the scan observes the apex; the monoisotopic PrecursorMz is left as mono.
+            // Reported most-abundant error is ~0 (on apex).
             var maParams = new CommonParameters(precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
-            var maScan = new Ms2ScanWithSpecificMass(msDataScan, mono.ToMz(1), 1, "", maParams, precursorMassToMatch: apex);
+            var maScan = new Ms2ScanWithSpecificMass(msDataScan, mono.ToMz(1), 1, "", maParams, precursorMostAbundantMass: apex);
             var maPsm = new PeptideSpectralMatch(peptide, 0, 10, 0, maScan, maParams, noIons);
 
             Assert.That(maPsm.MostAbundantMassErrorPpm, Is.Not.Null);
@@ -315,7 +359,7 @@ namespace Test
         }
 
         [Test]
-        public static void GetMs2Scans_MostAbundantMode_DeconvolutesToApexPrecursorMassToMatch()
+        public static void GetMs2Scans_RecordsApexObservation_RegardlessOfSearchMode()
         {
             string origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
             var fileManager = new MyFileManager(true);
@@ -331,11 +375,20 @@ namespace Test
             var apexScans = MetaMorpheusTask.GetMs2Scans(msDataFile, origDataFile, apexParams).ToArray();
 
             Assert.That(apexScans.Length, Is.GreaterThan(0));
-            // In monoisotopic mode the candidate-selection mass is always the monoisotopic PrecursorMass.
-            Assert.That(monoScans.All(s => Math.Abs(s.PrecursorMassToMatch - s.PrecursorMass) < 1e-6), Is.True);
-            // In most-abundant mode the deconvoluted envelope apex is used, so at least one scan's
-            // PrecursorMassToMatch departs from its monoisotopic PrecursorMass.
-            Assert.That(apexScans.Any(s => Math.Abs(s.PrecursorMassToMatch - s.PrecursorMass) > 1e-6), Is.True);
+
+            // The apex is an observation of the deconvoluted envelope, so it is recorded in BOTH modes —
+            // the scan does not change shape depending on the search being run.
+            Assert.That(monoScans.Any(s => s.PrecursorMostAbundantMass > 0), Is.True);
+            Assert.That(apexScans.Any(s => s.PrecursorMostAbundantMass > 0), Is.True);
+            // And in both modes PrecursorMass keeps its monoisotopic meaning.
+            Assert.That(monoScans.Select(s => s.PrecursorMass), Is.EqualTo(apexScans.Select(s => s.PrecursorMass)).Within(1e-6));
+
+            // Only the acceptor changes what gets matched: the apex acceptor selects a mass that departs
+            // from the monoisotopic one, the monoisotopic acceptor never does.
+            var monoAcceptor = new SinglePpmAroundZeroSearchMode(5);
+            var apexAcceptor = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(5), Averagine);
+            Assert.That(apexScans.All(s => Math.Abs(s.GetPrecursorMassForSearch(monoAcceptor) - s.PrecursorMass) < 1e-6), Is.True);
+            Assert.That(apexScans.Any(s => Math.Abs(s.GetPrecursorMassForSearch(apexAcceptor) - s.PrecursorMass) > 1e-6), Is.True);
         }
     }
 }
