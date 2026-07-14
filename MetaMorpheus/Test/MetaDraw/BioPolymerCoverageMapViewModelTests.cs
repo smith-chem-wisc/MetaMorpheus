@@ -259,90 +259,87 @@ public class BioPolymerCoverageMapViewModelTests
     #region Viridis Intensity Tests
 
     [Test]
-    public void ViridisColors_Has20Colors()
-    {
-        var field = typeof(BioPolymerCoverageMapViewModel)
-            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        Assert.That(field, Is.Not.Null);
-        var colors = field.GetValue(null) as SolidColorBrush[];
-        Assert.That(colors, Is.Not.Null);
-        Assert.That(colors.Length, Is.EqualTo(20));
-        Assert.That(colors.All(c => c != null), Is.True);
-    }
-
-    [Test]
-    public void ViridisColors_StartAndEndColorsDiffer()
-    {
-        var field = typeof(BioPolymerCoverageMapViewModel)
-            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var colors = field.GetValue(null) as SolidColorBrush[];
-        Assert.That(colors[0].Color, Is.Not.EqualTo(colors[19].Color));
-    }
-
-    [Test]
-    public void GetIntensityBrush_Zero_ReturnsFirstColor()
+    public void CreateColorMapper_ReturnsMapperForCurrentColorBy()
     {
         var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.Score;
         var method = typeof(BioPolymerCoverageMapViewModel)
-            .GetMethod("GetIntensityBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var result = method.Invoke(vm, new object[] { 0.0 }) as SolidColorBrush;
-        var field = typeof(BioPolymerCoverageMapViewModel)
-            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var colors = field.GetValue(null) as SolidColorBrush[];
-        Assert.That(result, Is.EqualTo(colors[0]));
+            .GetMethod("CreateColorMapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var mapper = method.Invoke(vm, null) as BioPolymerCoverageColorMapper;
+        Assert.That(mapper, Is.Not.Null);
+        Assert.That(mapper.ColorBy, Is.EqualTo(ColorResultsBy.Score));
+        Assert.That(mapper.IsNumeric, Is.True);
     }
 
     [Test]
-    public void GetIntensityBrush_One_ReturnsLastColor()
+    public void CreateNumericScale_NonNumericMapper_ReturnsNull()
     {
         var vm = new BioPolymerCoverageMapViewModel();
-        var method = typeof(BioPolymerCoverageMapViewModel)
-            .GetMethod("GetIntensityBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var result = method.Invoke(vm, new object[] { 1.0 }) as SolidColorBrush;
-        var field = typeof(BioPolymerCoverageMapViewModel)
-            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var colors = field.GetValue(null) as SolidColorBrush[];
-        Assert.That(result, Is.EqualTo(colors[19]));
+        vm.ColorBy = ColorResultsBy.CoverageType;
+        var mapperMethod = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("CreateColorMapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var mapper = mapperMethod.Invoke(vm, null) as BioPolymerCoverageColorMapper;
+        var scaleMethod = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("CreateNumericScale", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var scale = scaleMethod.Invoke(vm, new object[] { mapper, new List<BioPolymerCoverageResultModel>() });
+        Assert.That(scale, Is.Null);
     }
 
     [Test]
-    public void GetIntensityBrush_MidValue_ReturnsMidColor()
+    public void CreateNumericScale_ScoreMode_DerivesMinMax()
     {
         var vm = new BioPolymerCoverageMapViewModel();
-        var method = typeof(BioPolymerCoverageMapViewModel)
-            .GetMethod("GetIntensityBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var result = method.Invoke(vm, new object[] { 0.5 }) as SolidColorBrush;
-        var field = typeof(BioPolymerCoverageMapViewModel)
-            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var colors = field.GetValue(null) as SolidColorBrush[];
-        // 0.5 * 19 = 9.5, clamped to 9
-        Assert.That(result, Is.EqualTo(colors[9]));
+        vm.ColorBy = ColorResultsBy.Score;
+
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(10);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(1000);
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+        var results = new List<BioPolymerCoverageResultModel> { result1, result2 };
+
+        var mapperMethod = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("CreateColorMapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var mapper = mapperMethod.Invoke(vm, null) as BioPolymerCoverageColorMapper;
+        var scaleMethod = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("CreateNumericScale", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var scale = scaleMethod.Invoke(vm, new object[] { mapper, results }) as BioPolymerCoverageColorScale;
+
+        Assert.That(scale, Is.Not.Null);
+        Assert.That(scale.MinValue, Is.EqualTo(10));
+        Assert.That(scale.MaxValue, Is.EqualTo(1000));
     }
 
     [Test]
-    public void GetIntensityBrush_Negative_ClampsToFirstColor()
+    public void CreateNumericScale_PrecursorIntensityAllNull_FallsBackToScore()
     {
         var vm = new BioPolymerCoverageMapViewModel();
-        var method = typeof(BioPolymerCoverageMapViewModel)
-            .GetMethod("GetIntensityBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var result = method.Invoke(vm, new object[] { -0.1 }) as SolidColorBrush;
-        var field = typeof(BioPolymerCoverageMapViewModel)
-            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var colors = field.GetValue(null) as SolidColorBrush[];
-        Assert.That(result, Is.EqualTo(colors[0]));
-    }
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
 
-    [Test]
-    public void GetIntensityBrush_AboveOne_ClampsToLastColor()
-    {
-        var vm = new BioPolymerCoverageMapViewModel();
-        var method = typeof(BioPolymerCoverageMapViewModel)
-            .GetMethod("GetIntensityBrush", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var result = method.Invoke(vm, new object[] { 1.5 }) as SolidColorBrush;
-        var field = typeof(BioPolymerCoverageMapViewModel)
-            .GetField("ViridisColors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var colors = field.GetValue(null) as SolidColorBrush[];
-        Assert.That(result, Is.EqualTo(colors[19]));
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(50);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(500);
+        var backing = typeof(Readers.SpectrumMatchFromTsv)
+            .GetField("<PrecursorIntensity>k__BackingField",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        backing.SetValue(match1, null);
+        backing.SetValue(match2, null);
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+        var results = new List<BioPolymerCoverageResultModel> { result1, result2 };
+
+        var mapperMethod = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("CreateColorMapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var mapper = mapperMethod.Invoke(vm, null) as BioPolymerCoverageColorMapper;
+        var scaleMethod = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("CreateNumericScale", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var scale = scaleMethod.Invoke(vm, new object[] { mapper, results }) as BioPolymerCoverageColorScale;
+
+        Assert.That(scale, Is.Not.Null);
+        Assert.That(scale.MinValue, Is.EqualTo(50));
+        Assert.That(scale.MaxValue, Is.EqualTo(500));
     }
 
     [Test]
