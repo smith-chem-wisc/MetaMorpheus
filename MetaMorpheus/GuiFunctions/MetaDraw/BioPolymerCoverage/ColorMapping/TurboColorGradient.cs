@@ -4,9 +4,9 @@ using System.Windows.Media;
 
 namespace GuiFunctions.MetaDraw;
 
-public sealed class ViridisColorGradient : ColorGradient
+public sealed class TurboColorGradient : ColorGradient
 {
-    public override ColorGradientType GradientType => ColorGradientType.Viridis;
+    public override ColorGradientType GradientType => ColorGradientType.Turbo;
 
     private static readonly IReadOnlyList<SolidColorBrush> Brushes = BuildBrushes();
 
@@ -16,10 +16,10 @@ public sealed class ViridisColorGradient : ColorGradient
     {
         var hex = new[]
         {
-            "440154", "481467", "482576", "453781", "3f4d8a",
-            "39568c", "2e6f8e", "238a8d", "20a386", "34b679",
-            "60c85d", "93d443", "c7df2b", "eddf2b", "f8e51d",
-            "fce61b", "fbdf0e", "f6d300", "edc600", "fde725"
+            "30123b", "4145ab", "4870d5", "4194e1", "3cb6e4",
+            "41d4d8", "51edc1", "6dfeb6", "8fffa9", "affe98",
+            "c9fc85", "dff66f", "f0ec5c", "fbdd4b", "fdca3b",
+            "feb72d", "fca02a", "f78532", "eb663c", "d93f4c"
         };
         return hex.Select(h => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#" + h))).ToArray();
     }

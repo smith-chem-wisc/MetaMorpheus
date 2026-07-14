@@ -1,6 +1,7 @@
 using GuiFunctions.MetaDraw;
 using NUnit.Framework;
 using System;
+using System.Linq;
 using System.Windows.Media;
 
 namespace Test.MetaDraw;
@@ -211,4 +212,91 @@ public class BioPolymerCoverageColorMapperTests
     }
 
     #endregion
+}
+
+public static class ColorMapperGapTests
+{
+    [Test]
+    public static void NumericMapper_GradientProperties_AfterPrepareMatchExpected()
+    {
+        var mapper = new ScoreColorMapper();
+        var r1 = MakeScoreResult(10);
+        var r2 = MakeScoreResult(100);
+        mapper.Prepare([r1, r2], ColorGradientType.Viridis, false);
+        Assert.That(mapper.GradientMinValue, Is.EqualTo(10));
+        Assert.That(mapper.GradientMaxValue, Is.EqualTo(100));
+        Assert.That(mapper.GradientBrushes, Is.Not.Null);
+        Assert.That(mapper.GradientBrushes!.Count, Is.EqualTo(20));
+    }
+
+    [Test]
+    public static void NumericMapper_GradientBrushes_AfterLogPrepare_UsesGradient()
+    {
+        var mapper = new ScoreColorMapper();
+        mapper.Prepare([MakeScoreResult(10), MakeScoreResult(10000)], ColorGradientType.Viridis, true);
+        Assert.That(mapper.GradientLegendTitle, Does.EndWith("(log10)"));
+        Assert.That(mapper.GradientBrushes!.Count, Is.EqualTo(20));
+        Assert.That(mapper.GradientBrushes[0].Color, Is.EqualTo(new ViridisColorGradient().GetBrushes()[0].Color));
+    }
+
+    [Test]
+    public static void NumericMapper_GetBrush_WithoutPrepare_ReturnsGray()
+    {
+        var mapper = new ScoreColorMapper();
+        var brush = mapper.GetBrush(MakeScoreResult(50));
+        Assert.That(brush.Color, Is.EqualTo(Colors.Gray));
+    }
+
+    [Test]
+    public static void FileOrigin_LegendItems_AfterPrepare_ContainsEntries()
+    {
+        var mapper = new FileOriginColorMapper();
+        var r1 = MakeFileResult(10, "fileA.psmtsv");
+        var r2 = MakeFileResult(20, "fileB.psmtsv");
+        mapper.Prepare([r1, r2], ColorGradientType.Viridis, false);
+        Assert.That(mapper.LegendItems, Is.Not.Null);
+        Assert.That(mapper.LegendItems.Count, Is.EqualTo(2));
+        Assert.That(mapper.LegendItems.Any(i => i.Label.StartsWith("fileA")), Is.True);
+        Assert.That(mapper.LegendItems.Any(i => i.Label.StartsWith("fileB")), Is.True);
+    }
+
+    [Test]
+    public static void FileOrigin_LegendItems_EmptyFilteredResults_EmptyLegend()
+    {
+        var mapper = new FileOriginColorMapper();
+        mapper.Prepare([], ColorGradientType.Viridis, false);
+        Assert.That(mapper.LegendItems, Is.Empty);
+    }
+
+    [Test]
+    public static void CategoricalMapper_Prepare_PopulatesLegendItems()
+    {
+        var mapper = (CategoricalBioPolymerCoverageColorMapper)BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.CoverageType);
+        var r1 = new BioPolymerCoverageResultModel(new DummySpectralmatch(), "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var r2 = new BioPolymerCoverageResultModel(new DummySpectralmatch(), "DEF", 2, 4, BioPolymerCoverageType.Shared);
+        mapper.Prepare([r1, r2], ColorGradientType.Viridis, false);
+        Assert.That(mapper.LegendItems.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public static void CategoricalMapper_Prepare_EmptyResults_EmptyLegend()
+    {
+        var mapper = (CategoricalBioPolymerCoverageColorMapper)BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.CoverageType);
+        mapper.Prepare([], ColorGradientType.Viridis, false);
+        Assert.That(mapper.LegendItems, Is.Empty);
+    }
+
+    private static BioPolymerCoverageResultModel MakeScoreResult(double score)
+    {
+        var psm = new DummySpectralmatch();
+        psm.SetScore(score);
+        return new BioPolymerCoverageResultModel(psm, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+    }
+
+    private static BioPolymerCoverageResultModel MakeFileResult(double score, string fileName)
+    {
+        var psm = new DummySpectralmatch(filePath: fileName);
+        psm.SetScore(score);
+        return new BioPolymerCoverageResultModel(psm, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+    }
 }

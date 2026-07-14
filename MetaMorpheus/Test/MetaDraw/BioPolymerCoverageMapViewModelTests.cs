@@ -311,6 +311,97 @@ public class BioPolymerCoverageMapViewModelTests
     }
 
     [Test]
+    public void ColorResultsByExtensions_IsNumeric_ReturnsTrueForNumericModes()
+    {
+        Assert.That(ColorResultsBy.PrecursorIntensity.IsNumeric(), Is.True);
+        Assert.That(ColorResultsBy.Score.IsNumeric(), Is.True);
+    }
+
+    [Test]
+    public void ColorResultsByExtensions_IsNumeric_ReturnsFalseForNonNumericModes()
+    {
+        Assert.That(ColorResultsBy.None.IsNumeric(), Is.False);
+        Assert.That(ColorResultsBy.CoverageType.IsNumeric(), Is.False);
+        Assert.That(ColorResultsBy.FileOrigin.IsNumeric(), Is.False);
+    }
+
+    [Test]
+    public void IsNumericColorMode_TracksColorBy()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        Assert.That(vm.IsNumericColorMode, Is.False);
+
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.IsNumericColorMode, Is.True);
+
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.IsNumericColorMode, Is.True);
+
+        vm.ColorBy = ColorResultsBy.CoverageType;
+        Assert.That(vm.IsNumericColorMode, Is.False);
+    }
+
+    [Test]
+    public void AllGradients_ContainsViridis()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        Assert.That(vm.AllGradients, Is.Not.Null);
+        Assert.That(vm.AllGradients.Length, Is.EqualTo(1));
+        Assert.That(vm.AllGradients[0], Is.EqualTo(ColorGradientType.Viridis));
+    }
+
+    [Test]
+    public void LogDefault_PerModeTracking_PrecursorThenScore()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.UseLogColorScale, Is.True);
+
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.UseLogColorScale, Is.False);
+    }
+
+    [Test]
+    public void LogDefault_PerModeTracking_BackToPrecursorKeepsDefault()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.UseLogColorScale, Is.False);
+
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.UseLogColorScale, Is.True);
+
+        // both modes have had defaults applied once; switching back keeps last value
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.UseLogColorScale, Is.True);
+    }
+
+    [Test]
+    public void LogDefault_PerModeTracking_NonNumericDoesNotSet()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.CoverageType;
+        Assert.That(vm.UseLogColorScale, Is.False);
+    }
+
+    [Test]
+    public void LogDefault_UserOverride_PerModeStillApplies()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.UseLogColorScale, Is.True);
+
+        vm.UseLogColorScale = false;
+        Assert.That(vm.UseLogColorScale, Is.False);
+
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.UseLogColorScale, Is.False);
+
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.UseLogColorScale, Is.False);
+    }
+
+    [Test]
     public void ScoreColorMapper_CreateRenderContext_LogScale_TransformsValues()
     {
         var match1 = new DummySpectralmatch();
