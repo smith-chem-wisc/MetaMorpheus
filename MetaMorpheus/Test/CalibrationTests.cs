@@ -783,7 +783,7 @@ namespace Test
 
             var averagine = new Averagine();
             double apex = mono + MostAbundantMassDiffAcceptor.AveragineApexOffset(averagine, mono);
-            var apexAcceptor = new MostAbundantMassDiffAcceptor("mostAbundant", new PpmTolerance(10), averagine);
+            var apexParams = new CommonParameters(precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
 
             // Each PSM: the envelope's observed apex carries a few ppm of real drift and a k-neutron apex
             // misprediction. The deconvoluted monoisotopic mass is correspondingly off by k neutrons — which
@@ -799,14 +799,14 @@ namespace Test
             }
 
             var results = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0,
-                apexAcceptor);
+                apexParams);
 
             // The spread now reflects only the few-ppm drift, not the ±1–2 neutron offsets.
             Assert.That(results.PsmPrecursorIqrPpmError, Is.LessThan(5));
             Assert.That(Math.Abs(results.PsmPrecursorMedianPpmError), Is.LessThan(5));
 
-            // Control: read with no acceptor (the monoisotopic default), the same PSMs keep their raw
-            // neutron offsets — proving the correction, not the test data, is what tightens the spread.
+            // Control: read in the default monoisotopic mode, the same PSMs keep their raw neutron
+            // offsets — proving the correction, not the test data, is what tightens the spread.
             var rawResults = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
             Assert.That(rawResults.PsmPrecursorIqrPpmError, Is.GreaterThan(50));
         }
