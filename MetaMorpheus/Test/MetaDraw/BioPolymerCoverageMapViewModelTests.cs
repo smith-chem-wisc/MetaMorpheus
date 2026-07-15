@@ -347,7 +347,7 @@ public class BioPolymerCoverageMapViewModelTests
     {
         var vm = new BioPolymerCoverageMapViewModel();
         Assert.That(vm.AllGradients, Is.Not.Null);
-        Assert.That(vm.AllGradients.Length, Is.EqualTo(1));
+        Assert.That(vm.AllGradients.Length, Is.EqualTo(Enum.GetValues(typeof(ColorGradientType)).Length));
         Assert.That(vm.AllGradients[0], Is.EqualTo(ColorGradientType.Viridis));
     }
 
