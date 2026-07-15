@@ -9,7 +9,7 @@ coloration:
 - **Class-based**: a discrete brush is selected per result based on a category
   (e.g. `CoverageType`, `FileOrigin`).
 - **Numeric-based**: a numeric value is extracted from the result and mapped to
-  a gradient using a provided `[min, max]` scale (e.g. `PrecursorIntensity`,
+  a gradient using a prepared `[min, max]` scale (e.g. `PrecursorIntensity`,
   `Score`).
 
 The numeric path does **not** own min/max discovery, log behavior, or filtering.
@@ -21,72 +21,84 @@ touching mapper code.
 
 ```
 ColorMapping/
-  ColorResultsBy.cs              # user-facing mode selector
-  ColorGradientType.cs           # enum of implemented gradients
-  ColorGradient.cs               # abstract gradient base
-  ViridisColorGradient.cs        # first concrete gradient
-  ColorGradientFactory.cs        # resolves a gradient by enum
-  BioPolymerCoverageColorScale.cs # value object holding min/max + gradient
+  Gradient/
+    ColorGradient.cs               # abstract gradient base
+    ColorGradientType.cs           # enum of implemented gradients
+    ColorGradientFactory.cs        # resolves a gradient by enum
+    ViridisColorGradient.cs        # 20-bin viridis palette
+    PlasmaColorGradient.cs         # 20-bin plasma palette
+    InfernoColorGradient.cs        # 20-bin inferno palette
+    TurboColorGradient.cs          # 20-bin turbo palette
+    GrayscaleColorGradient.cs      # 20-bin grayscale palette
+  BioPolymerCoverageColorScale.cs  # value object holding min/max + gradient
   BioPolymerCoverageColorMapper.cs # abstract mapper base
   CategoricalBioPolymerCoverageColorMapper.cs # categorical strategy
-  NumericBioPolymerCoverageColorMapper.cs      # numeric base (Template Method)
+  NumericBioPolymerCoverageColorMapper.cs     # numeric base (Template Method)
+  FileOriginColorMapper.cs         # stateful categorical mapper for FileOrigin
   PrecursorIntensityColorMapper.cs
   ScoreColorMapper.cs
-  BioPolymerCoverageColorMapperFactory.cs      # resolves a mapper by enum
+  BioPolymerCoverageColorMapperFactory.cs     # resolves a mapper by enum
 ```
 
 ### Roles
 
 - **`ColorResultsBy`** — user-facing mode (`None`, `CoverageType`, `FileOrigin`,
   `PrecursorIntensity`, `Score`, ...).
-- **`ColorGradientType`** — enum of implemented gradients (`Viridis`, ...).
+- **`ColorGradientType`** — enum of implemented gradients (`Viridis`,
+  `Plasma`, `Inferno`, `Turbo`, `Grayscale`, ...).
 - **`ColorGradient`** — abstract gradient with `BinCount`, `GetBrush(double
   normalizedValue)`, and `GetBrushes()` for legend rendering.
-- **`ViridisColorGradient`** — current 20-bin viridis palette.
 - **`ColorGradientFactory`** — resolves a gradient by `ColorGradientType`.
 - **`BioPolymerCoverageColorScale`** — value object holding
   `MinValue` / `MaxValue` / `Range` / `Gradient` plus a `Normalize(double)`
   helper. Numeric mappers consume this; they do not compute it.
 - **`BioPolymerCoverageColorMapper`** — abstract base. Exposes
-  `ColorBy`, `IsNumeric`, and `GetBrush(result, scale?)`.
+  `ColorBy`, `IsNumeric`, `SupportsGradientSelection`, `SupportsLogScale`,
+  `DefaultUseLogScale`, `Prepare(...)`, `GetBrush(result)`, and legend
+  metadata properties (`LegendItems`, `GradientLegendTitle`, `GradientBrushes`,
+  `GradientMinValue`, `GradientMaxValue`).
 - **`CategoricalBioPolymerCoverageColorMapper`** — strategy that delegates
-  brush selection to a `Func<result, brush>`.
+  brush selection to a `Func<result, brush>`. Used for `None` and `CoverageType`.
+- **`FileOriginColorMapper`** — stateful categorical mapper that owns a
+  color queue and dictionary to assign stable per-file colors. Used for
+  `FileOrigin` mode.
 - **`NumericBioPolymerCoverageColorMapper`** — abstract numeric base. Subclasses
-  provide `GetNumericValue(result)`; the base handles normalize + gradient
-  lookup.
-- **`PrecursorIntensityColorMapper` / `ScoreColorMapper`** — concrete numeric
-  strategies.
+  provide `GetNumericValue(result)`, `DisplayName`, and optionally
+  `DefaultUseLogScale` and `GetFallbackMapper()`. The base handles normalize,
+  gradient lookup, log transform, and fallback.
+- **`PrecursorIntensityColorMapper` — concrete numeric strategy with
+  `DefaultUseLogScale = true` and fallback to `ScoreColorMapper`.
+- **`ScoreColorMapper`** — concrete numeric strategy with
+  `DefaultUseLogScale = false` and no fallback.
 - **`BioPolymerCoverageColorMapperFactory`** — resolves a mapper for a
-  `ColorResultsBy`, injecting required dependencies (e.g. identifier brush
-  resolver, gradient type).
+  `ColorResultsBy`. No parameters needed — all dependency injection is
+  internal to the mappers.
 
 ### How the view model uses it
 
-The view model is responsible for:
-
-- filtering
-- min/max derivation (only for numeric mappers)
-- legend layout
-- identifier brush caching (currently `FileOrigin`)
-
-The view model does **not** know how a specific mode produces a brush. It asks
-the factory for a mapper and asks the mapper for a brush.
+The view model creates a mapper from the factory, prepares it with the
+current filtered results and settings, then caches it. Drawing queries the
+cached mapper for each result.
 
 Typical flow inside `Redraw`:
 
 ```csharp
-var mapper = BioPolymerCoverageColorMapperFactory.Create(
-    ColorBy,
-    identifierBrushResolver: GetIdentifierBrush,
-    gradientType: ColorGradientType.Viridis);
-
-var scale = BuildNumericScale(mapper, filteredResults);
+var mapper = BioPolymerCoverageColorMapperFactory.Create(_colorBy);
+mapper.Prepare(filteredResults, selectedGradientType, useLogColorScale);
 
 foreach (var result in filteredResults)
 {
-    var brush = mapper.GetBrush(result, scale);
+    var brush = mapper.GetBrush(result);
     // draw using brush
 }
+```
+
+Legend data is also provided by the prepared mapper:
+```csharp
+var legendTitle = mapper.GradientLegendTitle;
+var gradientBrushes = mapper.GradientBrushes;
+var minValue = mapper.GradientMinValue;
+var maxValue = mapper.GradientMaxValue;
 ```
 
 ## How to extend
@@ -96,13 +108,15 @@ foreach (var result in filteredResults)
 1. Add the enum value to `ColorResultsBy`.
 2. Register the mapping in `BioPolymerCoverageColorMapperFactory.Create` using
    `CategoricalBioPolymerCoverageColorMapper` and a brush selector delegate.
-3. No changes to mappers, gradients, or numeric logic.
+3. Optionally provide a legend builder delegate.
+4. No changes to mappers, gradients, or numeric logic.
 
 ### Add a new numeric mode (e.g. `QValue`)
 
 1. Add the enum value to `ColorResultsBy`.
 2. Create a new `QValueColorMapper : NumericBioPolymerCoverageColorMapper`
-   that implements `GetNumericValue(result)`.
+   that implements `GetNumericValue(result)`, `DisplayName`, and optionally
+   `DefaultUseLogScale` and `GetFallbackMapper()`.
 3. Register it in the factory.
 4. No changes to gradient code, normalization pipeline, or categorical
    mappers.
