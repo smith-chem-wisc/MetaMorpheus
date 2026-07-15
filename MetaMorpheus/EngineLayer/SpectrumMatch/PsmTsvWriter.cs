@@ -214,7 +214,13 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorDa).ResolvedString;
             s[SpectrumMatchFromTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorPpm).ResolvedString;
             if (includeMostAbundantColumn)
+            {
+                // The observed apex mass itself (0 when no envelope was resolved), a precursor observation that
+                // does not depend on the peptide hypothesis — reported alongside the error so the reader sees both
+                // the value the search matched on and its ppm deviation from the candidate's theoretical apex.
+                s[SpectrumMatchFromTsvHeader.PrecursorMostAbundantMass] = sm == null ? " " : sm.ScanPrecursorMostAbundantMass.ToString("F5", CultureInfo.InvariantCulture);
                 s[SpectrumMatchFromTsvHeader.MostAbundantMassDiffPpm] = pepWithModsIsNull || sm.MostAbundantMassErrorPpm == null ? " " : Resolve(sm.MostAbundantMassErrorPpm).ResolvedString;
+            }
             s[SpectrumMatchFromTsvHeader.Accession] = pepWithModsIsNull ? " " : sm.Accession != null ? sm.Accession : Resolve(pepsWithMods.Select(b => b.Parent.Accession), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.Name] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.FullName), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.GeneName] = geneString;

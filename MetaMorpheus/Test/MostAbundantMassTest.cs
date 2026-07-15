@@ -316,18 +316,27 @@ namespace Test
             var monoPsm = new PeptideSpectralMatch(peptide, 0, 10, 0, monoScan, monoParams, noIons);
             Assert.That(monoPsm.MostAbundantMassErrorPpm, Is.Null);
 
-            // The optional column appears in the header only when requested.
+            // The optional columns appear in the header only when requested.
             Assert.That(SpectralMatch.GetTabSeparatedHeader(includeMostAbundantColumn: true),
                 Does.Contain("Most Abundant Mass Diff (ppm)"));
+            Assert.That(SpectralMatch.GetTabSeparatedHeader(includeMostAbundantColumn: true),
+                Does.Contain("Precursor Most Abundant Mass"));
             Assert.That(SpectralMatch.GetTabSeparatedHeader(), Does.Not.Contain("Most Abundant Mass Diff (ppm)"));
+            Assert.That(SpectralMatch.GetTabSeparatedHeader(), Does.Not.Contain("Precursor Most Abundant Mass"));
 
-            // End-to-end writer path: the emitted row cell aligns under the new header column and
-            // carries the reported value (row and header stay column-aligned).
+            // End-to-end writer path: the emitted row cells align under the new header columns and
+            // carry the reported values (row and header stay column-aligned).
             var header = SpectralMatch.GetTabSeparatedHeader(includeMostAbundantColumn: true).Split('\t');
             var row = maPsm.ToString(new Dictionary<string, int>(), false, false, false, includeMostAbundantColumn: true).Split('\t');
             int col = Array.IndexOf(header, "Most Abundant Mass Diff (ppm)");
             Assert.That(col, Is.GreaterThanOrEqualTo(0));
             Assert.That(double.Parse(row[col], System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo(0).Within(0.5));
+
+            // The absolute observed-apex column carries the same mass the search matched on.
+            int massCol = Array.IndexOf(header, "Precursor Most Abundant Mass");
+            Assert.That(massCol, Is.GreaterThanOrEqualTo(0));
+            Assert.That(double.Parse(row[massCol], System.Globalization.CultureInfo.InvariantCulture),
+                Is.EqualTo(maScan.PrecursorMostAbundantMass).Within(1e-4));
         }
 
         [Test]
