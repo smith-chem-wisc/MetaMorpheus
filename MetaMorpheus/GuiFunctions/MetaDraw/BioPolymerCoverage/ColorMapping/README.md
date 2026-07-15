@@ -64,12 +64,12 @@ ColorMapping/
   `FileOrigin` mode.
 - **`NumericBioPolymerCoverageColorMapper`** — abstract numeric base. Subclasses
   provide `GetNumericValue(result)`, `DisplayName`, and optionally
-  `DefaultUseLogScale` and `GetFallbackMapper()`. The base handles normalize,
-  gradient lookup, log transform, and fallback.
+  `DefaultUseLogScale`. The base handles normalize, gradient lookup, and log
+  transform.
 - **`PrecursorIntensityColorMapper` — concrete numeric strategy with
-  `DefaultUseLogScale = true` and fallback to `ScoreColorMapper`.
+  `DefaultUseLogScale = true`.
 - **`ScoreColorMapper`** — concrete numeric strategy with
-  `DefaultUseLogScale = false` and no fallback.
+  `DefaultUseLogScale = false`.
 - **`BioPolymerCoverageColorMapperFactory`** — resolves a mapper for a
   `ColorResultsBy`. No parameters needed — all dependency injection is
   internal to the mappers.

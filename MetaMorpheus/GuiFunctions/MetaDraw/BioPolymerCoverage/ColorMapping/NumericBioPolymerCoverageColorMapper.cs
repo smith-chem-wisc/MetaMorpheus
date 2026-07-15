@@ -14,16 +14,10 @@ public abstract class NumericBioPolymerCoverageColorMapper : BioPolymerCoverageC
 
     public abstract double? GetNumericValue(BioPolymerCoverageResultModel result);
     public abstract string DisplayName { get; }
-    protected virtual NumericBioPolymerCoverageColorMapper? GetFallbackMapper() => null;
-    private NumericBioPolymerCoverageColorMapper _effectiveMapper;
+
     private BioPolymerCoverageColorScale? _preparedScale;
     private bool _preparedUseLogScale;
     private string? _preparedLegendTitle;
-
-    protected NumericBioPolymerCoverageColorMapper()
-    {
-        _effectiveMapper = this;
-    }
 
     public override void Prepare(
         IReadOnlyList<BioPolymerCoverageResultModel> filteredResults,
@@ -31,31 +25,15 @@ public abstract class NumericBioPolymerCoverageColorMapper : BioPolymerCoverageC
         bool useLogScale)
     {
         var gradient = ColorGradientFactory.Create(gradientType);
-        var rawValues = filteredResults
+        var values = filteredResults
             .Select(GetNumericValue)
             .Where(v => v.HasValue)
             .Select(v => v.Value)
             .ToList();
 
-        NumericBioPolymerCoverageColorMapper effectiveMapper = this;
-        var usable = FilterUsableValues(rawValues, useLogScale);
-
-        if (usable.Count == 0)
-        {
-            var fallback = GetFallbackMapper();
-            if (fallback is not null)
-            {
-                rawValues = filteredResults
-                    .Select(fallback.GetNumericValue)
-                    .Where(v => v.HasValue)
-                    .Select(v => v.Value)
-                    .ToList();
-                effectiveMapper = fallback;
-                usable = FilterUsableValues(rawValues, useLogScale);
-            }
-        }
-
+        var usable = FilterUsableValues(values, useLogScale);
         var transformed = usable.Select(v => TransformValue(v, useLogScale)).ToList();
+
         BioPolymerCoverageColorScale scale;
         if (transformed.Count == 0)
         {
@@ -69,10 +47,9 @@ public abstract class NumericBioPolymerCoverageColorMapper : BioPolymerCoverageC
             scale = new BioPolymerCoverageColorScale(minVal, maxVal, gradient);
         }
 
-        string title = effectiveMapper.DisplayName;
+        string title = DisplayName;
         if (useLogScale) title += " (log10)";
 
-        _effectiveMapper = effectiveMapper;
         _preparedScale = scale;
         _preparedUseLogScale = useLogScale;
         _preparedLegendTitle = title;
@@ -82,7 +59,7 @@ public abstract class NumericBioPolymerCoverageColorMapper : BioPolymerCoverageC
     {
         if (_preparedScale is null)
             return new SolidColorBrush(Colors.Gray);
-        var value = _effectiveMapper.GetNumericValue(result);
+        var value = GetNumericValue(result);
         if (!IsRenderable(value, _preparedUseLogScale))
             return new SolidColorBrush(Colors.Gray);
         var transformed = TransformForRendering(value!.Value, _preparedUseLogScale);

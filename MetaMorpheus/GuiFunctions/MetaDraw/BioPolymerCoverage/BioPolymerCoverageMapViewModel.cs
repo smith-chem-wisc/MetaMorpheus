@@ -521,11 +521,15 @@ public class BioPolymerCoverageMapViewModel : BaseViewModel
         BioPolymerCoverageColorMapper colorMapper,
         out double newLegendY)
     {
+        newLegendY = legendY;
+        var brushes = colorMapper.GradientBrushes;
+        if (brushes is null || brushes.Count == 0)
+            return 0;
+
         double barWidth = Math.Min(250, usableWidth * 0.6);
         double barHeight = fontSize * 0.8;
         double barX = plotMargin + (usableWidth - barWidth) / 2;
         double barY = legendY + legendSpacing;
-        var brushes = colorMapper.GradientBrushes!;
         double bandW = barWidth / brushes.Count;
         for (int i = 0; i < brushes.Count; i++)
             dc.DrawRectangle(brushes[i], null, new Rect(barX + i * bandW, barY, bandW + 0.5, barHeight));

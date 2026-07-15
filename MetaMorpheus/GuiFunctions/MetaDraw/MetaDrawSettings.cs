@@ -299,6 +299,7 @@ namespace GuiFunctions
             StrokeThicknessUnannotated = 0.7;
             StrokeThicknessAnnotated = 1.0;
             AnnotateIsotopicEnvelopes = true;
+            BioPolymerCoverageGradientType = ColorGradientType.Viridis;
             
             // Reset the new ViewModel structure
             PlotModelStatParametersViewModel.Instance.LoadFromSnapshot(new PlotModelStatParameters());
