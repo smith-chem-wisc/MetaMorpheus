@@ -20,19 +20,18 @@ namespace Test
         }
 
         /// <summary>
-        /// Verifies that a regular (non-tims) centroided Bruker TOF .d folder (identified by
-        /// analysis.baf) loads through MetaMorpheus's file manager and exposes the expected spectra.
+        /// Verifies that a regular (non-tims) Bruker TOF .d folder (identified by analysis.baf)
+        /// loads through MetaMorpheus's file manager and exposes the expected spectra, for both
+        /// centroid and profile acquisitions. MyFileManager always applies peak filtering, so this
+        /// also guards against regressions in mzLib's profile-mode filtering path.
         /// </summary>
-        /// <remarks>
-        /// Only centroid data is covered here. Profile-mode Bruker TOF data currently throws
-        /// IndexOutOfRangeException in mzLib's BrukerFileReader.GetSpectraData when peak filtering
-        /// is applied (which MyFileManager always does); add profile coverage once that mzLib bug is fixed.
-        /// </remarks>
         [Test]
-        public static void TestBrukerTofFileLoadsThroughMyFileManager()
+        [TestCase(@"TestData\centroid_1x_MS1_4x_autoMS2.d", true, 721.86865)]
+        [TestCase(@"TestData\profile_1x_MS1_4x_autoMS2.d", false, 716.58715)]
+        public static void TestBrukerTofFileLoadsThroughMyFileManager(string relativePath, bool expectCentroid, double expectedPrecursorMz)
         {
-            string dotDPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\centroid_1x_MS1_4x_autoMS2.d");
-            Assert.That(Directory.Exists(dotDPath), Is.True, "Test requires the centroid Bruker TOF .d folder to exist");
+            string dotDPath = Path.Combine(TestContext.CurrentContext.TestDirectory, relativePath);
+            Assert.That(Directory.Exists(dotDPath), Is.True, "Test requires the Bruker TOF .d folder to exist");
 
             var dataFile = new MyFileManager(true).LoadFile(dotDPath, new CommonParameters());
 
@@ -41,9 +40,9 @@ namespace Test
             Assert.That(secondScan.MsnOrder, Is.EqualTo(2));
             Assert.That(secondScan.Polarity, Is.EqualTo(Polarity.Positive));
             Assert.That(secondScan.DissociationType, Is.EqualTo(DissociationType.CID));
-            Assert.That(secondScan.IsCentroid, Is.True);
+            Assert.That(secondScan.IsCentroid, Is.EqualTo(expectCentroid));
             Assert.That(secondScan.NativeId, Is.EqualTo("scan=2"));
-            Assert.That(secondScan.SelectedIonMZ, Is.EqualTo(721.86865).Within(0.001));
+            Assert.That(secondScan.SelectedIonMZ, Is.EqualTo(expectedPrecursorMz).Within(0.001));
         }
 
         [Test]
