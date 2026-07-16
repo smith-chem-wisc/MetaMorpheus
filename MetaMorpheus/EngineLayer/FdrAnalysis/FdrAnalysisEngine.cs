@@ -423,11 +423,32 @@ namespace EngineLayer.FdrAnalysis
 
             return predictorName switch
             {
-                "Chronologer" => _chronologerInstance.Value,
+                "Chronologer" => GetChronologer(),
                 "Prosit2019iRT" => new Prosit2019iRT(),
                 "Prosit2020iRTTMT" => new Prosit2020iRTTMT(),
                 _ => null
             };
+        }
+
+        /// <summary>
+        /// Chronologer runs on TorchSharp, whose native libraries aren't present in every installation.
+        /// When they're missing, we return null (as GetRTPredictor already does for unrecognized predictors) so that
+        /// PEP falls back to the default retention time predictor. A missing predictor should cost PEP accuracy,
+        /// not the entire search.
+        /// </summary>
+        private static IRetentionTimePredictor GetChronologer()
+        {
+            try
+            {
+                return _chronologerInstance.Value;
+            }
+            catch (DllNotFoundException e)
+            {
+                WarnStatic("Chronologer retention time prediction was skipped because its native libraries could not be loaded (" + e.Message.Trim() +
+                    "). PEP will be calculated using the default retention time predictor instead, and will be less accurate. " +
+                    "Reinstalling MetaMorpheus should restore the missing files.");
+                return null;
+            }
         }
 
         /// <summary>
