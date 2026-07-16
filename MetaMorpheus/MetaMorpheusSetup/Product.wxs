@@ -367,14 +367,6 @@
       <Component Id="src_timsdata.dll" Guid="22BAA8D2-623B-493E-932E-666A27ECC5A0">
       	<File Id="src_timsdata.dll" Name="timsdata.dll" Source="$(var.GUI_TargetDir)timsdata.dll" />
       </Component>
-      <!--Native Bruker baf2sql library (+ its vcomp110 dependency) for reading regular (non-tims)
-          Bruker TOF .d files. mzLib P/Invokes baf2sql_c by bare name, so it loads from the app root.-->
-      <Component Id="src_baf2sql_c.dll" Guid="ebbca9cb-0e89-4ce8-b540-04bd0d327da4">
-      	<File Id="src_baf2sql_c.dll" Name="baf2sql_c.dll" Source="$(var.GUI_TargetDir)baf2sql_c.dll" />
-      </Component>
-      <Component Id="src_vcomp110.dll" Guid="e18833e2-6562-43bf-9001-d148aa9da919">
-      	<File Id="src_vcomp110.dll" Name="vcomp110.dll" Source="$(var.GUI_TargetDir)vcomp110.dll" />
-      </Component>
       <Component Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Guid="F3DA60DB-CF5F-4671-9F3C-1033780261DD">
         <File Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Name="ThermoFisher.CommonCore.BackgroundSubtraction.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.BackgroundSubtraction.dll" />
       </Component>
