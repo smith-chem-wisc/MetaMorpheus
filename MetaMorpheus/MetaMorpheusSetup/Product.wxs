@@ -191,6 +191,13 @@
       <Component Id="src_MzLibUtil.dll" Guid="9475fcb2-63bd-490c-8441-17a1760869ac">
         <File Id="src_MzLibUtil.dll" Name="MzLibUtil.dll" Source="$(var.GUI_TargetDir)MzLibUtil.dll" />
       </Component>
+      <!--Bruker BAF native reader (from mzLib) and its OpenMP runtime dependency-->
+      <Component Id="src_baf2sql_c.dll" Guid="8454163a-a187-4aa6-8bc3-030311f0c935">
+        <File Id="src_baf2sql_c.dll" Name="baf2sql_c.dll" Source="$(var.GUI_TargetDir)baf2sql_c.dll" />
+      </Component>
+      <Component Id="src_vcomp110.dll" Guid="f5a0e25b-587f-4b54-8b28-a9a0396c0adf">
+        <File Id="src_vcomp110.dll" Name="vcomp110.dll" Source="$(var.GUI_TargetDir)vcomp110.dll" />
+      </Component>
 	  <Component Id="src_Chromatography.dll" Guid="e6316c7b-2cf7-4d42-9472-de4ac10fe988">
 		<File Id="src_Chromatography.dll" Name="Chromatography.dll" Source="$(var.GUI_TargetDir)Chromatography.dll" />
 	  </Component>			
