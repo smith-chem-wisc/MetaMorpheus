@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using OxyPlot;
 using Omics.Fragmentation;
 using System;
@@ -117,7 +117,7 @@ namespace GuiFunctions
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
         public static string[] AmbiguityTypes { get; set; } = { "No Filter", "1", "2A", "2B", "2C", "2D", "3", "4", "5" };
-        public static string[] GroupingProperties { get; set; } = { "None", "Notch", "Precursor Charge", "File Name", "Ambiguity Level", "Missed Cleavages", "OrganismName", "DecoyContamTarget" };
+        public static string[] GroupingProperties { get; set; } = { "None", "Notch", "Precursor Charge", "File Name", "Ambiguity Level", "Missed Cleavages", "Collision Energy", "OrganismName", "DecoyContamTarget" };
 
         #endregion
 
