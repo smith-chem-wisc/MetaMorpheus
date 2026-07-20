@@ -122,8 +122,14 @@ namespace EngineLayer
         {
             if (other is null) return 1;
             if (other is SpectralMatch mm) return CompareTo(mm);
-            // Fallback: compare by score descending
-            return Score.CompareTo(other.Score);
+
+            // Delta score and precursor mass error aren't on ISpectralMatch, so those were dropped from this
+            // CompareTo(SpectralMatch) method. Still, same ordering that mzLib's BaseSpectralMatch uses.
+            if (Math.Abs(this.Score - other.Score) > ToleranceForScoreDifferentiation)
+            {
+                return this.Score.CompareTo(other.Score);
+            }
+            return other.OneBasedScanNumber.CompareTo(this.ScanNumber); //reverse the comparision so that the lower scan number comes first.
         }
 
         public bool Equals(ISpectralMatch? other)

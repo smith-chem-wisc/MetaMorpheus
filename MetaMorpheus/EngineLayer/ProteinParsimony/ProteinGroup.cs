@@ -431,7 +431,7 @@ namespace EngineLayer
                 proteinsWithPsmsWithLocalizedMods.Add(protein, new List<IBioPolymerWithSetMods>());
             }
 
-            foreach (var psm in AllPsmsBelowOnePercentFDR.OfType<SpectralMatch>())
+            foreach (var psm in AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>())
             {
                 // null BaseSequence means that the amino acid sequence is ambiguous; do not use these to calculate sequence coverage
                 if (psm.BaseSequence != null)
@@ -464,7 +464,7 @@ namespace EngineLayer
                 HashSet<int> coveredResiduesInProteinOneBased = new();
 
                 //loop through PSMs
-                foreach (SpectralMatch psm in AllPsmsBelowOnePercentFDR.OfType<SpectralMatch>()
+                foreach (SpectralMatch psm in AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>()
                     .Where(psm => psm.BaseSequence != null))
                 {
                     //Calculate the covered bases within the psm. This is one based numbering for the peptide only

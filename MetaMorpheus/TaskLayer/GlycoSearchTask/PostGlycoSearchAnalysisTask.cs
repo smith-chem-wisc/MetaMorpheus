@@ -456,7 +456,7 @@ namespace TaskLayer
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
 
-                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.OfType<SpectralMatch>()
+                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>()
                         .Where(v => v.FullSequence != null))
                     {
                         if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
