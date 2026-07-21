@@ -511,16 +511,16 @@ namespace Test
             psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
             psm.PeptideFdrInfo = new FdrInfo();
 
-            List<int> indiciesOfPeptidesToRemove = new List<int>();
+            List<int> indicesOfPeptidesToRemove = new List<int>();
             List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
             List<double> pepValuePredictions = new List<double> { 1.0d, 0.99d, 0.9d };
 
-            PepAnalysisEngine.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-            Assert.That(indiciesOfPeptidesToRemove.Count, Is.EqualTo(1));
-            Assert.That(indiciesOfPeptidesToRemove.FirstOrDefault(), Is.EqualTo(2));
+            PepAnalysisEngine.GetIndicesOfPeptidesToRemove(indicesOfPeptidesToRemove, pepValuePredictions);
+            Assert.That(indicesOfPeptidesToRemove.Count, Is.EqualTo(1));
+            Assert.That(indicesOfPeptidesToRemove.FirstOrDefault(), Is.EqualTo(2));
             Assert.That(pepValuePredictions.Count, Is.EqualTo(2));
 
-            PepAnalysisEngine.RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, psm.BestMatchingBioPolymersWithSetMods.ToList(), ref ambiguousPeptidesRemovedCount);
+            PepAnalysisEngine.RemoveBestMatchingPeptidesWithLowPEP(psm, indicesOfPeptidesToRemove, psm.BestMatchingBioPolymersWithSetMods.ToList(), ref ambiguousPeptidesRemovedCount);
             Assert.That(ambiguousPeptidesRemovedCount, Is.EqualTo(1));
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Notch).ToList().Count, Is.EqualTo(2));
         }

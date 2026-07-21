@@ -408,7 +408,7 @@ namespace EngineLayer
 
                         int ambigousPeptidesRemovedinThread = 0;
 
-                        List<int> indiciesOfPeptidesToRemove = new List<int>();
+                        List<int> indicesOfPeptidesToRemove = new List<int>();
                         List<double> pepValuePredictions = new List<double>();
                         for (int i = range.Item1; i < range.Item2; i++)
                         {
@@ -417,7 +417,7 @@ namespace EngineLayer
                                 // I'm not sure what's going one here vis-a-vis disambiguations, but I'm not going to touch it for now
                                 if (psm != null)
                                 {
-                                    indiciesOfPeptidesToRemove.Clear();
+                                    indicesOfPeptidesToRemove.Clear();
                                     pepValuePredictions.Clear();
 
                                     //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
@@ -430,8 +430,8 @@ namespace EngineLayer
                                         //A score is available using the variable pepvaluePrediction.Score
                                     }
 
-                                    GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-                                    RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, bestMatchingBioPolymersWithSetMods, ref ambigousPeptidesRemovedinThread);
+                                    GetIndicesOfPeptidesToRemove(indicesOfPeptidesToRemove, pepValuePredictions);
+                                    RemoveBestMatchingPeptidesWithLowPEP(psm, indicesOfPeptidesToRemove, bestMatchingBioPolymersWithSetMods, ref ambigousPeptidesRemovedinThread);
 
                                     psm.PsmFdrInfo.PEP = 1 - pepValuePredictions.Max();
                                     psm.PeptideFdrInfo.PEP = 1 - pepValuePredictions.Max();
@@ -646,10 +646,10 @@ namespace EngineLayer
             return psm.PsmData_forPEPandPercolator;
         }
 
-        public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<SpectralMatchHypothesis> allPeptides, ref int ambiguousPeptidesRemovedCount)
+        public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indicesOfPeptidesToRemove, List<SpectralMatchHypothesis> allPeptides, ref int ambiguousPeptidesRemovedCount)
         {
             int peptidesRemoved = 0;
-            foreach (var toRemove in indiciesOfPeptidesToRemove)
+            foreach (var toRemove in indicesOfPeptidesToRemove)
             {
                 psm.RemoveThisAmbiguousPeptide(allPeptides[toRemove - peptidesRemoved]);
                 peptidesRemoved++;
@@ -661,7 +661,7 @@ namespace EngineLayer
         /// Given a set of PEP values, this method will find the indicies of BestMatchingBioPolymersWithSetMods that are not within the required tolerance
         /// This method will also remove the low scoring predictions from the set.
         /// </summary>
-        public static void GetIndiciesOfPeptidesToRemove(List<int> indiciesOfPeptidesToRemove, List<double> pepValuePredictions)
+        public static void GetIndicesOfPeptidesToRemove(List<int> indiciesOfPeptidesToRemove, List<double> pepValuePredictions)
         {
             double highestPredictedPEPValue = pepValuePredictions.Max();
             for (int i = 0; i < pepValuePredictions.Count; i++)

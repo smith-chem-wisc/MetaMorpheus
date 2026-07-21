@@ -574,12 +574,12 @@ namespace Test
             precursorPeaks.AddRange(losm2.Select(pm => pm.PrecursorMass).ToList());
             precursorPeaks.Sort();
 
-            List<int> filledIndicies = new List<int>();
+            List<int> filledIndices = new List<int>();
             for (int i = 0; i < indexResults.FragmentIndex.Length; i++)
             {
                 if (indexResults.FragmentIndex[i] != null)
                 {
-                    filledIndicies.Add(i);
+                    filledIndices.Add(i);
                 }
             }
 
@@ -587,7 +587,7 @@ namespace Test
                 570290, 571290, 576293, 588299, 604307, 622316, 671341, 672341, 675343, 689350, 703357, 721366, 770391, 771392, 776394, 788400, 804408, 822417, 867440, 868441, 877445, 885449, 905460, 923469, 964490, 965490, 976496,
                 982499, 1004510, 1021519, 1022519, 1039528, 1089553, 1117567, 1135576, 1150584, 1151585, 1168593, 1190604, 1218619, 1236628, 1279650, 1280650, 1297659};
 
-            Assert.That(filledIndicies, Is.EqualTo(expectedIndicies));
+            Assert.That(filledIndices, Is.EqualTo(expectedIndicies));
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
