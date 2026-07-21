@@ -658,21 +658,21 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Given a set of PEP values, this method will find the indicies of BestMatchingBioPolymersWithSetMods that are not within the required tolerance
+        /// Given a set of PEP values, this method will find the indices of BestMatchingBioPolymersWithSetMods that are not within the required tolerance
         /// This method will also remove the low scoring predictions from the set.
         /// </summary>
-        public static void GetIndicesOfPeptidesToRemove(List<int> indiciesOfPeptidesToRemove, List<double> pepValuePredictions)
+        public static void GetIndicesOfPeptidesToRemove(List<int> indicesOfPeptidesToRemove, List<double> pepValuePredictions)
         {
             double highestPredictedPEPValue = pepValuePredictions.Max();
             for (int i = 0; i < pepValuePredictions.Count; i++)
             {
                 if ((highestPredictedPEPValue - pepValuePredictions[i]) > AbsoluteProbabilityThatDistinguishesPeptides)
                 {
-                    indiciesOfPeptidesToRemove.Add(i);
+                    indicesOfPeptidesToRemove.Add(i);
                 }
             }
 
-            foreach (int i in indiciesOfPeptidesToRemove.OrderByDescending(p => p))
+            foreach (int i in indicesOfPeptidesToRemove.OrderByDescending(p => p))
             {
                 pepValuePredictions.RemoveAt(i);
             }
