@@ -13,6 +13,7 @@ using EngineLayer.SpectrumMatch;
 using Readers;
 using Readers.ProForma;
 using EngineLayer.FdrAnalysis;
+using GuiFunctions;
 using System.Linq;
 using System.Reflection;
 
@@ -526,6 +527,7 @@ namespace Test
         /// so this covers the column in both output files.
         /// </summary>
         [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
         public static void ProForma_TopDownSearch_ColumnFollowsFullSequenceAndCarriesProFormaString()
         {
             var previousAnalyteType = GlobalVariables.AnalyteType;
@@ -559,9 +561,13 @@ namespace Test
                 Assert.That(proFormaIndex, Is.EqualTo(fullSeqIndex + 1));
 
                 string[] rowSplits = psm.ToString(new Dictionary<string, int>()).Split('\t');
-                // Value is the proteoform's canonical ProForma string, carrying the modification descriptor.
-                Assert.That(rowSplits[proFormaIndex], Is.EqualTo(proteoform.ToProFormaString()));
-                Assert.That(rowSplits[proFormaIndex], Does.Contain("[Oxidation]"));
+
+                // Header and data row stay in sync - the invariant the single analyte-type gate exists to protect.
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+
+                // Compared against a literal rather than ToProFormaString(), so the assertion cannot move
+                // with the production code it is checking.
+                Assert.That(rowSplits[proFormaIndex], Is.EqualTo("M[Oxidation]PEPTIDEK"));
             }
             finally
             {
@@ -570,13 +576,18 @@ namespace Test
         }
 
         /// <summary>
-        /// Bottom-up (AnalyteType.Peptide): the ProForma column must NOT appear in the output header.
+        /// Non-top-down runs: the ProForma column must appear in neither the header nor the data row.
+        /// Asserting the row's field count matches the header's is what actually defends the invariant -
+        /// a gate that diverged between the two would shift every downstream column by one.
         /// </summary>
         [Test]
-        public static void ProForma_BottomUpSearch_ColumnAbsent()
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        [TestCase(AnalyteType.Peptide)]
+        [TestCase(AnalyteType.Oligo)]
+        public static void ProForma_NonTopDownSearch_ColumnAbsentFromHeader(AnalyteType analyteType)
         {
             var previousAnalyteType = GlobalVariables.AnalyteType;
-            GlobalVariables.AnalyteType = AnalyteType.Peptide;
+            GlobalVariables.AnalyteType = analyteType;
             try
             {
                 var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
@@ -587,6 +598,124 @@ namespace Test
                 GlobalVariables.AnalyteType = previousAnalyteType;
             }
         }
+
+        /// <summary>
+        /// Bottom-up: the column is absent from the header AND the data row, and the two stay aligned.
+        /// Only AnalyteType.Peptide is exercised with a real row - a PeptideSpectralMatch written under
+        /// AnalyteType.Oligo is not a state any run produces (oligo runs match OSMs), and the pre-existing
+        /// sequence-variation gate writes columns for it that the oligo header omits.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void ProForma_BottomUpSearch_ColumnAbsentFromRowAndRowStaysAligned()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
+            try
+            {
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                var psm = BuildProFormaTestPsm(out PeptideWithSetModifications peptide);
+                string[] rowSplits = psm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                Assert.That(rowSplits, Does.Not.Contain(peptide.ToProFormaString()));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// The PR claims the ProForma value is resolved across ambiguous matches with the same Resolve(...)
+        /// idiom as the neighbouring sequence columns. With two proteoforms whose ProForma strings differ,
+        /// that idiom joins them with '|' - the branch a single-proteoform test never enters.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void ProForma_AmbiguousProteoforms_ValuesJoinedByPipe()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Proteoform;
+            try
+            {
+                ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
+                Modification oxidation = new Modification(_originalId: "Oxidation", _modificationType: "Common Variable",
+                    _target: motif, _locationRestriction: "Anywhere.",
+                    _chemicalFormula: new ChemicalFormula(ChemicalFormula.ParseFormula("O1")));
+
+                Protein protein = new Protein("MPEPTIDEKM", "prot_td_ambig");
+                // Same base sequence, oxidation on a different M - so the two ProForma strings differ.
+                var modsOnFirstM = new Dictionary<int, Modification> { { 2, oxidation } };
+                var modsOnLastM = new Dictionary<int, Modification> { { 11, oxidation } };
+
+                PeptideWithSetModifications proteoformA = new PeptideWithSetModifications(
+                    protein, new DigestionParams(), 1, 10, CleavageSpecificity.Full, "", 0, modsOnFirstM, 0);
+                PeptideWithSetModifications proteoformB = new PeptideWithSetModifications(
+                    protein, new DigestionParams(), 1, 10, CleavageSpecificity.Full, "", 0, modsOnLastM, 0);
+
+                double mass = 12.0 + proteoformA.MonoisotopicMass.ToMz(1);
+                var scan = new Ms2ScanWithSpecificMass(
+                    new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                        0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                    mass, 1, "", new CommonParameters());
+
+                var psm = new PeptideSpectralMatch(proteoformA, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                psm.AddOrReplace(proteoformB, 10, 0, true, new List<MatchedFragmentIon>());
+                psm.ResolveAllAmbiguities();
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int proFormaIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ProForma);
+                string[] rowSplits = psm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                Assert.That(rowSplits[proFormaIndex], Does.Contain("|"));
+                Assert.That(rowSplits[proFormaIndex], Does.Contain(proteoformA.ToProFormaString()));
+                Assert.That(rowSplits[proFormaIndex], Does.Contain(proteoformB.ToProFormaString()));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// Builds the single-peptide PSM shared by the ProForma column tests.
+        /// </summary>
+        private static PeptideSpectralMatch BuildProFormaTestPsm(out PeptideWithSetModifications peptide)
+        {
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
+            Modification oxidation = new Modification(_originalId: "Oxidation", _modificationType: "Common Variable",
+                _target: motif, _locationRestriction: "Anywhere.",
+                _chemicalFormula: new ChemicalFormula(ChemicalFormula.ParseFormula("O1")));
+
+            var allModsOneIsNterminus = new Dictionary<int, Modification> { { 2, oxidation } }; // residue 1 (M)
+            Protein protein = new Protein("MPEPTIDEK", "prot_td");
+            peptide = new PeptideWithSetModifications(
+                protein, new DigestionParams(), 1, 9, CleavageSpecificity.Full, "", 0, allModsOneIsNterminus, 0);
+
+            double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            return psm;
+        }
+
+        /// <summary>
+        /// The MetaDraw grid keys its ProForma column off the loaded results rather than
+        /// GlobalVariables.AnalyteType. These cover the predicate that makes that decision.
+        /// </summary>
+        [Test]
+        public static void ShouldShowProFormaColumn_NullOrEmptyCollection_ReturnsFalse()
+        {
+            Assert.That(MetaDrawLogic.ShouldShowProFormaColumn(null), Is.False);
+            Assert.That(MetaDrawLogic.ShouldShowProFormaColumn(new List<SpectrumMatchFromTsv>()), Is.False);
+        }
+
 
         #region Collisional Energy Tests
 
