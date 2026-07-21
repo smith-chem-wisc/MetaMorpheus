@@ -571,6 +571,13 @@ namespace MetaMorpheusGUI
                 fragmentationReanalysisViewModel: FragmentationReanalysisViewModel);
             dataGridScanNums.IsEnabled = true;
 
+            // ProForma is a top-down feature: the writer only emits the column for AnalyteType.Proteoform,
+            // so show it here only when the loaded results actually carry one. Keyed off the data rather than
+            // GlobalVariables.AnalyteType, which defaults to Peptide and is never set by standalone MetaDraw.
+            proFormaColumn.Visibility = MetaDrawLogic.AllSpectralMatches?.Any(p => !string.IsNullOrWhiteSpace(p.ProForma)) == true
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
             if (errors.Any())
             {
                 string errorList = string.Join("\n", errors);
