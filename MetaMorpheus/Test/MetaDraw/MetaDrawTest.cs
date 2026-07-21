@@ -1578,6 +1578,98 @@ namespace Test.MetaDraw
         }
 
         [Test]
+        public static void TestMetaDrawWithMslSpectralLibrary()
+        {
+            // Verifies MetaDraw consumes a binary .msl spectral library exactly as it does a text
+            // .msp library: the same library peaks are rendered in the mirror plot. The .msl files
+            // are produced here from the existing .msp test libraries (so no new binary fixture is
+            // committed), then loaded through the unchanged MetaDrawLogic / MetaDrawDataLoader path —
+            // mzLib's SpectralLibrary routes .msl transparently.
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithMslSpectraLibrary");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
+            string mspLibrary1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_target.msp");
+            string mspLibrary2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_decoy.msp");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse.raw");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // Convert the .msp test libraries to binary .msl for MetaDraw to load. Dispose each reader
+            // before the SearchTask re-opens the same .msp files (avoids a file-in-use race on Windows CI).
+            string mslLibrary1 = Path.Combine(outputFolder, "P16858_target.msl");
+            string mslLibrary2 = Path.Combine(outputFolder, "P16858_decoy.msl");
+            using (var srcLib = new Readers.SpectralLibrary.SpectralLibrary(new List<string> { mspLibrary1 }))
+                Readers.SpectralLibrary.MslWriter.WriteFromLibrarySpectra(mslLibrary1, srcLib.GetAllLibrarySpectra().ToList());
+            using (var srcLib = new Readers.SpectralLibrary.SpectralLibrary(new List<string> { mspLibrary2 }))
+                Readers.SpectralLibrary.MslWriter.WriteFromLibrarySpectra(mslLibrary2, srcLib.GetAllLibrarySpectra().ToList());
+
+            // run search task (libraries supplied as .msp; produces the PSM file MetaDraw displays)
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder,
+                new List<DbForTask>
+                {
+                    new DbForTask(proteinDatabase, false),
+                    new DbForTask(mspLibrary1, false),
+                    new DbForTask(mspLibrary2, false),
+                },
+                new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // Render the same PSM once with the binary .msl libraries and once with the text .msp
+            // libraries, then assert the mirror-plot library-peak counts are equal — proving the .msl
+            // display is lossless/identical to .msp rather than matching a hardcoded literal.
+            int mslMirrorPeaks = CountMetaDrawMirrorPlotLibraryPeaks(spectraFile, psmFile, new List<string> { mslLibrary1, mslLibrary2 });
+            int mspMirrorPeaks = CountMetaDrawMirrorPlotLibraryPeaks(spectraFile, psmFile, new List<string> { mspLibrary1, mspLibrary2 });
+
+            Assert.That(mslMirrorPeaks, Is.EqualTo(mspMirrorPeaks));
+            Assert.That(mslMirrorPeaks, Is.EqualTo(52)); // anchor: matches the sibling .msp test
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        /// <summary>
+        /// Loads a PSM file + spectral libraries into MetaDraw, renders the first filtered PSM, and
+        /// returns the number of library (mirror-plot) peaks drawn. Used to compare .msl vs .msp
+        /// rendering. Asserts a clean load, a non-empty PSM list, and full resource cleanup.
+        /// </summary>
+        private static int CountMetaDrawMirrorPlotLibraryPeaks(string spectraFile, string psmFile, List<string> spectralLibraryPaths)
+        {
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            foreach (var libPath in spectralLibraryPaths)
+                metadrawLogic.SpectralLibraryPaths.Add(libPath);
+            var errors = metadrawLogic.LoadFiles(true, true);
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
+            var scrollableCanvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // library peaks are the negative-intensity series in the mirror plot
+            int mirrorPlotPeaks = plotView.Model.Series.Count(p => ((LineSeries)p).Points[1].Y < 0);
+
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
+
+            return mirrorPlotPeaks;
+        }
+
+        [Test]
         public static void TestPsmFromTsvIonParsing()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPsmFromTsvIonParsing");
