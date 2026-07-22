@@ -6,6 +6,7 @@ using Chemistry;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.DatabaseLoading;
+using EngineLayer.Gptmd;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -569,6 +570,143 @@ namespace Test
             Assert.That(controlPsms[0], Is.Not.Null, "control: monoisotopic search should find a correct monoisotopic mass");
             controlPsms[0].ResolveAllAmbiguities();
             Assert.That(controlPsms[0].BaseSequence, Is.EqualTo(peptide.BaseSequence));
+
+            // NEGATIVE CONTROL: the most-abundant search is not simply permissive. Move the observed apex
+            // 7.5 Da away — beyond the ±2-neutron notch set (±2.007 Da) and not a whole number of neutrons,
+            // so it cannot be rescued by any k — and the same search now finds nothing.
+            var wrongApexScan = new Ms2ScanWithSpecificMass(dataScan, (mono + monoError).ToMz(1), 1, "f.mzML",
+                new CommonParameters(), neutralExperimentalFragments: fragmentEnvelopes,
+                precursorMostAbundantMass: apex + 7.5);
+            SpectralMatch[] negativePsms = new PeptideSpectralMatch[1];
+            new ClassicSearchEngine(negativePsms, new[] { wrongApexScan }, new List<Modification>(), new List<Modification>(),
+                null, null, null, proteinList, new MostAbundantMassDiffAcceptor("mostAbundant", tol, Averagine),
+                apexParams, fsp, null, new List<string>(), false).Run();
+            Assert.That(negativePsms[0], Is.Null,
+                "negative control: most-abundant search accepted an apex 7.5 Da outside every notch");
+        }
+
+        /// <summary>
+        /// End-to-end proof that GptmdEngine discovers modifications through the APEX in most-abundant mode.
+        /// <para>
+        /// The G-PTM-D analogue of <see cref="ClassicSearch_SelectsScansByApex_NotMonoisotopic"/>. Mod
+        /// discovery cannot reuse GetObservedMonoisotopicMass, because there the residual holds
+        /// (k neutrons + the UNKNOWN modification mass) and rounding would destroy the modification. Instead
+        /// GetPossibleMods (GptmdEngine:253-282) tests each candidate mass — peptide + modification — on its
+        /// own via PrecursorMassExtensions.MatchesCandidateMass, apex-to-apex, never adjusting the
+        /// observation.
+        /// </para>
+        /// <para>
+        /// The scan here carries a deliberately WRONG monoisotopic mass and a CORRECT apex for the MODIFIED
+        /// candidate, so a monoisotopic G-PTM-D run must discover nothing while a most-abundant run must
+        /// discover the modification. Fragment scoring is deliberately uninformative (single-peak spectrum,
+        /// no filters) so the test isolates precursor-driven mod selection, which is the only thing
+        /// most-abundant mode changes.
+        /// </para>
+        /// </summary>
+        [Test]
+        public static void Gptmd_DiscoversModByApex_NotMonoisotopic()
+        {
+            // ~9.6 kDa peptide with four N residues, so the apex sits several neutrons above the
+            // monoisotopic mass and the mod has legal sites.
+            const string sequence = "PEPTIDEASYGLVNFQWMCH" + "PEPTIDEASYGLVNFQWMCH"
+                                  + "PEPTIDEASYGLVNFQWMCH" + "PEPTIDEASYGLVNFQWMCH"
+                                  + "PEPTIDE" + "K";
+            const int nCount = 4;
+            var protein = new Protein(sequence, "accession");
+            var digestionParams = new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 5, maxPeptideLength: 200);
+            var peptide = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>(), null, null).First();
+
+            // Deamidation-like mass on N: far from any whole number of neutrons, so an accepted match
+            // cannot be an isotope artifact in disguise.
+            const double modMass = 21.981943;
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
+            var gptmdModifications = new List<Modification>
+            {
+                new Modification(_originalId: "testmod", _modificationType: "mt", _target: motifN,
+                    _locationRestriction: "Anywhere.", _monoisotopicMass: modMass)
+            };
+
+            double modifiedMono = peptide.MonoisotopicMass + modMass;
+            double modifiedApex = modifiedMono + ApexOffset(modifiedMono);
+            Assert.That(modifiedApex - modifiedMono, Is.GreaterThan(1.0),
+                "test is only meaningful if the apex differs from the monoisotopic mass");
+
+            var tolerance = new PpmTolerance(10);
+            var monoParams = new CommonParameters(digestionParams: digestionParams,
+                precursorMassMatchMode: PrecursorMassMatchMode.Monoisotopic);
+            var apexParams = new CommonParameters(digestionParams: digestionParams,
+                precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+            var fsp = new List<(string FileName, CommonParameters Parameters)> { ("filepath", monoParams) };
+            var combos = new List<Tuple<double, double>>();
+
+            // Uninformative single-peak spectrum: every legal site scores the same, so nothing but the
+            // precursor decides which mods are shortlisted.
+            MsDataScan MakeDataScan() => new MsDataScan(
+                new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive,
+                double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN,
+                null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+
+            SpectralMatch MakePsm(double observedMono, double observedApex, CommonParameters cp)
+            {
+                var dataScan = MakeDataScan();
+                var scan = new Ms2ScanWithSpecificMass(dataScan, observedMono.ToMz(1), 1, "filepath", cp,
+                    precursorMostAbundantMass: observedApex);
+                SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, 0, 0, scan, cp, new List<MatchedFragmentIon>());
+                psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
+                psm.SetMs2Scan(scan.TheScan);
+                return psm;
+            }
+
+            GptmdResults RunGptmd(SpectralMatch psm, CommonParameters cp) =>
+                (GptmdResults)new GptmdEngine(new List<SpectralMatch> { psm }, gptmdModifications, combos,
+                    new Dictionary<string, Tolerance> { { "filepath", tolerance } }, cp, fsp,
+                    new List<string>(), null).Run();
+
+            // Monoisotopic mass deliberately wrong by 3.5 Da; apex exactly right for peptide + mod.
+            const double monoError = 3.5;
+
+            // A monoisotopic G-PTM-D run cannot reach the modification: the mass it reads is 3.5 Da off.
+            var monoResults = RunGptmd(MakePsm(modifiedMono + monoError, modifiedApex, monoParams), monoParams);
+            Assert.That(monoResults.Mods.Count, Is.EqualTo(0),
+                "monoisotopic G-PTM-D discovered a mod from a precursor mass that is 3.5 Da off");
+
+            // A most-abundant run finds it, because GetPossibleMods tested (peptide + mod) apex-to-apex.
+            var apexResults = RunGptmd(MakePsm(modifiedMono + monoError, modifiedApex, apexParams), apexParams);
+            Assert.That(apexResults.Mods.Count, Is.EqualTo(1),
+                "most-abundant G-PTM-D failed to discover the mod by its apex — discovery is still monoisotopic");
+            Assert.That(apexResults.Mods["accession"].Count, Is.EqualTo(nCount));
+            Assert.That(apexResults.Mods["accession"].Select(m => m.Item2.MonoisotopicMass.Value),
+                Is.All.EqualTo(modMass).Within(1e-6));
+
+            // CONTROL: the monoisotopic path is not broken — give it a correct monoisotopic mass and it
+            // discovers the same mod at the same sites. So the empty result above is caused by the mass it
+            // matched on, not by the mod list, the motif, or the FDR/score plumbing.
+            var controlResults = RunGptmd(MakePsm(modifiedMono, modifiedApex, monoParams), monoParams);
+            Assert.That(controlResults.Mods.Count, Is.EqualTo(1),
+                "control: monoisotopic G-PTM-D should discover the mod from a correct monoisotopic mass");
+            Assert.That(controlResults.Mods["accession"].Count, Is.EqualTo(nCount));
+
+            // NEGATIVE CONTROL: most-abundant discovery is not simply permissive. Move the observed apex
+            // 7.5 Da away — beyond the ±2-neutron apex tolerance (±2.007 Da) and not a whole number of
+            // neutrons, so no k can rescue it — and no mod is proposed for any site.
+            var negativeResults = RunGptmd(MakePsm(modifiedMono + monoError, modifiedApex + 7.5, apexParams), apexParams);
+            Assert.That(negativeResults.Mods.Count, Is.EqualTo(0),
+                "negative control: most-abundant G-PTM-D proposed a mod for an apex 7.5 Da outside every notch");
+
+            // NEGATIVE CONTROL 2: a mod whose mass the observation does not support is not proposed, even
+            // though the apex is otherwise correct. Guards against the ±k windows swallowing the mod mass.
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motifN2);
+            var wrongMassMods = new List<Modification>
+            {
+                new Modification(_originalId: "wrongmass", _modificationType: "mt", _target: motifN2,
+                    _locationRestriction: "Anywhere.", _monoisotopicMass: modMass + 7.5)
+            };
+            var wrongModResults = (GptmdResults)new GptmdEngine(
+                new List<SpectralMatch> { MakePsm(modifiedMono + monoError, modifiedApex, apexParams) },
+                wrongMassMods, combos, new Dictionary<string, Tolerance> { { "filepath", tolerance } },
+                apexParams, fsp, new List<string>(), null).Run();
+            Assert.That(wrongModResults.Mods.Count, Is.EqualTo(0),
+                "negative control: most-abundant G-PTM-D proposed a mod whose mass the apex does not support");
         }
     }
 }
