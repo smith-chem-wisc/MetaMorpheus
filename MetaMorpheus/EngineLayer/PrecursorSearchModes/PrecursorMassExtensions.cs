@@ -126,14 +126,22 @@ namespace EngineLayer
             return false;
         }
 
-        private static bool UsesMostAbundantPeak(CommonParameters commonParameters)
+        public static bool UsesMostAbundantPeak(this CommonParameters commonParameters)
             => commonParameters?.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
 
-        private static double ApexOffset(CommonParameters commonParameters, double monoisotopicMass)
-            => MostAbundantMassDiffAcceptor.AveragineApexOffset(
-                commonParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? DefaultAveragine, monoisotopicMass);
+        public static double ApexOffset(this CommonParameters commonParameters, double monoisotopicMass)
+        {
+            AverageResidue averagine = commonParameters.GetAverageResidue();
+            return averagine.GetDiffToMonoisotopic(averagine.GetMostIntenseMassIndex(monoisotopicMass));
+        }
 
-        private static double IsotopeSpacing(CommonParameters commonParameters)
+        public static double ApexOffset(this AverageResidue residue, double monoisotopicMass)
+            => residue.GetDiffToMonoisotopic(residue.GetMostIntenseMassIndex(monoisotopicMass));
+
+        public static AverageResidue GetAverageResidue(this CommonParameters commonParameters)
+            => commonParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? DefaultAveragine;
+
+        public static double IsotopeSpacing(this CommonParameters commonParameters)
             => commonParameters.PrecursorDeconvolutionParameters?.ExpectedIsotopeSpacing ?? Constants.C13MinusC12;
     }
 }

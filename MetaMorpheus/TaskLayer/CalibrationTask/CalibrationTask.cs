@@ -202,12 +202,12 @@ namespace TaskLayer
             // and the scans then carry no most-abundant mass at all — so use the standard zero-centered
             // (monoisotopic) acceptor there, and the scans' monoisotopic mass is what gets matched.
             MassDiffAcceptor searchMode;
-            if (combinedParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
+            if (combinedParameters.UsesMostAbundantPeak()
                 && combinedParameters.DoPrecursorDeconvolution)
             {
                 searchMode = new MostAbundantMassDiffAcceptor("mostAbundant", combinedParameters.PrecursorMassTolerance,
-                    combinedParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine(),
-                    expectedIsotopeSpacing: combinedParameters.PrecursorDeconvolutionParameters?.ExpectedIsotopeSpacing ?? Chemistry.Constants.C13MinusC12);
+                    combinedParameters.GetAverageResidue(),
+                    expectedIsotopeSpacing: combinedParameters.IsotopeSpacing());
             }
             else
             {
@@ -433,7 +433,7 @@ namespace TaskLayer
             // it searched with (that would explode the candidate space and memory in downstream
             // GPTMD/Search). In default Monoisotopic mode the tolerance is left unclamped, preserving the
             // historical multi-round calibration behavior.
-            if (combinedParams.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
+            if (combinedParams.UsesMostAbundantPeak())
             {
                 newPrecursorPpmTolerance = Math.Min(newPrecursorPpmTolerance, combinedParams.PrecursorMassTolerance.Value);
                 newProductPpmTolerance = Math.Min(newProductPpmTolerance, combinedParams.ProductMassTolerance.Value);

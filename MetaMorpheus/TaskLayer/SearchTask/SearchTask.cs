@@ -228,8 +228,8 @@ namespace TaskLayer
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                 MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac,
-                    combinedParams.PrecursorMassMatchMode, combinedParams.PrecursorDeconvolutionParameters?.AverageResidueModel,
-                    combinedParams.PrecursorDeconvolutionParameters?.ExpectedIsotopeSpacing ?? Constants.C13MinusC12);
+                    combinedParams.PrecursorMassMatchMode, combinedParams.GetAverageResidue(),
+                    combinedParams.IsotopeSpacing());
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);

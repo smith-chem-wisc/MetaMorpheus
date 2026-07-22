@@ -90,11 +90,6 @@ namespace EngineLayer
         // set ({0, -1, 1, -2, 2}). Distinct per k, never negative, never the -1 "not accepted" sentinel.
         private int NotchFor(int k) => Array.IndexOf(ApexOffsetsInNeutrons, k);
 
-        // The averagine most-abundant offset for a monoisotopic mass: the model's diff-to-monoisotopic
-        // at the nearest mass bin. (Composes the existing AverageResidue API rather than relying on a
-        // dedicated mzLib method.)
-        private double ApexOffset(double monoisotopicMass) => AveragineApexOffset(Averagine, monoisotopicMass);
-
         /// <summary>
         /// Averagine-predicted mass offset from a monoisotopic mass to its most-abundant isotopologue
         /// (the "apex"). Exposed statically so candidate selection (this acceptor) and precursor
@@ -106,7 +101,7 @@ namespace EngineLayer
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            double apex = peptideMass + ApexOffset(peptideMass);
+            double apex = peptideMass + Averagine.ApexOffset(peptideMass);
             foreach (int k in ApexOffsetsInNeutrons) // ordered to prefer k = 0
             {
                 if (Tolerance.Within(scanPrecursorMass, apex + k * ExpectedIsotopeSpacing))
@@ -119,7 +114,7 @@ namespace EngineLayer
 
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromTheoreticalMass(double peptideMonoisotopicMass)
         {
-            double apex = peptideMonoisotopicMass + ApexOffset(peptideMonoisotopicMass);
+            double apex = peptideMonoisotopicMass + +Averagine.ApexOffset(peptideMonoisotopicMass);
             foreach (int k in ApexOffsetsInNeutrons)
             {
                 double mass = apex + k * ExpectedIsotopeSpacing;
@@ -134,7 +129,7 @@ namespace EngineLayer
             // apex-offset notch. Top-down uses the exact theory-driven ClassicSearch path; this
             // observed-side conversion carries a small near-boundary ambiguity and is only exercised by
             // indexed bottom-up search, which this mode does not target.
-            double monoApprox = observedMostAbundantMass - ApexOffset(observedMostAbundantMass);
+            double monoApprox = observedMostAbundantMass - Averagine.ApexOffset(observedMostAbundantMass);
             foreach (int k in ApexOffsetsInNeutrons)
             {
                 double mass = monoApprox - k * ExpectedIsotopeSpacing;

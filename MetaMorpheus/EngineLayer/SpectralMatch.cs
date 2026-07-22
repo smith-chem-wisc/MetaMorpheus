@@ -34,7 +34,7 @@ namespace EngineLayer
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
             ScanPrecursorMostAbundantMass = scan.PrecursorMostAbundantMass;
-            IsMostAbundantMode = commonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
+            IsMostAbundantMode = commonParameters.UsesMostAbundantPeak();
             PrecursorAveragine = commonParameters.PrecursorDeconvolutionParameters?.AverageResidueModel;
             PrecursorScanEnvelopePeakCount = scan.PrecursorEnvelopePeakCount;
             PrecursorFractionalIntensity = scan.PrecursorFractionalIntensity;

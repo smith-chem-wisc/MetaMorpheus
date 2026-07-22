@@ -80,8 +80,8 @@ namespace TaskLayer
 
             // temporary search type for writing prose
             // the actual search type is technically file-specific but we don't allow file-specific notches, so it's safe to do this
-            MassDiffAcceptor tempSearchMode = CommonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
-                ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance, CommonParameters.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine(), expectedIsotopeSpacing: CommonParameters.PrecursorDeconvolutionParameters?.ExpectedIsotopeSpacing ?? Chemistry.Constants.C13MinusC12)
+            MassDiffAcceptor tempSearchMode = CommonParameters.UsesMostAbundantPeak()
+                ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance, CommonParameters.GetAverageResidue(), expectedIsotopeSpacing: CommonParameters.IsotopeSpacing())
                 : new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
             ProseCreatedWhileRunning.Append("precursor mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
 
@@ -115,8 +115,8 @@ namespace TaskLayer
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                MassDiffAcceptor searchMode = combinedParams.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant
-                    ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance, combinedParams.PrecursorDeconvolutionParameters?.AverageResidueModel ?? new Averagine(), expectedIsotopeSpacing: combinedParams.PrecursorDeconvolutionParameters?.ExpectedIsotopeSpacing ?? Chemistry.Constants.C13MinusC12)
+                MassDiffAcceptor searchMode = combinedParams.UsesMostAbundantPeak()
+                    ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance, combinedParams.GetAverageResidue(), expectedIsotopeSpacing: combinedParams.IsotopeSpacing())
                     : new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance);
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });

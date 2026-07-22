@@ -68,19 +68,12 @@ namespace EngineLayer
             NumNotches = SortedMassShifts.Length;
         }
 
-        // The averagine most-abundant offset for a monoisotopic mass: the model's diff-to-monoisotopic
-        // at the nearest mass bin. (Composes the existing AverageResidue API.) Guards against a large
-        // negative shift pushing the shifted mass to/below zero (the averagine model is undefined there),
-        // in which case the shift simply won't match rather than indexing the model out of range.
-        private double ApexOffset(double monoisotopicMass)
-            => monoisotopicMass <= 0 ? 0 : Averagine.GetDiffToMonoisotopic(Averagine.GetMostIntenseMassIndex(monoisotopicMass));
-
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
             for (int j = 0; j < SortedMassShifts.Length; j++)
             {
                 double shiftedMono = peptideMass + SortedMassShifts[j];
-                double apex = shiftedMono + ApexOffset(shiftedMono);
+                double apex = shiftedMono + Averagine.ApexOffset(shiftedMono);
                 foreach (int k in ApexOffsetsInNeutrons)
                 {
                     if (Tolerance.Within(scanPrecursorMass, apex + k * ExpectedIsotopeSpacing))
@@ -97,7 +90,7 @@ namespace EngineLayer
             for (int j = 0; j < SortedMassShifts.Length; j++)
             {
                 double shiftedMono = peptideMonoisotopicMass + SortedMassShifts[j];
-                double apex = shiftedMono + ApexOffset(shiftedMono);
+                double apex = shiftedMono + Averagine.ApexOffset(shiftedMono);
                 foreach (int k in ApexOffsetsInNeutrons)
                 {
                     double mass = apex + k * ExpectedIsotopeSpacing;
@@ -110,7 +103,7 @@ namespace EngineLayer
         {
             // Indexed (ModernSearch) path; documented near-boundary caveat as in MostAbundantMassDiffAcceptor.
             // GPTMD uses the theory-driven ClassicSearch path, so this is not its primary path.
-            double monoApprox = observedMostAbundantMass - ApexOffset(observedMostAbundantMass);
+            double monoApprox = observedMostAbundantMass - Averagine.ApexOffset(observedMostAbundantMass);
             for (int j = 0; j < SortedMassShifts.Length; j++)
             {
                 foreach (int k in ApexOffsetsInNeutrons)
