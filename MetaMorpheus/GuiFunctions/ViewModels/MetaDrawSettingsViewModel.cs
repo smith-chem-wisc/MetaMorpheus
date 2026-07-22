@@ -222,6 +222,34 @@ namespace GuiFunctions
             set { MetaDrawSettings.StrokeThicknessUnannotated = value; OnPropertyChanged(nameof(StrokeThicknessUnannotated)); }
         }
 
+        public double MinMzToPlot
+        {
+            get => MetaDrawSettings.MinMzToPlot;
+            set 
+            { 
+                if (value < 0) 
+                    value = 0;
+                if (value >= MaxMzToPlot)
+                    return;
+
+                MetaDrawSettings.MinMzToPlot = value; 
+                OnPropertyChanged(nameof(MinMzToPlot)); 
+            }
+        }
+
+        public double MaxMzToPlot
+        {
+            get => MetaDrawSettings.MaxMzToPlot;
+            set 
+            {
+                if (value < 0 || value <= MinMzToPlot)
+                    return;
+
+                MetaDrawSettings.MaxMzToPlot = value; 
+                OnPropertyChanged(nameof(MaxMzToPlot)); 
+            }
+        }
+
         // Chimera Settings
         public bool DisplayChimeraLegend
         {

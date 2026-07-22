@@ -60,6 +60,8 @@ namespace GuiFunctions
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double SpectrumDescriptionFontSize { get; set; } = 10;
         public static bool AnnotateIsotopicEnvelopes { get; set; } = true;
+        public static double MinMzToPlot { get; set; } = 0;
+        public static double MaxMzToPlot { get; set; } = 4000;
 
         // Chimera Settings
         public static bool DisplayChimeraLegend { get; set; } = true;
@@ -551,6 +553,8 @@ namespace GuiFunctions
                 AnnotateIsotopicEnvelopes = AnnotateIsotopicEnvelopes,
                 SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
                 SuppressMessageBoxes = SuppressMessageBoxes,
+                MinMzToPlot = MinMzToPlot,
+                MaxMzToPlot = MaxMzToPlot,
                 ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous,
                 ChimeraLegendMaxWidth = ChimeraLegendMaxWidth,
                 NormalizeHistogramToFile = NormalizeHistogramToFile,
@@ -605,6 +609,8 @@ namespace GuiFunctions
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
             SuppressMessageBoxes = settings.SuppressMessageBoxes;
+            MinMzToPlot = settings.MinMzToPlot;
+            MaxMzToPlot = settings.MaxMzToPlot;
             ChimeraLegendTakeFirstIfAmbiguous = settings.ChimeraLegendTakeFirstIfAmbiguous;
             ChimeraLegendMaxWidth = settings.ChimeraLegendMaxWidth;
             NormalizeHistogramToFile = settings.NormalizeHistogramToFile;
