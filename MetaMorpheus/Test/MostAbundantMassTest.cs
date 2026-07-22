@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Chemistry;
 using EngineLayer;
+using EngineLayer.ClassicSearch;
 using EngineLayer.DatabaseLoading;
 using MassSpectrometry;
 using MzLibUtil;
@@ -461,6 +462,113 @@ namespace Test
             // departs from the monoisotopic one, a monoisotopic search never does.
             Assert.That(apexScans.All(s => Math.Abs(s.GetPrecursorMassForSearch(monoParams) - s.PrecursorMass) < 1e-6), Is.True);
             Assert.That(apexScans.Any(s => Math.Abs(s.GetPrecursorMassForSearch(apexParams) - s.PrecursorMass) > 1e-6), Is.True);
+        }
+
+        /// <summary>
+        /// End-to-end proof that ClassicSearchEngine selects candidates by the APEX in most-abundant mode.
+        /// <para>
+        /// ClassicSearchEngine:149 passes <c>specificBioPolymer.MonoisotopicMass</c> into GetAcceptableScans,
+        /// which reads as "still monoisotopic". It is not: that value is the INPUT to the theory-side apex
+        /// conversion, not a bypass of it. GetAcceptableScans (:253) hands it to the acceptor's
+        /// GetAllowedPrecursorMassIntervalsFromTheoreticalMass, which returns windows centred on
+        /// mono + averagineApexOffset (MostAbundantMassDiffAcceptor:120-128); those windows are then compared
+        /// against MyScanPrecursorMasses (:258, :268, :276), which was built from GetPrecursorMassForSearch
+        /// (:46) — the observed APEX. So the comparison is apex-to-apex at both ends.
+        /// </para>
+        /// <para>
+        /// This test forces the distinction: the scan is given a deliberately WRONG monoisotopic mass
+        /// (+3.5 Da, far outside tolerance and not a whole number of neutrons) and a CORRECT apex. A
+        /// monoisotopic search must therefore find nothing; a most-abundant search must find the peptide.
+        /// If selection were really driven by the monoisotopic mass, the most-abundant search would return
+        /// null too.
+        /// </para>
+        /// </summary>
+        [Test]
+        public static void ClassicSearch_SelectsScansByApex_NotMonoisotopic()
+        {
+            // ~9.6 kDa tryptic peptide: big enough that the averagine apex is several neutrons above the
+            // monoisotopic mass, so "apex" and "monoisotopic" are unambiguously different numbers.
+            const string sequence = "PEPTIDEASYGLVNFQWMCH" + "PEPTIDEASYGLVNFQWMCH"
+                                  + "PEPTIDEASYGLVNFQWMCH" + "PEPTIDEASYGLVNFQWMCH"
+                                  + "PEPTIDE" + "K";
+            var protein = new Protein(sequence, "accession");
+            var digestionParams = new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 5, maxPeptideLength: 200);
+            var peptide = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>(), null, null).First();
+
+            double mono = peptide.MonoisotopicMass;
+            double apex = mono + ApexOffset(mono);
+            Assert.That(apex - mono, Is.GreaterThan(1.0), "test is only meaningful if the apex differs from the monoisotopic mass");
+
+            // Theoretical fragments, handed to the scan directly as neutral-mass envelopes so that fragment
+            // matching is guaranteed and the test isolates PRECURSOR selection.
+            var products = new List<Product>();
+            peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+            var fragmentEnvelopes = products.Where(p => !double.IsNaN(p.NeutralMass))
+                .Select(p => new IsotopicEnvelope(p.NeutralMass, 1.0, 1)).ToArray();
+
+            var spectrum = new MzSpectrum(
+                products.Where(p => !double.IsNaN(p.NeutralMass)).Select(p => p.NeutralMass.ToMz(1)).OrderBy(m => m).ToArray(),
+                products.Where(p => !double.IsNaN(p.NeutralMass)).Select(p => 1.0).ToArray(), false);
+            var dataScan = new MsDataScan(spectrum, 2, 2, true, Polarity.Positive, 1.0, new MzRange(100, 12000), "f",
+                MZAnalyzerType.Orbitrap, spectrum.SumOfAllY, null, null, "scan=2", 500.0, null, null, 500.0, null,
+                DissociationType.HCD, 1, null);
+
+            // The observation: monoisotopic mass deliberately wrong by 3.5 Da, apex exactly right.
+            const double monoError = 3.5;
+            var scan = new Ms2ScanWithSpecificMass(dataScan, (mono + monoError).ToMz(1), 1, "f.mzML",
+                new CommonParameters(), neutralExperimentalFragments: fragmentEnvelopes,
+                precursorMostAbundantMass: apex);
+
+            Assert.That(scan.PrecursorMass, Is.EqualTo(mono + monoError).Within(1e-6));
+            Assert.That(scan.PrecursorMostAbundantMass, Is.EqualTo(apex).Within(1e-6));
+
+            var scans = new[] { scan };
+            var proteinList = new List<Protein> { protein };
+            var tol = new PpmTolerance(5);
+
+            var monoParams = new CommonParameters(digestionParams: digestionParams, scoreCutoff: 1,
+                precursorMassTolerance: tol, dissociationType: DissociationType.HCD,
+                precursorMassMatchMode: PrecursorMassMatchMode.Monoisotopic);
+            var apexParams = new CommonParameters(digestionParams: digestionParams, scoreCutoff: 1,
+                precursorMassTolerance: tol, dissociationType: DissociationType.HCD,
+                precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+
+            var fsp = new List<(string FileName, CommonParameters Parameters)> { ("f.mzML", monoParams) };
+
+            SpectralMatch[] monoPsms = new PeptideSpectralMatch[1];
+            new ClassicSearchEngine(monoPsms, scans, new List<Modification>(), new List<Modification>(), null, null, null,
+                proteinList, new SinglePpmAroundZeroSearchMode(5), monoParams, fsp, null, new List<string>(), false).Run();
+
+            SpectralMatch[] apexPsms = new PeptideSpectralMatch[1];
+            new ClassicSearchEngine(apexPsms, scans, new List<Modification>(), new List<Modification>(), null, null, null,
+                proteinList, new MostAbundantMassDiffAcceptor("mostAbundant", tol, Averagine), apexParams, fsp, null,
+                new List<string>(), false).Run();
+
+            // The monoisotopic search cannot reach this scan: its monoisotopic mass is 3.5 Da off.
+            Assert.That(monoPsms[0], Is.Null,
+                "monoisotopic search selected a scan whose monoisotopic mass is 3.5 Da from the candidate");
+
+            // The most-abundant search finds it, because selection used the observed apex on the scan side
+            // and mono + averagineApexOffset on the theory side.
+            Assert.That(apexPsms[0], Is.Not.Null,
+                "most-abundant search failed to select the scan by its apex — selection is still monoisotopic");
+            Assert.That(apexPsms[0].Notch, Is.EqualTo(0), "on-apex match should carry notch 0");
+            apexPsms[0].ResolveAllAmbiguities();
+            Assert.That(apexPsms[0].BaseSequence, Is.EqualTo(peptide.BaseSequence));
+
+            // CONTROL: the monoisotopic search is not broken — give it a scan whose monoisotopic mass IS
+            // correct and it finds the same peptide. So the null above is caused by the mass it matched on,
+            // not by anything else in this setup (protease, score cutoff, fragment matching).
+            var correctMonoScan = new Ms2ScanWithSpecificMass(dataScan, mono.ToMz(1), 1, "f.mzML",
+                new CommonParameters(), neutralExperimentalFragments: fragmentEnvelopes,
+                precursorMostAbundantMass: apex);
+            SpectralMatch[] controlPsms = new PeptideSpectralMatch[1];
+            new ClassicSearchEngine(controlPsms, new[] { correctMonoScan }, new List<Modification>(), new List<Modification>(),
+                null, null, null, proteinList, new SinglePpmAroundZeroSearchMode(5), monoParams, fsp, null,
+                new List<string>(), false).Run();
+            Assert.That(controlPsms[0], Is.Not.Null, "control: monoisotopic search should find a correct monoisotopic mass");
+            controlPsms[0].ResolveAllAmbiguities();
+            Assert.That(controlPsms[0].BaseSequence, Is.EqualTo(peptide.BaseSequence));
         }
     }
 }
