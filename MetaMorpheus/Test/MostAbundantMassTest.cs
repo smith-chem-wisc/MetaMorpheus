@@ -586,6 +586,524 @@ namespace Test
         }
 
         /// <summary>
+        /// Q1 (review question): does TRADITIONAL G-PTM-D use missed-monoisotopic notches?
+        /// <para>
+        /// <b>No.</b> GptmdTask.GetAcceptableMassShifts (:282-291) builds the shift set from exactly four
+        /// sources — G-PTM-D mod masses, mod-replacement differences, combos, and a single zero notch — and
+        /// none of them is a neutron offset. The resulting <see cref="DotMassDiffAcceptor"/> therefore places
+        /// one tight-ppm window per shift, with no isotope-level tolerance anywhere, including on the zero
+        /// notch. A deconvolution that misassigns the monoisotopic peak by one neutron is simply lost.
+        /// </para>
+        /// </summary>
+        [Test]
+        public static void Q1_TraditionalGptmd_HasNoMissedMonoisotopicNotches()
+        {
+            const double peptideMono = 1200.0;
+            const double oxidation = 15.994915;
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
+            var gptmdMods = new List<Modification>
+            {
+                new Modification(_originalId: "ox", _modificationType: "mt", _target: motifM,
+                    _locationRestriction: "Anywhere.", _monoisotopicMass: oxidation)
+            };
+
+            var shifts = GptmdTask.GetAcceptableMassShifts(new List<Modification>(), new List<Modification>(),
+                gptmdMods, new List<Tuple<double, double>>()).ToList();
+
+            // The shift set is chemistry only: {0, +15.994915}. Nothing near a neutron.
+            Assert.That(shifts.Count, Is.EqualTo(2));
+            Assert.That(shifts.Any(s => Math.Abs(s) < 1e-9), Is.True, "shift set should contain the zero notch");
+            Assert.That(shifts.Any(s => Math.Abs(s - oxidation) < 1e-9), Is.True, "shift set should contain the mod mass");
+            Assert.That(shifts.Any(s => Math.Abs(Math.Abs(s) - Constants.C13MinusC12) < 0.05), Is.False,
+                "the traditional G-PTM-D shift set contains a neutron-sized offset");
+
+            var acceptor = new DotMassDiffAcceptor("gptmd", shifts, new PpmTolerance(10));
+
+            // POSITIVE CONTROLS — the two real shifts are accepted at tight ppm.
+            Assert.That(acceptor.Accepts(peptideMono, peptideMono), Is.GreaterThanOrEqualTo(0),
+                "positive control: unmodified peptide should match the zero notch");
+            Assert.That(acceptor.Accepts(peptideMono + oxidation, peptideMono), Is.GreaterThanOrEqualTo(0),
+                "positive control: oxidised peptide should match the oxidation notch");
+
+            // NEGATIVE CONTROLS — one neutron off either shift is rejected outright. This is the answer to
+            // Q1: there is no missed-monoisotopic tolerance, on the mod notch or on the zero notch.
+            Assert.That(acceptor.Accepts(peptideMono + Constants.C13MinusC12, peptideMono), Is.EqualTo(-1),
+                "traditional G-PTM-D accepted a +1-neutron precursor on the zero notch");
+            Assert.That(acceptor.Accepts(peptideMono + oxidation + Constants.C13MinusC12, peptideMono), Is.EqualTo(-1),
+                "traditional G-PTM-D accepted a +1-neutron precursor on the oxidation notch");
+            Assert.That(acceptor.Accepts(peptideMono - Constants.C13MinusC12, peptideMono), Is.EqualTo(-1));
+        }
+
+        /// <summary>
+        /// Q2 (review question): does MOST-ABUNDANT G-PTM-D use the analogous notches?
+        /// <para>
+        /// <b>Yes, but they are not the same thing.</b> <see cref="MostAbundantDotMassDiffAcceptor"/> emits
+        /// k ∈ {0, ±1, ±2} apex windows around <i>every</i> shift, so five windows per shift where the
+        /// traditional acceptor has one. They compensate for a different error: a missed-monoisotopic notch
+        /// covers the DECONVOLUTION picking the wrong isotopologue as monoisotopic (an observation-side
+        /// error), whereas the apex notches cover AVERAGINE mispredicting which isotopologue is tallest (a
+        /// theory-side error). All five windows for a shift share that shift's notch, so per-shift FDR
+        /// grouping is preserved.
+        /// </para>
+        /// </summary>
+        [Test]
+        public static void Q2_MostAbundantGptmd_HasApexNotchesAroundEveryShift()
+        {
+            const double peptideMono = 9500.0;
+            const double oxidation = 15.994915;
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
+            var gptmdMods = new List<Modification>
+            {
+                new Modification(_originalId: "ox", _modificationType: "mt", _target: motifM,
+                    _locationRestriction: "Anywhere.", _monoisotopicMass: oxidation)
+            };
+            var shifts = GptmdTask.GetAcceptableMassShifts(new List<Modification>(), new List<Modification>(),
+                gptmdMods, new List<Tuple<double, double>>()).ToList();
+
+            var tolerance = new PpmTolerance(10);
+            var apexAcceptor = new MostAbundantDotMassDiffAcceptor("gptmd", shifts, tolerance, Averagine);
+            var traditional = new DotMassDiffAcceptor("gptmd", shifts, tolerance);
+            double spacing = Constants.C13MinusC12;
+
+            foreach (double shift in new[] { 0.0, oxidation })
+            {
+                double shiftedMono = peptideMono + shift;
+                double apex = shiftedMono + ApexOffset(shiftedMono);
+                int expectedNotch = apexAcceptor.Accepts(apex, peptideMono);
+
+                // POSITIVE CONTROLS — on-apex and ±1, ±2 neutrons are all accepted, and all report the SAME
+                // notch, because they are one modification hypothesis differing only by apex misprediction.
+                Assert.That(expectedNotch, Is.GreaterThanOrEqualTo(0),
+                    $"positive control: on-apex candidate for shift {shift} should be accepted");
+                foreach (int k in new[] { -2, -1, 1, 2 })
+                {
+                    Assert.That(apexAcceptor.Accepts(apex + k * spacing, peptideMono), Is.EqualTo(expectedNotch),
+                        $"shift {shift}: k={k} should be accepted under the same notch as k=0");
+                }
+
+                // NEGATIVE CONTROL — ±3 neutrons is outside the set and must be rejected.
+                foreach (int k in new[] { -3, 3 })
+                {
+                    Assert.That(apexAcceptor.Accepts(apex + k * spacing, peptideMono), Is.EqualTo(-1),
+                        $"shift {shift}: k={k} is outside the ±2 apex set and must be rejected");
+                }
+
+                // THE ASYMMETRY, stated as an assertion: the traditional acceptor rejects exactly the
+                // ±1-neutron case that the most-abundant acceptor accepts.
+                Assert.That(traditional.Accepts(shiftedMono + spacing, peptideMono), Is.EqualTo(-1));
+                Assert.That(apexAcceptor.Accepts(apex + spacing, peptideMono), Is.GreaterThanOrEqualTo(0));
+            }
+
+            // NumNotches counts SHIFTS, not windows — the ±k windows do not inflate the FDR grouping.
+            Assert.That(apexAcceptor.NumNotches, Is.EqualTo(shifts.Count));
+            Assert.That(apexAcceptor.NumNotches, Is.EqualTo(traditional.NumNotches));
+        }
+
+        /// <summary>
+        /// The error source the Q1/Q2 asymmetry introduces, characterised rather than asserted away.
+        /// <para>
+        /// Because the zero notch also carries ±2 apex windows, and <see cref="MostAbundantDotMassDiffAcceptor.Accepts"/>
+        /// returns the FIRST matching shift in |shift|-ascending order (so the zero notch is tested first), a
+        /// real modification whose mass is close to a whole number of neutrons can be absorbed by the zero
+        /// notch instead of being reported as that modification. Deamidation (+0.98402) sits 0.01934 Da from
+        /// one neutron (1.00336), so whether the two are separable depends entirely on the peptide mass:
+        /// </para>
+        /// <list type="bullet">
+        /// <item>~1200 Da at 10 ppm (±0.012 Da): 0.01934 Da is OUTSIDE tolerance → correctly reported as deamidation.</item>
+        /// <item>~9500 Da at 10 ppm (±0.095 Da): 0.01934 Da is INSIDE tolerance → absorbed by the zero notch.</item>
+        /// </list>
+        /// <para>
+        /// Crucially, the TRADITIONAL acceptor is not safe here either — it fails in the opposite direction.
+        /// At 9500 Da its deamidation window is ±0.095 Da wide, so a precursor off by exactly one neutron (a
+        /// pure deconvolution isotope error, no chemistry) lands inside it and is reported AS deamidation.
+        /// So at high mass: traditional G-PTM-D invents a modification that is not there (false positive),
+        /// most-abundant G-PTM-D absorbs one that is (false negative). Neither is introduced by most-abundant
+        /// mode — at this mass and tolerance the two masses are not separable at all, and the mode only
+        /// decides which way the ambiguity falls. Documented here so the boundary is known rather than
+        /// discovered.
+        /// </para>
+        /// </summary>
+        [Test]
+        public static void ApexNotches_CanAbsorbANearNeutronMod_AtHighMassOnly()
+        {
+            const double deamidation = 0.984016;
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
+            var gptmdMods = new List<Modification>
+            {
+                new Modification(_originalId: "deam", _modificationType: "mt", _target: motifN,
+                    _locationRestriction: "Anywhere.", _monoisotopicMass: deamidation)
+            };
+            var shifts = GptmdTask.GetAcceptableMassShifts(new List<Modification>(), new List<Modification>(),
+                gptmdMods, new List<Tuple<double, double>>()).ToList();
+            var tolerance = new PpmTolerance(10);
+            var acceptor = new MostAbundantDotMassDiffAcceptor("gptmd", shifts, tolerance, Averagine);
+
+            // The zero notch sorts first, so it is tested before the deamidation notch.
+            Assert.That(shifts.First(), Is.EqualTo(0).Within(1e-9));
+            int zeroNotch = (int)Math.Round(0.0 * MassDiffAcceptor.NotchScalar);
+            int deamidationNotch = (int)Math.Round(deamidation * MassDiffAcceptor.NotchScalar);
+            Assert.That(deamidationNotch, Is.Not.EqualTo(zeroNotch));
+
+            // The gap that decides it.
+            double gap = Constants.C13MinusC12 - deamidation;
+            Assert.That(gap, Is.EqualTo(0.01934).Within(1e-4));
+
+            // POSITIVE CONTROL — small peptide: the gap exceeds tolerance, so the zero notch's k=+1 window
+            // does NOT reach the deamidated apex, and deamidation is correctly identified.
+            const double smallMono = 1200.0;
+            double smallDeamidatedApex = (smallMono + deamidation) + ApexOffset(smallMono + deamidation);
+            Assert.That(tolerance.GetMaximumValue(smallMono) - smallMono, Is.LessThan(gap),
+                "premise: at 1200 Da the tolerance must be tighter than the deamidation/neutron gap");
+            Assert.That(acceptor.Accepts(smallDeamidatedApex, smallMono), Is.EqualTo(deamidationNotch),
+                "at low mass a deamidated precursor should be reported as deamidation, not absorbed by notch 0");
+
+            // NEGATIVE CONTROL (the hazard) — large proteoform: the same gap is now inside tolerance, the
+            // zero notch matches first, and the modification is never attributed.
+            const double largeMono = 9500.0;
+            double largeDeamidatedApex = (largeMono + deamidation) + ApexOffset(largeMono + deamidation);
+            Assert.That(tolerance.GetMaximumValue(largeMono) - largeMono, Is.GreaterThan(gap),
+                "premise: at 9500 Da the tolerance must be looser than the deamidation/neutron gap");
+            Assert.That(acceptor.Accepts(largeDeamidatedApex, largeMono), Is.EqualTo(zeroNotch),
+                "expected the zero notch to absorb the near-neutron mod at high mass");
+
+            // AND THE TRADITIONAL ACCEPTOR IS NOT SAFE EITHER — it fails in the opposite direction.
+            // At 9500 Da the deamidation window is ±0.095 Da wide, so a precursor that is off by exactly one
+            // neutron (a pure deconvolution isotope error, no chemistry at all) lands inside it and is
+            // reported AS deamidation. Traditional G-PTM-D therefore invents a modification that is not
+            // there (false positive); most-abundant G-PTM-D loses one that is (false negative). Neither is
+            // introduced by most-abundant mode: at this mass and tolerance the two masses are simply not
+            // separable, and the mode only decides which way the ambiguity falls.
+            var traditional = new DotMassDiffAcceptor("gptmd", shifts, tolerance);
+            Assert.That(traditional.Accepts(largeMono + deamidation, largeMono), Is.EqualTo(deamidationNotch),
+                "positive control: traditional G-PTM-D should identify a genuinely deamidated precursor");
+            Assert.That(traditional.Accepts(largeMono + Constants.C13MinusC12, largeMono), Is.EqualTo(deamidationNotch),
+                "at high mass traditional G-PTM-D reports a pure +1-neutron isotope error as deamidation");
+
+            // NEGATIVE CONTROL for that claim — at low mass the traditional acceptor correctly rejects the
+            // same +1-neutron precursor, confirming the failure above is a mass-scale effect and not a
+            // property of the acceptor.
+            Assert.That(traditional.Accepts(smallMono + Constants.C13MinusC12, smallMono), Is.EqualTo(-1),
+                "at low mass a +1-neutron precursor should not be mistaken for deamidation");
+        }
+
+        /// <summary>
+        /// The sharpest form of the apex-notch error source: the ±k windows can make two DIFFERENT
+        /// modifications collide, not just a modification and "unmodified".
+        /// <para>
+        /// Acetylation (+42.010565) and carbamylation (+43.005814) are 0.995 Da apart — a full Dalton, and
+        /// completely unambiguous under the traditional acceptor, which places one tight window per shift.
+        /// But acetyl's <c>k = +1</c> apex window sits at 43.014, only <b>0.0081 Da</b> from carbamyl. Since
+        /// shifts are tested in |shift|-ascending order, acetyl is reached first, so above ~811 Da (at
+        /// 10 ppm) a genuinely carbamylated precursor is reported as acetylated.
+        /// </para>
+        /// <para>
+        /// This collision is created by the notch set: it does not exist without the ±k windows. It is the
+        /// concrete reason NOT to add missed-monoisotopic notches to traditional G-PTM-D, and a known
+        /// limitation of the most-abundant G-PTM-D acceptor, which already carries them.
+        /// </para>
+        /// </summary>
+        [Test]
+        public static void ApexNotches_CanConfuseTwoModifications_AcetylVersusCarbamyl()
+        {
+            const double acetyl = 42.010565;
+            const double carbamyl = 43.005814;
+            ModificationMotif.TryGetMotif("K", out ModificationMotif motifK);
+            var gptmdMods = new List<Modification>
+            {
+                new Modification(_originalId: "acetyl", _modificationType: "mt", _target: motifK,
+                    _locationRestriction: "Anywhere.", _monoisotopicMass: acetyl),
+                new Modification(_originalId: "carbamyl", _modificationType: "mt", _target: motifK,
+                    _locationRestriction: "Anywhere.", _monoisotopicMass: carbamyl)
+            };
+            var shifts = GptmdTask.GetAcceptableMassShifts(new List<Modification>(), new List<Modification>(),
+                gptmdMods, new List<Tuple<double, double>>()).ToList();
+            var tolerance = new PpmTolerance(10);
+
+            int acetylNotch = (int)Math.Round(acetyl * MassDiffAcceptor.NotchScalar);
+            int carbamylNotch = (int)Math.Round(carbamyl * MassDiffAcceptor.NotchScalar);
+
+            // The two mods are a full Dalton apart; the collision is manufactured by the +1 neutron window.
+            Assert.That(carbamyl - acetyl, Is.EqualTo(0.99525).Within(1e-5));
+            double collisionGap = Math.Abs((acetyl + Constants.C13MinusC12) - carbamyl);
+            Assert.That(collisionGap, Is.EqualTo(0.00811).Within(1e-4));
+
+            // TRADITIONAL — no ±k windows, so the two mods never collide, at any mass.
+            var traditional = new DotMassDiffAcceptor("gptmd", shifts, tolerance);
+            foreach (double mono in new[] { 1200.0, 9500.0 })
+            {
+                Assert.That(traditional.Accepts(mono + acetyl, mono), Is.EqualTo(acetylNotch),
+                    "positive control: traditional should identify acetylation");
+                Assert.That(traditional.Accepts(mono + carbamyl, mono), Is.EqualTo(carbamylNotch),
+                    $"traditional confused carbamyl with acetyl at {mono} Da");
+            }
+
+            var apexAcceptor = new MostAbundantDotMassDiffAcceptor("gptmd", shifts, tolerance, Averagine);
+
+            // The crossover is set by the tolerance evaluated at the WINDOW mass (mono + ~43 Da), not at the
+            // peptide mass, so it lands near 770 Da at 10 ppm — below essentially every real peptide.
+            const double smallMono = 500.0;
+            Assert.That(tolerance.GetMaximumValue(smallMono + carbamyl) - (smallMono + carbamyl),
+                Is.LessThan(collisionGap),
+                "premise: at 500 Da the tolerance must be tighter than the acetyl+1n / carbamyl gap");
+
+            // POSITIVE CONTROL — a genuinely acetylated precursor is identified as acetylation.
+            double smallAcetylApex = (smallMono + acetyl) + ApexOffset(smallMono + acetyl);
+            Assert.That(apexAcceptor.Accepts(smallAcetylApex, smallMono), Is.EqualTo(acetylNotch));
+
+            // NEGATIVE CONTROL — below the crossover the two mods are still resolved correctly.
+            double smallCarbamylApex = (smallMono + carbamyl) + ApexOffset(smallMono + carbamyl);
+            Assert.That(apexAcceptor.Accepts(smallCarbamylApex, smallMono), Is.EqualTo(carbamylNotch),
+                "below the crossover carbamylation should still be identified correctly");
+
+            // THE HAZARD — above the crossover, a genuinely CARBAMYLATED precursor is reported as ACETYL,
+            // because acetyl sorts first and its k=+1 window reaches it. Demonstrated here at a routine
+            // TRYPTIC peptide mass, not only at proteoform scale.
+            const double largeMono = 1500.0;
+            Assert.That(tolerance.GetMaximumValue(largeMono + carbamyl) - (largeMono + carbamyl),
+                Is.GreaterThan(collisionGap),
+                "premise: at 1500 Da the tolerance must be looser than the collision gap");
+            double largeCarbamylApex = (largeMono + carbamyl) + ApexOffset(largeMono + carbamyl);
+            Assert.That(apexAcceptor.Accepts(largeCarbamylApex, largeMono), Is.EqualTo(acetylNotch),
+                "expected acetyl's +1-neutron window to capture the carbamylated precursor");
+            Assert.That(apexAcceptor.Accepts(largeCarbamylApex, largeMono), Is.Not.EqualTo(carbamylNotch));
+        }
+
+        /// <summary>
+        /// PROTOTYPE MEASUREMENT — does resolving apex collisions in favour of the on-apex (k = 0)
+        /// hypothesis improve G-PTM-D, and what does it cost in depth?
+        /// <para>
+        /// Today <see cref="MostAbundantDotMassDiffAcceptor.Accepts"/> loops shift-major (for each shift, for
+        /// each k) and returns the first match, so the smallest |shift| wins — in practice the zero notch.
+        /// The alternative is k-major (for each k, for each shift), which resolves every collision toward the
+        /// hypothesis whose apex was predicted correctly. This test simulates both orderings over the same
+        /// acceptor inputs and reports where they disagree.
+        /// </para>
+        /// <para>
+        /// <b>Depth is identical by construction:</b> both orderings enumerate the same window set, so the
+        /// ACCEPTED/REJECTED decision is unchanged for every input. Only the notch attributed differs. The
+        /// question is therefore purely which error we prefer, not how many identifications we keep.
+        /// </para>
+        /// </summary>
+        [Test]
+        public static void Prototype_KMajorOrdering_ChangesAttributionNotDepth()
+        {
+            const double deamidation = 0.984016;
+            const double acetyl = 42.010565;
+            const double carbamyl = 43.005814;
+            var shifts = new[] { 0.0, deamidation, acetyl, carbamyl }.OrderBy(Math.Abs).ToArray();
+            var tolerance = new PpmTolerance(10);
+            double spacing = Constants.C13MinusC12;
+            int[] ks = { 0, -1, 1, -2, 2 };
+            const double mono = 9500.0;
+
+            int NotchOf(double shift) => (int)Math.Round(shift * MassDiffAcceptor.NotchScalar);
+            double ApexOf(double shift) => (mono + shift) + ApexOffset(mono + shift);
+
+            // Current production ordering, mirrored from MostAbundantDotMassDiffAcceptor:78-93.
+            int ShiftMajor(double observed)
+            {
+                foreach (double s in shifts)
+                    foreach (int k in ks)
+                        if (tolerance.Within(observed, ApexOf(s) + k * spacing)) return NotchOf(s);
+                return -1;
+            }
+            // Proposed alternative: every shift is tried at k = 0 before any shift is tried at k = ±1.
+            int KMajor(double observed)
+            {
+                foreach (int k in ks)
+                    foreach (double s in shifts)
+                        if (tolerance.Within(observed, ApexOf(s) + k * spacing)) return NotchOf(s);
+                return -1;
+            }
+
+            var scenarios = new (string Name, double Observed, int Truth)[]
+            {
+                ("unmodified, on apex",            ApexOf(0.0),                    NotchOf(0.0)),
+                ("unmodified, apex off by +1",     ApexOf(0.0) + spacing,          NotchOf(0.0)),
+                ("deamidated, on apex",            ApexOf(deamidation),            NotchOf(deamidation)),
+                ("acetylated, on apex",            ApexOf(acetyl),                 NotchOf(acetyl)),
+                ("acetylated, apex off by +1",     ApexOf(acetyl) + spacing,       NotchOf(acetyl)),
+                ("carbamylated, on apex",          ApexOf(carbamyl),               NotchOf(carbamyl)),
+            };
+
+            int shiftMajorCorrect = 0, kMajorCorrect = 0;
+            foreach (var sc in scenarios)
+            {
+                int a = ShiftMajor(sc.Observed), b = KMajor(sc.Observed);
+
+                // DEPTH: both orderings accept exactly the same inputs. This is the cost measurement.
+                Assert.That(a >= 0, Is.EqualTo(b >= 0), $"depth changed for '{sc.Name}'");
+
+                if (a == sc.Truth) shiftMajorCorrect++;
+                if (b == sc.Truth) kMajorCorrect++;
+                TestContext.WriteLine($"{sc.Name,-30} truth={sc.Truth,8}  shift-major={a,8}{(a == sc.Truth ? " ok " : " WRONG")}  k-major={b,8}{(b == sc.Truth ? " ok" : " WRONG")}");
+            }
+            TestContext.WriteLine($"correct attributions: shift-major {shiftMajorCorrect}/{scenarios.Length}, k-major {kMajorCorrect}/{scenarios.Length}");
+
+            // Every accepted input stays accepted under either ordering: reordering costs ZERO depth.
+            Assert.That(scenarios.All(sc => ShiftMajor(sc.Observed) >= 0 && KMajor(sc.Observed) >= 0), Is.True);
+
+            // The orderings genuinely disagree — this is not a no-op.
+            Assert.That(scenarios.Any(sc => ShiftMajor(sc.Observed) != KMajor(sc.Observed)), Is.True,
+                "the two orderings should disagree on at least one collision scenario");
+        }
+
+        /// <summary>
+        /// FDR consequences of the apex notch set — the question that matters most for top-down, where
+        /// depth must be bought without losing FDR control.
+        /// <para>
+        /// Two separate properties, and they land differently:
+        /// </para>
+        /// <list type="number">
+        /// <item><b>Validity is preserved.</b> Targets and decoys traverse the SAME acceptor with the SAME
+        /// five windows per shift, so the null distribution widens symmetrically and the per-notch q-value
+        /// stays calibrated. GPTMDTask:182 passes <c>NumNotches</c> to FdrAnalysisEngine, and that count is
+        /// identical in both modes — the ±k windows do not silently change the FDR grouping.</item>
+        /// <item><b>Stratification is LOST relative to the plain most-abundant search.</b> The search
+        /// acceptor makes k itself the notch, so a confident on-apex match and a ±2 apex-misprediction match
+        /// are FDR-controlled separately. The G-PTM-D acceptor collapses all k onto the shift's notch, so
+        /// those two populations are pooled into one q-value. Valid, but less discriminating.</item>
+        /// </list>
+        /// </summary>
+        [Test]
+        public static void FdrStratification_SearchSeparatesApexNotches_GptmdPoolsThem()
+        {
+            const double peptideMono = 9500.0;
+            const double oxidation = 15.994915;
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
+            var gptmdMods = new List<Modification>
+            {
+                new Modification(_originalId: "ox", _modificationType: "mt", _target: motifM,
+                    _locationRestriction: "Anywhere.", _monoisotopicMass: oxidation)
+            };
+            var shifts = GptmdTask.GetAcceptableMassShifts(new List<Modification>(), new List<Modification>(),
+                gptmdMods, new List<Tuple<double, double>>()).ToList();
+            var tolerance = new PpmTolerance(10);
+            double spacing = Constants.C13MinusC12;
+
+            var searchAcceptor = new MostAbundantMassDiffAcceptor("search", tolerance, Averagine);
+            var gptmdAcceptor = new MostAbundantDotMassDiffAcceptor("gptmd", shifts, tolerance, Averagine);
+            var traditional = new DotMassDiffAcceptor("gptmd", shifts, tolerance);
+
+            double apex = peptideMono + ApexOffset(peptideMono);
+
+            // SEARCH acceptor: k is the notch, so on-apex and ±2 land in DIFFERENT FDR groups.
+            int searchK0 = searchAcceptor.Accepts(apex, peptideMono);
+            int searchK2 = searchAcceptor.Accepts(apex + 2 * spacing, peptideMono);
+            Assert.That(searchK0, Is.GreaterThanOrEqualTo(0));
+            Assert.That(searchK2, Is.GreaterThanOrEqualTo(0));
+            Assert.That(searchK2, Is.Not.EqualTo(searchK0),
+                "the plain most-abundant search should FDR-control each apex offset separately");
+            Assert.That(searchAcceptor.NumNotches, Is.EqualTo(5), "one notch per k");
+
+            // G-PTM-D acceptor: the shift is the notch, so on-apex and ±2 are POOLED into one FDR group.
+            int gptmdK0 = gptmdAcceptor.Accepts(apex, peptideMono);
+            int gptmdK2 = gptmdAcceptor.Accepts(apex + 2 * spacing, peptideMono);
+            Assert.That(gptmdK0, Is.GreaterThanOrEqualTo(0));
+            Assert.That(gptmdK2, Is.EqualTo(gptmdK0),
+                "G-PTM-D pools every apex offset for a shift into that shift's notch");
+
+            // Validity plumbing: the notch COUNT handed to FdrAnalysisEngine (GPTMDTask:182) is unchanged by
+            // the apex windows, so most-abundant mode does not silently redefine the FDR grouping.
+            Assert.That(gptmdAcceptor.NumNotches, Is.EqualTo(traditional.NumNotches));
+            Assert.That(gptmdAcceptor.NumNotches, Is.EqualTo(shifts.Count));
+
+            // And the pooling is what keeps the notch groups populated: stratifying by k as well would
+            // multiply the group count by 5, which GPTMDTask:181 already warns is the failure mode
+            // ("it takes multiple files to get enough PSMs for all the different notches").
+            Assert.That(searchAcceptor.NumNotches * shifts.Count, Is.EqualTo(gptmdAcceptor.NumNotches * 5),
+                "stratifying G-PTM-D by shift AND k would give 5x the FDR groups");
+        }
+
+        /// <summary>
+        /// Candidate inflation — the historical reason missed-monoisotopic notches were kept out of
+        /// traditional G-PTM-D, measured against the REAL default G-PTM-D modification list.
+        /// <para>
+        /// This is a different failure from misassignment. <see cref="MassDiffAcceptor.Accepts"/> returns the
+        /// FIRST matching shift, so at most one notch is wrong. But GetPossibleMods (GptmdEngine:253-282) has
+        /// no early exit — it yields EVERY modification whose candidate mass matches. Widening each test from
+        /// a ppm window to ±2 neutrons widens the accepted mass span to ~4 Da, and since modification masses
+        /// cluster roughly a Dalton apart, the shortlist inflates. Every shortlisted mod is then placed at
+        /// every legal site, re-fragmented and re-scored, and any survivor is written into the database.
+        /// </para>
+        /// <para>
+        /// The unmodified case is the sharp one: a peptide carrying NO modification should propose nothing.
+        /// </para>
+        /// </summary>
+        [Test]
+        public static void ApexNotches_InflateTheGptmdCandidateShortlist()
+        {
+            // The actual default G-PTM-D list: Common Artifact + Common Biological + Metal.
+            var defaultIds = new GptmdParameters().ListOfModsGptmd.Select(t => t.Item2).ToHashSet();
+            var gptmdMods = GlobalVariables.AllModsKnown
+                .Where(m => m.ValidModification && m.MonoisotopicMass.HasValue && defaultIds.Contains(m.IdWithMotif))
+                .ToList();
+            Assert.That(gptmdMods.Count, Is.GreaterThan(20), "expected the real default G-PTM-D mod list");
+
+            const double peptideMono = 9500.0;
+            var tolerance = new PpmTolerance(10);
+            var monoParams = new CommonParameters(precursorMassMatchMode: PrecursorMassMatchMode.Monoisotopic);
+            var apexParams = new CommonParameters(precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+
+            // One observation carrying BOTH masses; only the interpretation changes between modes.
+            SpectralMatch PsmFor(double trueModMass)
+            {
+                double trueMono = peptideMono + trueModMass;
+                double trueApex = trueMono + ApexOffset(trueMono);
+                var dataScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1,
+                    true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null,
+                    "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+                var scan = new Ms2ScanWithSpecificMass(dataScan, trueMono.ToMz(1), 1, "f", new CommonParameters(),
+                    precursorMostAbundantMass: trueApex);
+                ModificationMotif.TryGetMotif("X", out ModificationMotif motifX);
+                var pep = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>());
+                return new PeptideSpectralMatch(pep, 0, 0, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            }
+
+            // Count exactly what GetPossibleMods counts: one MatchesCandidateMass call per mod (line 261).
+            int Shortlist(SpectralMatch psm, CommonParameters cp, out int distinctMasses)
+            {
+                var hits = gptmdMods
+                    .Where(m => psm.MatchesCandidateMass(peptideMono + m.MonoisotopicMass.Value, tolerance, cp))
+                    .ToList();
+                distinctMasses = hits.Select(m => Math.Round(m.MonoisotopicMass.Value, 4)).Distinct().Count();
+                return hits.Count;
+            }
+
+            // --- Case 1: a genuinely OXIDISED proteoform -------------------------------------------------
+            const double oxidation = 15.994915;
+            var oxPsm = PsmFor(oxidation);
+            int monoOx = Shortlist(oxPsm, monoParams, out int monoOxMasses);
+            int apexOx = Shortlist(oxPsm, apexParams, out int apexOxMasses);
+            TestContext.WriteLine($"oxidised  : monoisotopic {monoOx} mods ({monoOxMasses} masses) -> most-abundant {apexOx} mods ({apexOxMasses} masses)");
+
+            Assert.That(monoOx, Is.GreaterThan(0), "positive control: the true modification must be shortlisted");
+            Assert.That(apexOx, Is.GreaterThan(0), "positive control: the true modification must be shortlisted");
+            Assert.That(apexOx, Is.GreaterThanOrEqualTo(monoOx));
+            Assert.That(apexOxMasses, Is.GreaterThan(monoOxMasses),
+                "the apex windows should admit modification masses the monoisotopic test rejects");
+
+            // --- Case 2: an UNMODIFIED peptide ------------------------------------------------------------
+            var cleanPsm = PsmFor(0.0);
+            int monoClean = Shortlist(cleanPsm, monoParams, out int monoCleanMasses);
+            int apexClean = Shortlist(cleanPsm, apexParams, out int apexCleanMasses);
+            TestContext.WriteLine($"unmodified: monoisotopic {monoClean} mods ({monoCleanMasses} masses) -> most-abundant {apexClean} mods ({apexCleanMasses} masses)");
+
+            // NEGATIVE CONTROL — a monoisotopic search proposes nothing for an unmodified peptide, because no
+            // real modification has a mass within 0.095 Da of zero.
+            Assert.That(monoClean, Is.EqualTo(0),
+                "monoisotopic G-PTM-D should propose no modification for an unmodified peptide");
+
+            // THE HAZARD — most-abundant proposes modifications for a peptide that carries none, because the
+            // ±k windows reach the ~1 and ~2 Da region where many modification masses live.
+            Assert.That(apexClean, Is.GreaterThan(0),
+                "expected the apex windows to admit near-neutron modifications for an unmodified peptide");
+            TestContext.WriteLine("  spurious on unmodified peptide: " + string.Join(", ",
+                gptmdMods.Where(m => cleanPsm.MatchesCandidateMass(peptideMono + m.MonoisotopicMass.Value, tolerance, apexParams))
+                         .Select(m => $"{m.IdWithMotif} ({m.MonoisotopicMass.Value:F4})").Distinct().Take(12)));
+        }
+
+        /// <summary>
         /// The monoisotopic fallback in GetPrecursorMassForSearch is deliberate — a most-abundant search
         /// cannot match on a peak that was never observed — but it is silent, and a run where most scans take
         /// it is not the search the user asked for. GetMonoisotopicFallbackWarning reports it. Warn only when
