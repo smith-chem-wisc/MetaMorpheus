@@ -1,4 +1,4 @@
-﻿global using obo = Omics.Modifications.IO.obo;
+global using obo = Omics.Modifications.IO.obo;
 using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer.GlycoSearch;
@@ -51,6 +51,7 @@ namespace EngineLayer
         public static string UserSpecifiedDataDir { get; set; }
         public static string CustomProteasePath => Path.Combine(DataDir, "proteases_custom.tsv");
         public static string CustomRnasePath => Path.Combine(DataDir, "rnase_custom.tsv");
+        public static string FeatureMapsFilePath => Path.Combine(DataDir, "feature-maps.toml");
 
         public static bool StopLoops { get; set; }
         public static string MetaMorpheusVersion { get; private set; }

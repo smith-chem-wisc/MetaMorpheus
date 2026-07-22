@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -124,6 +124,49 @@ namespace Test
             Assert.That(AnalyteType.Peptide.GetDigestionAgentLabel(), Is.EqualTo("Protease"));
             Assert.That(AnalyteType.Proteoform.GetDigestionAgentLabel(), Is.EqualTo("Protease"));
             Assert.That(AnalyteType.Oligo.GetDigestionAgentLabel(), Is.EqualTo("RNase"));
+        }
+
+        [Test]
+        public static void TestFeatureMapsFilePathContract()
+        {
+            // The FeatureMapsFilePath must be non-null and point under DataDir
+            Assert.That(GlobalVariables.FeatureMapsFilePath, Is.Not.Null);
+            Assert.That(GlobalVariables.FeatureMapsFilePath, Does.EndWith("feature-maps.toml"));
+            Assert.That(GlobalVariables.FeatureMapsFilePath, Does.StartWith(GlobalVariables.DataDir));
+
+            // Verify it follows the same pattern as other DataDir-based paths
+            string expected = Path.Combine(GlobalVariables.DataDir, "feature-maps.toml");
+            Assert.That(GlobalVariables.FeatureMapsFilePath, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public static void TestFeatureMapsFilePathRespectsUserSpecifiedDataDir()
+        {
+            string originalDataDir = GlobalVariables.DataDir;
+            string customDataDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CustomDataDir_FeatureMaps");
+
+            if (Directory.Exists(customDataDir))
+                Directory.Delete(customDataDir, true);
+
+            Assert.That(!Directory.Exists(customDataDir));
+
+            // set custom data directory and reload
+            GlobalVariables.UserSpecifiedDataDir = customDataDir;
+            GlobalVariables.SetUpGlobalVariables();
+
+            // FeatureMapsFilePath should now point under the custom dir
+            Assert.That(GlobalVariables.FeatureMapsFilePath, Does.StartWith(customDataDir));
+            Assert.That(GlobalVariables.FeatureMapsFilePath, Does.EndWith("feature-maps.toml"));
+
+            // reset for other tests
+            GlobalVariables.UserSpecifiedDataDir = null;
+            GlobalVariables.SetUpGlobalVariables();
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+
+            if (Directory.Exists(customDataDir))
+                Directory.Delete(customDataDir, true);
         }
     }
 }
