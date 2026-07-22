@@ -144,7 +144,7 @@ namespace Test
             Assert.That(defaultParameters.CustomIons, Is.Not.EqualTo(notDefaultParameters.CustomIons));
 
             FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
-            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters);
+            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters, null);
 
             //CHECK THAT NOTHING CHANGED
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(notDefaultParameters.DissociationType));
@@ -183,7 +183,7 @@ namespace Test
                 DissociationType = DissociationType.CID,
                 CustomIons = new List<ProductType> { ProductType.b, ProductType.y }
             };
-            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters);
+            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters, null);
             //CHECK THAT SOMETHINGS CHANGED AND OTHERS DIDN'T
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(basicFileSpecificParameters.DissociationType));
             Assert.That(updatedParameters.ProductMassTolerance, Is.EqualTo(basicFileSpecificParameters.ProductMassTolerance));
@@ -230,7 +230,7 @@ namespace Test
                 ProductDeconvolutionParameters = new IsoDecDeconvolutionParameters()
             };
 
-            CommonParameters updated = MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParams, fspOverride);
+            CommonParameters updated = MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParams, fspOverride, null);
 
             Assert.That(updated.PrecursorDeconvolutionParameters, Is.EqualTo(fspOverride.PrecursorDeconvolutionParameters));
             Assert.That(updated.PrecursorDeconvolutionParameters, Is.Not.EqualTo(defaultParams.PrecursorDeconvolutionParameters),
@@ -304,7 +304,7 @@ namespace Test
             Assert.That(defaultParameters.CustomIons, Is.Not.EqualTo(notDefaultParameters.CustomIons));
 
             FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
-            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters);
+            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters, null);
 
             //CHECK THAT NOTHING CHANGED
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(notDefaultParameters.DissociationType));
@@ -342,7 +342,7 @@ namespace Test
                 DissociationType = DissociationType.CID,
                 CustomIons = new List<ProductType> { ProductType.b, ProductType.y }
             };
-            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters);
+            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters, null);
             //CHECK THAT SOMETHINGS CHANGED AND OTHERS DIDN'T
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(basicFileSpecificParameters.DissociationType));
             Assert.That(updatedParameters.ProductMassTolerance, Is.EqualTo(basicFileSpecificParameters.ProductMassTolerance));
@@ -383,7 +383,7 @@ namespace Test
 
             FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
 
-            Assert.That(() => MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParameters, emptyFileSpecificParameters),
+            Assert.That(() => MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParameters, emptyFileSpecificParameters, null),
                 Throws.TypeOf<MetaMorpheusException>()
                     .With.Message.Contain("Unrecognized digestion parameters of type"));
         }
