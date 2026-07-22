@@ -11,6 +11,7 @@ using Omics.Modifications;
 using Omics.SpectrumMatch;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using Readers.SpectralLibrary;
 using SpectralAveraging;
 using System;
@@ -29,8 +30,9 @@ using Transcriptomics;
 using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
-using EngineLayer.SpectrumMatch;
 using Omics.Fragmentation;
+using EngineLayer.Deconvolution;
+using EngineLayer.Deconvolution.FeatureFileMapping;
 
 namespace TaskLayer
 {
@@ -99,6 +101,9 @@ namespace TaskLayer
                     {
                         "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
                         "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
+                        "FromFile" => tmlTable.ContainsKey("FeatureFileMap")
+                            ? tmlTable.Get<FeatureMappedFromFileDeconvolutionParameters>()
+                            : tmlTable.Get<FromFileDeconvolutionParameters>(),
                         _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown Deconvolution Type: {tmlTable.Get<string>("DeconvolutionType")}")
                     })))
             // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
@@ -117,6 +122,13 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MinusOneAreasZero)
                 .IgnoreProperty(p => p.IsotopeThreshold)
                 .IgnoreProperty(p => p.ZScoreThreshold))
+            .ConfigureType<FromFileDeconvolutionParameters>(type => type
+                .CreateInstance(() => new FromFileDeconvolutionParameters(string.Empty, 1, 20))
+                .IgnoreProperty(p => p.Features))
+            .ConfigureType<SearchFeatureFileMap>(type => type
+                .IgnoreProperty(p => p.IsEmpty))
+            .ConfigureType<FeatureMappedFromFileDeconvolutionParameters>(type => type
+                .CreateInstance(() => new FeatureMappedFromFileDeconvolutionParameters()))
 
             // Convert average residue models to simple strings instead of tables, Nett makes all objects tables by default
             // The base class AverageResidue is used for Toml Reading. The derived classes are used for toml writing. 
@@ -215,13 +227,7 @@ namespace TaskLayer
         public CommonParameters CommonParameters { get; set; }
         public List<(string FileName, CommonParameters Parameters)> FileSpecificParameters { get; set; }
 
-        public const string IndexFolderName = "DatabaseIndex";
-        public const string IndexEngineParamsFileName = "indexEngine.params";
-        public const string PeptideIndexFileName = "peptideIndex.ind";
-        public const string FragmentIndexFileName = "fragmentIndex.ind";
-        public const string SecondIndexEngineParamsFileName = "secondIndexEngine.params";
-        public const string SecondFragmentIndexFileName = "secondFragmentIndex.ind";
-        public const string PrecursorIndexFileName = "precursorIndex.ind";
+        #region Deconvolution
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
@@ -272,7 +278,7 @@ namespace TaskLayer
                             if (commonParameters.DoPrecursorDeconvolution)
                             {
                                 foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
-                                    precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
+                                    precursorSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double? intensity = null;
                                     if (commonParameters.UseMostAbundantPrecursorIntensity)
@@ -503,18 +509,29 @@ namespace TaskLayer
             return parentScans;
         }
 
-        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
+        #endregion
+
+        /// <summary>
+        /// Sets all file-specific common parameters for a given raw file path, using the provided common parameters and file-specific parameters. Any non-null file specific parameter will override the value in the common params. 
+        /// </summary>
+        /// <param name="commonParams">The template to override</param>
+        /// <param name="fileSpecificParams">Specific parameters to override common paramms. Null when no file specific toml is next to the raw file.</param>
+        /// <param name="rawFilePath"></param>
+        /// <returns></returns>
+        /// <exception cref="MetaMorpheusException"></exception>
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams, string rawFilePath)
         {
-            if (fileSpecificParams == null)
+            // If no toml next to raw files and we are not doing file specific decon 
+            if (fileSpecificParams == null && commonParams.PrecursorDeconvolutionParameters is not FeatureMappedFromFileDeconvolutionParameters)
             {
                 return commonParams;
             }
 
             // set file-specific digestion parameters
-            int minPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinLength;
-            int maxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxLength;
-            int maxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            int maxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxMods;
+            int minPeptideLength = fileSpecificParams?.MinPeptideLength ?? commonParams.DigestionParams.MinLength;
+            int maxPeptideLength = fileSpecificParams?.MaxPeptideLength ?? commonParams.DigestionParams.MaxLength;
+            int maxMissedCleavages = fileSpecificParams?.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            int maxModsForPeptide = fileSpecificParams?.MaxModsForPeptide ?? commonParams.DigestionParams.MaxMods;
 
             // set file-specific digestion params based upon the type of digestion params
             IDigestionParams fileSpecificDigestionParams;
@@ -522,7 +539,7 @@ namespace TaskLayer
             {
                 case DigestionParams digestionParams:
                     fileSpecificDigestionParams = new DigestionParams(
-                        protease: (fileSpecificParams.DigestionAgent ?? digestionParams.SpecificProtease).Name,
+                        protease: (fileSpecificParams?.DigestionAgent ?? digestionParams.SpecificProtease).Name,
                         maxMissedCleavages: maxMissedCleavages, minPeptideLength: minPeptideLength,
                         maxPeptideLength: maxPeptideLength, maxModsForPeptides: maxModsForPeptide,
                         maxModificationIsoforms: digestionParams.MaxModificationIsoforms,
@@ -532,7 +549,7 @@ namespace TaskLayer
                     break;
                 case RnaDigestionParams:
                     fileSpecificDigestionParams = new RnaDigestionParams(
-                        rnase: (fileSpecificParams.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent).Name,
+                        rnase: (fileSpecificParams?.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent).Name,
                         maxMissedCleavages: maxMissedCleavages, minLength: minPeptideLength,
                         maxLength: maxPeptideLength, maxMods: maxModsForPeptide,
                         maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
@@ -545,17 +562,24 @@ namespace TaskLayer
 
             // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
             fileSpecificDigestionParams.ProductsFromDissociationType()[DissociationType.Custom] =
-                fileSpecificParams.CustomIons ?? commonParams.CustomIons;
+                fileSpecificParams?.CustomIons ?? commonParams.CustomIons;
 
             // set the rest of the file-specific parameters
-            Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-            Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-            Tolerance productMassTolerance_LowRes = fileSpecificParams.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
-            DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
-            string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
+            Tolerance precursorMassTolerance = fileSpecificParams?.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+            Tolerance productMassTolerance = fileSpecificParams?.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            Tolerance productMassTolerance_LowRes = fileSpecificParams?.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
+            DissociationType dissociationType = fileSpecificParams?.DissociationType ?? commonParams.DissociationType;
+            string separationType = fileSpecificParams?.SeparationType ?? commonParams.SeparationType;
 
-            DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
-            DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
+            DeconvolutionParameters precursorDeconParams = fileSpecificParams?.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
+            if (precursorDeconParams is FeatureMappedFromFileDeconvolutionParameters mapped)
+            {
+                if (rawFilePath == null)
+                    throw new MetaMorpheusException("Raw file path must be provided for feature-mapped file specific deconvolution parameters.");
+                else
+                    precursorDeconParams = mapped.ToDeconvolutionParameters(rawFilePath);
+            }
+            DeconvolutionParameters productDeconParams = fileSpecificParams?.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
 
             // DoPrecursorDeconvolution and DoProductDeconvolution flow from CommonParameters only;
             // file-specific PrecursorDeconvolutionParameters / ProductDeconvolutionParameters are stored
@@ -635,7 +659,7 @@ namespace TaskLayer
                         {
                             TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
-                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])));
+                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i], rawFilePath)));
                         }
                         catch (MetaMorpheusException e)
                         {
@@ -650,7 +674,7 @@ namespace TaskLayer
                     }
                     else // just used common parameters for file specific.
                     {
-                        FileSpecificParameters.Add((currentRawDataFilepathList[i], CommonParameters));
+                        FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, null, rawFilePath)));
                     }
                 }
 
@@ -1075,6 +1099,8 @@ namespace TaskLayer
 
         #endregion
 
+        #region IO 
+
         protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false)
         {
             
@@ -1120,12 +1146,15 @@ namespace TaskLayer
             return spectrumFilePath;
         }
 
+        #endregion
+
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList);
+
+        #region Event Handlers
         protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);
         }
-
-        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList);
 
         protected void FinishedWritingFile(string path, List<string> nestedIDs)
         {
@@ -1192,6 +1221,8 @@ namespace TaskLayer
             StartingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(displayName));
         }
 
+        #endregion
+
         private static IEnumerable<Type> GetSubclassesAndItself(Type type)
         {
             yield return type;
@@ -1228,6 +1259,15 @@ namespace TaskLayer
             Warn($"{engineName} engine Crashed! Error written to {outPath}");
         }
 
+        #region Peptide Indexing
+
+        public const string IndexFolderName = "DatabaseIndex";
+        public const string IndexEngineParamsFileName = "indexEngine.params";
+        public const string PeptideIndexFileName = "peptideIndex.ind";
+        public const string FragmentIndexFileName = "fragmentIndex.ind";
+        public const string SecondIndexEngineParamsFileName = "secondIndexEngine.params";
+        public const string SecondFragmentIndexFileName = "secondFragmentIndex.ind";
+        public const string PrecursorIndexFileName = "precursorIndex.ind";
         private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
@@ -1501,7 +1541,7 @@ namespace TaskLayer
             }
         }
 
-
+        #endregion
 
         /// <summary>
         /// Handle ambiguity when two theoretical bioPolymers in the
