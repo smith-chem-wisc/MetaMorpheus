@@ -1881,7 +1881,7 @@ namespace Test
         {
             CommonParameters commonParams = new CommonParameters(digestionParams: new DigestionParams(protease: "Arg-C", searchModeType: CleavageSpecificity.None));
             FileSpecificParameters fileSpecificParams = new FileSpecificParameters();
-            CommonParameters updatedCommonParams = MetaMorpheusTask.SetAllFileSpecificCommonParams(commonParams, fileSpecificParams);
+            CommonParameters updatedCommonParams = MetaMorpheusTask.SetAllFileSpecificCommonParams(commonParams, fileSpecificParams, null);
             Assert.That(((DigestionParams)updatedCommonParams.DigestionParams).SpecificProtease, Is.EqualTo(((DigestionParams)commonParams.DigestionParams).SpecificProtease));
         }
 
