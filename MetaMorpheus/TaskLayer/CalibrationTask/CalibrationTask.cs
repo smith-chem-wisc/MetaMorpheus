@@ -95,7 +95,7 @@ namespace TaskLayer
                 FileSpecificParameters fileSpecificParams = fileSettingsList[spectraFileIndex] == null
                     ? new()
                     : fileSettingsList[spectraFileIndex].Clone();
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams, originalUncalibratedFilePath);
 
                 // load the file
                 Status("Loading spectra file...", new List<string> { _taskId, "Individual Spectra Files" });

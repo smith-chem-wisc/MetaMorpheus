@@ -222,10 +222,9 @@ namespace TaskLayer
                          spectraFileIndex < Parameters.CurrentRawFileList.Count;
                          spectraFileIndex++)
                     {
-                        CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters,
-                            Parameters.FileSettingsList[spectraFileIndex]);
-
                         var origDataFile = Parameters.CurrentRawFileList[spectraFileIndex];
+                        CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters,
+                            Parameters.FileSettingsList[spectraFileIndex], origDataFile);
                         Status("Running mass-difference localization analysis...",
                             new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
                         MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams);
