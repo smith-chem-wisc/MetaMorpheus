@@ -187,7 +187,7 @@ namespace EngineLayer
                 return this._BestMatchingBioPolymersWithSetMods.Select(p =>
                 {
                     double theoreticalMostAbundant = p.SpecificBioPolymer.MonoisotopicMass
-                        + MostAbundantMassDiffAcceptor.AveragineApexOffset(PrecursorAveragine, p.SpecificBioPolymer.MonoisotopicMass);
+                        + PrecursorAveragine.ApexOffset(p.SpecificBioPolymer.MonoisotopicMass);
                     return theoreticalMostAbundant <= 0
                         ? 0
                         : Math.Round((this.ScanPrecursorMostAbundantMass - theoreticalMostAbundant) / theoreticalMostAbundant * 1e6, 2);
