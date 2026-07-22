@@ -739,9 +739,9 @@ namespace Test.MetaDraw
 
             // Test 1: Verify default values
             Assert.That(viewModel.MinMzToPlot, Is.EqualTo(0));
-            Assert.That(viewModel.MaxMzToPlot, Is.EqualTo(double.MaxValue));
+            Assert.That(viewModel.MaxMzToPlot, Is.EqualTo(4000));
             Assert.That(MetaDrawSettings.MinMzToPlot, Is.EqualTo(0));
-            Assert.That(MetaDrawSettings.MaxMzToPlot, Is.EqualTo(double.MaxValue));
+            Assert.That(MetaDrawSettings.MaxMzToPlot, Is.EqualTo(4000));
 
             // Test 2: Set valid MinMzToPlot value
             viewModel.MinMzToPlot = 100;
