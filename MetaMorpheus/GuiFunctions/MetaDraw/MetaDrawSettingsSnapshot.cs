@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Readers;
 using GuiFunctions.MetaDraw;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {
@@ -68,5 +69,6 @@ namespace GuiFunctions
 
         public int BioPolymerCoverageFontSize { get; set; } = 16;
         public List<string> BioPolymerCoverageColors { get; set; }
+        public ColorGradientType BioPolymerCoverageGradientType { get; set; } = ColorGradientType.Viridis;
     }
 }
