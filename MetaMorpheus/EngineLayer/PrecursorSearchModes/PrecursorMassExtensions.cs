@@ -2,6 +2,8 @@ using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer
 {
@@ -124,6 +126,53 @@ namespace EngineLayer
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// A warning for a most-abundant search that will silently match some scans on their monoisotopic
+        /// mass, because no most-abundant peak was observed for them. Returns <c>null</c> when there is
+        /// nothing to report: a monoisotopic search (where the fallback does not exist), an empty scan set,
+        /// or a scan set in which every precursor has an observed apex.
+        /// <para>
+        /// The fallback in <see cref="GetPrecursorMassForSearch(Ms2ScanWithSpecificMass, CommonParameters)"/>
+        /// is deliberate — a most-abundant search cannot match on a peak that was never seen — but it is
+        /// invisible at the call site, and a run in which most scans take it is not the search the user asked
+        /// for. Reporting the count lets that be noticed rather than inferred from a disappointing result.
+        /// </para>
+        /// </summary>
+        /// <param name="scans">The scans about to be searched.</param>
+        /// <param name="commonParameters">Parameters for this file; the match mode is read from here.</param>
+        /// <param name="dataFileName">Optional file name, included in the message when supplied.</param>
+        public static string GetMonoisotopicFallbackWarning(this IEnumerable<Ms2ScanWithSpecificMass> scans,
+            CommonParameters commonParameters, string dataFileName = null)
+        {
+            if (!UsesMostAbundantPeak(commonParameters) || scans == null)
+            {
+                return null;
+            }
+
+            int total = 0;
+            int withoutApex = 0;
+            foreach (var scan in scans.Where(s => s != null))
+            {
+                total++;
+                if (scan.PrecursorMostAbundantMass <= 0)
+                {
+                    withoutApex++;
+                }
+            }
+
+            if (total == 0 || withoutApex == 0)
+            {
+                return null;
+            }
+
+            string where = string.IsNullOrWhiteSpace(dataFileName) ? "" : $" in {dataFileName}";
+            double percent = 100.0 * withoutApex / total;
+            return $"Most-abundant precursor matching: {withoutApex} of {total} MS2 scans ({percent:F1}%){where} "
+                 + "have no observed most-abundant peak and will be matched on their monoisotopic precursor "
+                 + "mass instead. This occurs when no isotopic envelope was deconvoluted for the precursor — "
+                 + "for example a scan-header precursor, or a neutral mass read from a pre-deconvoluted file.";
         }
 
         private static bool UsesMostAbundantPeak(CommonParameters commonParameters)
