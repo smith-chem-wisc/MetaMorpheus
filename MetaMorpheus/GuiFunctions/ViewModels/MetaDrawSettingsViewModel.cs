@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using Omics.Fragmentation;
 using System;
 using System.Collections.ObjectModel;
@@ -9,6 +9,7 @@ using GuiFunctions.MetaDraw;
 using Readers;
 using System.Windows.Input;
 using Easy.Common.Extensions;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {
@@ -337,6 +338,14 @@ namespace GuiFunctions
             get => MetaDrawSettings.BioPolymerCoverageFontSize;
             set { MetaDrawSettings.BioPolymerCoverageFontSize = value; OnPropertyChanged(nameof(BioPolymerCoverageFontSize)); }
         }
+
+        public ColorGradientType BioPolymerCoverageGradientType
+        {
+            get => MetaDrawSettings.BioPolymerCoverageGradientType;
+            set { MetaDrawSettings.BioPolymerCoverageGradientType = value; OnPropertyChanged(nameof(BioPolymerCoverageGradientType)); }
+        }
+
+        public ObservableCollection<ColorGradientType> BioPolymerCoverageGradientTypes { get; } = [.. Enum.GetValues<ColorGradientType>()];
 
         #endregion
 
