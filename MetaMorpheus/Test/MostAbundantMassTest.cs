@@ -586,6 +586,96 @@ namespace Test
         }
 
         /// <summary>
+        /// The monoisotopic fallback in GetPrecursorMassForSearch is deliberate — a most-abundant search
+        /// cannot match on a peak that was never observed — but it is silent, and a run where most scans take
+        /// it is not the search the user asked for. GetMonoisotopicFallbackWarning reports it. Warn only when
+        /// there is something to warn about: never in monoisotopic mode (where the fallback does not exist),
+        /// and never when every precursor has an observed apex.
+        /// </summary>
+        [Test]
+        public static void MonoisotopicFallbackWarning_ReportsOnlyWhenScansLackAnApex()
+        {
+            var monoParams = new CommonParameters(precursorMassMatchMode: PrecursorMassMatchMode.Monoisotopic);
+            var apexParams = new CommonParameters(precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+
+            Ms2ScanWithSpecificMass MakeScan(double? apex)
+            {
+                var dataScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1,
+                    true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null,
+                    "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+                return new Ms2ScanWithSpecificMass(dataScan, 1000.0.ToMz(1), 1, "f.mzML", new CommonParameters(),
+                    precursorMostAbundantMass: apex);
+            }
+
+            var withApex = MakeScan(1005.0);
+            var withoutApex = MakeScan(null);   // no envelope deconvoluted -> PrecursorMostAbundantMass == 0
+            Assert.That(withoutApex.PrecursorMostAbundantMass, Is.EqualTo(0));
+
+            var mixed = new[] { withApex, withoutApex, withoutApex, withApex };
+
+            // Monoisotopic mode: the fallback does not exist, so there is nothing to warn about.
+            Assert.That(mixed.GetMonoisotopicFallbackWarning(monoParams), Is.Null);
+
+            // Most-abundant mode with a complete scan set: no fallback taken, no warning.
+            Assert.That(new[] { withApex, withApex }.GetMonoisotopicFallbackWarning(apexParams), Is.Null);
+
+            // Most-abundant mode with scans that lack an apex: warn, and say how many.
+            string warning = mixed.GetMonoisotopicFallbackWarning(apexParams, "myfile.mzML");
+            Assert.That(warning, Is.Not.Null, "most-abundant search silently fell back to monoisotopic matching");
+            Assert.That(warning, Does.Contain("2 of 4"));
+            Assert.That(warning, Does.Contain("50.0%"));
+            Assert.That(warning, Does.Contain("myfile.mzML"));
+            Assert.That(warning, Does.Contain("monoisotopic"));
+
+            // The file name is optional and simply omitted when absent.
+            Assert.That(mixed.GetMonoisotopicFallbackWarning(apexParams), Does.Contain("2 of 4"));
+            Assert.That(mixed.GetMonoisotopicFallbackWarning(apexParams), Does.Not.Contain(" in "));
+
+            // Degenerate inputs must not throw or invent a warning.
+            Assert.That(((Ms2ScanWithSpecificMass[])null).GetMonoisotopicFallbackWarning(apexParams), Is.Null);
+            Assert.That(Array.Empty<Ms2ScanWithSpecificMass>().GetMonoisotopicFallbackWarning(apexParams), Is.Null);
+            Assert.That(new[] { withoutApex, null }.GetMonoisotopicFallbackWarning(apexParams), Does.Contain("1 of 1"));
+        }
+
+        /// <summary>
+        /// The warning is actually emitted by a real task run, not merely computable. Runs a search in
+        /// most-abundant mode over a file whose precursors deconvolute, with precursor deconvolution turned
+        /// OFF so every scan falls back, and asserts the task raised the warning.
+        /// </summary>
+        [Test]
+        public static void SearchTask_EmitsMonoisotopicFallbackWarning_WhenNoApexObserved()
+        {
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => { lock (warnings) { warnings.Add(e.S); } };
+            MetaMorpheusTask.WarnHandler += handler;
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestMostAbundantFallbackWarning");
+            try
+            {
+                var searchTask = new SearchTask();
+                searchTask.CommonParameters = new CommonParameters(
+                    precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
+                    doPrecursorDeconvolution: false);   // no envelope -> no observed apex on any scan
+
+                string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+                string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+                Directory.CreateDirectory(outputFolder);
+
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) },
+                    new List<string> { myFile }, "test");
+
+                Assert.That(warnings.Any(w => w != null && w.Contains("no observed most-abundant peak")), Is.True,
+                    "a most-abundant search fell back to monoisotopic matching without warning");
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+                if (Directory.Exists(outputFolder)) { Directory.Delete(outputFolder, true); }
+                string taskSettings = Path.Combine(TestContext.CurrentContext.TestDirectory, "Task Settings");
+                if (Directory.Exists(taskSettings)) { Directory.Delete(taskSettings, true); }
+            }
+        }
+
+        /// <summary>
         /// End-to-end proof that GptmdEngine discovers modifications through the APEX in most-abundant mode.
         /// <para>
         /// The G-PTM-D analogue of <see cref="ClassicSearch_SelectsScansByApex_NotMonoisotopic"/>. Mod

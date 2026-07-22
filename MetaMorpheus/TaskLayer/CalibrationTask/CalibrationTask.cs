@@ -217,6 +217,10 @@ namespace TaskLayer
             }
 
             Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.GetPrecursorMassForSearch(combinedParameters)).ToArray();
+            // A most-abundant search falls back to the monoisotopic mass for any scan with no observed apex.
+            // That is intended, but silent — report how often it happens so it is noticed.
+            string fallbackWarning = listOfSortedms2Scans.GetMonoisotopicFallbackWarning(combinedParameters, Path.GetFileName(originalDataFile));
+            if (fallbackWarning != null) { Warn(fallbackWarning); }
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });

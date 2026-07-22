@@ -268,6 +268,10 @@ namespace TaskLayer
                 // Sort by the mass this search selects candidates on. ClassicSearchEngine binary-searches
                 // that same mass, so the array and the search key must use the same quantity.
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.GetPrecursorMassForSearch(combinedParams)).ToArray();
+                // A most-abundant search falls back to the monoisotopic mass for any scan with no observed
+                // apex. That is intended, but silent — report how often it happens so it is noticed.
+                string fallbackWarning = arrayOfMs2ScansSortedByMass.GetMonoisotopicFallbackWarning(combinedParams, Path.GetFileName(origDataFile));
+                if (fallbackWarning != null) { Warn(fallbackWarning); }
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
