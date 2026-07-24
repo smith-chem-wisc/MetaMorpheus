@@ -63,6 +63,7 @@ namespace EngineLayer
             bool useMostAbundantPrecursorIntensity = true,
             DIAparameters diaParameters = null,
             IFragmentationParams fragmentationParams = null,
+            PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
             string rtPredictorName = "Chronologer")
 
         {
@@ -95,6 +96,7 @@ namespace EngineLayer
             MS2ChildScanDissociationType = ms2childScanDissociationType;
             MS3ChildScanDissociationType = ms3childScanDissociationType;
             UseMostAbundantPrecursorIntensity = useMostAbundantPrecursorIntensity;
+            PrecursorMassMatchMode = precursorMassMatchMode;
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
             MaxHeterozygousVariants = maxHeterozygousVariants;
             MinVariantDepth = minVariantDepth;
@@ -207,6 +209,12 @@ namespace EngineLayer
         public DissociationType MS3ChildScanDissociationType { get; set; }
 
         public bool UseMostAbundantPrecursorIntensity { get; set; }
+
+        /// <summary>
+        /// Which precursor mass is used to select theoretical proteoform candidates during search.
+        /// Defaults to <see cref="EngineLayer.PrecursorMassMatchMode.Monoisotopic"/>.
+        /// </summary>
+        public PrecursorMassMatchMode PrecursorMassMatchMode { get; set; }
         public DIAparameters? DIAparameters { get; set; } //only for DIA analysis involving pseudo ms2 scan generation
         public IFragmentationParams FragmentationParameters { get; set; }
         public string RTPredictorName { get; private set; }
@@ -282,7 +290,9 @@ namespace EngineLayer
                                 ProductDeconvolutionParameters,
                                 UseMostAbundantPrecursorIntensity,
                                 DIAparameters,
-                                FragmentationParameters);
+                                FragmentationParameters,
+                                PrecursorMassMatchMode,
+                                RTPredictorName);
         }
 
         public void SetCustomProductTypes()
