@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaMorpheusGUI.MetaDrawSettingsWindow"
+<Window x:Class="MetaMorpheusGUI.MetaDrawSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -749,6 +749,10 @@
                                                             VerticalContentAlignment="Center"
                                                             HorizontalContentAlignment="Center"
                                                             Text="{Binding BioPolymerCoverageFontSize}"/>
+                                <Label Content="Gradient: " Width="80" Margin="15 0 0 0" VerticalAlignment="Center" />
+                                <ComboBox Width="100" Height="24" Margin="5 0 0 0"
+                                          ItemsSource="{Binding BioPolymerCoverageGradientTypes}"
+                                          SelectedItem="{Binding BioPolymerCoverageGradientType}" />
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>

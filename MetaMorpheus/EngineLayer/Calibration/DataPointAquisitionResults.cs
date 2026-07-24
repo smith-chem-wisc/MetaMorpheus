@@ -21,7 +21,8 @@ namespace EngineLayer.Calibration
             int numMs1MassChargeCombinationsConsidered,
             int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
             int numMs2MassChargeCombinationsConsidered,
-            int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
+            int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
+            CommonParameters commonParameters = null)
             : base(dataPointAcquisitionEngine)
         {
             Psms = psms;
@@ -35,7 +36,19 @@ namespace EngineLayer.Calibration
             var ms1PpmRange = Ms1List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
             var ms2PpmRange = Ms2List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
 
-            var precursorErrors = psms.Select(p => (p.ScanPrecursorMass - p.BioPolymerWithSetModsMonoisotopicMass.Value) / p.BioPolymerWithSetModsMonoisotopicMass.Value * 1e6).ToList();
+            // Calibration must see instrument m/z drift, not isotope-assignment error. A most-abundant
+            // search admits PSMs whose deconvoluted monoisotopic peak is off by whole isotopologues (the
+            // apex notch set), so the raw (ScanPrecursorMass - peptideMonoisotopic) difference carries
+            // those offsets; left in, they inflate the IQR and make calibration write runaway precursor
+            // tolerances (e.g. 1940 ppm). GetObservedMonoisotopicMass removes exactly the offset the search
+            // allowed, using the isotope spacing from the deconvolution parameters. In the default
+            // monoisotopic mode it is the identity, so baseline calibration behaviour is preserved exactly.
+            var precursorErrors = psms.Select(p =>
+            {
+                double theoreticalMass = p.BioPolymerWithSetModsMonoisotopicMass.Value;
+                double observedMass = p.GetObservedMonoisotopicMass(theoreticalMass, commonParameters);
+                return (observedMass - theoreticalMass) / theoreticalMass * 1e6;
+            }).ToList();
             PsmPrecursorIqrPpmError = precursorErrors.InterquartileRange();
             PsmPrecursorMedianPpmError = precursorErrors.Median();
 

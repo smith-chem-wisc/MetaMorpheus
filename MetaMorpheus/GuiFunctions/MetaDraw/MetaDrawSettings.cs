@@ -11,6 +11,7 @@ using Easy.Common.Extensions;
 using Readers;
 using GuiFunctions.MetaDraw;
 using OxyPlot.Wpf;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {
@@ -85,6 +86,7 @@ namespace GuiFunctions
         // biopolymer coverage settings
         public static int BioPolymerCoverageFontSize { get; set; } = 16;
         public static Dictionary<BioPolymerCoverageType, SolidColorBrush> BioPolymerCoverageColors { get; set; }
+        public static ColorGradientType BioPolymerCoverageGradientType { get; set; } = ColorGradientType.Viridis;
 
         #endregion
 
@@ -558,6 +560,7 @@ namespace GuiFunctions
                 DataVisualizationColorOrder = DataVisualizationColorOrder?.Select(c => c.GetColorName()).ToList(),
                 BioPolymerCoverageFontSize = BioPolymerCoverageFontSize,
                 BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList(),
+                BioPolymerCoverageGradientType = BioPolymerCoverageGradientType,
                 
                 // Save from the new ViewModel structure
                 UseLogScaleYAxis = PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis,
@@ -610,7 +613,8 @@ namespace GuiFunctions
             NormalizeHistogramToFile = settings.NormalizeHistogramToFile;
             DisplayFilteredOnly = settings.DisplayFilteredOnly;
             BioPolymerCoverageFontSize = settings.BioPolymerCoverageFontSize;
-            
+            BioPolymerCoverageGradientType = settings.BioPolymerCoverageGradientType;
+
             // Load into the new ViewModel structure
             var plotParams = new PlotModelStatParameters
             {
