@@ -12,7 +12,6 @@
         <local:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
         <local:BooleanToInvertedVisibilityConverter x:Key="boolToInvertedVisConverter"/>
         <local:BooleanToVisibilityConverter x:Key="boolToVisConverter"/>
-        <local:BooleanInverter x:Key="inverseBoolConverter"/>
         <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
             <Setter Property="BorderThickness" Value="3 1 1 1"/>

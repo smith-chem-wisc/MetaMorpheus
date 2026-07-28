@@ -29,23 +29,6 @@ namespace MetaMorpheusGUI
         }
     }
 
-    public class InverseBoolConverter : BaseValueConverter<InverseBoolConverter>
-    {
-        public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is bool b)
-                return !b;
-            return value;
-        }
-
-        public override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is bool b)
-                return !b;
-            return value;
-        }
-    }
-
     public class BooleanToInvertedVisibilityConverter : BaseValueConverter<BooleanToInvertedVisibilityConverter>
     {
         public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
