@@ -525,6 +525,26 @@ namespace Test.GuiTests
         }
 
         [Test]
+        public void PrecursorMassMatchModes_ContainsBothValues()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
+            Assert.That(vm.PrecursorMassMatchModes, Is.EquivalentTo(new[] { PrecursorMassMatchMode.Monoisotopic, PrecursorMassMatchMode.MostAbundant }));
+        }
+
+        [Test]
+        public void TypeViewModel_CompareTo_OrdersByEnumValue()
+        {
+            var exact = new MassDifferenceAcceptorTypeViewModel { Type = MassDiffAcceptorType.Exact };
+            var oneMM = new MassDifferenceAcceptorTypeViewModel { Type = MassDiffAcceptorType.OneMM };
+            var mostAbundantExact = new MassDifferenceAcceptorTypeViewModel { Type = MassDiffAcceptorType.MostAbundant_Exact };
+
+            Assert.That(exact.CompareTo(oneMM), Is.LessThan(0));
+            Assert.That(oneMM.CompareTo(exact), Is.GreaterThan(0));
+            Assert.That(exact.CompareTo(exact), Is.EqualTo(0));
+            Assert.That(mostAbundantExact.CompareTo(exact), Is.GreaterThan(0));
+        }
+
+        [Test]
         public void Constructor_WithMostAbundant_MissingMono_DefaultsToFirstMostAbundant()
         {
             var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.MostAbundant_PlusMinusTwo, "",
