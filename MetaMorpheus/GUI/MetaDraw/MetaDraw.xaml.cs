@@ -2,6 +2,7 @@ using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
+using MassSpectrometry;
 using Nett;
 using Omics.Fragmentation;
 using OxyPlot;
@@ -12,6 +13,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -57,7 +59,9 @@ namespace MetaMorpheusGUI
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
             AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel(!GuiGlobalParamsViewModel.Instance.IsRnaMode);
+            ChildFragmentIonControl.DataContext = FragmentationReanalysisViewModel;
             AdditionalFragmentIonControl.LinkMetaDraw(this);
+            ChildFragmentIonControl.LinkMetaDraw(this);
 
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
             ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel();
@@ -220,10 +224,25 @@ namespace MetaMorpheusGUI
             SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
 
             List<MatchedFragmentIon> oldMatchedIons = null;
+            Dictionary<int, List<MatchedFragmentIon>> savedChildIons = null;
+            Dictionary<int, List<MatchedFragmentIon>> savedBetaIons = null;
+
             if (FragmentationReanalysisViewModel.Persist && sender is DataGrid)
             {
-                oldMatchedIons = psm.MatchedIons;
-                ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
+                if (MetaDrawTabControl.SelectedItem == ParentChildScanView && psm.ChildScanMatchedIons != null)
+                {
+                    savedChildIons = SaveChildScanIons(psm.ChildScanMatchedIons);
+                    if (psm is PsmFromTsv { BetaPeptideChildScanMatchedIons: not null } bp)
+                    {
+                        savedBetaIons = SaveChildScanIons(bp.BetaPeptideChildScanMatchedIons);
+                    }
+                    RematchChildScans(psm);
+                }
+                else
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
+                }
             }
 
             wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
@@ -390,6 +409,12 @@ namespace MetaMorpheusGUI
             // put the original ions back in place if they were altered
             if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
                 psm.MatchedIons = oldMatchedIons;
+
+            if (savedChildIons != null)
+                RestoreChildScanIons(psm.ChildScanMatchedIons, savedChildIons);
+
+            if (psm is PsmFromTsv bpRestore && savedBetaIons != null)
+                RestoreChildScanIons(bpRestore.BetaPeptideChildScanMatchedIons, savedBetaIons);
         }
 
         #region File Selection and Resetting 
@@ -1276,35 +1301,114 @@ namespace MetaMorpheusGUI
         /// <summary>
         /// Method to fire the plotting method with new fragment ions
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        /// <exception cref="NotImplementedException"></exception>
         internal void SearchWithNewIons_OnClick(object sender, RoutedEventArgs e)
         {
-            // find currently selected psm
             var psm = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
             if (psm is null)
                 return;
-            
-            // replace the ions and replot
-            var oldIons = psm.MatchedIons;
-            ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
-            dataGridScanNums.SelectedItem = psm;
-            dataGridScanNums_SelectedCellsChanged(FragmentationReanalysisViewModel, null);
 
-            // put the old ions back
-            psm.MatchedIons = oldIons;
+            if (MetaDrawTabControl.SelectedItem == ParentChildScanView)
+            {
+                if (psm.ChildScanMatchedIons == null)
+                    return;
+
+                var savedChildIons = SaveChildScanIons(psm.ChildScanMatchedIons);
+                Dictionary<int, List<MatchedFragmentIon>> savedBetaIons = null;
+                if (psm is PsmFromTsv { BetaPeptideChildScanMatchedIons: not null } bp)
+                {
+                    savedBetaIons = SaveChildScanIons(bp.BetaPeptideChildScanMatchedIons);
+                }
+
+                RematchChildScans(psm);
+
+                dataGridScanNums.SelectedItem = psm;
+                dataGridScanNums_SelectedCellsChanged(new object(), null);
+
+                RestoreChildScanIons(psm.ChildScanMatchedIons, savedChildIons);
+                if (psm is PsmFromTsv { BetaPeptideChildScanMatchedIons: not null } bp2 && savedBetaIons != null)
+                {
+                    RestoreChildScanIons(bp2.BetaPeptideChildScanMatchedIons, savedBetaIons);
+                }
+            }
+            else
+            {
+                var oldIons = psm.MatchedIons;
+                ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm, false);
+                dataGridScanNums.SelectedItem = psm;
+                dataGridScanNums_SelectedCellsChanged(FragmentationReanalysisViewModel, null);
+                psm.MatchedIons = oldIons;
+            }
         }
 
         /// <summary>
         /// Replaces matched fragment ions on a psm with new ion types after a quick search
         /// </summary>
-        /// <param name="psm"></param>
-        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm, bool concatOldIonsOfType = false)
+        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm, bool concatOldIonsOfType = false, MsDataScan? scan = null)
         {
-            var scan = MetaDrawLogic.GetMs2ScanFromPsm(psm);
+            scan ??= MetaDrawLogic.GetMs2ScanFromPsm(psm);
             var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm, concatOldIonsOfType);
             psm.MatchedIons = newIons;
+        }
+
+        private static Dictionary<int, List<MatchedFragmentIon>> SaveChildScanIons(Dictionary<int, List<MatchedFragmentIon>> original)
+        {
+            var copy = new Dictionary<int, List<MatchedFragmentIon>>();
+            foreach (var kvp in original)
+            {
+                copy[kvp.Key] = new List<MatchedFragmentIon>(kvp.Value);
+            }
+            return copy;
+        }
+
+        private static void RestoreChildScanIons(Dictionary<int, List<MatchedFragmentIon>> target, Dictionary<int, List<MatchedFragmentIon>> saved)
+        {
+            foreach (var kvp in saved)
+            {
+                if (target.TryGetValue(kvp.Key, out var list))
+                {
+                    list.Clear();
+                    list.AddRange(kvp.Value);
+                }
+                else
+                {
+                    target[kvp.Key] = new List<MatchedFragmentIon>(kvp.Value);
+                }
+            }
+            var toRemove = target.Keys.Except(saved.Keys).ToList();
+            foreach (var key in toRemove)
+            {
+                target.Remove(key);
+            }
+        }
+
+        private void RematchChildScans(SpectrumMatchFromTsv psm)
+        {
+            if (psm.ChildScanMatchedIons == null)
+                return;
+
+            if (!MetaDrawLogic.MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out var spectraFile))
+                return;
+
+            foreach (var scanNumber in psm.ChildScanMatchedIons.Keys.ToList())
+            {
+                MsDataScan childScan = spectraFile.GetOneBasedScanFromDynamicConnection(scanNumber);
+                var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(childScan, psm, false);
+                var list = psm.ChildScanMatchedIons[scanNumber];
+                list.Clear();
+                list.AddRange(newIons);
+            }
+
+            if (psm is PsmFromTsv { BetaPeptideChildScanMatchedIons: not null } bp)
+            {
+                foreach (var scanNumber in bp.BetaPeptideChildScanMatchedIons.Keys.ToList())
+                {
+                    MsDataScan childScan = spectraFile.GetOneBasedScanFromDynamicConnection(scanNumber);
+                    var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(childScan, psm, false);
+                    var list = bp.BetaPeptideChildScanMatchedIons[scanNumber];
+                    list.Clear();
+                    list.AddRange(newIons);
+                }
+            }
         }
 
         private void MetaDraw_OnClosing(object sender, CancelEventArgs e)
