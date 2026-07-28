@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using EngineLayer;
 using GuiFunctions;
 using NUnit.Framework;
 using TaskLayer;
@@ -19,7 +20,10 @@ namespace Test.GuiTests
             {
                 var vm = new MassDifferenceAcceptorSelectionViewModel(type, "");
 
-                Assert.That(vm.MassDiffAcceptorTypes.Select(m => m.Type), Is.EquivalentTo(Enum.GetValues<MassDiffAcceptorType>()));
+                var monoTypes = Enum.GetValues<MassDiffAcceptorType>().Cast<MassDiffAcceptorType>().Where(t => !t.ToString().Contains("MostAbundant"));
+                var mostAbundantTypes = Enum.GetValues<MassDiffAcceptorType>().Cast<MassDiffAcceptorType>().Where(t => t.ToString().Contains("MostAbundant"));
+                Assert.That(vm.MonoMassDiffAcceptorTypes.Select(m => m.Type), Is.EquivalentTo(monoTypes));
+                Assert.That(vm.MostAbundantMassDiffAcceptorTypes.Select(m => m.Type), Is.EquivalentTo(mostAbundantTypes));
                 Assert.That(vm.SelectedType.Type, Is.EqualTo(type));
 
                 if (type == MassDiffAcceptorType.Custom)
@@ -39,8 +43,8 @@ namespace Test.GuiTests
         public void SelectedType_CachesAndRestoresCustomMdac()
         {
             var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
-            var customModel = vm.MassDiffAcceptorTypes.First(m => m.Type == MassDiffAcceptorType.Custom);
-            var exactModel = vm.MassDiffAcceptorTypes.First(m => m.Type == MassDiffAcceptorType.Exact);
+            var customModel = vm.MonoMassDiffAcceptorTypes.First(m => m.Type == MassDiffAcceptorType.Custom);
+            var exactModel = vm.MonoMassDiffAcceptorTypes.First(m => m.Type == MassDiffAcceptorType.Exact);
 
             // Switch to Custom, set CustomMdac
             vm.SelectedType = customModel;
@@ -126,28 +130,28 @@ namespace Test.GuiTests
         public void MassDifferenceAcceptorTypeModel_Equality_MissedMonosIsCorrect()
         {
             var host = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.OneMM, "");
-            var model1 = host.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.OneMM);
+            var model1 = host.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.OneMM);
 
             Assert.That(model1.PositiveMissedMonos, Is.EqualTo(1));
             Assert.That(model1.NegativeMissedMonos, Is.EqualTo(0));
 
-            var model2 = host.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.TwoMM);
+            var model2 = host.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.TwoMM);
             Assert.That(model2.PositiveMissedMonos, Is.EqualTo(2));
             Assert.That(model2.NegativeMissedMonos, Is.EqualTo(0));
 
-            var model3 = host.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
+            var model3 = host.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
             Assert.That(model3.PositiveMissedMonos, Is.EqualTo(3));
             Assert.That(model3.NegativeMissedMonos, Is.EqualTo(3));
 
-            var model4 = host.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.ModOpen);
+            var model4 = host.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.ModOpen);
             Assert.That(model4.PositiveMissedMonos, Is.EqualTo(0));
             Assert.That(model4.NegativeMissedMonos, Is.EqualTo(0));
 
-            var model5 = host.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.Open);
+            var model5 = host.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.Open);
             Assert.That(model5.PositiveMissedMonos, Is.EqualTo(0));
             Assert.That(model5.NegativeMissedMonos, Is.EqualTo(0));
 
-            var model6 = host.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.Custom);
+            var model6 = host.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.Custom);
             Assert.That(model6.PositiveMissedMonos, Is.EqualTo(0));
             Assert.That(model6.NegativeMissedMonos, Is.EqualTo(0));
         }
@@ -433,6 +437,100 @@ namespace Test.GuiTests
             var results = combos.Cast<double>().ToList();
             Assert.That(results.Count, Is.EqualTo(1));
             Assert.That(results[0], Is.EqualTo(0));
+        }
+
+        [Test]
+        public void UseMostAbundantMass_SwitchingModesPreservesSelectedType()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
+            var exactModel = vm.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.Exact);
+            var twoMMModel = vm.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.TwoMM);
+            var mostAbundantDefault = vm.MostAbundantMassDiffAcceptorTypes.Last();
+            var mostAbundantExact = vm.MostAbundantMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.MostAbundant_Exact);
+
+            Assert.That(vm.SelectedType, Is.EqualTo(exactModel));
+
+            vm.UseMostAbundantMass = true;
+            Assert.That(vm.SelectedType, Is.EqualTo(mostAbundantDefault));
+
+            vm.UseMostAbundantMass = false;
+            Assert.That(vm.SelectedType, Is.EqualTo(exactModel));
+
+            vm.SelectedType = twoMMModel;
+
+            vm.UseMostAbundantMass = true;
+            Assert.That(vm.SelectedType, Is.EqualTo(mostAbundantDefault));
+
+            vm.UseMostAbundantMass = false;
+            Assert.That(vm.SelectedType, Is.EqualTo(twoMMModel));
+
+            vm.UseMostAbundantMass = true;
+            vm.SelectedType = mostAbundantExact;
+            Assert.That(vm.SelectedType, Is.EqualTo(mostAbundantExact));
+
+            vm.UseMostAbundantMass = false;
+            Assert.That(vm.SelectedType, Is.EqualTo(twoMMModel));
+
+            vm.UseMostAbundantMass = true;
+            Assert.That(vm.SelectedType, Is.EqualTo(mostAbundantExact));
+        }
+
+        [Test]
+        public void UseMonoisotopicMass_IsInverseOfUseMostAbundantMass()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
+
+            Assert.That(vm.UseMonoisotopicMass, Is.True);
+            Assert.That(vm.UseMostAbundantMass, Is.False);
+
+            vm.UseMonoisotopicMass = false;
+            Assert.That(vm.UseMostAbundantMass, Is.True);
+            Assert.That(vm.PrecursorMassMatchMode, Is.EqualTo(PrecursorMassMatchMode.MostAbundant));
+
+            vm.UseMonoisotopicMass = true;
+            Assert.That(vm.UseMostAbundantMass, Is.False);
+            Assert.That(vm.PrecursorMassMatchMode, Is.EqualTo(PrecursorMassMatchMode.Monoisotopic));
+        }
+
+        [Test]
+        public void Constructor_WithMostAbundantMode_SetsSelectedTypeFromCorrectCollection()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.MostAbundant_Exact, "", 5, PrecursorMassMatchMode.MostAbundant);
+
+            Assert.That(vm.PrecursorMassMatchMode, Is.EqualTo(PrecursorMassMatchMode.MostAbundant));
+            Assert.That(vm.UseMostAbundantMass, Is.True);
+            Assert.That(vm.SelectedType.Type, Is.EqualTo(MassDiffAcceptorType.MostAbundant_Exact));
+            Assert.That(vm.MostAbundantMassDiffAcceptorTypes, Contains.Item(vm.SelectedType));
+        }
+
+        [Test]
+        public void MostAbundantTypeModels_HaveCorrectLabels()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
+
+            var exact = vm.MostAbundantMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.MostAbundant_Exact);
+            Assert.That(exact.Label, Is.EqualTo("Most Abundant Exact"));
+            Assert.That(exact.PositiveMissedMonos, Is.EqualTo(0));
+            Assert.That(exact.NegativeMissedMonos, Is.EqualTo(0));
+
+            var plusMinusOne = vm.MostAbundantMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.MostAbundant_PlusMinusOne);
+            Assert.That(plusMinusOne.Label, Is.EqualTo("Most Abundant +- 1 Isotopologue"));
+            Assert.That(plusMinusOne.PositiveMissedMonos, Is.EqualTo(1));
+            Assert.That(plusMinusOne.NegativeMissedMonos, Is.EqualTo(1));
+
+            var plusMinusTwo = vm.MostAbundantMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.MostAbundant_PlusMinusTwo);
+            Assert.That(plusMinusTwo.Label, Is.EqualTo("Most Abundant +- 2 Isotopologues"));
+            Assert.That(plusMinusTwo.PositiveMissedMonos, Is.EqualTo(2));
+            Assert.That(plusMinusTwo.NegativeMissedMonos, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Constructor_WithMostAbundant_MissingMono_DefaultsToFirstMostAbundant()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.MostAbundant_PlusMinusTwo, "",
+                5, PrecursorMassMatchMode.MostAbundant);
+            Assert.That(vm.SelectedType.Type, Is.EqualTo(MassDiffAcceptorType.MostAbundant_PlusMinusTwo));
+            Assert.That(vm.MostAbundantMassDiffAcceptorTypes, Contains.Item(vm.SelectedType));
         }
 
         [Test]
