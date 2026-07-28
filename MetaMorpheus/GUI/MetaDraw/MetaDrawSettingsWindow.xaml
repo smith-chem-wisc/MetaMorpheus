@@ -119,6 +119,7 @@
                                             <RowDefinition Height="*"/>
                                             <RowDefinition Height="*"/>
                                             <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -137,6 +138,25 @@
                                 <CheckBox Grid.Column="0" Grid.Row="5" IsChecked="{Binding AnnotateIsotopicEnvelopes}"
                                           Name="IsotopicEnvelopeCheckBox" Content="Annotate isotopic envelopes" Margin="5" />
 
+                                        <Grid  Grid.Column="0" Grid.Row="6" Margin="-5 0 0 0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Content="Min m/z:" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                            <local:DoubleTextBoxControl x:Name="MinMzBox" Grid.Column="1"  Width="60" Height="24"
+                                                                        Text="{Binding MinMzToPlot}" LowerBound="0"
+                                                                        VerticalContentAlignment="Center"
+                                                                        HorizontalContentAlignment="Center" />
+                                            <Label Content="Max m/z:" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                            <local:DoubleTextBoxControl x:Name="MaxMzBox" Grid.Column="3" Width="60" Height="24"
+                                                                        Text="{Binding MaxMzToPlot}" LowerBound="0"
+                                                                        VerticalContentAlignment="Center"
+                                                                        HorizontalContentAlignment="Center" />
+                                        </Grid>
+                                        
                                     </Grid>
 
                             <Expander Header="Advanced Ion Annotations" DockPanel.Dock="Top" Margin="10 5 5 5">
@@ -424,12 +444,30 @@
                                           Content="Display internal ion annotations" Margin="5" />
                             <CheckBox Grid.Column="0" Grid.Row="5" IsChecked="{Binding AnnotateIsotopicEnvelopes}"
                                           Content="Annotate isotopic envelopes" Margin="5" />
-
+                            <Grid  Grid.Column="0" Grid.Row="6" Margin="-10 0 10 0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Content="Min m/z:" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                <local:DoubleTextBoxControl x:Name="MinMzBox2" Grid.Column="1"  Width="60" Height="24"
+                                            Text="{Binding MinMzToPlot}" LowerBound="0"
+                                            VerticalContentAlignment="Center"
+                                            HorizontalContentAlignment="Center" />
+                                <Label Content="Max m/z:" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                <local:DoubleTextBoxControl x:Name="MaxMzBox2" Grid.Column="3" Width="60" Height="24"
+                                            Text="{Binding MaxMzToPlot}" LowerBound="0"
+                                            VerticalContentAlignment="Center"
+                                            HorizontalContentAlignment="Center" />
+                            </Grid>
+                            
                             <CheckBox Content="Bold ion annotations"  Margin="7 5"  Grid.Column="1" Grid.Row="0"
                                           IsChecked="{Binding AnnotationBold}" />
                             <CheckBox IsChecked="{Binding SubAndSuperScriptIons}" Grid.Column="1" Grid.Row="1" 
                                           Content="Sub/superscripted ion annotations"  Margin="7 5"  />
-
+                            
                             <StackPanel Orientation="Horizontal" Margin="5 0"
                                             Grid.Column="1" Grid.Row="2" >
                                 <Label Content="Annotation text size:" Width="165" />
