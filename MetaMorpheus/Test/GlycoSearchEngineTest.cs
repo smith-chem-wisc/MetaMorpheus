@@ -87,16 +87,13 @@ namespace Test
 
         /// <summary>
         /// Creates a GlycoSearchEngine with no scans, only so that private instance members can be exercised.
+        /// Uses OGlycan.gdb, which GlobalVariables already registers from Glycan_Mods at start-up, so this
+        /// helper does not mutate the static glycan database path lists.
         /// </summary>
         private static GlycoSearchEngine MakeEngineForLocalizationScanSelection(CommonParameters commonParameters)
         {
-            string oglycanPath = "OGlycan.gdb";
-            string nglycanPath = "NGlycan_ForNoSearch.gdb";
-            if (!GlobalVariables.OGlycanDatabasePaths.Contains(oglycanPath)) GlobalVariables.OGlycanDatabasePaths.Add(oglycanPath);
-            if (!GlobalVariables.NGlycanDatabasePaths.Contains(nglycanPath)) GlobalVariables.NGlycanDatabasePaths.Add(nglycanPath);
-
             return new GlycoSearchEngine(new List<GlycoSpectralMatch>[0], new Ms2ScanWithSpecificMass[0],
-                new List<PeptideWithSetModifications>(), null, null, 0, commonParameters, null, oglycanPath, nglycanPath,
+                new List<PeptideWithSetModifications>(), null, null, 0, commonParameters, null, "OGlycan.gdb", null,
                 glycoSearchType: GlycoSearchType.OGlycanSearch, 30, 3, false, null);
         }
 
