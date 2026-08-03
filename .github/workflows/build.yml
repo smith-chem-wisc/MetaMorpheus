@@ -5,9 +5,15 @@ name: Build
 
 on:
   push:
-    branches: [ "master" ] 
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+
+# Mirrors InstallRunAndArtifact.yml so the SDK version and target framework are declared in one place
+# per workflow rather than repeated inline.
+env:
+  DOTNET_VERSION: 8.0.204
+  DOTNET_FRAMEWORK: net8.0
 
 jobs:
   build:
@@ -30,8 +36,46 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.204
+          dotnet-version: ${{ env.DOTNET_VERSION }}
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
       - name: Build
         run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration ${{ matrix.configuration }}
+
+      # Guards issues #2503/#2504. An assembly built with PlatformTarget=x64 has AMD64 in its PE header and
+      # an arm64 .NET runtime refuses to load it. Building on an arm64 host does NOT catch this - cross
+      # compiling an x64-stamped IL assembly is legal and the stamp only bites at load time - so assert on
+      # the header directly. Architecture-neutral IL reads as "PE32 ... Intel 80386"; x64-stamped reads as
+      # "PE32+ ... x86-64". Runs on the Unix legs only, where `file` is available; IL is host-independent,
+      # so checking on one platform is sufficient.
+      - name: Assert CLI assemblies are architecture-neutral
+        if: runner.os != 'Windows'
+        run: |
+          set -euo pipefail
+          status=0
+          for project in CMD EngineLayer TaskLayer; do
+            asm="$project/bin/Release/${{ env.DOTNET_FRAMEWORK }}/$project.dll"
+            path="./MetaMorpheus/$asm"
+            if [ ! -f "$path" ]; then
+              echo "::error::expected assembly not found: $path"
+              status=1
+              continue
+            fi
+            desc=$(file -b "$path")
+            if echo "$desc" | grep -q 'x86-64'; then
+              echo "::error file=$asm::architecture-specific assembly ($desc). Remove PlatformTarget from this project - an x64 stamp cannot be loaded on arm64 (issues #2503, #2504). Note PlatformTarget must be left unset rather than set to AnyCPU, which Microsoft.ML rejects at build time."
+              status=1
+            else
+              echo "ok: $asm -> $desc"
+            fi
+          done
+          exit $status
+
+      # Non-blocking for now: this still fails on 'Omics, Version=...' because the mzLib package ships
+      # x64-stamped assemblies too (see smith-chem-wisc/mzLib#1127). Once an architecture-neutral mzLib
+      # release is consumed, drop continue-on-error so arm64 load regressions become a hard failure.
+      # TODO(#2503): make this step required after the mzLib bump lands.
+      - name: Smoke test on arm64 (non-blocking until mzLib ships architecture-neutral)
+        if: matrix.os == 'macos-latest'
+        continue-on-error: true
+        run: dotnet ./MetaMorpheus/CMD/bin/Release/${{ env.DOTNET_FRAMEWORK }}/CMD.dll --test -o "${{ runner.temp }}/arm64-smoke"
