@@ -8,6 +8,67 @@ namespace Test
     [TestFixture]
     public static class GlobalVariablesTest
     {
+        /// <summary>
+        /// The UniProt proteome catalogue is a convenience for one GUI window, not a prerequisite for
+        /// searching, so MetaMorpheus must still start without it. SetUpGlobalVariables runs in the
+        /// MainWindow constructor and in Program.Main outside any try/catch, so an exception escaping
+        /// LoadAvailableProteomes is an unhandled crash at launch — and mzLib now reports a missing
+        /// catalogue by throwing rather than returning null (smith-chem-wisc/mzLib#1126).
+        ///
+        /// The file is shipped beside the executable, but DataDir can resolve to %LOCALAPPDATA%\MetaMorpheus
+        /// for a Program Files install, or to a --customDataDir the user already created, and in those cases
+        /// it may simply be absent. This hides it to reproduce that.
+        /// </summary>
+        [Test]
+        public static void TestStartUpSurvivesAMissingProteomeCatalogue()
+        {
+            string proteomesDirectory = Path.Combine(GlobalVariables.DataDir, "Proteomes");
+            string hiddenDirectory = proteomesDirectory + ".hidden-for-test";
+
+            if (Directory.Exists(hiddenDirectory))
+                Directory.Delete(hiddenDirectory, true);
+
+            bool wasPresent = Directory.Exists(proteomesDirectory);
+            if (wasPresent)
+                Directory.Move(proteomesDirectory, hiddenDirectory);
+
+            try
+            {
+                Assert.DoesNotThrow(() => GlobalVariables.SetUpGlobalVariables(),
+                    "a missing proteome catalogue must not stop MetaMorpheus starting");
+
+                // Empty, never null: DownloadUniProtDatabaseWindow enumerates this property and calls
+                // FirstOrDefault on it with no null check, so null would be a latent NullReferenceException.
+                Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Not.Null);
+                Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Empty);
+            }
+            finally
+            {
+                if (wasPresent)
+                {
+                    if (Directory.Exists(proteomesDirectory))
+                        Directory.Delete(proteomesDirectory, true);
+                    Directory.Move(hiddenDirectory, proteomesDirectory);
+                }
+
+                // Leave the globals as the rest of the suite expects to find them.
+                GlobalVariables.SetUpGlobalVariables();
+            }
+        }
+
+        /// <summary>With the catalogue present it is read, and the human proteome is in it.</summary>
+        [Test]
+        public static void TestProteomeCatalogueIsReadWhenPresent()
+        {
+            Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Not.Null);
+
+            if (Directory.Exists(Path.Combine(GlobalVariables.DataDir, "Proteomes")))
+            {
+                Assert.That(GlobalVariables.AvailableUniProtProteomes.ContainsKey("UP000005640"));
+                Assert.That(GlobalVariables.AvailableUniProtProteomes["UP000005640"], Is.EqualTo("Homo sapiens (Human)"));
+            }
+        }
+
         [Test]
         public static void TestCustomDataDirectory()
         {
