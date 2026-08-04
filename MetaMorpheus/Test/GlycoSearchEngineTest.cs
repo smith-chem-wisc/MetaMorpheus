@@ -21,6 +21,29 @@ namespace Test
     [TestFixture]
     public class GlycoSearchEngineTest
     {
+        /// <summary>
+        /// Registers a glycan database that ships in GlycoTestData with the global path list that
+        /// GlycoSearchEngine resolves against.
+        /// <para>
+        /// GlycoSearchEngine looks a database up as
+        /// <c>GlobalVariables.NGlycanDatabasePaths.First(p =&gt; Path.GetFileName(p) == name)</c>, so whatever
+        /// is registered here has to be a path that actually resolves. Start-up only registers the contents
+        /// of Glycan_Mods, which does not include the GlycoTestData databases, so a bare file name added
+        /// here becomes the only match for those and is then resolved relative to the working directory.
+        /// That fails, and because GlobalVariables is static and never reset between fixtures it fails in
+        /// whichever later test needs the database, not in the test that registered it.
+        /// </para>
+        /// </summary>
+        private static void RegisterGlycoTestDataGlycanDatabase(List<string> glycanDatabasePaths, string fileName)
+        {
+            if (glycanDatabasePaths.Any(p => Path.GetFileName(p) == fileName))
+            {
+                return;
+            }
+
+            glycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", fileName));
+        }
+
         [Test]
         public void CreateGsm_WithWideProductTolerance_ScanInfo_p_IsCappedToOne() 
         {
@@ -30,8 +53,8 @@ namespace Test
             // ensure glycan DB paths used by GlycoSearchEngine ctor are registered (filenames must match ctor arguments)
             string oglycanPath = "OGlycan.gdb";
             string nglycanPath = "NGlycan_ForNoSearch.gdb";
-            if (!GlobalVariables.OGlycanDatabasePaths.Contains(oglycanPath)) GlobalVariables.OGlycanDatabasePaths.Add(oglycanPath);
-            if (!GlobalVariables.NGlycanDatabasePaths.Contains(nglycanPath)) GlobalVariables.NGlycanDatabasePaths.Add(nglycanPath);
+            RegisterGlycoTestDataGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, oglycanPath);
+            RegisterGlycoTestDataGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, nglycanPath);
 
             // Load the test MGF file and get MS2 scans
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
@@ -308,15 +331,8 @@ namespace Test
                 // GlycoSearchEngine expects these DB names to exist in global path lists.
                 string oglycanPath = "OGlycan.gdb";
                 string nglycanPath = "NGlycan_ForNoSearch.gdb";
-                if (!GlobalVariables.OGlycanDatabasePaths.Contains(oglycanPath))
-                {
-                    GlobalVariables.OGlycanDatabasePaths.Add(oglycanPath);
-                }
-
-                if (!GlobalVariables.NGlycanDatabasePaths.Contains(nglycanPath))
-                {
-                    GlobalVariables.NGlycanDatabasePaths.Add(nglycanPath);
-                }
+                RegisterGlycoTestDataGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, oglycanPath);
+                RegisterGlycoTestDataGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, nglycanPath);
 
                 // Use a calibratable mzML for calibration.
                 string rawFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
