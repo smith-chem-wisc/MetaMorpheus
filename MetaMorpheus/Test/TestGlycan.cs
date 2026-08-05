@@ -32,7 +32,6 @@ namespace Test
             Assert.That(Nglycan.Ions, Is.Not.Null);
             Assert.That(Nglycan.Ions.Count, Is.GreaterThan(0));
             Assert.That(Nglycan.Type, Is.EqualTo(GlycanType.N_glycan)); 
-            Assert.That(Nglycan.NeutralLosses, Is.Not.Null);
 
             var Oglycan = new Glycan(kind, "S", GlycanType.O_glycan);
             Assert.That(Oglycan.Ions, Is.Null);

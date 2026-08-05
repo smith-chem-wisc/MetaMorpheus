@@ -373,7 +373,7 @@ namespace EngineLayer
         /// </summary>
         /// <param name="glycan">The glycan to hydrate. Its GlyId is preserved on the returned glycan.</param>
         /// <param name="ions">The glycan ions to attach.</param>
-        /// <returns>A new Glycan instance with Ions set and NeutralLosses/DiagnosticIons rebuilt from those ions.</returns>
+        /// <returns>A new Glycan instance with Ions set </returns>
         public void RegenerateIons()
         {
             if (Ions != null && Ions.Count > 0) return; // Already hydrated, nothing to do.
