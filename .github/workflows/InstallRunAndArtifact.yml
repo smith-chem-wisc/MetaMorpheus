@@ -273,3 +273,101 @@ jobs:
           } else {
               Write-Host "✅ Installer DLLs match build output exactly." -ForegroundColor Green
           }
+
+      # The top-level DLL comparison above is non-recursive, so nothing under runtimes/ is
+      # covered by it. This step widens coverage to the win-x64 native libraries
+      # (LibTorchSharp.dll, torch_cpu.dll, libSkiaSharp.dll, ...), which are loaded via
+      # DllImport at runtime and throw DllNotFoundException when the installer omits them.
+      #
+      # Scoped to win-x64 on purpose: the MSI is a Windows x64 installer, and it deliberately
+      # maps the other RIDs' native folders to non-standard names
+      # (runtimes\linux-x64\nativeLinux, runtimes\osx-x64\nativeOsx - see the Directory
+      # elements in MetaMorpheus/MetaMorpheusSetup/Product.wxs). Only win-x64 keeps the real
+      # "native" folder name, so only file names within that one folder are compared; a
+      # recursive relative-path diff would report the renamed folders as false mismatches.
+      - name: Compare built native runtime libraries to installed native runtime libraries
+        run: |
+          $installDir = "C:\Program Files\MetaMorpheus"
+          $nativeSubPath = "runtimes\win-x64\native"
+
+          # Define whitelist for missing natives (build-only) - Okay to not be installed
+          $whitelistedMissingNatives = @(
+
+          )
+
+          # Define whitelist for extra natives (install-only)
+          $whitelistedExtraNatives = @(
+
+          )
+
+          # Define which folders to check in the repo (same build outputs as the DLL check above)
+          $foldersToCheck = @(
+              "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\$env:DOTNET_FRAMEWORK-windows",
+              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\$env:DOTNET_FRAMEWORK"
+          )
+
+          # Collect native libraries and their source folders
+          $buildNatives = @()
+          $buildNativeLocations = @{}
+
+          foreach ($folder in $foldersToCheck) {
+              $nativeFolder = Join-Path $folder $nativeSubPath
+              if (Test-Path $nativeFolder) {
+                  Get-ChildItem -Path $nativeFolder -Filter *.dll | ForEach-Object {
+                      $nativeName = $_.Name
+                      $buildNatives += $nativeName
+                      $buildNativeLocations[$nativeName] = $nativeFolder
+                  }
+              }
+          }
+          $buildNatives = @($buildNatives | Sort-Object -Unique)
+
+          # Guard against a silent pass if the build output layout ever moves
+          if ($buildNatives.Count -eq 0) {
+              Write-Host "❌ No native libraries found under $nativeSubPath in any build output folder; the comparison cannot be trusted." -ForegroundColor Red
+              $foldersToCheck | ForEach-Object { Write-Host "- looked in $(Join-Path $_ $nativeSubPath)" }
+              exit 1
+          }
+
+          # Get installed native libraries
+          $installedNativeFolder = Join-Path $installDir $nativeSubPath
+          if (Test-Path $installedNativeFolder) {
+              $installedNatives = @(Get-ChildItem -Path $installedNativeFolder -Filter *.dll | Select-Object -ExpandProperty Name -Unique)
+          } else {
+              Write-Host "⚠️ Installed native folder not found: $installedNativeFolder" -ForegroundColor Yellow
+              $installedNatives = @()
+          }
+
+          # Find missing natives (in build, not in install), ignoring whitelist
+          $missingNatives = @($buildNatives | Where-Object { $_ -notin $installedNatives -and $_ -notin $whitelistedMissingNatives })
+
+          # Find extra natives (in install, not in build), ignoring whitelist
+          $extraNatives = @($installedNatives | Where-Object { $_ -notin $buildNatives -and $_ -notin $whitelistedExtraNatives })
+
+          $hasError = $false
+
+          if ($missingNatives.Count -gt 0) {
+              Write-Host "❌ Missing native libraries from installer (not whitelisted):" -ForegroundColor Red
+              $missingNatives | ForEach-Object {
+                  $sourceFolder = $buildNativeLocations[$_]
+                  Write-Host "- $_ (from $sourceFolder)"
+              }
+              Write-Host "These are loaded by DllImport at runtime; when absent the installed app throws DllNotFoundException."
+              Write-Host "Add them to the WinNativeMathComponents ComponentGroup in MetaMorpheus/MetaMorpheusSetup/Product.wxs."
+              $hasError = $true
+          }
+
+          if ($extraNatives.Count -gt 0) {
+              Write-Host "❌ Extra/unexpected native libraries in installer:" -ForegroundColor Red
+              $extraNatives | ForEach-Object { Write-Host "- $_" }
+              $hasError = $true
+          }
+
+          if ($hasError) {
+              exit 1
+          } else {
+              Write-Host "✅ Installer $nativeSubPath libraries match build output exactly." -ForegroundColor Green
+          }
