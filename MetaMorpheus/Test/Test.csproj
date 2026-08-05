@@ -428,6 +428,13 @@
     <None Update="TestData\snippet.d\analysis.tdf_bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- Regular (non-tims) Bruker TOF .d data (analysis.baf), for BrukerFileReader tests -->
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralLibrarySearch\1-81.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
