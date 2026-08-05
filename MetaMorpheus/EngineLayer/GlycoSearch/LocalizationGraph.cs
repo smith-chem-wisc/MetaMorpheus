@@ -137,7 +137,23 @@ namespace EngineLayer.GlycoSearch
             var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, modPos_index, localizationGraph.ModBox);
             var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
             localizationGraph.NoLocalCost = noLocalScore;
-            localizationGraph.TotalScore = localizationGraph.array[modPos.Count - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;
+
+            // The terminal node is only populated when the peptide's candidate-site motifs can actually
+            // accommodate every modification in the box. GlycoSearchEngine guarantees that by calling
+            // GraphCheck before building the graph, so this never fires in a search. It fires when the graph
+            // is driven directly -- from a test, or from new calling code -- without that precondition, and
+            // without this check the symptom is a bare NullReferenceException on the line below rather than
+            // anything that names the cause.
+            var terminalNode = localizationGraph.array[modPos.Count - 1][localizationGraph.ChildModBoxes.Length - 1];
+            if (terminalNode == null)
+            {
+                throw new MetaMorpheusException(
+                    $"Localization graph has no reachable terminal node for a modification box of {localizationGraph.ModBox.NumberOfMods} " +
+                    $"modification(s) over {modPos.Count} candidate site(s). The candidate-site motifs cannot accommodate the box; " +
+                    "callers must screen with GlycoSearchEngine.GraphCheck before localizing.");
+            }
+
+            localizationGraph.TotalScore = terminalNode.maxCost + noLocalScore;
         }
 
         /// <summary>

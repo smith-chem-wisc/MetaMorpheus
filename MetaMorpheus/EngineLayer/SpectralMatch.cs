@@ -25,6 +25,9 @@ namespace EngineLayer
             _BestMatchingBioPolymersWithSetMods = new List<SpectralMatchHypothesis>();
             ScanIndex = scanIndex;
             ScanMetadata = scan.ScanMetadata;
+            ScanPrecursorMostAbundantMass = scan.PrecursorMostAbundantMass;
+            IsMostAbundantMode = commonParameters.UsesMostAbundantPeak();
+            PrecursorAveragine = commonParameters.PrecursorDeconvolutionParameters?.AverageResidueModel;
             PrecursorScanDeconvolutionScore = scan.PrecursorDeconvolutionScore;
             DigestionParams = commonParameters.DigestionParams;
             RunnerUpScore = commonParameters.ScoreCutoff;
@@ -93,6 +96,18 @@ namespace EngineLayer
         /// envelope is maximally bad; higher = better-shaped Averagine match.
         /// </summary>
         public double PrecursorScanDeconvolutionScore { get; }
+        /// <summary>
+        /// The observed neutral mass of the most abundant isotopologue of the precursor envelope, or 0 if
+        /// no envelope was deconvoluted. An observation, populated in every search — the mirror of
+        /// <see cref="Ms2ScanWithSpecificMass.PrecursorMostAbundantMass"/>. Which mass a given search
+        /// matched on is decided by the <see cref="MassDiffAcceptor"/>, not by this class; see
+        /// <see cref="PrecursorMassExtensions.GetPrecursorMassForSearch(SpectralMatch, MassDiffAcceptor)"/>.
+        /// </summary>
+        public double ScanPrecursorMostAbundantMass { get; }
+        /// <summary>True when this match was made in most-abundant precursor-selection mode.</summary>
+        public bool IsMostAbundantMode { get; }
+        /// <summary>Averagine model of the precursor deconvolution, used to predict the theoretical apex for most-abundant mass-error reporting; null if unavailable.</summary>
+        private AverageResidue PrecursorAveragine { get; }
         public double? CollisionalEnergy { get; }
 
         #endregion
@@ -188,6 +203,32 @@ namespace EngineLayer
             get
             {
                 return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round((this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass) / p.SpecificBioPolymer.MonoisotopicMass * 1e6, 2)).ToList();
+            }
+        }
+
+        /// <summary>
+        /// Precursor mass error (ppm) between the observed most-abundant isotopic peak
+        /// (<see cref="ScanPrecursorMostAbundantMass"/>) and the candidate's theoretical most-abundant
+        /// (averagine-apex) mass — the most-abundant-mode analogue of <see cref="PrecursorMassErrorPpm"/>.
+        /// Returns null outside most-abundant mode (the psmtsv column is then omitted). A non-tight value
+        /// here flags an apex misprediction the notch tolerated, complementing the monoisotopic Mass Diff,
+        /// which instead flags a deconvolution monoisotopic-peak misassignment; together they distinguish
+        /// the two error sources for a given PSM.
+        /// </summary>
+        public List<double> MostAbundantMassErrorPpm
+        {
+            get
+            {
+                if (!IsMostAbundantMode || PrecursorAveragine == null || ScanPrecursorMostAbundantMass <= 0)
+                    return null;
+                return this._BestMatchingBioPolymersWithSetMods.Select(p =>
+                {
+                    double theoreticalMostAbundant = p.SpecificBioPolymer.MonoisotopicMass
+                        + PrecursorAveragine.ApexOffset(p.SpecificBioPolymer.MonoisotopicMass);
+                    return theoreticalMostAbundant <= 0
+                        ? 0
+                        : Math.Round((this.ScanPrecursorMostAbundantMass - theoreticalMostAbundant) / theoreticalMostAbundant * 1e6, 2);
+                }).ToList();
             }
         }
 
@@ -370,9 +411,9 @@ namespace EngineLayer
 
         #region IO
 
-        public static string GetTabSeparatedHeader(bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
+        public static string GetTabSeparatedHeader(bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false)
         {
-            return string.Join("\t", DataDictionary(null, null, includeOneOverK0Column: includeOneOverK0Column, includeCollisionalEnergyColumn: includeCollisionalEnergyColumn).Keys);
+            return string.Join("\t", DataDictionary(null, null, includeOneOverK0Column: includeOneOverK0Column, includeCollisionalEnergyColumn: includeCollisionalEnergyColumn, includeMostAbundantColumn: includeMostAbundantColumn).Keys);
         }
 
         public override string ToString()
@@ -380,16 +421,16 @@ namespace EngineLayer
             return ToString(new Dictionary<string, int>());
         }
 
-        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column, includeCollisionalEnergyColumn).Values.Select(v => v?.Trim() ?? string.Empty));
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn).Values.Select(v => v?.Trim() ?? string.Empty));
         }
 
-        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
+        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddBasicMatchData(s, psm, includeOneOverK0Column, includeCollisionalEnergyColumn);
-            PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
+            PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned, includeMostAbundantColumn);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm, writePeptideLevelFdr);
             return s;
@@ -465,6 +506,9 @@ namespace EngineLayer
             PsmCount = psm.PsmCount;
             ModsIdentified = psm.ModsIdentified;
             LocalizedScores = psm.LocalizedScores;
+            ScanPrecursorMostAbundantMass = psm.ScanPrecursorMostAbundantMass;
+            IsMostAbundantMode = psm.IsMostAbundantMode;
+            PrecursorAveragine = psm.PrecursorAveragine;
             CollisionalEnergy = psm.CollisionalEnergy;
             FdrInfo = psm.FdrInfo;
             PeptideFdrInfo = psm.PeptideFdrInfo;

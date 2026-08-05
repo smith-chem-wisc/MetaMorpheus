@@ -9,6 +9,7 @@ using EngineLayer.DatabaseLoading;
 using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;
+using Omics.Fragmentation;
 using Nett;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
@@ -260,6 +261,50 @@ namespace Test.MetaDraw
             // clean up
             Directory.Delete(outputFolder, true);
             GlobalVariables.AnalyteType = AnalyteType.Peptide;
+        }
+
+        [Test]
+        public static void TestFragmentationReanalysisViewModel_DiagnosticIons()
+        {
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\TMT-Task1-SearchTaskconfig.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestRefragmentDiagnosticIons");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\VA084TQ_6.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\mouseTmt.fasta");
+
+            var engineToml = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) },
+                new List<string> { myFile },
+                new List<DbForTask> { new DbForTask(myDatabase, false) },
+                outputFolder);
+            engineToml.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
+            var dataFile = MsDataFileReader.GetDataFile(myFile);
+
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            var psmToResearch = parsedPsms.First();
+            var scan = dataFile.GetOneBasedScan(psmToResearch.Ms2ScanNumber);
+
+            var viewModel = new FragmentationReanalysisViewModel();
+
+            viewModel.PossibleProducts.ForEach(p => p.Use = true);
+
+            var productsSnapshot = viewModel.PossibleProducts.Where(p => p.Use).Select(p => p.ProductType).ToList();
+            Assert.That(productsSnapshot.Contains(ProductType.D), "ProductType.D should be enabled for diagnostic ion testing");
+
+            viewModel.ProductIonMassTolerance = 20;
+            var newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, false);
+
+            var diagnosticIonCount = newMatchedIons.Count(i => i.NeutralTheoreticalProduct.ProductType == ProductType.D);
+            Assert.That(diagnosticIonCount, Is.GreaterThan(0), "Should find diagnostic ions from TMT-labeled peptide reanalysis");
+
+            var nonDiagnosticIonCount = newMatchedIons.Count(i => i.NeutralTheoreticalProduct.ProductType != ProductType.D);
+            Assert.That(nonDiagnosticIonCount, Is.GreaterThan(0), "Should also find regular fragment ions");
+
+            Assert.That(newMatchedIons.Count, Is.EqualTo(diagnosticIonCount + nonDiagnosticIonCount), "All matched ions should be accounted for");
+
+            Directory.Delete(outputFolder, true);
         }
     }
 }

@@ -655,7 +655,7 @@ namespace TaskLayer
                     {
                         Status("Running histogram analysis...", new List<string> { Parameters.SearchTaskId });
                         var myTreeStructure = new BinTreeStructure();
-                        myTreeStructure.GenerateBins(limitedpsms_with_fdr.FilteredPsmsList, Parameters.SearchParameters.HistogramBinTolInDaltons);
+                        myTreeStructure.GenerateBins(limitedpsms_with_fdr.FilteredPsmsList, Parameters.SearchParameters.HistogramBinTolInDaltons, CommonParameters);
                         var writtenFile = Path.Combine(Parameters.OutputFolder, "MassDifferenceHistogram.tsv");
                         WriteTree(myTreeStructure, writtenFile);
                         FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });

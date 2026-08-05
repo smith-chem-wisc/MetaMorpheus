@@ -11,11 +11,13 @@ namespace EngineLayer
     {
         public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam,
             IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null,
+            double? precursorMostAbundantMass = null,
             double precursorDeconvolutionScore = 0)
         {
             PrecursorMonoisotopicPeakMz = precursorMonoisotopicPeakMz;
             PrecursorCharge = precursorCharge;
             PrecursorMass = PrecursorMonoisotopicPeakMz.ToMass(precursorCharge);
+            PrecursorMostAbundantMass = precursorMostAbundantMass ?? 0;
             PrecursorIntensity = precursorIntensity ?? 1;
             PrecursorEnvelopePeakCount = envelopePeakCount ?? 1;
             PrecursorFractionalIntensity = precursorFractionalIntensity ?? -1;
@@ -67,7 +69,26 @@ namespace EngineLayer
         public ScanMetadata ScanMetadata { get; }
 
         public double PrecursorMonoisotopicPeakMz { get; }
+
+        /// <summary>
+        /// The observed monoisotopic precursor mass, in every search. This property does not change
+        /// meaning with the search type.
+        /// </summary>
         public double PrecursorMass { get; }
+
+        /// <summary>
+        /// The observed neutral mass of the most abundant (tallest) isotopologue of the precursor envelope,
+        /// or 0 when no envelope was deconvoluted for this precursor (a scan-header precursor, or a neutral
+        /// mass read from a pre-deconvoluted file). Like <see cref="PrecursorMass"/> this is a plain
+        /// observation, populated in every search and never redefined by one: it is what the detector saw,
+        /// not what the current search chose to match on.
+        /// <para>
+        /// Which of the two a search matches candidates against is decided by the
+        /// <see cref="EngineLayer.MassDiffAcceptor"/> — see
+        /// <see cref="PrecursorMassExtensions.GetPrecursorMassForSearch(Ms2ScanWithSpecificMass, MassDiffAcceptor)"/>.
+        /// </para>
+        /// </summary>
+        public double PrecursorMostAbundantMass { get; }
         public int PrecursorCharge { get; }
         public double PrecursorIntensity { get; }
         public int PrecursorEnvelopePeakCount { get; }
