@@ -94,22 +94,6 @@ namespace EngineLayer.GlycoSearch
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
 
-            // Ensure any N-glycan selected as a variable modification has its Y-ion fragments
-            // Generated. Glycans in GlobalVariables.AllModsKnownDictionary are loaded without
-            // ions (ToGenerateIons: false) for performance reasons, since that dictionary mainly
-            // serves the "known mods" list. When such a glycan is used as a variable mod in
-            // O-glycan/NO-glycan search, we need its Ions populated to build Y-ions in CreateGsm.
-            foreach (var (modType, idWithMotif) in commonParameters.ListOfModsVariable)
-            {
-                if (modType == "N-linked glycosylation" &&
-                    GlobalVariables.AllModsKnownDictionary.TryGetValue(idWithMotif, out var mod) &&
-                    mod is Glycan variableNGlycan &&
-                    (variableNGlycan.Ions == null || variableNGlycan.Ions.Count == 0))
-                {
-                    variableNGlycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(variableNGlycan.Kind);
-                }
-            }
-
         }
 
         private Glycan[] NGlycans { get; }

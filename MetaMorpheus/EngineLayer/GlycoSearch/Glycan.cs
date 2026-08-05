@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Chemistry;
-using System;
+﻿using Chemistry;
 using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using Omics.Modifications;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer
 {
@@ -41,11 +41,54 @@ namespace EngineLayer
             Type = type;
 
             // Modification Properties
-            Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
-            // Generate the neural loss and diagnostic ions for O_glycan.
-            if (type == GlycanType.O_glycan)
+            if (Type == GlycanType.O_glycan) 
             {
                 ModificationType = "O-linked glycosylation"; // Set the modification type.
+            }
+            else if (Type == GlycanType.N_glycan)
+            {
+                ModificationType = "N-linked glycosylation"; // Set the modification type.
+            }
+
+            // Generate the Neutral losses and diagnostic ions for O_glycan.
+            GeneratedNeutralLosses();
+            GenerateDiagnosticIons();
+
+            ModificationMotif.TryGetMotif(motif, out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
+            var id = Glycan.GetKindString(Kind);
+
+            OriginalId = id; // Set the original ID to the glycan kind string, which is unique for each glycan.
+            Target = finalMotif; // Set the target motif for the modification.
+
+            if (OriginalId != null)
+            {
+                IdWithMotif = OriginalId + " on " + Target.ToString();
+                OriginalId = OriginalId;
+            }
+            else
+                OriginalId = OriginalId;
+        }
+        /// <summary>
+        /// Generate the diagnostic ions for Glycan
+        /// </summary>
+        private void GenerateDiagnosticIons()
+        {
+            Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
+            diagnosticIons.Add(DissociationType.HCD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList()); // Divided by 1E5 to convert mass(int) to monoisotopic mass(double).
+            diagnosticIons.Add(DissociationType.CID, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.EThcD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            DiagnosticIons = diagnosticIons; // Set the diagnostic ions for the modification.
+        }
+
+        /// <summary>
+        /// Generate the neural loss for Glycan.
+        /// </summary>
+        private void GeneratedNeutralLosses() 
+        {
+            Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
+            // Generate the neural loss and diagnostic ions for O_glycan.
+            if (Type == GlycanType.O_glycan)
+            {
                 if (Ions != null)
                 {
                     List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
@@ -56,37 +99,17 @@ namespace EngineLayer
             }
 
             // Generate the neural loss and diagnostic ions for N_glycan.
-            else if (type == GlycanType.N_glycan)
+            else if (Type == GlycanType.N_glycan)
             {
-                ModificationType = "N-linked glycosylation"; // Set the modification type.
                 if (Ions != null)
                 {
-                    List<double> lossMasses = Ions.Where(p=>p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
+                    List<double> lossMasses = Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
                     neutralLosses.Add(DissociationType.HCD, lossMasses);
                     neutralLosses.Add(DissociationType.CID, lossMasses);
                     neutralLosses.Add(DissociationType.EThcD, lossMasses);
                 }
             }
-
-            Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
-            diagnosticIons.Add(DissociationType.HCD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList()); // Divided by 1E5 to convert mass(int) to monoisotopic mass(double).
-            diagnosticIons.Add(DissociationType.CID, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            diagnosticIons.Add(DissociationType.EThcD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            ModificationMotif.TryGetMotif(motif, out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
-            var id = Glycan.GetKindString(Kind);
-
-            OriginalId = id; // Set the original ID to the glycan kind string, which is unique for each glycan.
-            Target = finalMotif; // Set the target motif for the modification.
             NeutralLosses = neutralLosses; // Set the neutral losses for the modification.
-            base.DiagnosticIons = diagnosticIons; // Set the diagnostic ions for the modification.
-
-            if (OriginalId != null)
-            {
-                IdWithMotif = OriginalId + " on " + Target.ToString();
-                OriginalId = OriginalId;
-            }
-            else
-                OriginalId = OriginalId;
         }
 
         /// <summary>
@@ -344,6 +367,18 @@ namespace EngineLayer
             { 349, 349.137281}, //Y2F
             { 552, 552.216654}  //Y3F
         };
+
+        /// <summary>
+        /// Rebuilds a Glycan with the given ions.
+        /// </summary>
+        /// <param name="glycan">The glycan to hydrate. Its GlyId is preserved on the returned glycan.</param>
+        /// <param name="ions">The glycan ions to attach.</param>
+        /// <returns>A new Glycan instance with Ions set and NeutralLosses/DiagnosticIons rebuilt from those ions.</returns>
+        public void RegenerateIons()
+        {
+            if (Ions != null && Ions.Count > 0) return; // Already hydrated, nothing to do.
+            Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(Kind);
+        }
 
         #endregion
 

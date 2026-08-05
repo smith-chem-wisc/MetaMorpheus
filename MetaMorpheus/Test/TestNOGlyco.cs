@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.GlycoSearch;
 using iText.StyledXmlParser.Jsoup.Nodes;
 using MassSpectrometry;
@@ -12,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using EngineLayer.DatabaseLoading;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -343,79 +343,113 @@ namespace Test
             Assert.That(site_case3[14] == "S");
         }
         [Test]
-        public static void NOGlycoSearch_WithNGlycanAsVariableMod_DoesNotCrash()
+        [TestCase(true, false)]  // O-search, N-glycan as fixed mod
+        [TestCase(false, false)] // O-search, N-glycan as variable mod
+        [TestCase(true, true)]   // N_O-search, N-glycan as fixed mod
+        [TestCase(false, true)]  // N_O-search, N-glycan as variable mod
+        public static void GlycoSearch_WithNGlycanAsFixedOrVariableMod_DoesNotCrash(bool asFixedMod, bool isNOSearch)
         {
-
-            // Reproduces a crash where an N-glycan set as a variable mod (instead of via the
-            // dedicated N-glycan database) causes a NullReferenceException in GetGlycanYIons,
+            // Reproduces a crash where an N-glycan set as a fixed or variable mod (instead of via
+            // the dedicated N-glycan database) causes a NullReferenceException in GetGlycanYIons,
             // called from CreateGsm. This happens because N-glycans in
             // GlobalVariables.AllModsKnownDictionary are loaded without their Y-ions generated.
             //
-            //"NGlycan_fakeN-glycan.gdb" only has one unrealistic composition, so any N - glycan
-            // mass matched in this data must come from the "N1" variable mod, forcing candidate
-            // peptides through FindOGlycan -> CreateGsm rather than FindSingle. This distinction
-            // matters: FindSingle is used when the precursor mass already equals the peptide mass
-            // (i.e. N1 alone fully explains the precursor), and it fragments the peptide directly
-            // without ever touching nGlycan.Ions. Only when there is an *additional* unexplained
-            // mass on top of peptide+N1 (i.e. an O-glycan) does the search route through
-            // FindOGlycan -> CreateGsm, which is the only code path that calls GetGlycanYIons and
-            // can hit the crash. So we need a genuinely co-N/O-glycosylated candidate -- N1 on an
-            // Nxs/Nxt site plus an O-glycan on a separate S/T site -- for this test to mean anything.
+            // For the N_O-search case, "NGlycan_fakeN-glycan.gdb" only has one unrealistic
+            // composition, so any N-glycan mass matched in this data must come from the "N1"
+            // fixed/variable mod, forcing candidate peptides through FindOGlycan -> CreateGsm
+            // rather than FindSingle. This distinction matters: FindSingle is used when the
+            // precursor mass already equals the peptide mass (i.e. N1 alone fully explains the
+            // precursor), and it fragments the peptide directly without ever touching
+            // nGlycan.Ions. Only when there is an *additional* unexplained mass on top of
+            // peptide+N1 (i.e. an O-glycan) does the search route through FindOGlycan ->
+            // CreateGsm, which is the only code path that calls GetGlycanYIons and can hit the
+            // crash. So we need a genuinely co-N/O-glycosylated candidate -- N1 on an Nxs/Nxt
+            // site plus an O-glycan on a separate S/T site -- for this test to mean anything.
             //
-            // In this test, there are two N- and O- co-glycosylated peptides found in the data, However,
-            // the peptides are filtered out by the FDR, so the test is only checking that the search completes without crashing.
-
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData_OWithNVarMod");
+            // In this test, there are two N- and O- co-glycosylated peptides found in the data,
+            // however, the peptides are filtered out by the FDR, so the test is only checking
+            // that the search completes without crashing.
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                $@"TESTGlycoData_{(isNOSearch ? "NO" : "O")}With{(asFixedMod ? "Fixed" : "Var")}NMod");
             Directory.CreateDirectory(outputFolder);
+            try 
+            {
+                if (isNOSearch)
+                {
+                    string fakeNGlycanDbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "NGlycan_fakeN-glycan.gdb");
+                    if (!GlobalVariables.NGlycanDatabasePaths.Contains(fakeNGlycanDbPath))
+                    {
+                        GlobalVariables.NGlycanDatabasePaths.Add(fakeNGlycanDbPath);
+                    }
+                }
 
-            GlobalVariables.NGlycanDatabasePaths.Add(
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "NGlycan_fakeN-glycan.gdb"));
-
-            var nGlycanVariableModsFromNGlycan_ForNoSearch = new List<(string, string)>
+                var nGlycanModsFromNGlycan_ForNoSearch = new List<(string, string)>
                 {
                     ("N-linked glycosylation", "N1 on Nxs"),
                     ("N-linked glycosylation", "N1 on Nxt"),
                 };
-            Assert.That(nGlycanVariableModsFromNGlycan_ForNoSearch.All(variableMod => GlobalVariables.AllModsKnownDictionary.ContainsKey(variableMod.Item2)), Is.True,
-                "Test setup assumption failed: expected N-glycans mod not found in AllModsKnownDictionary.");
+                Assert.That(nGlycanModsFromNGlycan_ForNoSearch.All(mod => GlobalVariables.AllModsKnownDictionary.ContainsKey(mod.Item2)), Is.True,
+                    "Test setup assumption failed: expected N-glycans mod not found in AllModsKnownDictionary.");
 
-            var commonParameters = new CommonParameters(
-                dissociationType: DissociationType.HCD,
-                ms2childScanDissociationType: DissociationType.EThcD,
-                listOfModsVariable: nGlycanVariableModsFromNGlycan_ForNoSearch);
+                var commonParameters = new CommonParameters(
+                    dissociationType: DissociationType.HCD,
+                    ms2childScanDissociationType: DissociationType.EThcD,
+                    listOfModsFixed: asFixedMod ? nGlycanModsFromNGlycan_ForNoSearch : null,
+                    listOfModsVariable: asFixedMod ? null : nGlycanModsFromNGlycan_ForNoSearch);
 
-            var glycoSearchTask = new GlycoSearchTask
-            {
-                CommonParameters = commonParameters,
-                _glycoSearchParameters = new GlycoSearchParameters
+                var glycoSearchTask = new GlycoSearchTask
                 {
-                    GlycoSearchType = GlycoSearchType.N_O_GlycanSearch,
-                    OGlycanDatabasefile = "OGlycan.gdb",
-                    NGlycanDatabasefile = "NGlycan_fakeN-glycan.gdb",
-                    MaximumOGlycanAllowed = 1,
+                    CommonParameters = commonParameters,
+                    _glycoSearchParameters = new GlycoSearchParameters
+                    {
+                        GlycoSearchType = isNOSearch ? GlycoSearchType.N_O_GlycanSearch : GlycoSearchType.OGlycanSearch,
+                        OGlycanDatabasefile = "OGlycan.gdb",
+                        NGlycanDatabasefile = isNOSearch ? "NGlycan_fakeN-glycan.gdb" : null,
+                        MaximumOGlycanAllowed = 1,
+                    }
+                };
+
+                DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\FiveMucinFasta.fasta"), false);
+                string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/N_O_glycoWithFileSpecific/2019_09_16_StcEmix_35trig_EThcD25_rep1_4999_5500.mzML");
+
+                // Before the fix, this call would throw a NullReferenceException from GetGlycanYIons
+                // once a peptide candidate carrying the N-glycan fixed/variable mod reached CreateGsm.
+                Assert.DoesNotThrow(() =>
+                {
+                    new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) },
+                        new List<string> { raw }, new List<DbForTask> { db }, outputFolder).Run();
+                });
+
+                // Confirm that the N-glycan fixed/variable mods now have their Ions populated after the search completes.
+                // This is the expected behavior after the fix.
+                var kind_N1 = GlycanDatabase.String2Kind("HexNAc(1)");
+                var glycan_N1 = new Glycan(kind_N1, "Nxs", GlycanType.N_glycan);
+                glycan_N1.RegenerateIons();
+
+                // Confirm the fix populated Ions on the shared Glycan instances used as fixed/variable mods.
+                // And confirm that the Glycan instances in AllModsKnown and AllModsKnownDictionary also have their Ions populated and match the expected N1 glycan.
+                foreach (var (modType, nGlycanIdWithMotif) in nGlycanModsFromNGlycan_ForNoSearch)
+                {
+                    var nGlycanInModDict = GlobalVariables.AllModsKnownDictionary[nGlycanIdWithMotif] as Glycan;
+                    Assert.That(nGlycanInModDict, Is.Not.Null);
+                    Assert.That(nGlycanInModDict.Ions, Is.Not.Null.And.Not.Empty);
+                    Assert.That(nGlycanInModDict.Ions.Count, Is.EqualTo(glycan_N1.Ions.Count));
+                    Assert.That(nGlycanInModDict.Ions.Select(ion => ion.IonMass), Is.EqualTo(glycan_N1.Ions.Select(ion => ion.IonMass))); 
+
+                    var nGlycanInModList = GlobalVariables.AllModsKnown.First(p=>p.IdWithMotif == nGlycanIdWithMotif) as Glycan;
+                    Assert.That(nGlycanInModList, Is.Not.Null);
+                    Assert.That(nGlycanInModList.Ions, Is.Not.Null.And.Not.Empty);
+                    Assert.That(nGlycanInModList.Ions.Count, Is.EqualTo(glycan_N1.Ions.Count));
+                    Assert.That(nGlycanInModList.Ions.Select(ion => ion.IonMass), Is.EqualTo(glycan_N1.Ions.Select(ion => ion.IonMass)));
                 }
-            };
-
-            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\FiveMucinFasta.fasta"), false);
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4999_5500.mzML");
-
-            // Before the fix, this call would throw a NullReferenceException from GetGlycanYIons
-            // once a peptide candidate carrying the N-glycan variable mod reached CreateGsm.
-            Assert.DoesNotThrow(() =>
-            {
-                new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) },
-                    new List<string> { raw }, new List<DbForTask> { db }, outputFolder).Run();
-            });
-
-            // Confirm the fix populated Ions on the shared Glycan instances used as a variable mods.
-            foreach (var (modType, nGlycanIdWithMotif) in nGlycanVariableModsFromNGlycan_ForNoSearch)
-            {
-                var nGlycanMod = GlobalVariables.AllModsKnownDictionary[nGlycanIdWithMotif] as Glycan;
-                Assert.That(nGlycanMod, Is.Not.Null);
-                Assert.That(nGlycanMod.Ions, Is.Not.Null.And.Not.Empty);
             }
-
-            Directory.Delete(outputFolder, true);
+            finally
+            {
+                if (Directory.Exists(outputFolder))
+                {
+                    Directory.Delete(outputFolder, true);
+                }
+            }
         }
     }
 }
