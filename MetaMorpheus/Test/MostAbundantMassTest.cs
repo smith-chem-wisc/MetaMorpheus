@@ -107,15 +107,22 @@ namespace Test
         }
 
         [Test]
-        public static void SearchTask_GetMassDiffAcceptor_ReturnsMostAbundantWhenModeSet()
+        public static void SearchTask_GetMassDiffAcceptor_WithMostAbundantType_ReturnsMostAbundantMassDiffAcceptor()
         {
-            var acc = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.OneMM, null,
-                PrecursorMassMatchMode.MostAbundant, Averagine);
+            var acc = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.MostAbundant_Exact, null,
+                averagineModel: Averagine);
             Assert.That(acc, Is.TypeOf<MostAbundantMassDiffAcceptor>());
+            Assert.That(acc.FileNameAddition, Is.EqualTo("mostAbundant"));
 
-            // Default mode is unaffected.
-            var def = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.OneMM, null);
-            Assert.That(def, Is.Not.TypeOf<MostAbundantMassDiffAcceptor>());
+            acc = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.MostAbundant_PlusMinusOne, null,
+                averagineModel: Averagine);
+            Assert.That(acc, Is.TypeOf<MostAbundantMassDiffAcceptor>());
+            Assert.That(acc.FileNameAddition, Is.EqualTo("mostAbundant_1"));
+
+            acc = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.MostAbundant_PlusMinusTwo, null,
+                averagineModel: Averagine);
+            Assert.That(acc, Is.TypeOf<MostAbundantMassDiffAcceptor>());
+            Assert.That(acc.FileNameAddition, Is.EqualTo("mostAbundant_2"));
         }
 
         /// <summary>

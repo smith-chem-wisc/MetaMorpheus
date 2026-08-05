@@ -40,14 +40,9 @@ namespace TaskLayer
             PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic, AverageResidue averagineModel = null,
             double expectedIsotopeSpacing = Constants.C13MinusC12)
         {
-            // Most-abundant mode matches candidates by their theoretical most-abundant isotopic peak,
-            // which directly solves the off-by-N problem. It replaces (rather than augments) the
-            // missed-monoisotopic notches, so it overrides the MassDiffAcceptorType selection.
-            if (precursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
-            {
-                return new MostAbundantMassDiffAcceptor("mostAbundant", precursorMassTolerance, averagineModel ?? new Averagine(),
-                    expectedIsotopeSpacing: expectedIsotopeSpacing);
-            }
+            averagineModel ??= GlobalVariables.AnalyteType == AnalyteType.Oligo
+                ? new OxyriboAveragine()
+                : new Averagine();
 
             switch (massDiffAcceptorType)
             {
@@ -93,6 +88,15 @@ namespace TaskLayer
                             3 * Chemistry.Constants.C13MinusC12
                         },
                         precursorMassTolerance);
+
+                case MassDiffAcceptorType.MostAbundant_Exact:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant", precursorMassTolerance, averagineModel, 0, expectedIsotopeSpacing);
+
+                case MassDiffAcceptorType.MostAbundant_PlusMinusOne:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant_1", precursorMassTolerance, averagineModel, 1, expectedIsotopeSpacing);
+
+                case MassDiffAcceptorType.MostAbundant_PlusMinusTwo:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant_2", precursorMassTolerance, averagineModel, 2, expectedIsotopeSpacing);
 
                 default:
                     throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
