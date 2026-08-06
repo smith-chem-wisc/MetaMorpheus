@@ -352,6 +352,8 @@ namespace EngineLayer
         {
             if (Ions != null && Ions.Count > 0) return; // Already hydrated, nothing to do.
             Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(Kind);
+            // NeutralLosses intentionally not regenerated: composition-loaded glycans (both
+            // ToGenerateIons true/false) carry no NL, so Ions-only matches existing behavior
         }
 
         #endregion
