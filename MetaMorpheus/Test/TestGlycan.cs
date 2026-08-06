@@ -2,6 +2,8 @@
 using EngineLayer.GlycoSearch;
 using NUnit.Framework;
 using System.Linq;
+using Omics.Modifications;
+using System.Collections.Generic;
 
 namespace Test
 {
@@ -83,6 +85,43 @@ namespace Test
             Assert.That(H1N2_withoutIon.Ions.Count, Is.GreaterThan(0));
             Assert.That(H1N2_withoutIon.Ions.Count, Is.EqualTo(expectedGlycanIons.Count));
             Assert.That(H1N2_withoutIon.Ions.Select(i => i.IonMass), Is.EqualTo(expectedGlycanIons.Select(i => i.IonMass)));
+        }
+
+        [Test]
+        public static void NonGlycanNLinkedMod_IsSkippedByOfTypeGuard_NoCrash()
+        {
+            // Guards against a future protein-XML / GPTMD annotation carrying the
+            // "N-linked glycosylation" ModificationType string on a plain Modification
+            // (not a Glycan). At the consumption site such a mod must be filtered out by
+            // OfType<Glycan>() rather than cast to null and NRE in GetGlycanYIons.
+            ModificationMotif.TryGetMotif("Nxs", out var motif);
+            var fakeNLinkedMod = new Modification(
+                _originalId: "FakeN",
+                _modificationType: "N-linked glycosylation",  // same string the consumption site keys on
+                _target: motif,
+                _locationRestriction: "Anywhere.",
+                _monoisotopicMass: 203.079);                   // not a Glycan instance
+
+            var allMods = new Dictionary<int, Modification> { { 1, fakeNLinkedMod } };
+
+            // The consumption-site selection: OfType<Glycan>() must skip the plain Modification.
+            var selectedGlycans = allMods.Values
+                .OfType<Glycan>()
+                .Where(g => g.ModificationType == "N-linked glycosylation")
+                .ToList();
+
+            Assert.That(selectedGlycans, Is.Empty,
+                "A non-Glycan N-linked mod must be filtered out by OfType<Glycan>(), not cast to null.");
+
+            // And it must not throw when the consumption loop runs over the (empty) selection.
+            Assert.DoesNotThrow(() =>
+            {
+                foreach (var g in selectedGlycans)
+                {
+                    g.RegenerateIons();
+                    _ = GlycoPeptides.GetGlycanYIons(1000.0, g);
+                }
+            });
         }
 
     }

@@ -349,26 +349,21 @@ namespace Test
         [TestCase(false, true)]  // N_O-search, N-glycan as variable mod
         public static void GlycoSearch_WithNGlycanAsFixedOrVariableMod_DoesNotCrash(bool asFixedMod, bool isNOSearch)
         {
-            // Reproduces a crash where an N-glycan set as a fixed or variable mod (instead of via
-            // the dedicated N-glycan database) causes a NullReferenceException in GetGlycanYIons,
-            // called from CreateGsm. This happens because N-glycans in
-            // GlobalVariables.AllModsKnownDictionary are loaded without their Y-ions generated.
+            // Integration test: verifies the search pipeline completes without crashing when an
+            // N-glycan is used as a fixed/variable modification, AND that the glycans actually
+            // used during the search get their Ions lazily hydrated in GetGlycanYIons.
             //
-            // For the N_O-search case, "NGlycan_fakeN-glycan.gdb" only has one unrealistic
-            // composition, so any N-glycan mass matched in this data must come from the "N1"
-            // fixed/variable mod, forcing candidate peptides through FindOGlycan -> CreateGsm
-            // rather than FindSingle. This distinction matters: FindSingle is used when the
-            // precursor mass already equals the peptide mass (i.e. N1 alone fully explains the
-            // precursor), and it fragments the peptide directly without ever touching
-            // nGlycan.Ions. Only when there is an *additional* unexplained mass on top of
-            // peptide+N1 (i.e. an O-glycan) does the search route through FindOGlycan ->
-            // CreateGsm, which is the only code path that calls GetGlycanYIons and can hit the
-            // crash. So we need a genuinely co-N/O-glycosylated candidate -- N1 on an Nxs/Nxt
-            // site plus an O-glycan on a separate S/T site -- for this test to mean anything.
+            // Both "N1 on Nxs" and "N1 on Nxt" are matched by peptides in this data (verified),
+            // so both are guaranteed to reach the consumption site and be hydrated — the post-search
+            // Ions assertions below are therefore deterministic, not data-incidental. If the input
+            // data changes such that a glycan is no longer matched, that glycan would not be hydrated
+            // and its assertion would need to be revisited.
             //
-            // In this test, there are two N- and O- co-glycosylated peptides found in the data,
-            // however, the peptides are filtered out by the FDR, so the test is only checking
-            // that the search completes without crashing.
+            // Deep ion-content correctness (RegenerateIons == the ToGenerateIons:true database path)
+            // is also covered independently by the TestGlycan.RegenerateIons_* unit tests.
+            //
+            // The matched N/O co-glycosylated peptides are filtered out by FDR, so results-level
+            // assertions aren't meaningful here — the crash-free run plus hydration checks are the point.
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 $@"TESTGlycoData_{(isNOSearch ? "NO" : "O")}With{(asFixedMod ? "Fixed" : "Var")}NMod");
             Directory.CreateDirectory(outputFolder);
@@ -378,7 +373,7 @@ namespace Test
                 {
                     ("N-linked glycosylation", "N1 on Nxs"),
                     ("N-linked glycosylation", "N1 on Nxt"),
-                };
+            };
 
             try 
             {

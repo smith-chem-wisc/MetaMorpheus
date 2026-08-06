@@ -306,10 +306,15 @@ namespace EngineLayer.GlycoSearch
             var fragmentsForEachGlycoPeptide = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.DissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
 
             // if the peptide contains N-glycan, we need to add the Y ion from N-glycan.
-            if (peptideWithMod.AllModsOneIsNterminus.Any(p=>p.Value.ModificationType == "N-linked glycosylation"))
+            // Guards against a future protein-XML / GPTMD annotation carrying the
+            // "N-linked glycosylation" ModificationType string on a plain Modification
+            // (not a Glycan).
+            var nGlycans = peptideWithMod.AllModsOneIsNterminus.Values
+                .OfType<Glycan>()
+                .Where(p => p.ModificationType == "N-linked glycosylation");
+            foreach (var nGlycan in nGlycans) 
             {
-                Glycan nGlycan = peptideWithMod.AllModsOneIsNterminus.First(p =>
-                    p.Value.ModificationType == "N-linked glycosylation").Value as Glycan;
+                nGlycan.RegenerateIons(); // Because some N-glycan (from variable or XML) may not have the Y ions, we need to regenerate the Y ions for those N-glycan.
                 fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan));
             }
 

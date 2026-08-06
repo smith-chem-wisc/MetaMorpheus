@@ -48,7 +48,6 @@ namespace TaskLayer
             List<List<GlycoSpectralMatch>> ListOfGsmsPerMS2Scan = new List<List<GlycoSpectralMatch>>();
 
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
-            ReloadGlycanInModList(); // Reload the glycan modifications in the mod list to ensure they have the correct child ions and neutral losses for glyco search. Called once, early in RunSpecific, before indexing/search begins.
 
             // load proteins
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, _glycoSearchParameters.DecoyType, true, localizeableModificationTypes);
@@ -249,41 +248,6 @@ namespace TaskLayer
                 glycos.Add(g);
             }
             return glycos;
-        }
-
-        /// <summary>
-        /// Hydrates any N-glycan fixed/variable modification pulled from
-        /// GlobalVariables.AllModsKnownDictionary that was loaded without ions
-        /// (ToGenerateIons: false, kept lightweight since that dictionary mainly serves the
-        /// "known mods" list). Glyco search needs Ions populated to build Y-ion fragments.
-        /// </summary>
-        private void ReloadGlycanInModList() 
-        {
-            foreach (var (modType, idWithMotif) in CommonParameters.ListOfModsVariable)
-            {
-                if (modType == "N-linked glycosylation" &&
-                    GlobalVariables.AllModsKnownDictionary.TryGetValue(idWithMotif, out var mod) &&
-                    mod is Glycan variableNGlycan &&
-                    (variableNGlycan.Ions == null || variableNGlycan.Ions.Count == 0))
-                {
-                    variableNGlycan.RegenerateIons();
-                    /// AllModsKnownDictionary and AllModsKnown share the same underlying Glycan instances 
-                    /// (see GlobalVariables.LoadGlycans), so mutating a glycan here via RegenerateIons() 
-                    /// updates it everywhere it's referenced - no dictionary/list swap or re-insertion is needed.
-                }
-            }
-
-            foreach (var (modType, idWithMotif) in CommonParameters.ListOfModsFixed)
-            {
-                if (modType == "N-linked glycosylation" &&
-                    GlobalVariables.AllModsKnownDictionary.TryGetValue(idWithMotif, out var mod) &&
-                    mod is Glycan variableNGlycan &&
-                    (variableNGlycan.Ions == null || variableNGlycan.Ions.Count == 0))
-                {
-                    variableNGlycan.RegenerateIons();
-                }
-            }
-
         }
     }
 }
