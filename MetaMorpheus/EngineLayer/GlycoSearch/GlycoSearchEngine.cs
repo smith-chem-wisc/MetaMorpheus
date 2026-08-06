@@ -445,7 +445,7 @@ namespace EngineLayer.GlycoSearch
             //For HCD-pd-ETD or CD-pd-EThcD type of data, we generate the different rpoducts.
             if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons))
             {
-                localizationScan = theScan.ChildScans.First();
+                localizationScan = GetLocalizationScan(theScan);
                 // For the localization scan, if it is from ion trap, we will use a wider tolerance for the localization.
                 toleranceForLocalizationScan = localizationScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap2D ||
                     localizationScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap3D ? CommonParameters.ProductMassTolerance_LowRes : CommonParameters.ProductMassTolerance;
@@ -512,6 +512,43 @@ namespace EngineLayer.GlycoSearch
                     possibleMatches.Add(psmGlyco);
                 }
             }
+        }
+
+        /// <summary>
+        /// Chooses which child scan is used as the localization spectrum.
+        /// Glycosite localization is scored with c/zDot ions, so it is only meaningful against an
+        /// electron-based child scan. The child scans of a precursor are ordered by scan number, so
+        /// simply taking the first one selects the lowest-numbered child whatever its activation. On an
+        /// acquisition that places more than one activation on the same precursor (for example
+        /// HCD-ETciD-CID) that can select the collision-based child and score c/zDot theoretical ions
+        /// against a spectrum which cannot contain them.
+        /// The child scan header is consulted first, and the previous first-child behavior is kept as the
+        /// fallback when no child reports a usable activation. Files with a single child scan, which is
+        /// every acquisition shape this method was originally written for, are unaffected either way.
+        /// </summary>
+        /// <param name="theScan">The parent scan whose children are candidates. Must have at least one child.</param>
+        /// <returns>The child scan to localize against.</returns>
+        private Ms2ScanWithSpecificMass GetLocalizationScan(Ms2ScanWithSpecificMass theScan)
+        {
+            foreach (var childScan in theScan.ChildScans)
+            {
+                DissociationType? childDissociationType = childScan.TheScan.DissociationType;
+
+                // An absent or Autodetect header carries no activation information, so it cannot be trusted here.
+                if (childDissociationType == null || childDissociationType == DissociationType.Autodetect)
+                {
+                    continue;
+                }
+
+                if (GlycoPeptides.DissociationTypeContainETD(childDissociationType.Value, CommonParameters.CustomIons))
+                {
+                    return childScan;
+                }
+            }
+
+            // No child advertised an electron-based activation. Preserve the historical behavior rather than
+            // dropping localization, because the declared MS2ChildScanDissociationType already asserted ETD.
+            return theScan.ChildScans.First();
         }
 
         private void FindNGlycan(Ms2ScanWithSpecificMass theScan, int scanIndex, int scoreCutOff, PeptideWithSetModifications theScanBestPeptide, int ind, double possibleGlycanMassLow, double[] oxoniumIonIntensities, ref List<GlycoSpectralMatch> possibleMatches)
