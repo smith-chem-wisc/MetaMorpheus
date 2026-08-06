@@ -372,24 +372,39 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 $@"TESTGlycoData_{(isNOSearch ? "NO" : "O")}With{(asFixedMod ? "Fixed" : "Var")}NMod");
             Directory.CreateDirectory(outputFolder);
+
+            string fakeNGlycanDbPath = null;
+            var nGlycanModsFromNGlycan_ForNoSearch = new List<(string, string)>
+                {
+                    ("N-linked glycosylation", "N1 on Nxs"),
+                    ("N-linked glycosylation", "N1 on Nxt"),
+                };
+
             try 
             {
                 if (isNOSearch)
                 {
-                    string fakeNGlycanDbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "NGlycan_fakeN-glycan.gdb");
+                    fakeNGlycanDbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "NGlycan_fakeN-glycan.gdb");
                     if (!GlobalVariables.NGlycanDatabasePaths.Contains(fakeNGlycanDbPath))
                     {
                         GlobalVariables.NGlycanDatabasePaths.Add(fakeNGlycanDbPath);
                     }
                 }
-
-                var nGlycanModsFromNGlycan_ForNoSearch = new List<(string, string)>
-                {
-                    ("N-linked glycosylation", "N1 on Nxs"),
-                    ("N-linked glycosylation", "N1 on Nxt"),
-                };
                 Assert.That(nGlycanModsFromNGlycan_ForNoSearch.All(mod => GlobalVariables.AllModsKnownDictionary.ContainsKey(mod.Item2)), Is.True,
                     "Test setup assumption failed: expected N-glycans mod not found in AllModsKnownDictionary.");
+
+                // Confirm that the N-glycan fixed/variable mods have their Ions set to null before the search, which is the state that caused the crash.
+                foreach (var (_, nGlycanIdWithMotif) in nGlycanModsFromNGlycan_ForNoSearch)
+                {
+                    if (GlobalVariables.AllModsKnownDictionary[nGlycanIdWithMotif] is Glycan g)
+                    {
+                        Assert.That(g.Ions, Is.Null, $"Test setup assumption failed: expected Glycan {nGlycanIdWithMotif} to have null Ions before the search.");
+                    }
+                    if(GlobalVariables.AllModsKnown.First(mod => mod.IdWithMotif == nGlycanIdWithMotif) is Glycan g2)
+                    {
+                        Assert.That(g2.Ions, Is.Null, $"Test setup assumption failed: expected Glycan {nGlycanIdWithMotif} to have null Ions before the search.");
+                    }
+                }
 
                 var commonParameters = new CommonParameters(
                     dissociationType: DissociationType.HCD,
@@ -409,7 +424,7 @@ namespace Test
                     }
                 };
 
-                DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\FiveMucinFasta.fasta"), false);
+                DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/FiveMucinFasta.fasta"), false);
                 string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/N_O_glycoWithFileSpecific/2019_09_16_StcEmix_35trig_EThcD25_rep1_4999_5500.mzML");
 
                 // Before the fix, this call would throw a NullReferenceException from GetGlycanYIons
@@ -421,33 +436,45 @@ namespace Test
                 });
 
                 // Confirm that the N-glycan fixed/variable mods now have their Ions populated after the search completes.
-                // This is the expected behavior after the fix.
-                var kind_N1 = GlycanDatabase.String2Kind("HexNAc(1)");
-                var glycan_N1 = new Glycan(kind_N1, "Nxs", GlycanType.N_glycan);
-                glycan_N1.RegenerateIons();
+                // This is the expected behavior after the fix. And the ions are built upon the glycan composition, so N1 on Nxs and N1 on Nxt should have the same ions.
+                var nGlycanPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "NGlycan_OnlyN1.gdb");
+                var expectedNGlycan = GlycanDatabase.LoadGlycan(nGlycanPath, true, false)
+                    .First(g => g.IdWithMotif == "N1 on Nxs");
 
                 // Confirm the fix populated Ions on the shared Glycan instances used as fixed/variable mods.
                 // And confirm that the Glycan instances in AllModsKnown and AllModsKnownDictionary also have their Ions populated and match the expected N1 glycan.
-                foreach (var (modType, nGlycanIdWithMotif) in nGlycanModsFromNGlycan_ForNoSearch)
+                foreach (var (_, nGlycanIdWithMotif) in nGlycanModsFromNGlycan_ForNoSearch)
                 {
                     var nGlycanInModDict = GlobalVariables.AllModsKnownDictionary[nGlycanIdWithMotif] as Glycan;
                     Assert.That(nGlycanInModDict, Is.Not.Null);
                     Assert.That(nGlycanInModDict.Ions, Is.Not.Null.And.Not.Empty);
-                    Assert.That(nGlycanInModDict.Ions.Count, Is.EqualTo(glycan_N1.Ions.Count));
-                    Assert.That(nGlycanInModDict.Ions.Select(ion => ion.IonMass), Is.EqualTo(glycan_N1.Ions.Select(ion => ion.IonMass))); 
+                    Assert.That(nGlycanInModDict.Ions.Count, Is.EqualTo(expectedNGlycan.Ions.Count));
+                    Assert.That(nGlycanInModDict.Ions.Select(ion => ion.IonMass), Is.EqualTo(expectedNGlycan.Ions.Select(ion => ion.IonMass))); 
 
                     var nGlycanInModList = GlobalVariables.AllModsKnown.First(p=>p.IdWithMotif == nGlycanIdWithMotif) as Glycan;
                     Assert.That(nGlycanInModList, Is.Not.Null);
                     Assert.That(nGlycanInModList.Ions, Is.Not.Null.And.Not.Empty);
-                    Assert.That(nGlycanInModList.Ions.Count, Is.EqualTo(glycan_N1.Ions.Count));
-                    Assert.That(nGlycanInModList.Ions.Select(ion => ion.IonMass), Is.EqualTo(glycan_N1.Ions.Select(ion => ion.IonMass)));
+                    Assert.That(nGlycanInModList.Ions.Count, Is.EqualTo(expectedNGlycan.Ions.Count));
+                    Assert.That(nGlycanInModList.Ions.Select(ion => ion.IonMass), Is.EqualTo(expectedNGlycan.Ions.Select(ion => ion.IonMass)));
                 }
             }
             finally
             {
-                if (Directory.Exists(outputFolder))
+                if (Directory.Exists(outputFolder)) // clean up the output folder after the test
                 {
                     Directory.Delete(outputFolder, true);
+                }
+
+                if (fakeNGlycanDbPath != null) // only remove if it was added
+                    GlobalVariables.NGlycanDatabasePaths.Remove(fakeNGlycanDbPath);
+
+                // reset the Ions to null to avoid side effects on other tests
+                foreach (var (_, nGlycanIdWithMotif) in nGlycanModsFromNGlycan_ForNoSearch)
+                {
+                    if (GlobalVariables.AllModsKnownDictionary[nGlycanIdWithMotif] is Glycan g)
+                    {
+                        g.Ions = null;  
+                    }
                 }
             }
         }
