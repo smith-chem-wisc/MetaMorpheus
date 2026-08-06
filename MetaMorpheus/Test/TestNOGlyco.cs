@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using EngineLayer.DatabaseLoading;
 using EngineLayer.GlycoSearch;
 using iText.StyledXmlParser.Jsoup.Nodes;
 using MassSpectrometry;
@@ -13,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
