@@ -89,9 +89,6 @@
     <None Update="GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4999_5500.mzML">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

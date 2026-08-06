@@ -1,10 +1,10 @@
-﻿using Chemistry;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Chemistry;
+using System;
 using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using Omics.Modifications;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace EngineLayer
 {
@@ -88,7 +88,7 @@ namespace EngineLayer
             else
                 OriginalId = OriginalId;
         }
-       
+
         /// <summary>
         /// In this constructor, we will generate the glycan only by the glycan kind and type.
         /// So there is no ions information, and the diagnostic ions will not be generated.

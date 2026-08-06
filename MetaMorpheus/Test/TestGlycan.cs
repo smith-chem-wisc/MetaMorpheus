@@ -23,25 +23,25 @@ namespace Test
         public static void RegenerateIons_PopulatesIonsWhenNull()
         {
             var kind = BuildTestKind();
-            var Nglycan = new Glycan(kind, "Nxs", GlycanType.N_glycan); // Ions == null, NeutralLosses empty (ToGenerateIons: false path)
-            Assert.That(Nglycan.Ions, Is.Null); // Ions are only populated when RegenerateIons is called, or when the constructor is called with ToGenerateIons: true.
-            Assert.That(Nglycan.DiagnosticIons, Is.Not.Null); // DiagnosticIons are always populated in the constructor, even when ToGenerateIons is false.
+            var nGlycan = new Glycan(kind, "Nxs", GlycanType.N_glycan); // Ions == null (ToGenerateIons: false path)
+            Assert.That(nGlycan.Ions, Is.Null); // Ions are only populated when RegenerateIons is called, or when the constructor is called with ToGenerateIons: true.
+            Assert.That(nGlycan.DiagnosticIons, Is.Not.Null); // DiagnosticIons are always populated in the constructor, even when ToGenerateIons is false.
 
-            Nglycan.RegenerateIons();
+            nGlycan.RegenerateIons();
 
-            Assert.That(Nglycan.Ions, Is.Not.Null);
-            Assert.That(Nglycan.Ions.Count, Is.GreaterThan(0));
-            Assert.That(Nglycan.Type, Is.EqualTo(GlycanType.N_glycan)); 
+            Assert.That(nGlycan.Ions, Is.Not.Null);
+            Assert.That(nGlycan.Ions.Count, Is.GreaterThan(0));
+            Assert.That(nGlycan.Type, Is.EqualTo(GlycanType.N_glycan)); 
 
-            var Oglycan = new Glycan(kind, "S", GlycanType.O_glycan);
-            Assert.That(Oglycan.Ions, Is.Null);
-            Assert.That(Oglycan.DiagnosticIons, Is.Not.Null);
+            var oGlycan = new Glycan(kind, "S", GlycanType.O_glycan);
+            Assert.That(oGlycan.Ions, Is.Null);
+            Assert.That(oGlycan.DiagnosticIons, Is.Not.Null);
 
-            Oglycan.RegenerateIons();
+            oGlycan.RegenerateIons();
 
-            Assert.That(Oglycan.Ions, Is.Not.Null);
-            Assert.That(Oglycan.Ions.Count, Is.GreaterThan(0));
-            Assert.That(Oglycan.Type, Is.EqualTo(GlycanType.O_glycan));
+            Assert.That(oGlycan.Ions, Is.Not.Null);
+            Assert.That(oGlycan.Ions.Count, Is.GreaterThan(0));
+            Assert.That(oGlycan.Type, Is.EqualTo(GlycanType.O_glycan));
         }
 
         [Test]
@@ -53,14 +53,10 @@ namespace Test
             glycan.RegenerateIons();
 
             var originalIons = glycan.Ions;
-            var originalIonCount = originalIons.Count;
 
-            // Calling again should not rebuild/replace the already-populated Ions list.
+            // Calling again should not rebuild/replace the already-populated Ions list, and return without doing anything.
             glycan.RegenerateIons();
-
-            // The Ions list should be the same reference as before, and the count should be unchanged.
-            Assert.That(glycan.Ions.Select(p=>p.IonMass), Is.EqualTo(originalIons.Select(p=>p.IonMass)));
-            Assert.That(glycan.Ions.Count, Is.EqualTo(originalIonCount));
+            Assert.That(glycan.Ions, Is.SameAs(originalIons));
         }
 
         [Test]
@@ -71,18 +67,18 @@ namespace Test
             var H1N2_withIon = GlycanDatabase.LoadGlycan(nGlycanPath, true, false).First(p => p.IdWithMotif == "H1N2 on Nxt");
             var H1N2_withoutIon = GlycanDatabase.LoadGlycan(nGlycanPath, false, false).First(p => p.IdWithMotif == "H1N2 on Nxt");
 
-            // The glycan loaded with ToGenerateIons: false should have null Ions and empty NeutralLosses.
+            // The glycan loaded with ToGenerateIons: false should have null Ions.
             Assert.That(H1N2_withoutIon, Is.Not.Null);
             Assert.That(H1N2_withoutIon.Ions, Is.Null);
 
-            // The glycan loaded with ToGenerateIons: true should have non-null Ions and populated NeutralLosses.
+            // The glycan loaded with ToGenerateIons: true should have non-null Ions and populated.
             Assert.That(H1N2_withIon, Is.Not.Null);
             Assert.That(H1N2_withIon.Ions, Is.Not.Null);
             var expectedGlycanIons = H1N2_withIon.Ions;
 
             H1N2_withoutIon.RegenerateIons();
 
-            // After calling RegenerateIons on the glycan that was loaded with ToGenerateIons: false, it should now have non-null Ions and populated NeutralLosses, matching the behavior of the glycan that was loaded with ToGenerateIons: true.
+            // After calling RegenerateIons on the glycan without Ions, it should now have non-null Ions, matching the behavior of the glycan that was loaded with ToGenerateIons: true.
             Assert.That(H1N2_withoutIon.Ions, Is.Not.Null);
             Assert.That(H1N2_withoutIon.Ions.Count, Is.GreaterThan(0));
             Assert.That(H1N2_withoutIon.Ions.Count, Is.EqualTo(expectedGlycanIons.Count));
