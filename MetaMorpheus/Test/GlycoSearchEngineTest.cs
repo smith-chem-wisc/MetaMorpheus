@@ -21,6 +21,29 @@ namespace Test
     [TestFixture]
     public class GlycoSearchEngineTest
     {
+        /// <summary>
+        /// Registers a glycan database that ships in GlycoTestData with the global path list that
+        /// GlycoSearchEngine resolves against.
+        /// <para>
+        /// GlycoSearchEngine looks a database up as
+        /// <c>GlobalVariables.NGlycanDatabasePaths.First(p =&gt; Path.GetFileName(p) == name)</c>, so whatever
+        /// is registered here has to be a path that actually resolves. Start-up only registers the contents
+        /// of Glycan_Mods, which does not include the GlycoTestData databases, so a bare file name added
+        /// here becomes the only match for those and is then resolved relative to the working directory.
+        /// That fails, and because GlobalVariables is static and never reset between fixtures it fails in
+        /// whichever later test needs the database, not in the test that registered it.
+        /// </para>
+        /// </summary>
+        private static void RegisterGlycoTestDataGlycanDatabase(List<string> glycanDatabasePaths, string fileName)
+        {
+            if (glycanDatabasePaths.Any(p => Path.GetFileName(p) == fileName))
+            {
+                return;
+            }
+
+            glycanDatabasePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", fileName));
+        }
+
         [Test]
         public void CreateGsm_WithWideProductTolerance_ScanInfo_p_IsCappedToOne() 
         {
@@ -30,8 +53,8 @@ namespace Test
             // ensure glycan DB paths used by GlycoSearchEngine ctor are registered (filenames must match ctor arguments)
             string oglycanPath = "OGlycan.gdb";
             string nglycanPath = "NGlycan_ForNoSearch.gdb";
-            if (!GlobalVariables.OGlycanDatabasePaths.Contains(oglycanPath)) GlobalVariables.OGlycanDatabasePaths.Add(oglycanPath);
-            if (!GlobalVariables.NGlycanDatabasePaths.Contains(nglycanPath)) GlobalVariables.NGlycanDatabasePaths.Add(nglycanPath);
+            RegisterGlycoTestDataGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, oglycanPath);
+            RegisterGlycoTestDataGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, nglycanPath);
 
             // Load the test MGF file and get MS2 scans
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
@@ -73,8 +96,106 @@ namespace Test
             Assert.That(result.ScanInfo_p, Is.EqualTo(1), "P value should be capped at 1 when product mass tolerance is very wide.");
         }
 
+        /// <summary>
+        /// Builds a minimal centroided MS2 scan carrying a specific activation in its header.
+        /// </summary>
+        private static Ms2ScanWithSpecificMass MakeChildScan(int oneBasedScanNumber, DissociationType? dissociationType, CommonParameters commonParameters)
+        {
+            var mzLibScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), oneBasedScanNumber, 2, true,
+                Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=" + oneBasedScanNumber,
+                double.NaN, null, null, double.NaN, null, dissociationType, 1, null);
+
+            return new Ms2ScanWithSpecificMass(mzLibScan, 1, 1, null, commonParameters);
+        }
+
+        /// <summary>
+        /// Creates a GlycoSearchEngine with no scans, only so that private instance members can be exercised.
+        /// Uses OGlycan.gdb, which GlobalVariables already registers from Glycan_Mods at start-up, so this
+        /// helper does not mutate the static glycan database path lists.
+        /// </summary>
+        private static GlycoSearchEngine MakeEngineForLocalizationScanSelection(CommonParameters commonParameters)
+        {
+            return new GlycoSearchEngine(new List<GlycoSpectralMatch>[0], new Ms2ScanWithSpecificMass[0],
+                new List<PeptideWithSetModifications>(), null, null, 0, commonParameters, null, "OGlycan.gdb", null,
+                glycoSearchType: GlycoSearchType.OGlycanSearch, 30, 3, false, null);
+        }
+
+        private static Ms2ScanWithSpecificMass InvokeGetLocalizationScan(GlycoSearchEngine engine, Ms2ScanWithSpecificMass parentScan)
+        {
+            var method = typeof(GlycoSearchEngine).GetMethod("GetLocalizationScan", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.That(method, Is.Not.Null, "Unable to find private GetLocalizationScan method via reflection.");
+            return (Ms2ScanWithSpecificMass)method.Invoke(engine, new object[] { parentScan });
+        }
+
+        /// <summary>
+        /// On a multi-activation acquisition (for example HCD-ETciD-CID) the electron-based child is not
+        /// necessarily the lowest-numbered one. Localization is scored with c/zDot ions, so the child must be
+        /// chosen by its activation rather than by scan order.
+        /// </summary>
         [Test]
-        public static void TestLowResToleranceConstruction_Default() 
+        public static void GetLocalizationScan_PrefersElectronBasedChild_NotTheFirstChild()
+        {
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
+                ms2childScanDissociationType: DissociationType.EThcD, trimMsMsPeaks: false);
+            var engine = MakeEngineForLocalizationScanSelection(commonParameters);
+
+            var collisionChild = MakeChildScan(2, DissociationType.CID, commonParameters);
+            var electronChild = MakeChildScan(3, DissociationType.EThcD, commonParameters);
+
+            var parentScan = MakeChildScan(1, DissociationType.HCD, commonParameters);
+            parentScan.ChildScans = new List<Ms2ScanWithSpecificMass> { collisionChild, electronChild };
+
+            var localizationScan = InvokeGetLocalizationScan(engine, parentScan);
+
+            Assert.That(localizationScan.OneBasedScanNumber, Is.EqualTo(electronChild.OneBasedScanNumber),
+                "The EThcD child should be selected for localization even though the CID child comes first.");
+        }
+
+        /// <summary>
+        /// The single-child acquisitions this code was written for must behave exactly as before.
+        /// </summary>
+        [Test]
+        public static void GetLocalizationScan_SingleElectronBasedChild_IsUnchanged()
+        {
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
+                ms2childScanDissociationType: DissociationType.EThcD, trimMsMsPeaks: false);
+            var engine = MakeEngineForLocalizationScanSelection(commonParameters);
+
+            var electronChild = MakeChildScan(2, DissociationType.EThcD, commonParameters);
+
+            var parentScan = MakeChildScan(1, DissociationType.HCD, commonParameters);
+            parentScan.ChildScans = new List<Ms2ScanWithSpecificMass> { electronChild };
+
+            var localizationScan = InvokeGetLocalizationScan(engine, parentScan);
+
+            Assert.That(localizationScan.OneBasedScanNumber, Is.EqualTo(electronChild.OneBasedScanNumber));
+        }
+
+        /// <summary>
+        /// When no child scan header reports a usable activation there is nothing better to go on, so the
+        /// historical first-child behavior is kept rather than dropping localization entirely.
+        /// </summary>
+        [Test]
+        public static void GetLocalizationScan_NoResolvableChildActivation_FallsBackToFirstChild()
+        {
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
+                ms2childScanDissociationType: DissociationType.EThcD, trimMsMsPeaks: false);
+            var engine = MakeEngineForLocalizationScanSelection(commonParameters);
+
+            var unknownChild = MakeChildScan(2, null, commonParameters);
+            var autodetectChild = MakeChildScan(3, DissociationType.Autodetect, commonParameters);
+
+            var parentScan = MakeChildScan(1, DissociationType.HCD, commonParameters);
+            parentScan.ChildScans = new List<Ms2ScanWithSpecificMass> { unknownChild, autodetectChild };
+
+            var localizationScan = InvokeGetLocalizationScan(engine, parentScan);
+
+            Assert.That(localizationScan.OneBasedScanNumber, Is.EqualTo(unknownChild.OneBasedScanNumber),
+                "With no resolvable child activation the first child should still be used.");
+        }
+
+        [Test]
+        public static void TestLowResToleranceConstruction_Default()
         {
             var commonParameters = new CommonParameters();
             Assert.That(commonParameters.ProductMassTolerance_LowRes, Is.Not.Null, "Low-Res tolerance should be initialized by default.");
@@ -308,15 +429,8 @@ namespace Test
                 // GlycoSearchEngine expects these DB names to exist in global path lists.
                 string oglycanPath = "OGlycan.gdb";
                 string nglycanPath = "NGlycan_ForNoSearch.gdb";
-                if (!GlobalVariables.OGlycanDatabasePaths.Contains(oglycanPath))
-                {
-                    GlobalVariables.OGlycanDatabasePaths.Add(oglycanPath);
-                }
-
-                if (!GlobalVariables.NGlycanDatabasePaths.Contains(nglycanPath))
-                {
-                    GlobalVariables.NGlycanDatabasePaths.Add(nglycanPath);
-                }
+                RegisterGlycoTestDataGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, oglycanPath);
+                RegisterGlycoTestDataGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, nglycanPath);
 
                 // Use a calibratable mzML for calibration.
                 string rawFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");

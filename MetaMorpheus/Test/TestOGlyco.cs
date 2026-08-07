@@ -43,6 +43,39 @@ namespace Test
             Assert.That(OGlycanBoxes.Count(), Is.EqualTo(2924));
         }
 
+        /// <summary>
+        /// A peptide whose candidate sites cannot accommodate every modification in the box leaves the
+        /// graph's terminal node unreachable. GlycoSearchEngine screens that out with GraphCheck, so this
+        /// only arises when the graph is driven directly, and it should say so rather than throwing a bare
+        /// NullReferenceException.
+        /// </summary>
+        [Test]
+        public static void OGlycoTest_LocalizeOGlycan_TooFewSitesForBox_ThrowsDescriptive()
+        {
+            // One candidate site, a box carrying two glycans: the terminal node can never be reached.
+            var glycanBox = OGlycanBoxes.First(p => p.NumberOfMods == 2);
+            var childBoxes = GlycanBox.BuildChildOGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds).ToArray();
+
+            var protein = new Protein("AAASAAAK", "onesite");
+            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            var products = new List<Product>();
+            peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+
+            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
+            Assert.That(modPos.Count, Is.EqualTo(1), "Test peptide should offer exactly one candidate site.");
+
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.ETD, trimMsMsPeaks: false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var scan = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).First();
+
+            var localizationGraph = new LocalizationGraph(modPos, glycanBox, childBoxes, -1);
+
+            var exception = Assert.Throws<MetaMorpheusException>(() =>
+                LocalizationGraph.LocalizeOGlycan(localizationGraph, scan, commonParameters.ProductMassTolerance, products));
+            Assert.That(exception.Message, Does.Contain("GraphCheck"));
+        }
+
         [Test]
         public static void GlycoTest_GlycanLoading()
         {
