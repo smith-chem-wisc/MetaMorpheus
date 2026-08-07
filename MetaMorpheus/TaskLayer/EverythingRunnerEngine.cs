@@ -18,6 +18,9 @@ namespace TaskLayer
         private List<DbForTask> CurrentXmlDbFilenameList;
         private List<string> _warnings;
 
+        // Shared in-memory hand-off between tasks in this run list (01_Architecture.md decision #1).
+        private readonly TaskChainContext _taskChainContext = new();
+
         public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
         {
             TaskList = taskList;
@@ -86,6 +89,10 @@ namespace TaskLayer
                 }
                
                 var ok = TaskList[i];
+
+                // give every task the shared in-memory hand-off so a finishing task can deposit
+                // results for a later one (e.g. SearchTask -> TruncationSearchTask), decision #1
+                ok.Item2.TaskChainContext = _taskChainContext;
 
                 // reset product types for custom fragmentation
                 ok.Item2.CommonParameters.SetCustomProductTypes();
