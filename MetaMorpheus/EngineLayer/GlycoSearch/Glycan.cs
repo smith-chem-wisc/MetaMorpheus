@@ -61,7 +61,7 @@ namespace EngineLayer
                 ModificationType = "N-linked glycosylation"; // Set the modification type.
                 if (Ions != null)
                 {
-                    List<double> lossMasses = Ions.Where(p=>p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
+                    List<double> lossMasses = Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
                     neutralLosses.Add(DissociationType.HCD, lossMasses);
                     neutralLosses.Add(DissociationType.CID, lossMasses);
                     neutralLosses.Add(DissociationType.EThcD, lossMasses);
@@ -344,6 +344,17 @@ namespace EngineLayer
             { 349, 349.137281}, //Y2F
             { 552, 552.216654}  //Y3F
         };
+
+        /// <summary>
+        /// Update the GlycanIon for the given Glycan object.
+        /// </summary>
+        public void RegenerateIons()
+        {
+            if (Ions != null && Ions.Count > 0) return; // Already hydrated, nothing to do.
+            Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(Kind);
+            // NeutralLosses intentionally not regenerated: composition-loaded glycans (both
+            // ToGenerateIons true/false) carry no NL, so Ions-only matches existing behavior
+        }
 
         #endregion
 

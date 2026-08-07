@@ -249,6 +249,5 @@ namespace TaskLayer
             }
             return glycos;
         }
-
     }
 }

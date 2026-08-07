@@ -152,6 +152,12 @@
     <None Update="GlycoTestData\leukosialin.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\NGlycan_OnlyN1.gdb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\NGlycan_fakeN-glycan.gdb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\NGlycan_ForNoSearch.gdb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
