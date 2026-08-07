@@ -360,9 +360,9 @@ namespace Test
             // here is a crash-free run; there is nothing to check on the results (the matched N/O
             // co-glycopeptides are FDR-filtered out anyway).
             //
-            // The pre-search assertion below confirms the "N1" mods start with null Ions — i.e. the
-            // exact state that used to trigger the crash — so DoesNotThrow is meaningfully exercising
-            // the fixed path, not a trivially-safe one.
+            // The pre-search assertion below confirms the "N1" mods start with null Ions — the exact
+            // state that used to trigger the crash — so the unwrapped run below is a real regression
+            // check: any thrown exception fails the test directly (and surfaces the real stack trace).
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 $@"TESTGlycoData_{(isNOSearch ? "NO" : "O")}With{(asFixedMod ? "Fixed" : "Var")}NMod");
             Directory.CreateDirectory(outputFolder);

@@ -311,7 +311,6 @@ namespace EngineLayer.GlycoSearch
             var nGlycan = peptideWithMod.AllModsOneIsNterminus.Values
                 .OfType<Glycan>()
                 .FirstOrDefault(g => g.ModificationType == "N-linked glycosylation" && g.HasIons);
-            // else: no ions → skip (dummy score); users should use NO-search for correct N-glycan ID
             if (nGlycan != null)
             {
                 fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan));
