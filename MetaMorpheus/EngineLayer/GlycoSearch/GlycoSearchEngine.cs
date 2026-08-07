@@ -310,7 +310,7 @@ namespace EngineLayer.GlycoSearch
             // excluded; correct N-glycan ID is the NO-search's job.
             var nGlycan = peptideWithMod.AllModsOneIsNterminus.Values
                 .OfType<Glycan>()
-                .FirstOrDefault(g => g.ModificationType == "N-linked glycosylation" && g.HasIons);
+                .FirstOrDefault(g => g.Type == GlycanType.N_glycan && g.HasIons);
             if (nGlycan != null)
             {
                 fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan));

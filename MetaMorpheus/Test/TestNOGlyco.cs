@@ -396,7 +396,7 @@ namespace Test
                     "Test setup assumption failed: expected N-glycans mod not found in AllModsKnown.");
 
                 // Confirm the "N1" mods start with null Ions — the exact state that used to NRE in
-                // GetGlycanYIons. This makes the DoesNotThrow below a real regression check.
+                // GetGlycanYIons. This makes the unwrapped run below a real regression check.
                 foreach (var (modType, idWithMotif) in nGlycanModsUnderTest)
                 {
                     var mod = GlobalVariables.AllModsKnown.Single(m => m.ModificationType == modType && m.IdWithMotif == idWithMotif);
