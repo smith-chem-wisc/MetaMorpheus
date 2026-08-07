@@ -1,11 +1,12 @@
 # <img src="https://user-images.githubusercontent.com/16883585/75211541-da01c680-5749-11ea-9f6c-096dc2ec4dbc.png" width="30"/> MetaMorpheus: Free, Open-Source PTM Discovery [![Follow us on Twitter](https://img.shields.io/twitter/follow/smith_chem_wisc?label=Twitter&style=social)](https://twitter.com/smith_chem_wisc)
 
 [![Release](https://img.shields.io/github/v/release/smith-chem-wisc/MetaMorpheus)](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest)
-[![Build status](https://ci.appveyor.com/api/projects/status/0jt31252xny5aoxt/branch/master?svg=true)](https://ci.appveyor.com/project/smith-chem-wisc/metamorpheus/branch/master)
+[![Build status](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/build.yml)
+
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus)
 [![Github All Releases](https://img.shields.io/github/downloads/smith-chem-wisc/MetaMorpheus/total.svg)](https://github.com/smith-chem-wisc/MetaMorpheus/releases)
 [![Github All Releases](https://img.shields.io/docker/pulls/smithchemwisc/metamorpheus)](https://hub.docker.com/r/smithchemwisc/metamorpheus/tags?page=1&ordering=last_updated)
-
+[![Tests](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/Test.yml/badge.svg?branch=master)](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/Test.yml)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/version.svg)](https://anaconda.org/conda-forge/metamorpheus)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/platforms.svg)](https://anaconda.org/conda-forge/metamorpheus)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/downloads.svg)](https://anaconda.org/conda-forge/metamorpheus)
