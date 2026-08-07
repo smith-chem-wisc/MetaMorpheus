@@ -24,7 +24,7 @@ namespace EngineLayer
     /// This class contains information about the Isobaric Mass Tag (e.g., TMT), including the theoretical m/z values of the reporter ions
     /// as well as methods designed to retrieve the intensities of those reporter ions from a given MzSpectrum. 
     /// It does not store any intensity information itself. Intensity information is associated with each Ms2ScanWithSpecificMass object or SpectralMatch,
-    /// in the IsobaricMassTagReporterIonIntensities property.
+    /// in the IsobaricMassTagReporterIonIntensities property (Ms2ScanWithSpecificMass) or ReporterIonIntensities property (SpectralMatch).
     /// </summary>
     public class IsobaricMassTag
     {

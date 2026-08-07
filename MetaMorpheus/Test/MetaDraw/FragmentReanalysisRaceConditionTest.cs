@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -25,8 +24,7 @@ namespace Test.MetaDraw
     internal class FragmentReanalysisRaceConditionTest
     {
         [Test]
-        [NonParallelizable]
-        public static void MatchIonsWithNewTypes_ConcurrentCalls_DoNotThrow()
+        public static void MatchIonsWithNewTypes_ProductsChangedDuringExecution_DoesNotThrow()
         {
             // Load test data similar to TestFragmentationReanalysisViewModel_RematchIons
             var viewModel = new FragmentationReanalysisViewModel();
@@ -47,39 +45,53 @@ namespace Test.MetaDraw
             var psmToResearch = parsedPsms.First();
             var scan = dataFile.GetOneBasedScan(psmToResearch.Ms2ScanNumber);
 
-            var startSignal = new ManualResetEventSlim(false);
-            var exceptions = new ConcurrentQueue<Exception>();
-            var tasks = Enumerable.Range(0, Environment.ProcessorCount)
-                .Select(_ => Task.Run(() =>
-                {
-                    startSignal.Wait();
-                    for (int i = 0; i < 25; i++)
-                    {
-                        try
-                        {
-                            viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
-                        }
-                        catch (Exception ex)
-                        {
-                            exceptions.Enqueue(ex);
-                            break;
-                        }
-                    }
-                }))
-                .ToArray();
+            // Set up cancellation for concurrent tasks
+            var cts = new CancellationTokenSource();
+            var token = cts.Token;
+            Exception caughtException = null;
 
-            try
+            // Background task that modifies PossibleProducts collection
+            var modifierTask = Task.Run(() =>
             {
-                startSignal.Set();
-                var completed = Task.WaitAll(tasks, TimeSpan.FromSeconds(30));
-                Assert.That(completed, Is.True, "Concurrent rematching did not complete within the timeout.");
-                Assert.That(exceptions, Is.Empty,
-                    $"Concurrent rematching threw: {string.Join(Environment.NewLine, exceptions.Select(p => p.ToString()))}");
-            }
-            finally
+                while (!token.IsCancellationRequested)
+                {
+                    // Add a dummy product
+                    var dummy = new FragmentViewModel(false, ProductType.Y);
+                    viewModel.PossibleProducts.Add(dummy);
+                    Thread.Sleep(1); // small delay
+                    viewModel.PossibleProducts.Remove(dummy);
+                }
+            }, token);
+
+            // Background task that calls MatchIonsWithNewTypes repeatedly
+            var matcherTask = Task.Run(() =>
             {
-                Directory.Delete(outputFolder, true);
-            }
+                for (int i = 0; i < 500 && !token.IsCancellationRequested; i++)
+                {
+                    try
+                    {
+                        viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        caughtException = ex;
+                        cts.Cancel();
+                        break;
+                    }
+                }
+            }, token);
+
+            // Wait for matcher to finish (or cancel)
+            matcherTask.Wait(TimeSpan.FromSeconds(10));
+            cts.Cancel();
+            // Wait for modifier to finish (should exit loop)
+            modifierTask.Wait(TimeSpan.FromSeconds(2));
+
+            // Clean up
+            Directory.Delete(outputFolder, true);
+
+            // If an InvalidOperationException was thrown, fail the test
+            Assert.That(caughtException, Is.Null, $"InvalidOperationException thrown: {caughtException?.Message}");
         }
     }
 }

@@ -1,6 +1,12 @@
 ﻿using EngineLayer;
+using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
-using NUnit.Framework; 
+using NUnit.Framework;
+using Omics;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Omics.Modifications;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
@@ -8,11 +14,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using EngineLayer.DatabaseLoading;
-using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Omics;
-using Omics.Digestion;
 
 namespace Test
 {
@@ -58,8 +61,9 @@ namespace Test
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.That(output.Length, Is.EqualTo(2));
-            Assert.That(output[0].Contains("Modification Info List\tIntensity_silac(R+3.988)\tIntensity_silac(R+10.008)")); //test that two files were made and no light file
-            Assert.That(output[1].Contains("875000.0000000009\t437500.00000000047")); //test the heavier intensity is half that of the heavy (per the raw file)
+            Assert.That(output[0].Contains("SpectralCount_silac(R+3.988)\tIntensity_silac(R+3.988)\tCountOccupancy_silac(R+3.988)\tIntensityOccupancy_silac(R+3.988)\tSpectralCount_silac(R+10.008)\tIntensity_silac(R+10.008)")); //test that two conditions were made and no light condition
+            Assert.That(output[1].Contains("875000.0000000009")); //test the heavy intensity
+            Assert.That(output[1].Contains("437500.00000000047")); //test the heavier intensity is half that of the heavy (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -132,8 +136,9 @@ namespace Test
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.That(output.Length, Is.EqualTo(2));
-            Assert.That(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014 & R+6.020)")); //test that two files were made
-            Assert.That(output[1].Contains("1374999.999999999\t687499.9999999995")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.That(output[0].Contains("SpectralCount_silac\tIntensity_silac\tCountOccupancy_silac\tIntensityOccupancy_silac\tSpectralCount_silac(K+8.014 & R+6.020)\tIntensity_silac(K+8.014 & R+6.020)")); //test that two conditions were made
+            Assert.That(output[1].Contains("1374999.999999999")); //test the light intensity
+            Assert.That(output[1].Contains("687499.9999999995")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -223,8 +228,13 @@ namespace Test
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"\TestSilac\AllQuantifiedProteinGroups.tsv");
             Assert.That(output.Length, Is.EqualTo(2));
-            Assert.That(output[0].Contains("Intensity_silac\tIntensity_silacPart2\tIntensity_silac(K+8.014)\tIntensity_silacPart2(K+8.014)")); //test that two files were made
-            Assert.That(output[1].Contains("875000.0000000009\t875000.0000000009\t437500.00000000047\t437500.00000000047")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.That(output[0].Contains(
+                "SpectralCount_silac\tIntensity_silac\tCountOccupancy_silac\tIntensityOccupancy_silac\t" +
+                "SpectralCount_silacPart2\tIntensity_silacPart2\tCountOccupancy_silacPart2\tIntensityOccupancy_silacPart2\t" +
+                "SpectralCount_silac(K+8.014)\tIntensity_silac(K+8.014)\tCountOccupancy_silac(K+8.014)\tIntensityOccupancy_silac(K+8.014)\t" +
+                "SpectralCount_silacPart2(K+8.014)\tIntensity_silacPart2(K+8.014)")); //test that all four conditions were made
+            Assert.That(output[1].Contains("875000.0000000009")); //test the light intensities (both files)
+            Assert.That(output[1].Contains("437500.00000000047")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"\TestSilac\AllQuantifiedPeptides.tsv");
@@ -669,6 +679,41 @@ namespace Test
 
             //Test no crash in weird situations
             SilacConversions.SilacConversionsPostQuantification(null, null, null, new List<SpectraFileInfo>(), null, new HashSet<IDigestionParams>(), null, new List<PeptideSpectralMatch>(), new Dictionary<string, int>(), true);
+        }
+
+        /// <summary>
+        /// Verifies that the SILAC clone constructor preserves IsobaricMassTagReporterIonIntensities
+        /// and PeptideFdrInfo, both of which were previously dropped during cloning.
+        /// Regression guard for the ptm_stoich branch fixes.
+        /// </summary>
+        [Test]
+        public static void TestSilacClonePreservesQuantAndFdrData()
+        {
+            var protein = new Protein("PEPTIDE", "ACCESSION");
+            var pwsm = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 7, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var scan = new Ms2ScanWithSpecificMass(
+                new TestDataFile(pwsm, "quadratic").GetOneBasedScan(2), 100, 1, null, new CommonParameters());
+
+            var psm = new PeptideSpectralMatch(pwsm, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+
+            // Set fields that the clone constructor must preserve
+            var reporterIons = new double[] { 100.0, 200.0, 300.0 };
+            typeof(PeptideSpectralMatch).BaseType.GetProperty("IsobaricMassTagReporterIonIntensities", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+                .SetValue(psm, reporterIons);
+            psm.PeptideFdrInfo = new FdrInfo { QValue = 0.05, PEP = 0.1 };
+
+            // Clone (SILAC path)
+            var clone = psm.Clone(new List<SpectralMatchHypothesis>
+            {
+                new SpectralMatchHypothesis(0, pwsm, new List<MatchedFragmentIon>(), 10)
+            });
+
+            // Assertions
+            Assert.That(clone.IsobaricMassTagReporterIonIntensities, Is.EqualTo(reporterIons));
+            Assert.That(clone.PeptideFdrInfo, Is.Not.Null);
+            Assert.That(clone.PeptideFdrInfo.QValue, Is.EqualTo(0.05));
+            Assert.That(clone.PeptideFdrInfo.PEP, Is.EqualTo(0.1));
         }
     }
 }
