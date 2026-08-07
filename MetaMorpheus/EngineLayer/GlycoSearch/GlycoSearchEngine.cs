@@ -305,18 +305,16 @@ namespace EngineLayer.GlycoSearch
 
             var fragmentsForEachGlycoPeptide = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.DissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
 
-            // If the peptide contains N-glycan, we need to add the Y ion from N-glycan.
-            // At first, we only consider the mod is N-linked glycosylation and as a glycan object.
-            var nGlycans = peptideWithMod.AllModsOneIsNterminus.Values
+            // Only Glycan-typed N-linked mods with generated Y ions contribute Y ions here.
+            // Non-Glycan annotations (DB/GPTMD) and mod-loaded glycans without ions are intentionally
+            // excluded; correct N-glycan ID is the NO-search's job.
+            var nGlycan = peptideWithMod.AllModsOneIsNterminus.Values
                 .OfType<Glycan>()
-                .Where(g => g.ModificationType == "N-linked glycosylation");
-            foreach (var nGlycan in nGlycans) 
+                .FirstOrDefault(g => g.ModificationType == "N-linked glycosylation" && g.HasIons);
+            // else: no ions → skip (dummy score); users should use NO-search for correct N-glycan ID
+            if (nGlycan != null)
             {
-                if (nGlycan.Ions != null) // guard against null Ions property
-                {
-                    fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan));
-                }
-                // else: no ions → skip (dummy score); users should use NO-search for correct N-glycan ID
+                fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan));
             }
 
             var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters);
