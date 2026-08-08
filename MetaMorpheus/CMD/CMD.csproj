@@ -10,13 +10,14 @@
     <ApplicationIcon></ApplicationIcon>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
+  <!-- PlatformTarget is deliberately left unset so the assembly is architecture-neutral (MSIL) and can be
+       loaded by an arm64 .NET runtime as well as an x64 one. Setting it to x64 stamps AMD64 into the PE
+       header, and CoreCLR on Apple Silicon then refuses the assembly with
+       "FileLoadException: Could not load file or assembly 'CMD'" (issues #2503, #2504).
+       Note that Microsoft.ML's _CheckForUnsupportedPlatformTarget guard rejects an explicit 'AnyCPU' but
+       explicitly permits an empty PlatformTarget for portable .NET Core apps, so this must stay unset
+       rather than being changed to AnyCPU. On .NET Core an architecture-neutral app still runs 64-bit on a
+       64-bit runtime, so nothing is lost on x64. -->
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
@@ -24,7 +25,7 @@
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="1.0.583" />
+    <PackageReference Include="mzLib" Version="1.0.584" />
     <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="SQLite.Interop.dll" Version="1.0.103" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.118" />

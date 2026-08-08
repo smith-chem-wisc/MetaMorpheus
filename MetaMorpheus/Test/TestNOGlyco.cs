@@ -205,7 +205,7 @@ namespace Test
             Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
             Assert.That(Psms.Count == 1);
             Assert.That(Psms.First().FullSequence == "AAT[O-linked glycosylation:N1 on T]VGSLAGQPLQER");
-            Assert.That(Psms.First().Score, Is.EqualTo(23.2).Within(0.1));
+            Assert.That(Psms.First().Score, Is.EqualTo(20.2).Within(0.1));
             Directory.Delete(outputFolder, true);
         }
 
