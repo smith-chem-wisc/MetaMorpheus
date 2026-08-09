@@ -161,6 +161,15 @@ namespace TaskLayer
             MigrateLegacyMostAbundantRequest();
 
             MyTaskResults = new(this);
+
+            // Checked HERE, before a single spectrum is read, rather than at write time.
+            //
+            // Asking for an SDRF is an assertion that the sample metadata exists. If it does not,
+            // the only alternatives are to write "not available" -- producing a file that passes
+            // every validator and answers no question -- or to fail. Failing is right, and failing
+            // before a three-hour search is a great deal better than failing after it.
+            ValidateSdrfPrerequisites(currentRawFileList);
+
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
@@ -612,6 +621,48 @@ namespace TaskLayer
             };
             return postProcessing.Run();
         }
+
+        /// <summary>
+        /// Refuses the run if SDRF output was requested but the sample metadata that only a human
+        /// can supply is missing.
+        ///
+        /// The search parameters -- enzyme, modifications, tolerances, instrument -- are always
+        /// available and always complete. The sample half is not: organism part, disease, cell type
+        /// and replicate structure come from ExperimentalDesign.tsv beside the spectra, and nothing
+        /// in a search can infer them. Emitting a document padded with reserved words would be
+        /// uniformly consistent, perfectly valid, and useless for the cross-experiment mining the
+        /// file exists to enable.
+        /// </summary>
+        private void ValidateSdrfPrerequisites(List<string> currentRawFileList)
+        {
+            if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
+                return;
+
+            string designPath = Path.Combine(
+                Directory.GetParent(currentRawFileList.First()).ToString(),
+                GlobalVariables.ExperimentalDesignFileName);
+
+            if (!File.Exists(designPath))
+                throw new MetaMorpheusException(
+                    "SDRF output was requested, but there is no " + GlobalVariables.ExperimentalDesignFileName +
+                    " beside the spectra files (" + designPath + "). An SDRF records which sample each " +
+                    "file came from, and nothing in a search knows that. Set up the experimental design " +
+                    "first, or turn off SDRF output.");
+
+            ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
+            if (designErrors.Any())
+                throw new MetaMorpheusException(
+                    "SDRF output was requested, but " + GlobalVariables.ExperimentalDesignFileName +
+                    " cannot be used as it stands: " + string.Join("; ", designErrors));
+
+            // Isobaric labelling cannot be described yet: SDRF wants one row per sample per channel,
+            // and MetaMorpheus models a single tag type for the whole search with no channel-to-
+            // sample mapping. Guessing one would invent an experimental design.
+            if (SearchParameters.DoMultiplexQuantification)
+                Warn("SDRF output with isobaric labelling: comment[label] cannot be filled in, because " +
+                     "MetaMorpheus has no channel-to-sample mapping. Every other column will be written.");
+        }
+
 
         private static MassDiffAcceptor ParseSearchMode(string text)
         {

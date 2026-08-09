@@ -32,7 +32,9 @@ using ProteinGroup = FlashLFQ.ProteinGroup;
 
 namespace TaskLayer
 {
-    public class PostSearchAnalysisTask : MetaMorpheusTask
+    // partial so the SDRF adapter can live in its own file (PostSearchAnalysisTaskSdrf.cs) rather
+    // than adding another ~200 lines to a class that is already 1,700.
+    public partial class PostSearchAnalysisTask : MetaMorpheusTask
     {
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
@@ -123,6 +125,11 @@ namespace TaskLayer
             {
                 WriteDigestionCountByProtein();
                 WriteDigestionCountHistogram();
+            }
+
+            if (Parameters.SearchParameters.WriteSdrf)
+            {
+                WriteSdrf();
             }
 
             WriteFlashLFQResults();

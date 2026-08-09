@@ -492,6 +492,18 @@
                                     </ToolTip>
                                 </ToolTipService.ToolTip>
                             </CheckBox>
+                                <CheckBox x:Name="WriteSdrfCheckBox" Content="Write SDRF experimental-design file">
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            Writes an SDRF-Proteomics file describing this experiment alongside the results,
+                                            so searches can be compared and mined across experiments.
+                                            <LineBreak/>
+                                            Requires an ExperimentalDesign.tsv beside the spectra files: an SDRF records which
+                                            sample each file came from, and nothing in a search knows that. The run will stop
+                                            before starting if it is missing.
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
                         </StackPanel>
                     </GroupBox>
 
