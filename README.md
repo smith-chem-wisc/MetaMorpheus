@@ -32,8 +32,8 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
   * 64-bit operating system
   * .NET 10.0, from https://dotnet.microsoft.com/en-us/download/dotnet/10.0 — that page offers
     installers for Windows, macOS (both Intel and Apple Silicon) and Linux
-     * Running MetaMorpheus needs only the Runtime; building it from source needs the SDK
-* Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)
+     * Running the GUI needs the **Desktop** Runtime (the plain Runtime is not enough for WPF); the CLI needs only the Runtime, and building from source needs the SDK
+* Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET (Windows, macOS, Linux)
 * 8 GB RAM recommended
 
 ## Spectra Requirements

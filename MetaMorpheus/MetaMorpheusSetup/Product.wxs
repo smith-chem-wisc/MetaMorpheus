@@ -358,11 +358,6 @@
 	  	<File Id="src_System.Data.SQLite.EF6.dll" Name="System.Data.SQLite.EF6.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.EF6.dll" />
 	  </Component>
 
-	  <Component Id="src_System.Drawing.Common.dll" Guid="D0717D69-C8C8-422C-8E25-A32A422AEFCE">
-	  	<!-- Taken from CMD: on net10.0-windows the Windows Desktop framework supplies this, so the
-	  	     SDK prunes the package and the GUI no longer copies it. CMD is plain net10.0 and does. -->
-	  	<File Id="src_System.Drawing.Common.dll" Name="System.Drawing.Common.dll" Source="$(var.CMD_TargetDir)System.Drawing.Common.dll" />
-	  </Component>
 	  <Component Id="src_System.Numerics.Tensors.dll" Guid="E82682ED-383F-4592-8B64-A0314FFB5481">
 	  	<File Id="src_System.Numerics.Tensors.dll" Name="System.Numerics.Tensors.dll" Source="$(var.GUI_TargetDir)System.Numerics.Tensors.dll" />
 	  </Component>

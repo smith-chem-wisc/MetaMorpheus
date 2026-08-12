@@ -201,6 +201,10 @@ jobs:
           $whitelistedMissingDlls = @(
             "System.Configuration.ConfigurationManager.dll",
             "System.Security.Cryptography.ProtectedData.dll",
+            # Same EntityFramework 4.7.0 chain as the two below, and it reaches the build only
+            # through mzLib's nuspec. Installing it would ship a 2019 binary in place of the
+            # 8.0.0.0 the MSI used to carry; smith-chem-wisc/mzLib#1142 removes it at source.
+            "System.Drawing.Common.dll",
             "System.Security.Permissions.dll",
             "System.Windows.Extensions.dll",
             "Microsoft.Win32.SystemEvents.dll",
