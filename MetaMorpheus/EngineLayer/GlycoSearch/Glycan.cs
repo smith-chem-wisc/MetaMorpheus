@@ -136,6 +136,13 @@ namespace EngineLayer
         /// List of glycan fragment ions.
         /// </summary>
         public List<GlycanIon> Ions { get; set; }
+
+        /// <summary>
+        /// True when this glycan's Y-ion fragments have been generated. Glycans loaded for the
+        /// fixed/variable-mod list (GlobalVariables.LoadGlycans, ToGenerateIons: false) have none.
+        /// </summary>
+        public bool HasIons => Ions != null && Ions.Count > 0;
+
         /// <summary>
         /// Indicates whether the glycan is a decoy.
         /// </summary>

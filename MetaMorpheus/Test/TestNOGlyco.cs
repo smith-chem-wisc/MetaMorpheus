@@ -342,5 +342,104 @@ namespace Test
             Assert.That(site_case3[4] == "Nxt" && site_case3[6] == "T");
             Assert.That(site_case3[14] == "S");
         }
+
+        [Test]
+        [TestCase(true, false)]  // O-search, N-glycan as fixed mod
+        [TestCase(false, false)] // O-search, N-glycan as variable mod
+        [TestCase(true, true)]   // N_O-search, N-glycan as fixed mod
+        [TestCase(false, true)]  // N_O-search, N-glycan as variable mod
+        public static void GlycoSearch_WithNGlycanAsFixedOrVariableMod_DoesNotCrash(bool asFixedMod, bool isNOSearch)
+        {
+            // Integration smoke test: the search pipeline must complete WITHOUT CRASHING when an
+            // N-glycan is used as a fixed or variable modification and reaches GetGlycanYIons.
+            // This is the crash (NullReferenceException) this PR fixes.
+            //
+            // N-glycan-as-a-mod is not hydrated in this mode: if the glycan has no Y ions, the
+            // consumption site skips them (dummy score) rather than generating them. Users should
+            // use NO-search for correct N-glycan identification. So the only assertion that matters
+            // here is a crash-free run; there is nothing to check on the results (the matched N/O
+            // co-glycopeptides are FDR-filtered out anyway).
+            //
+            // The pre-search assertion below confirms the "N1" mods start with null Ions — the exact
+            // state that used to trigger the crash — so the unwrapped run below is a real regression
+            // check: any thrown exception fails the test directly (and surfaces the real stack trace).
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                $@"TESTGlycoData_{(isNOSearch ? "NO" : "O")}With{(asFixedMod ? "Fixed" : "Var")}NMod");
+            Directory.CreateDirectory(outputFolder);
+
+            string fakeNGlycanDbPath = null;
+            bool addedFakeDbPath = false;
+            var nGlycanModsUnderTest = new List<(string, string)>
+            {
+                ("N-linked glycosylation", "N1 on Nxs"),
+                ("N-linked glycosylation", "N1 on Nxt"),
+            };
+            var noMods = new List<(string, string)>();
+
+            try
+            {
+                if (isNOSearch)
+                {
+                    // For the NO-search case, point the N-glycan database at a "fake" file with a single
+                    // unrealistic composition (HexNAc(9)Hex(9)) that the data won't match. This forces
+                    // any N-glycan to come from the "N1" mod, so candidates route through FindOGlycan ->
+                    // CreateGsm (the GetGlycanYIons path this test guards) instead of being explained by
+                    // the N-glycan search.
+                    fakeNGlycanDbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "NGlycan_fakeN-glycan.gdb");
+                    if (!GlobalVariables.NGlycanDatabasePaths.Contains(fakeNGlycanDbPath))
+                    {
+                        GlobalVariables.NGlycanDatabasePaths.Add(fakeNGlycanDbPath);
+                        addedFakeDbPath = true;
+                    }
+                }
+                Assert.That(nGlycanModsUnderTest.All(mod => GlobalVariables.AllModsKnown.Any(m => m.IdWithMotif == mod.Item2)), Is.True,
+                    "Test setup assumption failed: expected N-glycans mod not found in AllModsKnown.");
+
+                // Confirm the "N1" mods start with null Ions — the exact state that used to NRE in
+                // GetGlycanYIons. This makes the unwrapped run below a real regression check.
+                foreach (var (modType, idWithMotif) in nGlycanModsUnderTest)
+                {
+                    var mod = GlobalVariables.AllModsKnown.Single(m => m.ModificationType == modType && m.IdWithMotif == idWithMotif);
+                    Assert.That(mod, Is.InstanceOf<Glycan>(), $"setup: {idWithMotif} is not a Glycan.");
+                    Assert.That(((Glycan)mod).Ions, Is.Null, $"setup: expected {idWithMotif} null Ions before search.");
+                }
+
+                var commonParameters = new CommonParameters(
+                    dissociationType: DissociationType.HCD,
+                    ms2childScanDissociationType: DissociationType.EThcD,
+                    listOfModsFixed: asFixedMod ? nGlycanModsUnderTest : noMods,
+                    listOfModsVariable: asFixedMod ? noMods : nGlycanModsUnderTest);
+
+                var glycoSearchTask = new GlycoSearchTask
+                {
+                    CommonParameters = commonParameters,
+                    _glycoSearchParameters = new GlycoSearchParameters
+                    {
+                        GlycoSearchType = isNOSearch ? GlycoSearchType.N_O_GlycanSearch : GlycoSearchType.OGlycanSearch,
+                        OGlycanDatabasefile = "OGlycan.gdb",
+                        NGlycanDatabasefile = isNOSearch ? "NGlycan_fakeN-glycan.gdb" : null,
+                        MaximumOGlycanAllowed = 1,
+                    }
+                };
+
+                DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/FiveMucinFasta.fasta"), false);
+                string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/N_O_glycoWithFileSpecific/2019_09_16_StcEmix_35trig_EThcD25_rep1_4999_5500.mzML");
+
+                // Before the fix, this call would throw a NullReferenceException from GetGlycanYIons
+                // once a peptide candidate carrying the N-glycan fixed/variable mod reached CreateGsm.
+                new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) },
+                        new List<string> { raw }, new List<DbForTask> { db }, outputFolder).Run();
+
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) // clean up the output folder after the test
+                {
+                    Directory.Delete(outputFolder, true);
+                }
+                // clean up the fake N-glycan database path from GlobalVariables if it was added
+                if (addedFakeDbPath) GlobalVariables.NGlycanDatabasePaths.Remove(fakeNGlycanDbPath);
+            }
+        }
     }
 }
