@@ -58,6 +58,7 @@ namespace EngineLayer
                         break;
                     case "CID":
                         cleaveDissociationTypes.Add(DissociationType.CID);
+                        cleaveDissociationTypes.Add(DissociationType.LowCID);
                         break;
                     case "HCD":
                         cleaveDissociationTypes.Add(DissociationType.HCD);
@@ -67,6 +68,9 @@ namespace EngineLayer
                         break;
                     case "ETHCD":
                         cleaveDissociationTypes.Add(DissociationType.EThcD);
+                        break;
+                    case "LowCID":
+                        cleaveDissociationTypes.Add(DissociationType.LowCID);
                         break;
                     default:
                         break;
