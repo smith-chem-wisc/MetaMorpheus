@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="4.5.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Avalonia.Headless.NUnit" Version="12.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GUI.Avalonia\GUI.Avalonia.csproj" />
+  </ItemGroup>
+
+  <!-- The smallest real spectra/database pairing in the repository, the same one CalibrationTests and
+       SearchTaskTest use, so the end-to-end test runs a genuine search in seconds rather than minutes. -->
+  <ItemGroup>
+    <None Include="..\Test\TestData\mouseOne.mzML" CopyToOutputDirectory="PreserveNewest" Link="TestData\mouseOne.mzML" />
+    <None Include="..\Test\TestData\mouseOne.xml" CopyToOutputDirectory="PreserveNewest" Link="TestData\mouseOne.xml" />
+  </ItemGroup>
+
+</Project>

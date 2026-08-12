@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <AssemblyName>MetaMorpheus.Avalonia</AssemblyName>
+    <RootNamespace>MetaMorpheus.Avalonia</RootNamespace>
+    <!-- Deliberately no PlatformTarget. Microsoft.ML's _CheckForUnsupportedPlatformTarget errors on an
+         explicit non-x64 value but exempts an empty one, and stamping x64 is what stopped the old
+         assemblies loading on arm64 (#2503, #2504). -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <!-- TaskLayer brings EngineLayer, mzLib, and the Mods/Data/Contaminants/Proteomes/Glycan_Mods
+       folders that GlobalVariables reads from AppDomain.CurrentDomain.BaseDirectory. Verified: those
+       folders appear in this project's output through the reference alone, exactly as they do for CMD,
+       so no content copying is needed here. -->
+  <ItemGroup>
+    <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="GUI.Avalonia.Tests" />
+  </ItemGroup>
+
+</Project>

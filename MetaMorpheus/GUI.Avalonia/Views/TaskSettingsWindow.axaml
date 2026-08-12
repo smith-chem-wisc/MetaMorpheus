@@ -1,0 +1,125 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MetaMorpheus.Avalonia.ViewModels"
+        x:Class="MetaMorpheus.Avalonia.Views.TaskSettingsWindow"
+        x:DataType="vm:TaskSettingsViewModel"
+        Title="Task settings" Width="640" Height="620"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+    </Style>
+    <Style Selector="StackPanel.row">
+      <Setter Property="Orientation" Value="Horizontal" />
+      <Setter Property="Margin" Value="0,3" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="12">
+    <TextBlock DockPanel.Dock="Top" Text="{Binding TaskKind, StringFormat='{}{0} task settings'}"
+               FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" />
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+      <TextBlock x:Name="ValidationText" Foreground="IndianRed" TextWrapping="Wrap"
+                 MaxWidth="380" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <Button Content="Cancel" Click="OnCancelClick" />
+      <Button Content="Save" Click="OnSaveClick" Margin="6,0,0,0" />
+    </StackPanel>
+
+    <ScrollViewer>
+      <StackPanel Spacing="14">
+
+        <Expander Header="Tolerances and fragmentation" IsExpanded="True">
+          <StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Precursor tolerance" Width="150" />
+              <TextBox Text="{Binding PrecursorTolerance}" Width="90" />
+              <RadioButton Content="ppm" GroupName="prec" IsChecked="{Binding PrecursorToleranceIsPpm}" Margin="8,0,0,0" />
+              <RadioButton Content="absolute" GroupName="prec" IsChecked="{Binding !PrecursorToleranceIsPpm}" Margin="8,0,0,0" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Product tolerance" Width="150" />
+              <TextBox Text="{Binding ProductTolerance}" Width="90" />
+              <RadioButton Content="ppm" GroupName="prod" IsChecked="{Binding ProductToleranceIsPpm}" Margin="8,0,0,0" />
+              <RadioButton Content="absolute" GroupName="prod" IsChecked="{Binding !ProductToleranceIsPpm}" Margin="8,0,0,0" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Dissociation type" Width="150" />
+              <ComboBox ItemsSource="{Binding DissociationTypes}" SelectedItem="{Binding DissociationType}" Width="180" />
+            </StackPanel>
+          </StackPanel>
+        </Expander>
+
+        <Expander Header="Digestion" IsExpanded="True">
+          <StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Protease" Width="150" />
+              <ComboBox ItemsSource="{Binding Proteases}" SelectedItem="{Binding Protease}" Width="220" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Max missed cleavages" Width="150" />
+              <NumericUpDown Value="{Binding MaxMissedCleavages}" Minimum="0" Maximum="20" Width="120" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Peptide length" Width="150" />
+              <NumericUpDown Value="{Binding MinPeptideLength}" Minimum="1" Maximum="1000" Width="110" />
+              <TextBlock Classes="label" Text="to" Margin="8,0" />
+              <NumericUpDown Value="{Binding MaxPeptideLength}" Minimum="1" Width="130" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Max mods per peptide" Width="150" />
+              <NumericUpDown Value="{Binding MaxModsPerPeptide}" Minimum="0" Maximum="20" Width="120" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Max mod isoforms" Width="150" />
+              <NumericUpDown Value="{Binding MaxModificationIsoforms}" Minimum="1" Width="140" />
+            </StackPanel>
+          </StackPanel>
+        </Expander>
+
+        <Expander Header="Filtering and performance" IsExpanded="True">
+          <StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Score cutoff" Width="150" />
+              <NumericUpDown Value="{Binding ScoreCutoff}" Minimum="1" Increment="1" Width="120" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="q-value threshold" Width="150" />
+              <NumericUpDown Value="{Binding QValueThreshold}" Minimum="0" Maximum="1" Increment="0.01" Width="120" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Max threads per file" Width="150" />
+              <NumericUpDown Value="{Binding MaxThreadsPerFile}" Minimum="-1" Width="120"
+                             ToolTip.Tip="-1 uses all but one core" />
+            </StackPanel>
+            <CheckBox Content="Deconvolute precursors" IsChecked="{Binding DoPrecursorDeconvolution}" />
+            <CheckBox Content="Use provided precursor info" IsChecked="{Binding UseProvidedPrecursorInfo}" />
+            <CheckBox Content="Trim MS/MS peaks" IsChecked="{Binding TrimMsMsPeaks}" />
+            <CheckBox Content="Report all ambiguity" IsChecked="{Binding ReportAllAmbiguity}" />
+          </StackPanel>
+        </Expander>
+
+        <Expander Header="Search options" IsExpanded="True" IsVisible="{Binding IsSearchTask}">
+          <StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Decoy type" Width="150" />
+              <ComboBox ItemsSource="{Binding DecoyTypes}" SelectedItem="{Binding DecoyType}" Width="180" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Mass difference" Width="150" />
+              <ComboBox ItemsSource="{Binding MassDiffAcceptorTypes}" SelectedItem="{Binding MassDiffAcceptorType}" Width="180" />
+            </StackPanel>
+            <CheckBox Content="Protein parsimony" IsChecked="{Binding DoParsimony}" />
+            <CheckBox Content="Require more than one peptide per protein" IsChecked="{Binding NoOneHitWonders}" />
+            <CheckBox Content="Label-free quantification" IsChecked="{Binding DoLabelFreeQuantification}" />
+            <CheckBox Content="Match between runs" IsChecked="{Binding MatchBetweenRuns}" />
+            <CheckBox Content="Write pruned database" IsChecked="{Binding WritePrunedDatabase}" />
+          </StackPanel>
+        </Expander>
+
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>
