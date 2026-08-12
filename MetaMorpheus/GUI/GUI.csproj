@@ -72,7 +72,6 @@
     <PackageReference Include="SharpLearning.GradientBoost" Version="0.31.8" />
     <PackageReference Include="SharpLearning.Metrics" Version="0.31.8" />
     <PackageReference Include="SQLite.Interop.dll" Version="1.0.103" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
   </ItemGroup>
 
