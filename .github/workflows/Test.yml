@@ -38,6 +38,26 @@ jobs:
           verbose: true
           flags: unittests
 
+  # The Avalonia GUI tests, run on all three platforms. Test.csproj targets net8.0-windows and so can
+  # only run here on Windows; these are net8.0 and headless, which is the point of them.
+  avalonia-gui-tests:
+    name: Avalonia GUI tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.204
+
+      - name: Run Avalonia GUI tests
+        run: dotnet test ./MetaMorpheus/GUI.Avalonia.Tests/GUI.Avalonia.Tests.csproj --configuration Release --verbosity normal
+
   # Runs tests that depend on live external web services (UniProt, ...). Kept separate and
   # intentionally NOT a required status check, so a third-party outage never blocks a PR. The tests
   # self-classify: an outage is reported as Skipped (Assert.Ignore) and only a genuine contract
