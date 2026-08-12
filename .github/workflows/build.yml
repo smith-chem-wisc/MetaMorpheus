@@ -12,8 +12,8 @@ on:
 # Mirrors InstallRunAndArtifact.yml so the SDK version and target framework are declared in one place
 # per workflow rather than repeated inline.
 env:
-  DOTNET_VERSION: 8.0.204
-  DOTNET_FRAMEWORK: net8.0
+  DOTNET_VERSION: 10.0.100
+  DOTNET_FRAMEWORK: net10.0
 
 jobs:
   build:
