@@ -224,12 +224,23 @@ jobs:
               "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK",
               "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\$env:DOTNET_FRAMEWORK",
               "$(Get-Location)\MetaMorpheus\GUI\bin\Release\$env:DOTNET_FRAMEWORK-windows",
-              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\$env:DOTNET_FRAMEWORK"
+              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\$env:DOTNET_FRAMEWORK-windows"
           )
 
           # Collect DLLs and their source folders
           $buildDlls = @()
           $buildDllLocations = @{}
+
+          # A folder that is not there means this list has drifted from where the projects
+          # actually build, and the check quietly covers less than it claims. GuiFunctions was
+          # in that state: it targets net<n>.0-windows but was looked for under net<n>.0, so
+          # nothing it produces was ever validated.
+          $missingFolders = $foldersToCheck | Where-Object { -not (Test-Path $_) }
+          if ($missingFolders) {
+              Write-Host "::error::Build folders not found, so this check would be incomplete:"
+              $missingFolders | ForEach-Object { Write-Host "  - $_" }
+              exit 1
+          }
 
           foreach ($folder in $foldersToCheck) {
               if (Test-Path $folder) {
