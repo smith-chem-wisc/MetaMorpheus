@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using EngineLayer;
 using MetaMorpheusCommandLine;
+using Nett;
+using TaskLayer;
 
 namespace Test
 {
@@ -458,6 +460,91 @@ namespace Test
             finally
             {
                 // Cleanup
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// -g must emit a default toml for every MyTask type. Averaging was omitted, which left
+        /// spectral averaging as the one task whose settings could not be discovered from the
+        /// command line at all - the enum has six members and Program.cs runs all six.
+        /// </summary>
+        [Test]
+        public static void TestGenerateDefaultTaskTomlsCoversEveryTaskType()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestGenerateDefaultTomls");
+
+            try
+            {
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                CommandLineSettings.GenerateDefaultTaskTomls(tempFolder);
+
+                string[] expected =
+                {
+                    "CalibrationTask.toml", "GptmdTask.toml", "SearchTask.toml",
+                    "XLSearchTask.toml", "GlycoSearchTask.toml", "AveragingTask.toml"
+                };
+
+                foreach (string name in expected)
+                {
+                    Assert.That(File.Exists(Path.Combine(tempFolder, name)), Is.True,
+                        $"-g did not write {name}");
+                }
+
+                // One file per MyTask member, no more: a task type added to the enum without a
+                // generated default is exactly the gap this test exists to catch.
+                Assert.That(Directory.GetFiles(tempFolder, "*.toml").Length,
+                    Is.EqualTo(Enum.GetValues(typeof(MyTask)).Length),
+                    "-g should write exactly one default toml per MyTask member");
+            }
+            finally
+            {
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// The generated averaging toml must be runnable, not merely present. Unlike its five
+        /// siblings, SpectralAveragingTask's parameterless constructor initialised nothing, so a
+        /// default-constructed task would have serialised null sections - a file that exists,
+        /// looks plausible, and fails when someone tries to use it.
+        /// </summary>
+        [Test]
+        public static void TestGeneratedAveragingTomlRoundTripsWithPopulatedParameters()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestAveragingTomlRoundTrip");
+
+            try
+            {
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                CommandLineSettings.GenerateDefaultTaskTomls(tempFolder);
+                string averagingToml = Path.Combine(tempFolder, "AveragingTask.toml");
+
+                // The TaskType string is what Program.cs switches on to dispatch the task.
+                var raw = Toml.ReadFile(averagingToml, MetaMorpheusTask.tomlConfig);
+                Assert.That(raw.Get<string>("TaskType"), Is.EqualTo(MyTask.Average.ToString()));
+
+                var task = Toml.ReadFile<SpectralAveragingTask>(averagingToml, MetaMorpheusTask.tomlConfig);
+                Assert.That(task.Parameters, Is.Not.Null, "generated toml carried no [Parameters]");
+                Assert.That(task.CommonParameters, Is.Not.Null, "generated toml carried no [CommonParameters]");
+                Assert.That(task.TaskType, Is.EqualTo(MyTask.Average));
+            }
+            finally
+            {
                 if (Directory.Exists(tempFolder))
                 {
                     Directory.Delete(tempFolder, true);
