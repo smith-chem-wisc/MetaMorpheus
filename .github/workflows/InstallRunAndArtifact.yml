@@ -7,8 +7,8 @@ on:
     branches: [ "master" ]
 
 env:
-  DOTNET_VERSION: 8.0.204
-  DOTNET_FRAMEWORK: net8.0
+  DOTNET_VERSION: 10.0.x
+  DOTNET_FRAMEWORK: net10.0
 
 jobs:
   install:
@@ -201,8 +201,23 @@ jobs:
           $whitelistedMissingDlls = @(
             "System.Configuration.ConfigurationManager.dll",
             "System.Security.Cryptography.ProtectedData.dll",
+            # Same EntityFramework 4.7.0 chain as the two below, and it reaches the build only
+            # through mzLib's nuspec. Installing it would ship a 2019 binary in place of the
+            # 8.0.0.0 the MSI used to carry; smith-chem-wisc/mzLib#1142 removes it at source.
+            "System.Drawing.Common.dll",
             "System.Security.Permissions.dll",
             "System.Windows.Extensions.dll",
+            # The EF6 chain itself, no longer shipped in the MSI. Nothing in MetaMorpheus uses
+            # EntityFramework, and #2710 dropped the System.Data.SQLite metapackage that was its
+            # only direct source; it now reaches the build only transitively, through mzLib
+            # 1.0.584, whose published nuspec predates smith-chem-wisc/mzLib#1142. These four
+            # entries become dead and should be swept when MetaMorpheus moves to a post-#1142
+            # mzLib. sni.dll rides the same chain but lives in runtimes\win-x64\native\, which
+            # the non-recursive scan below never sees -- it needs an entry only if #2690 lands.
+            "EntityFramework.dll",
+            "EntityFramework.SqlServer.dll",
+            "System.Data.SqlClient.dll",
+            "System.Data.SQLite.EF6.dll",
             "Microsoft.Win32.SystemEvents.dll",
             "Microsoft.Extensions.DependencyInjection.Abstractions.dll",
             "Microsoft.Extensions.DependencyInjection.dll",
@@ -224,12 +239,23 @@ jobs:
               "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK",
               "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\$env:DOTNET_FRAMEWORK",
               "$(Get-Location)\MetaMorpheus\GUI\bin\Release\$env:DOTNET_FRAMEWORK-windows",
-              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\$env:DOTNET_FRAMEWORK"
+              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\$env:DOTNET_FRAMEWORK-windows"
           )
 
           # Collect DLLs and their source folders
           $buildDlls = @()
           $buildDllLocations = @{}
+
+          # A folder that is not there means this list has drifted from where the projects
+          # actually build, and the check quietly covers less than it claims. GuiFunctions was
+          # in that state: it targets net<n>.0-windows but was looked for under net<n>.0, so
+          # nothing it produces was ever validated.
+          $missingFolders = $foldersToCheck | Where-Object { -not (Test-Path $_) }
+          if ($missingFolders) {
+              Write-Host "::error::Build folders not found, so this check would be incomplete:"
+              $missingFolders | ForEach-Object { Write-Host "  - $_" }
+              exit 1
+          }
 
           foreach ($folder in $foldersToCheck) {
               if (Test-Path $folder) {
