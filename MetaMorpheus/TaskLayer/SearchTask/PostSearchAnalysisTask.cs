@@ -556,7 +556,7 @@ namespace TaskLayer
                                 decoy: psm.IsDecoy,
                                 // lets FlashLFQ keep match-between-runs within a digestion agent, while
                                 // normalization and protein quantification still span every file
-                                digestionAgentName: psm.DigestionParams?.DigestionAgent?.Name));
+                                digestionAgentName: psm.DigestionParams.DigestionAgentName()));
                     }
                 }
 

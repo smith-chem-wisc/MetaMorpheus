@@ -507,7 +507,7 @@ namespace TaskLayer
                 {
                     flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
                         psm.BioPolymerWithSetModsMonoisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm],
-                        digestionAgentName: psm.DigestionParams?.DigestionAgent?.Name));
+                        digestionAgentName: psm.DigestionParams.DigestionAgentName()));
                 }
             }
 
