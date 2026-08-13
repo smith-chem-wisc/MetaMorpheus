@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  DOTNET_VERSION: 10.0.x
+  DOTNET_FRAMEWORK: net10.0
+
 jobs:
   test:
     name: Test on Windows
@@ -16,7 +20,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.204
+          dotnet-version: ${{ env.DOTNET_VERSION }}
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
         
@@ -71,7 +75,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.204
+          dotnet-version: ${{ env.DOTNET_VERSION }}
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
 
