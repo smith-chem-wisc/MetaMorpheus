@@ -207,6 +207,17 @@ jobs:
             "System.Drawing.Common.dll",
             "System.Security.Permissions.dll",
             "System.Windows.Extensions.dll",
+            # The EF6 chain itself, no longer shipped in the MSI. Nothing in MetaMorpheus uses
+            # EntityFramework, and #2710 dropped the System.Data.SQLite metapackage that was its
+            # only direct source; it now reaches the build only transitively, through mzLib
+            # 1.0.584, whose published nuspec predates smith-chem-wisc/mzLib#1142. These four
+            # entries become dead and should be swept when MetaMorpheus moves to a post-#1142
+            # mzLib. sni.dll rides the same chain but lives in runtimes\win-x64\native\, which
+            # the non-recursive scan below never sees -- it needs an entry only if #2690 lands.
+            "EntityFramework.dll",
+            "EntityFramework.SqlServer.dll",
+            "System.Data.SqlClient.dll",
+            "System.Data.SQLite.EF6.dll",
             "Microsoft.Win32.SystemEvents.dll",
             "Microsoft.Extensions.DependencyInjection.Abstractions.dll",
             "Microsoft.Extensions.DependencyInjection.dll",
