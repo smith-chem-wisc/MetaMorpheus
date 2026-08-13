@@ -526,25 +526,12 @@ namespace TaskLayer
                 // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
                 // the peptides should still be quantified but not considered for protein quantification
                 var undefinedPg = new ProteinGroup("UNDEFINED", "", "");
-                //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-                Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
-                Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
-
-                foreach (IDigestionParams dp in Parameters.ListOfDigestionParams)
-                {
-                    if (!proteaseSortedPsms.ContainsKey(dp.DigestionAgent))
-                    {
-                        proteaseSortedPsms.Add(dp.DigestionAgent, new List<SpectralMatch>());
-                    }
-                }
                 foreach (var psm in psmsForQuantification)
                 {
                     if (!psmToProteinGroups.ContainsKey(psm))
                     {
                         psmToProteinGroups.Add(psm, new List<ProteinGroup> { undefinedPg });
                     }
-
-                    proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
                 }
 
                 // pass PSM info to FlashLFQ
@@ -566,7 +553,10 @@ namespace TaskLayer
                                 psmToProteinGroups[psm],
                                 psmScore: psm.Score,
                                 qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
-                                decoy: psm.IsDecoy));
+                                decoy: psm.IsDecoy,
+                                // lets FlashLFQ keep match-between-runs within a digestion agent, while
+                                // normalization and protein quantification still span every file
+                                digestionAgentName: psm.DigestionParams?.DigestionAgent?.Name));
                     }
                 }
 
