@@ -1588,7 +1588,9 @@ namespace Test
 
             // test child scan (low-resolution CID, alpha peptide signature ion)
             Assert.That(csm.ChildMatchedFragmentIons.First().Key == 4);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 1);
+            // 2 rather than 1 since #1797: DSSO is CID-cleavable, so its MS3 LowCID child scans are now
+            // searched with the cleaved masses, which matches one additional a* ion here
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 2);
 
             // test child scan (low-resolution CID, beta peptide signature ion)
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 4);

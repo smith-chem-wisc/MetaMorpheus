@@ -47,6 +47,22 @@ namespace EngineLayer
         public double DeadendMassNH2 { get; set; }
         public double DeadendMassTris { get; set; }
 
+        /// <summary>
+        /// Whether this crosslinker is cleaved by the given dissociation type. LowCID counts as CID: the
+        /// crosslinker does not know the resolution of the scan it is being fragmented in, so a crosslinker
+        /// declared CID-cleavable is also cleaved in a low-resolution CID scan such as an MS3 child scan.
+        /// </summary>
+        public bool IsCleavedBy(DissociationType dissociationType)
+        {
+            if (!Cleavable)
+            {
+                return false;
+            }
+
+            return CleaveDissociationTypes.Contains(dissociationType)
+                || (dissociationType == DissociationType.LowCID && CleaveDissociationTypes.Contains(DissociationType.CID));
+        }
+
         private List<DissociationType> GetCleaveDissociationTypes(string cleaveDissociationTypesInString)
         {
             List<DissociationType> cleaveDissociationTypes = new List<DissociationType>();
@@ -58,7 +74,6 @@ namespace EngineLayer
                         break;
                     case "CID":
                         cleaveDissociationTypes.Add(DissociationType.CID);
-                        cleaveDissociationTypes.Add(DissociationType.LowCID);
                         break;
                     case "HCD":
                         cleaveDissociationTypes.Add(DissociationType.HCD);
