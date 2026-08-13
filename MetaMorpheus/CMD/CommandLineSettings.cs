@@ -191,6 +191,11 @@ namespace MetaMorpheusCommandLine
 
                 GlycoSearchTask glyco = new GlycoSearchTask();
                 Toml.WriteFile(glyco, Path.Combine(folderLocation, @"GlycoSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                // The filename stem matches the output folder Program.cs creates for this task
+                // ("Task{N}AveragingTask"), keeping it consistent with the five above.
+                SpectralAveragingTask averaging = new SpectralAveragingTask();
+                Toml.WriteFile(averaging, Path.Combine(folderLocation, @"AveragingTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {
