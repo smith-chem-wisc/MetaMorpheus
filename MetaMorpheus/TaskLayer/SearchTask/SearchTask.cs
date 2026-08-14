@@ -174,6 +174,15 @@ namespace TaskLayer
             // load spectral libraries
             var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
 
+            // Checked here rather than where the library is updated, which happens after the whole search:
+            // there is nothing to update, and reporting that once the search has finished wastes the run.
+            if (SearchParameters.UpdateSpectralLibrary && spectralLibrary == null)
+            {
+                throw new MetaMorpheusException(
+                    "Updating a spectral library was requested, but no spectral library was given. Add one to " +
+                    "the list of databases, or select writing a new spectral library instead of updating one.");
+            }
+
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append($"{GlobalVariables.AnalyteType.GetDigestionAgentLabel()} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
