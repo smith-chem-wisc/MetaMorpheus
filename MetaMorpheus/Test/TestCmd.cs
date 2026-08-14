@@ -411,5 +411,68 @@ namespace Test
             Assert.That(exception.Message, Does.Contain("task"),
                 "a run given with --acceptThermoLicence should still be rejected for having no task");
         }
+
+        /// <summary>
+        /// The point of the flag is what it writes, so this drives the real entry point rather than a
+        /// stand-in: an unagreed settings.toml goes in, MetaMorpheusCommandLine.Program.Main runs with
+        /// nothing but the flag, and the agreement comes out recorded on disk and in memory.
+        ///
+        /// Given on its own the flag returns before Run() subscribes any engine or task handlers, so the
+        /// only global state this touches is settings.toml and GlobalVariables.GlobalSettings, both of
+        /// which are restored below. WriteExcelCompatibleTSVs is set beforehand and asserted afterwards
+        /// because it is the other half of that file: recording an agreement must not quietly reset the
+        /// one unrelated setting sharing it.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void TestAcceptThermoLicenceRecordsTheAgreementThroughMain()
+        {
+            string settingsPath = Path.Combine(GlobalVariables.DataDir, @"settings.toml");
+            string settingsBackup = File.Exists(settingsPath) ? File.ReadAllText(settingsPath) : null;
+            GlobalSettings globalSettingsBackup = GlobalVariables.GlobalSettings;
+
+            try
+            {
+                // a machine that has never agreed, and that has something to lose in the same file
+                Toml.WriteFile(new GlobalSettings
+                {
+                    UserHasAgreedToThermoRawFileReaderLicence = false,
+                    WriteExcelCompatibleTSVs = true
+                }, settingsPath);
+
+                int exitCode = Program.Main(new[] { "--acceptThermoLicence" });
+
+                Assert.That(exitCode, Is.EqualTo(0), "--acceptThermoLicence on its own should succeed");
+
+                var recorded = Toml.ReadFile<GlobalSettings>(settingsPath);
+                Assert.That(recorded.UserHasAgreedToThermoRawFileReaderLicence, Is.True,
+                    "the agreement was not written to settings.toml");
+                Assert.That(recorded.WriteExcelCompatibleTSVs, Is.True,
+                    "recording the agreement reset the other setting in settings.toml");
+                Assert.That(GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence, Is.True,
+                    "the agreement was written but not applied to the running process");
+
+                // Running it again on an already-agreed machine takes the other branch: nothing to
+                // record, nothing to re-print, and still a success rather than a complaint.
+                int secondExitCode = Program.Main(new[] { "--acceptThermoLicence" });
+
+                Assert.That(secondExitCode, Is.EqualTo(0), "--acceptThermoLicence should be idempotent");
+                Assert.That(Toml.ReadFile<GlobalSettings>(settingsPath).UserHasAgreedToThermoRawFileReaderLicence,
+                    Is.True);
+            }
+            finally
+            {
+                if (settingsBackup == null)
+                {
+                    File.Delete(settingsPath);
+                }
+                else
+                {
+                    File.WriteAllText(settingsPath, settingsBackup);
+                }
+
+                GlobalVariables.GlobalSettings = globalSettingsBackup;
+            }
+        }
     }
 }
