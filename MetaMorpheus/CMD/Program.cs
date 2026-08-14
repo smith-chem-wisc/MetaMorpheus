@@ -121,6 +121,37 @@ namespace MetaMorpheusCommandLine
                 return errorCode;
             }
 
+            // --acceptThermoLicence records the agreement without asking for it, for the situations that
+            // cannot answer the prompt further down: a container, a scheduled cluster job, a CI runner,
+            // anything with stdin closed. Those are also the situations most likely to need it, because
+            // outside a Windows installation SetUpDataDirectory() leaves DataDir at the application
+            // folder rather than a per-user one, so the agreement is recorded per extracted copy and
+            // every new download, conda environment and container layer starts unagreed.
+            if (settings.AcceptThermoLicence)
+            {
+                if (GlobalVariables.GlobalSettings?.UserHasAgreedToThermoRawFileReaderLicence != true)
+                {
+                    // Print the licence whatever the verbosity. The flag is an affirmative act by
+                    // whoever typed it, and this is what puts the terms they agreed to in the log.
+                    Console.WriteLine(ThermoRawFileReaderLicence.ThermoLicenceText);
+                    Console.WriteLine("\nThe --acceptThermoLicence flag was given, which agrees to the above terms.");
+
+                    RecordThermoLicenceAgreement();
+                }
+
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    Console.WriteLine("Agreed to the Thermo RawFileReader licence. Recorded in "
+                        + Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+                }
+
+                // On its own the flag is a setup step, so there is no run to continue into.
+                if (settings.Tasks.Count < 1 && settings.Databases.Count < 1 && settings.Spectra.Count < 1)
+                {
+                    return errorCode;
+                }
+            }
+
             // set up microvignette
             if (settings.RunMicroVignette)
             {
@@ -400,6 +431,24 @@ namespace MetaMorpheusCommandLine
             {
                 WriteMultiLineIndented("Finished writing file: " + e.WrittenFile);
             }
+        }
+
+        /// <summary>
+        /// Records agreement to the Thermo RawFileReader licence, in memory and in settings.toml,
+        /// carrying the one other setting that file holds so recording the agreement does not reset it.
+        /// GlobalSettings is read defensively because SetUpGlobalSettings() leaves it null when the data
+        /// directory is read-only, which is a state a container can easily be in.
+        /// </summary>
+        private static void RecordThermoLicenceAgreement()
+        {
+            var newGlobalSettings = new GlobalSettings
+            {
+                UserHasAgreedToThermoRawFileReaderLicence = true,
+                WriteExcelCompatibleTSVs = GlobalVariables.GlobalSettings?.WriteExcelCompatibleTSVs ?? false
+            };
+
+            Toml.WriteFile<GlobalSettings>(newGlobalSettings, Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+            GlobalVariables.GlobalSettings = newGlobalSettings;
         }
 
         private static void MyTaskEngine_finishedSingleTaskHandler(object sender, SingleTaskEventArgs e)

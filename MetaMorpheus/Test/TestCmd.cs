@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using CommandLine;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -345,6 +346,70 @@ namespace Test
                     Directory.Delete(tempFolder, true);
                 }
             }
+        }
+
+        /// <summary>
+        /// The option name is the whole interface here - it is what goes in a Dockerfile and a job
+        /// script - so a rename or a typo in the attribute has to fail loudly rather than quietly
+        /// leaving the flag unbound and the run back at the interactive prompt.
+        /// </summary>
+        [Test]
+        public static void TestAcceptThermoLicenceFlagBindsFromTheCommandLine()
+        {
+            bool bound = false;
+
+            CommandLine.Parser.Default
+                .ParseArguments<CommandLineSettings>(new[] { "--acceptThermoLicence" })
+                .WithParsed(options => bound = options.AcceptThermoLicence);
+
+            Assert.That(bound, Is.True, "--acceptThermoLicence was not bound by the command line parser");
+        }
+
+        /// <summary>
+        /// --acceptThermoLicence on its own is a setup step, not a run, so it must not be held to the
+        /// task/database/spectra requirements. Without the exemption the invocation that a container
+        /// build or a first-time macOS user needs most is rejected before it reaches Program.Run.
+        /// </summary>
+        [Test]
+        public static void TestAcceptThermoLicenceValidatesWithoutARunSpecified()
+        {
+            var settings = new CommandLineSettings { AcceptThermoLicence = true };
+
+            Assert.DoesNotThrow(() => settings.ValidateCommandLineSettings());
+
+            Assert.That(settings.Tasks.Count, Is.EqualTo(0));
+            Assert.That(settings.Databases.Count, Is.EqualTo(0));
+            Assert.That(settings.Spectra.Count, Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// The exemption above is conditional on the flag. An empty command line is still an error.
+        /// </summary>
+        [Test]
+        public static void TestEmptyCommandLineIsStillRejectedWithoutTheLicenceFlag()
+        {
+            var settings = new CommandLineSettings();
+
+            Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+        }
+
+        /// <summary>
+        /// Given alongside a run the flag is only a modifier, so the run itself is validated as usual.
+        /// A half-specified search must not become valid just because the licence was accepted with it.
+        /// </summary>
+        [Test]
+        public static void TestAcceptThermoLicenceDoesNotExemptARunFromValidation()
+        {
+            var settings = new CommandLineSettings
+            {
+                AcceptThermoLicence = true,
+                _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") }
+            };
+
+            var exception = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+
+            Assert.That(exception.Message, Does.Contain("task"),
+                "a run given with --acceptThermoLicence should still be rejected for having no task");
         }
     }
 }
