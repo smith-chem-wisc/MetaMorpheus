@@ -25,6 +25,12 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
 {
     public ObservableCollection<MassDifferenceAcceptorTypeViewModel> MonoMassDiffAcceptorTypes { get; }
     public ObservableCollection<MassDifferenceAcceptorTypeViewModel> MostAbundantMassDiffAcceptorTypes { get; }
+
+    /// <summary>
+    /// The acceptor collection that matches the currently selected precursor mass mode. The GUI binds a single
+    /// ListBox to this, so the inactive collection is never bound and cannot write a stale <c>null</c> selection back.
+    /// </summary>
+    public ObservableCollection<MassDifferenceAcceptorTypeViewModel> ActiveMassDiffAcceptorTypes => UseMostAbundantMass ? MostAbundantMassDiffAcceptorTypes : MonoMassDiffAcceptorTypes;
     public ObservableCollection<SelectableNotchViewModel> PredefinedNotches { get; } = new()
     {
         new SelectableNotchViewModel("Missed Mono", Chemistry.Constants.C13MinusC12),
@@ -129,6 +135,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             OnPropertyChanged(nameof(PrecursorMassMatchMode));
             OnPropertyChanged(nameof(UseMostAbundantMass)); 
             OnPropertyChanged(nameof(UseMonoisotopicMass));
+            OnPropertyChanged(nameof(ActiveMassDiffAcceptorTypes));
         }
     }
 
@@ -155,6 +162,11 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
         get => _selectedType;
         set
         {
+            if (value == null)
+            {
+                return; // keep the prior selection if a binding ever coerces its source item to null
+            }
+
             if (_selectedType != null) // only false during initialization when no cache is present. 
             {
                 switch (_selectedType.Type)

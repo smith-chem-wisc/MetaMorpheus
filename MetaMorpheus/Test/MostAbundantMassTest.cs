@@ -1163,9 +1163,10 @@ namespace Test
         }
 
         /// <summary>
-        /// The warning is actually emitted by a real task run, not merely computable. Runs a search in
-        /// most-abundant mode over a file whose precursors deconvolute, with precursor deconvolution turned
-        /// OFF so every scan falls back, and asserts the task raised the warning.
+        /// The warning is actually emitted by a real task run, not merely computable. Runs a search whose theory
+        /// (most-abundant mass diff acceptor) and observed (precursor mass match mode) sides are both most-abundant
+        /// over a file whose precursors deconvolute, with precursor deconvolution turned OFF so every scan falls
+        /// back, and asserts the task raised the warning.
         /// </summary>
         [Test]
         public static void SearchTask_EmitsMonoisotopicFallbackWarning_WhenNoApexObserved()
@@ -1177,6 +1178,7 @@ namespace Test
             try
             {
                 var searchTask = new SearchTask();
+                searchTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.MostAbundant_Exact;
                 searchTask.CommonParameters = new CommonParameters(
                     precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
                     doPrecursorDeconvolution: false);   // no envelope -> no observed apex on any scan

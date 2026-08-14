@@ -220,6 +220,7 @@ namespace TaskLayer
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>(); // key is filename, value is an int array of length 2, where the first element is the number of MS2 spectra in the file, and the second element is the number of different deconvoluted precursors assigned to those scans
             bool collectedDigestionInformation = false;
             IDictionary<(string Accession, string BaseSequence), int> digestionCountDictionary = null;
+            int numNotches = 0;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 if (GlobalVariables.StopLoops) { break; }
@@ -231,9 +232,18 @@ namespace TaskLayer
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
+                // The theory side is governed by SearchParameters.MassDiffAcceptorType, while the observed precursor
+                // mass comes from PrecursorMassMatchMode. Keep them aligned so a most-abundant acceptor actually
+                // searches against most-abundant masses (and vice versa).
+                combinedParams.PrecursorMassMatchMode = SearchParameters.MassDiffAcceptorType.IsMostAbundant()
+                    ? PrecursorMassMatchMode.MostAbundant
+                    : PrecursorMassMatchMode.Monoisotopic;
+
                 MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac,
                     combinedParams.PrecursorMassMatchMode, combinedParams.GetAverageResidue(),
                     combinedParams.IsotopeSpacing());
+
+                numNotches = massDiffAcceptor.NumNotches;
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -500,7 +510,6 @@ namespace TaskLayer
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            int numNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             //resolve category specific fdrs (for speedy semi and nonspecific
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
@@ -540,23 +549,6 @@ namespace TaskLayer
                 DigestionCountDictionary = digestionCountDictionary
             };
             return postProcessing.Run();
-        }
-
-        private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
-        {
-            switch (massDiffAcceptorType)
-            {
-                case MassDiffAcceptorType.Exact: return 1;
-                case MassDiffAcceptorType.OneMM: return 2;
-                case MassDiffAcceptorType.TwoMM: return 3;
-                case MassDiffAcceptorType.ThreeMM: return 4;
-                case MassDiffAcceptorType.ModOpen: return 1;
-                case MassDiffAcceptorType.Open: return 1;
-                case MassDiffAcceptorType.PlusOrMinusThreeMM: return 7;
-                case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
-
-                default: throw new MetaMorpheusException("Unknown mass difference acceptor type");
-            }
         }
 
         private static MassDiffAcceptor ParseSearchMode(string text)

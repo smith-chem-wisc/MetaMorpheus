@@ -493,6 +493,30 @@ namespace Test.GuiTests
         }
 
         [Test]
+        public void ActiveMassDiffAcceptorTypes_FollowsUseMostAbundantMass()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
+
+            Assert.That(vm.ActiveMassDiffAcceptorTypes, Is.SameAs(vm.MonoMassDiffAcceptorTypes));
+
+            vm.UseMostAbundantMass = true;
+            Assert.That(vm.ActiveMassDiffAcceptorTypes, Is.SameAs(vm.MostAbundantMassDiffAcceptorTypes));
+
+            vm.UseMostAbundantMass = false;
+            Assert.That(vm.ActiveMassDiffAcceptorTypes, Is.SameAs(vm.MonoMassDiffAcceptorTypes));
+        }
+
+        [Test]
+        public void SelectedType_NullAssignment_IsIgnored()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
+            var exactModel = vm.SelectedType;
+
+            Assert.DoesNotThrow(() => vm.SelectedType = null);
+            Assert.That(vm.SelectedType, Is.EqualTo(exactModel));
+        }
+
+        [Test]
         public void Constructor_WithMostAbundantMode_SetsSelectedTypeFromCorrectCollection()
         {
             var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.MostAbundant_Exact, "", 5, PrecursorMassMatchMode.MostAbundant);

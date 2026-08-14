@@ -10,8 +10,6 @@
     <UserControl.Resources>
         <local:MassDifferenceAcceptorTypeToCustomTextBoxVisibilityConverter x:Key="CustomBoxConverter" />
         <local:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
-        <local:BooleanToInvertedVisibilityConverter x:Key="boolToInvertedVisConverter"/>
-        <local:BooleanToVisibilityConverter x:Key="boolToVisConverter"/>
         <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
             <Setter Property="BorderThickness" Value="3 1 1 1"/>
@@ -51,12 +49,11 @@
                     <RadioButton Content="Most Abundant Mass" IsChecked="{Binding UseMostAbundantMass, Mode=TwoWay}" GroupName="PrecursorMassMatchMode" />
                 </StackPanel>
 
-                <!-- Mono Mass Diff Acceptor Types -->
-                <ListBox ItemsSource="{Binding MonoMassDiffAcceptorTypes}"
+                <!-- Mass Diff Acceptor Types (collection follows the selected precursor mass mode) -->
+                <ListBox ItemsSource="{Binding ActiveMassDiffAcceptorTypes}"
                              SelectedItem="{Binding SelectedType, Mode=TwoWay}"
                              BorderThickness="0"
-                             SelectionMode="Single"
-                             Visibility="{Binding UseMostAbundantMass, Converter={StaticResource boolToInvertedVisConverter}}">
+                             SelectionMode="Single">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
                             <Setter Property="BorderThickness" Value="0" />
@@ -79,42 +76,7 @@
                             <RadioButton
                                     Content="{Binding Label}"
                                     ToolTip="{Binding ToolTip}"
-                                    GroupName="MonoMassDiffAcceptor"
-                                    Margin="2,1,2,1"
-                                    IsChecked="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListBoxItem}, Path=IsSelected, Mode=TwoWay}" />
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-                
-                <!-- Most Abundant Mass Diff Acceptor Types -->
-                <ListBox ItemsSource="{Binding MostAbundantMassDiffAcceptorTypes}"
-                             SelectedItem="{Binding SelectedType, Mode=TwoWay}"
-                             BorderThickness="0"
-                             SelectionMode="Single"
-                             Visibility="{Binding UseMostAbundantMass, Converter={StaticResource boolToVisConverter}}">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="BorderThickness" Value="0" />
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="HorizontalContentAlignment" Value="Left" />
-                            <Setter Property="VerticalContentAlignment" Value="Center" />
-                            <Setter Property="Focusable" Value="False" />
-                            <!-- Remove selection highlight -->
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <ContentPresenter />
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <RadioButton
-                                    Content="{Binding Label}"
-                                    ToolTip="{Binding ToolTip}"
-                                    GroupName="MostAbundantMassDiffAcceptor"
+                                    GroupName="MassDiffAcceptor"
                                     Margin="2,1,2,1"
                                     IsChecked="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListBoxItem}, Path=IsSelected, Mode=TwoWay}" />
                         </DataTemplate>
