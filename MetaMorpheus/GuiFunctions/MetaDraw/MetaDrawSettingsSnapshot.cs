@@ -38,6 +38,8 @@ namespace GuiFunctions
         public double SpectrumDescriptionFontSize { get; set; } = 10;
         public bool DisplayChimeraLegend { get; set; } = true;
         public bool SuppressMessageBoxes { get; set; } = false;
+        public double MinMzToPlot { get; set; } = 0;
+        public double MaxMzToPlot { get; set; } = double.MaxValue;
 
         // Chimera Settings
         public bool ChimeraLegendTakeFirstIfAmbiguous { get; set; }
