@@ -42,8 +42,8 @@ jobs:
           verbose: true
           flags: unittests
 
-  # The Avalonia GUI tests, run on all three platforms. Test.csproj targets net8.0-windows and so can
-  # only run here on Windows; these are net8.0 and headless, which is the point of them.
+  # The Avalonia GUI tests, run on all three platforms. Test.csproj targets net10.0-windows and so can
+  # only run here on Windows; these are net10.0 and headless, which is the point of them.
   avalonia-gui-tests:
     name: Avalonia GUI tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -57,7 +57,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.204
+          dotnet-version: 10.0.x
 
       - name: Run Avalonia GUI tests
         run: dotnet test ./MetaMorpheus/GUI.Avalonia.Tests/GUI.Avalonia.Tests.csproj --configuration Release --verbosity normal

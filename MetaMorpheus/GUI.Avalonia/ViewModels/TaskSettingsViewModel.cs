@@ -22,8 +22,8 @@ namespace MetaMorpheus.Avalonia.ViewModels;
 ///
 ///   * CommonParameters exposes most of its properties with a private setter, so a change cannot be
 ///     bound onto an existing instance. It has to be rebuilt through its 41-argument constructor.
-///     Apply() does that with named arguments, passing only what is represented here and letting the
-///     rest keep their defaults.
+///     Apply() goes through CommonParameters.CloneWithNewValues, which copies every setting and
+///     overrides only the ones shown here - the constructor would reset the rest to their defaults.
 ///   * Task-specific options - SearchParameters and friends - are plain settable properties, so those
 ///     are mutated in place.
 ///
@@ -242,8 +242,8 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Writes the edited values back onto the task. CommonParameters is rebuilt because its setters
-    /// are private; the search options are assigned in place because theirs are not.
+    /// Writes the edited values back onto the task. CommonParameters is cloned-and-overridden because
+    /// its setters are private; the search options are assigned in place because theirs are not.
     /// </summary>
     public void Apply()
     {
@@ -257,8 +257,9 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
 
         CommonParameters existing = _task.CommonParameters ?? new CommonParameters();
 
-        _task.CommonParameters = new CommonParameters(
-            taskDescriptor: existing.TaskDescriptor,
+        // CloneWithNewValues, not the constructor: this view model shows 13 of the settings
+        // CommonParameters holds, and the constructor would default the rest back.
+        _task.CommonParameters = existing.CloneWithNewValues(
             dissociationType: DissociationType,
             doPrecursorDeconvolution: DoPrecursorDeconvolution,
             useProvidedPrecursorInfo: UseProvidedPrecursorInfo,

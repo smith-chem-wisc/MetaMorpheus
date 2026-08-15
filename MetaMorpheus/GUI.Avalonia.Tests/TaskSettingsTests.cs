@@ -12,14 +12,56 @@ using UsefulProteomicsDatabases;
 namespace Test.Avalonia;
 
 /// <summary>
-/// The settings dialog is only useful if what it collects reaches the task. CommonParameters has
-/// private setters, so Apply() has to rebuild it through the constructor - which is exactly the sort
-/// of thing that silently drops a field. These assert the round trip rather than the rendering.
+/// The settings dialog is only useful if what it collects reaches the task, and only safe if what it
+/// does not collect survives. CommonParameters has private setters, so Apply() clones and overrides
+/// rather than calling the constructor - which would default the settings this dialog never shows.
+/// These assert the round trip rather than the rendering.
 /// </summary>
 public class TaskSettingsTests
 {
     [SetUp]
     public void SetUp() => GlobalVariables.SetUpGlobalVariables();
+
+    /// <summary>
+    /// The dialog shows 13 of the settings CommonParameters holds. The other ~30 have to come through
+    /// Apply() untouched, which the constructor could not do: passing a subset of its arguments leaves
+    /// the rest at their defaults, so editing a tolerance would quietly reset deconvolution, windowing
+    /// and separation type. Several of these change search results, so the failure would be invisible
+    /// in the GUI and visible only in the output.
+    /// </summary>
+    [Test]
+    public void ApplyPreservesSettingsTheDialogDoesNotShow()
+    {
+        var task = new SearchTask();
+
+        // values differing from the constructor defaults, on settings this view model never shows
+        task.CommonParameters = new CommonParameters(
+            totalPartitions: 7,
+            numberOfPeaksToKeepPerWindow: 42,
+            addCompIons: true,
+            assumeOrphanPeaksAreZ1Fragments: false,
+            separationType: "RPLC");
+
+        var settings = new TaskSettingsViewModel(task, "Search") { PrecursorTolerance = "17" };
+        settings.Apply();
+
+        Assert.That(task.CommonParameters.PrecursorMassTolerance.Value, Is.EqualTo(17).Within(1e-9),
+            "the edited setting still has to arrive");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(task.CommonParameters.TotalPartitions, Is.EqualTo(7),
+                "TotalPartitions was reset by Apply()");
+            Assert.That(task.CommonParameters.NumberOfPeaksToKeepPerWindow, Is.EqualTo(42),
+                "NumberOfPeaksToKeepPerWindow was reset by Apply()");
+            Assert.That(task.CommonParameters.AddCompIons, Is.True,
+                "AddCompIons was reset by Apply()");
+            Assert.That(task.CommonParameters.AssumeOrphanPeaksAreZ1Fragments, Is.False,
+                "AssumeOrphanPeaksAreZ1Fragments was reset by Apply()");
+            Assert.That(task.CommonParameters.SeparationType, Is.EqualTo("RPLC"),
+                "SeparationType was reset by Apply()");
+        });
+    }
 
     [Test]
     public void SettingsLoadFromTheTaskTheyWillEdit()

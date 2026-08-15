@@ -240,6 +240,47 @@ namespace EngineLayer
             return c;
         }
 
+        /// <summary>
+        /// Copies every setting from this instance and then overrides only the ones supplied.
+        /// A caller that edits a subset of the settings - a GUI showing fewer fields than this class has
+        /// constructor arguments - has to use this rather than the constructor, which would silently reset
+        /// every setting it was not passed. Going through Clone() means a newly added property is carried
+        /// over without this method having to know about it.
+        /// </summary>
+        public CommonParameters CloneWithNewValues(
+            DissociationType? dissociationType = null,
+            bool? doPrecursorDeconvolution = null,
+            bool? useProvidedPrecursorInfo = null,
+            bool? reportAllAmbiguity = null,
+            bool? trimMsMsPeaks = null,
+            double? qValueThreshold = null,
+            double? scoreCutoff = null,
+            Tolerance precursorMassTolerance = null,
+            Tolerance productMassTolerance = null,
+            int? maxThreadsToUsePerFile = null,
+            IDigestionParams digestionParams = null,
+            IEnumerable<(string, string)> listOfModsVariable = null,
+            IEnumerable<(string, string)> listOfModsFixed = null)
+        {
+            CommonParameters c = Clone();
+
+            if (dissociationType.HasValue) c.DissociationType = dissociationType.Value;
+            if (doPrecursorDeconvolution.HasValue) c.DoPrecursorDeconvolution = doPrecursorDeconvolution.Value;
+            if (useProvidedPrecursorInfo.HasValue) c.UseProvidedPrecursorInfo = useProvidedPrecursorInfo.Value;
+            if (reportAllAmbiguity.HasValue) c.ReportAllAmbiguity = reportAllAmbiguity.Value;
+            if (trimMsMsPeaks.HasValue) c.TrimMsMsPeaks = trimMsMsPeaks.Value;
+            if (qValueThreshold.HasValue) c.QValueThreshold = qValueThreshold.Value;
+            if (scoreCutoff.HasValue) c.ScoreCutoff = scoreCutoff.Value;
+            if (precursorMassTolerance is not null) c.PrecursorMassTolerance = precursorMassTolerance;
+            if (productMassTolerance is not null) c.ProductMassTolerance = productMassTolerance;
+            if (maxThreadsToUsePerFile.HasValue) c.MaxThreadsToUsePerFile = maxThreadsToUsePerFile.Value;
+            if (digestionParams is not null) c.DigestionParams = digestionParams;
+            if (listOfModsVariable is not null) c.ListOfModsVariable = listOfModsVariable;
+            if (listOfModsFixed is not null) c.ListOfModsFixed = listOfModsFixed;
+
+            return c;
+        }
+
         public CommonParameters CloneWithNewTerminus(FragmentationTerminus? terminus = null, bool? addCompIons = null) //for use with speedy semi-specific searches to get both termini
         {
             if (terminus == null)
