@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <IsPackable>false</IsPackable>
     <Configurations>Debug;Release</Configurations>
     <DebugType>full</DebugType>
@@ -24,7 +24,7 @@
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
-    <PackageReference Include="mzLib" Version="1.0.583" />
+    <PackageReference Include="mzLib" Version="1.0.584" />
     <PackageReference Include="NUnit" Version="4.1.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
@@ -150,6 +150,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\leukosialin.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\NGlycan_fakeN-glycan.gdb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\NGlycan_ForNoSearch.gdb">
