@@ -81,6 +81,9 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
     [ObservableProperty] private int _numberOfScansToAverage = 5;
     [ObservableProperty] private int _scanOverlap = 4;
 
+    // --- GPTMD only --------------------------------------------------------------------------
+    [ObservableProperty] private bool _isGptmdTask;
+
     // --- search only -------------------------------------------------------------------------
     [ObservableProperty] private bool _isSearchTask;
     [ObservableProperty] private bool _doParsimony = true;
@@ -141,10 +144,18 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
             MaxModsPerPeptide = digestion.MaxMods;
         }
 
-        Modifications = new ModificationSelectionViewModel(common.ListOfModsFixed, common.ListOfModsVariable);
+        Modifications = new ModificationSelectionViewModel(
+            common.ListOfModsFixed,
+            common.ListOfModsVariable,
+            (task as GptmdTask)?.GptmdParameters?.ListOfModsGptmd,
+            isRna: common.DigestionParams is RnaDigestionParams);
 
         switch (task)
         {
+            case GptmdTask:
+                IsGptmdTask = true;
+                break;
+
             case SearchTask search:
                 IsSearchTask = true;
                 DoParsimony = search.SearchParameters.DoParsimony;
@@ -198,6 +209,12 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
         .ToList();
 
     public IReadOnlyList<GlycoSearchType> GlycoSearchTypes { get; } = Enum.GetValues<GlycoSearchType>().ToList();
+
+    /// <summary>
+    /// Which digestion parameters the default modifications should be derived from. CommonParameters
+    /// picks a different default set for RNA, so this decides which one "reset" means.
+    /// </summary>
+    internal IDigestionParams DigestionParametersForDefaults => _task.CommonParameters?.DigestionParams;
 
     /// <summary>
     /// Every double here round-trips through InvariantCulture, matching the 157 uses in the WPF task
@@ -336,6 +353,10 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
 
         switch (_task)
         {
+            case GptmdTask gptmd:
+                gptmd.GptmdParameters.ListOfModsGptmd = Modifications.GptmdSelection.ToList();
+                break;
+
             case SearchTask search:
                 search.SearchParameters.DoParsimony = DoParsimony;
                 search.SearchParameters.NoOneHitWonders = NoOneHitWonders;

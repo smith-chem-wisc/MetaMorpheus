@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using EngineLayer;
+using Omics.Digestion;
 using Omics.Modifications;
 
 namespace MetaMorpheusAvalonia.ViewModels;
@@ -26,20 +27,41 @@ internal sealed partial class ModificationSelectionViewModel : ObservableObject
 
     public ObservableCollection<ModificationGroup> Groups { get; } = new();
 
+    /// <summary>
+    /// <paramref name="isRna"/> selects which modification set is offered. GlobalVariables keeps two -
+    /// AllModsKnown and AllRnaModsKnown - and an RNA task's modifications are only in the second, so
+    /// offering AllModsKnown for one means none of its modifications can be chosen at all.
+    /// </summary>
     public ModificationSelectionViewModel(
-        IEnumerable<(string, string)> fixedMods, IEnumerable<(string, string)> variableMods)
+        IEnumerable<(string, string)> fixedMods,
+        IEnumerable<(string, string)> variableMods,
+        IEnumerable<(string, string)> gptmdMods = null,
+        bool isRna = false)
     {
+        IsRna = isRna;
         var chosenFixed = new HashSet<(string, string)>(fixedMods ?? Enumerable.Empty<(string, string)>());
         var chosenVariable = new HashSet<(string, string)>(variableMods ?? Enumerable.Empty<(string, string)>());
+        var chosenGptmd = new HashSet<(string, string)>(gptmdMods ?? Enumerable.Empty<(string, string)>());
 
-        _all = GlobalVariables.AllModsKnown
+        // One entry per (ModificationType, IdWithMotif), because that pair is the identity TOML stores -
+        // two modifications sharing it cannot be selected independently at all. On the shipped
+        // databases this collapses 84 groups, all in the glycan sets, and CollapsedDuplicates
+        // confirms every one of them is a byte-identical duplicate rather than a distinct variant.
+        var byIdentity = (isRna ? GlobalVariables.AllRnaModsKnown : GlobalVariables.AllModsKnown)
             .Where(m => m.ValidModification && m.ModificationType is not null && m.IdWithMotif is not null)
             .GroupBy(m => (m.ModificationType, m.IdWithMotif))
+            .ToList();
+
+        CollapsedDuplicates = byIdentity.Count(g => g.Count() > 1);
+        DistinctModificationsCollapsed = byIdentity.Count(HoldsDistinctModifications);
+
+        _all = byIdentity
             .Select(g => g.First())
-            .Select(m => new ModificationChoice(m)
+            .Select(m => new ModificationChoice(this, m)
             {
                 IsFixed = chosenFixed.Contains((m.ModificationType, m.IdWithMotif)),
                 IsVariable = chosenVariable.Contains((m.ModificationType, m.IdWithMotif)),
+                IsGptmd = chosenGptmd.Contains((m.ModificationType, m.IdWithMotif)),
             })
             .OrderBy(c => c.ModificationType, StringComparer.Ordinal)
             .ThenBy(c => c.Name, StringComparer.Ordinal)
@@ -47,6 +69,26 @@ internal sealed partial class ModificationSelectionViewModel : ObservableObject
 
         Rebuild();
     }
+
+    /// <summary>
+    /// True when entries sharing a TOML identity are not interchangeable - which would mean collapsing
+    /// them hides a modification the user cannot otherwise reach. Zero on the shipped databases; a
+    /// test asserts that, so a database change that broke the assumption would be caught rather than
+    /// silently narrowing the choices.
+    /// </summary>
+    private static bool HoldsDistinctModifications(IGrouping<(string, string), Modification> group) =>
+        group.Select(m => m.LocationRestriction).Distinct().Count() > 1
+        || group.Select(m => m.MonoisotopicMass).Distinct().Count() > 1
+        || group.Select(m => m.Target?.ToString()).Distinct().Count() > 1;
+
+    /// <summary>Which of GlobalVariables' two modification sets is being offered.</summary>
+    public bool IsRna { get; }
+
+    /// <summary>How many TOML identities matched more than one entry in the offered set.</summary>
+    public int CollapsedDuplicates { get; }
+
+    /// <summary>How many of those held entries that genuinely differ. Expected to be zero.</summary>
+    public int DistinctModificationsCollapsed { get; }
 
     public int TotalCount => _all.Count;
 
@@ -84,57 +126,115 @@ internal sealed partial class ModificationSelectionViewModel : ObservableObject
         _all.Where(c => c.IsVariable).Select(c => (c.ModificationType, c.Name)).ToList();
 
     /// <summary>
-    /// A modification cannot sensibly be both fixed and variable, so the two are mutually exclusive -
-    /// the WPF window allows it, which produces a search that treats the residue inconsistently.
+    /// GPTMD's ListOfModsGptmd - the one setting users actually change on a GPTMD task. Independent of
+    /// fixed and variable, since GPTMD is asking which modifications to go looking for.
     /// </summary>
-    public void SetFixed(ModificationChoice choice, bool isFixed)
+    public IReadOnlyList<(string, string)> GptmdSelection =>
+        _all.Where(c => c.IsGptmd).Select(c => (c.ModificationType, c.Name)).ToList();
+
+    public int SelectedGptmdCount => _all.Count(c => c.IsGptmd);
+
+    /// <summary>
+    /// A modification cannot sensibly be both fixed and variable, so the two are mutually exclusive.
+    /// The WPF window allows it - SearchTaskWindow.xaml.cs harvests two independent trees with no
+    /// cross-check - which produces a search that treats the residue inconsistently. This is a
+    /// deliberate divergence from the WPF GUI, called out in the PR description.
+    ///
+    /// The rule lives in ModificationChoice's property setters rather than here, so that a XAML author
+    /// binding IsChecked straight to IsFixed cannot get around it.
+    /// </summary>
+    public void SetFixed(ModificationChoice choice, bool isFixed) => choice.IsFixed = isFixed;
+
+    public void SetVariable(ModificationChoice choice, bool isVariable) => choice.IsVariable = isVariable;
+
+    /// <summary>Raised by ModificationChoice whenever a selection changes, however it was set.</summary>
+    internal void NoteSelectionChanged()
     {
-        choice.IsFixed = isFixed;
-        if (isFixed)
-        {
-            choice.IsVariable = false;
-        }
         OnPropertyChanged(nameof(SelectedFixedCount));
         OnPropertyChanged(nameof(SelectedVariableCount));
+        OnPropertyChanged(nameof(SelectedGptmdCount));
     }
 
-    public void SetVariable(ModificationChoice choice, bool isVariable)
+    /// <summary>
+    /// Restores the defaults the engine itself would apply. Read off a CommonParameters rather than
+    /// written out here, so they cannot drift from CommonParameters.cs - which also picks different
+    /// defaults for RNA, hence the digestion parameters being passed through.
+    /// </summary>
+    public void ResetToDefaults(IDigestionParams digestionParams = null)
     {
-        choice.IsVariable = isVariable;
-        if (isVariable)
-        {
-            choice.IsFixed = false;
-        }
-        OnPropertyChanged(nameof(SelectedFixedCount));
-        OnPropertyChanged(nameof(SelectedVariableCount));
-    }
+        var defaults = new CommonParameters(digestionParams: digestionParams);
+        var defaultFixed = new HashSet<(string, string)>(defaults.ListOfModsFixed);
+        var defaultVariable = new HashSet<(string, string)>(defaults.ListOfModsVariable);
 
-    /// <summary>Restores the defaults MetaMorpheus uses when no modifications are specified.</summary>
-    public void ResetToDefaults()
-    {
         foreach (ModificationChoice choice in _all)
         {
-            choice.IsFixed = choice.ModificationType == "Common Fixed"
-                && (choice.Name == "Carbamidomethyl on C" || choice.Name == "Carbamidomethyl on U");
-            choice.IsVariable = choice.ModificationType == "Common Variable" && choice.Name == "Oxidation on M";
+            var identity = (choice.ModificationType, choice.Name);
+            choice.SetWithoutExclusion(
+                isFixed: defaultFixed.Contains(identity),
+                isVariable: defaultVariable.Contains(identity));
         }
+
         Rebuild();
-        OnPropertyChanged(nameof(SelectedFixedCount));
-        OnPropertyChanged(nameof(SelectedVariableCount));
+        NoteSelectionChanged();
     }
 }
 
 /// <summary>One selectable modification. Name is IdWithMotif, which is the half stored in TOML.</summary>
 internal sealed partial class ModificationChoice : ObservableObject
 {
+    private readonly ModificationSelectionViewModel _owner;
+    private bool _applyingDefaults;
+
     [ObservableProperty] private bool _isFixed;
     [ObservableProperty] private bool _isVariable;
+    [ObservableProperty] private bool _isGptmd;
 
-    public ModificationChoice(Modification modification)
+    public ModificationChoice(ModificationSelectionViewModel owner, Modification modification)
     {
+        _owner = owner;
         ModificationType = modification.ModificationType;
         Name = modification.IdWithMotif;
         MonoisotopicMass = modification.MonoisotopicMass;
+    }
+
+    // Exclusivity is enforced here rather than in the parent so that it holds however the property is
+    // set - including <CheckBox IsChecked="{Binding IsFixed}"/>, the binding a XAML author reaches for
+    // first, which bypassed the parent's methods entirely.
+    partial void OnIsFixedChanged(bool value)
+    {
+        if (value && !_applyingDefaults)
+        {
+            IsVariable = false;
+        }
+        _owner?.NoteSelectionChanged();
+    }
+
+    partial void OnIsVariableChanged(bool value)
+    {
+        if (value && !_applyingDefaults)
+        {
+            IsFixed = false;
+        }
+        _owner?.NoteSelectionChanged();
+    }
+
+    // GPTMD is not exclusive with either: it asks which modifications to search for, not how to apply
+    // one that is already known to be there.
+    partial void OnIsGptmdChanged(bool value) => _owner?.NoteSelectionChanged();
+
+    /// <summary>Sets both flags as a unit, for ResetToDefaults - which is already consistent.</summary>
+    internal void SetWithoutExclusion(bool isFixed, bool isVariable)
+    {
+        _applyingDefaults = true;
+        try
+        {
+            IsFixed = isFixed;
+            IsVariable = isVariable;
+        }
+        finally
+        {
+            _applyingDefaults = false;
+        }
     }
 
     public string ModificationType { get; }

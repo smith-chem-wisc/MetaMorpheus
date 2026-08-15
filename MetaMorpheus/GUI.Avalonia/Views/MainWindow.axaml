@@ -63,11 +63,16 @@
           <DockPanel>
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
               <Button Content="Add databases..." Click="OnAddDatabaseClick" />
+              <Button Content="Add default contaminants"
+                      Command="{Binding AddDefaultContaminantsCommand}"
+                      ToolTip.Tip="Loads the contaminant databases shipped with MetaMorpheus" />
             </StackPanel>
-            <DataGrid ItemsSource="{Binding Databases}" IsReadOnly="True" AutoGenerateColumns="False">
+            <!-- The contaminant flag is a filename guess, so the column is editable. AutoGenerate is
+                 off and only this column is writable, which is why the grid is not IsReadOnly. -->
+            <DataGrid ItemsSource="{Binding Databases}" AutoGenerateColumns="False">
               <DataGrid.Columns>
-                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="*" />
-                <DataGridCheckBoxColumn Header="Contaminant" Binding="{Binding IsContaminant}" />
+                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="*" IsReadOnly="True" />
+                <DataGridCheckBoxColumn Header="Contaminant" Binding="{Binding IsContaminant, Mode=TwoWay}" />
               </DataGrid.Columns>
             </DataGrid>
           </DockPanel>
@@ -80,9 +85,12 @@
         <HeaderedContentControl Grid.Row="0" Header="Tasks">
           <DockPanel>
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
-              <Button Content="Add Calibrate" Command="{Binding AddCalibrationTaskCommand}" />
-              <Button Content="Add GPTMD" Command="{Binding AddGptmdTaskCommand}" />
-              <Button Content="Add Search" Command="{Binding AddSearchTaskCommand}" />
+              <Button Content="Calibrate" Command="{Binding AddCalibrationTaskCommand}" />
+              <Button Content="GPTMD" Command="{Binding AddGptmdTaskCommand}" />
+              <Button Content="Search" Command="{Binding AddSearchTaskCommand}" />
+              <Button Content="XLSearch" Command="{Binding AddXlSearchTaskCommand}" />
+              <Button Content="Glyco" Command="{Binding AddGlycoSearchTaskCommand}" />
+              <Button Content="Average" Command="{Binding AddAveragingTaskCommand}" />
               <Button Content="Clear" Command="{Binding ClearTasksCommand}" />
               <Button Content="Edit settings..." Click="OnEditTaskClick" />
             </StackPanel>

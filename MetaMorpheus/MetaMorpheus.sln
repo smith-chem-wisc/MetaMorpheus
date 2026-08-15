@@ -22,9 +22,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", 
 EndProject
 Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "Bootstrapper", "Bootstrapper\Bootstrapper.wixproj", "{E0EA5AC4-24A9-43DC-8FBC-CCEB3B9935B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GUI.Avalonia", "GUI.Avalonia\GUI.Avalonia.csproj", "{BD94D208-D962-42AC-84A7-E66A39FBACA8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GUI.Avalonia", "GUI.Avalonia\GUI.Avalonia.csproj", "{BD94D208-D962-42AC-84A7-E66A39FBACA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GUI.Avalonia.Tests", "GUI.Avalonia.Tests\GUI.Avalonia.Tests.csproj", "{7DADFE0A-EB19-4B50-829E-305C59BE5403}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GUI.Avalonia.Tests", "GUI.Avalonia.Tests\GUI.Avalonia.Tests.csproj", "{7DADFE0A-EB19-4B50-829E-305C59BE5403}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

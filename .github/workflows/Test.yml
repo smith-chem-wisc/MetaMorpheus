@@ -47,6 +47,10 @@ jobs:
   avalonia-gui-tests:
     name: Avalonia GUI tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Expresses "do not hang forever" here rather than as a wall-clock assertion inside a test, so a
+    # slow runner fails the job for what it is instead of looking like a broken search. The suite runs
+    # in well under a minute.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -57,10 +61,20 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Run Avalonia GUI tests
-        run: dotnet test ./MetaMorpheus/GUI.Avalonia.Tests/GUI.Avalonia.Tests.csproj --configuration Release --verbosity normal
+      - name: Run Avalonia GUI tests with coverage
+        run: dotnet test ./MetaMorpheus/GUI.Avalonia.Tests/GUI.Avalonia.Tests.csproj --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+
+      # Without this the new code sits outside the coverage denominator, which is why Codecov reported a
+      # zero-line delta on a four-thousand-line pull request. A separate flag keeps it from being
+      # confused with the Windows-only unittests run.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          flags: avaloniagui
 
   # Runs tests that depend on live external web services (UniProt, ...). Kept separate and
   # intentionally NOT a required status check, so a third-party outage never blocks a PR. The tests

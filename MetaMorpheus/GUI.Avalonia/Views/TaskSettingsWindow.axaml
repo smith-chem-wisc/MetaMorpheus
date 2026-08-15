@@ -119,6 +119,139 @@
           </StackPanel>
         </Expander>
 
+        <Expander Header="Modifications" IsExpanded="False">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Classes="row">
+              <TextBlock Classes="label" Text="Filter" Width="46" />
+              <TextBox Text="{Binding Modifications.Filter}" Width="220"
+                       ToolTip.Tip="Matches the modification name or its type. Anything already ticked stays visible." />
+              <Button Content="Reset to defaults" Click="OnResetModificationsClick" Margin="10,0,0,0" />
+            </StackPanel>
+
+            <TextBlock DockPanel.Dock="Top" Margin="0,6,0,4" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
+              <Run Text="Fixed:" /><Run Text="{Binding Modifications.SelectedFixedCount}" />
+              <Run Text="   Variable:" /><Run Text="{Binding Modifications.SelectedVariableCount}" />
+              <Run Text="   GPTMD:" /><Run Text="{Binding Modifications.SelectedGptmdCount}" />
+              <Run Text="   of" /><Run Text="{Binding Modifications.TotalCount}" />
+            </TextBlock>
+
+            <!-- Fixed and variable are mutually exclusive, enforced in ModificationChoice's setters
+                 rather than here, so binding straight to the property cannot get around it. -->
+            <ScrollViewer MaxHeight="260">
+              <ItemsControl x:Name="ModificationList" ItemsSource="{Binding Modifications.Groups}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ModificationGroup">
+                    <Expander Header="{Binding Header}" IsExpanded="False" Margin="0,2">
+                      <ItemsControl ItemsSource="{Binding Choices}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:ModificationChoice">
+                            <Grid ColumnDefinitions="70,90,*,80" Margin="0,1">
+                              <CheckBox Grid.Column="0" Content="Fixed" IsChecked="{Binding IsFixed}" />
+                              <CheckBox Grid.Column="1" Content="Variable" IsChecked="{Binding IsVariable}" />
+                              <TextBlock Grid.Column="2" Text="{Binding Name}" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="3" Text="{Binding MassDisplay}" VerticalAlignment="Center"
+                                         HorizontalAlignment="Right" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Expander>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+        </Expander>
+
+        <!-- GPTMD's one setting users routinely change: which modifications to go looking for. -->
+        <Expander Header="GPTMD modifications" IsExpanded="True" IsVisible="{Binding IsGptmdTask}">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Classes="row">
+              <TextBlock Classes="label" Text="Filter" Width="46" />
+              <TextBox Text="{Binding Modifications.Filter}" Width="220" />
+              <TextBlock Classes="label" Margin="10,0,0,0" Text="{Binding Modifications.SelectedGptmdCount, StringFormat='{}{0} selected'}" />
+            </StackPanel>
+            <ScrollViewer MaxHeight="260">
+              <ItemsControl x:Name="GptmdModificationList" ItemsSource="{Binding Modifications.Groups}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ModificationGroup">
+                    <Expander Header="{Binding Header}" IsExpanded="False" Margin="0,2">
+                      <ItemsControl ItemsSource="{Binding Choices}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:ModificationChoice">
+                            <Grid ColumnDefinitions="Auto,*,80" Margin="0,1">
+                              <CheckBox Grid.Column="0" IsChecked="{Binding IsGptmd}" Margin="0,0,6,0" />
+                              <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="2" Text="{Binding MassDisplay}" VerticalAlignment="Center"
+                                         HorizontalAlignment="Right" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Expander>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+        </Expander>
+
+        <Expander Header="Crosslink search options" IsExpanded="True" IsVisible="{Binding IsXlSearchTask}">
+          <StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Crosslinker" Width="150" />
+              <ComboBox ItemsSource="{Binding Crosslinkers}" SelectedItem="{Binding Crosslinker}" Width="220" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Decoy type" Width="150" />
+              <ComboBox ItemsSource="{Binding DecoyTypes}" SelectedItem="{Binding DecoyType}" Width="180" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Top N candidates" Width="150" />
+              <NumericUpDown Value="{Binding CrosslinkSearchTopNum}" Minimum="1" Width="120" />
+            </StackPanel>
+            <CheckBox Content="Crosslink at cleavage site" IsChecked="{Binding CrosslinkAtCleavageSite}" />
+            <CheckBox Content="Write pepXML" IsChecked="{Binding WritePepXml}" />
+          </StackPanel>
+        </Expander>
+
+        <Expander Header="Glyco search options" IsExpanded="True" IsVisible="{Binding IsGlycoSearchTask}">
+          <StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Glyco search type" Width="150" />
+              <ComboBox ItemsSource="{Binding GlycoSearchTypes}" SelectedItem="{Binding GlycoSearchType}" Width="220" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Decoy type" Width="150" />
+              <ComboBox ItemsSource="{Binding DecoyTypes}" SelectedItem="{Binding DecoyType}" Width="180" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Top N candidates" Width="150" />
+              <NumericUpDown Value="{Binding GlycoSearchTopNum}" Minimum="1" Width="120" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Max O-glycans" Width="150" />
+              <NumericUpDown Value="{Binding MaximumOGlycanAllowed}" Minimum="1" Width="120" />
+            </StackPanel>
+            <CheckBox Content="Oxonium ion filter" IsChecked="{Binding OxoniumIonFilt}" />
+            <CheckBox Content="Protein parsimony" IsChecked="{Binding DoParsimony}" />
+            <CheckBox Content="Require more than one peptide per protein" IsChecked="{Binding NoOneHitWonders}" />
+          </StackPanel>
+        </Expander>
+
+        <Expander Header="Spectral averaging options" IsExpanded="True" IsVisible="{Binding IsAveragingTask}">
+          <StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Scans to average" Width="150" />
+              <NumericUpDown Value="{Binding NumberOfScansToAverage}" Minimum="2" Width="120" />
+            </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Scan overlap" Width="150" />
+              <NumericUpDown Value="{Binding ScanOverlap}" Minimum="0" Width="120" />
+            </StackPanel>
+          </StackPanel>
+        </Expander>
+
       </StackPanel>
     </ScrollViewer>
   </DockPanel>

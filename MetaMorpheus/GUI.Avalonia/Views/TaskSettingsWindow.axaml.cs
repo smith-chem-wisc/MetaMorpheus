@@ -30,4 +30,8 @@ public partial class TaskSettingsWindow : Window
     }
 
     private void OnCancelClick(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>Defaults come from CommonParameters, so RNA tasks get RNA's rather than the peptide set.</summary>
+    private void OnResetModificationsClick(object sender, RoutedEventArgs e) =>
+        ViewModel.Modifications.ResetToDefaults(ViewModel.DigestionParametersForDefaults);
 }

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EngineLayer;
@@ -31,6 +31,17 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
     private EventHandler<SingleTaskEventArgs> _onTaskFinished;
     private EventHandler<StringEventArgs> _onRunnerWarn;
     private EventHandler<StringEventArgs> _onAllFinished;
+    private EventHandler<StringEventArgs> _onEngineStatus;
+    private EventHandler<ProgressEventArgs> _onEngineProgress;
+    private EventHandler<StringEventArgs> _onEngineWarn;
+    private EventHandler<StringEventArgs> _onFileManagerWarn;
+    private EventHandler _onAllStarting;
+    private EventHandler<StringEventArgs> _onAllResultsWritten;
+    private EventHandler<XmlForTaskListEventArgs> _onNewDbs;
+    private EventHandler<StringListEventArgs> _onNewSpectra;
+
+    // Whatever thread constructed this view model. See OnUiThread.
+    private readonly SynchronizationContext _uiContext = SynchronizationContext.Current;
 
     public ObservableCollection<SpectraFileForDisplay> SpectraFiles { get; } = new();
     public ObservableCollection<DatabaseForDisplay> Databases { get; } = new();
@@ -95,6 +106,12 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
         _onRunnerWarn = (_, e) => OnUiThread(() => Append($"WARNING: {e.S}"));
         _onAllFinished = (_, _) => OnUiThread(() => Append("All tasks finished."));
 
+        // The inner engines report separately from the tasks that own them. Without these three, the
+        // progress bar sat still and engine warnings never reached the log for the whole of a search.
+        _onEngineStatus = (_, e) => OnUiThread(() => Status = e.S);
+        _onEngineProgress = (_, e) => OnUiThread(() => Progress = e.NewProgress);
+        _onEngineWarn = (_, e) => OnUiThread(() => Append($"WARNING: {e.S}"));
+
         MetaMorpheusTask.LogHandler += _onLog;
         MetaMorpheusTask.WarnHandler += _onWarn;
         MetaMorpheusTask.OutLabelStatusHandler += _onStatus;
@@ -103,20 +120,94 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
         MetaMorpheusTask.FinishedSingleTaskHandler += _onTaskFinished;
         EverythingRunnerEngine.WarnHandler += _onRunnerWarn;
         EverythingRunnerEngine.FinishedAllTasksEngineHandler += _onAllFinished;
+        // MyFileManager warns about the spectra files themselves - unreadable or unexpected content -
+        // which is exactly the class of problem a new platform surfaces first.
+        _onFileManagerWarn = (_, e) => OnUiThread(() => Append($"WARNING: {e.S}"));
+
+        // EverythingRunnerEngine feeds each task's output into the next, so a Calibrate -> GPTMD ->
+        // Search run silently swaps the database and spectra lists partway through. Reporting that is
+        // how a user can tell the chaining happened.
+        _onAllStarting = (_, _) => OnUiThread(() => Append("Starting all tasks..."));
+        _onAllResultsWritten = (_, e) => OnUiThread(() => Append($"Wrote results: {e.S}"));
+        _onNewDbs = (_, e) => OnUiThread(() => Append(
+            $"Later tasks will use {e.NewDatabases.Count} database(s) written by the task that just finished."));
+        _onNewSpectra = (_, e) => OnUiThread(() => Append(
+            $"Later tasks will use {e.StringList.Count()} calibrated spectra file(s)."));
+
+        MetaMorpheusEngine.OutLabelStatusHandler += _onEngineStatus;
+        MetaMorpheusEngine.OutProgressHandler += _onEngineProgress;
+        MetaMorpheusEngine.WarnHandler += _onEngineWarn;
+        MyFileManager.WarnHandler += _onFileManagerWarn;
+        EverythingRunnerEngine.StartingAllTasksEngineHandler += _onAllStarting;
+        EverythingRunnerEngine.FinishedWritingAllResultsFileHandler += _onAllResultsWritten;
+        EverythingRunnerEngine.NewDbsHandler += _onNewDbs;
+        EverythingRunnerEngine.NewSpectrasHandler += _onNewSpectra;
     }
 
     /// <summary>
-    /// Runs an update on the UI thread. Falls back to running inline when there is no dispatcher,
-    /// which is the case for tests that exercise the engines without an Avalonia application.
+    /// Gate C. The static event surface a front end has to cover, split into what this window handles
+    /// and what it deliberately does not, so a reflection test can require every event to appear in
+    /// one list or the other. A new engine event then fails the build rather than going unnoticed.
     /// </summary>
-    private static void OnUiThread(Action update)
+    internal static IReadOnlyList<string> SubscribedEventNames { get; } = new[]
     {
-        if (Dispatcher.UIThread is null || Dispatcher.UIThread.CheckAccess())
+        "MetaMorpheusTask.LogHandler",
+        "MetaMorpheusTask.WarnHandler",
+        "MetaMorpheusTask.OutLabelStatusHandler",
+        "MetaMorpheusTask.OutProgressHandler",
+        "MetaMorpheusTask.StartingSingleTaskHander",
+        "MetaMorpheusTask.FinishedSingleTaskHandler",
+        "EverythingRunnerEngine.WarnHandler",
+        "EverythingRunnerEngine.FinishedAllTasksEngineHandler",
+        "EverythingRunnerEngine.StartingAllTasksEngineHandler",
+        "EverythingRunnerEngine.FinishedWritingAllResultsFileHandler",
+        "EverythingRunnerEngine.NewDbsHandler",
+        "EverythingRunnerEngine.NewSpectrasHandler",
+        "MetaMorpheusEngine.OutLabelStatusHandler",
+        "MetaMorpheusEngine.OutProgressHandler",
+        "MetaMorpheusEngine.WarnHandler",
+        "MyFileManager.WarnHandler",
+    };
+
+    /// <summary>
+    /// Events left alone on purpose, each because it exists to populate a piece of WPF-specific UI this
+    /// window does not have. Every one of these is informational; none carries a warning or a result.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> DeliberatelyUnsubscribedEvents { get; } =
+        new Dictionary<string, string>
+        {
+            ["MetaMorpheusTask.NewCollectionHandler"] = "adds a branch to the WPF results tree; no such tree here",
+            ["MetaMorpheusTask.FinishedWritingFileHandler"] = "populates the WPF results-file tree",
+            ["MetaMorpheusTask.StartingDataFileHandler"] = "per-file progress rows; this window has no per-file grid",
+            ["MetaMorpheusTask.FinishedDataFileHandler"] = "per-file progress rows; this window has no per-file grid",
+            ["EverythingRunnerEngine.NewFileSpecificTomlHandler"] = "file-specific parameters are not implemented yet",
+            ["MetaMorpheusEngine.StartingSingleEngineHander"] = "per-engine start; OutLabelStatusHandler already reports it, and the WPF window ignores this too",
+            ["MetaMorpheusEngine.FinishedSingleEngineHandler"] = "carries engine results for the WPF tree; the WPF window ignores this too",
+        };
+
+    /// <summary>
+    /// Runs an update on the thread that owns this view model, or inline when nothing owns it.
+    ///
+    /// This has to be right before any engine event is subscribed, because engines raise theirs from
+    /// inside Parallel.For - arbitrary thread-pool threads, not one predictable one. The earlier
+    /// version tested Dispatcher.UIThread for null, which is never null in Avalonia 12, and then
+    /// Post()ed to it. With no Avalonia platform registered, Dispatcher.UIThread is built over
+    /// ManagedDispatcherImpl and binds to whichever thread first touches it; a Post from any other
+    /// thread then queues onto a dispatcher nobody pumps and is discarded silently. Log lines went
+    /// missing that way, and it would have looked like the events were never raised.
+    ///
+    /// Capturing the SynchronizationContext at construction settles it: Avalonia installs its own on
+    /// the UI thread, so this marshals properly in the running app and under [AvaloniaTest], and is
+    /// null in tests that drive the engines with no application, where inline is correct.
+    /// </summary>
+    private void OnUiThread(Action update)
+    {
+        if (_uiContext is null || ReferenceEquals(_uiContext, SynchronizationContext.Current))
         {
             update();
             return;
         }
-        Dispatcher.UIThread.Post(update);
+        _uiContext.Post(_ => update(), null);
     }
 
     /// <summary>Detaches from the static engine events. Not doing this leaks the view model.</summary>
@@ -130,6 +221,14 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
         MetaMorpheusTask.FinishedSingleTaskHandler -= _onTaskFinished;
         EverythingRunnerEngine.WarnHandler -= _onRunnerWarn;
         EverythingRunnerEngine.FinishedAllTasksEngineHandler -= _onAllFinished;
+        MetaMorpheusEngine.OutLabelStatusHandler -= _onEngineStatus;
+        MetaMorpheusEngine.OutProgressHandler -= _onEngineProgress;
+        MetaMorpheusEngine.WarnHandler -= _onEngineWarn;
+        MyFileManager.WarnHandler -= _onFileManagerWarn;
+        EverythingRunnerEngine.StartingAllTasksEngineHandler -= _onAllStarting;
+        EverythingRunnerEngine.FinishedWritingAllResultsFileHandler -= _onAllResultsWritten;
+        EverythingRunnerEngine.NewDbsHandler -= _onNewDbs;
+        EverythingRunnerEngine.NewSpectrasHandler -= _onNewSpectra;
     }
 
     /// <summary>Adds spectra paths chosen by the view, which owns the file dialog.</summary>
@@ -202,6 +301,40 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
 
     [RelayCommand]
     private void AddGptmdTask() => AddTask("GPTMD", new GptmdTask());
+
+    [RelayCommand]
+    private void AddXlSearchTask() => AddTask("XLSearch", new XLSearchTask());
+
+    [RelayCommand]
+    private void AddGlycoSearchTask() => AddTask("GlycoSearch", new GlycoSearchTask());
+
+    [RelayCommand]
+    private void AddAveragingTask() => AddTask("Average", new SpectralAveragingTask());
+
+    /// <summary>
+    /// Loads the contaminant databases shipped alongside the application, as the WPF window's
+    /// "+ADD DEFAULT CONTAMINANTS" button does.
+    /// </summary>
+    [RelayCommand]
+    private void AddDefaultContaminants()
+    {
+        string folder = Path.Combine(GlobalVariables.DataDir, "Contaminants");
+        if (!Directory.Exists(folder))
+        {
+            Append($"No contaminants folder at {folder}");
+            return;
+        }
+
+        string[] found = Directory.GetFiles(folder).Where(IsSupportedDatabaseFile).ToArray();
+        if (found.Length == 0)
+        {
+            Append($"No contaminant databases found in {folder}");
+            return;
+        }
+
+        AddDatabases(found);
+        Append($"Added {found.Length} contaminant database(s).");
+    }
 
     private void AddTask(string kind, MetaMorpheusTask task)
     {
@@ -306,8 +439,15 @@ internal sealed class SpectraFileForDisplay
     public string FilePath { get; }
 }
 
-internal sealed class DatabaseForDisplay
+/// <summary>
+/// ObservableObject rather than a plain class because the contaminant column is editable: the filename
+/// heuristic is a guess and the user has to be able to overrule it, which needs a two-way binding and
+/// therefore change notification.
+/// </summary>
+internal sealed partial class DatabaseForDisplay : ObservableObject
 {
+    [ObservableProperty] private bool _isContaminant;
+
     public DatabaseForDisplay(string filePath)
     {
         FilePath = filePath;
@@ -317,7 +457,6 @@ internal sealed class DatabaseForDisplay
 
     public string FileName { get; }
     public string FilePath { get; }
-    public bool IsContaminant { get; set; }
 }
 
 internal sealed class TaskForDisplay
