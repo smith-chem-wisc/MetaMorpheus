@@ -127,29 +127,9 @@ namespace MetaMorpheusCommandLine
             // outside a Windows installation SetUpDataDirectory() leaves DataDir at the application
             // folder rather than a per-user one, so the agreement is recorded per extracted copy and
             // every new download, conda environment and container layer starts unagreed.
-            if (settings.AcceptThermoLicence)
+            if (AgreeToThermoLicence(settings, GlobalVariables.DataDir, Console.Out))
             {
-                if (GlobalVariables.GlobalSettings?.UserHasAgreedToThermoRawFileReaderLicence != true)
-                {
-                    // Print the licence whatever the verbosity. The flag is an affirmative act by
-                    // whoever typed it, and this is what puts the terms they agreed to in the log.
-                    Console.WriteLine(ThermoRawFileReaderLicence.ThermoLicenceText);
-                    Console.WriteLine("\nThe --acceptThermoLicence flag was given, which agrees to the above terms.");
-
-                    RecordThermoLicenceAgreement();
-                }
-
-                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                {
-                    Console.WriteLine("Agreed to the Thermo RawFileReader licence. Recorded in "
-                        + Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
-                }
-
-                // On its own the flag is a setup step, so there is no run to continue into.
-                if (settings.Tasks.Count < 1 && settings.Databases.Count < 1 && settings.Spectra.Count < 1)
-                {
-                    return errorCode;
-                }
+                return errorCode;
             }
 
             // set up microvignette
@@ -434,20 +414,52 @@ namespace MetaMorpheusCommandLine
         }
 
         /// <summary>
+        /// Carries out --acceptThermoLicence: prints the licence, records the agreement, and reports
+        /// whether this was the flag on its own, in which case the caller has no run to continue into.
+        /// Does nothing and reports false when the flag was not given.
+        /// The data directory and the output writer are parameters rather than reached for through
+        /// Console and GlobalVariables so that this can be exercised directly, Run() being private.
+        /// </summary>
+        public static bool AgreeToThermoLicence(CommandLineSettings settings, string dataDirectory, TextWriter output)
+        {
+            if (!settings.AcceptThermoLicence)
+            {
+                return false;
+            }
+
+            if (!GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence)
+            {
+                // Print the licence whatever the verbosity. The flag is an affirmative act by
+                // whoever typed it, and this is what puts the terms they agreed to in the log.
+                output.WriteLine(ThermoRawFileReaderLicence.ThermoLicenceText);
+                output.WriteLine("\nThe --acceptThermoLicence flag was given, which agrees to the above terms.");
+
+                RecordThermoLicenceAgreement(dataDirectory);
+            }
+
+            if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                output.WriteLine("Agreed to the Thermo RawFileReader licence. Recorded in "
+                    + Path.Combine(dataDirectory, @"settings.toml"));
+            }
+
+            // On its own the flag is a setup step, so there is no run to continue into.
+            return settings.Tasks.Count + settings.Databases.Count + settings.Spectra.Count == 0;
+        }
+
+        /// <summary>
         /// Records agreement to the Thermo RawFileReader licence, in memory and in settings.toml,
         /// carrying the one other setting that file holds so recording the agreement does not reset it.
-        /// GlobalSettings is read defensively because SetUpGlobalSettings() leaves it null when the data
-        /// directory is read-only, which is a state a container can easily be in.
         /// </summary>
-        private static void RecordThermoLicenceAgreement()
+        private static void RecordThermoLicenceAgreement(string dataDirectory)
         {
             var newGlobalSettings = new GlobalSettings
             {
                 UserHasAgreedToThermoRawFileReaderLicence = true,
-                WriteExcelCompatibleTSVs = GlobalVariables.GlobalSettings?.WriteExcelCompatibleTSVs ?? false
+                WriteExcelCompatibleTSVs = GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs
             };
 
-            Toml.WriteFile<GlobalSettings>(newGlobalSettings, Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+            Toml.WriteFile<GlobalSettings>(newGlobalSettings, Path.Combine(dataDirectory, @"settings.toml"));
             GlobalVariables.GlobalSettings = newGlobalSettings;
         }
 
