@@ -44,6 +44,15 @@ namespace GuiFunctions
         public ICollectionView PeptideSpectralMatchesView;
 
         public List<SpectrumMatchFromTsv> AllSpectralMatches; // all loaded PSMs
+
+        /// <summary>
+        /// Whether the MetaDraw PSM grid should show its ProForma column. ProForma is written only for
+        /// top-down (AnalyteType.Proteoform) searches, so the answer is taken from the loaded results
+        /// themselves rather than from GlobalVariables.AnalyteType, which defaults to Peptide and is
+        /// never set by standalone MetaDraw.
+        /// </summary>
+        public static bool ShouldShowProFormaColumn(IEnumerable<SpectrumMatchFromTsv> spectralMatches) =>
+            spectralMatches?.Any(p => !string.IsNullOrWhiteSpace(p.ProForma)) == true;
         public Dictionary<string, MsDataFile> MsDataFiles { get; } // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
