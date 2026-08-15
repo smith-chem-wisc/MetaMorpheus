@@ -95,6 +95,13 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
     [ObservableProperty] private DecoyType _decoyType = DecoyType.Reverse;
     [ObservableProperty] private MassDiffAcceptorType _massDiffAcceptorType = MassDiffAcceptorType.OneMM;
 
+    /// <summary>
+    /// Only meaningful when MassDiffAcceptorType is Custom, which is the whole point: offering Custom
+    /// in the combo box without carrying this meant the choice could be made and then silently ignored.
+    /// SearchTaskWindow.xaml.cs sets it; this did not.
+    /// </summary>
+    [ObservableProperty] private string _customMassDiffAcceptor = string.Empty;
+
     public IReadOnlyList<DissociationType> DissociationTypes { get; } =
         Enum.GetValues<DissociationType>().ToList();
 
@@ -166,6 +173,7 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
                 WritePrunedDatabase = search.SearchParameters.WritePrunedDatabase;
                 DecoyType = search.SearchParameters.DecoyType;
                 MassDiffAcceptorType = search.SearchParameters.MassDiffAcceptorType;
+                CustomMassDiffAcceptor = search.SearchParameters.CustomMdac ?? string.Empty;
                 break;
 
             case XLSearchTask xl:
@@ -274,6 +282,20 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
         {
             problems.Add("Score cutoff must be at least 1.");
         }
+
+        // Custom is only a real choice if the expression parses, so reject it here rather than letting
+        // the search fail later. SearchTaskWindow.xaml.cs:732 validates the same way.
+        if (MassDiffAcceptorType == MassDiffAcceptorType.Custom)
+        {
+            try
+            {
+                SearchTask.GetMassDiffAcceptor(null, MassDiffAcceptorType.Custom, CustomMassDiffAcceptor);
+            }
+            catch (Exception exception)
+            {
+                problems.Add($"The custom mass difference acceptor could not be read: {exception.Message}");
+            }
+        }
         return problems;
     }
 
@@ -365,6 +387,7 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
                 search.SearchParameters.WritePrunedDatabase = WritePrunedDatabase;
                 search.SearchParameters.DecoyType = DecoyType;
                 search.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType;
+                search.SearchParameters.CustomMdac = CustomMassDiffAcceptor;
                 break;
 
             case XLSearchTask xl:

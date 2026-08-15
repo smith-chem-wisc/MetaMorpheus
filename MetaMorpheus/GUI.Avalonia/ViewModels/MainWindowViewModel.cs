@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -48,7 +49,6 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
     public ObservableCollection<TaskForDisplay> Tasks { get; } = new();
 
     [ObservableProperty] private string _outputFolder = string.Empty;
-    [ObservableProperty] private string _log = string.Empty;
     [ObservableProperty] private string _status = "Ready.";
     [ObservableProperty] private double _progress;
     [ObservableProperty] private bool _isRunning;
@@ -424,7 +424,27 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
         Append("Cancellation requested; tasks stop at their next checkpoint.");
     }
 
-    private void Append(string line) => Log += line + Environment.NewLine;
+    /// <summary>
+    /// The run log. Held as a StringBuilder rather than a string that gets concatenated: a search
+    /// emits thousands of lines, and `Log += line` reallocates the whole document every time, which is
+    /// quadratic in the number of lines. The lock is because Append runs on engine worker threads
+    /// whenever there is no UI thread to marshal to, making the old read-modify-write a genuine race.
+    /// </summary>
+    public string Log
+    {
+        get { lock (_logLines) { return _logLines.ToString(); } }
+    }
+
+    private readonly StringBuilder _logLines = new();
+
+    private void Append(string line)
+    {
+        lock (_logLines)
+        {
+            _logLines.AppendLine(line);
+        }
+        OnPropertyChanged(nameof(Log));
+    }
 }
 
 internal sealed class SpectraFileForDisplay

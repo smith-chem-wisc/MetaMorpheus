@@ -86,6 +86,14 @@ public partial class MainWindow : Window
         }
 
         var settings = ViewModel.CreateSettingsFor(selected);
+        if (settings is null)
+        {
+            // Reachable in a way the WPF equivalent is not: this comes from a ListBox item rather than
+            // an exhaustive enum, so an unexpected item type must not take the window down.
+            ViewModel.Note("That item is not an editable task.");
+            return;
+        }
+
         var dialog = new TaskSettingsWindow { DataContext = settings };
         await dialog.ShowDialog(this);
         if (dialog.Saved)

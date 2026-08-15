@@ -152,4 +152,73 @@ public class UiSurfaceTests
         Assert.That(viewModel.Databases.All(d => d.IsContaminant), Is.True,
             "everything from the Contaminants folder should arrive already flagged");
     }
+
+    /// <summary>
+    /// Offering Custom in the combo box without carrying the expression meant the choice could be made
+    /// and then silently ignored. The WPF window has always written it.
+    /// </summary>
+    [Test]
+    public void ACustomMassDifferenceAcceptorReachesTheTask()
+    {
+        var task = new SearchTask();
+        var settings = new TaskSettingsViewModel(task, "Search")
+        {
+            MassDiffAcceptorType = MassDiffAcceptorType.Custom,
+            CustomMassDiffAcceptor = "myAcceptor dot 5 ppm 0,1.003,2.006",
+        };
+
+        Assert.That(settings.Validate(), Is.Empty, "that expression is valid, so it should not be rejected");
+        settings.Apply();
+
+        Assert.That(task.SearchParameters.MassDiffAcceptorType, Is.EqualTo(MassDiffAcceptorType.Custom));
+        Assert.That(task.SearchParameters.CustomMdac, Is.EqualTo("myAcceptor dot 5 ppm 0,1.003,2.006"));
+
+        // and it survives a reload, so the dialog shows what the task holds
+        Assert.That(new TaskSettingsViewModel(task, "Search").CustomMassDiffAcceptor,
+            Is.EqualTo("myAcceptor dot 5 ppm 0,1.003,2.006"));
+    }
+
+    [Test]
+    public void AnUnreadableCustomAcceptorIsRejectedRatherThanRunning()
+    {
+        var settings = new TaskSettingsViewModel(new SearchTask(), "Search")
+        {
+            MassDiffAcceptorType = MassDiffAcceptorType.Custom,
+            CustomMassDiffAcceptor = "this is not an acceptor",
+        };
+
+        Assert.That(settings.Validate(), Is.Not.Empty,
+            "an unparseable expression should be caught here, not part-way into a search");
+    }
+
+    /// <summary>
+    /// A ListBox hands back whatever object it holds, so an unexpected item type must not take the
+    /// window down. The WPF equivalent switches on an exhaustive enum, so it cannot reach this state.
+    /// </summary>
+    [Test]
+    public void AnItemThatIsNotATaskProducesNoSettings()
+    {
+        using var viewModel = new MainWindowViewModel();
+
+        Assert.That(viewModel.CreateSettingsFor("not a task"), Is.Null);
+        Assert.That(viewModel.CreateSettingsFor(null), Is.Null);
+    }
+
+    /// <summary>
+    /// The log is appended to thousands of times during a search, so it is a StringBuilder rather than
+    /// a string being concatenated. Appending from several threads at once must not lose lines or throw.
+    /// </summary>
+    [Test]
+    public void TheLogSurvivesConcurrentAppends()
+    {
+        using var viewModel = new MainWindowViewModel();
+        int before = viewModel.Log.Split(System.Environment.NewLine).Length;
+
+        System.Threading.Tasks.Parallel.For(0, 200, i => viewModel.Note($"line-{i}"));
+
+        string log = viewModel.Log;
+        Assert.That(log.Split(System.Environment.NewLine).Length, Is.EqualTo(before + 200),
+            "every line should be present exactly once");
+        Assert.That(Enumerable.Range(0, 200).All(i => log.Contains($"line-{i}")), Is.True);
+    }
 }

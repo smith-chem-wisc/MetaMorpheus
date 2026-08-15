@@ -111,6 +111,11 @@
               <TextBlock Classes="label" Text="Mass difference" Width="150" />
               <ComboBox ItemsSource="{Binding MassDiffAcceptorTypes}" SelectedItem="{Binding MassDiffAcceptorType}" Width="180" />
             </StackPanel>
+            <StackPanel Classes="row">
+              <TextBlock Classes="label" Text="Custom acceptor" Width="150" />
+              <TextBox Text="{Binding CustomMassDiffAcceptor}" Width="260"
+                       ToolTip.Tip="Only used when the mass difference type is Custom, for example: myAcceptor dot 5 ppm 0,1.003,2.006" />
+            </StackPanel>
             <CheckBox Content="Protein parsimony" IsChecked="{Binding DoParsimony}" />
             <CheckBox Content="Require more than one peptide per protein" IsChecked="{Binding NoOneHitWonders}" />
             <CheckBox Content="Label-free quantification" IsChecked="{Binding DoLabelFreeQuantification}" />
