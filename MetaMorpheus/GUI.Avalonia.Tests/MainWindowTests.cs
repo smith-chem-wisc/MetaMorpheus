@@ -43,6 +43,27 @@ public class MainWindowTests
         Assert.That(viewModel.Log, Does.Contain("modifications"),
             "the constructor should report how many modifications GlobalVariables loaded");
     }
+
+    /// <summary>
+    /// A data directory that cannot be read used to take the process down inside
+    /// OnFrameworkInitializationCompleted, before any window existed - the worst possible first run on
+    /// exactly the platforms this GUI is for. The window opens now and says why.
+    /// </summary>
+    [AvaloniaTest]
+    public void AFailedStartUpStillShowsAWindowWithTheReason()
+    {
+        using var viewModel = MainWindowViewModel.ThatFailedToStart(
+            new DirectoryNotFoundException("Mods folder is missing"));
+        var window = new MainWindow { DataContext = viewModel };
+        window.Show();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(window.IsVisible, Is.True, "the window must open even when start-up failed");
+            Assert.That(viewModel.Log, Does.Contain("Mods folder is missing"));
+            Assert.That(viewModel.CanRun, Is.False, "nothing can run without the data directory");
+        });
+    }
 }
 
 public class SpectraFileHandlingTests
@@ -51,11 +72,64 @@ public class SpectraFileHandlingTests
     [TestCase("run.mzml", true)]
     [TestCase("run.mgf", true)]
     [TestCase("run.raw", true)]
+    [TestCase("run.msalign", true)]
+    [TestCase("run.tdf", true)]
     [TestCase("notes.txt", false)]
     [TestCase("results.psmtsv", false)]
     public void OnlySpectraFormatsAreAccepted(string fileName, bool expected)
     {
         Assert.That(MainWindowViewModel.IsSupportedSpectraFile(fileName), Is.EqualTo(expected));
+    }
+
+    /// <summary>The accepted set is GlobalVariables', not a copy that can drift from it.</summary>
+    [Test]
+    public void EverySpectraFormatGlobalVariablesAcceptsIsAccepted()
+    {
+        foreach (string extension in GlobalVariables.AcceptedSpectraFormats)
+        {
+            Assert.That(MainWindowViewModel.IsSupportedSpectraFile("run" + extension), Is.True, extension);
+        }
+    }
+
+    [TestCase("db.fasta", true)]
+    [TestCase("db.xml", true)]
+    [TestCase("db.xml.gz", true)]
+    [TestCase("library.msp", true)]
+    [TestCase("library.msl", true)]
+    [TestCase("notes.txt", false)]
+    public void OnlyDatabaseFormatsAreAccepted(string fileName, bool expected)
+    {
+        Assert.That(MainWindowViewModel.IsSupportedDatabaseFile(fileName), Is.EqualTo(expected));
+    }
+
+    /// <summary>
+    /// Bruker data is a .d folder, so a user who opens one and picks the .tdf inside has to end up
+    /// with the folder. Without the remap the selection was silently dropped.
+    /// </summary>
+    [Test]
+    public void PickingTheTdfInsideABrukerFolderSelectsTheFolder()
+    {
+        string folder = Path.Combine("somewhere", "run.d");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(MainWindowViewModel.ToBrukerFolderIfInside(Path.Combine(folder, "analysis.tdf")),
+                Is.EqualTo(folder));
+            Assert.That(MainWindowViewModel.ToBrukerFolderIfInside(Path.Combine(folder, "analysis.tdf_bin")),
+                Is.EqualTo(folder));
+            Assert.That(MainWindowViewModel.ToBrukerFolderIfInside(Path.Combine("elsewhere", "run.mzML")),
+                Is.EqualTo(Path.Combine("elsewhere", "run.mzML")), "a normal file is left alone");
+        });
+    }
+
+    /// <summary>Spectral libraries are databases as far as the run is concerned.</summary>
+    [Test]
+    public void SpectralLibrariesCanBeAdded()
+    {
+        using var viewModel = new MainWindowViewModel();
+        viewModel.AddDatabases(new[] { "library.msl", "notes.txt" });
+
+        Assert.That(viewModel.Databases.Select(d => d.FileName), Is.EqualTo(new[] { "library.msl" }));
     }
 
     /// <summary>

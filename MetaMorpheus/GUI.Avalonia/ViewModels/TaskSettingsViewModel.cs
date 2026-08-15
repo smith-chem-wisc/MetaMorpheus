@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using EngineLayer;
@@ -198,18 +199,28 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
 
     public IReadOnlyList<GlycoSearchType> GlycoSearchTypes { get; } = Enum.GetValues<GlycoSearchType>().ToList();
 
-    /// <summary>"5" plus ppm/absolute, from whichever Tolerance subclass this is.</summary>
+    /// <summary>
+    /// Every double here round-trips through InvariantCulture, matching the 157 uses in the WPF task
+    /// windows. Current culture would be actively dangerous rather than merely inconsistent: on a
+    /// de-DE machine "." is the group separator, so double.TryParse("0.05") succeeds with the value
+    /// 5.0 and a user typing a tolerance silently gets one a hundred times looser.
+    /// </summary>
     private static (string Value, bool IsPpm) Describe(Tolerance tolerance) => tolerance switch
     {
-        PpmTolerance ppm => (ppm.Value.ToString(), true),
-        AbsoluteTolerance absolute => (absolute.Value.ToString(), false),
+        PpmTolerance ppm => (Format(ppm.Value), true),
+        AbsoluteTolerance absolute => (Format(absolute.Value), false),
         null => ("5", true),
-        _ => (tolerance.Value.ToString(), true),
+        _ => (Format(tolerance.Value), true),
     };
+
+    private static string Format(double value) => value.ToString(CultureInfo.InvariantCulture);
+
+    private static bool TryParse(string value, out double parsed) =>
+        double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed);
 
     private static Tolerance BuildTolerance(string value, bool isPpm, double fallback)
     {
-        if (!double.TryParse(value, out double parsed) || parsed <= 0)
+        if (!TryParse(value, out double parsed) || parsed <= 0)
         {
             parsed = fallback;
         }
@@ -220,11 +231,11 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
     public IReadOnlyList<string> Validate()
     {
         var problems = new List<string>();
-        if (!double.TryParse(PrecursorTolerance, out double precursor) || precursor <= 0)
+        if (!TryParse(PrecursorTolerance, out double precursor) || precursor <= 0)
         {
             problems.Add("Precursor mass tolerance must be a number greater than zero.");
         }
-        if (!double.TryParse(ProductTolerance, out double product) || product <= 0)
+        if (!TryParse(ProductTolerance, out double product) || product <= 0)
         {
             problems.Add("Product mass tolerance must be a number greater than zero.");
         }
@@ -240,9 +251,11 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
         {
             problems.Add("Missed cleavages cannot be negative.");
         }
-        if (ScoreCutoff <= 0)
+        // >= 1, matching TaskValidator.CheckMinScoreAllowed. Same field, so the two GUIs must not
+        // disagree about what is valid.
+        if (ScoreCutoff < 1)
         {
-            problems.Add("Score cutoff must be greater than zero.");
+            problems.Add("Score cutoff must be at least 1.");
         }
         return problems;
     }

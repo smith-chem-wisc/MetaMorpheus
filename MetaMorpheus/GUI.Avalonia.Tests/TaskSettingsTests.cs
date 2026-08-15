@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Avalonia.Headless.NUnit;
 using EngineLayer;
@@ -24,9 +25,6 @@ namespace Test.Avalonia;
 /// </summary>
 public class TaskSettingsTests
 {
-    [SetUp]
-    public void SetUp() => GlobalVariables.SetUpGlobalVariables();
-
     /// <summary>
     /// The dialog shows 13 of the settings CommonParameters holds. The other ~30 have to come through
     /// Apply() untouched, which the constructor could not do: passing a subset of its arguments leaves
@@ -76,7 +74,8 @@ public class TaskSettingsTests
 
         Assert.That(settings.IsSearchTask, Is.True);
         Assert.That(settings.PrecursorTolerance, Is.EqualTo(
-            ((PpmTolerance)task.CommonParameters.PrecursorMassTolerance).Value.ToString()));
+            ((PpmTolerance)task.CommonParameters.PrecursorMassTolerance).Value
+                .ToString(System.Globalization.CultureInfo.InvariantCulture)));
         Assert.That(settings.DecoyType, Is.EqualTo(task.SearchParameters.DecoyType));
     }
 
@@ -150,7 +149,7 @@ public class TaskSettingsTests
     }
 
     /// <summary>
-    /// Apply() rebuilds CommonParameters from a subset of its 41 constructor arguments, so anything
+    /// Apply() rebuilds CommonParameters from a subset of its 42 constructor arguments, so anything
     /// not represented in the dialog must survive rather than reverting to a constructor default.
     /// </summary>
     [Test]
@@ -347,6 +346,52 @@ public class TaskSettingsTests
             Assert.That(rna.MaxMissedCleavages, Is.EqualTo(1));
             Assert.That(rna.MinLength, Is.EqualTo(4), "the edited value should still arrive");
         });
+    }
+
+    /// <summary>
+    /// On de-DE, "." is the group separator, so a current-culture double.TryParse("0.05") returns true
+    /// with the value 5.0 - a tolerance a hundred times looser than the one typed, with no error shown.
+    /// This is the locale bug the PR most needed not to have, given what it is for.
+    /// </summary>
+    [TestCase("de-DE")]
+    [TestCase("fr-FR")]
+    [TestCase("en-US")]
+    public void TolerancesRoundTripUnderAnyCulture(string culture)
+    {
+        CultureInfo original = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo(culture);
+
+            var task = new SearchTask();
+            var settings = new TaskSettingsViewModel(task, "Search")
+            {
+                ProductTolerance = "0.05",
+                ProductToleranceIsPpm = false,
+            };
+            settings.Apply();
+
+            Assert.That(task.CommonParameters.ProductMassTolerance.Value, Is.EqualTo(0.05).Within(1e-12),
+                $"0.05 was misread under {culture}");
+
+            // and back out again, so a value written on one locale is not misread on another
+            Assert.That(new TaskSettingsViewModel(task, "Search").ProductTolerance, Is.EqualTo("0.05"));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
+    /// <summary>Same field, so the two GUIs must not disagree about what is valid.</summary>
+    [TestCase(0.5, false)]
+    [TestCase(1, true)]
+    [TestCase(5, true)]
+    public void ScoreCutoffMatchesTaskValidatorsThreshold(double cutoff, bool valid)
+    {
+        var settings = new TaskSettingsViewModel(new SearchTask(), "Search") { ScoreCutoff = cutoff };
+
+        Assert.That(settings.Validate(), valid ? Is.Empty : Is.Not.Empty);
     }
 
     private static Dictionary<string, string> Snapshot(CommonParameters parameters) =>

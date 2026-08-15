@@ -23,7 +23,6 @@ public class SettingsAffectResultsTests
     [SetUp]
     public void SetUp()
     {
-        GlobalVariables.SetUpGlobalVariables();
         _testData = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData");
     }
 

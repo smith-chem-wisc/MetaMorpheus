@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using EngineLayer;
 using MetaMorpheus.Avalonia.ViewModels;
 
 namespace MetaMorpheus.Avalonia.Views;
@@ -16,6 +17,26 @@ public partial class MainWindow : Window
 
     public MainWindow() => AvaloniaXamlLoader.Load(this);
 
+    /// <summary>
+    /// Built from GlobalVariables rather than written out, so the picker cannot drift from what the
+    /// application accepts. Two things this gets right that a hand-written list did not:
+    ///
+    ///   * The entries are lowercase. Avalonia's FreeDesktop backend passes these to the XDG portal as
+    ///     GlobStyle globs, and portal matching is case-sensitive, so "*.mzML" hides sample.mzml on
+    ///     Linux - the platform this exists for. Windows and macOS match case-insensitively, so it
+    ///     would never reproduce locally on either.
+    ///   * ".d" is excluded. Bruker data is a directory and OpenFilePickerAsync cannot select one;
+    ///     users pick the .tdf inside it and AddSpectraFiles maps that back to the folder.
+    /// </summary>
+    private static string[] SpectraPatterns => GlobalVariables.AcceptedSpectraFormats
+        .Where(extension => extension != ".d")
+        .Select(extension => "*" + extension)
+        .ToArray();
+
+    private static string[] DatabasePatterns => GlobalVariables.AcceptedDatabaseFormats
+        .SelectMany(extension => new[] { "*" + extension, "*" + extension + ".gz" })
+        .ToArray();
+
     private async void OnAddSpectraClick(object sender, RoutedEventArgs e)
     {
         IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
@@ -24,7 +45,7 @@ public partial class MainWindow : Window
             AllowMultiple = true,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Spectra") { Patterns = new[] { "*.mzML", "*.mgf", "*.raw" } },
+                new FilePickerFileType("Spectra") { Patterns = SpectraPatterns },
             },
         });
         ViewModel.AddSpectraFiles(files.Select(f => f.Path.LocalPath));
@@ -38,7 +59,7 @@ public partial class MainWindow : Window
             AllowMultiple = true,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Databases") { Patterns = new[] { "*.xml", "*.xml.gz", "*.fasta", "*.fa" } },
+                new FilePickerFileType("Databases") { Patterns = DatabasePatterns },
             },
         });
         ViewModel.AddDatabases(files.Select(f => f.Path.LocalPath));

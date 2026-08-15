@@ -15,9 +15,6 @@ namespace Test.Avalonia;
 /// </summary>
 public class ModificationSelectionTests
 {
-    [SetUp]
-    public void SetUp() => GlobalVariables.SetUpGlobalVariables();
-
     [Test]
     public void TheDefaultsAreLoadedAsSelected()
     {
@@ -117,9 +114,6 @@ public class ModificationSelectionTests
 /// <summary>The three task types added after Search, Calibrate and GPTMD.</summary>
 public class RemainingTaskTypeTests
 {
-    [SetUp]
-    public void SetUp() => GlobalVariables.SetUpGlobalVariables();
-
     [Test]
     public void CrosslinkSearchOptionsRoundTrip()
     {

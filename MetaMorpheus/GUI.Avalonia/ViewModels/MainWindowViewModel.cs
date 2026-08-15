@@ -44,6 +44,10 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
 
     public string Version => GlobalVariables.MetaMorpheusVersion;
 
+    // Set when the data directory could not be read. Nothing can run, but the window still opens so
+    // the user is told why rather than watching the process vanish.
+    private readonly bool _startupFailed;
+
     public MainWindowViewModel()
     {
         // Every entry point must do this before anything else: it resolves the data directory and
@@ -54,6 +58,18 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
             + $"{GlobalVariables.Crosslinkers.Count()} crosslinkers loaded.");
         SubscribeToEngineEvents();
     }
+
+    private MainWindowViewModel(Exception startupFailure)
+    {
+        _startupFailed = true;
+        Append("MetaMorpheus could not read its data directory, so no search can run.");
+        Append($"ERROR: {startupFailure.GetType().Name}: {startupFailure.Message}");
+        Append($"Expected the Mods, Data and Contaminants folders under {AppDomain.CurrentDomain.BaseDirectory}");
+        Status = "Failed to start.";
+    }
+
+    /// <summary>A view model that only reports why start-up failed. See App.OnFrameworkInitializationCompleted.</summary>
+    internal static MainWindowViewModel ThatFailedToStart(Exception failure) => new(failure);
 
     /// <summary>
     /// The engines report through static events rather than return values, so a front end has to
@@ -119,7 +135,7 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
     /// <summary>Adds spectra paths chosen by the view, which owns the file dialog.</summary>
     public void AddSpectraFiles(IEnumerable<string> paths)
     {
-        foreach (string path in paths.Where(IsSupportedSpectraFile))
+        foreach (string path in paths.Where(IsSupportedSpectraFile).Select(ToBrukerFolderIfInside))
         {
             if (SpectraFiles.All(f => f.FilePath != path))
             {
@@ -133,22 +149,39 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
     }
 
     /// <summary>
-    /// Thermo .raw reading works on Windows and Linux only, so on macOS it is rejected up front with
-    /// a reason rather than failing part-way into a run.
+    /// GlobalVariables owns the canonical list, so a format added there is accepted here without this
+    /// having to be updated. GetFileExtension rather than Path.GetExtension, for .xml.gz and friends.
     /// </summary>
-    internal static bool IsSupportedSpectraFile(string path)
+    internal static bool IsSupportedSpectraFile(string path) =>
+        GlobalVariables.AcceptedSpectraFormats.Contains(
+            GlobalVariables.GetFileExtension(path).ToLowerInvariant());
+
+    /// <summary>
+    /// Bruker data is a .d folder. Selecting a file inside one has to be read as selecting the folder,
+    /// which is what CMD and the WPF windows both do; otherwise the choice is silently dropped.
+    /// </summary>
+    internal static string ToBrukerFolderIfInside(string path)
     {
-        string extension = Path.GetExtension(path).ToLowerInvariant();
-        return extension is ".mzml" or ".mgf" or ".raw" or ".d";
+        string extension = GlobalVariables.GetFileExtension(path).ToLowerInvariant();
+        if (extension is not (".tdf" or ".tdf_bin"))
+        {
+            return path;
+        }
+
+        string parent = Path.GetDirectoryName(path);
+        return parent is not null && Path.GetExtension(parent).Equals(".d", StringComparison.OrdinalIgnoreCase)
+            ? parent
+            : path;
     }
 
     internal static bool IsThermoRawUnsupportedHere(string path) =>
         Path.GetExtension(path).Equals(".raw", StringComparison.OrdinalIgnoreCase)
         && OperatingSystem.IsMacOS();
 
+    /// <summary>Databases are filtered against GlobalVariables too, so .msp and .msl libraries load.</summary>
     public void AddDatabases(IEnumerable<string> paths)
     {
-        foreach (string path in paths)
+        foreach (string path in paths.Where(IsSupportedDatabaseFile))
         {
             if (Databases.All(d => d.FilePath != path))
             {
@@ -156,6 +189,10 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
             }
         }
     }
+
+    internal static bool IsSupportedDatabaseFile(string path) =>
+        GlobalVariables.AcceptedDatabaseFormats.Contains(
+            GlobalVariables.GetFileExtension(path).ToLowerInvariant());
 
     [RelayCommand]
     private void AddSearchTask() => AddTask("Search", new SearchTask());
@@ -192,11 +229,18 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
         Status = "Ready.";
     }
 
-    public bool CanRun => !IsRunning && Tasks.Count > 0 && SpectraFiles.Count > 0 && Databases.Count > 0;
+    public bool CanRun => !_startupFailed && !IsRunning
+        && Tasks.Count > 0 && SpectraFiles.Count > 0 && Databases.Count > 0;
 
     [RelayCommand]
     private async Task RunAsync()
     {
+        if (_startupFailed)
+        {
+            Append("Cannot run: MetaMorpheus did not finish starting up. See the errors above.");
+            return;
+        }
+
         // Clear a previous Cancel() before validating, as the WPF GUI does. Nothing else resets this,
         // so without it one cancellation ends every later run in the process.
         GlobalVariables.StopLoops = false;
@@ -268,9 +312,7 @@ internal sealed class DatabaseForDisplay
     {
         FilePath = filePath;
         FileName = Path.GetFileName(filePath);
-        // Matches the WPF window's convention for flagging contaminant databases.
-        IsContaminant = filePath.Contains("contaminant", StringComparison.OrdinalIgnoreCase)
-            || filePath.Contains("crap", StringComparison.OrdinalIgnoreCase);
+        IsContaminant = DbForTask.LooksLikeContaminant(filePath);
     }
 
     public string FileName { get; }
