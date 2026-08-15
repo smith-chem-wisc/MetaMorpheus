@@ -61,8 +61,17 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Run GuiFunctions.Core tests
-        run: dotnet test ./MetaMorpheus/GuiFunctions.Core.Tests/GuiFunctions.Core.Tests.csproj --configuration Release --verbosity normal
+      - name: Run GuiFunctions.Core tests with coverage
+        run: dotnet test ./MetaMorpheus/GuiFunctions.Core.Tests/GuiFunctions.Core.Tests.csproj --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+
+      # Its own flag, so this is not confused with the Windows-only unittests run that covers the same
+      # source through Test.csproj.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          flags: guifunctionscore
 
   # Runs tests that depend on live external web services (UniProt, ...). Kept separate and
   # intentionally NOT a required status check, so a third-party outage never blocks a PR. The tests
