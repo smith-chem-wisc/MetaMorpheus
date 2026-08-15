@@ -197,6 +197,10 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
     [RelayCommand]
     private async Task RunAsync()
     {
+        // Clear a previous Cancel() before validating, as the WPF GUI does. Nothing else resets this,
+        // so without it one cancellation ends every later run in the process.
+        GlobalVariables.StopLoops = false;
+
         if (Tasks.Count == 0 || SpectraFiles.Count == 0 || Databases.Count == 0)
         {
             Append("Add at least one spectra file, one database and one task before running.");

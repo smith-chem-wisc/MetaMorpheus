@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
+using EngineLayer;
 using MetaMorpheus.Avalonia;
 using MetaMorpheus.Avalonia.ViewModels;
 using MetaMorpheus.Avalonia.Views;
@@ -90,6 +91,9 @@ public class EndToEndSearchTests
     [TearDown]
     public void TearDown()
     {
+        // StopLoops is static and process-wide, so a cancellation test must not leak into the next one.
+        GlobalVariables.StopLoops = false;
+
         if (Directory.Exists(_outputFolder))
         {
             Directory.Delete(_outputFolder, recursive: true);
@@ -113,8 +117,41 @@ public class EndToEndSearchTests
         Assert.That(viewModel.CanRun, Is.True, "a spectra file, a database and a task should be enough to run");
 
         viewModel.RunCommand.Execute(null);
+        WaitForRunToFinish(viewModel);
 
-        // RunCommand is async; wait for it rather than sleeping a fixed amount.
+        Assert.That(viewModel.Log, Does.Not.Contain("ERROR:"), viewModel.Log);
+
+        string[] written = Directory.GetFiles(_outputFolder, "*.psmtsv", SearchOption.AllDirectories);
+        Assert.That(written, Is.Not.Empty, $"no .psmtsv was written. Log:{Environment.NewLine}{viewModel.Log}");
+    }
+
+    /// <summary>
+    /// Cancel raises GlobalVariables.StopLoops and nothing else lowers it, so Run has to. Asserted by
+    /// requiring a real search to still write results, rather than by reading the flag back.
+    /// </summary>
+    [Test]
+    public void ASearchAfterACancellationStillProducesResults()
+    {
+        string testData = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData");
+
+        using var viewModel = new MainWindowViewModel { OutputFolder = _outputFolder };
+        viewModel.CancelCommand.Execute(null);
+        Assert.That(GlobalVariables.StopLoops, Is.True, "Cancel should raise the cooperative stop flag");
+
+        viewModel.AddSpectraFiles(new[] { Path.Combine(testData, "mouseOne.mzML") });
+        viewModel.AddDatabases(new[] { Path.Combine(testData, "mouseOne.xml") });
+        viewModel.AddSearchTaskCommand.Execute(null);
+        viewModel.RunCommand.Execute(null);
+        WaitForRunToFinish(viewModel);
+
+        Assert.That(viewModel.Log, Does.Not.Contain("ERROR:"), viewModel.Log);
+        Assert.That(Directory.GetFiles(_outputFolder, "*.psmtsv", SearchOption.AllDirectories), Is.Not.Empty,
+            $"a cancellation left the process unable to search. Log:{Environment.NewLine}{viewModel.Log}");
+    }
+
+    /// <summary>RunCommand is async; wait for it rather than sleeping a fixed amount.</summary>
+    private static void WaitForRunToFinish(MainWindowViewModel viewModel)
+    {
         DateTime deadline = DateTime.UtcNow.AddMinutes(10);
         while (viewModel.IsRunning && DateTime.UtcNow < deadline)
         {
@@ -122,9 +159,5 @@ public class EndToEndSearchTests
         }
 
         Assert.That(viewModel.IsRunning, Is.False, "the search did not finish within 10 minutes");
-        Assert.That(viewModel.Log, Does.Not.Contain("ERROR:"), viewModel.Log);
-
-        string[] written = Directory.GetFiles(_outputFolder, "*.psmtsv", SearchOption.AllDirectories);
-        Assert.That(written, Is.Not.Empty, $"no .psmtsv was written. Log:{Environment.NewLine}{viewModel.Log}");
     }
 }
