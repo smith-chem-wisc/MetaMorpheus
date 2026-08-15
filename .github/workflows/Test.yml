@@ -42,6 +42,28 @@ jobs:
           verbose: true
           flags: unittests
 
+  # The half of the GUI tests that do not need WPF, run on all three platforms. Test.csproj is
+  # net10.0-windows and can only run on Windows; these are the same test files compiled into a net10.0
+  # project, so they are the same tests rather than copies of them.
+  guifunctions-core-tests:
+    name: GuiFunctions.Core tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Run GuiFunctions.Core tests
+        run: dotnet test ./MetaMorpheus/GuiFunctions.Core.Tests/GuiFunctions.Core.Tests.csproj --configuration Release --verbosity normal
+
   # Runs tests that depend on live external web services (UniProt, ...). Kept separate and
   # intentionally NOT a required status check, so a third-party outage never blocks a PR. The tests
   # self-classify: an outage is reported as Skipped (Assert.Ignore) and only a genuine contract
