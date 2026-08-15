@@ -1,6 +1,6 @@
 using Avalonia;
 
-namespace MetaMorpheus.Avalonia;
+namespace MetaMorpheusAvalonia;
 
 internal static class Program
 {

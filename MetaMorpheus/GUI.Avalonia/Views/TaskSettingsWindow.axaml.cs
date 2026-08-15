@@ -2,9 +2,9 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
-using MetaMorpheus.Avalonia.ViewModels;
+using MetaMorpheusAvalonia.ViewModels;
 
-namespace MetaMorpheus.Avalonia.Views;
+namespace MetaMorpheusAvalonia.Views;
 
 public partial class TaskSettingsWindow : Window
 {

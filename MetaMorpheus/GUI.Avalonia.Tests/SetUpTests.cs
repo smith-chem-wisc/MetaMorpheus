@@ -1,7 +1,7 @@
 using EngineLayer;
 using NUnit.Framework;
 
-namespace Test.Avalonia;
+namespace Test.AvaloniaGui;
 
 /// <summary>
 /// Loads the modification, protease, crosslinker and glycan databases once for the whole assembly,

@@ -2,10 +2,10 @@ using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using MetaMorpheus.Avalonia.ViewModels;
-using MetaMorpheus.Avalonia.Views;
+using MetaMorpheusAvalonia.ViewModels;
+using MetaMorpheusAvalonia.Views;
 
-namespace MetaMorpheus.Avalonia;
+namespace MetaMorpheusAvalonia;
 
 public partial class App : Application
 {

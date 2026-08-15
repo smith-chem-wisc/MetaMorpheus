@@ -5,14 +5,14 @@ using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using EngineLayer;
-using MetaMorpheus.Avalonia;
-using MetaMorpheus.Avalonia.ViewModels;
-using MetaMorpheus.Avalonia.Views;
+using MetaMorpheusAvalonia;
+using MetaMorpheusAvalonia.ViewModels;
+using MetaMorpheusAvalonia.Views;
 using NUnit.Framework;
 
-[assembly: AvaloniaTestApplication(typeof(Test.Avalonia.TestAppBuilder))]
+[assembly: AvaloniaTestApplication(typeof(Test.AvaloniaGui.TestAppBuilder))]
 
-namespace Test.Avalonia;
+namespace Test.AvaloniaGui;
 
 public static class TestAppBuilder
 {

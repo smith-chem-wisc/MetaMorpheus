@@ -4,8 +4,8 @@ using System.Linq;
 using Avalonia.Headless.NUnit;
 using EngineLayer;
 using MassSpectrometry;
-using MetaMorpheus.Avalonia.ViewModels;
-using MetaMorpheus.Avalonia.Views;
+using MetaMorpheusAvalonia.ViewModels;
+using MetaMorpheusAvalonia.Views;
 using MzLibUtil;
 using NUnit.Framework;
 using Omics.Digestion;
@@ -15,7 +15,7 @@ using TaskLayer;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
-namespace Test.Avalonia;
+namespace Test.AvaloniaGui;
 
 /// <summary>
 /// The settings dialog is only useful if what it collects reaches the task, and only safe if what it

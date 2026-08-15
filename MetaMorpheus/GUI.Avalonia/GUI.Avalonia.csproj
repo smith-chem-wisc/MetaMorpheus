@@ -6,8 +6,8 @@
     <Nullable>disable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <AssemblyName>MetaMorpheus.Avalonia</AssemblyName>
-    <RootNamespace>MetaMorpheus.Avalonia</RootNamespace>
+    <AssemblyName>MetaMorpheusAvalonia</AssemblyName>
+    <RootNamespace>MetaMorpheusAvalonia</RootNamespace>
     <!-- Deliberately no PlatformTarget. Microsoft.ML's _CheckForUnsupportedPlatformTarget errors on an
          explicit non-x64 value but exempts an empty one, and stamping x64 is what stopped the old
          assemblies loading on arm64 (#2503, #2504). -->

@@ -14,7 +14,7 @@ using TaskLayer;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
-namespace MetaMorpheus.Avalonia.ViewModels;
+namespace MetaMorpheusAvalonia.ViewModels;
 
 /// <summary>
 /// Editable settings for one task, shared by every task type.

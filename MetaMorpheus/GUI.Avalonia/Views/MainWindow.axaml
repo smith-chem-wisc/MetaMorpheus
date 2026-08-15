@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:MetaMorpheus.Avalonia.ViewModels"
-        x:Class="MetaMorpheus.Avalonia.Views.MainWindow"
+        xmlns:vm="using:MetaMorpheusAvalonia.ViewModels"
+        x:Class="MetaMorpheusAvalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="MetaMorpheus" Width="1100" Height="650">
 

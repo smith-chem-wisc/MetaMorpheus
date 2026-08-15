@@ -11,7 +11,7 @@ using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using TaskLayer;
 
-namespace MetaMorpheus.Avalonia.ViewModels;
+namespace MetaMorpheusAvalonia.ViewModels;
 
 /// <summary>
 /// The main window's state and behaviour, with no UI types.

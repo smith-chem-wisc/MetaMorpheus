@@ -6,9 +6,9 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using EngineLayer;
-using MetaMorpheus.Avalonia.ViewModels;
+using MetaMorpheusAvalonia.ViewModels;
 
-namespace MetaMorpheus.Avalonia.Views;
+namespace MetaMorpheusAvalonia.Views;
 
 /// <summary>Only the parts that genuinely need a window: file pickers and opening a browser.</summary>
 public partial class MainWindow : Window

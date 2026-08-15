@@ -6,7 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using EngineLayer;
 using Omics.Modifications;
 
-namespace MetaMorpheus.Avalonia.ViewModels;
+namespace MetaMorpheusAvalonia.ViewModels;
 
 /// <summary>
 /// Chooses fixed and variable modifications.

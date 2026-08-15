@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:MetaMorpheus.Avalonia.ViewModels"
-        x:Class="MetaMorpheus.Avalonia.Views.TaskSettingsWindow"
+        xmlns:vm="using:MetaMorpheusAvalonia.ViewModels"
+        x:Class="MetaMorpheusAvalonia.Views.TaskSettingsWindow"
         x:DataType="vm:TaskSettingsViewModel"
         Title="Task settings" Width="640" Height="620"
         WindowStartupLocation="CenterOwner">

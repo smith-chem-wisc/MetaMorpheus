@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
-using MetaMorpheus.Avalonia.ViewModels;
+using MetaMorpheusAvalonia.ViewModels;
 using NUnit.Framework;
 using TaskLayer;
 
-namespace Test.Avalonia;
+namespace Test.AvaloniaGui;
 
 /// <summary>
 /// A settings dialog can look right, store values correctly, and still have no effect if the edited

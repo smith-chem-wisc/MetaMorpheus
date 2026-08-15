@@ -1,12 +1,12 @@
 using System.Linq;
 using EngineLayer;
 using EngineLayer.GlycoSearch;
-using MetaMorpheus.Avalonia.ViewModels;
+using MetaMorpheusAvalonia.ViewModels;
 using NUnit.Framework;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
-namespace Test.Avalonia;
+namespace Test.AvaloniaGui;
 
 /// <summary>
 /// Modification selection is the setting most likely to be silently lost, because Apply() rebuilds
