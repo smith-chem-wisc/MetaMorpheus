@@ -215,7 +215,13 @@ namespace EngineLayer
         /// Defaults to <see cref="EngineLayer.PrecursorMassMatchMode.Monoisotopic"/>.
         /// </summary>
         public PrecursorMassMatchMode PrecursorMassMatchMode { get; set; }
+        // The ? is a reference-type annotation, which needs an annotations context to mean anything;
+        // without one it is only a CS8632 warning. Scoped to this member rather than the file so the
+        // other members' nullability metadata does not change for consumers that do enable nullable.
+        // The int?/double? properties above are Nullable<T> and need none of this.
+#nullable enable annotations
         public DIAparameters? DIAparameters { get; set; } //only for DIA analysis involving pseudo ms2 scan generation
+#nullable restore
         public IFragmentationParams FragmentationParameters { get; set; }
         public string RTPredictorName { get; private set; }
 
