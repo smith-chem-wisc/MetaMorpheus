@@ -510,6 +510,19 @@ namespace MetaMorpheusGUI
                 ClearPresentationArea();
                 MetaDrawLogic.FilteredListOfPsms.Clear();
             }
+
+            UpdateProFormaColumnVisibility();
+        }
+
+        /// <summary>
+        /// Shows the ProForma column only while the loaded results carry ProForma strings. Called after every
+        /// load and after every reset, so the column never lingers over results it does not describe.
+        /// </summary>
+        private void UpdateProFormaColumnVisibility()
+        {
+            proFormaColumn.Visibility = MetaDrawLogic.ShouldShowProFormaColumn(MetaDrawLogic.AllSpectralMatches)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         #endregion
@@ -596,6 +609,8 @@ namespace MetaMorpheusGUI
                 deconExplorationTabViewModel: DeconExplorationViewModel,
                 fragmentationReanalysisViewModel: FragmentationReanalysisViewModel);
             dataGridScanNums.IsEnabled = true;
+
+            UpdateProFormaColumnVisibility();
 
             if (errors.Any())
             {
