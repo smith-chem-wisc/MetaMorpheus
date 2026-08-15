@@ -1,4 +1,4 @@
-﻿global using obo = Omics.Modifications.IO.obo;
+global using obo = Omics.Modifications.IO.obo;
 using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer.GlycoSearch;
@@ -77,7 +77,6 @@ namespace EngineLayer
         {
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp", ".msl" };
             AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf", ".msalign", ".tdf", ".tdf_bin", ".baf", ".d" };
-            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf", ".msalign", ".tdf", ".tdf_bin", ".d" };
             AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
