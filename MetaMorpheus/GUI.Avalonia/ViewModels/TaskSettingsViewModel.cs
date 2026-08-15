@@ -10,6 +10,7 @@ using Omics.Digestion;
 using Proteomics.ProteolyticDigestion;
 using SpectralAveraging;
 using TaskLayer;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
 namespace MetaMorpheus.Avalonia.ViewModels;
@@ -21,9 +22,10 @@ namespace MetaMorpheus.Avalonia.ViewModels;
 /// lines each:
 ///
 ///   * CommonParameters exposes most of its properties with a private setter, so a change cannot be
-///     bound onto an existing instance. It has to be rebuilt through its 41-argument constructor.
+///     bound onto an existing instance. It has to be rebuilt through its 42-argument constructor.
 ///     Apply() goes through CommonParameters.CloneWithNewValues, which copies every setting and
 ///     overrides only the ones shown here - the constructor would reset the rest to their defaults.
+///     DigestionParams is the same shape, handled by BuildDigestionParams.
 ///   * Task-specific options - SearchParameters and friends - are plain settable properties, so those
 ///     are mutated in place.
 ///
@@ -124,9 +126,13 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
         TrimMsMsPeaks = common.TrimMsMsPeaks;
         ReportAllAmbiguity = common.ReportAllAmbiguity;
 
-        if (common.DigestionParams is DigestionParams digestion)
+        if (common.DigestionParams is { } digestion)
         {
-            Protease = digestion.Protease?.Name ?? Protease;
+            // SpecificProtease, not Protease: a non-specific search holds singleN/singleC in Protease
+            // and the user's actual choice in SpecificProtease.
+            Protease = (digestion as DigestionParams)?.SpecificProtease?.Name
+                ?? digestion.DigestionAgent?.Name
+                ?? Protease;
             MaxMissedCleavages = digestion.MaxMissedCleavages;
             MinPeptideLength = digestion.MinLength;
             MaxPeptideLength = digestion.MaxLength;
@@ -242,20 +248,61 @@ internal sealed partial class TaskSettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Writes the edited values back onto the task. CommonParameters is cloned-and-overridden because
-    /// its setters are private; the search options are assigned in place because theirs are not.
+    /// Rebuilds the digestion parameters, carrying forward the six settings this dialog does not show.
+    /// Most of DigestionParams' properties have private setters, so the object has to go back through
+    /// its constructor; every argument not edited here is read off <paramref name="existing"/>.
     /// </summary>
-    public void Apply()
+    private IDigestionParams BuildDigestionParams(IDigestionParams existing) => existing switch
     {
-        IDigestionParams digestion = new DigestionParams(
+        // The enzyme box is filled from ProteaseDictionary, so it has nothing to offer an RNA task and
+        // the rnase is carried through untouched. Without this branch an RNA task came back proteolytic.
+        RnaDigestionParams rna => new RnaDigestionParams(
+            rnase: rna.Rnase.Name,
+            maxMissedCleavages: MaxMissedCleavages,
+            minLength: MinPeptideLength,
+            maxLength: MaxPeptideLength,
+            maxModificationIsoforms: MaxModificationIsoforms,
+            maxMods: MaxModsPerPeptide,
+            fragmentationTerminus: rna.FragmentationTerminus)
+        {
+            SearchModeType = rna.SearchModeType,
+        },
+
+        // searchModeType and fragmentationTerminus have to be passed for a semi or non-specific search
+        // to survive; RecordSpecificProtease() then re-derives Protease from them, so the name given
+        // here is the specific protease either way.
+        DigestionParams proteolytic => new DigestionParams(
             protease: Protease,
             maxMissedCleavages: MaxMissedCleavages,
             minPeptideLength: MinPeptideLength,
             maxPeptideLength: MaxPeptideLength,
             maxModificationIsoforms: MaxModificationIsoforms,
-            maxModsForPeptides: MaxModsPerPeptide);
+            initiatorMethionineBehavior: proteolytic.InitiatorMethionineBehavior,
+            maxModsForPeptides: MaxModsPerPeptide,
+            searchModeType: proteolytic.SearchModeType,
+            fragmentationTerminus: proteolytic.FragmentationTerminus,
+            generateUnlabeledProteinsForSilac: proteolytic.GeneratehUnlabeledProteinsForSilac,
+            keepNGlycopeptide: proteolytic.KeepNGlycopeptide,
+            keepOGlycopeptide: proteolytic.KeepOGlycopeptide),
 
+        _ => new DigestionParams(
+            protease: Protease,
+            maxMissedCleavages: MaxMissedCleavages,
+            minPeptideLength: MinPeptideLength,
+            maxPeptideLength: MaxPeptideLength,
+            maxModificationIsoforms: MaxModificationIsoforms,
+            maxModsForPeptides: MaxModsPerPeptide),
+    };
+
+    /// <summary>
+    /// Writes the edited values back onto the task. CommonParameters and the digestion parameters are
+    /// cloned-and-overridden because their setters are private; the search options are assigned in
+    /// place because theirs are not.
+    /// </summary>
+    public void Apply()
+    {
         CommonParameters existing = _task.CommonParameters ?? new CommonParameters();
+        IDigestionParams digestion = BuildDigestionParams(existing.DigestionParams);
 
         // CloneWithNewValues, not the constructor: this view model shows 13 of the settings
         // CommonParameters holds, and the constructor would default the rest back.

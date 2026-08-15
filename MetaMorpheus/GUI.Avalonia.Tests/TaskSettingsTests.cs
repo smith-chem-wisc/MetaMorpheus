@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Headless.NUnit;
 using EngineLayer;
@@ -6,7 +7,11 @@ using MetaMorpheus.Avalonia.ViewModels;
 using MetaMorpheus.Avalonia.Views;
 using MzLibUtil;
 using NUnit.Framework;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using TaskLayer;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
 namespace Test.Avalonia;
@@ -223,6 +228,138 @@ public class TaskSettingsTests
                 $"{task.GetType().Name} should accept common settings");
         }
     }
+
+    /// <summary>
+    /// Gate A. Load a task holding non-default values across the parameter space, click Save without
+    /// editing anything, and every setting must come back unchanged. Reflective over CommonParameters,
+    /// so a property added later is covered without this test having to know about it.
+    /// </summary>
+    [Test]
+    public void ApplyWithoutEditingChangesNothing()
+    {
+        var task = new SearchTask
+        {
+            CommonParameters = new CommonParameters(
+                taskDescriptor: "descriptor",
+                ms2childScanDissociationType: DissociationType.EThcD,
+                separationType: "CZE",
+                addCompIons: true,
+                totalPartitions: 3,
+                numberOfPeaksToKeepPerWindow: 1000,
+                trimMs1Peaks: true,
+                addTruncations: true,
+                pepQValueThreshold: 0.02,
+                precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
+                digestionParams: new DigestionParams(
+                    protease: "Asp-N",
+                    initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
+                    searchModeType: CleavageSpecificity.Semi,
+                    fragmentationTerminus: FragmentationTerminus.C,
+                    keepNGlycopeptide: true,
+                    keepOGlycopeptide: true)),
+        };
+
+        Dictionary<string, string> before = Snapshot(task.CommonParameters);
+
+        new TaskSettingsViewModel(task, "Search").Apply();
+
+        Assert.That(Snapshot(task.CommonParameters), Is.EqualTo(before));
+    }
+
+    /// <summary>The digestion half of the same contract, spelled out so a failure names the setting.</summary>
+    [Test]
+    public void DigestionSettingsNotShownInTheDialogAreNotLost()
+    {
+        var task = new SearchTask
+        {
+            CommonParameters = new CommonParameters(digestionParams: new DigestionParams(
+                protease: "Asp-N",
+                initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
+                searchModeType: CleavageSpecificity.Semi,
+                fragmentationTerminus: FragmentationTerminus.C,
+                generateUnlabeledProteinsForSilac: false,
+                keepNGlycopeptide: true,
+                keepOGlycopeptide: true)),
+        };
+
+        // edit something the dialog does show, so this is a realistic Save rather than a no-op
+        new TaskSettingsViewModel(task, "Search") { MaxMissedCleavages = 4 }.Apply();
+
+        var digestion = (DigestionParams)task.CommonParameters.DigestionParams;
+        Assert.Multiple(() =>
+        {
+            Assert.That(digestion.MaxMissedCleavages, Is.EqualTo(4), "the edited value should arrive");
+            Assert.That(digestion.SearchModeType, Is.EqualTo(CleavageSpecificity.Semi));
+            Assert.That(digestion.FragmentationTerminus, Is.EqualTo(FragmentationTerminus.C));
+            Assert.That(digestion.InitiatorMethionineBehavior, Is.EqualTo(InitiatorMethionineBehavior.Retain));
+            Assert.That(digestion.GeneratehUnlabeledProteinsForSilac, Is.False);
+            Assert.That(digestion.KeepNGlycopeptide, Is.True);
+            Assert.That(digestion.KeepOGlycopeptide, Is.True);
+        });
+    }
+
+    /// <summary>
+    /// A non-specific search keeps the user's enzyme in SpecificProtease and singleN/singleC in
+    /// Protease, so the dialog has to read and write the former.
+    /// </summary>
+    [Test]
+    public void NonSpecificSearchKeepsItsModeAndShowsTheSpecificProtease()
+    {
+        var task = new SearchTask
+        {
+            CommonParameters = new CommonParameters(digestionParams: new DigestionParams(
+                protease: "Asp-N",
+                searchModeType: CleavageSpecificity.None,
+                fragmentationTerminus: FragmentationTerminus.N)),
+        };
+
+        var settings = new TaskSettingsViewModel(task, "Search");
+        Assert.That(settings.Protease, Is.EqualTo("Asp-N"), "the enzyme box should show the user's choice, not singleN");
+
+        settings.Apply();
+
+        var digestion = (DigestionParams)task.CommonParameters.DigestionParams;
+        Assert.Multiple(() =>
+        {
+            Assert.That(digestion.SearchModeType, Is.EqualTo(CleavageSpecificity.None), "the search mode must survive Save");
+            Assert.That(digestion.SpecificProtease.Name, Is.EqualTo("Asp-N"));
+            Assert.That(digestion.Protease.Name, Is.EqualTo("singleN"));
+        });
+    }
+
+    /// <summary>An RNA task must stay an RNA task; the enzyme box has nothing to offer it.</summary>
+    [Test]
+    public void RnaDigestionParametersSurviveApply()
+    {
+        var task = new SearchTask
+        {
+            CommonParameters = new CommonParameters(
+                digestionParams: new RnaDigestionParams(rnase: "RNase T1", maxMissedCleavages: 1)),
+        };
+
+        new TaskSettingsViewModel(task, "Search") { MinPeptideLength = 4 }.Apply();
+
+        Assert.That(task.CommonParameters.DigestionParams, Is.TypeOf<RnaDigestionParams>());
+        var rna = (RnaDigestionParams)task.CommonParameters.DigestionParams;
+        Assert.Multiple(() =>
+        {
+            Assert.That(rna.Rnase.Name, Is.EqualTo("RNase T1"));
+            Assert.That(rna.MaxMissedCleavages, Is.EqualTo(1));
+            Assert.That(rna.MinLength, Is.EqualTo(4), "the edited value should still arrive");
+        });
+    }
+
+    private static Dictionary<string, string> Snapshot(CommonParameters parameters) =>
+        typeof(CommonParameters).GetProperties()
+            .Where(p => p.CanRead && p.GetIndexParameters().Length == 0)
+            .ToDictionary(p => p.Name, p => Describe(p.GetValue(parameters)));
+
+    private static string Describe(object value) => value switch
+    {
+        null => "<null>",
+        IEnumerable<(string, string)> mods => string.Join(";", mods.Select(m => $"{m.Item1}|{m.Item2}")),
+        _ => value.ToString(),
+    };
 
     [AvaloniaTest]
     public void SettingsWindowBuilds()
