@@ -711,6 +711,14 @@ namespace TaskLayer
                 file.WriteLine();
                 file.WriteLine("Published works using MetaMorpheus software are encouraged to cite the appropriate publications listed in the reference guide, found here: https://github.com/smith-chem-wisc/MetaMorpheus/blob/master/README.md.");
                 file.WriteLine();
+                // UniDec's licence requires software that redistributes IsoDec to tell its users so and to
+                // pass on the citation request, so this is an obligation rather than a courtesy. Written
+                // only when IsoDec actually ran, including when it was selected for individual files.
+                if (UsedIsoDecDeconvolution())
+                {
+                    file.WriteLine("Isotopic envelope deconvolution was performed using IsoDec, part of UniDec (https://github.com/michaelmarty/UniDec). Publications using these results should cite Marty et al. Anal. Chem. 2015, DOI: 10.1021/acs.analchem.5b00140.");
+                    file.WriteLine();
+                }
                 file.WriteLine("Spectra files: ");
                 file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
                 file.WriteLine("Databases:");
@@ -730,6 +738,30 @@ namespace TaskLayer
             FinishedWritingFile(proseFilePath, new List<string> { displayName });
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
             return MyTaskResults;
+        }
+
+        /// <summary>
+        /// Whether this run deconvoluted with IsoDec, for either precursors or products, at the task level
+        /// or for any individual file. Drives the UniDec citation in the manuscript prose, which its licence
+        /// requires be passed on to end users rather than left implicit.
+        /// </summary>
+        private bool UsedIsoDecDeconvolution()
+        {
+            static bool IsIsoDec(CommonParameters parameters) =>
+                parameters?.PrecursorDeconvolutionParameters?.DeconvolutionType == DeconvolutionType.IsoDecDeconvolution
+                || parameters?.ProductDeconvolutionParameters?.DeconvolutionType == DeconvolutionType.IsoDecDeconvolution;
+
+            // FileSpecificParameters holds each file's settings already merged over CommonParameters, so it
+            // is authoritative when populated: a file-specific toml can turn IsoDec on for one file, and it
+            // can equally turn it off for every file, in which case the task-level value was never used and
+            // citing IsoDec would be wrong. CommonParameters is the fallback only when no per-file entries
+            // were built.
+            if (FileSpecificParameters is { Count: > 0 })
+            {
+                return FileSpecificParameters.Any(fileAndParameters => IsIsoDec(fileAndParameters.Parameters));
+            }
+
+            return IsIsoDec(CommonParameters);
         }
 
         #region Database Loading
