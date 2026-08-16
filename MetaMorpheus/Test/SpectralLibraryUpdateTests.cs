@@ -23,12 +23,65 @@ namespace Test
     public static class SpectralLibraryUpdateTests
     {
         /// <summary>
+        /// Issue #2291, as the user meets it. Every entry point runs tasks through EverythingRunnerEngine,
+        /// which refuses the combination alongside its other database checks: a warning and a clean stop,
+        /// not an exception, so the GUI shows a notification rather than a crash report.
+        ///
+        /// Checked per task, so a search that writes a library followed by one that updates it stays legal.
+        /// </summary>
+        [Test]
+        public static void TheRunnerRefusesAnUpdateWithNoLibraryAndRunsNothing()
+        {
+            string outputFolder = MakeOutputFolder("RunnerNoLibrary");
+
+            var task = new SearchTask();
+            task.SearchParameters.UpdateSpectralLibrary = true;
+
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "TestData", "hela_snip_for_unitTest.fasta");
+            string spectra = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "TestData", "TaGe_SA_A549_3_snip.mzML");
+
+            var runner = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task1Search", task) },
+                new List<string> { spectra },
+                new List<DbForTask> { new DbForTask(database, false) },
+                outputFolder);
+
+            var enginesStarted = new List<string>();
+            void OnEngineStarting(object sender, SingleEngineEventArgs e)
+                => enginesStarted.Add(e.MyEngine.GetType().Name);
+
+            MetaMorpheusEngine.StartingSingleEngineHander += OnEngineStarting;
+            try
+            {
+                Assert.That(() => runner.Run(), Throws.Nothing,
+                    "the runner reports this, it does not throw -- a throw reaches the GUI as a crash report");
+            }
+            finally
+            {
+                MetaMorpheusEngine.StartingSingleEngineHander -= OnEngineStarting;
+            }
+
+            // EverythingRunnerEngine has its own WarnHandler, separate from MetaMorpheusTask's, and
+            // collects into Warnings; MyTaskTest.MissingDbInSpectralLibrarySearch reads it the same way.
+            List<string> warnings = runner.Warnings;
+            Assert.That(warnings.Any(w => w.Contains("no spectral library was given", StringComparison.OrdinalIgnoreCase)),
+                Is.True, "the refusal has to reach the user as a warning: " + string.Join(" | ", warnings));
+            Assert.That(warnings.Any(w => w.Contains("list of databases", StringComparison.OrdinalIgnoreCase)),
+                Is.True, "and has to say what to do about it");
+            Assert.That(enginesStarted, Is.Empty,
+                "nothing may run before the refusal, but these did: " + string.Join(", ", enginesStarted));
+        }
+
+        /// <summary>
         /// Issue #2291. Asking to update a spectral library without giving one used to run the whole search
         /// and then throw NullReferenceException out of UpdateSpectralLibrary, which surfaced as the task
         /// hanging on "Writing PSM results" with the exception only visible in results.txt afterwards.
         ///
-        /// The combination is refused before searching now, so the wasted run is what this pins. The check
-        /// also precedes the background protein load, so reaching it costs no I/O at all.
+        /// The runner gate above is what users hit. This pins the backstop for a caller invoking RunTask
+        /// directly: it still refuses, before searching and before the background protein load, so reaching
+        /// the check costs no I/O at all.
         /// </summary>
         [Test]
         public static void UpdatingASpectralLibraryWithoutOneIsRefusedBeforeSearching()
