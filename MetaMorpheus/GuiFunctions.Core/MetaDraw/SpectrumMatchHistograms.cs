@@ -234,7 +234,7 @@ namespace GuiFunctions
             return i * sign;
         }
 
-        private static IEnumerable<double> ParseAmbiguousNotchValues(string notch)
+        public static IEnumerable<double> ParseAmbiguousNotchValues(string notch)
         {
             foreach (var part in SplitAmbiguousNotch(notch))
             {
@@ -249,7 +249,11 @@ namespace GuiFunctions
         {
             if (string.IsNullOrWhiteSpace(notch))
                 return new[] { "0" };
-            return notch.Split('|', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim());
+
+            return notch.Split('|')
+                .Select(p => p.Trim())
+                .Where(p => p.Length > 0)
+                .DefaultIfEmpty("0");
         }
     }
 }

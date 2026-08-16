@@ -105,4 +105,22 @@ public class SpectrumMatchHistogramsTests
     {
         Assert.That(SpectrumMatchHistograms.NormalizeAmbiguityLevel(input), Is.EqualTo(expected));
     }
+
+    /// <summary>
+    /// The exact semantics MetaDrawTest.TestPlotModelStat_Notch_PipeOnlyAndEmptyParts pins, asserted
+    /// here too because that test is Windows-only. Dropping the DefaultIfEmpty("0") when this helper
+    /// was moved made pipe-only notches vanish instead of binning at zero, and only Windows caught it.
+    /// </summary>
+    [TestCase("|", new[] { 0.0 })]
+    [TestCase("||", new[] { 0.0 })]
+    [TestCase("|1.003|", new[] { 1.003 })]
+    [TestCase("", new[] { 0.0 })]
+    [TestCase(null, new[] { 0.0 })]
+    [TestCase("1|2", new[] { 1.0, 2.0 })]
+    [TestCase(" 1 | 2 ", new[] { 1.0, 2.0 })]
+    public void AmbiguousNotchesParseToExpectedValues(string notch, double[] expected)
+    {
+        Assert.That(SpectrumMatchHistograms.ParseAmbiguousNotchValues(notch).ToArray(),
+            Is.EqualTo(expected).Within(1e-9));
+    }
 }
