@@ -1,4 +1,4 @@
-﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <!--Shorthand way of getting the install directory-->
   <?define GUI_TargetDir=$(var.GUI.TargetDir)?>
   <?define CMD_TargetDir=$(var.CMD.TargetDir)?>
@@ -268,6 +268,11 @@
       </Component>
       <Component Id="src_OxyPlot.Wpf.dll" Guid="2052508D-D83C-45D7-8C9C-9211F97A8949">
         <File Id="src_OxyPlot.Wpf.dll" Name="OxyPlot.Wpf.dll" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.dll" />
+      </Component>
+      <!-- New in OxyPlot.Wpf 2.2.0, which split this out of OxyPlot.Wpf.dll. Loaded at runtime, so
+           MetaDraw cannot open without it. -->
+      <Component Id="src_OxyPlot.Wpf.Shared.dll" Guid="0CDD74F9-FF57-4AF2-BDA5-7E52199DD170">
+        <File Id="src_OxyPlot.Wpf.Shared.dll" Name="OxyPlot.Wpf.Shared.dll" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.Shared.dll" />
       </Component>
       <Component Id="src_itext.barcodes.dll" Guid="4CC3D87C-FA1E-4301-B0B9-4E1EE3DFC4F2">
         <File Id="src_itext.barcodes.dll" Name="itext.barcodes.dll" Source="$(var.GUI_TargetDir)itext.barcodes.dll" />

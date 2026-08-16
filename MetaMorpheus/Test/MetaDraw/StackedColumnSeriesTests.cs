@@ -42,8 +42,9 @@ public class StackedColumnSeriesTests
     }
 
     /// <summary>
-    /// Renders the model so OxyPlot fills in ActualBarRectangles. SvgExporter lives in OxyPlot.Core,
-    /// so this runs on every platform - which is the point, since MetaDrawTest cannot.
+    /// Forces a full layout and render pass, which is what populates the axis transforms the
+    /// geometry assertions read. SvgExporter lives in OxyPlot.Core, so this runs on every platform -
+    /// which is the point, since MetaDrawTest cannot.
     /// </summary>
     private static void Render(PlotModel model)
     {
