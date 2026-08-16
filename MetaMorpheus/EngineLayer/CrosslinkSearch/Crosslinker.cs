@@ -68,7 +68,9 @@ namespace EngineLayer
             List<DissociationType> cleaveDissociationTypes = new List<DissociationType>();
             foreach (var x in cleaveDissociationTypesInString.Split('|'))
             {
-                switch (x)
+                // ToString writes "EThcD" and "LowCID" but the GUI upper-cases its input, so the two
+                // sources disagree on case and a case-sensitive match silently drops entries (#2716)
+                switch (x.Trim().ToUpperInvariant())
                 {
                     case "":
                         break;
@@ -84,7 +86,7 @@ namespace EngineLayer
                     case "ETHCD":
                         cleaveDissociationTypes.Add(DissociationType.EThcD);
                         break;
-                    case "LowCID":
+                    case "LOWCID":
                         cleaveDissociationTypes.Add(DissociationType.LowCID);
                         break;
                     default:

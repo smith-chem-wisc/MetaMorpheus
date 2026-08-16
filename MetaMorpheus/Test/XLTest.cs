@@ -53,6 +53,58 @@ namespace Test
             Assert.That(crosslinkerString == "testCrosslinker\tK\tK\tTrue\tCID|HCD|\t100\t25\t60\t0\t0\t50");
         }
 
+        /// <summary>
+        /// A crosslinker that cleaves under CID also cleaves under LowCID -- low-resolution CID is still
+        /// CID, and the crosslinker has no knowledge of the analyser resolution. The negative cases matter
+        /// as much as the positive one: the equivalence must not make an uncleavable crosslinker cleavable,
+        /// and must not extend to unrelated dissociation types.
+        /// </summary>
+        [Test]
+        public static void CidCleavableCrosslinkerIsAlsoCleavedByLowCid()
+        {
+            var cidCleavable = new Crosslinker("K", "K", "DSSO-like", true, "CID|HCD", 100, 25, 60, 100, 0, 0, 50);
+            Assert.Multiple(() =>
+            {
+                Assert.That(cidCleavable.IsCleavedBy(DissociationType.CID), Is.True);
+                Assert.That(cidCleavable.IsCleavedBy(DissociationType.LowCID), Is.True);
+                Assert.That(cidCleavable.IsCleavedBy(DissociationType.HCD), Is.True);
+                Assert.That(cidCleavable.IsCleavedBy(DissociationType.ETD), Is.False);
+            });
+
+            // the equivalence runs one way only: declaring LowCID does not imply CID
+            var lowCidOnly = new Crosslinker("K", "K", "lowCidOnly", true, "LowCID", 100, 25, 60, 100, 0, 0, 50);
+            Assert.That(lowCidOnly.IsCleavedBy(DissociationType.LowCID), Is.True);
+            Assert.That(lowCidOnly.IsCleavedBy(DissociationType.CID), Is.False);
+
+            // an uncleavable crosslinker stays uncleavable whatever the dissociation type
+            var notCleavable = new Crosslinker("K", "K", "notCleavable", false, "", 100, 0, 0, 100, 0, 0, 50);
+            Assert.That(notCleavable.IsCleavedBy(DissociationType.CID), Is.False);
+            Assert.That(notCleavable.IsCleavedBy(DissociationType.LowCID), Is.False);
+        }
+
+        /// <summary>
+        /// ToString writes dissociation types with the enum's own casing ("EThcD", "LowCID") while the
+        /// custom-crosslinker GUI upper-cases what the user typed, so the parser has to accept both or it
+        /// silently drops entries on a save-and-reload (#2716).
+        /// </summary>
+        [Test]
+        public static void CleaveDissociationTypesParseRegardlessOfCase()
+        {
+            var written = new Crosslinker("K", "K", "roundTrip", true, "EThcD|LowCID", 100, 25, 60, 100, 0, 0, 50);
+            Assert.That(written.CleaveDissociationTypes,
+                Is.EquivalentTo(new[] { DissociationType.EThcD, DissociationType.LowCID }));
+
+            // what the GUI produces
+            var upperCased = new Crosslinker("K", "K", "fromGui", true, "ETHCD|LOWCID", 100, 25, 60, 100, 0, 0, 50);
+            Assert.That(upperCased.CleaveDissociationTypes,
+                Is.EquivalentTo(new[] { DissociationType.EThcD, DissociationType.LowCID }));
+
+            // and what a ToString round trip produces
+            var reparsed = new Crosslinker("K", "K", "reparsed", true,
+                Crosslinker.DissociationTypes2String(written.CleaveDissociationTypes), 100, 25, 60, 100, 0, 0, 50);
+            Assert.That(reparsed.CleaveDissociationTypes, Is.EquivalentTo(written.CleaveDissociationTypes));
+        }
+
         [Test]
         public static void XlTestXlPosCal()
         {
@@ -1587,14 +1639,15 @@ namespace Test
             Assert.That(csm.ScanNumber == 2);
 
             // test child scan (low-resolution CID, alpha peptide signature ion)
-            Assert.That(csm.ChildMatchedFragmentIons.First().Key == 4);
-            // 2 rather than 1 since #1797: DSSO is CID-cleavable, so its MS3 LowCID child scans are now
-            // searched with the cleaved masses, which matches one additional a* ion here
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 2);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Key, Is.EqualTo(4));
+            // 2 rather than 1 since #1797. Scan 4 is beta's signature ion, so it does not match alpha's
+            // stub masses and falls through to the MS3 fallback in ScoreChildScan, which now localizes
+            // against the cleaved masses instead of the intact crosslinker plus beta.
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count, Is.EqualTo(2));
 
             // test child scan (low-resolution CID, beta peptide signature ion)
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 4);
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 5);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key, Is.EqualTo(4));
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count, Is.EqualTo(5));
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0);
@@ -1603,13 +1656,14 @@ namespace Test
             // read results from TSV
             var psmFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(outputFile, out var warnings).First();
 
-            Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 4
-                && psmFromTsv.ChildScanMatchedIons.First().Key == 4
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 1);
+            Assert.That(psmFromTsv.ChildScanMatchedIons.Count, Is.EqualTo(4));
+            Assert.That(psmFromTsv.ChildScanMatchedIons.First().Key, Is.EqualTo(4));
+            // tracks the in-memory assertion above; both moved 1 -> 2 with #1797
+            Assert.That(psmFromTsv.ChildScanMatchedIons.First().Value.Count, Is.EqualTo(2));
 
-            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 4
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 4
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 5);
+            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count, Is.EqualTo(4));
+            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key, Is.EqualTo(4));
+            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count, Is.EqualTo(5));
 
             File.Delete(outputFile);
         }
