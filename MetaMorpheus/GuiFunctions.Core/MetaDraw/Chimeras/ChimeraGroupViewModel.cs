@@ -29,6 +29,8 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
     public MsDataScan Ms2Scan { get; }
     public ObservableCollection<ChimericSpectralMatchModel> ChimericPsms { get; }
 
+    private readonly DeconvolutionParameters _precursorDeconvolutionParameters;
+
     #region Plotting 
 
     private List<string> _letters = new List<string> { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
@@ -152,10 +154,16 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
 
     #endregion
 
-    public ChimeraGroupViewModel(IEnumerable<SpectrumMatchFromTsv> chimericSpectrumMatches, MsDataScan precursorSpectrum, MsDataScan fragmentationSpectrum)
+    /// <summary>
+    /// precursorDeconvolutionParameters is passed in rather than read off a settings singleton so this
+    /// class does not depend on the WPF view-model layer, and so a test can supply its own.
+    /// </summary>
+    public ChimeraGroupViewModel(IEnumerable<SpectrumMatchFromTsv> chimericSpectrumMatches, MsDataScan precursorSpectrum,
+        MsDataScan fragmentationSpectrum, DeconvolutionParameters precursorDeconvolutionParameters)
     {
         Ms1Scan = precursorSpectrum;
         Ms2Scan = fragmentationSpectrum;
+        _precursorDeconvolutionParameters = precursorDeconvolutionParameters;
         Letters = new (_letters);
 
         ChimericPsms = [.. ConstructChimericPsmModels(chimericSpectrumMatches)];
@@ -177,7 +185,7 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
     private IEnumerable<ChimericSpectralMatchModel> ConstructChimericPsmModels(IEnumerable<SpectrumMatchFromTsv> psms)
     {
         // Deconvolute the isolation window of the MS1 scan. 
-        var deconParams = MetaDrawSettingsViewModel.Instance.DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters;
+        var deconParams = _precursorDeconvolutionParameters;
         List<IsotopicEnvelope> envelopes = Ms2Scan.GetIsolatedMassesAndCharges(Ms1Scan, deconParams)
             .Where(p => p.Peaks.Count >= 2) // Magic number for quality filtering. 
             .ToList();

@@ -5,3 +5,5 @@ using System.Runtime.CompilerServices;
 // assembly boundary, so grant them access rather than widening the public API.
 [assembly: InternalsVisibleTo("GuiFunctions")]
 [assembly: InternalsVisibleTo("Test")]
+// The cross-platform test project compiles the same test files as Test, so it needs the same access.
+[assembly: InternalsVisibleTo("GuiFunctions.Core.Tests")]

@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Windows;
 using System;
 using System.Windows.Controls;
@@ -7,15 +7,6 @@ using System.Windows.Shapes;
 using System.Collections.Generic;
 
 namespace GuiFunctions.MetaDraw;
-public enum LegendDisplayProperty
-{
-    ProteinName,
-    ProteinAccession,
-    BaseSequence,
-    FullSequence,
-    Modifications
-}
-
 public class ChimeraLegendCanvas : Canvas
 {
     private const int TextFontSize = 12;
