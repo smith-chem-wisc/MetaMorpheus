@@ -27,8 +27,8 @@ namespace Test
         /// and then throw NullReferenceException out of UpdateSpectralLibrary, which surfaced as the task
         /// hanging on "Writing PSM results" with the exception only visible in results.txt afterwards.
         ///
-        /// The combination is refused before searching now, so the wasted run is what this pins: reaching
-        /// the check costs a database load, not a search.
+        /// The combination is refused before searching now, so the wasted run is what this pins. The check
+        /// also precedes the background protein load, so reaching it costs no I/O at all.
         /// </summary>
         [Test]
         public static void UpdatingASpectralLibraryWithoutOneIsRefusedBeforeSearching()
@@ -45,17 +45,40 @@ namespace Test
             string spectra = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 "TestData", "TaGe_SA_A549_3_snip.mzML");
 
-            var thrown = Assert.Throws<MetaMorpheusException>(() => task.RunTask(
-                outputFolder,
-                new List<DbForTask> { new DbForTask(database, false) },
-                new List<string> { spectra },
-                "TestUpdateWithoutLibrary"));
+            // "Before searching" is half the fix, so observe it rather than trusting the method name.
+            // Absence of output files does not show it: every result file is written by
+            // PostSearchAnalysisTask, so a check placed anywhere ahead of that leaves the folder empty even
+            // though the search ran. Engine start events are the signal that discriminates -- the guard
+            // precedes the database load, so no engine may start at all.
+            var enginesStarted = new List<string>();
+            void OnEngineStarting(object sender, SingleEngineEventArgs e)
+                => enginesStarted.Add(e.MyEngine.GetType().Name);
 
-            Assert.That(thrown.Message, Does.Contain("spectral library"));
+            MetaMorpheusEngine.StartingSingleEngineHander += OnEngineStarting;
+            MetaMorpheusException thrown;
+            try
+            {
+                thrown = Assert.Throws<MetaMorpheusException>(() => task.RunTask(
+                    outputFolder,
+                    new List<DbForTask> { new DbForTask(database, false) },
+                    new List<string> { spectra },
+                    "TestUpdateWithoutLibrary"));
+            }
+            finally
+            {
+                MetaMorpheusEngine.StartingSingleEngineHander -= OnEngineStarting;
+            }
+
             Assert.That(thrown.Message, Does.Contain("no spectral library was given").IgnoreCase,
                 "say what is missing, not just that something went wrong");
+            Assert.That(thrown.Message, Does.Contain("list of databases").IgnoreCase,
+                "and say what to do about it, so the message cannot be trimmed to the diagnosis alone");
 
-            Directory.Delete(outputFolder, recursive: true);
+            Assert.That(enginesStarted, Is.Empty,
+                "the refusal has to come before any work starts, but these ran: " + string.Join(", ", enginesStarted));
+
+            // No delete here: RunTask writes its toml one level above this folder, and a failing assertion
+            // would skip it anyway. OneTimeTearDown removes the whole root.
         }
 
         /// <summary>
