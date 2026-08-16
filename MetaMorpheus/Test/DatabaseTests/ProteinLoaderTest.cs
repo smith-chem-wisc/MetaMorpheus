@@ -247,6 +247,70 @@ namespace Test.DatabaseTests
             }
         }
 
+        /// <summary>
+        /// Writes a minimal protein database with one "modified residue" feature carrying the given description.
+        /// Deliberately omits the &lt;modification&gt; blocks a MetaMorpheus-written database embeds, because those
+        /// are loaded by GetPtmListFromProteinXml and would make any description resolvable.
+        /// </summary>
+        private static string WriteDbWithModificationDescription(string fileName, string modificationDescription)
+        {
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, fileName);
+            File.WriteAllText(path,
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<mzLibProteinDb>\n" +
+                "  <entry>\n" +
+                "  <accession>P12345</accession>\n" +
+                "    <name>TEST_PROTEIN</name>\n" +
+                "    <protein><recommendedName><fullName>Test protein</fullName></recommendedName></protein>\n" +
+                $"    <feature type=\"modified residue\" description=\"{modificationDescription}\">\n" +
+                "      <location>\n" +
+                "        <position position=\"3\" />\n" +
+                "      </location>\n" +
+                "    </feature>\n" +
+                "    <sequence length=\"11\">MPSPEPTIDEK</sequence>\n" +
+                "  </entry>\n" +
+                "</mzLibProteinDb>\n");
+            return path;
+        }
+
+        /// <summary>
+        /// A modification annotated in a database but absent from the known modifications is skipped by mzLib, which
+        /// records it in its unknownModifications dictionary. That dictionary used to be discarded here, so the
+        /// annotation vanished with nothing said about it (mzLib #417). It must now reach the user as a warning.
+        /// </summary>
+        [Test]
+        public static void UnmatchedModificationInDatabaseIsWarnedAbout()
+        {
+            string dbPath = WriteDbWithModificationDescription("unknownModDb.xml", "Nonexistent modification on S");
+
+            DatabaseLoadingEngine.LoadBioPolymers("TestTask", new List<DbForTask> { new DbForTask(dbPath, false) },
+                true, DecoyType.None, new List<string> { "UniProt" }, new CommonParameters(), out var errors);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(errors.Any(p => p.Contains("Nonexistent modification on S")),
+                    $"expected the unmatched modification to be named; got: {string.Join(" | ", errors)}");
+                Assert.That(errors.Any(p => p.Contains("unknownModDb.xml")),
+                    "expected the warning to name the database it came from");
+            });
+        }
+
+        /// <summary>
+        /// The counterpart: a modification that does resolve must not be reported. Without this, the warning above
+        /// could be satisfied by warning unconditionally, which would be worse than the silence it replaces.
+        /// </summary>
+        [Test]
+        public static void ResolvableModificationProducesNoUnmatchedModificationWarning()
+        {
+            string dbPath = WriteDbWithModificationDescription("knownModDb.xml", "Phosphoserine on S");
+
+            DatabaseLoadingEngine.LoadBioPolymers("TestTask", new List<DbForTask> { new DbForTask(dbPath, false) },
+                true, DecoyType.None, new List<string> { "UniProt" }, new CommonParameters(), out var errors);
+
+            Assert.That(errors.Any(p => p.Contains("could not be matched")), Is.False,
+                $"no unmatched-modification warning expected; got: {string.Join(" | ", errors)}");
+        }
+
         public class ProteinLoaderTask : MetaMorpheusTask
         {
             public ProteinLoaderTask(string x)
