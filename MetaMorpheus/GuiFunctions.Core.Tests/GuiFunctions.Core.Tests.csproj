@@ -62,6 +62,7 @@
 
   <!-- DATA -->
   <ItemGroup>
+    <None Include="..\Test\TestData\VariantCrossTest.psmtsv" Link="TestData\VariantCrossTest.psmtsv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Test\TestData\SequenceCoverageTestPSM.psmtsv" Link="TestData\SequenceCoverageTestPSM.psmtsv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Test\Transcriptomics\TestData\AllOligos.osmtsv" Link="Transcriptomics\TestData\AllOligos.osmtsv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
