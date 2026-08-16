@@ -6,11 +6,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Windows.Media;
 using Easy.Common.Extensions;
 using Readers;
 using GuiFunctions.MetaDraw;
-using OxyPlot.Wpf;
 using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
@@ -87,7 +85,8 @@ namespace GuiFunctions
 
         // biopolymer coverage settings
         public static int BioPolymerCoverageFontSize { get; set; } = 16;
-        public static Dictionary<BioPolymerCoverageType, SolidColorBrush> BioPolymerCoverageColors { get; set; }
+        // OxyColor, like every other colour here. The WPF drawing code converts at its own boundary.
+        public static Dictionary<BioPolymerCoverageType, OxyColor> BioPolymerCoverageColors { get; set; }
         public static ColorGradientType BioPolymerCoverageGradientType { get; set; } = ColorGradientType.Viridis;
 
         #endregion
@@ -130,7 +129,6 @@ namespace GuiFunctions
         public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
         public static OxyColor InternalIonColor { get; set; } = OxyColors.Purple;
-        public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
         public static double CanvasPdfExportDpi { get; set; } = 600;
         public static double AnnotatedSequenceTextSpacing { get; set; } = 22;
         public static int NumberOfAAOnScreen { get; set; }
@@ -176,7 +174,7 @@ namespace GuiFunctions
                 ModificationTypeToColor.TryAdd(rnaMod.IdWithMotif, OxyColors.Orange);
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
             CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
-            BioPolymerCoverageColors = Enum.GetValues<BioPolymerCoverageType>().ToDictionary(p => p, _ => Brushes.LightGray);
+            BioPolymerCoverageColors = Enum.GetValues<BioPolymerCoverageType>().ToDictionary(p => p, _ => OxyColors.LightGray);
 
             // If no default settings are saved, load in defaults
             string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
@@ -473,12 +471,12 @@ namespace GuiFunctions
         {
             BioPolymerCoverageColors = new()
             {
-                { BioPolymerCoverageType.Unique, Brushes.LightGreen },
-                { BioPolymerCoverageType.UniqueMissedCleavage, Brushes.YellowGreen },
-                { BioPolymerCoverageType.TandemRepeat, Brushes.LightBlue },
-                { BioPolymerCoverageType.TandemRepeatMissedCleavage, Brushes.SkyBlue },
-                { BioPolymerCoverageType.Shared, Brushes.Orange },
-                { BioPolymerCoverageType.SharedMissedCleavage, Brushes.OrangeRed }
+                { BioPolymerCoverageType.Unique, OxyColors.LightGreen },
+                { BioPolymerCoverageType.UniqueMissedCleavage, OxyColors.YellowGreen },
+                { BioPolymerCoverageType.TandemRepeat, OxyColors.LightBlue },
+                { BioPolymerCoverageType.TandemRepeatMissedCleavage, OxyColors.SkyBlue },
+                { BioPolymerCoverageType.Shared, OxyColors.Orange },
+                { BioPolymerCoverageType.SharedMissedCleavage, OxyColors.OrangeRed }
             };
         }
 
@@ -563,7 +561,7 @@ namespace GuiFunctions
                 DisplayFilteredOnly = DisplayFilteredOnly,
                 DataVisualizationColorOrder = DataVisualizationColorOrder?.Select(c => c.GetColorName()).ToList(),
                 BioPolymerCoverageFontSize = BioPolymerCoverageFontSize,
-                BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList(),
+                BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList(),
                 BioPolymerCoverageGradientType = BioPolymerCoverageGradientType,
                 
                 // Save from the new ViewModel structure
@@ -609,8 +607,8 @@ namespace GuiFunctions
             StrokeThicknessAnnotated = settings.StrokeThicknessAnnotated == 0 ? 1 : settings.StrokeThicknessAnnotated;
             AnnotateIsotopicEnvelopes = settings.AnnotateIsotopicEnvelopes;
             SpectrumDescriptionFontSize = settings.SpectrumDescriptionFontSize;
-            UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
-            InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
+            UnannotatedPeakColor = ParseOxyColorFromName(settings.UnannotatedPeakColor);
+            InternalIonColor = ParseOxyColorFromName(settings.InternalIonColor);
             SuppressMessageBoxes = settings.SuppressMessageBoxes;
             MinMzToPlot = settings.MinMzToPlot;
             MaxMzToPlot = settings.MaxMzToPlot;
@@ -644,7 +642,7 @@ namespace GuiFunctions
                     : // if they have the same number of elements, assume they are in the correct order
                     {
                         for (int i = 0; i < settings.ProductTypeToColorValues.Count; i++)
-                            ProductTypeToColor[ProductTypeToColor.ElementAt(i).Key] = DrawnSequence.ParseOxyColorFromName(settings.ProductTypeToColorValues[i]);
+                            ProductTypeToColor[ProductTypeToColor.ElementAt(i).Key] = ParseOxyColorFromName(settings.ProductTypeToColorValues[i]);
                         break;
                     }
                     // if it is a new settings file, assign colors by name
@@ -654,7 +652,7 @@ namespace GuiFunctions
                         {
                             var key = Enum.Parse<ProductType>(savedProductType.Split(',')[0]);
                             if (ProductTypeToColor.ContainsKey(key))
-                                ProductTypeToColor[key] = DrawnSequence.ParseOxyColorFromName(savedProductType.Split(',')[1]);
+                                ProductTypeToColor[key] = ParseOxyColorFromName(savedProductType.Split(',')[1]);
                         }
 
                         break;
@@ -681,7 +679,7 @@ namespace GuiFunctions
                         : // if they have the same number of elements, assume they are in the correct order
                     {
                         for (int i = 0; i < settings.BetaProductTypeToColorValues.Count; i++)
-                            BetaProductTypeToColor[BetaProductTypeToColor.ElementAt(i).Key] = DrawnSequence.ParseOxyColorFromName(settings.BetaProductTypeToColorValues[i]);
+                            BetaProductTypeToColor[BetaProductTypeToColor.ElementAt(i).Key] = ParseOxyColorFromName(settings.BetaProductTypeToColorValues[i]);
                         break;
                     }
                     // if it is a new settings file, assign colors by name
@@ -691,7 +689,7 @@ namespace GuiFunctions
                         {
                             var key = Enum.Parse<ProductType>(savedProductType.Split(',')[0]);
                             if (BetaProductTypeToColor.ContainsKey(key))
-                                BetaProductTypeToColor[key] = DrawnSequence.ParseOxyColorFromName(savedProductType.Split(',')[1]);
+                                BetaProductTypeToColor[key] = ParseOxyColorFromName(savedProductType.Split(',')[1]);
                         }
 
                         break;
@@ -717,7 +715,7 @@ namespace GuiFunctions
                         : // if they have the same number of mods as the default settings, assume they are in the correct order
                     {
                         for (int i = 0; i < settings.ModificationTypeToColorValues.Count; i++)
-                            ModificationTypeToColor[ModificationTypeToColor.ElementAt(i).Key] = DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[i]);
+                            ModificationTypeToColor[ModificationTypeToColor.ElementAt(i).Key] = ParseOxyColorFromName(settings.ModificationTypeToColorValues[i]);
                         break;
                     }
                     // if it is a new settings file, assign colors by name
@@ -727,7 +725,7 @@ namespace GuiFunctions
                         {
                             var key = savedProductType.Split(',')[0];
                             if (ModificationTypeToColor.ContainsKey(key))
-                                ModificationTypeToColor[key] = DrawnSequence.ParseOxyColorFromName(savedProductType.Split(',')[1]);
+                                ModificationTypeToColor[key] = ParseOxyColorFromName(savedProductType.Split(',')[1]);
                         }
 
                         break;
@@ -753,7 +751,7 @@ namespace GuiFunctions
                         : // if they have the same number of mods as the default settings, assume they are in the correct order
                     {
                         for (int i = 0; i < settings.CoverageTypeToColorValues.Count; i++)
-                            CoverageTypeToColor[CoverageTypeToColor.ElementAt(i).Key] = DrawnSequence.ParseOxyColorFromName(settings.CoverageTypeToColorValues[i]);
+                            CoverageTypeToColor[CoverageTypeToColor.ElementAt(i).Key] = ParseOxyColorFromName(settings.CoverageTypeToColorValues[i]);
                         break;
                     }
                     // if it is a new settings file, assign colors by name
@@ -763,7 +761,7 @@ namespace GuiFunctions
                         {
                             var key = savedProductType.Split(',')[0];
                             if (CoverageTypeToColor.ContainsKey(key))
-                                CoverageTypeToColor[key] = DrawnSequence.ParseOxyColorFromName(savedProductType.Split(',')[1]);
+                                CoverageTypeToColor[key] = ParseOxyColorFromName(savedProductType.Split(',')[1]);
                         }
                         break;
                     }
@@ -824,7 +822,7 @@ namespace GuiFunctions
                 if (settings.DataVisualizationColorOrder is { Count: > 0 })
                 {
                     DataVisualizationColorOrder = settings.DataVisualizationColorOrder
-                        .Select(DrawnSequence.ParseOxyColorFromName)
+                        .Select(ParseOxyColorFromName)
                         .ToList();
                 }
                 else
@@ -848,7 +846,7 @@ namespace GuiFunctions
                         var key = savedProductType.Split(',')[0];
                         var color = savedProductType.Split(',')[1];
                         var enumVal = Enum.Parse<BioPolymerCoverageType>(key);
-                        BioPolymerCoverageColors[enumVal] = DrawnSequence.ParseColorBrushFromName(color);
+                        BioPolymerCoverageColors[enumVal] = ParseOxyColorFromName(color);
                     }
                 }
                 else
@@ -868,6 +866,18 @@ namespace GuiFunctions
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
         {
             return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
+        }
+
+        /// <summary>
+        /// Resolves a saved colour name back to an OxyColor, falling back when the name is unknown.
+        /// Lives here rather than on DrawnSequence so the settings layer does not depend on the WPF
+        /// drawing code; DrawnSequence's brush-returning overload wraps this.
+        /// </summary>
+        public static OxyColor ParseOxyColorFromName(string name)
+        {
+            string cleanedName = name.Replace(" ", "");
+            var foundColor = PossibleColors.FirstOrDefault(p => p.Value == cleanedName).Key;
+            return foundColor == default ? FallbackColor : foundColor;
         }
     }
 }

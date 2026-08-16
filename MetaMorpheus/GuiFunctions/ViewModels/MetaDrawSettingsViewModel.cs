@@ -432,13 +432,13 @@ namespace GuiFunctions
                     if (ion.HasChanged)
                     {
                         if (ion.Name.Equals("Unannotated Peak"))
-                            MetaDrawSettings.UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
+                            MetaDrawSettings.UnannotatedPeakColor = MetaDrawSettings.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
                         else if (ion.Name.Equals("Internal Ion"))
-                            MetaDrawSettings.InternalIonColor = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
+                            MetaDrawSettings.InternalIonColor = MetaDrawSettings.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
                         else if (ion.IsBeta)
-                            MetaDrawSettings.BetaProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
+                            MetaDrawSettings.BetaProductTypeToColor[ion.IonType] = MetaDrawSettings.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
                         else
-                            MetaDrawSettings.ProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
+                            MetaDrawSettings.ProductTypeToColor[ion.IonType] = MetaDrawSettings.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
                     }
                 }
             }
@@ -449,7 +449,7 @@ namespace GuiFunctions
                 foreach (var mod in group)
                 {
                     if (mod.HasChanged)
-                        MetaDrawSettings.ModificationTypeToColor[mod.ModName] = DrawnSequence.ParseOxyColorFromName(mod.SelectedColor.Replace(" ", ""));
+                        MetaDrawSettings.ModificationTypeToColor[mod.ModName] = MetaDrawSettings.ParseOxyColorFromName(mod.SelectedColor.Replace(" ", ""));
                 }
             }
 
@@ -458,7 +458,7 @@ namespace GuiFunctions
             {
                 if (color.HasChanged)
                 {
-                    MetaDrawSettings.CoverageTypeToColor[color.Name] = DrawnSequence.ParseOxyColorFromName(color.SelectedColor.Replace(" ", ""));
+                    MetaDrawSettings.CoverageTypeToColor[color.Name] = MetaDrawSettings.ParseOxyColorFromName(color.SelectedColor.Replace(" ", ""));
                 }
             }
 
@@ -466,7 +466,7 @@ namespace GuiFunctions
             {
                 var color = DataVisualizationColors[i];
                 if (color.HasChanged)
-                    MetaDrawSettings.DataVisualizationColorOrder[i] = DrawnSequence.ParseOxyColorFromName(color.SelectedColor.Replace(" ", ""));
+                    MetaDrawSettings.DataVisualizationColorOrder[i] = MetaDrawSettings.ParseOxyColorFromName(color.SelectedColor.Replace(" ", ""));
             }
 
             foreach (var color in BioPolymerCoverageColors)
@@ -474,7 +474,7 @@ namespace GuiFunctions
                 if (color.HasChanged)
                 {
                     var key = Enum.Parse<BioPolymerCoverageType>(color.Name.Replace(" ", ""));
-                    MetaDrawSettings.BioPolymerCoverageColors[key] = color.ColorBrush;
+                    MetaDrawSettings.BioPolymerCoverageColors[key] = MetaDrawSettings.ParseOxyColorFromName(color.SelectedColor);
                 }
             }
         }
@@ -565,7 +565,7 @@ namespace GuiFunctions
         {
             foreach (var col in MetaDrawSettings.BioPolymerCoverageColors)
             {
-                _BioPolymerCoverageColors.Add(new(AddSpaces(col.Key.ToString()), col.Value));
+                _BioPolymerCoverageColors.Add(new(AddSpaces(col.Key.ToString()), DrawnSequence.ParseColorBrushFromOxyColor(col.Value)));
             }
         }
 

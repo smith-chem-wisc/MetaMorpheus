@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <!-- Deliberately net10.0 rather than net10.0-windows. Everything here is free of WPF, which is what
+         lets it be referenced by a cross-platform front end and tested on any operating system. If a
+         file added here starts using System.Windows, this project stops building and says so.
+
+         Also deliberately no PlatformTarget, unlike GuiFunctions.csproj which sets x64. An x64 stamp
+         cannot be loaded by an arm64 runtime (#2503, #2504), and this project exists to be loadable
+         anywhere. Leave it unset rather than setting AnyCPU, which Microsoft.ML rejects at build. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OxyPlot.Core" Version="2.2.0" />
+  </ItemGroup>
+
+</Project>

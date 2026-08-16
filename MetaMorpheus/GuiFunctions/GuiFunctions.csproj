@@ -17,12 +17,13 @@
     <PackageReference Include="itext7" Version="9.7.0" />
     <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.7.0" />
     <PackageReference Include="mzLib" Version="1.0.584" />
-    <PackageReference Include="OxyPlot.Wpf" Version="2.0.0" />
+    <PackageReference Include="OxyPlot.Wpf" Version="2.2.0" />
     <PackageReference Include="Svg" Version="3.4.7" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
+    <ProjectReference Include="..\GuiFunctions.Core\GuiFunctions.Core.csproj" />
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
   </ItemGroup>
 
