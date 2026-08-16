@@ -29,7 +29,8 @@ using LineSeries = OxyPlot.Series.LineSeries;
 using Path = System.IO.Path;
 using Polyline = System.Windows.Shapes.Polyline;
 using Omics;
-using PlotColumnSeries = OxyPlot.Series.ColumnSeries;
+using PlotColumnSeries = GuiFunctions.StackedColumnSeries;
+using PlotColumnItem = GuiFunctions.StackedColumnItem;
 using PlotCategoryAxis = OxyPlot.Axes.CategoryAxis;
 
 namespace Test.MetaDraw
@@ -42,6 +43,15 @@ namespace Test.MetaDraw
         public static void SetUp()
         {
             MetaDrawSettings.ResetSettings();
+        }
+
+        /// <summary>
+        /// The bars of a histogram series, in the order PlotModelStat added them.
+        /// </summary>
+        private static List<PlotColumnItem> HistogramItems(OxyPlot.Series.Series series)
+        {
+            Assert.That(series, Is.InstanceOf<PlotColumnSeries>());
+            return ((PlotColumnSeries)series).Items.OfType<PlotColumnItem>().ToList();
         }
 
         [Test, Category("PlotModelStat")]
@@ -104,7 +114,7 @@ namespace Test.MetaDraw
 
             var normalizedValues = plot.Model.Series
                 .OfType<PlotColumnSeries>()
-                .SelectMany(series => series.Items)
+                .SelectMany(series => series.Items.OfType<PlotColumnItem>())
                 .Select(item => item.Value)
                 .ToList();
 
@@ -377,7 +387,7 @@ namespace Test.MetaDraw
             // Check that all values in the series are >= 0.1 (the clamped minimum)
             foreach (var series in columnSeries)
             {
-                foreach (var item in series.Items)
+                foreach (var item in series.Items.OfType<PlotColumnItem>())
                 {
                     // Values should be at least 0.1 (or 0 if empty)
                     Assert.That(item.Value, Is.GreaterThanOrEqualTo(0).Or.EqualTo(0.1),
@@ -2107,38 +2117,33 @@ namespace Test.MetaDraw
 
             var plot2 = new PlotModelStat("Histogram of Precursor Charges", psms, psmDict);
             var series2 = plot2.Model.Series.ToList()[0];
-            var items2 = (List<OxyPlot.Series.ColumnItem>)series2.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series2);
+            var items2 = HistogramItems(series2);
             Assert.That(items2[0].Value, Is.EqualTo(9));
             Assert.That(items2[1].Value, Is.EqualTo(1));
 
             var plot3 = new PlotModelStat("Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
                 psms, psmDict);
             var series3 = plot3.Model.Series.ToList()[0];
-            var items3 = (List<OxyPlot.Series.ColumnItem>)series3.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series3);
+            var items3 = HistogramItems(series3);
             Assert.That(items3[7].Value, Is.EqualTo(2));
 
             var plot4 = new PlotModelStat("Histogram of Fragment Charges",
                 psms, psmDict);
             var series4 = plot4.Model.Series.ToList()[0];
-            var items4 = (List<OxyPlot.Series.ColumnItem>)series4.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series4);
+            var items4 = HistogramItems(series4);
             Assert.That(items4[0].Value, Is.EqualTo(101));
 
             var plot5 = new PlotModelStat("Histogram of Precursor m/z",
                 psms, psmDict);
             var series5 = plot5.Model.Series.ToList()[0];
-            var items5 = (List<OxyPlot.Series.ColumnItem>)series5.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series5);
+            var items5 = HistogramItems(series5);
             Assert.That(items5.Count, Is.EqualTo(5));
             Assert.That(items5[0].Value, Is.EqualTo(5));
 
             var plot6 = new PlotModelStat("Histogram of PTM Spectral Counts",
                 psms, psmDict);
             var series6 = plot6.Model.Series.ToList()[0];
-            var items6 = (List<OxyPlot.Series.ColumnItem>)series6.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series6);
+            var items6 = HistogramItems(series6);
             Assert.That(items6.Count, Is.EqualTo(1));
             Assert.That(items6[0].Value, Is.EqualTo(2));
 
@@ -2165,15 +2170,13 @@ namespace Test.MetaDraw
             var plot9 = new PlotModelStat("Histogram of Fragment PPM Errors",
                 psms, psmDict);
             var series9 = plot9.Model.Series.ToList()[0];
-            var items9 = (List<OxyPlot.Series.ColumnItem>)series9.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series9);
+            var items9 = HistogramItems(series9);
             Assert.That(items9[11].Value, Is.EqualTo(2));
 
             var plot10 = new PlotModelStat("Histogram of Hydrophobicity scores",
                 psms, psmDict);
             var series10 = plot10.Model.Series.ToList()[0];
-            var items10 = (List<OxyPlot.Series.ColumnItem>)series10.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series10);
+            var items10 = HistogramItems(series10);
             Assert.That(items10.Count, Is.EqualTo(5));
             Assert.That(items10[1].Value, Is.EqualTo(3));
 
@@ -2208,32 +2211,28 @@ namespace Test.MetaDraw
             // Histogram of Fragment Ion Types by Count
             var plot11 = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
             var series11 = plot11.Model.Series.ToList()[0];
-            var items11 = (List<OxyPlot.Series.ColumnItem>)series11.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series11);
+            var items11 = HistogramItems(series11);
             Assert.That(items11.Count, Is.GreaterThan(0)); // At least one fragment type
             Assert.That(items11.Sum(i => i.Value), Is.GreaterThan(0)); // At least one count
 
             // Histogram of Fragment Ion Types by Intensity
             var plot12 = new PlotModelStat("Histogram of Fragment Ion Types by Intensity", psms, psmDict);
             var series12 = plot12.Model.Series.ToList()[0];
-            var items12 = (List<OxyPlot.Series.ColumnItem>)series12.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series12);
+            var items12 = HistogramItems(series12);
             Assert.That(items12.Count, Is.GreaterThan(0)); // At least one fragment type
             Assert.That(items12.Sum(i => i.Value), Is.GreaterThan(0)); // At least one intensity
 
             // Histogram of Ids by Retention Time
             var plot13 = new PlotModelStat("Histogram of Ids by Retention Time", psms, psmDict);
             var series13 = plot13.Model.Series.ToList()[0];
-            var items13 = (List<OxyPlot.Series.ColumnItem>)series13.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series13);
+            var items13 = HistogramItems(series13);
             Assert.That(items13.Count, Is.GreaterThan(0)); // At least one retention time bin
             Assert.That(items13.Sum(i => i.Value), Is.GreaterThan(0)); // At least one ID
 
             // Histogram of Missed Cleavages
             var plot14 = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
             var series14 = plot14.Model.Series.ToList()[0];
-            var items14 = (List<OxyPlot.Series.ColumnItem>)series14.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series14);
+            var items14 = HistogramItems(series14);
             Assert.That(items14.Count, Is.GreaterThan(0)); // At least one missed cleavage bin
             Assert.That(items14.Sum(i => i.Value), Is.GreaterThanOrEqualTo(0)); // Non-negative count
 
@@ -2241,15 +2240,13 @@ namespace Test.MetaDraw
             PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = false;
             var plotMissedNormOff = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
             var seriesMissedNormOff = plotMissedNormOff.Model.Series.ToList()[0];
-            var itemsMissedNormOff = (List<OxyPlot.Series.ColumnItem>)seriesMissedNormOff.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesMissedNormOff);
+            var itemsMissedNormOff = HistogramItems(seriesMissedNormOff);
             double sumMissedNormOff = itemsMissedNormOff.Sum(i => i.Value);
 
             PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = true;
             var plotMissedNormOn = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
             var seriesMissedNormOn = plotMissedNormOn.Model.Series.ToList()[0];
-            var itemsMissedNormOn = (List<OxyPlot.Series.ColumnItem>)seriesMissedNormOn.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesMissedNormOn);
+            var itemsMissedNormOn = HistogramItems(seriesMissedNormOn);
             double sumMissedNormOn = itemsMissedNormOn.Sum(i => i.Value);
 
             Assert.That(sumMissedNormOn, Is.LessThanOrEqualTo(1.0));
@@ -2262,16 +2259,14 @@ namespace Test.MetaDraw
             PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = false;
             var plotNormOff = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
             var seriesNormOff = plotNormOff.Model.Series.ToList()[0];
-            var itemsNormOff = (List<OxyPlot.Series.ColumnItem>)seriesNormOff.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesNormOff);
+            var itemsNormOff = HistogramItems(seriesNormOff);
             double sumNormOff = itemsNormOff.Sum(i => i.Value);
 
             // Test normalization ON
             PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = true;
             var plotNormOn = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
             var seriesNormOn = plotNormOn.Model.Series.ToList()[0];
-            var itemsNormOn = (List<OxyPlot.Series.ColumnItem>)seriesNormOn.GetType()
-                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesNormOn);
+            var itemsNormOn = HistogramItems(seriesNormOn);
             double sumNormOn = itemsNormOn.Sum(i => i.Value);
 
             // When normalized, the sum should be <= 1 (since values are divided by total count)
@@ -2874,7 +2869,7 @@ namespace Test.MetaDraw
 
                 var values = plot.Model.Series
                     .OfType<PlotColumnSeries>()
-                    .SelectMany(s => s.Items)
+                    .SelectMany(s => s.Items.OfType<PlotColumnItem>())
                     .Select(item => item.Value)
                     .ToList();
                 Assert.That(values, Is.Not.Empty);

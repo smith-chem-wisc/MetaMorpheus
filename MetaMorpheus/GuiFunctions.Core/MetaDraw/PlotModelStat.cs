@@ -29,6 +29,34 @@ namespace GuiFunctions
         /// </summary>
         public List<Dictionary<string, string>> PlotData { get; private set; } = new();
 
+        /// <summary>
+        /// Running stack height per category, shared by every series in this plot. ColumnSeries did
+        /// this internally through IsStacked; RectangleBarSeries has no equivalent, so it is explicit.
+        /// One plot per instance, so it resets naturally.
+        /// </summary>
+        private readonly Dictionary<int, double> stackTops = new();
+
+        private int seriesColorIndex;
+
+        /// <summary>
+        /// Gap between bars on the category axis. Shared with StackedColumnSeries, which has to size
+        /// its rectangles from the same number - a mismatch changes every bar's width silently.
+        /// </summary>
+        private const double CategoryGapWidth = 0.3;
+        private const double GroupedCategoryGapWidth = 0.1;
+
+        /// <summary>
+        /// ColumnSeries took its colour from PlotModel.DefaultColors automatically. RectangleBarSeries
+        /// does not, so the same palette is walked in the same order here.
+        /// </summary>
+        private OxyColor NextSeriesColor()
+        {
+            var palette = MetaDrawSettings.DataVisualizationColorOrder;
+            if (palette is null || palette.Count == 0)
+                return OxyColors.Automatic;
+            return palette[seriesColorIndex++ % palette.Count];
+        }
+
         public readonly static List<string> PlotNames = new List<string> {
             "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
             "Histogram of Fragment PPM Errors",
@@ -137,7 +165,7 @@ namespace GuiFunctions
 
         private void histogramPlot(int plotType)
         {
-            privateModel.LegendTitle = "Source file(s)";
+            privateModel.Legends.Add(new OxyPlot.Legends.Legend { LegendTitle = "Source file(s)" });
 
             bool isGroupingEnabled = parameters.GroupingProperty != "None";
             Dictionary<string, Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>> groupedPsmsBySourceFile = null;
@@ -259,13 +287,12 @@ namespace GuiFunctions
 
                 foreach (string sourceFile in psmsBySourceFile.Keys)
                 {
-                    ColumnSeries column = new ColumnSeries
+                    var column = new StackedColumnSeries(stackTops, parameters.UseLogScaleYAxis ? 0.1 : 0)
                     {
-                        ColumnWidth = 200,
-                        IsStacked = true,
                         Title = sourceFile,
-                        TrackerFormatString = "Category: {bin}\n{0}: {2}\nGroup: {group}\nTotal: {total}",
-                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                        TrackerFormatString = "Category: {bin}\n{0}: {Value}\nGroup: {group}\nTotal: {total}",
+                        FillColor = NextSeriesColor(),
+                        GapWidth = isGroupingEnabled ? GroupedCategoryGapWidth : CategoryGapWidth
                     };
 
                     foreach (string groupKey in allGroupKeys)
@@ -276,7 +303,7 @@ namespace GuiFunctions
                             {
                                 string lookupKey = cat + "|" + groupKey;
                                 if (categoryToIndex.ContainsKey(lookupKey))
-                                    column.Items.Add(new HistItem(0, categoryToIndex[lookupKey], cat, filteredCounts[filteredCategoryIDs[cat]], groupKey));
+                                    column.AddItem(0, categoryToIndex[lookupKey], cat, filteredCounts[filteredCategoryIDs[cat]], groupKey);
                             }
                             continue;
                         }
@@ -295,7 +322,7 @@ namespace GuiFunctions
                             if (parameters.UseLogScaleYAxis && value > 0 && value < 0.1)
                                 value = 0.1;
 
-                            column.Items.Add(new HistItem(value, categoryToIndex[lookupKey], cat, filteredCounts[catId], groupKey));
+                            column.AddItem(value, categoryToIndex[lookupKey], cat, filteredCounts[catId], groupKey);
 
                             PlotData.Add(new Dictionary<string, string>
                             {
@@ -314,13 +341,12 @@ namespace GuiFunctions
             {
                 foreach (string key in dictsBySourceFile.Keys)
                 {
-                    ColumnSeries column = new ColumnSeries
+                    var column = new StackedColumnSeries(stackTops, parameters.UseLogScaleYAxis ? 0.1 : 0)
                     {
-                        ColumnWidth = 200,
-                        IsStacked = true,
                         Title = key,
-                        TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}",
-                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                        TrackerFormatString = "Bin: {bin}\n{0}: {Value}\nTotal: {total}",
+                        FillColor = NextSeriesColor(),
+                        GapWidth = isGroupingEnabled ? GroupedCategoryGapWidth : CategoryGapWidth
                     };
 
                     foreach (var d in dictsBySourceFile[key])
@@ -334,7 +360,7 @@ namespace GuiFunctions
                         if (parameters.UseLogScaleYAxis && value < 0.1)
                             value = 0.1;
 
-                        column.Items.Add(new HistItem(value, id, d.Key, filteredCounts[id]));
+                        column.AddItem(value, id, d.Key, filteredCounts[id]);
 
                         PlotData.Add(new Dictionary<string, string>
                         {
@@ -460,13 +486,12 @@ namespace GuiFunctions
 
                 foreach (string sourceFile in psmsBySourceFile.Keys)
                 {
-                    var column = new ColumnSeries
+                    var column = new StackedColumnSeries(stackTops, parameters.UseLogScaleYAxis ? 0.1 : 0)
                     {
-                        ColumnWidth = 200,
-                        IsStacked = true,
                         Title = sourceFile,
-                        TrackerFormatString = "Bin: {bin}\n{0}: {2}\nGroup: {group}\nTotal: {total}",
-                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                        TrackerFormatString = "Bin: {bin}\n{0}: {Value}\nGroup: {group}\nTotal: {total}",
+                        FillColor = NextSeriesColor(),
+                        GapWidth = isGroupingEnabled ? GroupedCategoryGapWidth : CategoryGapWidth
                     };
 
                     foreach (string groupKey in allGroupKeys)
@@ -477,8 +502,8 @@ namespace GuiFunctions
                             {
                                 string lookupKey = binKey.ToString() + "|" + groupKey;
                                 if (categoryToIndex.ContainsKey(lookupKey))
-                                    column.Items.Add(new HistItem(0, categoryToIndex[lookupKey],
-                                        (binKey * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[binToFilteredIndex[binKey]], groupKey));
+                                    column.AddItem(0, categoryToIndex[lookupKey],
+                                        (binKey * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[binToFilteredIndex[binKey]], groupKey);
                             }
                             continue;
                         }
@@ -500,8 +525,8 @@ namespace GuiFunctions
                             if (parameters.UseLogScaleYAxis && value > 0 && value < 0.1)
                                 value = 0.1;
 
-                            column.Items.Add(new HistItem(value, categoryToIndex[lookupKey],
-                                (binKey * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[binToFilteredIndex[binKey]], groupKey));
+                            column.AddItem(value, categoryToIndex[lookupKey],
+                                (binKey * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[binToFilteredIndex[binKey]], groupKey);
 
                             PlotData.Add(new Dictionary<string, string>
                             {
@@ -520,13 +545,12 @@ namespace GuiFunctions
             {
                 foreach (string key in dictsBySourceFile.Keys)
                 {
-                    var column = new ColumnSeries
+                    var column = new StackedColumnSeries(stackTops, parameters.UseLogScaleYAxis ? 0.1 : 0)
                     {
-                        ColumnWidth = 200,
-                        IsStacked = true,
                         Title = key,
-                        TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}",
-                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                        TrackerFormatString = "Bin: {bin}\n{0}: {Value}\nTotal: {total}",
+                        FillColor = NextSeriesColor(),
+                        GapWidth = isGroupingEnabled ? GroupedCategoryGapWidth : CategoryGapWidth
                     };
 
                     foreach (var d in dictsBySourceFile[key])
@@ -541,8 +565,8 @@ namespace GuiFunctions
                         if (parameters.UseLogScaleYAxis && value < 0.1)
                             value = 0.1;
 
-                        column.Items.Add(new HistItem(value, filteredIdx,
-                            (bin * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[filteredIdx]));
+                        column.AddItem(value, filteredIdx,
+                            (bin * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[filteredIdx]);
 
                         PlotData.Add(new Dictionary<string, string>
                         {
@@ -577,13 +601,13 @@ namespace GuiFunctions
                 Position = AxisPosition.Bottom,
                 ItemsSource = category,
                 Title = isGroupingEnabled ? null : xAxisTitle,
-                GapWidth = 0.3,
+                GapWidth = CategoryGapWidth,
                 Angle = labelAngle,
             };
 
             if (isGroupingEnabled && allGroupKeys != null && allGroupKeys.Count > 0 && categoriesPerGroup > 0)
             {
-                mainAxis.GapWidth = 0.1;
+                mainAxis.GapWidth = GroupedCategoryGapWidth;
 
                 if (allGroupKeys.Count > 1)
                 {
@@ -627,7 +651,7 @@ namespace GuiFunctions
                     Position = AxisPosition.Bottom,
                     Key = "GroupAxis",
                     ItemsSource = groupLabels,
-                    GapWidth = 0.1,
+                    GapWidth = GroupedCategoryGapWidth,
                     Angle = 0,
                     Title = parameters.GroupingProperty,
                     TitleFontWeight = FontWeights.Normal,
@@ -869,20 +893,6 @@ namespace GuiFunctions
                 values.Add(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split("|")[0], null)));
             }
             return values;
-        }
-
-        private class HistItem : ColumnItem
-        {
-            public int total { get; set; }
-            public string bin { get; set; }
-            public string group { get; set; }
-            
-            public HistItem(double value, int categoryIndex, string bin, int total, string group = null) : base(value, categoryIndex)
-            {
-                this.total = total;
-                this.bin = bin;
-                this.group = group;
-            }
         }
 
         private static IEnumerable<string> SplitAmbiguousNotch(string notch)

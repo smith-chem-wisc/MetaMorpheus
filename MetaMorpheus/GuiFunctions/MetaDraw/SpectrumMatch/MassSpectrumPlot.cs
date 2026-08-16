@@ -62,8 +62,20 @@ public class MassSpectrumPlot : PlotBase
     public void ExportToPng(string path, int width = 800, int height = 600)
     {
         using var s = File.Create(path);
-        var pngExporter = new OxyPlot.Wpf.PngExporter { Width = width, Height = height, Background = OxyColors.White };
-        pngExporter.Export(Model, s);
+        var pngExporter = new OxyPlot.Wpf.PngExporter { Width = width, Height = height };
+
+        // OxyPlot 2.2 dropped PngExporter.Background; the exporter reads PlotModel.Background
+        // instead. Set it for the export only, so the white background is unchanged.
+        var previousBackground = Model.Background;
+        Model.Background = OxyColors.White;
+        try
+        {
+            pngExporter.Export(Model, s);
+        }
+        finally
+        {
+            Model.Background = previousBackground;
+        }
     }
 
     /// <summary>
