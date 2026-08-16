@@ -57,7 +57,6 @@
     <Compile Remove="..\Test\MetaDraw\MetaDrawSettingsAndViewsTest.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawTest.cs" />
     <Compile Remove="..\Test\MetaDraw\Ms1ChimeraPlotTests.cs" />
-    <Compile Remove="..\Test\MetaDraw\PlotModelStatParametersTests.cs" />
     <Compile Remove="..\Test\MetaDraw\SpectrumMatchPlotTests.cs" />
   </ItemGroup>
 

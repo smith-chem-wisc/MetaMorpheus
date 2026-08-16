@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -21,6 +21,20 @@ namespace Test.MetaDraw;
 [ExcludeFromCodeCoverage]
 public class ChimeraGroupViewModelTests
 {
+
+    /// <summary>
+    /// Matches what MetaDrawSettingsViewModel does to its own host (MetaDrawSettingsViewModel.cs:385-387),
+    /// but without touching the WPF view model, so this fixture runs off Windows.
+    /// </summary>
+    private static DeconvolutionParameters TestPrecursorDeconParameters
+    {
+        get
+        {
+            var host = new DeconHostViewModel();
+            host.SetAllPrecursorMaxChargeState(60);
+            return host.PrecursorDeconvolutionParameters.Parameters;
+        }
+    }
     public static ChimeraTestCase OneProteinTwoProteoformChimeraGroup;
     public static ChimeraTestCase TwoProteinsTwoProteoformChimeraGroup;
     public static List<SpectrumMatchFromTsv> AllMatches;
@@ -41,7 +55,7 @@ public class ChimeraGroupViewModelTests
         var testMs1Scan = DataFile.GetOneBasedScan(900);
         var testMs2Scan = DataFile.GetOneBasedScan(901);
         var testPsms = AllMatches.Where(p => p.Ms2ScanNumber == testMs2Scan.OneBasedScanNumber);
-        var group = new ChimeraGroupViewModel(testPsms, testMs1Scan, testMs2Scan);
+        var group = new ChimeraGroupViewModel(testPsms, testMs1Scan, testMs2Scan, TestPrecursorDeconParameters);
         var ions = group.AssignFragmentIonColors()
             .ToDictionary(p => p.Key, p => p.Value.Select(m => m.Item1).ToList());
         OneProteinTwoProteoformChimeraGroup = new ChimeraTestCase(group, ions);
@@ -49,7 +63,7 @@ public class ChimeraGroupViewModelTests
         var testMs1Scan2 = DataFile.GetOneBasedScan(1243);
         var testMs2Scan2 = DataFile.GetOneBasedScan(1246);
         var testPsms2 = AllMatches.Where(p => p.Ms2ScanNumber == testMs2Scan2.OneBasedScanNumber && p.QValue <= 0.01);
-        var group2 = new ChimeraGroupViewModel(testPsms2, testMs1Scan2, testMs2Scan2);
+        var group2 = new ChimeraGroupViewModel(testPsms2, testMs1Scan2, testMs2Scan2, TestPrecursorDeconParameters);
         var ions2 = group2.AssignFragmentIonColors()
             .ToDictionary(p => p.Key, p => p.Value.Select(m => m.Item1).ToList());
 
