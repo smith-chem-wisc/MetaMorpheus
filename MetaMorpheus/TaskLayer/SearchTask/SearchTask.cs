@@ -162,13 +162,10 @@ namespace TaskLayer
 
             MyTaskResults = new(this);
 
-            // Checked HERE, before a single spectrum is read, rather than at write time.
-            //
-            // Asking for an SDRF is an assertion that the sample metadata exists. If it does not,
-            // the only alternatives are to write "not available" -- producing a file that passes
-            // every validator and answers no question -- or to fail. Failing is right, and failing
-            // before a three-hour search is a great deal better than failing after it.
-            ValidateSdrfPrerequisites(currentRawFileList);
+            // Reported HERE, before a single spectrum is read, rather than only at write time --
+            // a gap named up front can still be fixed cheaply, whereas one named after a three-hour
+            // search cannot. This warns; it does not refuse the run.
+            WarnAboutSdrfGaps(currentRawFileList);
 
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
@@ -623,17 +620,20 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Refuses the run if SDRF output was requested but the sample metadata that only a human
-        /// can supply is missing.
+        /// Reports, before the search starts, which parts of the SDRF this run will not be able to
+        /// fill in. It does NOT refuse the run.
         ///
-        /// The search parameters -- enzyme, modifications, tolerances, instrument -- are always
-        /// available and always complete. The sample half is not: organism part, disease, cell type
-        /// and replicate structure come from ExperimentalDesign.tsv beside the spectra, and nothing
-        /// in a search can infer them. Emitting a document padded with reserved words would be
-        /// uniformly consistent, perfectly valid, and useless for the cross-experiment mining the
-        /// file exists to enable.
+        /// It used to. That was stricter than the specification -- which marks organism part
+        /// required but explicitly permits the reserved words -- and stricter than the community,
+        /// a fifth of whose curated cells are one. It was also self-defeating: a user who is blocked
+        /// turns the feature off, and then there is no file at all.
+        ///
+        /// What replaces the refusal is not silence. The gaps are named here, before the run, so
+        /// they can still be fixed cheaply; they are named again in the coverage report afterwards,
+        /// against what was actually written. An SDRF padded with reserved words is honest and
+        /// spec-conformant; one whose emptiness is never mentioned is how a corpus fills with holes.
         /// </summary>
-        private void ValidateSdrfPrerequisites(List<string> currentRawFileList)
+        private void WarnAboutSdrfGaps(List<string> currentRawFileList)
         {
             if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
                 return;
@@ -643,23 +643,27 @@ namespace TaskLayer
                 GlobalVariables.ExperimentalDesignFileName);
 
             if (!File.Exists(designPath))
-                throw new MetaMorpheusException(
-                    "SDRF output was requested, but there is no " + GlobalVariables.ExperimentalDesignFileName +
-                    " beside the spectra files (" + designPath + "). An SDRF records which sample each " +
-                    "file came from, and nothing in a search knows that. Set up the experimental design " +
-                    "first, or turn off SDRF output.");
+            {
+                Warn("SDRF output is on, but there is no " + GlobalVariables.ExperimentalDesignFileName +
+                     " beside the spectra files (" + designPath + "). The search parameters will be " +
+                     "recorded in full; condition, replicate and fraction will not, and the sample " +
+                     "columns will say 'not available'. Set up the experimental design to fix that.");
+            }
+            else
+            {
+                ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
+                if (designErrors.Any())
+                    Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
+                         " cannot be used as it stands, so the SDRF will describe the search only: " +
+                         string.Join("; ", designErrors));
+            }
 
-            ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
-            if (designErrors.Any())
-                throw new MetaMorpheusException(
-                    "SDRF output was requested, but " + GlobalVariables.ExperimentalDesignFileName +
-                    " cannot be used as it stands: " + string.Join("; ", designErrors));
-
-            // Isobaric labelling cannot be described yet: SDRF wants one row per sample per channel,
-            // and MetaMorpheus models a single tag type for the whole search with no channel-to-
-            // sample mapping. Guessing one would invent an experimental design.
-            if (SearchParameters.DoMultiplexQuantification)
-                Warn("SDRF output with isobaric labelling: comment[label] cannot be filled in, because " +
+            // Labelled runs cannot express comment[label]: SDRF wants one row per sample per channel,
+            // and MetaMorpheus has no channel-to-sample mapping for isobaric tags or for SILAC.
+            // Guessing one would invent an experimental design.
+            if (SearchParameters.DoMultiplexQuantification
+                || SearchParameters.SilacLabels?.Any() == true)
+                Warn("SDRF output on a labelled search: comment[label] cannot be filled in, because " +
                      "MetaMorpheus has no channel-to-sample mapping. Every other column will be written.");
         }
 

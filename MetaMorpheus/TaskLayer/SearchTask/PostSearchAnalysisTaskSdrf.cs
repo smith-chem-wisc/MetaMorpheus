@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EngineLayer;
+using EngineLayer.DIA;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics.Modifications;
@@ -104,7 +105,7 @@ namespace TaskLayer
                     Organism = organism,
                     // SDRF is 1-based; SpectraFileInfo stores these 0-based.
                     BiologicalReplicate = (sampleInfo?.BiologicalReplicate ?? 0) + 1,
-                    Label = ResolveLabel(),
+                    Label = ResolveLabel(Parameters.SearchParameters),
                     FactorValue = sampleInfo?.Condition,
                     FactorValueColumn = string.IsNullOrWhiteSpace(sampleInfo?.Condition)
                         ? null
@@ -122,7 +123,7 @@ namespace TaskLayer
                     FixedModifications = ResolveModifications(common.ListOfModsFixed),
                     VariableModifications = ResolveModifications(common.ListOfModsVariable),
                     DissociationType = common.DissociationType,
-                    AcquisitionMethod = new CvParam("PRIDE", "PRIDE:0000627", "Data-dependent acquisition", ""),
+                    AcquisitionMethod = ResolveAcquisitionMethod(common),
                     TechnicalReplicate = (sampleInfo?.TechnicalReplicate ?? 0) + 1,
                     Fraction = (sampleInfo?.Fraction ?? 0) + 1
                 };
@@ -201,18 +202,55 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Label-free and SILAC are expressible; isobaric labelling is not, and says so.
+        /// Only a genuinely label-free search is described as label free.
         ///
-        /// SDRF wants one row per sample per CHANNEL, and MetaMorpheus models a single tag type for
-        /// the whole search with no channel-to-sample mapping anywhere. Guessing one would invent
-        /// an experimental design, so the label is left unresolved and the coverage report shows it.
+        /// SDRF wants one row per sample per CHANNEL, and MetaMorpheus has no channel-to-sample
+        /// mapping for EITHER isobaric tags or SILAC -- it models the labelling scheme for the whole
+        /// search, not which sample sat in which channel. Guessing one would invent an experimental
+        /// design, so the label is left unresolved and the coverage report shows it.
+        ///
+        /// Returning "label free sample" for a labelled run would be worse than returning nothing:
+        /// the column comes out fully populated with a confident falsehood, which
+        /// <see cref="SdrfCoverage"/> cannot flag because it only measures emptiness.
+        ///
+        /// Static and parameterised so the decision can be tested without driving a whole search.
         /// </summary>
-        private CvParam ResolveLabel()
+        private static CvParam ResolveLabel(SearchParameters searchParameters)
         {
-            if (Parameters.SearchParameters.DoMultiplexQuantification)
+            if (searchParameters.DoMultiplexQuantification)
+                return null;
+
+            // SILAC, including the turnover variants, which carry their labels separately.
+            if (searchParameters.SilacLabels?.Any() == true
+                || searchParameters.StartTurnoverLabel is not null
+                || searchParameters.EndTurnoverLabel is not null)
                 return null;
 
             return new CvParam("", "", "label free sample", "");
+        }
+
+        /// <summary>
+        /// The acquisition method, read from the search rather than assumed.
+        ///
+        /// Every MetaMorpheus search today is data-dependent, which is exactly why this was
+        /// hardcoded and exactly why that was a hazard: a constant is not wrong until the day the
+        /// capability lands, and then it is wrong invisibly. The column would be 100% filled with a
+        /// false CV term, so no coverage or drift instrument could see it.
+        ///
+        /// In-source decay deliberately resolves to nothing. It is not a precursor-selection scheme
+        /// and PSI-MS/PRIDE define no acquisition-method term for it; borrowing the nearest-looking
+        /// one is the misannotation D12 exists to keep out of authored output.
+        /// </summary>
+        private static CvParam ResolveAcquisitionMethod(CommonParameters commonParameters)
+        {
+            if (commonParameters?.DIAparameters is null)
+                return new CvParam("PRIDE", "PRIDE:0000627", "Data-dependent acquisition", "");
+
+            return commonParameters.DIAparameters.AanalysisType switch
+            {
+                DIAanalysisType.DIA => new CvParam("PRIDE", "PRIDE:0000450", "Data-independent acquisition", ""),
+                _ => null
+            };
         }
 
         private IReadOnlyList<Modification> ResolveModifications(IEnumerable<(string, string)> mods)

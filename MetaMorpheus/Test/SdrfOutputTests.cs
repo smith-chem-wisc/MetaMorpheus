@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
+using EngineLayer.DIA;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
+using Omics.Modifications;
 using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -100,44 +104,58 @@ namespace Test
         #region Validation happens before the search, not after it (D17)
 
         /// <summary>
-        /// The decision this feature rests on: asking for an SDRF is an assertion that the sample
-        /// metadata exists, and if it does not the run is refused BEFORE a spectrum is read.
+        /// Opting in does NOT block the search when sample metadata is absent (D21).
         ///
-        /// Failing late would be the same defect wearing a different coat -- a three-hour search
-        /// thrown away, or worse, a document padded with "not available" that passes every validator
-        /// and answers no question.
+        /// The earlier design refused the run. It was stricter than the specification -- which marks
+        /// organism part required but explicitly permits the reserved words -- and stricter than the
+        /// community, a fifth of whose curated cells are one. It was also self-defeating: a user who
+        /// is blocked unticks the box, and then there is no file at all.
+        ///
+        /// So the run proceeds, the file is written, and the gap is REPORTED rather than hidden.
+        /// That last part is what keeps this honest rather than merely permissive.
         /// </summary>
         [Test]
-        public static void OptingInWithoutAnExperimentalDesign_RefusesTheRun()
+        public static void OptingInWithoutAnExperimentalDesign_StillRunsAndStillWrites()
         {
-            string folder = SetUpIsolatedRun(nameof(OptingInWithoutAnExperimentalDesign_RefusesTheRun),
+            string folder = SetUpIsolatedRun(nameof(OptingInWithoutAnExperimentalDesign_StillRunsAndStillWrites),
                 out string spectraPath, out DbForTask database);
 
             var task = BuildSearchTask(writeSdrf: true);
             string output = Path.Combine(folder, "TaskOutput");
             Directory.CreateDirectory(output);
 
-            var exception = Assert.Throws<MetaMorpheusException>(() =>
+            Assert.DoesNotThrow(() =>
                 task.RunTask(output, new List<DbForTask> { database }, new List<string> { spectraPath }, "sdrf-no-design"));
 
-            Assert.That(exception.Message, Does.Contain(GlobalVariables.ExperimentalDesignFileName),
-                "The message has to name the file the user is expected to produce.");
+            Assert.That(File.Exists(Path.Combine(output, "AllPSMs.psmtsv")), Is.True,
+                "The search itself must not be blocked by missing sample metadata.");
 
-            // The point of validating at task level rather than at write time: nothing was searched.
-            Assert.That(File.Exists(Path.Combine(output, "AllPSMs.psmtsv")), Is.False,
-                "The run must be refused BEFORE the search, not after it.");
+            string sdrfPath = Path.Combine(output, SdrfFileName);
+            Assert.That(File.Exists(sdrfPath), Is.True, "The SDRF is still written.");
+
+            var document = new SdrfDocument(sdrfPath);
+            document.LoadResults();
+
+            var missing = RequiredSdrfColumns.Where(c => !document.Header.Contains(c)).ToList();
+            Assert.That(missing, Is.Empty,
+                "Every required column must be present even with no design file: " + string.Join(", ", missing));
+            Assert.That(document.Results.Single()["characteristics[organism part]"], Is.EqualTo("not available"),
+                "Absent metadata is stated with the reserved word, not invented and not omitted.");
 
             Directory.Delete(folder, true);
         }
 
         /// <summary>
-        /// A design file that exists but cannot be parsed is refused too. Present-but-broken is the
-        /// more dangerous case: it looks satisfied.
+        /// A design file that exists but cannot be parsed does not block either -- it degrades to
+        /// the same position as no design at all, and says so.
+        ///
+        /// Note this is not the only consequence of a malformed design: quantification independently
+        /// refuses to run on one. SDRF is not the component that should be enforcing that.
         /// </summary>
         [Test]
-        public static void OptingInWithAnUnusableExperimentalDesign_RefusesTheRun()
+        public static void OptingInWithAnUnusableExperimentalDesign_StillRunsAndStillWrites()
         {
-            string folder = SetUpIsolatedRun(nameof(OptingInWithAnUnusableExperimentalDesign_RefusesTheRun),
+            string folder = SetUpIsolatedRun(nameof(OptingInWithAnUnusableExperimentalDesign_StillRunsAndStillWrites),
                 out string spectraPath, out DbForTask database);
 
             // Four cells where five are required -- the same malformed shape the calibration tests
@@ -154,15 +172,63 @@ namespace Test
             string output = Path.Combine(folder, "TaskOutput");
             Directory.CreateDirectory(output);
 
-            var exception = Assert.Throws<MetaMorpheusException>(() =>
+            Assert.DoesNotThrow(() =>
                 task.RunTask(output, new List<DbForTask> { database }, new List<string> { spectraPath }, "sdrf-bad-design"));
 
-            Assert.That(exception.Message, Does.Contain("cannot be used as it stands"),
-                "A malformed design must be reported as malformed, not as missing.");
-            Assert.That(File.Exists(Path.Combine(output, "AllPSMs.psmtsv")), Is.False,
-                "The run must be refused BEFORE the search, not after it.");
+            Assert.That(File.Exists(Path.Combine(output, SdrfFileName)), Is.True);
 
             Directory.Delete(folder, true);
+        }
+
+        #endregion
+
+        #region Values that must not be asserted when they are not known
+
+        /// <summary>
+        /// The acquisition method is READ, not assumed.
+        ///
+        /// It was hardcoded to DDA. MetaMorpheus does not support DIA searching today, so nothing
+        /// was visibly wrong -- but a hardcoded term is wrong the day support arrives, and wrong in
+        /// the worst way: the column comes out 100% filled with a false CV term, so SdrfCoverage
+        /// cannot see it and a reader has no reason to doubt it.
+        /// </summary>
+        [Test]
+        public static void AcquisitionMethodIsReadFromTheSearch_NotHardcoded()
+        {
+            Assert.That(InvokeAcquisitionMethod(null)?.Name, Is.EqualTo("Data-dependent acquisition"),
+                "No DIA parameters means DDA, which is every MetaMorpheus search today.");
+
+            var dia = new CommonParameters(diaParameters: DiaParams(DIAanalysisType.DIA));
+            Assert.That(InvokeAcquisitionMethod(dia)?.Accession, Is.EqualTo("PRIDE:0000450"),
+                "A DIA search must say Data-independent acquisition.");
+
+            var isd = new CommonParameters(diaParameters: DiaParams(DIAanalysisType.ISD));
+            Assert.That(InvokeAcquisitionMethod(isd), Is.Null,
+                "In-source decay has no acquisition-method term. Leave it unresolved rather than " +
+                "borrowing the nearest-looking one.");
+        }
+
+        /// <summary>
+        /// A labelled search does not get to claim it was label free.
+        ///
+        /// SDRF wants one row per sample per channel, and MetaMorpheus has no channel-to-sample
+        /// mapping for either isobaric tags or SILAC. Saying "label free sample" for a SILAC run is
+        /// a confident falsehood; the reserved word is the truth.
+        /// </summary>
+        [Test]
+        public static void LabelledSearchesDoNotClaimToBeLabelFree()
+        {
+            Assert.That(InvokeLabel(new SearchParameters())?.Name, Is.EqualTo("label free sample"));
+
+            Assert.That(InvokeLabel(new SearchParameters { DoMultiplexQuantification = true }), Is.Null,
+                "Isobaric labelling: no channel-to-sample map exists.");
+
+            var silac = new SearchParameters
+            {
+                SilacLabels = new List<SilacLabel> { new('K', 'a', "C{6}H{12}N{2}O{1}", 6.020129) }
+            };
+            Assert.That(InvokeLabel(silac), Is.Null,
+                "SILAC: which sample carries which label is not something the search knows.");
         }
 
         #endregion
@@ -271,6 +337,28 @@ namespace Test
         #endregion
 
         #region Helpers
+
+        /// <summary>
+        /// Both resolvers are private statics on the adapter. Reaching them by reflection follows
+        /// the idiom PostSearchAnalysisTaskTests already uses for this class's private writers, and
+        /// is far cheaper than driving a whole DIA or SILAC search to observe one cell.
+        /// </summary>
+        /// <summary>
+        /// Only the analysis type matters to the SDRF; the XIC/grouping machinery does not, so it is
+        /// left null rather than stood up.
+        /// </summary>
+        private static DIAparameters DiaParams(DIAanalysisType type) =>
+            new(type, null, null, null, default);
+
+        private static CvParam InvokeAcquisitionMethod(CommonParameters common) =>
+            (CvParam)typeof(PostSearchAnalysisTask)
+                .GetMethod("ResolveAcquisitionMethod", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { common });
+
+        private static CvParam InvokeLabel(SearchParameters searchParameters) =>
+            (CvParam)typeof(PostSearchAnalysisTask)
+                .GetMethod("ResolveLabel", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { searchParameters });
 
         /// <summary>
         /// A search whose parameters are cheap but not degenerate. Notch/parsimony settings match
