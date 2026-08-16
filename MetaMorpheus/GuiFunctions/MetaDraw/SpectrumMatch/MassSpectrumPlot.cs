@@ -14,24 +14,56 @@ using OxyPlot.Wpf;
 using ThermoFisher.CommonCore.Data;
 using LinearAxis = OxyPlot.Axes.LinearAxis;
 using LineSeries = OxyPlot.Series.LineSeries;
-using Plot = mzPlot.Plot;
 using TextAnnotation = OxyPlot.Annotations.TextAnnotation;
 
 namespace GuiFunctions;
 
-public class MassSpectrumPlot : Plot
+public class MassSpectrumPlot : PlotBase
 {
     private const int MultiLineAnnotationPixelSpacing = 18;
+
+    /// <summary>Used when there is no laid-out view to measure. Was inline in DrawPeak.</summary>
+    protected const double DefaultPlotHeight = 370.0;
+
     public PlotView PlotView { get; protected set; }
     public MsDataScan Scan { get; private set; }
-    public MassSpectrumPlot(PlotView plotView, MsDataScan scan) : base(plotView)
+
+    public MassSpectrumPlot(PlotView plotView, MsDataScan scan)
     {
         PlotView = plotView;
+
+        // mzPlot.Plot's constructor did this binding; it is the only thing that was gained by
+        // inheriting from it, so it moves here rather than into the WPF-free base.
+        if (plotView is not null)
+        {
+            plotView.DataContext = this;
+            plotView.Model = Model;
+        }
+
         Model.Title = string.Empty;
         Model.Subtitle = string.Empty;
         Scan = scan;
         DrawSpectrum();
         RefreshChart();
+    }
+
+    /// <summary>
+    /// Height in pixels used to convert annotation spacing into y-axis units. Reading it from a live
+    /// WPF layout pass is what stopped annotation stacking being computable headlessly, so it is a
+    /// virtual property a non-WPF subclass can supply instead.
+    /// </summary>
+    protected virtual double ViewportHeight =>
+        PlotView?.ActualHeight > 0 ? PlotView.ActualHeight : DefaultPlotHeight;
+
+    /// <summary>
+    /// Was inherited from mzPlot.Plot. It renders through OxyPlot.Wpf, so it belongs on this side of
+    /// the split rather than in the WPF-free base. Behaviour is unchanged from the original.
+    /// </summary>
+    public void ExportToPng(string path, int width = 800, int height = 600)
+    {
+        using var s = File.Create(path);
+        var pngExporter = new OxyPlot.Wpf.PngExporter { Width = width, Height = height, Background = OxyColors.White };
+        pngExporter.Export(Model, s);
     }
 
     /// <summary>
@@ -137,7 +169,7 @@ public class MassSpectrumPlot : Plot
             // Calculate y step for annotation lines based on PlotView's actual height
             var yAxis = Model.Axes.FirstOrDefault(a => a.Position == AxisPosition.Left);
             double yRange = yAxis != null ? Math.Abs(yAxis.ActualMaximum - yAxis.ActualMinimum) : 1.0;
-            double plotHeight = PlotView?.ActualHeight > 0 ? PlotView.ActualHeight : 370.0; // fallback to default height
+            double plotHeight = ViewportHeight;
             double yStep = yRange * (MultiLineAnnotationPixelSpacing / plotHeight); // Convert pixel spacing to y-axis units
 
             for (int j = splits.Length - 1; j >= 0; j--)
