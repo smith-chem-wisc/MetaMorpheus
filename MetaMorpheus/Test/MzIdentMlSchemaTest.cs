@@ -45,11 +45,22 @@ namespace Test
             group.SequenceCoverageFraction.Add(0.5);
 
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ambiguous_only_group.mzID");
-            Write(new List<SpectralMatch> { psm }, new List<ProteinGroup> { group }, path);
 
             try
             {
+                Write(new List<SpectralMatch> { psm }, new List<ProteinGroup> { group }, path);
+
                 AssertMinimumChildCounts(path);
+
+                // AssertMinimumChildCounts alone would also pass on a document that contains no
+                // protein detection content whatsoever, so pin the intended shape explicitly: the
+                // group is dropped, and nothing else about the file is.
+                Assert.That(CountElements(path, "ProteinDetectionHypothesis"), Is.EqualTo(0));
+                Assert.That(CountElements(path, "ProteinAmbiguityGroup"), Is.EqualTo(0));
+                Assert.That(CountElements(path, "ProteinDetectionList"), Is.EqualTo(1),
+                    "the empty ProteinDetectionList is still written; only its invalid children are dropped");
+                Assert.That(CountElements(path, "SpectraData"), Is.EqualTo(1),
+                    "dropping the group must not narrow the rest of the document");
             }
             finally
             {
@@ -80,16 +91,22 @@ namespace Test
             group.SequenceCoverageFraction.Add(0.0);
 
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "subset_group.mzID");
-            Write(new List<SpectralMatch> { psm }, new List<ProteinGroup> { group }, path);
 
             try
             {
+                Write(new List<SpectralMatch> { psm }, new List<ProteinGroup> { group }, path);
+
                 AssertMinimumChildCounts(path);
 
                 // ACC1 keeps its hypothesis; only the evidence-free ACC2 is left out.
                 Assert.That(CountElements(path, "ProteinAmbiguityGroup"), Is.EqualTo(1));
                 Assert.That(CountElements(path, "ProteinDetectionHypothesis"), Is.EqualTo(1));
-                Assert.That(File.ReadAllText(path), Does.Contain("DBS_ACC1").And.Not.Contain("DBS_ACC2\""));
+
+                // Assert on the hypothesis' dBSequence_ref, not on the bare accession: a plain
+                // Does.Contain("DBS_ACC1") is already satisfied by the DBSequence declaration in
+                // SequenceCollection and so would pass even if the hypothesis had been dropped.
+                Assert.That(File.ReadAllText(path),
+                    Does.Contain("dBSequence_ref=\"DBS_ACC1\"").And.Not.Contain("dBSequence_ref=\"DBS_ACC2\""));
             }
             finally
             {
@@ -117,10 +134,11 @@ namespace Test
             group.SequenceCoverageFraction.Add(0.5);
 
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "resolved_group.mzID");
-            Write(new List<SpectralMatch> { psm }, new List<ProteinGroup> { group }, path);
 
             try
             {
+                Write(new List<SpectralMatch> { psm }, new List<ProteinGroup> { group }, path);
+
                 AssertMinimumChildCounts(path);
 
                 // The group must actually be present, not silently dropped.
@@ -136,8 +154,8 @@ namespace Test
         [Test]
         public static void SilacSearchWithAnAmbiguousPsmDoesNotThrow()
         {
-            // The SILAC pre-filter reads p.FullSequence.Contains("|"), but an ambiguous PSM has a
-            // null FullSequence -- the neighbouring p.BaseSequence != null check does not cover it.
+            // The SILAC pre-filter used to read p.FullSequence.Contains("|") guarded only by
+            // p.BaseSequence != null, but an ambiguous PSM has a null FullSequence, so it threw.
             // Only reachable when SilacLabels is non-null, i.e. an actual SILAC search.
             var psm = AmbiguousPsm(out Protein protein);
             var labels = new List<SilacLabel> { new SilacLabel('K', 'a', "C{13}6", 6.0201290768) };
@@ -148,6 +166,64 @@ namespace Test
             {
                 Assert.That(() => Write(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), path, labels),
                     Throws.Nothing);
+
+                // Not throwing is not enough: filtering the ambiguous PSM out of psms entirely would
+                // also pass, while silently emptying peptides/proteins/filenames for the whole file.
+                // The PSM must still reach the writer and contribute its spectra data.
+                Assert.That(File.Exists(path));
+                Assert.That(CountElements(path, "SpectraData"), Is.EqualTo(1),
+                    "the ambiguous PSM must not be dropped from the SILAC pre-filter");
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void DroppedGroupsLeaveGapsButDoNotRenumberSurvivingIds()
+        {
+            // The PR's compatibility claim is that the change is a pure deletion: elements that
+            // survive keep the PDH_n / PAG_n id they had before, so ids gain gaps rather than
+            // shifting. Nothing in mzIdentML 1.1 references a PAG or PDH id (they are xsd:string,
+            // not xsd:ID), so gaps are legal -- but renumbering would change every surviving id.
+            Protein withoutEvidence = new Protein("ANOTHERPEPTIDEK", "ACC2", databaseFilePath: "temp");
+            Protein withEvidence = new Protein("PEPTIDEK", "ACC1", databaseFilePath: "temp");
+
+            var peptide = withEvidence.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            var psm = new PeptideSpectralMatch(peptide, 0, 10, 0, Scan(), new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+
+            // Group 0 has no peptide evidence and is dropped; group 1 survives and must stay PAG_1.
+            var dropped = new ProteinGroup(
+                new HashSet<IBioPolymer> { withoutEvidence },
+                new HashSet<IBioPolymerWithSetMods>(),
+                new HashSet<IBioPolymerWithSetMods>());
+            dropped.SequenceCoverageFraction.Add(0.0);
+
+            var kept = new ProteinGroup(
+                new HashSet<IBioPolymer> { withEvidence },
+                new HashSet<IBioPolymerWithSetMods> { peptide },
+                new HashSet<IBioPolymerWithSetMods> { peptide });
+            kept.SequenceCoverageFraction.Add(0.5);
+
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "id_stability.mzID");
+
+            try
+            {
+                Write(new List<SpectralMatch> { psm }, new List<ProteinGroup> { dropped, kept }, path);
+
+                AssertMinimumChildCounts(path);
+
+                Assert.That(CountElements(path, "ProteinAmbiguityGroup"), Is.EqualTo(1));
+                Assert.That(CountElements(path, "ProteinDetectionHypothesis"), Is.EqualTo(1));
+
+                string text = File.ReadAllText(path);
+                Assert.That(text, Does.Contain("id=\"PAG_1\""), "the surviving group must keep its original index");
+                Assert.That(text, Does.Contain("id=\"PDH_1\""), "the surviving hypothesis must keep its original index");
+                Assert.That(text, Does.Not.Contain("id=\"PAG_0\""));
+                Assert.That(text, Does.Not.Contain("id=\"PDH_0\""));
             }
             finally
             {
