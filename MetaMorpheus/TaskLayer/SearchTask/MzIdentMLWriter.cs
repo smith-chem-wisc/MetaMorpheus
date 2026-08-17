@@ -37,9 +37,14 @@ namespace TaskLayer
                         }
                     }
                 }
-                // FullSequence is null when the sequence could not be resolved; such PSMs are
-                // dropped further down anyway, and "|" only appears on a resolved ambiguous one.
-                psms = psms.Where(p => p.BaseSequence != null && p.FullSequence != null && !p.FullSequence.Contains("|") && !labelsToSearch.Any(x => p.BaseSequence.Contains(x)));
+                // SpectralMatch.FullSequence is assigned from PsmTsvWriter.Resolve(...).ResolvedValue,
+                // which is null whenever the candidate sequences disagree -- the pipe-joined form is
+                // ResolvedString and is discarded. So FullSequence is either a clean sequence or null,
+                // never "|"-delimited, and the old !FullSequence.Contains("|") conjunct could only ever
+                // be true or throw a NullReferenceException on an ambiguous PSM. Dropping it fixes the
+                // crash without narrowing psms, which also feeds peptides/proteins/filenames below;
+                // ambiguous PSMs are excluded from the identification data by unambiguousPsms instead.
+                psms = psms.Where(p => p.BaseSequence != null && !labelsToSearch.Any(x => p.BaseSequence.Contains(x)));
             }
 
             List<PeptideWithSetModifications> peptides = psms.SelectMany(i => i.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer as PeptideWithSetModifications)).Distinct().ToList();
