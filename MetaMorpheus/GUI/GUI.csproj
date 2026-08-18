@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -13,7 +13,7 @@
     <RootNamespace>MetaMorpheusGUI</RootNamespace>
     <AssemblyName>MetaMorpheusGUI</AssemblyName>
     <Configurations>Debug;Release</Configurations>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <ApplicationIcon>Icons\MMnice.ico</ApplicationIcon>
 	<EnableWindowsTargeting>true</EnableWindowsTargeting>
