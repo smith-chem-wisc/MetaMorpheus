@@ -208,14 +208,25 @@ whole pool gets one fresh per-class FDR/PEP analysis.
 
 ---
 
-## Optional: database-seeded parents
+## Optional: sequence-tag candidate filtering
 
-`SeedParentsFromDatabase` generates parents by digesting the database — theoretical full-length
-proteoforms built the way a top-down search builds them, so annotated PTMs ride along — instead of
-taking only the proteoforms an upstream search identified. That removes the requirement that a
-truncation's parent be observed intact, at the cost of a much larger Pass 2 search; raise
-`MaxParentMass` alongside it, since a large protein's intact form may never be observed even when
-its truncations are.
+`SeedParentsFromDatabase` generates parents by digesting the database instead of taking only
+upstream-identified proteoforms, which removes the requirement that a truncation's parent be
+observed intact - at the cost of a much larger Pass 2 search.
+
+`UseSequenceTagFilter` controls that explosion. `SequenceTagExtractor` reads short de-novo residue
+tags straight off each scan's peak list (tags are emitted only for **unambiguous** residue gaps, so
+an I/L-style tie produces no tag), and `ProteinTagIndex` is a k-mer index over the database that
+maps each tag to the proteins containing it. A protein becomes a candidate once it contains at
+least `MinTagHits` distinct extracted tags.
+
+- Default (`UsePerScanTagRestriction = false`): the candidate set is the **union over all scans**,
+  so the indexed engine is reused unchanged. This controls the parent explosion but does not make
+  the candidate set scan-specific.
+- `UsePerScanTagRestriction = true`: each scan is scored only against parents from its **own**
+  tag-selected proteins, which stops a scan being won by a protein its own tags never supported.
+
+Tags restrict candidates only; Pass 2/3 scoring and the FDR analysis still police precision.
 
 ---
 
