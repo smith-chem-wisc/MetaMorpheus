@@ -100,8 +100,14 @@ namespace EngineLayer.Indexing
             
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+            // Each thread's peptides land in its own slot and are concatenated in thread order, so the
+            // peptide index does not depend on which thread finishes first. Appending under a lock made
+            // the order vary run to run, which changed how equal-mass peptides were ordered by the sort
+            // below and so changed reported Delta Scores between otherwise identical runs.
+            var peptidesPerThread = new List<PeptideWithSetModifications>[maxThreadsPerFile];
             Parallel.ForEach(threads, (i) =>
             {
+                int threadIndex = i;
                 List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
 
                 for (; i < ProteinList.Count; i += maxThreadsPerFile)
@@ -121,14 +127,20 @@ namespace EngineLayer.Indexing
                     }
                 }
 
-                lock (peptides)
-                {
-                    peptides.AddRange(localPeptides);
-                }
+                // left null on cancellation, matching the previous behaviour of discarding partial results
+                peptidesPerThread[threadIndex] = localPeptides;
             });
 
+            foreach (var threadPeptides in peptidesPerThread)
+            {
+                if (threadPeptides != null)
+                {
+                    peptides.AddRange(threadPeptides);
+                }
+            }
+
             // sort peptides by mass
-            peptides.Sort((x, y) => x.MonoisotopicMass.CompareTo(y.MonoisotopicMass));
+            peptides = SortByMonoisotopicMass(peptides);
 
             //create precursor index (if specified)
             List<int>[] precursorIndex = null;
@@ -204,6 +216,32 @@ namespace EngineLayer.Indexing
             }
 
             return new IndexingResults(peptides, fragmentIndex, precursorIndex, this);
+        }
+
+        /// <summary>
+        /// Sorts by monoisotopic mass, reading each mass once instead of once per comparison —
+        /// PeptideWithSetModifications.MonoisotopicMass rounds to 9 places on every read even though the
+        /// unrounded value is cached, so a comparison delegate pays for it ~2n*log(n) times.
+        /// Sorting (mass, position) pairs through the same comparison-based introsort reproduces the exact
+        /// permutation the previous in-place sort produced, which matters because equal masses are
+        /// pervasive: a reversed decoy has its target's residue composition and therefore its exact mass.
+        /// </summary>
+        internal static List<PeptideWithSetModifications> SortByMonoisotopicMass(List<PeptideWithSetModifications> peptides)
+        {
+            var order = new KeyValuePair<double, int>[peptides.Count];
+            for (int i = 0; i < order.Length; i++)
+            {
+                order[i] = new KeyValuePair<double, int>(peptides[i].MonoisotopicMass, i);
+            }
+
+            Array.Sort(order, (x, y) => x.Key.CompareTo(y.Key));
+
+            var sorted = new List<PeptideWithSetModifications>(order.Length);
+            for (int i = 0; i < order.Length; i++)
+            {
+                sorted.Add(peptides[order[i].Value]);
+            }
+            return sorted;
         }
 
         private List<int>[] CreateNewPrecursorIndex(List<PeptideWithSetModifications> peptidesSortedByMass)

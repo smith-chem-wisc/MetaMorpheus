@@ -15,6 +15,7 @@ using Readers.SpectralLibrary;
 using SpectralAveraging;
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -218,10 +219,10 @@ namespace TaskLayer
         public const string IndexFolderName = "DatabaseIndex";
         public const string IndexEngineParamsFileName = "indexEngine.params";
         public const string PeptideIndexFileName = "peptideIndex.ind";
-        public const string FragmentIndexFileName = "fragmentIndex.ind";
+        public const string FragmentIndexFileName = "fragmentIndex.bin";
         public const string SecondIndexEngineParamsFileName = "secondIndexEngine.params";
-        public const string SecondFragmentIndexFileName = "secondFragmentIndex.ind";
-        public const string PrecursorIndexFileName = "precursorIndex.ind";
+        public const string SecondFragmentIndexFileName = "secondFragmentIndex.bin";
+        public const string PrecursorIndexFileName = "precursorIndex.bin";
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
@@ -1169,6 +1170,45 @@ namespace TaskLayer
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
+        /// <summary>
+        /// Returns <paramref name="parameters"/>, or a copy with a raised TotalPartitions when one index
+        /// build would not fit in available memory. Only ever raises, so a user who deliberately asked for
+        /// more partitions keeps them. Returning a copy rather than mutating matters:
+        /// SetAllFileSpecificCommonParams hands back the task's own CommonParameters when a file has no
+        /// file-specific settings, so mutating would rewrite the settings the task reports.
+        ///
+        /// Callers must use the returned instance for *every* read of TotalPartitions in the partition
+        /// loop — the loop bound and the protein-range slicing included — or the two will disagree and the
+        /// search will silently cover only part of the database.
+        /// </summary>
+        protected CommonParameters RaisePartitionsToFitMemory(List<Protein> proteinList, CommonParameters parameters,
+            List<Modification> fixedModifications, List<Modification> variableModifications,
+            List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, double maxFragmentSize,
+            ref bool alreadyWarned)
+        {
+            int suggested = IndexPartitioning.SuggestTotalPartitions(proteinList, parameters, fixedModifications,
+                variableModifications, silacLabels, startLabel, endLabel, maxFragmentSize, parameters.TotalPartitions,
+                out long estimatedBytes, out long budgetBytes, out bool cappedByLimit);
+
+            if (suggested <= parameters.TotalPartitions)
+            {
+                return parameters;
+            }
+
+            if (!alreadyWarned)
+            {
+                Warn(IndexPartitioning.PartitionIncreaseWarning(parameters.TotalPartitions, suggested, estimatedBytes, budgetBytes));
+                if (cappedByLimit)
+                {
+                    Warn($"Even {suggested} partitions is estimated not to fit in memory; this search may page heavily. " +
+                         $"Consider a smaller database, a shorter maximum peptide length, or fewer variable modifications.");
+                }
+                alreadyWarned = true;
+            }
+
+            return parameters.CloneWithNewTotalPartitions(suggested);
+        }
+
         protected static void Warn(string v)
         {
             WarnHandler?.Invoke(null, new StringEventArgs(v, null));
@@ -1299,25 +1339,118 @@ namespace TaskLayer
             return digestionParams;
         }
 
+        // "MMFI" — guards against reading a file written by a different layout. The file name also changed
+        // when this replaced NetSerializer, so an index cached by an older version is simply not found and
+        // gets rebuilt rather than misread.
+        private const int FragmentIndexMagic = 0x4946_4D4D;
+        private const int FragmentIndexFormatVersion = 1;
+
+        /// <summary>
+        /// Bin counts followed by the concatenated peptide ids, written as raw little-endian int32 in bulk.
+        /// NetSerializer walked every List and every element individually; a fragment index has millions of
+        /// bins and hundreds of millions of entries, so the per-object cost dominated. The in-memory type is
+        /// unchanged — only the on-disk layout is flat.
+        /// </summary>
         private static void WriteFragmentIndex(List<int>[] fragmentIndex, string fragmentIndexFileName)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            using var file = new FileStream(fragmentIndexFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20);
 
-            using (var file = File.Create(fragmentIndexFileName))
+            var counts = new int[fragmentIndex.Length];
+            for (int i = 0; i < fragmentIndex.Length; i++)
             {
-                ser.Serialize(file, fragmentIndex);
+                counts[i] = fragmentIndex[i]?.Count ?? 0;
+            }
+
+            Span<int> header = stackalloc int[3];
+            header[0] = FragmentIndexMagic;
+            header[1] = FragmentIndexFormatVersion;
+            header[2] = fragmentIndex.Length;
+            file.Write(MemoryMarshal.AsBytes(header));
+            WriteInt32Bulk(file, counts);
+
+            // stage entries into a fixed buffer so the stream sees large writes rather than one per int
+            var buffer = new int[1 << 20];
+            int staged = 0;
+            foreach (List<int> bin in fragmentIndex)
+            {
+                if (bin == null || bin.Count == 0)
+                {
+                    continue;
+                }
+
+                ReadOnlySpan<int> ids = CollectionsMarshal.AsSpan(bin);
+                while (!ids.IsEmpty)
+                {
+                    if (staged == buffer.Length)
+                    {
+                        file.Write(MemoryMarshal.AsBytes(buffer.AsSpan(0, staged)));
+                        staged = 0;
+                    }
+
+                    int take = Math.Min(buffer.Length - staged, ids.Length);
+                    ids.Slice(0, take).CopyTo(buffer.AsSpan(staged));
+                    staged += take;
+                    ids = ids.Slice(take);
+                }
+            }
+
+            if (staged > 0)
+            {
+                file.Write(MemoryMarshal.AsBytes(buffer.AsSpan(0, staged)));
             }
         }
 
         private static List<int>[] ReadFragmentIndex(string fragmentIndexFileName)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            using var file = new FileStream(fragmentIndexFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
 
-            using (var file = File.OpenRead(fragmentIndexFileName))
+            Span<int> header = stackalloc int[3];
+            file.ReadExactly(MemoryMarshal.AsBytes(header));
+            if (header[0] != FragmentIndexMagic || header[1] != FragmentIndexFormatVersion)
             {
-                return (List<int>[])ser.Deserialize(file);
+                throw new MetaMorpheusException($"{fragmentIndexFileName} is not a fragment index this version can read.");
+            }
+
+            var counts = new int[header[2]];
+            ReadInt32Bulk(file, counts);
+
+            var fragmentIndex = new List<int>[counts.Length];
+            for (int i = 0; i < counts.Length; i++)
+            {
+                if (counts[i] == 0)
+                {
+                    continue;
+                }
+
+                // size the list exactly and fill its backing array directly, rather than Add-ing element by element
+                var bin = new List<int>(counts[i]);
+                CollectionsMarshal.SetCount(bin, counts[i]);
+                ReadInt32Bulk(file, CollectionsMarshal.AsSpan(bin));
+                fragmentIndex[i] = bin;
+            }
+
+            return fragmentIndex;
+        }
+
+        private static void WriteInt32Bulk(Stream stream, int[] values)
+        {
+            // Span byte length is an int, so a >512 M-element array has to go out in chunks
+            const int chunk = 1 << 24;
+            for (int offset = 0; offset < values.Length; offset += chunk)
+            {
+                int count = Math.Min(chunk, values.Length - offset);
+                stream.Write(MemoryMarshal.AsBytes(values.AsSpan(offset, count)));
+            }
+        }
+
+        private static void ReadInt32Bulk(Stream stream, Span<int> destination)
+        {
+            const int chunk = 1 << 24;
+            while (!destination.IsEmpty)
+            {
+                int count = Math.Min(chunk, destination.Length);
+                stream.ReadExactly(MemoryMarshal.AsBytes(destination.Slice(0, count)));
+                destination = destination.Slice(count);
             }
         }
 
@@ -1381,7 +1514,17 @@ namespace TaskLayer
             {
                 Directory.CreateDirectory(pathToIndexes);
             }
-            var folder = Path.Combine(pathToIndexes, DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            // The folder name is a timestamp with one-second resolution, so two partitions indexed within
+            // the same second used to land in the same folder and overwrite each other's indexEngine.params
+            // and peptideIndex.ind. That leaves the earlier partition's index unfindable, which is fatal for
+            // XL search: its second round re-reads each partition's peptide index and gets null instead.
+            // Only reachable when indexing is fast enough for two partitions to finish inside one second.
+            string stamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            var folder = Path.Combine(pathToIndexes, stamp);
+            for (int disambiguator = 1; Directory.Exists(folder); disambiguator++)
+            {
+                folder = Path.Combine(pathToIndexes, $"{stamp}-{disambiguator}");
+            }
             Directory.CreateDirectory(folder);
             return folder;
         }

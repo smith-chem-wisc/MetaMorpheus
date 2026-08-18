@@ -295,6 +295,65 @@ namespace EngineLayer
                                 RTPredictorName);
         }
 
+        /// <summary>
+        /// Copy with a different TotalPartitions. Returns a new instance rather than mutating, because
+        /// SetAllFileSpecificCommonParams hands back the task's own CommonParameters when a file has no
+        /// file-specific settings — mutating that would rewrite the settings the task reports to the user.
+        /// DigestionParams is shared rather than cloned so the digestion identity peptides carry is unchanged.
+        /// </summary>
+        public CommonParameters CloneWithNewTotalPartitions(int totalPartitions)
+        {
+            CommonParameters clone = new CommonParameters(
+                                TaskDescriptor,
+                                DissociationType,
+                                MS2ChildScanDissociationType,
+                                MS3ChildScanDissociationType,
+                                SeparationType,
+                                DoPrecursorDeconvolution,
+                                UseProvidedPrecursorInfo,
+                                DeconvolutionIntensityRatio,
+                                DeconvolutionMaxAssumedChargeState,
+                                ReportAllAmbiguity,
+                                AddCompIons,
+                                totalPartitions, //changed
+                                QValueThreshold,
+                                PepQValueThreshold,
+                                QValueCutoffForPepCalculation,
+                                ScoreCutoff,
+                                NumberOfPeaksToKeepPerWindow,
+                                MinimumAllowedIntensityRatioToBasePeak,
+                                WindowWidthThomsons,
+                                NumberOfWindows,
+                                NormalizePeaksAccrossAllWindows,
+                                TrimMs1Peaks,
+                                TrimMsMsPeaks,
+                                ProductMassTolerance,
+                                PrecursorMassTolerance,
+                                ProductMassTolerance_LowRes,
+                                DeconvolutionMassTolerance,
+                                MaxThreadsToUsePerFile,
+                                DigestionParams,
+                                ListOfModsVariable,
+                                ListOfModsFixed,
+                                AssumeOrphanPeaksAreZ1Fragments,
+                                MaxHeterozygousVariants,
+                                MinVariantDepth,
+                                AddTruncations,
+                                PrecursorDeconvolutionParameters,
+                                ProductDeconvolutionParameters,
+                                UseMostAbundantPrecursorIntensity,
+                                DIAparameters,
+                                FragmentationParameters,
+                                PrecursorMassMatchMode,
+                                RTPredictorName);
+
+            // CustomIons is not a constructor parameter — the constructor reads it from the global
+            // dissociation-type dictionary — so copy it across explicitly. GlycoSearchEngine branches on
+            // CommonParameters.CustomIons, and this clone is handed to it.
+            clone.CustomIons = CustomIons;
+            return clone;
+        }
+
         public void SetCustomProductTypes()
         {
             DigestionParams.ProductsFromDissociationType()[MassSpectrometry.DissociationType.Custom] = CustomIons;
