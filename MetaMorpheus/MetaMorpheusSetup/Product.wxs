@@ -191,6 +191,13 @@
       <Component Id="src_MzLibUtil.dll" Guid="9475fcb2-63bd-490c-8441-17a1760869ac">
         <File Id="src_MzLibUtil.dll" Name="MzLibUtil.dll" Source="$(var.GUI_TargetDir)MzLibUtil.dll" />
       </Component>
+      <!--Bruker BAF native reader (from mzLib) and its OpenMP runtime dependency-->
+      <Component Id="src_baf2sql_c.dll" Guid="8454163a-a187-4aa6-8bc3-030311f0c935">
+        <File Id="src_baf2sql_c.dll" Name="baf2sql_c.dll" Source="$(var.GUI_TargetDir)baf2sql_c.dll" />
+      </Component>
+      <Component Id="src_vcomp110.dll" Guid="f5a0e25b-587f-4b54-8b28-a9a0396c0adf">
+        <File Id="src_vcomp110.dll" Name="vcomp110.dll" Source="$(var.GUI_TargetDir)vcomp110.dll" />
+      </Component>
 	  <Component Id="src_Chromatography.dll" Guid="e6316c7b-2cf7-4d42-9472-de4ac10fe988">
 		<File Id="src_Chromatography.dll" Name="Chromatography.dll" Source="$(var.GUI_TargetDir)Chromatography.dll" />
 	  </Component>			
@@ -329,31 +336,16 @@
 	  <Component Id="src_CsvHelper.dll" Guid="79F28320-5AF2-4825-9B9B-AC0776E753C1">
 	  	<File Id="src_CsvHelper.dll" Name="CsvHelper.dll" Source="$(var.GUI_TargetDir)CsvHelper.dll" />
 	  </Component>
-	  <Component Id="src_EntityFramework.dll" Guid="AAB0BE24-C695-42CE-9495-B804B0929589">
-	  	<File Id="src_EntityFramework.dll" Name="EntityFramework.dll" Source="$(var.GUI_TargetDir)EntityFramework.dll" />
-	  </Component>
-	  <Component Id="src_EntityFramework.SqlServer.dll" Guid="C8207F75-5358-4EEB-9E86-D648FAFDD735">
-	  	<File Id="src_EntityFramework.SqlServer.dll" Name="EntityFramework.SqlServer.dll" Source="$(var.GUI_TargetDir)EntityFramework.SqlServer.dll" />
-	  </Component>
 	  <Component Id="src_msvcp110.dll" Guid="36947FB1-E7F0-4580-A15C-66CB25D566C4">
 	  	<File Id="src_msvcp110.dll" Name="msvcp110.dll" Source="$(var.GUI_TargetDir)msvcp110.dll" />
 	  </Component>
 	  <Component Id="src_msvcr110.dll" Guid="4C52ED24-C962-42B7-AE53-0FF423D25E64">
 	  	<File Id="src_msvcr110.dll" Name="msvcr110.dll" Source="$(var.GUI_TargetDir)msvcr110.dll" />
 	  </Component>
-	  <Component Id="src_System.Data.SqlClient.dll" Guid="46279896-7740-429F-A4B4-F4453F577F67">
-	  	<File Id="src_System.Data.SqlClient.dll" Name="System.Data.SqlClient.dll" Source="$(var.GUI_TargetDir)System.Data.SqlClient.dll" />
-	  </Component>
 	  <Component Id="src_System.Data.SQLite.dll" Guid="5CB69DD0-680A-4E49-9A93-74D0F4A10661">
 		<File Id="src_System.Data.SQLite.dll" Name="System.Data.SQLite.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.dll" />
 	  </Component>
-	  <Component Id="src_System.Data.SQLite.EF6.dll" Guid="F9804BA5-D660-4079-8BB4-738DF62EAF7E">
-	  	<File Id="src_System.Data.SQLite.EF6.dll" Name="System.Data.SQLite.EF6.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.EF6.dll" />
-	  </Component>
 
-	  <Component Id="src_System.Drawing.Common.dll" Guid="D0717D69-C8C8-422C-8E25-A32A422AEFCE">
-	  	<File Id="src_System.Drawing.Common.dll" Name="System.Drawing.Common.dll" Source="$(var.GUI_TargetDir)System.Drawing.Common.dll" />
-	  </Component>
 	  <Component Id="src_System.Numerics.Tensors.dll" Guid="E82682ED-383F-4592-8B64-A0314FFB5481">
 	  	<File Id="src_System.Numerics.Tensors.dll" Name="System.Numerics.Tensors.dll" Source="$(var.GUI_TargetDir)System.Numerics.Tensors.dll" />
 	  </Component>
@@ -499,6 +491,43 @@
 	  <Component Id="src_SQLite.Interop.dll" Guid="A918BB3C-0720-469E-900B-27FA93B7BB86">
 		<File Id="src_SQLite.Interop.dll" Name="SQLite.Interop.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\SQLite.Interop.dll" />
 	  </Component>
+      <!--TorchSharp/libtorch natives required by Chronologer retention time prediction during PEP.-->
+      <!--The managed TorchSharp.dll P/Invokes LibTorchSharp, which in turn pulls in the libtorch stack.-->
+      <!--CMD.deps.json probes runtimes\win-x64\native, so these must land here or PEP throws DllNotFoundException.-->
+      <Component Id="src_LibTorchSharp.dll" Guid="9BA2F494-3C28-4276-A8FC-B14399E4BDE7">
+        <File Id="src_LibTorchSharp.dll" Name="LibTorchSharp.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\LibTorchSharp.dll" />
+      </Component>
+      <Component Id="src_torch_cpu.dll" Guid="757479C9-7B0B-4873-802B-0D2BC9AA9379">
+        <File Id="src_torch_cpu.dll" Name="torch_cpu.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\torch_cpu.dll" />
+      </Component>
+      <Component Id="src_torch.dll" Guid="C1C621CB-87FD-41B8-A367-D540C8EB5CF6">
+        <File Id="src_torch.dll" Name="torch.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\torch.dll" />
+      </Component>
+      <Component Id="src_torch_global_deps.dll" Guid="F077F9E2-D56E-460E-BAAA-3762E4B0C37A">
+        <File Id="src_torch_global_deps.dll" Name="torch_global_deps.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\torch_global_deps.dll" />
+      </Component>
+      <Component Id="src_c10.dll" Guid="BDA4715C-9201-4ECA-91FD-DD717D80FEDC">
+        <File Id="src_c10.dll" Name="c10.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\c10.dll" />
+      </Component>
+      <Component Id="src_fbgemm.dll" Guid="B93DD689-FB38-4E76-A32F-35D9220530ED">
+        <File Id="src_fbgemm.dll" Name="fbgemm.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\fbgemm.dll" />
+      </Component>
+      <Component Id="src_asmjit.dll" Guid="270B2CC7-3268-4190-A2C2-035EAA49A704">
+        <File Id="src_asmjit.dll" Name="asmjit.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\asmjit.dll" />
+      </Component>
+      <Component Id="src_uv.dll" Guid="CBE55EAF-154D-4014-8C69-C454C715339E">
+        <File Id="src_uv.dll" Name="uv.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\uv.dll" />
+      </Component>
+      <Component Id="src_libiomp5md.dll" Guid="A0375978-1255-4937-B3DE-77A653EBBEA3">
+        <File Id="src_libiomp5md.dll" Name="libiomp5md.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\libiomp5md.dll" />
+      </Component>
+      <Component Id="src_libiompstubs5md.dll" Guid="EA4924B2-F518-44AF-B6B0-B2835F9BAAF4">
+        <File Id="src_libiompstubs5md.dll" Name="libiompstubs5md.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\libiompstubs5md.dll" />
+      </Component>
+      <!--Native backing library for the managed SkiaSharp.dll, which ships but has no native pair.-->
+      <Component Id="src_libSkiaSharp.dll" Guid="08B9E210-A08C-457F-9618-7D7DBEFE233A">
+        <File Id="src_libSkiaSharp.dll" Name="libSkiaSharp.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\libSkiaSharp.dll" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 

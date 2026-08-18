@@ -11,6 +11,7 @@ using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
+using Readers.ProForma;
 
 namespace EngineLayer
 {
@@ -192,7 +193,7 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch / MassDiffAcceptor.NotchScalar)).ResolvedString;
         }
 
-        internal static void AddPeptideSequenceData(Dictionary<string, string> s, SpectralMatch sm, IReadOnlyDictionary<string, int> ModsToWritePruned)
+        internal static void AddPeptideSequenceData(Dictionary<string, string> s, SpectralMatch sm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool includeMostAbundantColumn = false)
         {
             bool pepWithModsIsNull = sm == null || sm.BestMatchingBioPolymersWithSetMods == null || !sm.BestMatchingBioPolymersWithSetMods.Any();
 
@@ -200,6 +201,10 @@ namespace EngineLayer
 
             s[SpectrumMatchFromTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : sm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString;
             s[SpectrumMatchFromTsvHeader.FullSequence] = pepWithModsIsNull ? " " : sm.FullSequence != null ? sm.FullSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString;
+            // ProForma 2.0 string, top-down only, immediately after Full Sequence. Gated on the run's
+            // analyte type so the header (sm == null) and the data rows include/exclude the column together.
+            if (GlobalVariables.AnalyteType == AnalyteType.Proteoform)
+                s[SpectrumMatchFromTsvHeader.ProForma] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.ToProFormaString())).ResolvedString;
             s[SpectrumMatchFromTsvHeader.EssentialSequence] = pepWithModsIsNull ? " " : sm.EssentialSequence != null ? sm.EssentialSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
             string geneString = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Parent.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.AmbiguityLevel] = ProteoformLevelClassifier.ClassifyPrSM(s[SpectrumMatchFromTsvHeader.FullSequence], geneString);
@@ -213,6 +218,14 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.MonoisotopicMass] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
             s[SpectrumMatchFromTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorDa).ResolvedString;
             s[SpectrumMatchFromTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorPpm).ResolvedString;
+            if (includeMostAbundantColumn)
+            {
+                // The observed apex mass itself (0 when no envelope was resolved), a precursor observation that
+                // does not depend on the peptide hypothesis — reported alongside the error so the reader sees both
+                // the value the search matched on and its ppm deviation from the candidate's theoretical apex.
+                s[SpectrumMatchFromTsvHeader.PrecursorMostAbundantMass] = sm == null ? " " : sm.ScanPrecursorMostAbundantMass.ToString("F5", CultureInfo.InvariantCulture);
+                s[SpectrumMatchFromTsvHeader.MostAbundantMassDiffPpm] = pepWithModsIsNull || sm.MostAbundantMassErrorPpm == null ? " " : Resolve(sm.MostAbundantMassErrorPpm).ResolvedString;
+            }
             s[SpectrumMatchFromTsvHeader.Accession] = pepWithModsIsNull ? " " : sm.Accession != null ? sm.Accession : Resolve(pepsWithMods.Select(b => b.Parent.Accession), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.Name] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.FullName), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.GeneName] = geneString;
