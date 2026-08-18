@@ -57,7 +57,8 @@ namespace Test
         /// A crosslinker that cleaves under CID also cleaves under LowCID -- low-resolution CID is still
         /// CID, and the crosslinker has no knowledge of the analyser resolution. The negative cases matter
         /// as much as the positive one: the equivalence must not make an uncleavable crosslinker cleavable,
-        /// and must not extend to unrelated dissociation types.
+        /// must not extend to unrelated dissociation types, and must not degenerate into "LowCID always
+        /// cleaves" -- only a CID declaration earns it.
         /// </summary>
         [Test]
         public static void CidCleavableCrosslinkerIsAlsoCleavedByLowCid()
@@ -76,6 +77,12 @@ namespace Test
             Assert.That(lowCidOnly.IsCleavedBy(DissociationType.LowCID), Is.True);
             Assert.That(lowCidOnly.IsCleavedBy(DissociationType.CID), Is.False);
 
+            // only a CID declaration earns LowCID; a crosslinker that cleaves under something else
+            // entirely is not swept in
+            var etdOnly = new Crosslinker("K", "K", "etdOnly", true, "ETD", 100, 25, 60, 100, 0, 0, 50);
+            Assert.That(etdOnly.IsCleavedBy(DissociationType.ETD), Is.True);
+            Assert.That(etdOnly.IsCleavedBy(DissociationType.LowCID), Is.False);
+
             // an uncleavable crosslinker stays uncleavable whatever the dissociation type
             var notCleavable = new Crosslinker("K", "K", "notCleavable", false, "", 100, 0, 0, 100, 0, 0, 50);
             Assert.That(notCleavable.IsCleavedBy(DissociationType.CID), Is.False);
@@ -83,26 +90,63 @@ namespace Test
         }
 
         /// <summary>
-        /// ToString writes dissociation types with the enum's own casing ("EThcD", "LowCID") while the
-        /// custom-crosslinker GUI upper-cases what the user typed, so the parser has to accept both or it
-        /// silently drops entries on a save-and-reload (#2716).
+        /// The CID-cleavable crosslinkers shipped in Data/Crosslinkers.tsv are the ones a user actually has
+        /// to hand, so assert the change reaches them. The uncleavable entries, whose DissociationType
+        /// field is empty, must not be swept in.
+        /// </summary>
+        [Test]
+        public static void ShippedCidCleavableCrosslinkersAreCleavedByLowCid()
+        {
+            var byName = GlobalVariables.Crosslinkers.ToDictionary(p => p.CrosslinkerName);
+            Assert.Multiple(() =>
+            {
+                foreach (var name in new[] { "DSSO", "DSUB", "DisulfideBond" })
+                {
+                    Assert.That(byName[name].CleaveDissociationTypes, Does.Contain(DissociationType.CID), name);
+                    Assert.That(byName[name].IsCleavedBy(DissociationType.LowCID), Is.True, name);
+                }
+
+                foreach (var name in new[] { "DSS", "LeiKer_bAL2", "Leiker_clv" })
+                {
+                    Assert.That(byName[name].Cleavable, Is.False, name);
+                    Assert.That(byName[name].IsCleavedBy(DissociationType.LowCID), Is.False, name);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Every dissociation type the format accepts has to survive a save-and-reload of a custom
+        /// crosslinker. ToString(true) writes the enum's own casing ("EThcD", "LowCID") into
+        /// CustomCrosslinkers.tsv while the custom-crosslinker GUI upper-cases what the user typed, so a
+        /// case-sensitive parser silently drops entries in one direction or the other (#2716).
         /// </summary>
         [Test]
         public static void CleaveDissociationTypesParseRegardlessOfCase()
         {
-            var written = new Crosslinker("K", "K", "roundTrip", true, "EThcD|LowCID", 100, 25, 60, 100, 0, 0, 50);
-            Assert.That(written.CleaveDissociationTypes,
-                Is.EquivalentTo(new[] { DissociationType.EThcD, DissociationType.LowCID }));
+            var allTypes = new[] { DissociationType.CID, DissociationType.HCD, DissociationType.ETD,
+                DissociationType.EThcD, DissociationType.LowCID };
 
-            // what the GUI produces
-            var upperCased = new Crosslinker("K", "K", "fromGui", true, "ETHCD|LOWCID", 100, 25, 60, 100, 0, 0, 50);
-            Assert.That(upperCased.CleaveDissociationTypes,
-                Is.EquivalentTo(new[] { DissociationType.EThcD, DissociationType.LowCID }));
+            // the enum's own casing, which is what ToString writes
+            var enumCased = new Crosslinker("K", "K", "enumCased", true, "CID|HCD|ETD|EThcD|LowCID", 100, 25, 60, 100, 0, 0, 50);
+            Assert.That(enumCased.CleaveDissociationTypes, Is.EquivalentTo(allTypes));
 
-            // and what a ToString round trip produces
-            var reparsed = new Crosslinker("K", "K", "reparsed", true,
-                Crosslinker.DissociationTypes2String(written.CleaveDissociationTypes), 100, 25, 60, 100, 0, 0, 50);
-            Assert.That(reparsed.CleaveDissociationTypes, Is.EquivalentTo(written.CleaveDissociationTypes));
+            // upper case, which is what the GUI writes
+            var upperCased = new Crosslinker("K", "K", "upperCased", true, "CID|HCD|ETD|ETHCD|LOWCID", 100, 25, 60, 100, 0, 0, 50);
+            Assert.That(upperCased.CleaveDissociationTypes, Is.EquivalentTo(allTypes));
+
+            // a hand-edited tsv, where case and padding are whatever the user typed
+            var handEdited = new Crosslinker("K", "K", "handEdited", true, " cid | ethcd ", 100, 25, 60, 100, 0, 0, 50);
+            Assert.That(handEdited.CleaveDissociationTypes,
+                Is.EquivalentTo(new[] { DissociationType.CID, DissociationType.EThcD }));
+
+            // an unrecognised type is dropped rather than throwing, and does not take the rest with it
+            var unknownType = new Crosslinker("K", "K", "unknownType", true, "CID|UVPD|", 100, 25, 60, 100, 0, 0, 50);
+            Assert.That(unknownType.CleaveDissociationTypes, Is.EquivalentTo(new[] { DissociationType.CID }));
+
+            // and the round trip through the file the GUI writes preserves all five
+            var reloaded = Crosslinker.ParseCrosslinkerFromString(enumCased.ToString(true));
+            Assert.That(reloaded.CleaveDissociationTypes, Is.EquivalentTo(allTypes));
+            Assert.That(reloaded.IsCleavedBy(DissociationType.EThcD), Is.True);
         }
 
         [Test]
@@ -1316,6 +1360,60 @@ namespace Test
             var signatureIons = fragmentsWithCleavedXlPieces.Where(v => v.ProductType == ProductType.M).ToList();
             Assert.That(signatureIons.Count == 2);
             Assert.That(signatureIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 814, 824 }));
+        }
+
+        /// <summary>
+        /// The behaviour #1797 asks for: under LowCID a CID-cleavable crosslinker is localized as its two
+        /// cleaved stubs, exactly as it would be under CID, rather than as the intact crosslinker plus the
+        /// partner peptide. LowCID is compared against CID directly so the assertion states the
+        /// equivalence rather than a golden number, and against ETD to show the uncleaved path survives.
+        ///   PROTEIN
+        ///   |
+        /// PEPTIDE
+        /// </summary>
+        [Test]
+        public static void TestTheoreticalFragmentsCleavableCrosslinkLowCid()
+        {
+            Crosslinker c = new Crosslinker("P", "R", "Test", true, "CID", 1000, 15, 25, 1000, 5, 5, 5);
+
+            Protein p1 = new Protein("PEPTIDE", "");
+            var alphaPeptide = p1.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            double betaPeptideMass = 10000;
+
+            List<Product> Fragments(DissociationType dissociationType)
+            {
+                var yielded = CrosslinkedPeptide.XlGetTheoreticalFragments(dissociationType, c,
+                    new List<int> { 3 }, betaPeptideMass, alphaPeptide).ToList();
+                Assert.That(yielded.Count, Is.EqualTo(1));
+                Assert.That(yielded[0].Item1, Is.EqualTo(3));
+                return yielded[0].Item2;
+            }
+
+            static double[] Masses(List<Product> fragments, ProductType productType) => fragments
+                .Where(v => v.ProductType == productType).Select(v => v.NeutralMass).ToArray();
+
+            var lowCid = Fragments(DissociationType.LowCID);
+            var cid = Fragments(DissociationType.CID);
+            var etd = Fragments(DissociationType.ETD);
+
+            // LowCID localizes what CID localizes: the signature ions and the crosslinked backbone ions
+            // carry the same masses, and only the ion types mzLib generates differ
+            Assert.That(Masses(lowCid, ProductType.M), Is.EqualTo(Masses(cid, ProductType.M)));
+            Assert.That(Masses(lowCid, ProductType.b), Is.EqualTo(Masses(cid, ProductType.b)));
+            Assert.That(Masses(lowCid, ProductType.y), Is.EqualTo(Masses(cid, ProductType.y)));
+
+            // and those masses are the two cleaved stubs, not the intact crosslinker
+            Assert.That(Masses(lowCid, ProductType.M), Is.EqualTo(new[]
+            {
+                alphaPeptide.MonoisotopicMass + c.CleaveMassShort,
+                alphaPeptide.MonoisotopicMass + c.CleaveMassLong
+            }).Within(1e-6));
+
+            // ETD is not declared, so the crosslinker stays intact and the partner peptide comes with it
+            Assert.That(Masses(etd, ProductType.M), Is.EqualTo(new[]
+            {
+                alphaPeptide.MonoisotopicMass + c.TotalMass + betaPeptideMass
+            }).Within(1e-6));
         }
 
         [Test]
