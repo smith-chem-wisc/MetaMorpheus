@@ -714,9 +714,10 @@ namespace TaskLayer
                 // UniDec's licence requires software that redistributes IsoDec to tell its users so and to
                 // pass on the citation request, so this is an obligation rather than a courtesy. Written
                 // only when IsoDec actually ran, including when it was selected for individual files.
-                if (UsedIsoDecDeconvolution())
+                // Worded so it stays true when only some files used IsoDec, which Any(...) admits.
+                if (UsedIsoDecDeconvolution(currentRawDataFilepathList.Count))
                 {
-                    file.WriteLine("Isotopic envelope deconvolution was performed using IsoDec, part of UniDec (https://github.com/michaelmarty/UniDec). Publications using these results should cite Marty et al. Anal. Chem. 2015, DOI: 10.1021/acs.analchem.5b00140.");
+                    file.WriteLine("IsoDec, part of UniDec (https://github.com/michaelmarty/UniDec), was used for isotopic envelope deconvolution in this analysis. Publications using these results should cite Marty et al. Anal. Chem. 2015, DOI: 10.1021/acs.analchem.5b00140.");
                     file.WriteLine();
                 }
                 file.WriteLine("Spectra files: ");
@@ -745,23 +746,47 @@ namespace TaskLayer
         /// or for any individual file. Drives the UniDec citation in the manuscript prose, which its licence
         /// requires be passed on to end users rather than left implicit.
         /// </summary>
-        private bool UsedIsoDecDeconvolution()
+        /// <param name="spectraFileCount">
+        /// How many spectra files the task was given. A file whose settings failed to parse is absent from
+        /// FileSpecificParameters but still runs on CommonParameters, so a short list means the task-level
+        /// value governed at least one file.
+        /// </param>
+        private bool UsedIsoDecDeconvolution(int spectraFileCount)
         {
-            static bool IsIsoDec(CommonParameters parameters) =>
-                parameters?.PrecursorDeconvolutionParameters?.DeconvolutionType == DeconvolutionType.IsoDecDeconvolution
-                || parameters?.ProductDeconvolutionParameters?.DeconvolutionType == DeconvolutionType.IsoDecDeconvolution;
-
-            // FileSpecificParameters holds each file's settings already merged over CommonParameters, so it
-            // is authoritative when populated: a file-specific toml can turn IsoDec on for one file, and it
-            // can equally turn it off for every file, in which case the task-level value was never used and
-            // citing IsoDec would be wrong. CommonParameters is the fallback only when no per-file entries
-            // were built.
-            if (FileSpecificParameters is { Count: > 0 })
+            // MultipleDeconParameters reports its own type rather than the ones it wraps, so an equality
+            // test alone would miss IsoDec nested inside it. Unreachable from a toml today (the converter
+            // accepts only Classic and IsoDec) but selectable in memory, and missing it would under-cite.
+            static bool ContainsIsoDec(DeconvolutionParameters parameters) => parameters switch
             {
-                return FileSpecificParameters.Any(fileAndParameters => IsIsoDec(fileAndParameters.Parameters));
+                null => false,
+                MultipleDeconParameters multiple => multiple.Parameters.Any(ContainsIsoDec),
+                _ => parameters.DeconvolutionType == DeconvolutionType.IsoDecDeconvolution
+            };
+
+            // Precursor parameters only apply when DoPrecursorDeconvolution is set, so IsoDec sitting in a
+            // parameter set that never runs is not grounds for a citation. Products have no such flag:
+            // Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments always deconvolutes.
+            // Not caught: SearchTask force-disables precursor deconvolution for Mgf/Ms2Align inputs on a
+            // transient copy that never reaches these lists, so such a run can still over-cite. Closing
+            // that needs the citation recorded where deconvolution is dispatched, not inferred from
+            // parameters.
+            static bool IsIsoDec(CommonParameters parameters) =>
+                parameters is not null
+                && ((parameters.DoPrecursorDeconvolution && ContainsIsoDec(parameters.PrecursorDeconvolutionParameters))
+                    || ContainsIsoDec(parameters.ProductDeconvolutionParameters));
+
+            // FileSpecificParameters holds each file's settings already merged over CommonParameters, so a
+            // file-specific toml can turn IsoDec on for one file and can equally turn it off for every file,
+            // in which case the task-level value never applied and citing IsoDec would be wrong.
+            List<(string FileName, CommonParameters Parameters)> perFileParameters = FileSpecificParameters ?? [];
+            if (perFileParameters.Any(fileAndParameters => IsIsoDec(fileAndParameters.Parameters)))
+            {
+                return true;
             }
 
-            return IsIsoDec(CommonParameters);
+            // One entry per file means the per-file list is the whole story. Short of that, a toml failed to
+            // parse (or the run is aborting) and those files ran on CommonParameters, which still counts.
+            return perFileParameters.Count < spectraFileCount && IsIsoDec(CommonParameters);
         }
 
         #region Database Loading

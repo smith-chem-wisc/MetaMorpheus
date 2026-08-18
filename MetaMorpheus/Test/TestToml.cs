@@ -432,6 +432,14 @@ namespace Test
                     Assert.That(Prose(outputDir, "ClassicFromToml"), Does.Not.Contain("10.1021/acs.analchem.5b00140"),
                         "the task asked for IsoDec but every file's toml overrode it to Classic, so IsoDec "
                         + "never ran and citing it would be wrong");
+
+                    // Asserting the DOI alone would stay green if a regression emitted the sentence
+                    // unconditionally while reformatting the DOI. UniDec is the name the licence requires
+                    // be indicated, so its absence is the thing worth pinning.
+                    Assert.That(Prose(outputDir, "ClassicDirect"), Does.Not.Contain("UniDec"),
+                        "Classic deconvolution must not name UniDec either");
+                    Assert.That(Prose(outputDir, "ClassicFromToml"), Does.Not.Contain("UniDec"),
+                        "IsoDec never ran, so UniDec must not be named");
                 });
             }
             finally
@@ -720,5 +728,172 @@ namespace Test
                 File.Delete(tomlPath);
             }
         }
+
+        /// <summary>
+        /// The UniDec citation decision, case by case. Each case is chosen to fail if one specific piece
+        /// of the rule is removed, so none of them passes for an incidental reason:
+        /// the DoPrecursorDeconvolution gate, the product half of the check, the per-file precedence, the
+        /// short-list fallback, and the descent into MultipleDeconParameters.
+        /// </summary>
+        /// <param name="scenario">Which arrangement of task-level and per-file settings to build.</param>
+        /// <param name="spectraFileCount">How many spectra files the task was handed.</param>
+        /// <param name="expectCitation">Whether IsoDec actually governed at least one file.</param>
+        [Test]
+        // Task-level only, no per-file entries: the precursor clause and its gate.
+        [TestCase("TaskPrecursorIsoDec", 1, true)]
+        [TestCase("TaskPrecursorIsoDecButDeconvolutionOff", 1, false)]
+        // Products have no Do* flag, so IsoDec there always counts.
+        [TestCase("TaskProductIsoDecOnly", 1, true)]
+        [TestCase("TaskProductIsoDecOnlyAndDeconvolutionOff", 1, true)]
+        // Per-file entries take precedence over the task when they cover every file.
+        [TestCase("EveryFileOverridesToClassic", 2, false)]
+        [TestCase("OneFileOverridesToIsoDec", 2, true)]
+        // A toml that failed to parse leaves the list short, and those files ran on CommonParameters.
+        [TestCase("ShortListBecauseATomlFailedToParse", 2, true)]
+        [TestCase("ShortListButTaskIsClassic", 2, false)]
+        // MultipleDeconParameters reports its own type and hides the ones it wraps.
+        [TestCase("TaskMultipleContainingIsoDec", 1, true)]
+        [TestCase("TaskMultipleAllClassic", 1, false)]
+        // Nothing ran, so there is nothing to cite.
+        [TestCase("NoSpectraFiles", 0, false)]
+        public static void TestUniDecCitationDecision(string scenario, int spectraFileCount, bool expectCitation)
+        {
+            static DeconvolutionParameters Classic() => new ClassicDeconvolutionParameters(1, 12, 4, 3);
+            static DeconvolutionParameters IsoDec() => new IsoDecDeconvolutionParameters();
+            static DeconvolutionParameters Multiple(params DeconvolutionParameters[] wrapped) =>
+                new MultipleDeconParameters(wrapped, 1, 12);
+
+            CommonParameters taskParameters;
+            var perFileParameters = new List<(string FileName, CommonParameters Parameters)>();
+
+            switch (scenario)
+            {
+                case "TaskPrecursorIsoDec":
+                    taskParameters = new CommonParameters(precursorDeconParams: IsoDec(), productDeconParams: Classic());
+                    break;
+                case "TaskPrecursorIsoDecButDeconvolutionOff":
+                    taskParameters = new CommonParameters(doPrecursorDeconvolution: false,
+                        precursorDeconParams: IsoDec(), productDeconParams: Classic());
+                    break;
+                case "TaskProductIsoDecOnly":
+                    taskParameters = new CommonParameters(precursorDeconParams: Classic(), productDeconParams: IsoDec());
+                    break;
+                case "TaskProductIsoDecOnlyAndDeconvolutionOff":
+                    taskParameters = new CommonParameters(doPrecursorDeconvolution: false,
+                        precursorDeconParams: Classic(), productDeconParams: IsoDec());
+                    break;
+                case "EveryFileOverridesToClassic":
+                    taskParameters = new CommonParameters(precursorDeconParams: IsoDec(), productDeconParams: IsoDec());
+                    perFileParameters.Add(("a.mzML", new CommonParameters(precursorDeconParams: Classic(), productDeconParams: Classic())));
+                    perFileParameters.Add(("b.mzML", new CommonParameters(precursorDeconParams: Classic(), productDeconParams: Classic())));
+                    break;
+                case "OneFileOverridesToIsoDec":
+                    taskParameters = new CommonParameters(precursorDeconParams: Classic(), productDeconParams: Classic());
+                    perFileParameters.Add(("a.mzML", new CommonParameters(precursorDeconParams: Classic(), productDeconParams: Classic())));
+                    perFileParameters.Add(("b.mzML", new CommonParameters(precursorDeconParams: IsoDec(), productDeconParams: IsoDec())));
+                    break;
+                case "ShortListBecauseATomlFailedToParse":
+                    // Two files, one toml parsed to Classic, the other threw so nothing was added for it.
+                    // That file ran on the task's IsoDec, so the citation is owed.
+                    taskParameters = new CommonParameters(precursorDeconParams: IsoDec(), productDeconParams: IsoDec());
+                    perFileParameters.Add(("a.mzML", new CommonParameters(precursorDeconParams: Classic(), productDeconParams: Classic())));
+                    break;
+                case "ShortListButTaskIsClassic":
+                    taskParameters = new CommonParameters(precursorDeconParams: Classic(), productDeconParams: Classic());
+                    perFileParameters.Add(("a.mzML", new CommonParameters(precursorDeconParams: Classic(), productDeconParams: Classic())));
+                    break;
+                case "TaskMultipleContainingIsoDec":
+                    taskParameters = new CommonParameters(precursorDeconParams: Classic(),
+                        productDeconParams: Multiple(Classic(), IsoDec()));
+                    break;
+                case "TaskMultipleAllClassic":
+                    taskParameters = new CommonParameters(precursorDeconParams: Classic(),
+                        productDeconParams: Multiple(Classic(), Classic()));
+                    break;
+                case "NoSpectraFiles":
+                    taskParameters = new CommonParameters(precursorDeconParams: IsoDec(), productDeconParams: IsoDec());
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(scenario), scenario, "unknown scenario");
+            }
+
+            var task = new SearchTask { CommonParameters = taskParameters, FileSpecificParameters = perFileParameters };
+            var method = typeof(MetaMorpheusTask).GetMethod("UsedIsoDecDeconvolution",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.That(method, Is.Not.Null, "UsedIsoDecDeconvolution was renamed; this test needs updating");
+
+            bool citationWritten = (bool)method.Invoke(task, new object[] { spectraFileCount });
+            Assert.That(citationWritten, Is.EqualTo(expectCitation));
+        }
+
+        /// <summary>
+        /// The short-list state the UniDec citation fallback exists for. A file-specific toml that cannot be
+        /// parsed is warned about and skipped, so FileSpecificParameters ends up with fewer entries than
+        /// there are spectra files while that file still runs on CommonParameters. Uses Classic throughout so
+        /// it does not depend on the IsoDec native library, which is Windows-only; whether a short list then
+        /// earns a citation is covered by TestUniDecCitationDecision.
+        /// </summary>
+        [Test]
+        public static void TestUnparseableFileSpecificTomlLeavesFileSpecificParametersShort()
+        {
+            string outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestShortFileSpecificList");
+            string dataDir = Path.Combine(outputDir, "data");
+            if (Directory.Exists(outputDir)) Directory.Delete(outputDir, true);
+            Directory.CreateDirectory(dataDir);
+
+            var warnings = new List<string>();
+            void Handler(object sender, StringEventArgs e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += Handler;
+
+            try
+            {
+                string source = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "PrunedDbSpectra.mzml");
+                string goodFile = Path.Combine(dataDir, "GoodToml.mzml");
+                string brokenFile = Path.Combine(dataDir, "BrokenToml.mzml");
+                File.Copy(source, goodFile, true);
+                File.Copy(source, brokenFile, true);
+
+                var classicForOneFile = new FileSpecificParameters
+                {
+                    PrecursorDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                    ProductDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 10, 4, 3)
+                };
+                Toml.WriteFile(classicForOneFile, Path.Combine(dataDir, "GoodToml.toml"), MetaMorpheusTask.tomlConfig);
+
+                // An unknown deconvolution type is what the toml converter throws MetaMorpheusException on,
+                // which RunTask catches, warns about, and continues past without adding a per-file entry.
+                File.WriteAllText(Path.Combine(dataDir, "BrokenToml.toml"),
+                    "[PrecursorDeconvolutionParameters]" + Environment.NewLine
+                    + "DeconvolutionType = \"NotARealDeconvolutionType\"" + Environment.NewLine);
+
+                var task = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        precursorDeconParams: new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                        productDeconParams: new ClassicDeconvolutionParameters(1, 10, 4, 3))
+                };
+                string database = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "DbForPrunedDb.fasta");
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("ShortListRun", task) },
+                    new List<string> { goodFile, brokenFile },
+                    new List<DbForTask> { new DbForTask(database, false) },
+                    outputDir).Run();
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(warnings.Any(w => w.Contains("Problem parsing the file-specific toml")), Is.True,
+                        "the broken toml must actually fail to parse, or this is not the scenario under test");
+                    Assert.That(task.FileSpecificParameters, Has.Count.EqualTo(1),
+                        "two spectra files were given but only the parseable toml produced an entry, which is "
+                        + "the short list the citation fallback consults CommonParameters for");
+                });
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= Handler;
+                if (Directory.Exists(outputDir)) Directory.Delete(outputDir, true);
+            }
+        }
+
     }
 }
