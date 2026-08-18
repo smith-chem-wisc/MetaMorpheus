@@ -1,9 +1,12 @@
+using System;
+using Nett;
+
 namespace TaskLayer
 {
     /// <summary>
     /// Parameters for <see cref="TruncationSearchTask"/>. Mirrors the SearchParameters pattern,
     /// holding only what the truncation search needs; expanded as later phases require more settings.
-    /// Defaults encode the locked decisions in 01_Architecture.md (#3, #16, #17, #20).
+    /// Defaults encode the locked decisions in docs/Truncation-Search.md (#3, #16, #17, #20).
     /// </summary>
     public class TruncationSearchParameters
     {
@@ -26,7 +29,7 @@ namespace TaskLayer
         public double ParentQValueThreshold { get; set; } = 0.10;
 
         /// <summary>
-        /// Notch acceptor used when chopping a parent down to the precursor mass in Pass 3 (decision #80).
+        /// Notch acceptor used when chopping a parent down to the precursor mass in Pass 3 (decisions #9, #15).
         /// Inherited from the Pass 1 search convention; defaults to the top-down ThreeMM notches so
         /// precursor isotope errors do not block a chop. Also sets the FDR notch count for the pooled
         /// analysis.
@@ -36,15 +39,22 @@ namespace TaskLayer
         /// <summary>Custom mass-diff-acceptor string, used only when <see cref="MassDiffAcceptorType"/> is Custom.</summary>
         public string CustomMdac { get; set; } = null;
 
-        /// <summary>Custom output-folder name used for benchmark runs (decision #20). Null = default naming.</summary>
-        public string CustomOutputFolderName { get; set; } = null;
+        /// <summary>
+        /// Environment variable that turns on the benchmarking instrumentation: set it to the path of a
+        /// rolling, append-only <c>perf_log.tsv</c>.
+        /// </summary>
+        public const string PerfLogPathEnvironmentVariable = "MetaMorpheusTruncationPerfLog";
 
         /// <summary>
-        /// Optional path to the rolling, append-only <c>perf_log.tsv</c> (03_Benchmarks.md). When set, the
-        /// task appends one metrics+timing row per run. Null (default) = no perf logging, so ordinary runs
-        /// and tests are unaffected.
+        /// Path to the rolling, append-only <c>perf_log.tsv</c> (docs/Truncation-Search.md, Benchmarking hook).
+        /// When set, the task appends one metrics+timing row per run and writes the CandidateRanks.tsv side
+        /// file. Deliberately kept OUT of the serialized TOML schema — this is benchmarking instrumentation,
+        /// not a search setting, so it is driven by the <see cref="PerfLogPathEnvironmentVariable"/>
+        /// environment variable (and set directly by tests). Unset (default) = no perf logging, so ordinary
+        /// runs and tests are unaffected.
         /// </summary>
-        public string PerfLogPath { get; set; } = null;
+        [TomlIgnore]
+        public string PerfLogPath { get; set; } = Environment.GetEnvironmentVariable(PerfLogPathEnvironmentVariable);
 
         /// <summary>
         /// Seed truncation parents from the DATABASE — theoretical full-length proteoforms generated like a
@@ -57,7 +67,7 @@ namespace TaskLayer
 
         /// <summary>
         /// When database-seeding (<see cref="SeedParentsFromDatabase"/>), first narrow the database to
-        /// proteins supported by de-novo sequence tags extracted from the scans (doc §11.2.4) rather than
+        /// proteins supported by de-novo sequence tags extracted from the scans (docs/Truncation-Search.md, Sequence-tag filtering) rather than
         /// digesting every protein. Global-union variant: the candidate set is the union over all scans, so
         /// the indexed engine is reused unchanged — this controls the parent explosion (the all-DB blowup)
         /// but does not yet restrict candidates per scan. Off by default.
