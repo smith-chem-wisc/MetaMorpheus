@@ -3,11 +3,16 @@ using System.Collections.Generic;
 namespace TaskLayer
 {
     /// <summary>
-    /// In-memory hand-off between tasks in a run list (01_Architecture.md decision #1). A finishing
+    /// In-memory hand-off between tasks in a run list (docs/Truncation-Search.md decision #1). A finishing
     /// task deposits a typed result keyed by its task id; a later task retrieves it by the upstream
-    /// task id it was configured with. Used by <see cref="SearchTask"/>'s post-search analysis to pass
-    /// the deduped proteoform-level SpectralMatch list to <see cref="TruncationSearchTask"/> without a
-    /// file round-trip. When the lookup misses, the consumer falls back to parsing from disk.
+    /// task id it was configured with. Used by <see cref="SearchTask"/> to pass its PSM-level
+    /// SpectralMatch list — as searched, neither deduped nor reduced to proteoform level — to
+    /// <see cref="TruncationSearchTask"/> without a file round-trip; the consumer does the dedup to
+    /// proteoform level itself. When the lookup misses, the consumer falls back to parsing from disk.
+    ///
+    /// The context is handed out by <see cref="EverythingRunnerEngine"/> only when the run list actually
+    /// contains a consumer, and <see cref="Clear"/>ed once that consumer has run, so a deposited result
+    /// is not kept alive for the remainder of a run that will never read it.
     /// </summary>
     public class TaskChainContext
     {
@@ -60,6 +65,16 @@ namespace TaskLayer
 
             result = default;
             return false;
+        }
+
+        /// <summary>
+        /// Drops every deposited result, releasing the object graphs they pin. The runner calls this once a
+        /// consuming task has run, so a search's PSM set is not held for the rest of the run list.
+        /// </summary>
+        public void Clear()
+        {
+            _results.Clear();
+            _depositOrder.Clear();
         }
     }
 }

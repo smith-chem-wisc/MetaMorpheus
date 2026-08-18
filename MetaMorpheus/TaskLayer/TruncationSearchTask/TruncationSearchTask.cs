@@ -21,7 +21,7 @@ namespace TaskLayer
     /// <summary>
     /// Identifies N- and C-terminally truncated proteoforms by re-searching MS2 scans against a
     /// fragment index built from the proteoforms found by an upstream top-down <see cref="SearchTask"/>.
-    /// See 01_Architecture.md for the full three-pass design (index + dual single-series scoring,
+    /// See docs/Truncation-Search.md for the full three-pass design (index + dual single-series scoring,
     /// terminus-directed chopping, pooled FDR/PEP).
     ///
     /// <see cref="RunSpecific"/> wires the Phase 1-3 engine pieces together: ingest the deduped Pass 1
@@ -42,6 +42,13 @@ namespace TaskLayer
         }
 
         public TruncationSearchParameters TruncationSearchParameters { get; set; }
+
+        /// <summary>This task ingests the upstream search's PSM set from the task-chain context (#1).</summary>
+        // [TomlIgnore] must be repeated on the override: Nett reads the attribute off the runtime type's own
+        // property, so it does not inherit the one on MetaMorpheusTask and would otherwise serialize this
+        // read-only property into the task TOML (and then fail to read it back).
+        [Nett.TomlIgnore]
+        public override bool ConsumesTaskChainContext => true;
 
         // Set during parent building; reported in the perf log (did PEP, not notch q, drive the #3 filter?).
         private bool _pepQWasUsedForParents;
@@ -143,7 +150,7 @@ namespace TaskLayer
             // the engine's MaxCandidatesToScore cap). Written to CandidateRanks.tsv.
             var winnerRankRows = new List<string>();
 
-            // Perf accumulators (03_Benchmarks); parent/oversize counts are identical per file (shared list).
+            // Perf accumulators (docs/Truncation-Search.md, Benchmarking hook); parent/oversize counts are identical per file (shared list).
             var pass3Timings = new TruncationTimings();
             double pass2IndexSeconds = 0, pass2ScoringSeconds = 0;
             int totalMs2Scans = 0, indexedParents = 0, oversizeExcluded = 0;
@@ -248,7 +255,7 @@ namespace TaskLayer
                 }
             }
 
-            // 6. Optional perf-log row (03_Benchmarks). No-op unless a path is configured.
+            // 6. Optional perf-log row (docs/Truncation-Search.md, Benchmarking hook). No-op unless a path is configured.
             if (!string.IsNullOrWhiteSpace(TruncationSearchParameters.PerfLogPath))
             {
                 AppendPerfLog(withFdr, OutputFolder, currentRawFileList.Count, totalMs2Scans,
@@ -452,7 +459,7 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Database-seeded parents, narrowed by the sequence-tag filter (doc §11.2.4): build a k-mer index
+        /// Database-seeded parents, narrowed by the sequence-tag filter (docs/Truncation-Search.md, Sequence-tag filtering): build a k-mer index
         /// over the database, extract de-novo tags from every scan, take the UNION of tag-supported proteins
         /// (global-union variant), and digest only those into theoretical parents — keeping the parent set
         /// far smaller than the whole database without restricting candidates per scan. Tag extraction (over

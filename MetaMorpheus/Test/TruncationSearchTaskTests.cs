@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace Test
             Assert.That(task.TaskType, Is.EqualTo(MyTask.Truncation));
             Assert.That(task.CommonParameters, Is.Not.Null);
             Assert.That(task.TruncationSearchParameters, Is.Not.Null);
-            // Locked defaults (01_Architecture.md #3, #17).
+            // Locked defaults (docs/Truncation-Search.md #3, #17).
             Assert.That(task.TruncationSearchParameters.ParentQValueThreshold, Is.EqualTo(0.10));
             Assert.That(task.TruncationSearchParameters.WriteDecoys, Is.True);
             Assert.That(task.TruncationSearchParameters.WriteContaminants, Is.True);
@@ -110,6 +111,74 @@ namespace Test
             {
                 File.Delete(tomlPath);
             }
+        }
+
+        /// <summary>
+        /// The perf log is benchmarking instrumentation, not a search setting: it must not appear in the
+        /// TOML every user sees, and a TOML that still carries the key from before it moved must still
+        /// load. The environment variable is the supported way to turn it on.
+        /// </summary>
+        [Test]
+        public void PerfLogPath_IsNotPartOfTheTomlSurface()
+        {
+            var task = new TruncationSearchTask();
+            task.TruncationSearchParameters.PerfLogPath = @"C:\somewhere\perf_log.tsv";
+
+            string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TruncationNoPerfLog.toml");
+            Toml.WriteFile(task, tomlPath, MetaMorpheusTask.tomlConfig);
+            try
+            {
+                Assert.That(File.ReadAllText(tomlPath), Does.Not.Contain("PerfLogPath"));
+                Assert.That(File.ReadAllText(tomlPath), Does.Not.Contain("CustomOutputFolderName"));
+
+                // A stale key left over in an existing benchmarking TOML must not break the read.
+                File.AppendAllText(tomlPath, "\r\nPerfLogPath = 'C:\\stale\\perf_log.tsv'\r\n");
+                var read = Toml.ReadFile<TruncationSearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+                Assert.That(read.TruncationSearchParameters.PerfLogPath, Is.Null,
+                    "the TOML key is ignored; the environment variable drives it");
+            }
+            finally
+            {
+                File.Delete(tomlPath);
+            }
+        }
+
+        /// <summary>The benchmarking hook is driven by an environment variable, not by the task TOML.</summary>
+        [Test]
+        public void PerfLogPath_DefaultsFromEnvironmentVariable()
+        {
+            string previous = Environment.GetEnvironmentVariable(TruncationSearchParameters.PerfLogPathEnvironmentVariable);
+            try
+            {
+                Environment.SetEnvironmentVariable(TruncationSearchParameters.PerfLogPathEnvironmentVariable, @"C:\bench\perf_log.tsv");
+                Assert.That(new TruncationSearchParameters().PerfLogPath, Is.EqualTo(@"C:\bench\perf_log.tsv"));
+
+                Environment.SetEnvironmentVariable(TruncationSearchParameters.PerfLogPathEnvironmentVariable, null);
+                Assert.That(new TruncationSearchParameters().PerfLogPath, Is.Null);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(TruncationSearchParameters.PerfLogPathEnvironmentVariable, previous);
+            }
+        }
+
+        /// <summary>
+        /// The runner must not hand out — or hold on to — the task-chain context for run lists that have no
+        /// consumer, and must drop the deposited results once a consumer has run.
+        /// </summary>
+        [Test]
+        public void TaskChainContext_OnlyWiredWhenARunListHasAConsumer()
+        {
+            Assert.That(new SearchTask().ConsumesTaskChainContext, Is.False);
+            Assert.That(new TruncationSearchTask().ConsumesTaskChainContext, Is.True);
+
+            var context = new TaskChainContext();
+            context.Deposit("Task1", new List<SpectralMatch>());
+            Assert.That(context.TryGetMostRecent(out List<SpectralMatch> _), Is.True);
+
+            context.Clear();
+            Assert.That(context.TryGetMostRecent(out List<SpectralMatch> _), Is.False);
+            Assert.That(context.TryGet("Task1", out List<SpectralMatch> _), Is.False);
         }
 
         [Test]
@@ -211,7 +280,7 @@ namespace Test
                 // CommonParameters so MS2 deconvolution + the intact-skip tolerance match Pass 1.
                 truncationTask.TruncationSearchParameters.UpstreamSearchTaskId = "Task1-SearchTask";
                 truncationTask.CommonParameters = Toml.ReadFile<SearchTask>(topDownSearchToml, MetaMorpheusTask.tomlConfig).CommonParameters;
-                // Also exercise the optional perf-log path (03_Benchmarks).
+                // Also exercise the optional perf-log path (docs/Truncation-Search.md, Benchmarking hook).
                 string perfLogPath = Path.Combine(outDirectory, "perf_log.tsv");
                 truncationTask.TruncationSearchParameters.PerfLogPath = perfLogPath;
 
