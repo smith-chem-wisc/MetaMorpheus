@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using CommandLine;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,10 +15,38 @@ namespace Test
     [TestFixture]
     public static class TestCmd
     {
+        private static GlobalSettings GlobalSettingsBeforeTest;
+        private static string ScratchDataDirectory;
+
         [OneTimeSetUp]
         public static void Setup()
         {
             Environment.CurrentDirectory = TestContext.CurrentContext.TestDirectory;
+        }
+
+        /// <summary>
+        /// The licence tests below write a settings.toml and set GlobalVariables.GlobalSettings. Each gets
+        /// a private scratch directory to stand in for the data directory, and the process-wide settings
+        /// object is put back afterwards, so nothing they do is visible to the rest of the suite.
+        /// </summary>
+        [SetUp]
+        public static void PerTestSetup()
+        {
+            GlobalSettingsBeforeTest = GlobalVariables.GlobalSettings;
+            ScratchDataDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "ThermoLicenceScratch_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(ScratchDataDirectory);
+        }
+
+        [TearDown]
+        public static void PerTestTearDown()
+        {
+            GlobalVariables.GlobalSettings = GlobalSettingsBeforeTest;
+
+            if (Directory.Exists(ScratchDataDirectory))
+            {
+                Directory.Delete(ScratchDataDirectory, true);
+            }
         }
 
         [Test]
@@ -344,6 +373,291 @@ namespace Test
                 {
                     Directory.Delete(tempFolder, true);
                 }
+            }
+        }
+
+        /// <summary>
+        /// The option name is the whole interface here - it is what goes in a Dockerfile and a job
+        /// script - so a rename or a typo in the attribute has to fail loudly rather than quietly
+        /// leaving the flag unbound and the run back at the interactive prompt.
+        /// </summary>
+        [Test]
+        public static void TestAcceptThermoLicenceFlagBindsFromTheCommandLine()
+        {
+            bool bound = false;
+
+            CommandLine.Parser.Default
+                .ParseArguments<CommandLineSettings>(new[] { "--acceptThermoLicence" })
+                .WithParsed(options => bound = options.AcceptThermoLicence);
+
+            Assert.That(bound, Is.True, "--acceptThermoLicence was not bound by the command line parser");
+        }
+
+        /// <summary>
+        /// --acceptThermoLicence on its own is a setup step, not a run, so it must not be held to the
+        /// task/database/spectra requirements. Without the exemption the invocation that a container
+        /// build or a first-time macOS user needs most is rejected before it reaches Program.Run.
+        /// </summary>
+        [Test]
+        public static void TestAcceptThermoLicenceValidatesWithoutARunSpecified()
+        {
+            var settings = new CommandLineSettings { AcceptThermoLicence = true };
+
+            Assert.DoesNotThrow(() => settings.ValidateCommandLineSettings());
+
+            Assert.That(settings.Tasks.Count, Is.EqualTo(0));
+            Assert.That(settings.Databases.Count, Is.EqualTo(0));
+            Assert.That(settings.Spectra.Count, Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// The exemption above is conditional on the flag. An empty command line is still an error.
+        /// </summary>
+        [Test]
+        public static void TestEmptyCommandLineIsStillRejectedWithoutTheLicenceFlag()
+        {
+            var settings = new CommandLineSettings();
+
+            Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+        }
+
+        /// <summary>
+        /// Given alongside a run the flag is only a modifier, so the run itself is validated as usual.
+        /// A half-specified search must not become valid just because the licence was accepted with it.
+        /// </summary>
+        [Test]
+        public static void TestAcceptThermoLicenceDoesNotExemptARunFromValidation()
+        {
+            var settings = new CommandLineSettings
+            {
+                AcceptThermoLicence = true,
+                _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") }
+            };
+
+            var exception = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+
+            Assert.That(exception.Message, Does.Contain("task"),
+                "a run given with --acceptThermoLicence should still be rejected for having no task");
+        }
+
+        /// <summary>
+        /// Without the flag this must do nothing at all - not print, not write, and above all not stop
+        /// the run - since it sits on the path of every single command line invocation.
+        /// </summary>
+        [Test]
+        public static void TestAgreeToThermoLicenceIsANoOpWithoutTheFlag()
+        {
+            var settings = new CommandLineSettings { AcceptThermoLicence = false };
+            var output = new StringWriter();
+
+            bool nothingToRun = Program.AgreeToThermoLicence(settings, ScratchDataDirectory, output);
+
+            Assert.That(nothingToRun, Is.False, "a run without the flag must not be stopped");
+            Assert.That(output.ToString(), Is.Empty);
+            Assert.That(File.Exists(Path.Combine(ScratchDataDirectory, "settings.toml")), Is.False,
+                "nothing should have been written without the flag");
+        }
+
+        /// <summary>
+        /// The flag on an unagreed machine: the licence is printed, the agreement is recorded on disk and
+        /// applied to the running process, and the caller is told there is no run to continue into.
+        /// WriteExcelCompatibleTSVs starts true and is asserted true afterwards because it is the other
+        /// half of settings.toml - recording an agreement must not quietly reset an unrelated setting.
+        /// </summary>
+        [Test]
+        public static void TestAgreeToThermoLicencePrintsAndRecordsWhenNotYetAgreed()
+        {
+            GlobalVariables.GlobalSettings = new GlobalSettings
+            {
+                UserHasAgreedToThermoRawFileReaderLicence = false,
+                WriteExcelCompatibleTSVs = true
+            };
+
+            var settings = new CommandLineSettings
+            {
+                AcceptThermoLicence = true,
+                Verbosity = CommandLineSettings.VerbosityType.normal
+            };
+            settings.ValidateCommandLineSettings();
+            var output = new StringWriter();
+
+            bool nothingToRun = Program.AgreeToThermoLicence(settings, ScratchDataDirectory, output);
+
+            Assert.That(nothingToRun, Is.True, "the flag on its own is a setup step, not a run");
+            Assert.That(output.ToString(), Does.Contain("SOFTWARE LICENSE AGREEMENT"),
+                "the licence itself must be printed, so what was agreed to is in the log");
+            Assert.That(output.ToString(), Does.Contain("Recorded in"));
+
+            var recorded = Toml.ReadFile<GlobalSettings>(Path.Combine(ScratchDataDirectory, "settings.toml"));
+            Assert.That(recorded.UserHasAgreedToThermoRawFileReaderLicence, Is.True,
+                "the agreement was not written to settings.toml");
+            Assert.That(recorded.WriteExcelCompatibleTSVs, Is.True,
+                "recording the agreement reset the other setting in settings.toml");
+            Assert.That(GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence, Is.True,
+                "the agreement was written but not applied to the running process");
+        }
+
+        /// <summary>
+        /// On a machine that has already agreed there is nothing to record and nothing to re-read, so the
+        /// licence is not printed again and settings.toml is left alone. It still reports success.
+        /// </summary>
+        [Test]
+        public static void TestAgreeToThermoLicenceDoesNotReprintOnceAlreadyAgreed()
+        {
+            GlobalVariables.GlobalSettings = new GlobalSettings
+            {
+                UserHasAgreedToThermoRawFileReaderLicence = true,
+                WriteExcelCompatibleTSVs = false
+            };
+
+            var settings = new CommandLineSettings
+            {
+                AcceptThermoLicence = true,
+                Verbosity = CommandLineSettings.VerbosityType.normal
+            };
+            settings.ValidateCommandLineSettings();
+            var output = new StringWriter();
+
+            bool nothingToRun = Program.AgreeToThermoLicence(settings, ScratchDataDirectory, output);
+
+            Assert.That(nothingToRun, Is.True);
+            Assert.That(output.ToString(), Does.Not.Contain("SOFTWARE LICENSE AGREEMENT"),
+                "the licence should not be reprinted to someone who has already agreed");
+            Assert.That(output.ToString(), Does.Contain("Agreed to the Thermo RawFileReader licence"));
+            Assert.That(File.Exists(Path.Combine(ScratchDataDirectory, "settings.toml")), Is.False,
+                "an already-agreed machine should not have its settings.toml rewritten");
+        }
+
+        /// <summary>
+        /// -v none means no output, and that applies to the confirmation as much as to anything else.
+        /// </summary>
+        [Test]
+        public static void TestAgreeToThermoLicenceSaysNothingAtVerbosityNone()
+        {
+            GlobalVariables.GlobalSettings = new GlobalSettings { UserHasAgreedToThermoRawFileReaderLicence = true };
+
+            var settings = new CommandLineSettings
+            {
+                AcceptThermoLicence = true,
+                Verbosity = CommandLineSettings.VerbosityType.none
+            };
+            settings.ValidateCommandLineSettings();
+            var output = new StringWriter();
+
+            Program.AgreeToThermoLicence(settings, ScratchDataDirectory, output);
+
+            Assert.That(output.ToString(), Is.Empty, "-v none should suppress the confirmation");
+        }
+
+        /// <summary>
+        /// -v minimal is the other half of that condition, and does report the agreement.
+        /// </summary>
+        [Test]
+        public static void TestAgreeToThermoLicenceReportsAtVerbosityMinimal()
+        {
+            GlobalVariables.GlobalSettings = new GlobalSettings { UserHasAgreedToThermoRawFileReaderLicence = true };
+
+            var settings = new CommandLineSettings
+            {
+                AcceptThermoLicence = true,
+                Verbosity = CommandLineSettings.VerbosityType.minimal
+            };
+            settings.ValidateCommandLineSettings();
+            var output = new StringWriter();
+
+            Program.AgreeToThermoLicence(settings, ScratchDataDirectory, output);
+
+            Assert.That(output.ToString(), Does.Contain("Agreed to the Thermo RawFileReader licence"));
+        }
+
+        /// <summary>
+        /// Given alongside a real run the flag is only a modifier: the agreement is recorded and the
+        /// caller is told to carry on into the search rather than stopping at the setup step.
+        /// </summary>
+        [Test]
+        public static void TestAgreeToThermoLicenceContinuesIntoARunWhenOneWasGiven()
+        {
+            GlobalVariables.GlobalSettings = new GlobalSettings { UserHasAgreedToThermoRawFileReaderLicence = false };
+
+            var settings = new CommandLineSettings
+            {
+                AcceptThermoLicence = true,
+                _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") },
+                _spectra = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SmallCalibratible_Yeast.mzML") },
+                OutputFolder = ScratchDataDirectory
+            };
+            settings.ValidateCommandLineSettings();
+            var output = new StringWriter();
+
+            bool nothingToRun = Program.AgreeToThermoLicence(settings, ScratchDataDirectory, output);
+
+            Assert.That(nothingToRun, Is.False, "a run was given, so the flag must not stop it");
+            Assert.That(Toml.ReadFile<GlobalSettings>(Path.Combine(ScratchDataDirectory, "settings.toml"))
+                .UserHasAgreedToThermoRawFileReaderLicence, Is.True,
+                "the agreement should still have been recorded on the way through");
+        }
+
+        /// <summary>
+        /// The point of the flag is what it writes, so this drives the real entry point rather than a
+        /// stand-in: an unagreed settings.toml goes in, MetaMorpheusCommandLine.Program.Main runs with
+        /// nothing but the flag, and the agreement comes out recorded on disk and in memory.
+        ///
+        /// Given on its own the flag returns before Run() subscribes any engine or task handlers, so the
+        /// only global state this touches is settings.toml and GlobalVariables.GlobalSettings, both of
+        /// which are restored below. WriteExcelCompatibleTSVs is set beforehand and asserted afterwards
+        /// because it is the other half of that file: recording an agreement must not quietly reset the
+        /// one unrelated setting sharing it.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void TestAcceptThermoLicenceRecordsTheAgreementThroughMain()
+        {
+            string settingsPath = Path.Combine(GlobalVariables.DataDir, @"settings.toml");
+            string settingsBackup = File.Exists(settingsPath) ? File.ReadAllText(settingsPath) : null;
+            GlobalSettings globalSettingsBackup = GlobalVariables.GlobalSettings;
+
+            try
+            {
+                // a machine that has never agreed, and that has something to lose in the same file
+                Toml.WriteFile(new GlobalSettings
+                {
+                    UserHasAgreedToThermoRawFileReaderLicence = false,
+                    WriteExcelCompatibleTSVs = true
+                }, settingsPath);
+
+                int exitCode = Program.Main(new[] { "--acceptThermoLicence" });
+
+                Assert.That(exitCode, Is.EqualTo(0), "--acceptThermoLicence on its own should succeed");
+
+                var recorded = Toml.ReadFile<GlobalSettings>(settingsPath);
+                Assert.That(recorded.UserHasAgreedToThermoRawFileReaderLicence, Is.True,
+                    "the agreement was not written to settings.toml");
+                Assert.That(recorded.WriteExcelCompatibleTSVs, Is.True,
+                    "recording the agreement reset the other setting in settings.toml");
+                Assert.That(GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence, Is.True,
+                    "the agreement was written but not applied to the running process");
+
+                // Running it again on an already-agreed machine takes the other branch: nothing to
+                // record, nothing to re-print, and still a success rather than a complaint.
+                int secondExitCode = Program.Main(new[] { "--acceptThermoLicence" });
+
+                Assert.That(secondExitCode, Is.EqualTo(0), "--acceptThermoLicence should be idempotent");
+                Assert.That(Toml.ReadFile<GlobalSettings>(settingsPath).UserHasAgreedToThermoRawFileReaderLicence,
+                    Is.True);
+            }
+            finally
+            {
+                if (settingsBackup == null)
+                {
+                    File.Delete(settingsPath);
+                }
+                else
+                {
+                    File.WriteAllText(settingsPath, settingsBackup);
+                }
+
+                GlobalVariables.GlobalSettings = globalSettingsBackup;
             }
         }
     }
