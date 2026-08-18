@@ -20,13 +20,22 @@ namespace Test
         /// it may simply be absent. This hides it to reproduce that.
         /// </summary>
         [Test]
+        [NonParallelizable]
         public static void TestStartUpSurvivesAMissingProteomeCatalogue()
         {
             string proteomesDirectory = Path.Combine(GlobalVariables.DataDir, "Proteomes");
             string hiddenDirectory = proteomesDirectory + ".hidden-for-test";
 
+            // A run that died between the Move below and its finally block — a crash, a cancellation, a
+            // killed test host — leaves the only copy of the real directory here. Put it back rather than
+            // deleting it, or this run destroys the thing the test is meant to be protecting.
             if (Directory.Exists(hiddenDirectory))
-                Directory.Delete(hiddenDirectory, true);
+            {
+                if (Directory.Exists(proteomesDirectory))
+                    Directory.Delete(hiddenDirectory, true);
+                else
+                    Directory.Move(hiddenDirectory, proteomesDirectory);
+            }
 
             bool wasPresent = Directory.Exists(proteomesDirectory);
             if (wasPresent)
@@ -56,17 +65,22 @@ namespace Test
             }
         }
 
-        /// <summary>With the catalogue present it is read, and the human proteome is in it.</summary>
+        /// <summary>
+        /// With the catalogue present it is read, and the human proteome is in it. The directory is
+        /// asserted rather than tested for: the catalogue ships beside the executable, so if it is not
+        /// there the fixture is broken (or the sibling test above left it hidden), and this test passing
+        /// vacuously would hide that.
+        /// </summary>
         [Test]
+        [NonParallelizable]
         public static void TestProteomeCatalogueIsReadWhenPresent()
         {
-            Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Not.Null);
+            Assert.That(Directory.Exists(Path.Combine(GlobalVariables.DataDir, "Proteomes")), Is.True,
+                "the shipped Proteomes directory is missing from the data directory");
 
-            if (Directory.Exists(Path.Combine(GlobalVariables.DataDir, "Proteomes")))
-            {
-                Assert.That(GlobalVariables.AvailableUniProtProteomes.ContainsKey("UP000005640"));
-                Assert.That(GlobalVariables.AvailableUniProtProteomes["UP000005640"], Is.EqualTo("Homo sapiens (Human)"));
-            }
+            Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Not.Null);
+            Assert.That(GlobalVariables.AvailableUniProtProteomes.ContainsKey("UP000005640"));
+            Assert.That(GlobalVariables.AvailableUniProtProteomes["UP000005640"], Is.EqualTo("Homo sapiens (Human)"));
         }
 
         [Test]

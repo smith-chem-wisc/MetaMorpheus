@@ -551,8 +551,6 @@ namespace EngineLayer
         /// </remarks>
         private static void LoadAvailableProteomes()
         {
-            AvailableUniProtProteomes = new Dictionary<string, string>();
-
             string proteomeListPath = Path.Combine(DataDir, @"Proteomes", @"availableUniProtProteomes.txt.gz");
 
             try
@@ -567,6 +565,8 @@ namespace EngineLayer
                 // Deliberately broad: every way reading a local file can fail — absent, wrong extension,
                 // truncated, locked, unreadable — has the same consequence for this optional catalogue, and
                 // none of them is worth refusing to start over.
+                AvailableUniProtProteomes = new Dictionary<string, string>();
+
                 Console.WriteLine($"Could not read the list of available UniProt proteomes from '{proteomeListPath}'. " +
                                   $"Downloading a proteome by name will be unavailable. {e.Message}");
             }
