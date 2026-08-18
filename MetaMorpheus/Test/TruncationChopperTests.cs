@@ -387,6 +387,54 @@ namespace Test
         }
 
         /// <summary>
+        /// An internal fragment removes residues from BOTH termini (here 5 from the N-terminus and 10 from the
+        /// C-terminus -> P1[6..40]). ChopInternalCandidates must enumerate the bilateral chop, report the correct
+        /// total residues chopped (15) at the exact notch (0), and label it InternalTruncation. Exercises the
+        /// chopper primitive directly.
+        /// </summary>
+        [Test]
+        public void ChopInternal_RecoversInternalSpan_LabeledInternal()
+        {
+            // P1[6..40]: 5 residues chopped from the N-terminus AND 10 from the C-terminus -> internal fragment.
+            double target = MakeProteoform(RepeatTo(AlphabetP1, 50).Substring(5, 35), "x", null).MonoisotopicMass;
+
+            List<ChopResult> results = ProteoformChopper.ChopInternalCandidates(_p1, target, _exactAcceptor);
+            ChopResult hit = results.FirstOrDefault(r => r.TruncatedForm.OneBasedStartResidueInProtein == 6
+                                                       && r.TruncatedForm.OneBasedEndResidueInProtein == 40);
+
+            Assert.That(hit, Is.Not.Null, "internal span 6-40 not recovered");
+            Assert.That(hit.ResiduesChopped, Is.EqualTo(15));        // 5 from N + 10 from C
+            Assert.That(hit.Notch, Is.EqualTo(0));
+            Assert.That(hit.TruncatedForm.Description, Does.StartWith(TruncationPass3.InternalTruncation));
+        }
+
+        /// <summary>
+        /// Engine-level companion to ChopInternal_RecoversInternalSpan: the direct internal search must enumerate
+        /// the internal fragment P1[6..40] from its parent, clear the bilateral ion gate (>= 2 ions per terminus),
+        /// and report exactly one InternalTruncation PSM with the right span. Verifies functional recovery on a
+        /// clean synthetic case; its FDR behavior in dense spectra - the reason this search ships off by default -
+        /// is a system-level property tested elsewhere.
+        /// </summary>
+        [Test]
+        public void InternalSearch_RecoversInternalFragment_FromParent()
+        {
+            // Scan = internal fragment P1[6..40] (precursor + its own both-series ladder). The direct internal
+            // search should enumerate it from parent P1, clear the bilateral gate, and report it as internal.
+            var internalForm = MakeProteoform(RepeatTo(AlphabetP1, 50).Substring(5, 35), "P1", null);
+            Ms2ScanWithSpecificMass scan = BuildScan(1, internalForm.MonoisotopicMass,
+                SeriesMasses(internalForm, FragmentationTerminus.Both, _cp), _cp);
+            var parents = new List<TruncationParent> { new TruncationParent(_p1, "P1", "P1", false) };
+
+            List<TruncationPsm> psms = InternalTruncationSearch.Run(parents, new[] { scan }, _cp, _exactAcceptor,
+                minIonsPerTerminus: 2, maxParentMass: 30000);
+
+            Assert.That(psms.Count, Is.EqualTo(1));
+            Assert.That(psms[0].TruncationProductType, Is.EqualTo(TruncationPass3.InternalTruncation));
+            Assert.That(psms[0].TruncatedForm.OneBasedStartResidueInProtein, Is.EqualTo(6));
+            Assert.That(psms[0].TruncatedForm.OneBasedEndResidueInProtein, Is.EqualTo(40));
+        }
+
+        /// <summary>
         /// When a TruncationTimings is supplied, ScoreTruncation accumulates the chop and score durations
         /// into it as a pure side channel — it must not change the resulting score. Exercises the optional
         /// timing-instrumentation branch that the perf-logged engine path uses.

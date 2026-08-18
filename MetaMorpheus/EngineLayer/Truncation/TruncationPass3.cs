@@ -34,6 +34,7 @@ namespace EngineLayer.Truncation
         public const string CTerminalTruncation = "C-terminal truncation";
 
         /// <summary>Description-column label for an internal fragment — both termini chopped from the parent.</summary>
+        public const string InternalTruncation = "internal truncation";
 
         /// <summary>
         /// Canonical initiator-methionine excision (#13) — a standard N-terminal form, NOT a truncation.
@@ -105,6 +106,7 @@ namespace EngineLayer.Truncation
         private static string LabelFor(PeptideWithSetModifications truncatedForm)
         {
             string description = truncatedForm.Description ?? string.Empty;
+            if (description.StartsWith(InternalTruncation)) return InternalTruncation;
             if (description.StartsWith(NTerminalMetExcisionPlusAcetyl)) return NTerminalMetExcisionPlusAcetyl;
             if (description.StartsWith(NTerminalMetExcision)) return NTerminalMetExcision;
             if (description.StartsWith(NTerminalTruncation)) return NTerminalTruncation;

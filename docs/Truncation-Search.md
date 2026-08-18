@@ -149,7 +149,7 @@ whole pool gets one fresh per-class FDR/PEP analysis.
 - The truncation type rides the existing **`Description`** column - no new column - mirroring the
   proteolysis-product descriptors already carried there (`chain(2-121)`). Values are
   `N-terminal truncation(<start>-<end>)`, `C-terminal truncation(<start>-<end>)`,
-  `N-terminal Met excision(...)`, or `full-length`.
+  `internal truncation(<start>-<end>)`, `N-terminal Met excision(...)`, or `full-length`.
 - **Protein accession** is the parent's, unchanged. **Start/end residue** are the truncated
   coordinates within the parent protein, which makes downstream cleavage-motif analysis trivial.
 
@@ -189,7 +189,9 @@ whole pool gets one fresh per-class FDR/PEP analysis.
 
 ### #19 - Out of scope for v1
 
-- **No internal truncations** (both termini cut in the same proteoform). v1 is strictly terminal.
+- Internal truncations were out of scope for v1; they now exist as the opt-in
+  `SearchInternalTruncations` path described below, judged in their own FDR universe rather than
+  mixed into the terminal one.
 - No mass-shift absorption for unmatched chops. No charge-state analysis beyond existing code.
 
 ### #20 - Task wiring
@@ -227,6 +229,18 @@ least `MinTagHits` distinct extracted tags.
   tag-selected proteins, which stops a scan being won by a protein its own tags never supported.
 
 Tags restrict candidates only; Pass 2/3 scoring and the FDR analysis still police precision.
+
+## Optional: internal truncations
+
+`SearchInternalTruncations` runs a separate, direct search for proteoforms that lost **both**
+termini, restricted to the same parent set (no database-wide subsequence search). Mass-matching
+spans are found by prefix-sum arithmetic and only the few matches are built, so the enumeration is
+near-linear in parent length rather than quadratic.
+
+Candidates must clear a strong bilateral gate - at least `InternalMinIonsPerTerminus` matched ions
+on **each** newly created terminus - before they are scored. Scoring is the standard core weighted
+by `FragmentationPropensity`. Results are judged in their **own** per-class FDR universe and written
+to `AllInternalTruncations.psmtsv`, independent of the terminal/intact search.
 
 ---
 
