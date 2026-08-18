@@ -570,9 +570,9 @@ namespace TaskLayer
             DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
             DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
 
-            // DoPrecursorDeconvolution and DoProductDeconvolution flow from CommonParameters only;
-            // file-specific PrecursorDeconvolutionParameters / ProductDeconvolutionParameters are stored
-            // independently and take effect when the corresponding Do* flag is true.
+            // DoPrecursorDeconvolution flows from CommonParameters only, and PrecursorDeconvolutionParameters
+            // take effect only when it is true. There is no DoProductDeconvolution: product deconvolution
+            // always runs, so ProductDeconvolutionParameters always apply.
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
