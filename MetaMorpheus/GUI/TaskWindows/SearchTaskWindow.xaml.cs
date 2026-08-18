@@ -437,6 +437,21 @@ namespace MetaMorpheusGUI
             }
 
             _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac, task.CommonParameters.PrecursorMassTolerance.Value);
+            switch (task.CommonParameters.RTPredictorName)
+            {
+                case "SSRCalc":
+                    SSRCalcRadioButton.IsChecked = true;
+                    break;
+                case "Prosit2019iRT":
+                    Prosit2019iRTRadioButton.IsChecked = true;
+                    break;
+                case "Prosit2020iRTTMT":
+                    Prosit2020iRTTMTRadioButton.IsChecked = true;
+                    break;
+                default:
+                    ChronologerRadioButton.IsChecked = true; // covers "Chronologer" and unknown/null
+                    break;
+            }
             WritePrunedDBCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
             UpdateModSelectionGrid();
 
@@ -618,7 +633,13 @@ namespace MetaMorpheusGUI
             DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
             bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
             bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
-            
+
+            string rtPredictorModelName;
+            if (SSRCalcRadioButton.IsChecked == true) rtPredictorModelName = "SSRCalc";
+            else if (Prosit2019iRTRadioButton.IsChecked == true) rtPredictorModelName = "Prosit2019iRT";
+            else if (Prosit2020iRTTMTRadioButton.IsChecked == true) rtPredictorModelName = "Prosit2020iRTTMT";
+            else rtPredictorModelName = "Chronologer"; // default
+
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
@@ -651,7 +672,8 @@ namespace MetaMorpheusGUI
                 precursorDeconParams: precursorDeconvolutionParameters,
                 productDeconParams: productDeconvolutionParameters,
                 precursorMassMatchMode: DeconHostViewModel.PrecursorMassMatchMode,
-                fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams() );
+                fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
+                rtPredictorName: rtPredictorModelName);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {

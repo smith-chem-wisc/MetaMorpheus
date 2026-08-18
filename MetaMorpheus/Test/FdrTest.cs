@@ -1,25 +1,27 @@
 ﻿using Chemistry;
+using Chromatography.RetentionTimePrediction.Chronologer;
+using Chromatography.RetentionTimePrediction.SSRCalc;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
-using Proteomics;
+using Omics;
+using Omics.BioPolymer;
+using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Omics.Digestion;
-using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Omics;
-using Omics.BioPolymer;
-using EngineLayer.SpectrumMatch;
-using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
 
 namespace Test
 {
@@ -174,9 +176,9 @@ namespace Test
                     ProteinDbLoader.UniprotOrganismRegex, -1);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), SearchParameters.WriteSpectralLibrary).Run();
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1, 
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1,
                 CommonParameters, fsp, new List<string>()).Run());
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
@@ -226,7 +228,7 @@ namespace Test
             var pepEngineProperties = pepEngine.GetType().GetProperties();
             foreach (var p in pepEngineProperties)
             {
-                switch(p.Name)
+                switch (p.Name)
                 {
                     case "FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified":
                         p.SetValue(pepEngine, fileSpecificRetTimeHI_behavior);
@@ -242,7 +244,7 @@ namespace Test
                         break;
                     default:
                         break;
-                }             
+                }
             }
 
             var maxPsmData = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
@@ -347,7 +349,7 @@ namespace Test
 
             fsp.Add((origDataFile, cp));
 
-            
+
             trueCount = 0;
 
             foreach (var item in psmCopyForCZETest.Where(p => p != null))
@@ -416,7 +418,7 @@ namespace Test
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             bool writeSpectralLibrary = false;
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             List<SpectralMatch> moreNonNullPSMs = new List<SpectralMatch>();
@@ -430,7 +432,7 @@ namespace Test
                 }
             }
 
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(moreNonNullPSMs.Where(p => p != null).OrderByDescending(f=>f.Score).ToList(), 1, CommonParameters, fsp, new List<string>(), analysisType: "PSM", outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(moreNonNullPSMs.Where(p => p != null).OrderByDescending(f => f.Score).ToList(), 1, CommonParameters, fsp, new List<string>(), analysisType: "PSM", outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
 
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
             SpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
@@ -590,7 +592,7 @@ namespace Test
 
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
             bool writeSpectralLibrary = false;
-            new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             List<SpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
@@ -619,7 +621,7 @@ namespace Test
 
             var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors, 
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
                 ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
                     ProteinDbLoader.UniprotOrganismRegex, -1);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
@@ -894,6 +896,7 @@ namespace Test
         //[Category("Koina")]
         [TestCase("Prosit2019iRT", typeof(Prosit2019iRT))]
         [TestCase("Prosit2020iRTTMT", typeof(Prosit2020iRTTMT))]
+        [TestCase("SSRCalc", typeof(SSRCalc3RetentionTimePredictor))]
         public static void FdrAnalysisEngine_GetRTPredictor_ReturnsExpectedPrositPredictor(
             string rtPredictorName, Type expectedType)
         {
@@ -912,6 +915,60 @@ namespace Test
             var result = method.Invoke(null, new object[] { "standard", fsp });
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Is.InstanceOf(expectedType));
+        }
+
+        [Test]
+        [TestCase("GlycoSearch")]
+        [TestCase("SearchTask")]
+        public static void SearchTask_DefaultRTPredictor_ResolvedToChronologer(string searchType)
+        {
+            //  This test ensures that the default RT model is still Chronologer.
+            var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            MetaMorpheusTask task;
+            switch(searchType) // The default setting both works for GlycoSearch and SearchTask
+            {
+                case "GlycoSearch":
+                    task = new GlycoSearchTask();
+                    break;
+                default:
+                    task = new SearchTask();
+                    break;
+            }
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
+            {
+                ("dummy.mzML", task.CommonParameters)
+            };
+            var result = method.Invoke(null, new object[] { "standard", fsp });
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Is.InstanceOf<ChronologerRetentionTimePredictor>());
+        }
+
+        [Test]
+        [TestCase("GlycoSearch")]
+        [TestCase("SearchTask")]
+        public static void TaskRTPredictor_WhenSSRCalcSelected_ResolvedToSSRCalc3(string searchType) 
+        {
+            var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            MetaMorpheusTask task;
+            switch (searchType) // The default setting both works for GlycoSearch and SearchTask
+            {
+                case "GlycoSearch":
+                    task = new GlycoSearchTask();
+                    break;
+                default:
+                    task = new SearchTask();
+                    break;
+            }
+            task.CommonParameters = new CommonParameters(rtPredictorName: "SSRCalc");
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
+            {
+                ("dummy.mzML", task.CommonParameters)
+            };
+            var result = method.Invoke(null, new object[] { "standard", fsp });
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Is.InstanceOf<SSRCalc3RetentionTimePredictor>());
         }
     }
 }

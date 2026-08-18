@@ -1,5 +1,6 @@
 ﻿using Chromatography.RetentionTimePrediction;
 using Chromatography.RetentionTimePrediction.Chronologer;
+using Chromatography.RetentionTimePrediction.SSRCalc;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
 using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
@@ -424,6 +425,7 @@ namespace EngineLayer.FdrAnalysis
             return predictorName switch
             {
                 "Chronologer" => _chronologerInstance.Value,
+                "SSRCalc" => new SSRCalc3RetentionTimePredictor(),
                 "Prosit2019iRT" => new Prosit2019iRT(),
                 "Prosit2020iRTTMT" => new Prosit2020iRTTMT(),
                 _ => null
