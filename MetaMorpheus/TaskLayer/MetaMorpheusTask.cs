@@ -570,9 +570,9 @@ namespace TaskLayer
             DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
             DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
 
-            // DoPrecursorDeconvolution and DoProductDeconvolution flow from CommonParameters only;
-            // file-specific PrecursorDeconvolutionParameters / ProductDeconvolutionParameters are stored
-            // independently and take effect when the corresponding Do* flag is true.
+            // DoPrecursorDeconvolution flows from CommonParameters only, and PrecursorDeconvolutionParameters
+            // take effect only when it is true. There is no DoProductDeconvolution: product deconvolution
+            // always runs, so ProductDeconvolutionParameters always apply.
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
@@ -711,6 +711,15 @@ namespace TaskLayer
                 file.WriteLine();
                 file.WriteLine("Published works using MetaMorpheus software are encouraged to cite the appropriate publications listed in the reference guide, found here: https://github.com/smith-chem-wisc/MetaMorpheus/blob/master/README.md.");
                 file.WriteLine();
+                // UniDec's licence requires software that redistributes IsoDec to tell its users so and to
+                // pass on the citation request, so this is an obligation rather than a courtesy. Written
+                // only when IsoDec actually ran, including when it was selected for individual files.
+                // Worded so it stays true when only some files used IsoDec, which Any(...) admits.
+                if (UsedIsoDecDeconvolution(currentRawDataFilepathList.Count))
+                {
+                    file.WriteLine("IsoDec, part of UniDec (https://github.com/michaelmarty/UniDec), was used for isotopic envelope deconvolution in this analysis. Publications using these results should cite Marty et al. Anal. Chem. 2015, DOI: 10.1021/acs.analchem.5b00140.");
+                    file.WriteLine();
+                }
                 file.WriteLine("Spectra files: ");
                 file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
                 file.WriteLine("Databases:");
@@ -730,6 +739,54 @@ namespace TaskLayer
             FinishedWritingFile(proseFilePath, new List<string> { displayName });
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
             return MyTaskResults;
+        }
+
+        /// <summary>
+        /// Whether this run deconvoluted with IsoDec, for either precursors or products, at the task level
+        /// or for any individual file. Drives the UniDec citation in the manuscript prose, which its licence
+        /// requires be passed on to end users rather than left implicit.
+        /// </summary>
+        /// <param name="spectraFileCount">
+        /// How many spectra files the task was given. A file whose settings failed to parse is absent from
+        /// FileSpecificParameters but still runs on CommonParameters, so a short list means the task-level
+        /// value governed at least one file.
+        /// </param>
+        private bool UsedIsoDecDeconvolution(int spectraFileCount)
+        {
+            // MultipleDeconParameters reports its own type rather than the ones it wraps, so an equality
+            // test alone would miss IsoDec nested inside it. Unreachable from a toml today (the converter
+            // accepts only Classic and IsoDec) but selectable in memory, and missing it would under-cite.
+            static bool ContainsIsoDec(DeconvolutionParameters parameters) => parameters switch
+            {
+                null => false,
+                MultipleDeconParameters multiple => multiple.Parameters.Any(ContainsIsoDec),
+                _ => parameters.DeconvolutionType == DeconvolutionType.IsoDecDeconvolution
+            };
+
+            // Precursor parameters only apply when DoPrecursorDeconvolution is set, so IsoDec sitting in a
+            // parameter set that never runs is not grounds for a citation. Products have no such flag:
+            // Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments always deconvolutes.
+            // Not caught: SearchTask force-disables precursor deconvolution for Mgf/Ms2Align inputs on a
+            // transient copy that never reaches these lists, so such a run can still over-cite. Closing
+            // that needs the citation recorded where deconvolution is dispatched, not inferred from
+            // parameters.
+            static bool IsIsoDec(CommonParameters parameters) =>
+                parameters is not null
+                && ((parameters.DoPrecursorDeconvolution && ContainsIsoDec(parameters.PrecursorDeconvolutionParameters))
+                    || ContainsIsoDec(parameters.ProductDeconvolutionParameters));
+
+            // FileSpecificParameters holds each file's settings already merged over CommonParameters, so a
+            // file-specific toml can turn IsoDec on for one file and can equally turn it off for every file,
+            // in which case the task-level value never applied and citing IsoDec would be wrong.
+            List<(string FileName, CommonParameters Parameters)> perFileParameters = FileSpecificParameters ?? [];
+            if (perFileParameters.Any(fileAndParameters => IsIsoDec(fileAndParameters.Parameters)))
+            {
+                return true;
+            }
+
+            // One entry per file means the per-file list is the whole story. Short of that, a toml failed to
+            // parse (or the run is aborting) and those files ran on CommonParameters, which still counts.
+            return perFileParameters.Count < spectraFileCount && IsIsoDec(CommonParameters);
         }
 
         #region Database Loading
