@@ -112,6 +112,71 @@ namespace Test
             Assert.That(result, Is.Null);
         }
 
+        /// <summary>
+        /// A scan whose precursor is heavier than every reachable chop can never match, and chopping only
+        /// makes the form lighter — so the loop must stop at the first form below the acceptor's lower
+        /// bound rather than constructing all 49 remaining PeptideWithSetModifications to conclude nothing
+        /// matched. Counting Accepts calls is the observable proxy for "it stopped early".
+        /// </summary>
+        [Test]
+        public void ChopUntilMassMatches_StopsOnceBelowLowestAcceptableMass()
+        {
+            // One residue lighter than the parent is already below this target, so only the first chop
+            // should ever be built and tested.
+            double unreachablyHeavy = _p1.MonoisotopicMass - 0.5;
+            var counting = new CountingAcceptor(_exactAcceptor);
+
+            ChopResult result = ProteoformChopper.ChopUntilMassMatches(_p1, FragmentationTerminus.C, unreachablyHeavy, counting);
+
+            Assert.That(result, Is.Null);
+            Assert.That(counting.AcceptsCalls, Is.EqualTo(1));
+            Assert.That(_p1.BaseSequence.Length - 1, Is.GreaterThan(counting.AcceptsCalls),
+                "without the early exit the loop would run to length - 1");
+        }
+
+        /// <summary>The early exit must not cut a reachable match short: a deep chop still resolves.</summary>
+        [Test]
+        public void ChopUntilMassMatches_EarlyExitDoesNotSkipAReachableMatch()
+        {
+            double target = MakeProteoform(RepeatTo(AlphabetP1, 50).Substring(0, 10), "deep", null).MonoisotopicMass;
+            var counting = new CountingAcceptor(_exactAcceptor);
+
+            ChopResult result = ProteoformChopper.ChopUntilMassMatches(_p1, FragmentationTerminus.C, target, counting);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.ResiduesChopped, Is.EqualTo(_p1.BaseSequence.Length - 10));
+            Assert.That(counting.AcceptsCalls, Is.EqualTo(result.ResiduesChopped));
+        }
+
+        /// <summary>Wraps an acceptor and counts <see cref="Accepts"/> calls, so a test can show the
+        /// chopping loop stopped early instead of walking every residue.</summary>
+        private class CountingAcceptor : MassDiffAcceptor
+        {
+            private readonly MassDiffAcceptor _inner;
+
+            public CountingAcceptor(MassDiffAcceptor inner) : base("counting")
+            {
+                _inner = inner;
+                NumNotches = inner.NumNotches;
+            }
+
+            public int AcceptsCalls { get; private set; }
+
+            public override int Accepts(double scanPrecursorMass, double peptideMass)
+            {
+                AcceptsCalls++;
+                return _inner.Accepts(scanPrecursorMass, peptideMass);
+            }
+
+            public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromTheoreticalMass(double peptideMonoisotopicMass)
+                => _inner.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass);
+
+            public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double peptideMonoisotopicMass)
+                => _inner.GetAllowedPrecursorMassIntervalsFromObservedMass(peptideMonoisotopicMass);
+
+            public override string ToProseString() => _inner.ToProseString();
+        }
+
         [Test]
         public void NotchOnePlus_AcceptedWithinTolerance()
         {

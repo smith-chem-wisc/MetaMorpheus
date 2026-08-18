@@ -24,7 +24,7 @@ namespace EngineLayer.Truncation
     }
 
     /// <summary>
-    /// Pass 3 chopping algorithm (01_Architecture.md decisions #9, #10). Removes residues one at a time
+    /// Pass 3 chopping algorithm (docs/Truncation-Search.md decisions #9, #10). Removes residues one at a time
     /// from the indicated terminus — each step also dropping any PTM locked to that residue and the
     /// terminal mod on it (so N-terminal acetyl-Ala leaves as one step) — until the deduced truncated
     /// mass matches the observed precursor mass at an allowed notch of the supplied acceptor, or no
@@ -37,11 +37,14 @@ namespace EngineLayer.Truncation
         /// truncated monoisotopic mass matches <paramref name="targetMass"/> within an allowed notch of
         /// <paramref name="massDiffAcceptor"/> (which carries the precursor tolerance). Returns the first
         /// match, or null if no integer-residue chop matches. At least one residue is always removed.
+        /// Chopping is monotonic in mass, so the loop stops early once the truncated form drops below the
+        /// lowest mass the acceptor could accept — no point building the remaining forms.
         /// </summary>
         public static ChopResult ChopUntilMassMatches(PeptideWithSetModifications parent, FragmentationTerminus terminusToChop,
             double targetMass, MassDiffAcceptor massDiffAcceptor)
         {
             int length = parent.BaseSequence.Length;
+            double lowestAcceptableMass = LowestAcceptableMass(targetMass, massDiffAcceptor);
 
             for (int chopped = 1; chopped <= length - 1; chopped++)
             {
@@ -49,15 +52,45 @@ namespace EngineLayer.Truncation
                 int chopFromC = terminusToChop == FragmentationTerminus.C ? chopped : 0;
 
                 PeptideWithSetModifications truncated = BuildTruncated(parent, chopFromN, chopFromC);
+                double mass = truncated.MonoisotopicMass;
 
-                int notch = massDiffAcceptor.Accepts(targetMass, truncated.MonoisotopicMass);
+                int notch = massDiffAcceptor.Accepts(targetMass, mass);
                 if (notch >= 0)
                 {
                     return new ChopResult(truncated, chopped, terminusToChop, notch);
                 }
+
+                if (mass < lowestAcceptableMass)
+                {
+                    // Already lighter than anything the acceptor could take, and from the first chop onwards
+                    // the mass only falls (the terminal mod is gone after step 1, so every further step just
+                    // removes a residue). No deeper chop can match; stop instead of building the rest.
+                    break;
+                }
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Lowest theoretical mass <paramref name="massDiffAcceptor"/> could accept for an observed
+        /// <paramref name="targetMass"/> — the acceptor's own lower bound across all its notches, which is
+        /// what bounds the chopping loops. Returns <see cref="double.NegativeInfinity"/> when the acceptor
+        /// reports no bounded interval (open searches), which simply disables the early exit.
+        /// </summary>
+        private static double LowestAcceptableMass(double targetMass, MassDiffAcceptor massDiffAcceptor)
+        {
+            double lowest = double.PositiveInfinity;
+
+            foreach (AllowedIntervalWithNotch interval in massDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(targetMass))
+            {
+                if (interval.Minimum < lowest)
+                {
+                    lowest = interval.Minimum;
+                }
+            }
+
+            return double.IsPositiveInfinity(lowest) ? double.NegativeInfinity : lowest;
         }
 
         /// <summary>
@@ -121,9 +154,6 @@ namespace EngineLayer.Truncation
         public static PeptideWithSetModifications BuildTruncatedForm(PeptideWithSetModifications parent, int chopFromN, int chopFromC)
             => BuildTruncated(parent, chopFromN, chopFromC);
 
-        /// <summary>Mass margin (Da) past the lowest acceptable target before the inner C-chop loop stops.</summary>
-        private const double InternalChopMassMargin = 50.0;
-
         /// <summary>
         /// Enumerates INTERNAL truncations of <paramref name="parent"/> (both termini lost: chopFromN≥1 AND
         /// chopFromC≥1, keeping ≥1 residue) whose mass matches <paramref name="targetMass"/> at an allowed
@@ -136,6 +166,7 @@ namespace EngineLayer.Truncation
         {
             int length = parent.BaseSequence.Length;
             var results = new List<ChopResult>();
+            double lowestAcceptableMass = LowestAcceptableMass(targetMass, massDiffAcceptor);
 
             for (int chopFromN = 1; chopFromN <= length - 2; chopFromN++)
             {
@@ -149,7 +180,7 @@ namespace EngineLayer.Truncation
                     {
                         results.Add(new ChopResult(truncated, chopFromN + chopFromC, FragmentationTerminus.None, notch));
                     }
-                    else if (mass + InternalChopMassMargin < targetMass)
+                    else if (mass < lowestAcceptableMass)
                     {
                         break; // already too light; removing more C-terminal residues cannot reach the target
                     }
