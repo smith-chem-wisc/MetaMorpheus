@@ -95,37 +95,11 @@ namespace TaskLayer
                 loaded.Add((rawFilePath, fileParams, scans, pass1PsmByScan, pass1MassByScan));
             }
 
-            // Build parents: database-seeded (optionally narrowed by the sequence-tag filter, decision: remove
-            // the observed-parent requirement) takes precedence; otherwise seed from the upstream-identified
-            // proteoforms (in-memory, else disk).
-            List<TruncationParent> parents;
-            Dictionary<Ms2ScanWithSpecificMass, HashSet<string>> perScanAllowed = null;
-            if (TruncationSearchParameters.SeedParentsFromDatabase)
-            {
-                if (TruncationSearchParameters.UseSequenceTagFilter)
-                {
-                    parents = BuildParentsFromDatabaseTagFiltered(taskId, dbFilenameList,
-                        loaded.SelectMany(f => f.Scans).ToList(), out perScanAllowed);
-                }
-                else
-                {
-                    parents = BuildParentsFromDatabase(taskId, dbFilenameList);
-                }
-            }
-            else
-            {
-                parents = haveInMemoryProvenance ? BuildParentsFromPsms(pass1Psms) : BuildParentsFromDisk();
-            }
-
-            // Per-scan tag restriction is applied in the engine only when both the tag filter and the per-scan
-            // flag are on; otherwise null = no restriction (global-union or non-tag paths).
-            if (TruncationSearchParameters.UsePerScanTagRestriction && perScanAllowed == null)
-            {
-                Warn("UsePerScanTagRestriction is set but has no effect: it requires both SeedParentsFromDatabase " +
-                     "and UseSequenceTagFilter to be enabled. Proceeding without per-scan restriction.");
-            }
-            IReadOnlyDictionary<Ms2ScanWithSpecificMass, HashSet<string>> allowedByScan =
-                TruncationSearchParameters.UsePerScanTagRestriction ? perScanAllowed : null;
+            // Build parents: database-seeded (decision: remove the observed-parent requirement) takes
+            // precedence; otherwise seed from the upstream-identified proteoforms (in-memory, else disk).
+            List<TruncationParent> parents = TruncationSearchParameters.SeedParentsFromDatabase
+                ? BuildParentsFromDatabase(taskId, dbFilenameList)
+                : (haveInMemoryProvenance ? BuildParentsFromPsms(pass1Psms) : BuildParentsFromDisk());
 
             if (parents.Count == 0)
             {
@@ -159,7 +133,7 @@ namespace TaskLayer
             {
                 var engine = new TruncationSearchEngine(parents, file.Scans, file.FileParams,
                     new TruncationAcceptor(file.FileParams.PrecursorMassTolerance), file.Pass1MassByScan,
-                    TruncationSearchParameters.MaxParentMass, allowedByScan);
+                    TruncationSearchParameters.MaxParentMass);
                 List<TruncationParentSelection> selections = engine.Run();
                 foreach (string warning in engine.Warnings)
                 {
@@ -431,91 +405,6 @@ namespace TaskLayer
                 }
             }
 
-            return parents;
-        }
-
-        /// <summary>
-        /// Database-seeded parents, narrowed by the sequence-tag filter (docs/Truncation-Search.md, Sequence-tag filtering): build a k-mer index
-        /// over the database, extract de-novo tags from every scan, take the UNION of tag-supported proteins
-        /// (global-union variant), and digest only those into theoretical parents — keeping the parent set
-        /// far smaller than the whole database without restricting candidates per scan. Tag extraction (over
-        /// scans) and digestion (over candidate proteins) both run in parallel.
-        /// </summary>
-        private List<TruncationParent> BuildParentsFromDatabaseTagFiltered(string taskId, List<DbForTask> dbFilenameList,
-            IReadOnlyList<Ms2ScanWithSpecificMass> allScans,
-            out Dictionary<Ms2ScanWithSpecificMass, HashSet<string>> perScanAllowedAccessions)
-        {
-            LoadModifications(taskId, out List<Modification> variableModifications,
-                out List<Modification> fixedModifications, out List<string> localizableModificationTypes);
-
-            var proteins = new List<Protein>();
-            foreach (DbForTask db in dbFilenameList)
-            {
-                proteins.AddRange(DatabaseLoadingEngine.LoadProteinDb(
-                        db.FilePath, generateTargets: true, decoyType: DecoyType.None,
-                        localizableModificationTypes, db.IsContaminant, out _, out _, CommonParameters)
-                    .Where(p => !p.IsDecoy));
-            }
-
-            int tagLength = TruncationSearchParameters.TagLength;
-            int minTagHits = TruncationSearchParameters.MinTagHits;
-            int threads = Math.Max(1, CommonParameters.MaxThreadsToUsePerFile);
-            var index = new ProteinTagIndex(proteins, tagLength, threads);
-            MzLibUtil.Tolerance productTolerance = CommonParameters.ProductMassTolerance;
-            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = threads };
-            const int maxFragmentPeaksForTags = 120; // tags come from the most intense peaks; noise peaks excluded
-
-            // Per scan: the proteins its de-novo tags support (recorded for the per-scan restriction); the union
-            // is what we digest into parents so the shared index covers every scan's candidates.
-            var perThreadCandidates = new ConcurrentBag<HashSet<int>>();
-            var perScanAccessions = new ConcurrentDictionary<Ms2ScanWithSpecificMass, HashSet<string>>();
-            Parallel.ForEach(allScans, parallelOptions, () => new HashSet<int>(), (scan, _, local) =>
-            {
-                if (scan.ExperimentalFragments != null && scan.ExperimentalFragments.Length > 0)
-                {
-                    // Only the most intense fragment peaks feed the tag extractor — low-intensity noise peaks
-                    // create spurious residue-sized gaps that otherwise let tags match nearly every protein.
-                    List<double> masses = scan.ExperimentalFragments
-                        .OrderByDescending(e => e.TotalIntensity)
-                        .Take(maxFragmentPeaksForTags)
-                        .Select(e => e.MonoisotopicMass)
-                        .ToList();
-                    HashSet<string> tags = SequenceTagExtractor.ExtractTags(masses, productTolerance, tagLength);
-                    var scanAccessions = new HashSet<string>();
-                    foreach (int id in index.GetCandidateProteinIds(tags, minTagHits))
-                    {
-                        local.Add(id);
-                        scanAccessions.Add(proteins[id].Accession);
-                    }
-                    perScanAccessions[scan] = scanAccessions;
-                }
-                return local;
-            }, local => perThreadCandidates.Add(local));
-
-            perScanAllowedAccessions = new Dictionary<Ms2ScanWithSpecificMass, HashSet<string>>(perScanAccessions);
-
-            var candidateProteinIds = new HashSet<int>();
-            foreach (HashSet<int> set in perThreadCandidates) candidateProteinIds.UnionWith(set);
-
-            Warn($"Sequence-tag filter selected {candidateProteinIds.Count} of {proteins.Count} database proteins " +
-                 $"(tag length {tagLength}, min {minTagHits} tag hits).");
-
-            // Digest only the candidate proteins (in parallel) into theoretical full-length parents.
-            var perThreadParents = new ConcurrentBag<List<TruncationParent>>();
-            Parallel.ForEach(candidateProteinIds, parallelOptions, () => new List<TruncationParent>(), (id, _, local) =>
-            {
-                Protein protein = proteins[id];
-                foreach (PeptideWithSetModifications proteoform in protein
-                    .Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications)
-                    .OfType<PeptideWithSetModifications>())
-                {
-                    local.Add(new TruncationParent(proteoform, protein.Accession, protein.Accession, isDecoy: false));
-                }
-                return local;
-            }, local => perThreadParents.Add(local));
-
-            var parents = new List<TruncationParent>();
-            foreach (List<TruncationParent> list in perThreadParents) parents.AddRange(list);
             return parents;
         }
 

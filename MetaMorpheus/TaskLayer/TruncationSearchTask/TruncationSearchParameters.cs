@@ -66,29 +66,6 @@ namespace TaskLayer
         public bool SeedParentsFromDatabase { get; set; } = false;
 
         /// <summary>
-        /// When database-seeding (<see cref="SeedParentsFromDatabase"/>), first narrow the database to
-        /// proteins supported by de-novo sequence tags extracted from the scans (docs/Truncation-Search.md, Sequence-tag filtering) rather than
-        /// digesting every protein. Global-union variant: the candidate set is the union over all scans, so
-        /// the indexed engine is reused unchanged — this controls the parent explosion (the all-DB blowup)
-        /// but does not yet restrict candidates per scan. Off by default.
-        /// </summary>
-        public bool UseSequenceTagFilter { get; set; } = false;
-
-        /// <summary>
-        /// With the sequence-tag filter on, score each scan ONLY against parents from its own tag-selected
-        /// proteins (per-scan restriction) rather than the global union. Gives per-scan selectivity and stops a
-        /// scan being won by a protein its own tags did not support (the winner-competition loss). Off = global
-        /// union. Requires <see cref="UseSequenceTagFilter"/>.
-        /// </summary>
-        public bool UsePerScanTagRestriction { get; set; } = false;
-
-        /// <summary>Length (residues) of the de-novo sequence tags and the matching protein k-mer index.</summary>
-        public int TagLength { get; set; } = 4;
-
-        /// <summary>Minimum number of distinct extracted tags a protein must contain to be a tag-filter candidate.</summary>
-        public int MinTagHits { get; set; } = 2;
-
-        /// <summary>
         /// Maximum parent proteoform monoisotopic mass (Da) placed in the Pass 2 index (decision #6); heavier
         /// parents are excluded. Defaults to the search convention (30 kDa). RAISE this for database-seeded
         /// runs so large proteins — whose small fragments populate an LMW fraction but whose intact form is
