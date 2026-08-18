@@ -8,7 +8,7 @@ namespace EngineLayer.Truncation
     /// Extracts short de-novo sequence tags from a deconvoluted MS2 scan: amino-acid strings spelled by runs
     /// of fragment-mass gaps that each match a residue mass. Tags are I/L-normalized (the two residues are
     /// isobaric, both -> 'L'). They are used only as a recall-oriented candidate-protein FILTER for the
-    /// database-seeded truncation search (doc §11.2.4 / pTop §3.4.4); Pass 2/3 scoring + FDR police precision.
+    /// database-seeded truncation search (docs/Truncation-Search.md, Sequence-tag filtering / pTop §3.4.4); Pass 2/3 scoring + FDR police precision.
     ///
     /// Top-down caveat: at large fragment masses the per-peak absolute tolerance is wide relative to
     /// residue-mass differences, so a gap may match several residues (e.g. K vs Q). Such gaps emit one edge

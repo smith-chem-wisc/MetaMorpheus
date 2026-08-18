@@ -6,7 +6,7 @@ namespace EngineLayer.Truncation
 {
     /// <summary>
     /// Pooled FDR + PEP over the union of inherited intact PSMs and Pass 3 truncation PSMs
-    /// (01_Architecture.md decisions #15, #18). Mirrors the SearchTask order: resolve ambiguities,
+    /// (docs/Truncation-Search.md decisions #15, #18). Mirrors the SearchTask order: resolve ambiguities,
     /// drop duplicate PSMs for the same scan, then run the standard <see cref="FdrAnalysisEngine"/>
     /// (which trains PEP internally when the pool is large enough; top-down PSMs get the top-down
     /// training mode). N-terminal and C-terminal truncations are pooled into one FDR category (#15).

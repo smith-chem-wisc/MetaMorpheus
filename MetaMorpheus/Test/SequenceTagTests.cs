@@ -8,7 +8,7 @@ using Proteomics;
 namespace Test
 {
     /// <summary>
-    /// Tests for the sequence-tag candidate-filtering foundation (doc §11.2.4): de-novo tag extraction from
+    /// Tests for the sequence-tag candidate-filtering foundation (docs/Truncation-Search.md, Sequence-tag filtering): de-novo tag extraction from
     /// fragment-mass gaps (<see cref="SequenceTagExtractor"/>) and the protein k-mer index
     /// (<see cref="ProteinTagIndex"/>) that turns a scan's tags into a small candidate-protein set.
     /// </summary>

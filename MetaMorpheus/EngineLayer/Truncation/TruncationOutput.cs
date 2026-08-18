@@ -5,7 +5,7 @@ using System.Linq;
 namespace EngineLayer.Truncation
 {
     /// <summary>
-    /// Writes the two truncation-search result files (01_Architecture.md decisions #16, #17) using the
+    /// Writes the two truncation-search result files (docs/Truncation-Search.md decisions #16, #17) using the
     /// standard MetaMorpheus PSM columns (<see cref="SpectralMatch.GetTabSeparatedHeader"/> /
     /// <see cref="SpectralMatch.ToString(System.Collections.Generic.IReadOnlyDictionary{string,int},bool,bool)"/>),
     /// so the truncation type rides in the standard "Description" column (#13). No q-value/PEP cutoff is

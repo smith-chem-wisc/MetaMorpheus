@@ -9,7 +9,7 @@ namespace Test
     /// <summary>
     /// Phase 1.4 gate: exercise the mzLib snip utility once on Windows to confirm it produces a
     /// readable mzML. Snippets cut with this API become the real-data unit-test fixtures in later
-    /// phases (01_Architecture.md #21, 02_Implementation.md Phase 4).
+    /// phases (docs/Truncation-Search.md #21).
     /// </summary>
     [TestFixture]
     public class TruncationSnipSmokeTest

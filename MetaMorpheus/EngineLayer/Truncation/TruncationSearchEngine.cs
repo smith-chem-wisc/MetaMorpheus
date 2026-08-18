@@ -65,7 +65,7 @@ namespace EngineLayer.Truncation
     }
 
     /// <summary>
-    /// Pass 2 indexed dual single-series scoring engine (01_Architecture.md decisions #4-#8). Builds two
+    /// Pass 2 indexed dual single-series scoring engine (docs/Truncation-Search.md decisions #4-#8). Builds two
     /// fragment indexes — one per ion series (N: b/c, C: y/z) — from the parent proteoforms
     /// (<see cref="FragmentBinsPerDalton"/> binning, the ModernSearchEngine pattern), then for each MS2 scan
     /// that Pass 1 did not match intact (#4a) it scores candidate parents directly off the index: a single
@@ -113,7 +113,7 @@ namespace EngineLayer.Truncation
         /// <summary>Number of parents excluded because their mass exceeded MaxFragmentSize (decision #6).</summary>
         public int ExcludedOversizedParentCount { get; }
 
-        /// <summary>Wall-clock seconds spent building the fragment index (perf logging, 03_Benchmarks).</summary>
+        /// <summary>Wall-clock seconds spent building the fragment index (perf logging, docs/Truncation-Search.md, Benchmarking hook).</summary>
         public double IndexBuildSeconds { get; private set; }
 
         /// <summary>Wall-clock seconds spent in the per-scan dual single-series scoring loop.</summary>

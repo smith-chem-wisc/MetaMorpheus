@@ -24,7 +24,7 @@ namespace EngineLayer.Truncation
 
     /// <summary>
     /// Turns deduped Pass 1 proteoform rows into the combined target+decoy parent list for Pass 2
-    /// (01_Architecture.md decisions #2, #3). Applies the permissive parent inclusion threshold and
+    /// (docs/Truncation-Search.md decisions #2, #3). Applies the permissive parent inclusion threshold and
     /// expands pipe-ambiguous FullSequences, tagging every alternative with its originating row so
     /// downstream counting does not double-count.
     /// </summary>

@@ -22,7 +22,7 @@ namespace EngineLayer.Truncation
     }
 
     /// <summary>
-    /// Pass 3 (01_Architecture.md decisions #9-#13): for each Pass 2 winner, chop the terminus OPPOSITE
+    /// Pass 3 (docs/Truncation-Search.md decisions #9-#13): for each Pass 2 winner, chop the terminus OPPOSITE
     /// the winning ion series (a winning N-terminal-ion series means the C-terminus was lost) until the
     /// precursor mass matches, then score the deduced truncated form against the scan with standard
     /// both-series MetaMorpheus scoring and emit a <see cref="TruncationPsm"/>. Duplicate truncations

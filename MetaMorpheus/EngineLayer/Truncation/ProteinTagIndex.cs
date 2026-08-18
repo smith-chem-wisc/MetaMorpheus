@@ -6,7 +6,7 @@ using Proteomics;
 namespace EngineLayer.Truncation
 {
     /// <summary>
-    /// A k-mer index over a protein database for sequence-tag candidate filtering (doc §11.2.4): maps each
+    /// A k-mer index over a protein database for sequence-tag candidate filtering (docs/Truncation-Search.md, Sequence-tag filtering): maps each
     /// I/L-normalized k-mer (k = tag length) to the proteins whose sequence contains it, so a scan's de-novo
     /// tags (<see cref="SequenceTagExtractor"/>) select a small candidate-protein set without materializing
     /// or scoring the whole database. Built in parallel over proteins (per the perf-parallelism convention),

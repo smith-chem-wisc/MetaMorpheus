@@ -11,7 +11,7 @@ using Proteomics.ProteolyticDigestion;
 namespace Test
 {
     /// <summary>
-    /// Phase 3 tests: reverse-decoy generation for parents (01_Architecture.md decision #14), reusing
+    /// Phase 3 tests: reverse-decoy generation for parents (docs/Truncation-Search.md decision #14), reusing
     /// the existing mzLib reversal so PTMs lock to residues, and not duplicating decoys already present.
     /// </summary>
     [TestFixture]

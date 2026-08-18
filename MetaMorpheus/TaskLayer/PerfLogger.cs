@@ -7,7 +7,7 @@ using System.Linq;
 namespace TaskLayer
 {
     /// <summary>
-    /// One row of the rolling, append-only <c>perf_log.tsv</c> performance log (03_Benchmarks.md schema).
+    /// One row of the rolling, append-only <c>perf_log.tsv</c> performance log (docs/Truncation-Search.md, Benchmarking hook schema).
     /// A SearchTask run and its paired TruncationSearchTask run each produce one row; truncation-specific
     /// fields are left at their defaults for SearchTask rows.
     /// </summary>
@@ -45,7 +45,7 @@ namespace TaskLayer
 
     /// <summary>
     /// Appends <see cref="TruncationPerfMetrics"/> rows to a tab-separated <c>perf_log.tsv</c>
-    /// (03_Benchmarks.md). Writes the header when the file does not yet exist; never overwrites existing
+    /// (docs/Truncation-Search.md, Benchmarking hook). Writes the header when the file does not yet exist; never overwrites existing
     /// rows (append-only). Best-effort git commit/dirty are captured from the running assembly's directory.
     /// </summary>
     public static class PerfLogger
@@ -101,7 +101,7 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Parses the 03_Benchmarks run-folder convention &lt;date&gt;_&lt;phase&gt;_&lt;datasetTag&gt;_&lt;runLabel&gt;
+        /// Parses the docs/Truncation-Search.md, Benchmarking hook run-folder convention &lt;date&gt;_&lt;phase&gt;_&lt;datasetTag&gt;_&lt;runLabel&gt;
         /// into (phase, datasetTag, runLabel). runLabel keeps any trailing underscores. Missing parts stay empty.
         /// </summary>
         public static (string phase, string datasetTag, string runLabel) ParseRunFolderName(string runFolderName)
