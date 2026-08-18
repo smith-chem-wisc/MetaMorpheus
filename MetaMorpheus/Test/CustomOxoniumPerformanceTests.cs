@@ -1,10 +1,8 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
 using NUnit.Framework;
 using System;
 using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 
 namespace Test
 {
@@ -16,6 +14,7 @@ namespace Test
     /// few-nanosecond drift. The exact ns/call is written to the test output for the report.
     /// </summary>
     [TestFixture]
+    [NonParallelizable] // mutates process-wide Glycan monosaccharide statics
     public class CustomOxoniumPerformanceTests
     {
         private const int Iterations = 200_000;
@@ -48,7 +47,7 @@ namespace Test
             }
             finally
             {
-                Glycan.ResetCustomMonosaccharides();
+                RestoreStartupMonosaccharides();
             }
         }
 
@@ -63,11 +62,12 @@ namespace Test
                 Assert.That(customs.Count, Is.EqualTo(50));
 
                 double[] oxo = new double[Glycan.AllOxoniumIonsIncludingCustoms.Length];
+                oxo[OxoniumIonReservedIndices.R138] = 100.0;     // relative-intensity reference
                 byte[] kind = new byte[Glycan.KindCapacity];
                 for (int j = 0; j < customs.Count; j++)
                 {
-                    oxo[Glycan.AllOxoniumIons.Length + j] = 1.0; // every custom ion observed
-                    kind[customs[j].KindIndex] = 1;              // every linked mono present
+                    oxo[Glycan.AllOxoniumIons.Length + j] = 50.0; // every custom ion observed (ratio 0.5)
+                    kind[customs[j].KindIndex] = 1;               // every linked mono present
                 }
                 var box = BoxWithKind(kind);
 
@@ -80,7 +80,7 @@ namespace Test
             }
             finally
             {
-                Glycan.ResetCustomMonosaccharides();
+                RestoreStartupMonosaccharides();
             }
         }
 
@@ -92,7 +92,10 @@ namespace Test
                 int[] ions = new int[10];
                 for (int k = 0; k < ions.Length; k++)
                 {
-                    ions[k] = 30_000_000 + m * 1000 + k; // distinct scaled-int m/z values
+                    // 300.00 .. 304.18 Da, spaced 0.02 Da apart: distinct from each other and from
+                    // every built-in oxonium ion by more than the 0.01 Da collision window that
+                    // RegisterCustomMonosaccharide now enforces.
+                    ions[k] = 30_000_000 + m * 100_000 + k * 2_000;
                 }
                 Glycan.RegisterCustomMonosaccharide($"PerfSugar{m}", codes[m], 18_000_000 + m, ions);
             }
@@ -121,10 +124,19 @@ namespace Test
 
         private static GlycanBox BoxWithKind(byte[] kind)
         {
-            var box = (GlycanBox)RuntimeHelpers.GetUninitializedObject(typeof(GlycanBox));
-            MethodInfo setter = typeof(GlycanBox).GetProperty("Kind").GetSetMethod(nonPublic: true);
-            setter.Invoke(box, new object[] { kind });
-            return box;
+            return new GlycanBox(kind); // internal test-only constructor
+        }
+
+        // Reset to startup state, not to empty: GlobalVariables.LoadGlycans() registers whatever the
+        // shipped MonosaccharidesCustom.tsv contains, and emptying would wipe that for later tests.
+        private static void RestoreStartupMonosaccharides()
+        {
+            Glycan.ResetCustomMonosaccharides();
+            string shipped = System.IO.Path.Combine(GlobalVariables.DataDir, "Glycan_Mods", "MonosaccharidesCustom.tsv");
+            if (System.IO.File.Exists(shipped))
+            {
+                GlycanDatabase.LoadCustomMonosaccharides(shipped);
+            }
         }
 
         // Pre-Phase-3 DiagonsticFilter body (built-in rules only), kept here as the benchmark baseline.

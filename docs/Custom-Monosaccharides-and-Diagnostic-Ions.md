@@ -169,9 +169,11 @@ The Glyco Search task has a checkbox labelled **`OxoniumIonFilt`** (on by defaul
 | No | Yes | ❌ reject |
 | No | No | ✅ keep |
 
-"Observed" means a peak matching the ion's m/z was found within your **product-mass tolerance** — the same presence test used for the built-in HexNAc 204.087 check. If **any** listed ion disagrees with the candidate's composition, the candidate is rejected.
+"Observed" means a peak matching the ion's m/z was found within your **product-mass tolerance** **and** rising above **2% of the HexNAc 138.055 diagnostic ion** — the same relative-intensity test the built-in sialic-acid and HexHexNAc rules use. A bare presence test would let a single noise peak at a custom ion's m/z reject every candidate lacking that monosaccharide, for the whole scan. If the 138.055 reference is itself absent, custom ions are treated as not observed. If **any** listed ion disagrees with the candidate's composition, the candidate is rejected.
 
 This runs **after** the built-in oxonium rules (the 138/144 ratio, the 204 requirement, the 274/292 sialic-acid and 366 HexHexNAc rules), which are unchanged.
+
+**A custom diagnostic ion may not duplicate a built-in oxonium ion** (109.029, 115.040, 126.055, 127.040, 138.055, 144.066, 163.061, 168.066, 186.077, 204.087, 274.093, 290.088, 292.103, 308.098, 366.140, 657.235, 673.230), **or an ion already claimed by another custom monosaccharide**. Values within 0.01 Da of one of those are rejected when the file is loaded, with the offending line named. Listing something ubiquitous such as 204.087 would make the ion "observed" on essentially every glycopeptide spectrum, and the strict rule would then silently reject every candidate lacking your sugar.
 
 > **Turn the filter off** (uncheck `OxoniumIonFilt`) and column-4 ions keep only their scoring role.
 
