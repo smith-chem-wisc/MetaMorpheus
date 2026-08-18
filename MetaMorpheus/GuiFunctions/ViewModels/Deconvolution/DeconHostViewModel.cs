@@ -29,10 +29,12 @@ public class DeconHostViewModel : BaseViewModel
     /// <param name="deconvolutePrecursors"></param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
     public DeconHostViewModel(DeconvolutionParameters? initialPrecursorParameters = null, DeconvolutionParameters? initialProductParameters = null,
-        bool useProvidedPrecursor = false, bool deconvolutePrecursors = true)
+        bool useProvidedPrecursor = false, bool deconvolutePrecursors = true,
+        PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic)
     {
         UseProvidedPrecursors = useProvidedPrecursor;
         DoPrecursorDeconvolution = deconvolutePrecursors;
+        PrecursorMassMatchMode = precursorMassMatchMode;
 
         // Order matters here, construct the lists before setting the selected parameters
         PrecursorDeconvolutionParametersList = new ObservableCollection<DeconParamsViewModel>();
@@ -101,6 +103,32 @@ public class DeconHostViewModel : BaseViewModel
             _doPrecursorDeconvolution = value;
             OnPropertyChanged(nameof(DoPrecursorDeconvolution));
         }
+    }
+
+    private PrecursorMassMatchMode _precursorMassMatchMode;
+    /// <summary>
+    /// Selects whether precursor candidates are matched by the monoisotopic mass (the default) or by the
+    /// most-abundant observed isotopic mass. Surfaced as the "Use Most Abundant Mass" checkbox in the
+    /// Calibration, GPTMD, and Search task windows.
+    /// </summary>
+    public PrecursorMassMatchMode PrecursorMassMatchMode
+    {
+        get => _precursorMassMatchMode;
+        set
+        {
+            _precursorMassMatchMode = value;
+            OnPropertyChanged(nameof(PrecursorMassMatchMode));
+            OnPropertyChanged(nameof(UseMostAbundantMass));
+        }
+    }
+
+    /// <summary>
+    /// Boolean projection of <see cref="PrecursorMassMatchMode"/> for two-way checkbox binding.
+    /// </summary>
+    public bool UseMostAbundantMass
+    {
+        get => _precursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
+        set => PrecursorMassMatchMode = value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic;
     }
 
     public void SetAllPrecursorMaxChargeState(int newMaxCharge)
