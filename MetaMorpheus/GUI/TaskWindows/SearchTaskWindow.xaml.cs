@@ -330,8 +330,7 @@ namespace MetaMorpheusGUI
 
             DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
                 TheTask.CommonParameters.ProductDeconvolutionParameters,
-                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution,
-                TheTask.CommonParameters.PrecursorMassMatchMode);
+                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
             DeisotopingControl.DataContext = DeconHostViewModel;
 
             NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
@@ -672,8 +671,7 @@ namespace MetaMorpheusGUI
                 precursorDeconParams: precursorDeconvolutionParameters,
                 productDeconParams: productDeconvolutionParameters,
                 precursorMassMatchMode: DeconHostViewModel.PrecursorMassMatchMode,
-                fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
-                rtPredictorName: rtPredictorModelName);
+                fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams() );
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {
@@ -950,7 +948,7 @@ namespace MetaMorpheusGUI
                                 _fragmentationParamsViewModel.MinInternalIonLength = 10;
                                 CheckBoxNoQuant.IsChecked = true; 
                                 _massDifferenceAcceptorViewModel.SelectedType =
-                                    _massDifferenceAcceptorViewModel.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
+                                    _massDifferenceAcceptorViewModel.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
 
                                 //uncheck all variable mods
                                 foreach (var mod in VariableModTypeForTreeViewObservableCollection)
