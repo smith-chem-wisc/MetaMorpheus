@@ -39,6 +39,9 @@ namespace MetaMorpheusCommandLine
         [Option("mmsettings", HelpText = "[Optional] Path to MetaMorpheus settings")]
         public string CustomDataDirectory { get; set; }
 
+        [Option("acceptThermoLicence", HelpText = "[Optional] Agree to the Thermo RawFileReader licence, which is required to read .raw files, and record the agreement. Prints the licence and does not prompt, so it can be used where no console is available to answer one. May be given on its own as a setup step, or alongside a run.")]
+        public bool AcceptThermoLicence { get; set; }
+
         public enum VerbosityType { none, minimal, normal };
 
         public void ValidateCommandLineSettings()
@@ -53,6 +56,14 @@ namespace MetaMorpheusCommandLine
             }
 
             if (GenerateDefaultTomls || RunMicroVignette)
+            {
+                return;
+            }
+
+            // --acceptThermoLicence on its own is a setup step - record the agreement and stop - so it
+            // must not be held to the requirements of a run. Given alongside one it is only a modifier,
+            // and falls through to the usual validation.
+            if (AcceptThermoLicence && Tasks.Count < 1 && Databases.Count < 1 && Spectra.Count < 1)
             {
                 return;
             }
@@ -191,6 +202,11 @@ namespace MetaMorpheusCommandLine
 
                 GlycoSearchTask glyco = new GlycoSearchTask();
                 Toml.WriteFile(glyco, Path.Combine(folderLocation, @"GlycoSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                // The filename stem matches the output folder Program.cs creates for this task
+                // ("Task{N}AveragingTask"), keeping it consistent with the five above.
+                SpectralAveragingTask averaging = new SpectralAveragingTask();
+                Toml.WriteFile(averaging, Path.Combine(folderLocation, @"AveragingTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {

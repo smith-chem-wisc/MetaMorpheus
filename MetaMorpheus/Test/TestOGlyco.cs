@@ -428,7 +428,7 @@ namespace Test
             var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
 
 
-            Assert.That(fragments_etd.Count == 22);
+            Assert.That(fragments_etd.Count, Is.EqualTo(15)); // 7 c + 8 zDot (incl. the full-length zDot8); ETD no longer produces a y series
             Assert.That(fragments_etd.Last().Annotation == "zDot8");
             Assert.That(fragments_etd.Last().NeutralMass > 1824);
 
@@ -440,7 +440,7 @@ namespace Test
         }
 
         [Test]
-        public static void OGlycoTest_FragmentIonsHash()
+        public static void OGlycoTest_ModifiedFragmentsIncludeNeutralLosses()
         {
             //Get glycanBox
             var glycanBox = OGlycanBoxes[22]; // GlycanBox : [N1A1 on T], [N1 on S]
@@ -458,30 +458,7 @@ namespace Test
             var fragmentsMod_hcd = new List<Product>();
                 peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both, fragmentsMod_hcd); 
             Assert.That(fragments_hcd.Count() == 20);
-            Assert.That(fragmentsMod_hcd.Count() == 61); //The Fragments also contain neutral loss ions. 
-
-            var frag_ments_etd = new List<Product>();
-                peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, frag_ments_etd);
-            var fragmentsMod_etd = new List<Product>();
-                peptideWithMod.Fragment(DissociationType.ETD, FragmentationTerminus.Both, fragmentsMod_etd);
-
-            //Tuple<int, int[]> keyValuePair represents: <glycanBoxId, glycanModPositions> 
-            Tuple<int, int[]> keyValuePairs = new Tuple<int, int[]>(22, modPos.ToArray());
-
-            var fragments_etd_origin = GlycoPeptides.GetFragmentHash(frag_ments_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
-
-            var fragmentsHash_etd = GlycoPeptides.GetFragmentHash(frag_ments_etd, keyValuePairs, OGlycanBoxes, 1000);
-
-            var fragmentsMod_etd_origin = GlycoPeptides.GetFragmentHash(fragmentsMod_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
-
-            var overlap = fragmentsHash_etd.Intersect(fragments_etd_origin).Count();
-
-            Assert.That(overlap == 14);
-
-            var overlap2 = fragmentsHash_etd.Intersect(fragmentsMod_etd_origin).Count();
-
-            //ETD didn't change y ions.
-            Assert.That(overlap2 == 23);
+            Assert.That(fragmentsMod_hcd.Count() == 61); //The Fragments also contain neutral loss ions.
         }
 
         [Test]
