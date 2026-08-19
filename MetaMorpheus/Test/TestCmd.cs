@@ -313,7 +313,8 @@ namespace Test
                 string[] expected =
                 {
                     "CalibrationTask.toml", "GptmdTask.toml", "SearchTask.toml",
-                    "XLSearchTask.toml", "GlycoSearchTask.toml", "AveragingTask.toml"
+                    "XLSearchTask.toml", "GlycoSearchTask.toml", "AveragingTask.toml",
+                    "TruncationSearchTask.toml"
                 };
 
                 foreach (string name in expected)
