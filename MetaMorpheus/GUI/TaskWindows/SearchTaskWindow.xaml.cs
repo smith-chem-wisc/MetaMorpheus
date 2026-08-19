@@ -671,7 +671,7 @@ namespace MetaMorpheusGUI
                 precursorDeconParams: precursorDeconvolutionParameters,
                 productDeconParams: productDeconvolutionParameters,
                 precursorMassMatchMode: _massDifferenceAcceptorViewModel.PrecursorMassMatchMode,
-                fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams()
+                fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
                 rtPredictorName: rtPredictorModelName);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
