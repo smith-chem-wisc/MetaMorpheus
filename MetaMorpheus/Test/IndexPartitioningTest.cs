@@ -12,6 +12,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -319,17 +320,17 @@ namespace Test
             long budget = (long)(tenGb * BudgetFraction);
 
             // comfortably inside the budget -> leave it alone
-            Assert.That(IndexPartitioning.PartitionsForBudget(budget / 4, tenGb, 1, 5000, out bool capped1), Is.EqualTo(1));
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget / 4, 0, tenGb, 1, 5000, out bool capped1), Is.EqualTo(1));
             Assert.That(capped1, Is.False);
 
             // just over one budget -> two partitions
-            Assert.That(IndexPartitioning.PartitionsForBudget(budget + 1, tenGb, 1, 5000, out _), Is.EqualTo(2));
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget + 1, 0, tenGb, 1, 5000, out _), Is.EqualTo(2));
 
             // four budgets exactly -> four partitions
-            Assert.That(IndexPartitioning.PartitionsForBudget(budget * 4, tenGb, 1, 5000, out _), Is.EqualTo(4));
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget * 4, 0, tenGb, 1, 5000, out _), Is.EqualTo(4));
 
             // a request above the computed need always wins
-            Assert.That(IndexPartitioning.PartitionsForBudget(budget + 1, tenGb, 16, 5000, out _), Is.EqualTo(16));
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget + 1, 0, tenGb, 16, 5000, out _), Is.EqualTo(16));
         }
 
         /// <summary>
@@ -341,22 +342,42 @@ namespace Test
         {
             const long tenGb = 10L * 1024 * 1024 * 1024;
 
-            int suggested = IndexPartitioning.PartitionsForBudget(long.MaxValue / 2, tenGb, 1, 100_000, out bool capped);
+            int suggested = IndexPartitioning.PartitionsForBudget(long.MaxValue / 2, 0, tenGb, 1, 100_000, out bool capped);
             Assert.That(capped, Is.True, "must report that the partition cap was hit");
             Assert.That(suggested, Is.EqualTo(256), "capped at MaxPartitions");
 
             // 22 GB would want 4 partitions, but there are only 3 proteins to split
-            Assert.That(IndexPartitioning.PartitionsForBudget(22L * 1024 * 1024 * 1024, tenGb, 1, 3, out _), Is.EqualTo(3));
+            Assert.That(IndexPartitioning.PartitionsForBudget(22L * 1024 * 1024 * 1024, 0, tenGb, 1, 3, out _), Is.EqualTo(3));
 
             // an unknown/empty protein count must not produce zero partitions
-            Assert.That(IndexPartitioning.PartitionsForBudget(22L * 1024 * 1024 * 1024, tenGb, 1, 0, out _), Is.EqualTo(1));
+            Assert.That(IndexPartitioning.PartitionsForBudget(22L * 1024 * 1024 * 1024, 0, tenGb, 1, 0, out _), Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// Bin space does not shrink when the database is split, so it has to come off the budget rather
+        /// than be divided into it. Halving what is left must double the partitions, and a fixed cost that
+        /// swallows the whole budget must be a no-op rather than a negative-divisor crash.
+        /// </summary>
+        [Test]
+        public static void PartitionsForBudget_FixedBytesComeOffTheBudget()
+        {
+            const long tenGb = 10L * 1024 * 1024 * 1024;
+            long budget = (long)(tenGb * BudgetFraction);
+
+            // with half the budget spent on bin space, the same index needs twice as many partitions
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget, 0, tenGb, 1, 5000, out _), Is.EqualTo(1));
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget, budget / 2, tenGb, 1, 5000, out _), Is.EqualTo(2));
+
+            // bin space alone exceeding the budget leaves nothing to divide into
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget, budget, tenGb, 3, 5000, out bool capped), Is.EqualTo(3));
+            Assert.That(capped, Is.False);
         }
 
         /// <summary>A machine reporting no usable memory must be a no-op, not a divide-by-zero.</summary>
         [Test]
         public static void PartitionsForBudget_NoBudget_ReturnsRequestedCount()
         {
-            Assert.That(IndexPartitioning.PartitionsForBudget(1L << 40, 0, 2, 500, out bool capped), Is.EqualTo(2));
+            Assert.That(IndexPartitioning.PartitionsForBudget(1L << 40, 0, 0, 2, 500, out bool capped), Is.EqualTo(2));
             Assert.That(capped, Is.False);
         }
 
@@ -370,7 +391,10 @@ namespace Test
             Assert.That(warning, Does.Contain("4"));
             Assert.That(warning, Does.Contain("18.6 GB").Or.Contain("18.63 GB"), "estimate in GB");
             Assert.That(warning, Does.Contain("free"), "must say what the budget was derived from");
-            Assert.That(warning, Does.Contain("Results are unaffected"), "partition count no longer changes results");
+            Assert.That(warning, Does.Contain("Identifications and scores are unaffected"),
+                "must say what does not move");
+            Assert.That(warning, Does.Contain("q-values can shift"),
+                "and must not claim the partition count is entirely result-neutral, because it is not");
         }
 
         // ------------------------------------------------------------------ mass sort
@@ -451,6 +475,88 @@ namespace Test
 
             Assert.That(first.Count, Is.GreaterThan(100), "need enough peptides that thread interleaving could differ");
             Assert.That(second, Is.EqualTo(first), "peptide index order must not depend on thread completion order");
+        }
+
+        /// <summary>
+        /// The compressed layout must hold exactly what the old list-per-bin layout held. Rather than assert
+        /// hand-picked bins, this rebuilds the reference form from the same peptides with the arithmetic the
+        /// engine used to inline, and compares every bin — an offset that is off by one shifts contents into
+        /// the neighbouring bin instead of failing loudly, so a sample would not find it.
+        ///
+        /// Ascending order within a bin is asserted separately because the search binary-searches inside a
+        /// bin by peptide mass, and the peptide index is sorted by mass, so ascending id is what makes that
+        /// search valid. A fill pass that visited peptides in any other order would still round-trip.
+        /// </summary>
+        [Test]
+        public static void IndexingEngine_CompressedFragmentIndexMatchesBinPerListLayout()
+        {
+            const double maxFragmentSize = 3000;
+            const int binsPerDalton = 1000;
+
+            var proteins = MakeAnagramProteins();
+            var parameters = new CommonParameters(scoreCutoff: 1,
+                digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
+            var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+
+            var engine = new IndexingEngine(proteins, new List<Modification>(), new List<Modification>(), null, null, null,
+                0, DecoyType.Reverse, parameters, fsp, maxFragmentSize, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var results = (IndexingResults)engine.Run();
+
+            var reference = new List<int>[(int)Math.Ceiling(maxFragmentSize) * binsPerDalton + 1];
+            var fragments = new List<Product>();
+            for (int peptideId = 0; peptideId < results.PeptideIndex.Count; peptideId++)
+            {
+                results.PeptideIndex[peptideId].Fragment(parameters.DissociationType,
+                    parameters.DigestionParams.FragmentationTerminus, fragments, parameters.FragmentationParameters);
+
+                foreach (var fragment in fragments)
+                {
+                    double mass = fragment.NeutralMass;
+                    if (mass < maxFragmentSize && mass > 0)
+                    {
+                        int bin = (int)Math.Round(mass * binsPerDalton);
+                        (reference[bin] ??= new List<int>()).Add(peptideId);
+                    }
+                }
+            }
+
+            Assert.That(results.FragmentIndex.Length, Is.EqualTo(reference.Length), "bin count");
+            Assert.That(results.FragmentIndex.EntryCount, Is.EqualTo(reference.Sum(b => b?.Count ?? 0)), "total entries");
+            Assert.That(results.FragmentIndex.EntryCount, Is.GreaterThan(10_000),
+                "the comparison is only worth anything on a well-populated index");
+
+            var mismatches = new List<string>();
+            int populated = 0;
+            for (int bin = 0; bin < reference.Length && mismatches.Count < 10; bin++)
+            {
+                ReadOnlySpan<int> actual = results.FragmentIndex[bin];
+                int[] expected = reference[bin]?.ToArray() ?? Array.Empty<int>();
+
+                if (expected.Length > 0)
+                {
+                    populated++;
+                }
+
+                if (!actual.SequenceEqual(expected))
+                {
+                    mismatches.Add($"bin {bin}: expected [{string.Join(",", expected)}] got [{string.Join(",", actual.ToArray())}]");
+                }
+                else if (actual.Length > 1)
+                {
+                    for (int i = 1; i < actual.Length; i++)
+                    {
+                        if (actual[i] < actual[i - 1])
+                        {
+                            mismatches.Add($"bin {bin} is not ascending at {i}");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            Assert.That(populated, Is.GreaterThan(1000), $"need many populated bins for this to mean anything; got {populated}");
+            Assert.That(mismatches, Is.Empty, string.Join("; ", mismatches));
         }
 
         // ------------------------------------------------------ CommonParameters clone
@@ -572,6 +678,30 @@ namespace Test
         /// The bin boundary search returns the inclusive end of the range that receives coarse score
         /// increments, so an index that is too small means candidates are never scored at all. It is
         /// therefore checked against a linear-scan ground truth rather than against itself, across bin
+        /// <summary>
+        /// Exposes the protected static boundary search. It takes a ReadOnlySpan now, which reflection cannot
+        /// pass, so the test reaches it by derivation instead. The constructor exists only to satisfy the base
+        /// class; nothing ever instantiates this.
+        /// </summary>
+        private sealed class BinSearchProbe : ModernSearchEngine
+        {
+            private BinSearchProbe() : base(null, null, null, null, 0, new CommonParameters(), null, new OpenSearchMode(), 0, new List<string>()) { }
+
+            internal static int Search(ReadOnlySpan<int> bin, double mass, List<PeptideWithSetModifications> peptideIndex)
+                => BinarySearchBinForPrecursorIndex(bin, mass, peptideIndex);
+
+            /// <summary>Reaches the protected instance scoring method; the base constructor only assigns fields.</summary>
+            internal static List<int> Score(FragmentIndex fragmentIndex, List<int> binsToSearch, double highestMass,
+                List<PeptideWithSetModifications> peptideIndex)
+            {
+                var observed = new List<int>();
+                new BinSearchProbe().IndexedScoring(fragmentIndex, binsToSearch, new byte[peptideIndex.Count], 1,
+                    observed, peptideIndex[0].MonoisotopicMass, double.NegativeInfinity, highestMass, peptideIndex,
+                    new OpenSearchMode(), 0, DissociationType.HCD);
+                return observed;
+            }
+        }
+
         /// lengths — the previous implementation was path-dependent, so the same target could give different
         /// answers for bins of different length, which is how database partitioning leaked into scoring.
         /// Exact ties between the target and a stored mass are the case that used to fail, and equal masses
@@ -593,7 +723,6 @@ namespace Test
             Assert.That(masses.Count - distinctMasses.Count, Is.GreaterThan(0),
                 "the interesting case is exact ties; this index must contain some");
 
-            var search = typeof(ModernSearchEngine).GetMethod("BinarySearchBinForPrecursorIndex", PrivateStatic);
 
             var targets = new List<double>();
             foreach (double m in distinctMasses)
@@ -613,7 +742,7 @@ namespace Test
 
                 foreach (double target in targets)
                 {
-                    int actual = (int)search.Invoke(null, new object[] { bin, target, peptideIndex });
+                    int actual = BinSearchProbe.Search(CollectionsMarshal.AsSpan(bin), target, peptideIndex);
 
                     int expected = 0;
                     for (int k = binLength - 1; k >= 0; k--)
@@ -631,16 +760,60 @@ namespace Test
             Assert.That(failures, Is.Empty, "boundary disagrees with a linear scan: " + string.Join("; ", failures));
         }
 
-        // ------------------------------------------- flat fragment index serialization
-
-        private static List<int>[] RoundTrip(List<int>[] fragmentIndex, out long fileLength)
+        /// <summary>
+        /// An empty bin must be skipped, not scored. Under the old list-per-bin layout an unpopulated bin was
+        /// null and callers filtered on that; a span is never null, so `bin != null` silently became "always
+        /// true" and empty bins reached the scoring loop, which indexed element 0 of nothing. Real crosslink
+        /// and glyco searches died on this, so the check is on the observable behaviour, not just on no-throw.
+        /// Both the finite and infinite upper bound are covered: they take different paths to the bin length.
+        /// </summary>
+        [Test]
+        [TestCase(double.PositiveInfinity)]
+        [TestCase(1e6)]
+        public static void IndexedScoring_EmptyBinsAreSkippedNotScored(double highestMass)
         {
-            var write = typeof(MetaMorpheusTask).GetMethod("WriteFragmentIndex", PrivateStatic);
-            var read = typeof(MetaMorpheusTask).GetMethod("ReadFragmentIndex", PrivateStatic);
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 5);
+            var peptideIndex = MakeAnagramProteins()
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<PeptideWithSetModifications>()
+                .Where(p => !double.IsNaN(p.MonoisotopicMass))
+                .OrderBy(p => p.MonoisotopicMass)
+                .Take(40)
+                .ToList();
+
+            // bins 0, 2 and 4 are empty; the populated ones hold ascending ids as the real index does
+            var populated = new Dictionary<int, int[]> { [1] = new[] { 0, 1, 2 }, [3] = new[] { 3 } };
+            var binStart = new List<int> { 0 };
+            var peptideIds = new List<int>();
+            for (int bin = 0; bin < 5; bin++)
+            {
+                if (populated.TryGetValue(bin, out int[] ids))
+                {
+                    peptideIds.AddRange(ids);
+                }
+                binStart.Add(peptideIds.Count);
+            }
+            var fragmentIndex = new FragmentIndex(binStart.ToArray(), peptideIds.ToArray());
+
+            List<int> observed = BinSearchProbe.Score(fragmentIndex, new List<int> { 0, 1, 2, 3, 4 }, highestMass, peptideIndex);
+
+            Assert.That(observed, Is.EquivalentTo(new[] { 0, 1, 2, 3 }),
+                "exactly the ids in the populated bins, and nothing conjured out of the empty ones");
+
+            // and searching only empty bins must be a no-op rather than a crash
+            Assert.That(BinSearchProbe.Score(fragmentIndex, new List<int> { 0, 2, 4 }, highestMass, peptideIndex), Is.Empty);
+        }
+
+        // ------------------------------------------- flat index serialization
+
+        private static List<int>[] RoundTrip(List<int>[] precursorIndex, out long fileLength)
+        {
+            var write = typeof(MetaMorpheusTask).GetMethod("WritePrecursorIndex", PrivateStatic);
+            var read = typeof(MetaMorpheusTask).GetMethod("ReadPrecursorIndex", PrivateStatic);
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "roundtrip-" + Guid.NewGuid().ToString("N") + ".bin");
             try
             {
-                write.Invoke(null, new object[] { fragmentIndex, path });
+                write.Invoke(null, new object[] { precursorIndex, path });
                 fileLength = new FileInfo(path).Length;
                 return (List<int>[])read.Invoke(null, new object[] { path });
             }
@@ -655,7 +828,7 @@ namespace Test
         /// bins have to come back null rather than as empty lists — the search engines test for null.
         /// </summary>
         [Test]
-        public static void FragmentIndex_RoundTripPreservesBinsContentsAndOrder()
+        public static void PrecursorIndex_RoundTripPreservesBinsContentsAndOrder()
         {
             var index = new List<int>[50];
             index[0] = new List<int> { 0 };                     // first bin populated
@@ -685,7 +858,7 @@ namespace Test
         /// Real fragment indexes are hundreds of millions of entries, so this must be right.
         /// </summary>
         [Test]
-        public static void FragmentIndex_RoundTripBinLargerThanWriteBuffer()
+        public static void PrecursorIndex_RoundTripBinLargerThanWriteBuffer()
         {
             const int entries = (1 << 20) + 12345; // one buffer flush plus a remainder
             var index = new List<int>[3];
@@ -708,7 +881,7 @@ namespace Test
 
         /// <summary>An index with no fragments at all still has to round-trip; the precursor index can be sparse.</summary>
         [Test]
-        public static void FragmentIndex_RoundTripEmptyIndex()
+        public static void PrecursorIndex_RoundTripEmptyIndex()
         {
             List<int>[] actual = RoundTrip(new List<int>[10], out long fileLength);
 
@@ -717,16 +890,112 @@ namespace Test
             Assert.That(fileLength, Is.EqualTo((3 + 10) * sizeof(int)));
         }
 
+        private static FragmentIndex RoundTripFragments(FragmentIndex index, out long fileLength)
+        {
+            var write = typeof(MetaMorpheusTask).GetMethod("WriteFragmentIndex", PrivateStatic);
+            var read = typeof(MetaMorpheusTask).GetMethod("ReadFragmentIndex", PrivateStatic);
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "roundtrip-frag-" + Guid.NewGuid().ToString("N") + ".bin");
+            try
+            {
+                write.Invoke(null, new object[] { index, path });
+                fileLength = new FileInfo(path).Length;
+                return (FragmentIndex)read.Invoke(null, new object[] { path });
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
         /// <summary>
-        /// An index written by an older MetaMorpheus must be rejected, not misinterpreted. The reader is the
-        /// last line of defence: GenerateSecondIndexes reads without a try/catch.
+        /// The search binary-searches inside a bin, so bin boundaries, contents and order all have to survive.
+        /// The compressed layout puts every bin in one array, so an off-by-one in the offsets would shift a
+        /// bin's contents into its neighbour rather than fail loudly — hence checking every bin, not a sample.
         /// </summary>
         [Test]
-        public static void FragmentIndex_ReadRejectsForeignFile()
+        public static void FragmentIndex_RoundTripPreservesBinBoundariesAndOrder()
+        {
+            // bins deliberately include the first, the last, empties either side of a populated one, and a
+            // bin longer than the 16 Mi-int I/O chunk boundary is covered separately below
+            var binStart = new List<int> { 0 };
+            var peptideIds = new List<int>();
+            var contents = new List<int>[6];
+            contents[0] = new List<int> { 0 };
+            contents[1] = new List<int>();
+            contents[2] = new List<int> { 3, 3, 9, 41 };          // duplicates allowed
+            contents[3] = new List<int>();
+            contents[4] = Enumerable.Range(0, 1000).ToList();
+            contents[5] = new List<int> { int.MaxValue, 0 };      // last bin, extreme value, descending
+            foreach (var bin in contents)
+            {
+                peptideIds.AddRange(bin);
+                binStart.Add(peptideIds.Count);
+            }
+
+            FragmentIndex actual = RoundTripFragments(new FragmentIndex(binStart.ToArray(), peptideIds.ToArray()), out long fileLength);
+
+            Assert.That(actual.Length, Is.EqualTo(6));
+            Assert.That(actual.EntryCount, Is.EqualTo(peptideIds.Count));
+            for (int i = 0; i < contents.Length; i++)
+            {
+                Assert.That(actual[i].ToArray(), Is.EqualTo(contents[i].ToArray()), $"bin {i}");
+            }
+            // 4 header ints + 7 offsets + 1007 entries
+            Assert.That(fileLength, Is.EqualTo((4 + 7 + 1007) * sizeof(int)));
+        }
+
+        /// <summary>
+        /// Both arrays are written through a fixed int chunk, so an index whose entries exceed one chunk
+        /// exercises the loop rather than the single-shot path. Real indexes are hundreds of millions of
+        /// entries, so the chunked path is the one that actually runs in production.
+        /// </summary>
+        [Test]
+        public static void FragmentIndex_RoundTripSurvivesMoreEntriesThanOneIoChunk()
+        {
+            const int entries = (16 * 1024 * 1024) + 12345; // one chunk plus a remainder
+            var peptideIds = new int[entries];
+            for (int i = 0; i < entries; i++)
+            {
+                peptideIds[i] = entries - i; // descending, so order is checkable
+            }
+
+            FragmentIndex actual = RoundTripFragments(new FragmentIndex(new[] { 0, 1, entries }, peptideIds), out long fileLength);
+
+            Assert.That(actual.Length, Is.EqualTo(2));
+            Assert.That(actual[0].Length, Is.EqualTo(1));
+            Assert.That(actual[1].Length, Is.EqualTo(entries - 1));
+            Assert.That(actual[1][0], Is.EqualTo(entries - 1), "first entry of the long bin, and order preserved");
+            Assert.That(actual[1][entries - 2], Is.EqualTo(1), "last entry");
+            Assert.That(fileLength, Is.EqualTo((4L + 3 + entries) * sizeof(int)));
+        }
+
+        /// <summary>An index with no fragments at all still has to round-trip.</summary>
+        [Test]
+        public static void FragmentIndex_RoundTripEmptyIndex()
+        {
+            FragmentIndex actual = RoundTripFragments(new FragmentIndex(new int[11], Array.Empty<int>()), out long fileLength);
+
+            Assert.That(actual.Length, Is.EqualTo(10));
+            Assert.That(actual.EntryCount, Is.Zero);
+            Assert.That(Enumerable.Range(0, 10).All(i => actual[i].IsEmpty), Is.True);
+            Assert.That(fileLength, Is.EqualTo((4 + 11) * sizeof(int)));
+        }
+
+        /// <summary>
+        /// An index written by an older MetaMorpheus must be rejected, not misinterpreted. The reader is the
+        /// last line of defence: GenerateSecondIndexes reads without a try/catch. The stale-version case is
+        /// the one that actually happens — the fragment index kept its magic number when the layout changed
+        /// from bin counts to offsets, so only the version distinguishes them.
+        /// </summary>
+        [Test]
+        [TestCase(new byte[] { 9, 9, 9, 9, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0 }, TestName = "foreign magic")]
+        [TestCase(new byte[] { 0x4D, 0x4D, 0x46, 0x49, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0 }, TestName = "previous format version")]
+        [TestCase(new byte[] { 0x4D, 0x4D, 0x50, 0x49, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0 }, TestName = "precursor index in the fragment index slot")]
+        public static void FragmentIndex_ReadRejectsForeignFile(byte[] header)
         {
             var read = typeof(MetaMorpheusTask).GetMethod("ReadFragmentIndex", PrivateStatic);
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "foreign-" + Guid.NewGuid().ToString("N") + ".bin");
-            File.WriteAllBytes(path, new byte[] { 9, 9, 9, 9, 1, 0, 0, 0, 2, 0, 0, 0 });
+            File.WriteAllBytes(path, header);
             try
             {
                 var exception = Assert.Throws<TargetInvocationException>(() => read.Invoke(null, new object[] { path }));

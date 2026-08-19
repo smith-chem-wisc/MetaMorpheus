@@ -60,7 +60,7 @@ namespace TaskLayer
 
         // Modern Search indexing fields
         private List<PeptideWithSetModifications> _peptideIndex;
-        private List<int>[] _fragmentIndex;
+        private FragmentIndex _fragmentIndex;
 
         protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {

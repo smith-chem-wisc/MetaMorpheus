@@ -1348,35 +1348,76 @@ namespace TaskLayer
         // when this replaced NetSerializer, so an index cached by an older version is simply not found and
         // gets rebuilt rather than misread.
         private const int FragmentIndexMagic = 0x4946_4D4D;
-        private const int FragmentIndexFormatVersion = 1;
+        // "MMPI"
+        private const int PrecursorIndexMagic = 0x4950_4D4D;
+        // 2: the fragment index went from bin counts + concatenated ids to the compressed sparse row pair
+        private const int FragmentIndexFormatVersion = 2;
 
         /// <summary>
-        /// Bin counts followed by the concatenated peptide ids, written as raw little-endian int32 in bulk.
-        /// NetSerializer walked every List and every element individually; a fragment index has millions of
-        /// bins and hundreds of millions of entries, so the per-object cost dominated. The in-memory type is
-        /// unchanged — only the on-disk layout is flat.
+        /// The two arrays behind a <see cref="FragmentIndex"/>, written as raw little-endian int32 in bulk.
+        /// NetSerializer walked every list and every element individually; a fragment index has millions of
+        /// bins and hundreds of millions of entries, so the per-object cost dominated. Now that the in-memory
+        /// form is already flat, reading it back is a pair of array fills rather than a rebuild.
         /// </summary>
-        private static void WriteFragmentIndex(List<int>[] fragmentIndex, string fragmentIndexFileName)
+        private static void WriteFragmentIndex(FragmentIndex fragmentIndex, string fragmentIndexFileName)
         {
             using var file = new FileStream(fragmentIndexFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20);
 
-            var counts = new int[fragmentIndex.Length];
-            for (int i = 0; i < fragmentIndex.Length; i++)
+            Span<int> header = stackalloc int[4];
+            header[0] = FragmentIndexMagic;
+            header[1] = FragmentIndexFormatVersion;
+            header[2] = fragmentIndex.BinStart.Length;
+            header[3] = fragmentIndex.PeptideIds.Length;
+            file.Write(MemoryMarshal.AsBytes(header));
+
+            WriteInt32Bulk(file, fragmentIndex.BinStart);
+            WriteInt32Bulk(file, fragmentIndex.PeptideIds);
+        }
+
+        private static FragmentIndex ReadFragmentIndex(string fragmentIndexFileName)
+        {
+            using var file = new FileStream(fragmentIndexFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
+
+            Span<int> header = stackalloc int[4];
+            file.ReadExactly(MemoryMarshal.AsBytes(header));
+            if (header[0] != FragmentIndexMagic || header[1] != FragmentIndexFormatVersion)
             {
-                counts[i] = fragmentIndex[i]?.Count ?? 0;
+                throw new MetaMorpheusException($"{fragmentIndexFileName} is not a fragment index this version can read.");
+            }
+
+            var binStart = new int[header[2]];
+            var peptideIds = new int[header[3]];
+            ReadInt32Bulk(file, binStart);
+            ReadInt32Bulk(file, peptideIds);
+
+            return new FragmentIndex(binStart, peptideIds);
+        }
+
+        /// <summary>
+        /// The precursor index is still a <see cref="List{T}"/> array: it is appended to after construction by
+        /// AddInteriorTerminalModsToPrecursorIndex, so it cannot be built with the count-then-fill pass a
+        /// compressed layout needs. Kept in the same flat format as before.
+        /// </summary>
+        private static void WritePrecursorIndex(List<int>[] precursorIndex, string precursorIndexFileName)
+        {
+            using var file = new FileStream(precursorIndexFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20);
+
+            var counts = new int[precursorIndex.Length];
+            for (int i = 0; i < precursorIndex.Length; i++)
+            {
+                counts[i] = precursorIndex[i]?.Count ?? 0;
             }
 
             Span<int> header = stackalloc int[3];
-            header[0] = FragmentIndexMagic;
+            header[0] = PrecursorIndexMagic;
             header[1] = FragmentIndexFormatVersion;
-            header[2] = fragmentIndex.Length;
+            header[2] = precursorIndex.Length;
             file.Write(MemoryMarshal.AsBytes(header));
             WriteInt32Bulk(file, counts);
 
-            // stage entries into a fixed buffer so the stream sees large writes rather than one per int
             var buffer = new int[1 << 20];
             int staged = 0;
-            foreach (List<int> bin in fragmentIndex)
+            foreach (List<int> bin in precursorIndex)
             {
                 if (bin == null || bin.Count == 0)
                 {
@@ -1405,21 +1446,21 @@ namespace TaskLayer
             }
         }
 
-        private static List<int>[] ReadFragmentIndex(string fragmentIndexFileName)
+        private static List<int>[] ReadPrecursorIndex(string precursorIndexFileName)
         {
-            using var file = new FileStream(fragmentIndexFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
+            using var file = new FileStream(precursorIndexFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
 
             Span<int> header = stackalloc int[3];
             file.ReadExactly(MemoryMarshal.AsBytes(header));
-            if (header[0] != FragmentIndexMagic || header[1] != FragmentIndexFormatVersion)
+            if (header[0] != PrecursorIndexMagic || header[1] != FragmentIndexFormatVersion)
             {
-                throw new MetaMorpheusException($"{fragmentIndexFileName} is not a fragment index this version can read.");
+                throw new MetaMorpheusException($"{precursorIndexFileName} is not a precursor index this version can read.");
             }
 
             var counts = new int[header[2]];
             ReadInt32Bulk(file, counts);
 
-            var fragmentIndex = new List<int>[counts.Length];
+            var precursorIndex = new List<int>[counts.Length];
             for (int i = 0; i < counts.Length; i++)
             {
                 if (counts[i] == 0)
@@ -1427,14 +1468,13 @@ namespace TaskLayer
                     continue;
                 }
 
-                // size the list exactly and fill its backing array directly, rather than Add-ing element by element
                 var bin = new List<int>(counts[i]);
                 CollectionsMarshal.SetCount(bin, counts[i]);
                 ReadInt32Bulk(file, CollectionsMarshal.AsSpan(bin));
-                fragmentIndex[i] = bin;
+                precursorIndex[i] = bin;
             }
 
-            return fragmentIndex;
+            return precursorIndex;
         }
 
         private static void WriteInt32Bulk(Stream stream, int[] values)
@@ -1534,7 +1574,7 @@ namespace TaskLayer
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref FragmentIndex fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -1552,7 +1592,7 @@ namespace TaskLayer
                     if (indexEngine.GeneratePrecursorIndex)
                     {
                         Status("Reading precursor index...", new List<string> { taskId });
-                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                        precursorIndex = ReadPrecursorIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                     }
 
                     successfullyReadIndices = true;
@@ -1597,7 +1637,7 @@ namespace TaskLayer
                 {
                     Status("Writing precursor index...", new List<string> { taskId });
                     var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
-                    WriteFragmentIndex(precursorIndex, precursorIndexFile);
+                    WritePrecursorIndex(precursorIndex, precursorIndexFile);
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
             }
@@ -1618,7 +1658,7 @@ namespace TaskLayer
                     if (indexEngine.GeneratePrecursorIndex)
                     {
                         Status("Reading precursor index...", new List<string> { taskId });
-                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                        precursorIndex = ReadPrecursorIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                     }
 
                     successfullyReadIndices = true;
@@ -1640,7 +1680,7 @@ namespace TaskLayer
             }
         }
 
-        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref FragmentIndex secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (!File.Exists(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName))) //if no indexes exist

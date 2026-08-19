@@ -19,12 +19,10 @@ namespace EngineLayer.Indexing
         /// Share of currently-free physical memory one index build may occupy; the rest is left for the
         /// spectra, the PSMs and quantification.
         ///
-        /// Sizing against memory that is actually free is only safe because partition count no longer affects
-        /// results — see ModernSearchEngine.FineScorePeptides. While it did, a budget that moved with machine
-        /// load made two runs of the same search choose different partition counts and report different Delta
-        /// Scores, so the budget had to be a deterministic function of the machine instead, which meant
-        /// guessing what fraction of it was free. That guess was wrong in both directions: too generous on a
-        /// busy laptop, far too mean on an idle cluster node with hundreds of free GB.
+        /// Measured against free memory rather than installed memory: a fixed fraction of installed is too
+        /// generous on a busy laptop and far too mean on an idle cluster node with hundreds of free GB.
+        /// The cost is that the partition count is not reproducible across runs, which matters only to the
+        /// extent that results still depend on it — see ModernSearchEngine.FineScorePeptides.
         /// </summary>
         private const double MemoryBudgetFraction = 0.55;
 
@@ -37,16 +35,29 @@ namespace EngineLayer.Indexing
         private static long BytesPerPeptide => System.Runtime.GCSettings.IsServerGC ? 1500 : 750;
 
         /// <summary>
-        /// Heap bytes per fragment-index entry. Measured at 4,000 targets / 125.09 M binned fragments:
-        /// the fragment index added 1,380 MB under workstation GC and 2,434 MB under server GC, i.e. ~11 B
-        /// and ~20 B per entry (a List&lt;int&gt; slot plus its share of per-bin object overhead).
+        /// Bytes per fragment-index entry: one int in the compressed sparse row array, and nothing else.
+        /// This used to be measured (~11 B under workstation GC, ~20 B under server GC at 4,000 targets /
+        /// 125.09 M binned fragments) and used to depend on the GC mode, because the entry carried a share
+        /// of per-bin List&lt;int&gt; overhead and of the garbage repeated doubling left behind. The flat
+        /// layout has neither, so the cost is now exact.
         ///
         /// Counting fragments separately rather than folding them into a per-peptide constant is what makes
         /// the estimate hold for searches whose peptides are long: fragments per peptide grows with peptide
         /// length, so a top-down or unbounded-length search has far more index entries per peptide than the
-        /// tryptic case this was calibrated on.
+        /// tryptic case the peptide constant was calibrated on.
         /// </summary>
-        private static long BytesPerFragmentEntry => System.Runtime.GCSettings.IsServerGC ? 20 : 11;
+        private const long BytesPerFragmentEntry = sizeof(int);
+
+        /// <summary>
+        /// Bytes of bin offsets: one int per bin plus a terminator. Set by the maximum fragment mass, not by
+        /// the database, so unlike everything else here it does not shrink when the database is partitioned
+        /// and has to be taken off the budget instead of divided into it. 120 MB at the default 30,000 Da.
+        /// </summary>
+        private static long BinSpaceBytes(double maxFragmentSize) =>
+            sizeof(int) * ((long)Math.Ceiling(maxFragmentSize) * FragmentBinsPerDalton + 2);
+
+        /// <summary>Bins per dalton, matching IndexingEngine.</summary>
+        private const int FragmentBinsPerDalton = 1000;
 
         /// <summary>Proteins digested to learn the peptide yield of the configured digestion settings.</summary>
         private const int SampleSize = 200;
@@ -83,7 +94,8 @@ namespace EngineLayer.Indexing
                 fixedModifications, variableModifications, silacLabels, turnoverLabels, maxFragmentSize);
             estimatedBytes = peptideCount * BytesPerPeptide + fragmentCount * BytesPerFragmentEntry;
 
-            return PartitionsForBudget(estimatedBytes, budgetBytes, requestedPartitions, proteins.Count, out cappedByLimit);
+            return PartitionsForBudget(estimatedBytes, BinSpaceBytes(maxFragmentSize), budgetBytes,
+                requestedPartitions, proteins.Count, out cappedByLimit);
         }
 
         /// <summary>
@@ -91,12 +103,14 @@ namespace EngineLayer.Indexing
         /// how many partitions does <paramref name="estimatedBytes"/> need to fit the share of
         /// <paramref name="availableBytes"/> budgeted for an index, never going below
         /// <paramref name="requestedPartitions"/> and never exceeding one partition per protein.
+        /// <paramref name="fixedBytes"/> is the part of an index that partitioning does not shrink, so it
+        /// comes off the budget rather than being divided into it.
         /// </summary>
-        internal static int PartitionsForBudget(long estimatedBytes, long availableBytes, int requestedPartitions,
-            int proteinCount, out bool cappedByLimit)
+        internal static int PartitionsForBudget(long estimatedBytes, long fixedBytes, long availableBytes,
+            int requestedPartitions, int proteinCount, out bool cappedByLimit)
         {
             cappedByLimit = false;
-            long budget = (long)(availableBytes * MemoryBudgetFraction);
+            long budget = (long)(availableBytes * MemoryBudgetFraction) - fixedBytes;
             if (budget <= 0)
             {
                 return requestedPartitions;
@@ -290,7 +304,8 @@ namespace EngineLayer.Indexing
                    $"{estimatedBytes / 1073741824.0:N1} GB, which does not fit the " +
                    $"{freeGb * MemoryBudgetFraction:N1} GB budgeted for the index " +
                    $"({MemoryBudgetFraction:P0} of {freeGb:N1} GB free). Increasing TotalPartitions to {suggestedPartitions} " +
-                   $"so the index stays in memory. Results are unaffected by the partition count.";
+                   $"so the index stays in memory. Identifications and scores are unaffected; reported PEP and " +
+                   $"q-values can shift slightly, because the partition count is derived from free memory.";
         }
     }
 }

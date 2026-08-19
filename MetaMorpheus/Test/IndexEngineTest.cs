@@ -75,7 +75,7 @@ namespace Test
 
                     // look up the peptides that have fragments with this mass
                     // the result of the lookup is a list of peptide IDs that have this fragment mass
-                    List<int> fragmentBin = results.FragmentIndex[integerMassRepresentation];
+                    ReadOnlySpan<int> fragmentBin = results.FragmentIndex[integerMassRepresentation];
 
                     // this list should contain this peptide!
                     Assert.That(fragmentBin.Contains(positionInPeptideIndex));
@@ -191,7 +191,7 @@ namespace Test
 
                     // look up the peptides that have fragments with this mass
                     // the result of the lookup is a list of peptide IDs that have this fragment mass
-                    List<int> fragmentBin = results.FragmentIndex[integerMassRepresentation];
+                    ReadOnlySpan<int> fragmentBin = results.FragmentIndex[integerMassRepresentation];
 
                     // this list should contain this peptide!
                     Assert.That(fragmentBin.Contains(positionInPeptideIndex));

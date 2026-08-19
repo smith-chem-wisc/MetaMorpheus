@@ -136,12 +136,12 @@ namespace TaskLayer
                         UsefulProteomicsDatabases.DecoyType.Reverse, indexParams, this.FileSpecificParameters, 30000.0, false,
                         dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
 
-                    List<int>[] fragmentIndex = null;
+                    FragmentIndex fragmentIndex = null;
                     List<int>[] precursorIndex = null;
                     GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
 
                     //The second Fragment index is for 'MS1-HCD_MS1-ETD_MS2s' type of data. If LowCID is used for MS1, ion-index is not allowed to use.
-                    List<int>[] secondFragmentIndex = null;
+                    FragmentIndex secondFragmentIndex = null;
                     if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID && combinedParams.MS2ChildScanDissociationType!= DissociationType.Unknown
                     && !CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
                     {
