@@ -11,12 +11,12 @@
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
-        
+
         <!-- used in Quantifications -->
         <local:BooleanOrConverter x:Key="boolOrConverter"/>
         <local:BooleanOrToVisibilityConverter x:Key="boolOr2VisConverter"/>
 
-            <!-- Style GroupBoxes -->
+        <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
             <Setter Property="BorderThickness" Value="3 1 1 1"/>
             <Setter Property="Padding" Value="5"/>
@@ -310,7 +310,7 @@
                                         </TextBox.ToolTip>
                                     </local:IntegerTexBoxControl>
                                 </StackPanel>
-                                
+
                                 <!-- Min Score -->
                                 <StackPanel Grid.Column="0" Grid.Row="6"  Orientation="Horizontal"  Margin="5 5 5 0">
                                     <Label x:Name="minScoreAllowedLabel" Width="150" Content="Minimum score allowed:" HorizontalContentAlignment="Left"/>
@@ -675,9 +675,9 @@
 
                                 <!-- Writing Options  -->
                                 <ColumnDefinition Width="*" />
-                                
+
                             </Grid.ColumnDefinitions>
-                            
+
                             <!-- writing options -->
                             <StackPanel Orientation="Vertical" Margin="5" Grid.Column="0">
                                 <CheckBox x:Name="CkbMzId" Content="Write .mzID" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}" ToolTipService.ShowOnDisabled="True">
@@ -712,11 +712,11 @@
                                         </TextBlock>
                                     </CheckBox.ToolTip>
                                 </CheckBox>
-                                
+
                             </StackPanel>
                         </Grid>
-                        
-                        
+
+
                         <!--</Expander>-->
                     </GroupBox>
                 </StackPanel>
@@ -1057,25 +1057,27 @@
                                     </Style>
                                 </Expander.Style>
                                 <StackPanel>
-                                    <GroupBox Header="Retention Time Predictor">
+                                    <GroupBox Header="Retention Time Predictor"
+                                              Visibility="{Binding Converter={StaticResource CollapseOnRnaModeConverter}}">
                                         <StackPanel Margin="5">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="1*" />
-                                                    <ColumnDefinition Width="1*" />
-                                                    <ColumnDefinition Width="1*" />
-                                                    <ColumnDefinition Width="1*" />
+                                                    <ColumnDefinition Width="77*" />
+                                                    <ColumnDefinition Width="92*"/>
+                                                    <ColumnDefinition Width="168*" />
+                                                    <ColumnDefinition Width="168*" />
+                                                    <ColumnDefinition Width="168*" />
                                                 </Grid.ColumnDefinitions>
                                                 <RadioButton x:Name="ChronologerRadioButton" Grid.Column="0" HorizontalAlignment="Center"
                                                              GroupName="RTPredictorType" Content="Chronologer"  IsChecked="True"
-                                                             ToolTip="Deep-learning retention time predictor. More accurate but noticeably slower." />
-                                                <RadioButton x:Name="SSRCalcRadioButton" Grid.Column="1" HorizontalAlignment="Center"
+                                                             ToolTip="Deep-learning retention time predictor. More accurate but noticeably slower." Grid.ColumnSpan="2" />
+                                                <RadioButton x:Name="SSRCalcRadioButton" Grid.Column="2" HorizontalAlignment="Center"
                                                              GroupName="RTPredictorType" Content="SSRCalc"
                                                              ToolTip="Classic hydrophobicity-based retention time calculator. Much faster, slightly less accurate." />
-                                                <RadioButton x:Name="Prosit2019iRTRadioButton" Grid.Column="2" HorizontalAlignment="Center"
+                                                <RadioButton x:Name="Prosit2019iRTRadioButton" Grid.Column="3" HorizontalAlignment="Center"
                                                              GroupName="RTPredictorType" Content="Prosit 2019 (network)"
                                                              ToolTip="Deep-learning retention time predictor served via Koina (network required). Predicts indexed RT for unmodified/oxidized peptides." />
-                                                <RadioButton x:Name="Prosit2020iRTTMTRadioButton" Grid.Column="3" HorizontalAlignment="Center"
+                                                <RadioButton x:Name="Prosit2020iRTTMTRadioButton" Grid.Column="4" HorizontalAlignment="Center"
                                                              GroupName="RTPredictorType" Content="Prosit 2020 (network)"
                                                              ToolTip="Deep-learning retention time predictor served via Koina (network required). Same as Prosit2019iRT but trained for TMT-labeled peptides." />
                                             </Grid>

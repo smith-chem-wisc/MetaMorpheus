@@ -894,9 +894,8 @@ namespace Test
         [Test]
         //[Explicit("Constructs Koina-backed Prosit predictors. Excluded from normal CI; run with: dotnet test --filter Category=Koina")]
         //[Category("Koina")]
-        [TestCase("Prosit2019iRT", typeof(Prosit2019iRT))]
-        [TestCase("Prosit2020iRTTMT", typeof(Prosit2020iRTTMT))]
-        [TestCase("SSRCalc", typeof(SSRCalc3RetentionTimePredictor))]
+        [TestCase(RTPredictorNames.Prosit2019iRT, typeof(Prosit2019iRT))]
+        [TestCase(RTPredictorNames.Prosit2020iRTTMT, typeof(Prosit2020iRTTMT))]
         public static void FdrAnalysisEngine_GetRTPredictor_ReturnsExpectedPrositPredictor(
             string rtPredictorName, Type expectedType)
         {
@@ -918,6 +917,27 @@ namespace Test
         }
 
         [Test]
+        [TestCase(RTPredictorNames.Chronologer, typeof(ChronologerRetentionTimePredictor))]
+        [TestCase(RTPredictorNames.SSRCalc, typeof(SSRCalc3RetentionTimePredictor))]
+        public static void FdrAnalysisEngine_GetRTPredictor_ReturnsExpectedLocalPredictor(
+            string rtPredictorName, Type expectedType)
+        {
+            // Local (non-network) predictors only — kept separate from the Prosit/Koina test below
+            // so this coverage can never be excluded by that test's Explicit/Category("Koina") gate.
+            var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
+              {
+                  ("dummy.mzML", new CommonParameters(rtPredictorName: rtPredictorName))
+              };
+
+            var result = method.Invoke(null, new object[] { "standard", fsp });
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Is.InstanceOf(expectedType));
+        }
+
+        [Test]
         [TestCase("GlycoSearch")]
         [TestCase("SearchTask")]
         public static void SearchTask_DefaultRTPredictor_ResolvedToChronologer(string searchType)
@@ -925,15 +945,17 @@ namespace Test
             //  This test ensures that the default RT model is still Chronologer.
             var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
             System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, "GetRTPredictor not found via reflection — signature changed?");
             MetaMorpheusTask task;
             switch(searchType) // The default setting both works for GlycoSearch and SearchTask
             {
                 case "GlycoSearch":
                     task = new GlycoSearchTask();
                     break;
-                default:
+                case "SearchTask":
                     task = new SearchTask();
                     break;
+                default: Assert.Fail($"Unrecognized searchType: {searchType}"); return;
             }
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
             {
@@ -945,30 +967,14 @@ namespace Test
         }
 
         [Test]
-        [TestCase("GlycoSearch")]
-        [TestCase("SearchTask")]
-        public static void TaskRTPredictor_WhenSSRCalcSelected_ResolvedToSSRCalc3(string searchType) 
+        public static void SetAllFileSpecificCommonParams_PreservesRTPredictorName()
         {
-            var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
-            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-            MetaMorpheusTask task;
-            switch (searchType) // The default setting both works for GlycoSearch and SearchTask
-            {
-                case "GlycoSearch":
-                    task = new GlycoSearchTask();
-                    break;
-                default:
-                    task = new SearchTask();
-                    break;
-            }
-            task.CommonParameters = new CommonParameters(rtPredictorName: "SSRCalc");
-            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
-            {
-                ("dummy.mzML", task.CommonParameters)
-            };
-            var result = method.Invoke(null, new object[] { "standard", fsp });
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result, Is.InstanceOf<SSRCalc3RetentionTimePredictor>());
+            var commonParams = new CommonParameters(rtPredictorName: RTPredictorNames.SSRCalc);
+            var fileSpecificParams = new FileSpecificParameters(); // simulates a companion <basename>.toml existing
+
+            var result = MetaMorpheusTask.SetAllFileSpecificCommonParams(commonParams, fileSpecificParams);
+
+            Assert.That(result.RTPredictorName, Is.EqualTo(RTPredictorNames.SSRCalc));
         }
     }
 }

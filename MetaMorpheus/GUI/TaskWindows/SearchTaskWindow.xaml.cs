@@ -1,4 +1,5 @@
 using EngineLayer;
+using EngineLayer.FdrAnalysis;
 using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;
@@ -438,13 +439,13 @@ namespace MetaMorpheusGUI
             _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac, task.CommonParameters.PrecursorMassTolerance.Value, task.CommonParameters.PrecursorMassMatchMode);
             switch (task.CommonParameters.RTPredictorName)
             {
-                case "SSRCalc":
+                case RTPredictorNames.SSRCalc:
                     SSRCalcRadioButton.IsChecked = true;
                     break;
-                case "Prosit2019iRT":
+                case RTPredictorNames.Prosit2019iRT:
                     Prosit2019iRTRadioButton.IsChecked = true;
                     break;
-                case "Prosit2020iRTTMT":
+                case RTPredictorNames.Prosit2020iRTTMT:
                     Prosit2020iRTTMTRadioButton.IsChecked = true;
                     break;
                 default:
@@ -634,10 +635,10 @@ namespace MetaMorpheusGUI
             bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
 
             string rtPredictorModelName;
-            if (SSRCalcRadioButton.IsChecked == true) rtPredictorModelName = "SSRCalc";
-            else if (Prosit2019iRTRadioButton.IsChecked == true) rtPredictorModelName = "Prosit2019iRT";
-            else if (Prosit2020iRTTMTRadioButton.IsChecked == true) rtPredictorModelName = "Prosit2020iRTTMT";
-            else rtPredictorModelName = "Chronologer"; // default
+            if (SSRCalcRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.SSRCalc;
+            else if (Prosit2019iRTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2019iRT;
+            else if (Prosit2020iRTTMTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2020iRTTMT;
+            else rtPredictorModelName = RTPredictorNames.Chronologer; // default
 
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
