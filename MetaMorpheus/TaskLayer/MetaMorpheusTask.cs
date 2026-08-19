@@ -1184,29 +1184,34 @@ namespace TaskLayer
         protected CommonParameters RaisePartitionsToFitMemory(List<Protein> proteinList, CommonParameters parameters,
             List<Modification> fixedModifications, List<Modification> variableModifications,
             List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, double maxFragmentSize,
-            ref bool alreadyWarned)
+            ref int? decidedPartitions)
         {
-            int suggested = IndexPartitioning.SuggestTotalPartitions(proteinList, parameters, fixedModifications,
-                variableModifications, silacLabels, startLabel, endLabel, maxFragmentSize, parameters.TotalPartitions,
-                out long estimatedBytes, out long budgetBytes, out bool cappedByLimit);
-
-            if (suggested <= parameters.TotalPartitions)
+            // Decide once per task, not once per spectra file. Available memory shrinks as PSMs accumulate
+            // and each file's spectra are loaded, so re-deriving per file could index file 1 in one partition
+            // and file 5 in four. That would invalidate the disk cache for every partition (the count is part
+            // of IndexingEngine.ToString(), which is the cache key) and leave files within one run searched
+            // under different partitionings, whose PSM-level statistics are then not comparable.
+            if (decidedPartitions == null)
             {
-                return parameters;
-            }
+                int suggested = IndexPartitioning.SuggestTotalPartitions(proteinList, parameters, fixedModifications,
+                    variableModifications, silacLabels, startLabel, endLabel, maxFragmentSize, parameters.TotalPartitions,
+                    out long estimatedBytes, out long budgetBytes, out bool cappedByLimit);
 
-            if (!alreadyWarned)
-            {
-                Warn(IndexPartitioning.PartitionIncreaseWarning(parameters.TotalPartitions, suggested, estimatedBytes, budgetBytes));
-                if (cappedByLimit)
+                decidedPartitions = suggested;
+
+                if (suggested > parameters.TotalPartitions)
                 {
-                    Warn($"Even {suggested} partitions is estimated not to fit in memory; this search may page heavily. " +
-                         $"Consider a smaller database, a shorter maximum peptide length, or fewer variable modifications.");
+                    foreach (string warning in IndexPartitioning.PartitionWarnings(parameters.TotalPartitions,
+                                 suggested, estimatedBytes, budgetBytes, cappedByLimit))
+                    {
+                        Warn(warning);
+                    }
                 }
-                alreadyWarned = true;
             }
 
-            return parameters.CloneWithNewTotalPartitions(suggested);
+            return decidedPartitions.Value <= parameters.TotalPartitions
+                ? parameters
+                : parameters.CloneWithNewTotalPartitions(decidedPartitions.Value);
         }
 
         protected static void Warn(string v)

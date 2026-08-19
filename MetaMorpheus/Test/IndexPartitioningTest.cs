@@ -72,6 +72,16 @@ namespace Test
             return proteins;
         }
 
+        /// <summary>
+        /// A DIAparameters instance that is merely distinct, for identity comparison. Its real constructor
+        /// wants an XIC constructor and a grouping engine; the clone test never dereferences the object, it
+        /// only asserts the same reference comes across, so an uninitialised instance is sufficient and keeps
+        /// the fixture from depending on DIA internals.
+        /// </summary>
+        private static EngineLayer.DIA.DIAparameters DistinctDiaParameters()
+            => (EngineLayer.DIA.DIAparameters)System.Runtime.CompilerServices.RuntimeHelpers
+                .GetUninitializedObject(typeof(EngineLayer.DIA.DIAparameters));
+
         private static void Permute(char[] letters, int start, List<string> into)
         {
             if (start == letters.Length - 1)
@@ -168,27 +178,157 @@ namespace Test
         }
 
         /// <summary>
-        /// The decision itself, with memory supplied rather than measured, so the assertions are about the
-        /// code and not about how much RAM the test machine happens to have. 55 % of 10 GB is 5.5 GB budgeted
-        /// per partition.
+        /// DissociationType.Custom resolves its product types from a process-global list that the
+        /// CommonParameters constructor clears, and only MetaMorpheusEngine.Run() restores it. The estimator
+        /// fragments outside any engine, so without restoring it the fragment term would silently be zero and
+        /// a Custom search would under-partition — the failure the guard exists to prevent. Compared against
+        /// HCD with the same ion types, which should give a similar estimate.
+        /// </summary>
+        [Test]
+        public static void SuggestTotalPartitions_CustomDissociation_StillCountsFragments()
+        {
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 5);
+            List<ProductType> globalBefore = digestion.ProductsFromDissociationType()[DissociationType.Custom];
+            try
+            {
+                // b/y is what HCD produces for peptides, so the two estimates should be comparable
+                digestion.ProductsFromDissociationType()[DissociationType.Custom] =
+                    new List<ProductType> { ProductType.b, ProductType.y };
+                var customParams = new CommonParameters(dissociationType: DissociationType.Custom, digestionParams: digestion);
+
+                // premises: the constructor captured the ion list and then emptied the global
+                Assert.That(customParams.CustomIons, Is.Not.Empty, "CustomIons must be captured by the constructor");
+                Assert.That(digestion.ProductsFromDissociationType()[DissociationType.Custom], Is.Empty,
+                    "the constructor is expected to have cleared the global list");
+
+                var proteins = MakeProteins(60);
+                Suggest(proteins, customParams, 1, out long customEstimate, out _, out _);
+
+                var hcdParams = new CommonParameters(dissociationType: DissociationType.HCD,
+                    digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
+                Suggest(proteins, hcdParams, 1, out long hcdEstimate, out _, out _);
+
+                Assert.That(customEstimate, Is.GreaterThan(0), "a Custom search must not estimate zero fragments");
+                Assert.That(customEstimate, Is.EqualTo(hcdEstimate).Within(25).Percent,
+                    "Custom with b/y ions should size like HCD");
+            }
+            finally
+            {
+                digestion.ProductsFromDissociationType()[DissociationType.Custom] = globalBefore;
+            }
+        }
+
+        /// <summary>
+        /// Under a batch scheduler the job's allocation is the ceiling, and sites that do not enforce it with
+        /// cgroups leave the process seeing the whole node — so a job entitled to a few GB of a large node
+        /// would otherwise size its index for the node and be killed for exceeding its allocation.
+        /// </summary>
+        [Test]
+        public static void SchedulerMemoryLimitBytes_ReadsSlurmAllocation()
+        {
+            string perNodeBefore = Environment.GetEnvironmentVariable("SLURM_MEM_PER_NODE");
+            string perCpuBefore = Environment.GetEnvironmentVariable("SLURM_MEM_PER_CPU");
+            string cpusBefore = Environment.GetEnvironmentVariable("SLURM_CPUS_ON_NODE");
+            try
+            {
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", null);
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_CPU", null);
+                Environment.SetEnvironmentVariable("SLURM_CPUS_ON_NODE", null);
+                Assert.That(IndexPartitioning.SchedulerMemoryLimitBytes(), Is.EqualTo(0),
+                    "no scheduler variables means no limit to honour");
+
+                // --mem=16G
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", "16384");
+                Assert.That(IndexPartitioning.SchedulerMemoryLimitBytes(), Is.EqualTo(16L * 1024 * 1024 * 1024));
+
+                // --mem=0 means unlimited, so it must not be read as a zero-byte allocation
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", "0");
+                Assert.That(IndexPartitioning.SchedulerMemoryLimitBytes(), Is.EqualTo(0));
+
+                // --mem-per-cpu=4G on 8 cores
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", null);
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_CPU", "4096");
+                Environment.SetEnvironmentVariable("SLURM_CPUS_ON_NODE", "8");
+                Assert.That(IndexPartitioning.SchedulerMemoryLimitBytes(), Is.EqualTo(32L * 1024 * 1024 * 1024));
+
+                // per-node wins when both are present, matching how Slurm sets them
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", "8192");
+                Assert.That(IndexPartitioning.SchedulerMemoryLimitBytes(), Is.EqualTo(8L * 1024 * 1024 * 1024));
+
+                // garbage must not be taken as a limit
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", "not-a-number");
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_CPU", null);
+                Assert.That(IndexPartitioning.SchedulerMemoryLimitBytes(), Is.EqualTo(0));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", perNodeBefore);
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_CPU", perCpuBefore);
+                Environment.SetEnvironmentVariable("SLURM_CPUS_ON_NODE", cpusBefore);
+            }
+        }
+
+        /// <summary>
+        /// A small Slurm allocation must actually shrink the budget the guard works from, not merely be read.
+        /// </summary>
+        [Test]
+        public static void SuggestTotalPartitions_SmallSlurmAllocation_RaisesPartitions()
+        {
+            string before = Environment.GetEnvironmentVariable("SLURM_MEM_PER_NODE");
+            var parameters = new CommonParameters(digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
+            // only ~200 are digested for the sample; the rest scale the residue count, so this stays fast
+            var proteins = MakeProteins(40_000);
+            try
+            {
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", null);
+                int unconstrained = Suggest(proteins, parameters, 1, out long estimate, out long wideBudget, out _);
+
+                // an allocation far smaller than the estimate must force more partitions than the same
+                // database needs when nothing is constraining it
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", "512");
+                int constrained = Suggest(proteins, parameters, 1, out _, out long narrowBudget, out _);
+
+                Assert.That(narrowBudget, Is.LessThan(wideBudget), "the allocation must shrink the budget");
+                Assert.That(narrowBudget, Is.LessThanOrEqualTo(512L * 1024 * 1024), "budget cannot exceed the allocation");
+                Assert.That(constrained, Is.GreaterThan(unconstrained), "a tight allocation must raise partitions");
+                Assert.That(estimate, Is.GreaterThan(0));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", before);
+            }
+        }
+
+        /// <summary>
+        /// The budgeted share of the supplied ceiling, read from the class rather than hard-coded, so
+        /// recalibrating the fraction cannot silently invalidate the expectations below.
+        /// </summary>
+        private static double BudgetFraction => (double)typeof(IndexPartitioning)
+            .GetField("MemoryBudgetFraction", BindingFlags.NonPublic | BindingFlags.Static)
+            .GetRawConstantValue();
+
+        /// <summary>
+        /// The decision itself, with the ceiling supplied rather than measured, so the assertions are about the
+        /// code and not about how much RAM the test machine happens to have.
         /// </summary>
         [Test]
         public static void PartitionsForBudget_RaisesOnlyAsFarAsNeeded()
         {
             const long tenGb = 10L * 1024 * 1024 * 1024;
+            long budget = (long)(tenGb * BudgetFraction);
 
             // comfortably inside the budget -> leave it alone
-            Assert.That(IndexPartitioning.PartitionsForBudget(1L << 30, tenGb, 1, 5000, out bool capped1), Is.EqualTo(1));
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget / 4, tenGb, 1, 5000, out bool capped1), Is.EqualTo(1));
             Assert.That(capped1, Is.False);
 
-            // 11 GB needed against a 5.5 GB budget -> 2 partitions
-            Assert.That(IndexPartitioning.PartitionsForBudget(11L * 1024 * 1024 * 1024, tenGb, 1, 5000, out _), Is.EqualTo(2));
+            // just over one budget -> two partitions
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget + 1, tenGb, 1, 5000, out _), Is.EqualTo(2));
 
-            // 22 GB needed -> 4 partitions
-            Assert.That(IndexPartitioning.PartitionsForBudget(22L * 1024 * 1024 * 1024, tenGb, 1, 5000, out _), Is.EqualTo(4));
+            // four budgets exactly -> four partitions
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget * 4, tenGb, 1, 5000, out _), Is.EqualTo(4));
 
             // a request above the computed need always wins
-            Assert.That(IndexPartitioning.PartitionsForBudget(11L * 1024 * 1024 * 1024, tenGb, 16, 5000, out _), Is.EqualTo(16));
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget + 1, tenGb, 16, 5000, out _), Is.EqualTo(16));
         }
 
         /// <summary>
@@ -314,9 +454,15 @@ namespace Test
         // ------------------------------------------------------ CommonParameters clone
 
         /// <summary>
-        /// Every setting except TotalPartitions must survive the clone. Compared by reflection so that a
-        /// parameter added to the constructor later, and forgotten here, fails this test rather than silently
-        /// resetting to its default mid-search.
+        /// Every setting except TotalPartitions must survive the clone.
+        ///
+        /// Two things are needed for that claim to hold. Every constructor parameter must be given a value
+        /// distinguishable from its default — a parameter left at its default would reproduce the same default
+        /// if the clone dropped it, and the sweep would see no mismatch — which is asserted as a premise below.
+        /// And reference-typed settings are compared by identity, not by ToString: the clone is supposed to hand
+        /// the very same instance across, and several of these types (deconvolution and fragmentation
+        /// parameters especially) do not override ToString, so a distinctively configured object replaced by a
+        /// freshly defaulted one of the same type would compare equal.
         /// </summary>
         [Test]
         public static void CloneWithNewTotalPartitions_PreservesEveryOtherSetting()
@@ -347,13 +493,21 @@ namespace Test
                 trimMsMsPeaks: false,
                 productMassTolerance: new PpmTolerance(11),
                 precursorMassTolerance: new PpmTolerance(6),
+                productMassTolerance_LowRes: new AbsoluteTolerance(0.44),
+                deconvolutionMassTolerance: new PpmTolerance(7),
                 maxThreadsToUsePerFile: 2,
                 digestionParams: new DigestionParams(protease: "Asp-N", maxMissedCleavages: 3, minPeptideLength: 6),
+                listOfModsVariable: new List<(string, string)> { ("Common Biological", "Phosphorylation on S") },
+                listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C") },
                 assumeOrphanPeaksAreZ1Fragments: false,
                 maxHeterozygousVariants: 2,
                 minVariantDepth: 5,
                 addTruncations: true,
+                precursorDeconParams: new ClassicDeconvolutionParameters(2, 9, 5, 4),
+                productDeconParams: new ClassicDeconvolutionParameters(1, 7, 6, 3),
                 useMostAbundantPrecursorIntensity: false,
+                diaParameters: DistinctDiaParameters(),
+                fragmentationParams: new FragmentationParams(),
                 precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
                 rtPredictorName: "SSRCalc3");
 
@@ -368,7 +522,10 @@ namespace Test
             Assert.That(clone.TotalPartitions, Is.EqualTo(9));
             Assert.That(original.TotalPartitions, Is.EqualTo(3), "the original must not be mutated");
 
+            var defaults = new CommonParameters();
+            var indistinguishable = new List<string>();
             var mismatches = new List<string>();
+
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (property.Name == nameof(CommonParameters.TotalPartitions) || property.GetIndexParameters().Length > 0)
@@ -378,11 +535,22 @@ namespace Test
 
                 object a = property.GetValue(original);
                 object b = property.GetValue(clone);
+                object def = property.GetValue(defaults);
 
-                bool equal = a is System.Collections.IEnumerable && a is not string
-                    ? string.Join("|", ((System.Collections.IEnumerable)a).Cast<object>()) ==
-                      string.Join("|", ((System.Collections.IEnumerable)(b ?? Array.Empty<object>())).Cast<object>())
-                    : Equals(a?.ToString(), b?.ToString());
+                // premise: the fixture must actually differ from a default instance, or dropping this
+                // parameter from the clone would be invisible
+                bool differsFromDefault = property.PropertyType.IsValueType || property.PropertyType == typeof(string)
+                    ? !Equals(a, def)
+                    : !ReferenceEquals(a, def);
+                if (!differsFromDefault)
+                {
+                    indistinguishable.Add(property.Name);
+                }
+
+                // reference types must come across as the same instance; value types and strings by equality
+                bool equal = a == null || property.PropertyType.IsValueType || property.PropertyType == typeof(string)
+                    ? Equals(a, b)
+                    : ReferenceEquals(a, b);
 
                 if (!equal)
                 {
@@ -391,6 +559,9 @@ namespace Test
             }
 
             Assert.That(mismatches, Is.Empty, "clone lost settings: " + string.Join("; ", mismatches));
+            Assert.That(indistinguishable, Is.Empty,
+                "these properties match a default-constructed CommonParameters, so this test cannot detect the "
+                + "clone dropping them: " + string.Join(", ", indistinguishable));
         }
 
         // ------------------------------------------- flat fragment index serialization
@@ -511,9 +682,9 @@ namespace Test
                 List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
                 => throw new NotSupportedException("probe only");
 
-            public CommonParameters Probe(List<Protein> proteins, CommonParameters parameters, ref bool warned)
+            public CommonParameters Probe(List<Protein> proteins, CommonParameters parameters, ref int? decided)
                 => RaisePartitionsToFitMemory(proteins, parameters, new List<Modification>(),
-                    new List<Modification>(), null, null, null, 30000.0, ref warned);
+                    new List<Modification>(), null, null, null, 30000.0, ref decided);
         }
 
         /// <summary>
@@ -526,17 +697,17 @@ namespace Test
         {
             var task = new GuardProbeTask();
             var parameters = new CommonParameters(digestionParams: new DigestionParams(protease: "trypsin"));
-            bool warned = false;
+            int? decided = null;
 
             var warnings = new List<string>();
             void Collect(object sender, EngineLayer.StringEventArgs e) => warnings.Add(e.S);
             MetaMorpheusTask.WarnHandler += Collect;
             try
             {
-                CommonParameters result = task.Probe(MakeProteins(20), parameters, ref warned);
+                CommonParameters result = task.Probe(MakeProteins(20), parameters, ref decided);
 
                 Assert.That(ReferenceEquals(result, parameters), Is.True, "must not copy when no change is needed");
-                Assert.That(warned, Is.False);
+                Assert.That(decided, Is.EqualTo(1), "decision recorded so later files reuse it");
                 Assert.That(warnings, Is.Empty);
             }
             finally
@@ -559,21 +730,21 @@ namespace Test
             // independent of how much RAM the runner has, and costs a list of references rather than sequences.
             var oneProtein = new Protein("M" + string.Concat(Enumerable.Repeat("AGSTDVK", 700)), "HUGE");
             var huge = Enumerable.Repeat(oneProtein, 200_000).ToList();
-            bool warned = false;
+            int? decided = null;
 
             var warnings = new List<string>();
             void Collect(object sender, EngineLayer.StringEventArgs e) => warnings.Add(e.S);
             MetaMorpheusTask.WarnHandler += Collect;
             try
             {
-                CommonParameters first = task.Probe(huge, parameters, ref warned);
-                CommonParameters second = task.Probe(huge, parameters, ref warned);
+                CommonParameters first = task.Probe(huge, parameters, ref decided);
+                CommonParameters second = task.Probe(huge, parameters, ref decided);
 
                 Assert.That(first.TotalPartitions, Is.GreaterThan(1), "an impossible database must be partitioned");
                 Assert.That(ReferenceEquals(first, parameters), Is.False, "must return a copy, not mutate the input");
                 Assert.That(parameters.TotalPartitions, Is.EqualTo(1), "the caller's parameters must be untouched");
                 Assert.That(second.TotalPartitions, Is.EqualTo(first.TotalPartitions), "decision must be stable");
-                Assert.That(warned, Is.True);
+                Assert.That(decided, Is.EqualTo(first.TotalPartitions), "decision cached for later files");
                 Assert.That(warnings.Count, Is.EqualTo(1), "must warn once, not once per spectra file");
                 Assert.That(warnings[0], Does.Contain("TotalPartitions"));
             }
@@ -584,33 +755,59 @@ namespace Test
         }
 
         /// <summary>
-        /// If even the maximum partition count will not fit, say so rather than leaving the user to wonder why
-        /// the search is paging. The first warning alone would imply the problem had been solved.
+        /// The guard runs once per spectra file, but the decision must be taken once per task. Available memory
+        /// shrinks as PSMs accumulate, so re-deriving per file could index file 1 in one partition and file 5 in
+        /// four — which invalidates the disk cache for every partition, since the count is part of the cache
+        /// key, and leaves files in one run searched under different partitionings.
         /// </summary>
         [Test]
-        public static void RaisePartitionsToFitMemory_BeyondPartitionCap_WarnsThatItStillWillNotFit()
+        public static void RaisePartitionsToFitMemory_DecisionAlreadyMade_IsReusedWithoutReDeriving()
         {
             var task = new GuardProbeTask();
-            var parameters = new CommonParameters(digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
-            var oneProtein = new Protein("M" + string.Concat(Enumerable.Repeat("AGSTDVK", 700)), "HUGE");
-            var absurd = Enumerable.Repeat(oneProtein, 4_000_000).ToList();
-            bool warned = false;
+            var parameters = new CommonParameters(digestionParams: new DigestionParams(protease: "trypsin"));
+            // as though an earlier spectra file had already settled on 7, on a database that on its own
+            // would need only 1
+            int? decided = 7;
 
             var warnings = new List<string>();
             void Collect(object sender, EngineLayer.StringEventArgs e) => warnings.Add(e.S);
             MetaMorpheusTask.WarnHandler += Collect;
             try
             {
-                CommonParameters result = task.Probe(absurd, parameters, ref warned);
+                CommonParameters result = task.Probe(MakeProteins(20), parameters, ref decided);
 
-                Assert.That(result.TotalPartitions, Is.EqualTo(256), "capped at MaxPartitions");
-                Assert.That(warnings.Count, Is.EqualTo(2), "the raise, plus a warning that it still will not fit");
-                Assert.That(warnings[1], Does.Contain("may page heavily"));
+                Assert.That(decided, Is.EqualTo(7), "an existing decision must not be re-derived");
+                Assert.That(result.TotalPartitions, Is.EqualTo(7), "later files must reuse the first file's count");
+                Assert.That(warnings, Is.Empty, "a decision already reported must not warn again");
             }
             finally
             {
                 MetaMorpheusTask.WarnHandler -= Collect;
             }
+        }
+
+        /// <summary>
+        /// If even the maximum partition count will not fit, say so rather than leaving the user to wonder why
+        /// the search is paging — the first warning alone would imply the problem had been solved. Driven
+        /// through the pure message builder with the estimate and budget supplied, because asserting an exact
+        /// partition count from an end-to-end call would depend on how much memory the runner happens to have.
+        /// </summary>
+        [Test]
+        public static void PartitionWarnings_ReportTheRaiseAndWhetherItStillWillNotFit()
+        {
+            const long tenGb = 10L * 1024 * 1024 * 1024;
+
+            var fits = IndexPartitioning.PartitionWarnings(1, 4, 22L * 1024 * 1024 * 1024, tenGb, cappedByLimit: false)
+                .Where(w => w.Contains("TotalPartitions") || w.Contains("may page heavily")).ToList();
+            Assert.That(fits.Count, Is.EqualTo(1), "a raise that fits needs one message");
+            Assert.That(fits[0], Does.Contain("TotalPartitions to 4"));
+            Assert.That(fits[0], Does.Not.Contain("may page heavily"));
+
+            var capped = IndexPartitioning.PartitionWarnings(1, 256, long.MaxValue / 2, tenGb, cappedByLimit: true)
+                .Where(w => w.Contains("TotalPartitions") || w.Contains("may page heavily")).ToList();
+            Assert.That(capped.Count, Is.EqualTo(2), "the raise, plus a warning that it still will not fit");
+            Assert.That(capped[0], Does.Contain("TotalPartitions to 256"));
+            Assert.That(capped[1], Does.Contain("may page heavily"));
         }
 
         /// <summary>

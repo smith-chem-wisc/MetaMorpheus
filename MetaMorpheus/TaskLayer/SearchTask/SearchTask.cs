@@ -266,7 +266,7 @@ namespace TaskLayer
             int completedFiles = 0;
             object indexLock = new object();
             object psmLock = new object();
-            bool warnedAboutPartitions = false;
+            int? decidedPartitions = null;
 
             Status("Searching files...", new List<string> { taskId });
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
@@ -382,7 +382,7 @@ namespace TaskLayer
                     // scoped to indexing/searching only, so the settings the task reports stay as configured
                     CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, combinedParams, fixedModifications,
                         variableModifications, SearchParameters.SilacLabels, SearchParameters.StartTurnoverLabel,
-                        SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref warnedAboutPartitions);
+                        SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref decidedPartitions);
                     for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                     {
                         List<PeptideWithSetModifications> peptideIndex = null;
@@ -460,7 +460,7 @@ namespace TaskLayer
                         // to the spectral-library step below
                         CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, paramToUse, fixedModifications,
                             variableModifications, SearchParameters.SilacLabels, SearchParameters.StartTurnoverLabel,
-                            SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref warnedAboutPartitions);
+                            SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref decidedPartitions);
 
                         //foreach database partition
                         for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)

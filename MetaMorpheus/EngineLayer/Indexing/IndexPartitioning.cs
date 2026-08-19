@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MassSpectrometry;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
@@ -14,8 +15,23 @@ namespace EngineLayer.Indexing
     /// </summary>
     public static class IndexPartitioning
     {
-        /// <summary>Share of available memory one index build may occupy.</summary>
-        private const double MemoryBudgetFraction = 0.55;
+        /// <summary>
+        /// Share of the memory ceiling one index build may occupy.
+        ///
+        /// Applied to installed (or scheduler-allocated) memory rather than to a live free-memory reading,
+        /// deliberately. The partition count changes reported Delta Score, PEP and q-values, so it has to be a
+        /// deterministic function of the machine and the job — sizing against whatever else happened to be
+        /// running made two runs of the same search on the same machine choose different partition counts and
+        /// so produce different output.
+        ///
+        /// Derived rather than guessed: measured free memory on a 16 GB developer machine with an editor and
+        /// browser open was 29-33 % of installed, and an index build should take somewhat over half of what is
+        /// free so the spectra, PSMs and quantification still fit. That is ~0.30 x ~0.55, rounded down to err
+        /// toward more partitions — being one partition too many costs a little per-partition overhead, being
+        /// one too few costs paging, and the two are not symmetric: on this machine the same full-mouse search
+        /// took 232 s at 8 partitions and 670 s at 5.
+        /// </summary>
+        private const double MemoryBudgetFraction = 0.15;
 
         /// <summary>
         /// Heap bytes per peptide in the peptide index. Measured on mouse at 9.21 M peptides: 6,926 MB of
@@ -55,7 +71,7 @@ namespace EngineLayer.Indexing
             int requestedPartitions, out long estimatedBytes, out long budgetBytes, out bool cappedByLimit)
         {
             estimatedBytes = 0;
-            budgetBytes = AvailableBytes();
+            budgetBytes = MemoryCeilingBytes();
             cappedByLimit = false;
 
             if (proteins == null || proteins.Count == 0 || commonParameters.DigestionParams is not DigestionParams digestionParams)
@@ -113,6 +129,22 @@ namespace EngineLayer.Indexing
                 totalResidues += protein.BaseSequence.Length;
             }
 
+            // DissociationType.Custom resolves its product types from a process-global list that the
+            // CommonParameters constructor clears, and only MetaMorpheusEngine.Run() restores it. This
+            // samples outside any engine, so without restoring it here a Custom search would fragment into
+            // an empty product list, count zero fragments, and under-partition — silently, and precisely in
+            // the case the guard exists for. Put the global back afterwards so the estimate leaks no state.
+            bool isCustom = commonParameters.DissociationType == DissociationType.Custom;
+            List<ProductType> previousCustomProducts = null;
+            if (isCustom)
+            {
+                previousCustomProducts = digestionParams.ProductsFromDissociationType()[DissociationType.Custom];
+                commonParameters.SetCustomProductTypes();
+            }
+
+            try
+            {
+
             int stride = Math.Max(1, proteins.Count / SampleSize);
             long sampledResidues = 0;
             long sampledPeptides = 0;
@@ -154,13 +186,29 @@ namespace EngineLayer.Indexing
 
             double scale = totalResidues / (double)sampledResidues;
             return ((long)(sampledPeptides * scale), (long)(sampledFragments * scale));
+
+            }
+            finally
+            {
+                if (isCustom)
+                {
+                    digestionParams.ProductsFromDissociationType()[DissociationType.Custom] = previousCustomProducts;
+                }
+            }
         }
 
         /// <summary>
-        /// Memory the process can still use: the physical/container limit less what the heap already
-        /// holds (the spectra of the file being searched are loaded by this point).
+        /// The memory ceiling to budget against: the installed (or container-limited) figure, further clamped
+        /// by a batch scheduler's allocation when there is one.
+        ///
+        /// Deliberately does not subtract a live in-use reading. TotalAvailableMemoryBytes is installed memory
+        /// rather than headroom, so a fraction of it is an assumption about how much is free rather than a
+        /// measurement — but it is a *stable* assumption, and stability is what the partition count needs.
+        /// A batch scheduler's allocation is the real ceiling and is not always enforced with cgroups; where it
+        /// is not, this process sees the whole node, so a job entitled to 16 GB of a 512 GB node would size its
+        /// index for 512 GB and be killed for exceeding its allocation.
         /// </summary>
-        private static long AvailableBytes()
+        private static long MemoryCeilingBytes()
         {
             long total = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
             if (total <= 0)
@@ -168,19 +216,97 @@ namespace EngineLayer.Indexing
                 return 0;
             }
 
-            long free = total - GC.GetTotalMemory(false);
-            return Math.Max(total / 8, free);
+            long schedulerLimit = SchedulerMemoryLimitBytes();
+            return schedulerLimit > 0 ? Math.Min(total, schedulerLimit) : total;
+        }
+
+        /// <summary>
+        /// Physical memory free machine-wide right now, or 0 if it cannot be determined. Advisory only — it is
+        /// reported to the user but never used to size anything, because it varies between runs.
+        /// MemoryLoadBytes reads 0 until the first collection has run, so an unset value is forced rather than
+        /// taken to mean the whole machine is free.
+        /// </summary>
+        internal static long CurrentlyFreeBytes()
+        {
+            GCMemoryInfo info = GC.GetGCMemoryInfo();
+            long total = info.TotalAvailableMemoryBytes;
+            long inUse = info.MemoryLoadBytes;
+            if (inUse <= 0)
+            {
+                GC.Collect(0, GCCollectionMode.Forced, blocking: true);
+                inUse = GC.GetGCMemoryInfo().MemoryLoadBytes;
+            }
+
+            return total > 0 && inUse > 0 && inUse < total ? total - inUse : 0;
+        }
+
+        /// <summary>
+        /// The memory this job has been allocated by a batch scheduler, in bytes, or 0 if it is not running
+        /// under one. Slurm advertises <c>SLURM_MEM_PER_NODE</c> for <c>--mem</c> and
+        /// <c>SLURM_MEM_PER_CPU</c> (times <c>SLURM_CPUS_ON_NODE</c>) for <c>--mem-per-cpu</c>, both in MB;
+        /// 0 or absent means no limit was requested.
+        /// </summary>
+        internal static long SchedulerMemoryLimitBytes()
+        {
+            const long megabyte = 1024 * 1024;
+
+            long perNode = ReadPositiveLong("SLURM_MEM_PER_NODE");
+            if (perNode > 0)
+            {
+                return perNode * megabyte;
+            }
+
+            long perCpu = ReadPositiveLong("SLURM_MEM_PER_CPU");
+            long cpus = ReadPositiveLong("SLURM_CPUS_ON_NODE");
+            return perCpu > 0 && cpus > 0 ? perCpu * cpus * megabyte : 0;
+        }
+
+        private static long ReadPositiveLong(string variable)
+        {
+            return long.TryParse(Environment.GetEnvironmentVariable(variable), out long value) && value > 0
+                ? value
+                : 0;
+        }
+
+        /// <summary>
+        /// Everything the user should be told about a raised partition count: that it was raised, and — when
+        /// even the maximum will not fit — that the run may still page. Returned rather than emitted so the
+        /// set of messages can be asserted without depending on the test machine's memory.
+        /// </summary>
+        public static IEnumerable<string> PartitionWarnings(int requestedPartitions, int suggestedPartitions,
+            long estimatedBytes, long budgetBytes, bool cappedByLimit)
+        {
+            yield return PartitionIncreaseWarning(requestedPartitions, suggestedPartitions, estimatedBytes, budgetBytes);
+
+            if (cappedByLimit)
+            {
+                yield return $"Even {suggestedPartitions} partitions is estimated not to fit in memory; this search " +
+                             $"may page heavily. Consider a smaller database, a shorter maximum peptide length, " +
+                             $"or fewer variable modifications.";
+            }
+
+            // Advisory only. The partition count above is deliberately not derived from this figure — it moves
+            // between runs, and the count has to be reproducible — but a machine that is genuinely full right
+            // now will page regardless, and the user is better off being told.
+            long freeNow = CurrentlyFreeBytes();
+            long budgeted = (long)(budgetBytes * MemoryBudgetFraction);
+            if (freeNow > 0 && freeNow < budgeted)
+            {
+                yield return $"Only {freeNow / 1073741824.0:N1} GB of physical memory is free at the moment, less " +
+                             $"than the {budgeted / 1073741824.0:N1} GB budgeted per partition, so this search may " +
+                             $"page. Closing other applications, or raising TotalPartitions further, would help.";
+            }
         }
 
         /// <summary>Message for the user when the requested partition count cannot fit.</summary>
         public static string PartitionIncreaseWarning(int requestedPartitions, int suggestedPartitions,
             long estimatedBytes, long budgetBytes)
         {
-            double availableGb = budgetBytes / 1073741824.0;
+            double ceilingGb = budgetBytes / 1073741824.0;
             return $"Indexing this database in {requestedPartitions} partition(s) is estimated to need " +
                    $"{estimatedBytes / 1073741824.0:N1} GB, which does not fit the " +
-                   $"{availableGb * MemoryBudgetFraction:N1} GB budgeted for the index " +
-                   $"({availableGb:N1} GB available). Increasing TotalPartitions to {suggestedPartitions} " +
+                   $"{ceilingGb * MemoryBudgetFraction:N1} GB budgeted for the index " +
+                   $"({MemoryBudgetFraction:P0} of a {ceilingGb:N1} GB ceiling). Increasing TotalPartitions to {suggestedPartitions} " +
                    $"so the index stays in memory. Note that partition count affects reported Delta Score, " +
                    $"PEP and q-values slightly, so results will not be bit-identical to a " +
                    $"{requestedPartitions}-partition run on a larger machine.";

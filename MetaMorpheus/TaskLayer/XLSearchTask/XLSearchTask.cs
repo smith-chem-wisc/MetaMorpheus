@@ -89,7 +89,7 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             List<CrosslinkSpectralMatch> AllCsms = new List<CrosslinkSpectralMatch>();
-            bool warnedAboutPartitions = false;
+            int? decidedPartitions = null;
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -120,7 +120,7 @@ namespace TaskLayer
                 // this rarely raises anything; it is a backstop for databases whose peptide yield per
                 // protein is unusually high.
                 CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, combinedParams, fixedModifications,
-                    variableModifications, null, null, null, 30000.0, ref warnedAboutPartitions);
+                    variableModifications, null, null, null, 30000.0, ref decidedPartitions);
 
                 //First round search.
                 for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)

@@ -92,7 +92,7 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("\n");
 
             FlashLfqResults flashLfqResults = null;
-            bool warnedAboutPartitions = false;
+            int? decidedPartitions = null;
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -117,7 +117,7 @@ namespace TaskLayer
                 // every TotalPartitions read below comes from indexParams, including the loop bound and the
                 // protein-range slicing, which previously read from two different objects.
                 CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, combinedParams, fixedModifications,
-                    variableModifications, null, null, null, 30000.0, ref warnedAboutPartitions);
+                    variableModifications, null, null, null, 30000.0, ref decidedPartitions);
 
                 for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                 {
