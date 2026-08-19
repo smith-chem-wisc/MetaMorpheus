@@ -309,8 +309,8 @@ namespace Test
             .GetRawConstantValue();
 
         /// <summary>
-        /// The decision itself, with the ceiling supplied rather than measured, so the assertions are about the
-        /// code and not about how much RAM the test machine happens to have.
+        /// The decision itself, with the free-memory figure supplied rather than measured, so the assertions
+        /// are about the code and not about how much RAM the test machine happens to have.
         /// </summary>
         [Test]
         public static void PartitionsForBudget_RaisesOnlyAsFarAsNeeded()
@@ -369,7 +369,8 @@ namespace Test
             Assert.That(warning, Does.Contain("1 partition"));
             Assert.That(warning, Does.Contain("4"));
             Assert.That(warning, Does.Contain("18.6 GB").Or.Contain("18.63 GB"), "estimate in GB");
-            Assert.That(warning, Does.Contain("Delta Score"), "must say results are not bit-identical");
+            Assert.That(warning, Does.Contain("free"), "must say what the budget was derived from");
+            Assert.That(warning, Does.Contain("Results are unaffected"), "partition count no longer changes results");
         }
 
         // ------------------------------------------------------------------ mass sort

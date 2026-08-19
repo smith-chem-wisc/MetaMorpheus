@@ -369,28 +369,24 @@ namespace EngineLayer.ModernSearch
         protected void FineScorePeptides(List<int> peptideIds, Ms2ScanWithSpecificMass scan, int scanIndex, byte[] scoringTable, 
             DissociationType dissociationType, List<Product> peptideTheorProducts)
         {
-            // this method re-scores the top-scoring peptides until no peptide in the rough-scored list can out-score
-            // the best-scoring peptide. this guarantees that peptides will be scored accurately, according to metamorpheus score,
-            // while high speed is maintained. however, this means that the delta score is only an approximation. since PEP 
-            // analysis trains on delta score, the modern search output is not guaranteed to be the same as classic search 
-            // output, though it will be very close.
-            byte bestScore = 0;
-
+            // Every rough-scored candidate is fine-scored.
+            //
+            // This used to stop early: candidates were taken in descending rough-score order and the loop broke
+            // once no remaining candidate's rough score could beat the best fine score found so far. That is a
+            // sound bound — the rough score over-counts matched fragments, never under-counts — but the bound
+            // was accumulated per partition. Each partition ran the loop over only its own candidates starting
+            // from zero, so the number of candidates fine-scored, and with it the runner-up and the Delta Score
+            // derived from it, depended on how the database had been split. Splitting is a memory decision, so
+            // reported Delta Score, PEP and q-values moved with the amount of RAM available. Scoring everything
+            // makes the result a function of the data alone: 1-, 2- and 4-partition runs are byte-identical.
+            //
+            // Measured on the mouse proteome this costs nothing outside run-to-run variance, partly because the
+            // ordering below materialises the whole sort either way, and partly because partitioning itself
+            // shrinks each loop. The ordering is kept so that equal-scoring matches are still recorded in a
+            // stable order.
             foreach (int id in peptideIds.OrderByDescending(p => scoringTable[p]))
             {
-                if (scoringTable[id] < bestScore && dissociationType != DissociationType.LowCID)
-                {
-                    FineScorePeptide(id, scan, scanIndex, peptideTheorProducts);
-
-                    break;
-                }
-
-                SpectralMatch psm = FineScorePeptide(id, scan, scanIndex, peptideTheorProducts);
-
-                if (psm != null && psm.Score > bestScore)
-                {
-                    bestScore = (byte)Math.Floor(psm.Score);
-                }
+                FineScorePeptide(id, scan, scanIndex, peptideTheorProducts);
             }
         }
 

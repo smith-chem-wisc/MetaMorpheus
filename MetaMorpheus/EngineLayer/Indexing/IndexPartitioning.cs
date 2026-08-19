@@ -16,22 +16,17 @@ namespace EngineLayer.Indexing
     public static class IndexPartitioning
     {
         /// <summary>
-        /// Share of the memory ceiling one index build may occupy.
+        /// Share of currently-free physical memory one index build may occupy; the rest is left for the
+        /// spectra, the PSMs and quantification.
         ///
-        /// Applied to installed (or scheduler-allocated) memory rather than to a live free-memory reading,
-        /// deliberately. The partition count changes reported Delta Score, PEP and q-values, so it has to be a
-        /// deterministic function of the machine and the job — sizing against whatever else happened to be
-        /// running made two runs of the same search on the same machine choose different partition counts and
-        /// so produce different output.
-        ///
-        /// Derived rather than guessed: measured free memory on a 16 GB developer machine with an editor and
-        /// browser open was 29-33 % of installed, and an index build should take somewhat over half of what is
-        /// free so the spectra, PSMs and quantification still fit. That is ~0.30 x ~0.55, rounded down to err
-        /// toward more partitions — being one partition too many costs a little per-partition overhead, being
-        /// one too few costs paging, and the two are not symmetric: on this machine the same full-mouse search
-        /// took 232 s at 8 partitions and 670 s at 5.
+        /// Sizing against memory that is actually free is only safe because partition count no longer affects
+        /// results — see ModernSearchEngine.FineScorePeptides. While it did, a budget that moved with machine
+        /// load made two runs of the same search choose different partition counts and report different Delta
+        /// Scores, so the budget had to be a deterministic function of the machine instead, which meant
+        /// guessing what fraction of it was free. That guess was wrong in both directions: too generous on a
+        /// busy laptop, far too mean on an idle cluster node with hundreds of free GB.
         /// </summary>
-        private const double MemoryBudgetFraction = 0.15;
+        private const double MemoryBudgetFraction = 0.55;
 
         /// <summary>
         /// Heap bytes per peptide in the peptide index. Measured on mouse at 9.21 M peptides: 6,926 MB of
@@ -71,7 +66,7 @@ namespace EngineLayer.Indexing
             int requestedPartitions, out long estimatedBytes, out long budgetBytes, out bool cappedByLimit)
         {
             estimatedBytes = 0;
-            budgetBytes = MemoryCeilingBytes();
+            budgetBytes = AvailableBytes();
             cappedByLimit = false;
 
             if (proteins == null || proteins.Count == 0 || commonParameters.DigestionParams is not DigestionParams digestionParams)
@@ -198,38 +193,27 @@ namespace EngineLayer.Indexing
         }
 
         /// <summary>
-        /// The memory ceiling to budget against: the installed (or container-limited) figure, further clamped
-        /// by a batch scheduler's allocation when there is one.
+        /// Physical memory that is genuinely free, clamped by a batch scheduler's allocation when there is one.
         ///
-        /// Deliberately does not subtract a live in-use reading. TotalAvailableMemoryBytes is installed memory
-        /// rather than headroom, so a fraction of it is an assumption about how much is free rather than a
-        /// measurement — but it is a *stable* assumption, and stability is what the partition count needs.
-        /// A batch scheduler's allocation is the real ceiling and is not always enforced with cgroups; where it
-        /// is not, this process sees the whole node, so a job entitled to 16 GB of a 512 GB node would size its
-        /// index for 512 GB and be killed for exceeding its allocation.
+        /// TotalAvailableMemoryBytes is installed (or container-limited) memory rather than headroom, and
+        /// subtracting only this process's managed heap would ignore every other process, the file cache and
+        /// our own unmanaged allocations. MemoryLoadBytes is the system-wide in-use figure, which is the right
+        /// basis — but it reads 0 until the first collection has run, so an unset value is forced rather than
+        /// taken to mean the whole machine is free.
+        ///
+        /// A scheduler's allocation is a separate ceiling and is not always enforced with cgroups; where it is
+        /// not, this process sees the whole node, so a job entitled to 16 GB of a 512 GB node would otherwise
+        /// size its index against the node's free memory and be killed for exceeding its allocation.
         /// </summary>
-        private static long MemoryCeilingBytes()
+        private static long AvailableBytes()
         {
-            long total = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+            GCMemoryInfo info = GC.GetGCMemoryInfo();
+            long total = info.TotalAvailableMemoryBytes;
             if (total <= 0)
             {
                 return 0;
             }
 
-            long schedulerLimit = SchedulerMemoryLimitBytes();
-            return schedulerLimit > 0 ? Math.Min(total, schedulerLimit) : total;
-        }
-
-        /// <summary>
-        /// Physical memory free machine-wide right now, or 0 if it cannot be determined. Advisory only — it is
-        /// reported to the user but never used to size anything, because it varies between runs.
-        /// MemoryLoadBytes reads 0 until the first collection has run, so an unset value is forced rather than
-        /// taken to mean the whole machine is free.
-        /// </summary>
-        internal static long CurrentlyFreeBytes()
-        {
-            GCMemoryInfo info = GC.GetGCMemoryInfo();
-            long total = info.TotalAvailableMemoryBytes;
             long inUse = info.MemoryLoadBytes;
             if (inUse <= 0)
             {
@@ -237,7 +221,18 @@ namespace EngineLayer.Indexing
                 inUse = GC.GetGCMemoryInfo().MemoryLoadBytes;
             }
 
-            return total > 0 && inUse > 0 && inUse < total ? total - inUse : 0;
+            // No usable in-use figure: fall back to a deliberately pessimistic slice rather than reporting the
+            // whole machine, which would under-partition exactly when the guard matters most.
+            long free = inUse > 0 && inUse < total ? total - inUse : total / 4;
+
+            long schedulerLimit = SchedulerMemoryLimitBytes();
+            if (schedulerLimit > 0)
+            {
+                // our own footprint already counts against the allocation
+                free = Math.Min(free, Math.Max(schedulerLimit / 4, schedulerLimit - Environment.WorkingSet));
+            }
+
+            return free;
         }
 
         /// <summary>
@@ -284,32 +279,18 @@ namespace EngineLayer.Indexing
                              $"may page heavily. Consider a smaller database, a shorter maximum peptide length, " +
                              $"or fewer variable modifications.";
             }
-
-            // Advisory only. The partition count above is deliberately not derived from this figure — it moves
-            // between runs, and the count has to be reproducible — but a machine that is genuinely full right
-            // now will page regardless, and the user is better off being told.
-            long freeNow = CurrentlyFreeBytes();
-            long budgeted = (long)(budgetBytes * MemoryBudgetFraction);
-            if (freeNow > 0 && freeNow < budgeted)
-            {
-                yield return $"Only {freeNow / 1073741824.0:N1} GB of physical memory is free at the moment, less " +
-                             $"than the {budgeted / 1073741824.0:N1} GB budgeted per partition, so this search may " +
-                             $"page. Closing other applications, or raising TotalPartitions further, would help.";
-            }
         }
 
         /// <summary>Message for the user when the requested partition count cannot fit.</summary>
         public static string PartitionIncreaseWarning(int requestedPartitions, int suggestedPartitions,
             long estimatedBytes, long budgetBytes)
         {
-            double ceilingGb = budgetBytes / 1073741824.0;
+            double freeGb = budgetBytes / 1073741824.0;
             return $"Indexing this database in {requestedPartitions} partition(s) is estimated to need " +
                    $"{estimatedBytes / 1073741824.0:N1} GB, which does not fit the " +
-                   $"{ceilingGb * MemoryBudgetFraction:N1} GB budgeted for the index " +
-                   $"({MemoryBudgetFraction:P0} of a {ceilingGb:N1} GB ceiling). Increasing TotalPartitions to {suggestedPartitions} " +
-                   $"so the index stays in memory. Note that partition count affects reported Delta Score, " +
-                   $"PEP and q-values slightly, so results will not be bit-identical to a " +
-                   $"{requestedPartitions}-partition run on a larger machine.";
+                   $"{freeGb * MemoryBudgetFraction:N1} GB budgeted for the index " +
+                   $"({MemoryBudgetFraction:P0} of {freeGb:N1} GB free). Increasing TotalPartitions to {suggestedPartitions} " +
+                   $"so the index stays in memory. Results are unaffected by the partition count.";
         }
     }
 }
