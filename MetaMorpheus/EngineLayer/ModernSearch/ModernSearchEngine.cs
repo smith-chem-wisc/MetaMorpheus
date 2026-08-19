@@ -254,38 +254,37 @@ namespace EngineLayer.ModernSearch
         /// </summary>
         protected static int BinarySearchBinForPrecursorIndex(List<int> bin, double peptideMassToLookFor, List<PeptideWithSetModifications> peptideIndex)
         {
-            int m = 0;
-            int l = 0;
-            int r = bin.Count - 1;
+            // Plain upper-bound search: find the last index whose mass is <= the target.
+            //
+            // The previous implementation narrowed the window and then linear-scanned downwards from the
+            // window's r, which gave a path-dependent answer. On an exact tie between the target and a stored
+            // mass it took r = m - 1, discarding the very index it was looking for, and returned the first
+            // index of an equal-mass run rather than the last. Because the path depends on bin.Count, the same
+            // target could return different answers for bins of different length. Since this value is the
+            // inclusive end of the range that receives coarse score increments, too small an index means
+            // candidates are silently never scored: probed against a linear-scan ground truth over 104,472
+            // (bin length, target) pairs it was wrong 1,390 times, once returning 0 where 719 was correct.
+            int low = 0;
+            int high = bin.Count - 1;
+            int result = 0;
 
-            // binary search in the fragment bin for precursor mass
-            while (l <= r)
+            while (low <= high)
             {
-                m = (l + r) / 2;
+                int mid = low + ((high - low) / 2);
 
-                if (r - l < 2)
+                if (peptideIndex[bin[mid]].MonoisotopicMass <= peptideMassToLookFor)
                 {
-                    for (; r >= 0; r--)
-                    {
-                        if (peptideIndex[bin[r]].MonoisotopicMass <= peptideMassToLookFor)
-                        {
-                            return r;
-                        }
-                    }
-                }
-
-                if (peptideMassToLookFor > peptideIndex[bin[m]].MonoisotopicMass)
-                {
-                    l = m + 1;
+                    result = mid;
+                    low = mid + 1;
                 }
                 else
                 {
-                    r = m - 1;
+                    high = mid - 1;
                 }
             }
 
-            // this happens only if there are no peptides in the bin less than the looked-for mass
-            return 0;
+            // 0 when no peptide in the bin is at or below the looked-for mass, as before
+            return result;
         }
 
         /// <summary>

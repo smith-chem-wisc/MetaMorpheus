@@ -1,6 +1,7 @@
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.Indexing;
+using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -562,6 +563,71 @@ namespace Test
             Assert.That(indistinguishable, Is.Empty,
                 "these properties match a default-constructed CommonParameters, so this test cannot detect the "
                 + "clone dropping them: " + string.Join(", ", indistinguishable));
+        }
+
+        // ------------------------------------------------ fragment bin boundary search
+
+        /// <summary>
+        /// The bin boundary search returns the inclusive end of the range that receives coarse score
+        /// increments, so an index that is too small means candidates are never scored at all. It is
+        /// therefore checked against a linear-scan ground truth rather than against itself, across bin
+        /// lengths — the previous implementation was path-dependent, so the same target could give different
+        /// answers for bins of different length, which is how database partitioning leaked into scoring.
+        /// Exact ties between the target and a stored mass are the case that used to fail, and equal masses
+        /// are pervasive because a reversed decoy carries its target's exact mass.
+        /// </summary>
+        [Test]
+        public static void BinarySearchBinForPrecursorIndex_MatchesLinearScanAtEveryBinLength()
+        {
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 5);
+            var peptideIndex = MakeAnagramProteins()
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<PeptideWithSetModifications>()
+                .Where(p => !double.IsNaN(p.MonoisotopicMass))
+                .OrderBy(p => p.MonoisotopicMass)
+                .ToList();
+
+            var masses = peptideIndex.Select(p => p.MonoisotopicMass).ToList();
+            var distinctMasses = masses.Distinct().OrderBy(m => m).ToList();
+            Assert.That(masses.Count - distinctMasses.Count, Is.GreaterThan(0),
+                "the interesting case is exact ties; this index must contain some");
+
+            var search = typeof(ModernSearchEngine).GetMethod("BinarySearchBinForPrecursorIndex", PrivateStatic);
+
+            var targets = new List<double>();
+            foreach (double m in distinctMasses)
+            {
+                targets.Add(m);              // exact tie - the case that used to fail
+                targets.Add(m + 1e-6);
+                targets.Add(m - 1e-6);
+            }
+            targets.Add(masses[0] - 100);    // below everything
+            targets.Add(masses[^1] + 100);   // above everything
+
+            var failures = new List<string>();
+            foreach (int binLength in new[] { masses.Count, masses.Count / 2, masses.Count / 3, 101, 17, 8, 3, 1 })
+            {
+                if (binLength < 1) continue;
+                var bin = Enumerable.Range(0, binLength).ToList();
+
+                foreach (double target in targets)
+                {
+                    int actual = (int)search.Invoke(null, new object[] { bin, target, peptideIndex });
+
+                    int expected = 0;
+                    for (int k = binLength - 1; k >= 0; k--)
+                    {
+                        if (masses[bin[k]] <= target) { expected = k; break; }
+                    }
+
+                    if (actual != expected && failures.Count < 10)
+                    {
+                        failures.Add($"binLength={binLength} target={target:F5} expected={expected} actual={actual}");
+                    }
+                }
+            }
+
+            Assert.That(failures, Is.Empty, "boundary disagrees with a linear scan: " + string.Join("; ", failures));
         }
 
         // ------------------------------------------- flat fragment index serialization
