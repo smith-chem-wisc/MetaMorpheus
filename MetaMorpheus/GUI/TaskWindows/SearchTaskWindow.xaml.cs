@@ -435,7 +435,7 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             }
 
-            _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac, task.CommonParameters.PrecursorMassTolerance.Value);
+            _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac, task.CommonParameters.PrecursorMassTolerance.Value, task.CommonParameters.PrecursorMassMatchMode);
             switch (task.CommonParameters.RTPredictorName)
             {
                 case "SSRCalc":
@@ -670,7 +670,7 @@ namespace MetaMorpheusGUI
                 maxHeterozygousVariants: MaxHeterozygousVariants,
                 precursorDeconParams: precursorDeconvolutionParameters,
                 productDeconParams: productDeconvolutionParameters,
-                precursorMassMatchMode: DeconHostViewModel.PrecursorMassMatchMode,
+                precursorMassMatchMode: _massDifferenceAcceptorViewModel.PrecursorMassMatchMode,
                 fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams() );
 
             if (ClassicSearchRadioButton.IsChecked.Value)
