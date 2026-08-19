@@ -600,7 +600,18 @@ namespace TaskLayer
                 CommonParameters = CommonParameters,
                 DigestionCountDictionary = digestionCountDictionary
             };
-            return postProcessing.Run();
+            MyTaskResults postSearchResults = postProcessing.Run();
+
+            // Hand the resolved, FDR'd PSM set to a downstream TruncationSearchTask via the shared
+            // in-memory task-chain context (decision #1). The consumer dedups to proteoform level, applies
+            // its own permissive parent filter, and null-filters as it goes — AllSpectralMatches is assembled
+            // from fixed-length per-file arrays that hold null slots for unmatched scans — so deposit the
+            // list as-is rather than allocating a filtered copy of it. The context is null (and this a
+            // no-op) unless the run list actually contains a consumer, and the runner clears it once that
+            // consumer has run.
+            TaskChainContext?.Deposit(taskId, parameters.AllSpectralMatches);
+
+            return postSearchResults;
         }
 
         private static MassDiffAcceptor ParseSearchMode(string text)
