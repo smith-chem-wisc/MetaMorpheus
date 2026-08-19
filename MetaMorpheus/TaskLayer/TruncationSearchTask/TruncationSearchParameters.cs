@@ -1,0 +1,82 @@
+using System;
+using Nett;
+
+namespace TaskLayer
+{
+    /// <summary>
+    /// Parameters for <see cref="TruncationSearchTask"/>. Mirrors the SearchParameters pattern,
+    /// holding only what the truncation search needs; expanded as later phases require more settings.
+    /// Defaults encode the locked decisions in docs/Truncation-Search.md (#3, #16, #17, #20).
+    /// </summary>
+    public class TruncationSearchParameters
+    {
+        /// <summary>
+        /// Id of the upstream task whose deduped proteoform-level result seeds Pass 2 via the
+        /// in-memory <see cref="TaskChainContext"/> hand-off (decision #1). Null for standalone runs.
+        /// </summary>
+        public string UpstreamSearchTaskId { get; set; } = null;
+
+        /// <summary>
+        /// Disk fallback (decision #1): path to an AllProteoforms.psmtsv to ingest when no upstream
+        /// task result is present in the <see cref="TaskChainContext"/>.
+        /// </summary>
+        public string Pass1ProteoformsFilePath { get; set; } = null;
+
+        /// <summary>
+        /// Parent inclusion q-value threshold (decision #3). Deliberately permissive (10% FDR) to cast
+        /// a wide net of parents; the truncation search's own FDR analysis polices the final output.
+        /// </summary>
+        public double ParentQValueThreshold { get; set; } = 0.10;
+
+        /// <summary>
+        /// Notch acceptor used when chopping a parent down to the precursor mass in Pass 3 (decisions #9, #15).
+        /// Inherited from the Pass 1 search convention; defaults to the top-down ThreeMM notches so
+        /// precursor isotope errors do not block a chop. Also sets the FDR notch count for the pooled
+        /// analysis.
+        /// </summary>
+        public MassDiffAcceptorType MassDiffAcceptorType { get; set; } = MassDiffAcceptorType.ThreeMM;
+
+        /// <summary>Custom mass-diff-acceptor string, used only when <see cref="MassDiffAcceptorType"/> is Custom.</summary>
+        public string CustomMdac { get; set; } = null;
+
+        /// <summary>
+        /// Environment variable that turns on the benchmarking instrumentation: set it to the path of a
+        /// rolling, append-only <c>perf_log.tsv</c>.
+        /// </summary>
+        public const string PerfLogPathEnvironmentVariable = "MetaMorpheusTruncationPerfLog";
+
+        /// <summary>
+        /// Path to the rolling, append-only <c>perf_log.tsv</c> (docs/Truncation-Search.md, Benchmarking hook).
+        /// When set, the task appends one metrics+timing row per run and writes the CandidateRanks.tsv side
+        /// file. Deliberately kept OUT of the serialized TOML schema — this is benchmarking instrumentation,
+        /// not a search setting, so it is driven by the <see cref="PerfLogPathEnvironmentVariable"/>
+        /// environment variable (and set directly by tests). Unset (default) = no perf logging, so ordinary
+        /// runs and tests are unaffected.
+        /// </summary>
+        [TomlIgnore]
+        public string PerfLogPath { get; set; } = Environment.GetEnvironmentVariable(PerfLogPathEnvironmentVariable);
+
+        /// <summary>
+        /// Seed truncation parents from the DATABASE — theoretical full-length proteoforms generated like a
+        /// top-down search (digest each protein with the configured fixed/variable mods, so annotated PTMs
+        /// ride along) — rather than only from upstream-identified proteoforms. Removes the requirement that a
+        /// truncation's parent be observed intact, at the cost of a much larger Pass 2 search. Single-terminus
+        /// only (internal truncations are not generated here). Off by default.
+        /// </summary>
+        public bool SeedParentsFromDatabase { get; set; } = false;
+
+        /// <summary>
+        /// Maximum parent proteoform monoisotopic mass (Da) placed in the Pass 2 index (decision #6); heavier
+        /// parents are excluded. Defaults to the search convention (30 kDa). RAISE this for database-seeded
+        /// runs so large proteins — whose small fragments populate an LMW fraction but whose intact form is
+        /// never observed — can still be chopped down to a matching truncation.
+        /// </summary>
+        public double MaxParentMass { get; set; } = EngineLayer.Truncation.TruncationSearchEngine.DefaultMaxFragmentSize;
+
+        /// <summary>Write decoy rows to the output TSVs (decision #17).</summary>
+        public bool WriteDecoys { get; set; } = true;
+
+        /// <summary>Write contaminant rows to the output TSVs (decision #17).</summary>
+        public bool WriteContaminants { get; set; } = true;
+    }
+}

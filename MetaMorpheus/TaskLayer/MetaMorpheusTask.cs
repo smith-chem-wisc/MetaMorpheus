@@ -41,7 +41,8 @@ namespace TaskLayer
         Calibrate,
         XLSearch,
         GlycoSearch,
-        Average
+        Average,
+        Truncation
     }
 
     public abstract class MetaMorpheusTask
@@ -182,6 +183,24 @@ namespace TaskLayer
 
         [TomlIgnore]
         public virtual string OutputFolder { get; private set; }
+
+        /// <summary>
+        /// In-memory hand-off shared across the tasks in a run list (docs/Truncation-Search.md decision #1).
+        /// Assigned by <see cref="EverythingRunnerEngine"/> before each task runs; a finishing task can
+        /// deposit results that a later task retrieves, avoiding a file round-trip. Null for tasks run
+        /// outside the runner (e.g. directly in tests), in which case consumers fall back to disk.
+        /// </summary>
+        [TomlIgnore]
+        public TaskChainContext TaskChainContext { get; set; }
+
+        /// <summary>
+        /// True for tasks that read results out of the <see cref="TaskChainContext"/>. The runner wires the
+        /// context up only when a run list contains at least one such task, and clears it once one has run —
+        /// so a task that deposits into the context does not pin its results through run lists that will
+        /// never read them.
+        /// </summary>
+        [TomlIgnore]
+        public virtual bool ConsumesTaskChainContext => false;
 
         protected MyTaskResults MyTaskResults;
 
