@@ -4,10 +4,13 @@
 
   Test.yml splits the Windows suite by a FullyQualifiedName filter. If a fixture is renamed or a
   filter string is mistyped, one half matches zero tests, and by default VSTest reports that as a
-  warning and exits 0 -- so the job stays green while the tests silently stop running.
+  warning and exits 0, so the job stays green while those tests silently stop running.
 
-  Only this runsettings form works. Plain `dotnet test --filter` and `-p:TreatNoTestsAsError=true`
-  both still exit 0 on a zero-match filter.
+  This runsettings form is the only one that works. Passing the filter alone, or setting
+  TreatNoTestsAsError as an MSBuild property, both still exit 0 on a zero match.
+
+  Note for editors: XML comments cannot contain a double hyphen, so command line flags are
+  spelled out in words above rather than quoted literally.
 -->
 <RunSettings>
   <RunConfiguration>
