@@ -1,6 +1,7 @@
 using Chemistry;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
+using EngineLayer.CrosslinkSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using MassSpectrometry;
@@ -741,11 +742,15 @@ namespace Test
             /// <summary>Reaches the protected instance scoring method; the base constructor only assigns fields.</summary>
             internal static List<int> Score(FragmentIndex fragmentIndex, List<int> binsToSearch, double highestMass,
                 List<PeptideWithSetModifications> peptideIndex)
+                => Score(fragmentIndex, binsToSearch, double.NegativeInfinity, highestMass, peptideIndex);
+
+            internal static List<int> Score(FragmentIndex fragmentIndex, List<int> binsToSearch, double lowestMass,
+                double highestMass, List<PeptideWithSetModifications> peptideIndex)
             {
                 var observed = new List<int>();
                 new BinSearchProbe().IndexedScoring(fragmentIndex, binsToSearch, new byte[peptideIndex.Count], 1,
-                    observed, peptideIndex[0].MonoisotopicMass, double.NegativeInfinity, highestMass, peptideIndex,
-                    new OpenSearchMode(), 0, DissociationType.HCD);
+                    observed, peptideIndex.First(p => !double.IsNaN(p.MonoisotopicMass)).MonoisotopicMass,
+                    lowestMass, highestMass, peptideIndex, new OpenSearchMode(), 0, DissociationType.HCD);
                 return observed;
             }
         }
@@ -1328,6 +1333,323 @@ namespace Test
 
             Assert.That(indexed.Any(id => double.IsNaN(results.PeptideIndex[id].MonoisotopicMass)), Is.True,
                 "it must be reachable through the fragment index, or an open search cannot score it");
+        }
+
+        /// <summary>
+        /// Both bin searches read an undefined mass as negative infinity, which is only monotone if the sort
+        /// actually puts those peptides first. It does, because Array.Sort here compares with double.CompareTo
+        /// and CompareTo orders NaN below everything — unlike the &lt; operator, which is false against NaN in
+        /// both directions. Swapping the comparison back to operators, or to Array.Sort over a double[] key
+        /// array, would move them and silently break both searches, so the invariant is pinned here.
+        /// </summary>
+        [Test]
+        public static void SortByMonoisotopicMass_PutsUndefinedMassesFirst()
+        {
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 1);
+            var peptides = MakeAnagramProteins()
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<PeptideWithSetModifications>()
+                .ToList();
+
+            int undefined = peptides.Count(p => double.IsNaN(p.MonoisotopicMass));
+            Assert.That(undefined, Is.GreaterThan(0), "the fixture must contain undefined masses");
+
+            var sorted = IndexingEngine.SortByMonoisotopicMass(peptides);
+
+            Assert.That(sorted.Take(undefined).All(p => double.IsNaN(p.MonoisotopicMass)), Is.True,
+                "every undefined mass must come first");
+            Assert.That(sorted.Skip(undefined).Any(p => double.IsNaN(p.MonoisotopicMass)), Is.False,
+                "and none may appear after a defined one");
+
+            var defined = sorted.Skip(undefined).Select(p => p.MonoisotopicMass).ToList();
+            Assert.That(defined, Is.Ordered, "the rest ascend, which is what the searches binary-search over");
+        }
+
+        /// <summary>
+        /// The precursor index bins on the peptide's own mass, so an undefined one has no bin to go in. It is
+        /// already skipped; this pins that, because the same peptide is deliberately kept in the fragment
+        /// index and the two indexes have opposite answers for it.
+        /// </summary>
+        [Test]
+        public static void CreateNewPrecursorIndex_SkipsUndefinedMasses()
+        {
+            var parameters = new CommonParameters(scoreCutoff: 1,
+                digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 1));
+            var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+
+            var engine = new IndexingEngine(new List<Protein> { new Protein("MNNNKQXQ", "X-CONTAINING") },
+                new List<Modification>(), new List<Modification>(), null, null, null, 0, DecoyType.None,
+                parameters, fsp, 30000, true, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var results = (IndexingResults)engine.Run();
+
+            var undefinedIds = Enumerable.Range(0, results.PeptideIndex.Count)
+                .Where(i => double.IsNaN(results.PeptideIndex[i].MonoisotopicMass))
+                .ToHashSet();
+            Assert.That(undefinedIds, Is.Not.Empty, "the fixture must produce an undefined mass");
+
+            Assert.That(results.PrecursorIndex, Is.Not.Null);
+            var inPrecursorIndex = results.PrecursorIndex.Where(b => b != null).SelectMany(b => b).ToHashSet();
+            Assert.That(inPrecursorIndex.Overlaps(undefinedIds), Is.False,
+                "an undefined mass has no precursor bin");
+
+            var inFragmentIndex = new HashSet<int>();
+            for (int bin = 0; bin < results.FragmentIndex.Length; bin++)
+            {
+                foreach (int id in results.FragmentIndex[bin])
+                {
+                    inFragmentIndex.Add(id);
+                }
+            }
+            Assert.That(inFragmentIndex.Overlaps(undefinedIds), Is.True,
+                "but it stays in the fragment index, where an open search can still reach it");
+        }
+
+        /// <summary>
+        /// The contrast that defines correct handling of an undefined mass, asserted end to end on one
+        /// fixture: a tolerance acceptor must never match it, an open acceptor must. Dropping such peptides
+        /// from the index satisfied the first and broke the second, which is what the Windows suite caught.
+        /// </summary>
+        [Test]
+        public static void ModernSearchEngine_UndefinedMassMatchesOnlyUnderAnOpenAcceptor()
+        {
+            var parameters = new CommonParameters(scoreCutoff: 1,
+                digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 1));
+            var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+            var proteins = new List<Protein> { new Protein("MNNNKQXQ", "X-CONTAINING") };
+
+            var indexEngine = new IndexingEngine(proteins, new List<Modification>(), new List<Modification>(), null, null, null,
+                0, DecoyType.None, parameters, fsp, 30000, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var index = (IndexingResults)indexEngine.Run();
+
+            int undefinedId = Enumerable.Range(0, index.PeptideIndex.Count)
+                .First(i => double.IsNaN(index.PeptideIndex[i].MonoisotopicMass));
+
+            // a scan made from the undefined-mass peptide's own defined fragments
+            var products = new List<Product>();
+            index.PeptideIndex[undefinedId].Fragment(parameters.DissociationType, FragmentationTerminus.Both,
+                products, parameters.FragmentationParameters);
+            var neutral = products.Select(pr => pr.NeutralMass).Where(m => m > 0 && !double.IsNaN(m)).Distinct().ToList();
+            Assert.That(neutral, Is.Not.Empty, "an X-containing peptide still has some defined fragments");
+
+            double[] mz = neutral.Select(m => m.ToMz(1)).ToArray();
+            var dataScan = new MsDataScan(new MzSpectrum(mz, neutral.Select(_ => 1000.0).ToArray(), false), 1, 2, true,
+                Polarity.Positive, 1, new MzRange(0, 5000), "", MZAnalyzerType.Orbitrap, 1000.0 * mz.Length, null, null, "");
+            var envelopes = neutral.Select(m => new IsotopicEnvelope(new List<(double, double)> { (m.ToMz(1), 1000.0) }, m, 1, 1000.0, 0)).ToArray();
+            var scan = new Ms2ScanWithSpecificMass(dataScan, 500.0, 1, "", parameters, envelopes);
+
+            static bool Scored(IndexingResults index, Ms2ScanWithSpecificMass scan, CommonParameters parameters,
+                List<(string, CommonParameters)> fsp, MassDiffAcceptor acceptor, int undefinedId)
+            {
+                var matches = new SpectralMatch[1];
+                new ModernSearchEngine(matches, new[] { scan }, index.PeptideIndex, index.FragmentIndex, 0,
+                    parameters, fsp, acceptor, 0, new List<string>()).Run();
+                return matches[0] != null
+                    && matches[0].BestMatchingBioPolymersWithSetMods.Any(b => ReferenceEquals(b.SpecificBioPolymer, index.PeptideIndex[undefinedId]));
+            }
+
+            Assert.That(Scored(index, scan, parameters, fsp, new OpenSearchMode(), undefinedId), Is.True,
+                "an open acceptor takes any precursor mass, so the undefined-mass peptide is a valid answer");
+            Assert.That(Scored(index, scan, parameters, fsp, new SinglePpmAroundZeroSearchMode(5), undefinedId), Is.False,
+                "a tolerance acceptor can never match an undefined mass");
+        }
+
+        /// <summary>
+        /// The crosslink and glyco engines score through IndexedScoring rather than through IndexScoreScan, so
+        /// the two window bugs have to be checked on that path too. Both are exercised here on one bin: an
+        /// undefined mass must not be scored under a finite window, and a run of equal masses on the window's
+        /// lower edge must be scored in full.
+        /// </summary>
+        [Test]
+        public static void IndexedScoring_HandlesUndefinedMassesAndEqualMassRuns()
+        {
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 1);
+            var peptideIndex = IndexingEngine.SortByMonoisotopicMass(MakeAnagramProteins()
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<PeptideWithSetModifications>()
+                .ToList());
+            var masses = peptideIndex.Select(p => p.MonoisotopicMass).ToList();
+
+            int undefined = masses.Count(double.IsNaN);
+            Assert.That(undefined, Is.GreaterThan(0), "the fixture must contain undefined masses");
+
+            // longest run of equal defined masses
+            int runStart = undefined, runLength = 1, bestStart = undefined, bestLength = 1;
+            for (int i = undefined + 1; i < masses.Count; i++)
+            {
+                if (masses[i] == masses[i - 1]) { runLength++; } else { runStart = i; runLength = 1; }
+                if (runLength > bestLength) { bestLength = runLength; bestStart = runStart; }
+            }
+            Assert.That(bestLength, Is.GreaterThan(2), "and a run of equal masses");
+
+            // one bin holding every peptide, so the undefined masses lead it exactly as they do in a real index
+            var bin = Enumerable.Range(0, masses.Count).ToList();
+            double edge = masses[bestStart];
+
+            var observed = BinSearchProbe.Score(new FragmentIndex(new[] { 0, bin.Count }, bin.ToArray()),
+                new List<int> { 0 }, edge, masses[^1] + 1, peptideIndex);
+
+            Assert.That(observed.Any(id => double.IsNaN(masses[id])), Is.False,
+                "no undefined mass may be scored under a finite window");
+            for (int i = bestStart; i < bestStart + bestLength; i++)
+            {
+                Assert.That(observed, Does.Contain(i),
+                    $"entry {i} sits exactly on the window's lower edge and must be scored");
+            }
+        }
+
+        /// <summary>
+        /// The crosslink and glyco engines already had a correct lower-bound search — CrosslinkSearchEngine
+        /// and GlycoPeptides both take the bitwise complement for the insertion point and then walk back over
+        /// a run of equal masses. Modern search was the odd one out, asking the upper-bound search for its
+        /// window start. This pins the two against each other so they cannot drift apart again: for every
+        /// target, the modern window's start must be the index that the crosslink engine's independent
+        /// implementation already returns.
+        /// </summary>
+        [Test]
+        public static void WindowStart_AgreesWithTheCrosslinkEnginesLowerBoundSearch()
+        {
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 5);
+            // anagrams for the equal-mass runs that distinguish the two searches, plus varied proteins so the
+            // comparison also covers ordinary distinct masses and the gaps between them
+            var peptideIndex = MakeAnagramProteins().Concat(MakeProteins(300))
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<PeptideWithSetModifications>()
+                .Where(p => !double.IsNaN(p.MonoisotopicMass))
+                .OrderBy(p => p.MonoisotopicMass)
+                .ToList();
+            var masses = peptideIndex.Select(p => p.MonoisotopicMass).ToArray();
+            var bin = Enumerable.Range(0, masses.Length).ToList();
+
+            var targets = new List<double>();
+            foreach (double m in masses.Distinct())
+            {
+                targets.Add(m);            // exactly on a run of equal masses, the case that differed
+                targets.Add(m + 1e-4);
+                targets.Add(m - 1e-4);
+            }
+            targets.Add(masses[0] - 500);
+            targets.Add(masses[^1] + 500);
+
+            var disagreements = new List<string>();
+            foreach (double target in targets)
+            {
+                int modern = BinSearchProbe.FirstAtOrAbove(CollectionsMarshal.AsSpan(bin), target, peptideIndex);
+                int crosslink = CrosslinkSearchEngine.BinarySearchGetIndex(masses, target);
+
+                if (modern != crosslink && disagreements.Count < 10)
+                {
+                    disagreements.Add($"target {target:F5}: modern {modern}, crosslink {crosslink}");
+                }
+            }
+
+            Assert.That(targets.Count, Is.GreaterThan(100));
+            Assert.That(disagreements, Is.Empty,
+                "the two lower-bound searches must agree: " + string.Join("; ", disagreements));
+        }
+
+        /// <summary>
+        /// Classic search does not use the fragment index at all, and it handles an undefined mass correctly
+        /// by accident of comparison semantics: the allowed interval it derives is NaN-bounded, and every
+        /// "scanMass &lt;= maximum" test against NaN is false, so no scan is considered. Modern search must
+        /// reach the same answer through completely different machinery. Asserting the two agree is what
+        /// makes "open matches, tolerance does not" a property of MetaMorpheus rather than of one engine.
+        /// </summary>
+        [Test]
+        public static void UndefinedMassContract_IsTheSameInClassicAndModernSearch()
+        {
+            var parameters = new CommonParameters(scoreCutoff: 1,
+                digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 1));
+            var proteins = new List<Protein> { new Protein("MNNNKQXQ", "X-CONTAINING") };
+            var undefined = proteins[0].Digest(parameters.DigestionParams, new List<Modification>(), new List<Modification>())
+                .Cast<PeptideWithSetModifications>()
+                .First(p => double.IsNaN(p.MonoisotopicMass));
+
+            // classic search asks the acceptor for the intervals it should look in
+            var openIntervals = new OpenSearchMode()
+                .GetAllowedPrecursorMassIntervalsFromTheoreticalMass(undefined.MonoisotopicMass).ToList();
+            var toleranceIntervals = new SinglePpmAroundZeroSearchMode(5)
+                .GetAllowedPrecursorMassIntervalsFromTheoreticalMass(undefined.MonoisotopicMass).ToList();
+
+            // a scan can only be considered when its mass is inside an interval; against a NaN bound every
+            // comparison is false, so a tolerance acceptor considers nothing while an open one considers all
+            const double someScanMass = 500.0;
+            Assert.That(openIntervals.Any(i => someScanMass >= i.Minimum && someScanMass <= i.Maximum), Is.True,
+                "classic search would consider scans for this peptide under an open acceptor");
+            Assert.That(toleranceIntervals.Any(i => someScanMass >= i.Minimum && someScanMass <= i.Maximum), Is.False,
+                "and none under a tolerance acceptor");
+
+            // modern search reaches the same two answers through the bin window instead
+            var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+            var engine = new IndexingEngine(proteins, new List<Modification>(), new List<Modification>(), null, null, null,
+                0, DecoyType.None, parameters, fsp, 30000, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var index = (IndexingResults)engine.Run();
+            int undefinedId = Enumerable.Range(0, index.PeptideIndex.Count)
+                .First(i => double.IsNaN(index.PeptideIndex[i].MonoisotopicMass));
+
+            int binWithIt = Enumerable.Range(0, index.FragmentIndex.Length)
+                .First(b => index.FragmentIndex[b].ToArray().Contains(undefinedId));
+            ReadOnlySpan<int> entries = index.FragmentIndex[binWithIt];
+            int position = entries.ToArray().ToList().IndexOf(undefinedId);
+
+            var (openStart, openEnd) = BinSearchProbe.Window(double.NegativeInfinity, double.PositiveInfinity, entries, index.PeptideIndex);
+            Assert.That(position, Is.InRange(openStart, openEnd),
+                "an open search leaves both bounds infinite, so the whole bin including this peptide is scored");
+
+            var (tolStart, tolEnd) = BinSearchProbe.Window(499.0, 501.0, entries, index.PeptideIndex);
+            Assert.That(position < tolStart || position > tolEnd, Is.True,
+                "a finite window must place an undefined mass outside it");
+        }
+
+        /// <summary>
+        /// The case that actually distinguishes reading an undefined mass as negative infinity from taking it
+        /// literally: a bin whose entries are mostly undefined. With a handful of NaNs leading a large bin the
+        /// binary search's first probe never lands among them, so the bug hides; when they are the majority it
+        /// probes one immediately, every comparison is false, the search walks left and reports an empty
+        /// window — losing the one real candidate in the bin.
+        ///
+        /// This is not a contrived shape. A bin holds the peptides sharing one fragment mass, so it is often
+        /// only a handful of entries, and a database with many unknown residues puts several of them in bins
+        /// that small.
+        /// </summary>
+        [Test]
+        public static void WindowSurvivesABinThatIsMostlyUndefinedMasses()
+        {
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 1);
+
+            // three peptides with an unknown residue and one ordinary one
+            var proteins = new List<Protein>
+            {
+                new Protein("QXQK", "X1"), new Protein("NXNK", "X2"), new Protein("AXAK", "X3"),
+                new Protein("PEPTIDEK", "REAL"),
+            };
+            var peptideIndex = IndexingEngine.SortByMonoisotopicMass(proteins
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<PeptideWithSetModifications>()
+                .ToList());
+
+            var undefinedIds = Enumerable.Range(0, peptideIndex.Count)
+                .Where(i => double.IsNaN(peptideIndex[i].MonoisotopicMass)).ToList();
+            var realIds = Enumerable.Range(0, peptideIndex.Count)
+                .Where(i => !double.IsNaN(peptideIndex[i].MonoisotopicMass)).ToList();
+            Assert.That(undefinedIds.Count, Is.GreaterThanOrEqualTo(3), "need the undefined masses to dominate");
+            Assert.That(realIds, Is.Not.Empty);
+
+            // the bin the sort would produce: undefined masses first, then the real one
+            int realId = realIds[0];
+            var bin = undefinedIds.Concat(new[] { realId }).ToList();
+            double realMass = peptideIndex[realId].MonoisotopicMass;
+
+            var (start, end) = BinSearchProbe.Window(realMass - 1, realMass + 1,
+                CollectionsMarshal.AsSpan(bin), peptideIndex);
+
+            int position = bin.IndexOf(realId);
+            Assert.That(position, Is.InRange(start, end),
+                "the one real candidate in the bin must be inside the window, not lost behind the undefined ones");
+            Assert.That(start, Is.EqualTo(position),
+                "and the window must start at it, excluding every undefined mass");
         }
 
         // ------------------------------------------- flat index serialization
