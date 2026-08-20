@@ -538,12 +538,17 @@ namespace Test
                 }
             }
 
-            Assert.That(inter, Is.EqualTo(435));
-            Assert.That(intra, Is.EqualTo(215));
-            Assert.That(single, Is.EqualTo(318));
-            Assert.That(loop, Is.EqualTo(18));
+            // Counts before any FDR filtering, so they include every match with a positive score. They moved
+            // when the precursor window's lower bound was corrected: candidates sitting exactly on the
+            // window's lower edge used to be clipped, and scoring them turns some Single matches into Inter
+            // ones by finding a beta partner. Of 13 interlinks gained, 8 are decoys, which is what an
+            // unfiltered count of weak matches looks like. At 1 % FDR, below, Inter and Intra do not move.
+            Assert.That(inter, Is.EqualTo(447));
+            Assert.That(intra, Is.EqualTo(212));
+            Assert.That(single, Is.EqualTo(310));
+            Assert.That(loop, Is.EqualTo(17));
             Assert.That(deadend, Is.EqualTo(0));
-            Assert.That(deadendH2O, Is.EqualTo(82));
+            Assert.That(deadendH2O, Is.EqualTo(81));
             Assert.That(deadendNH2, Is.EqualTo(0));
             Assert.That(deadendTris, Is.EqualTo(0));
             Assert.That(unnasignedCrossType, Is.EqualTo(0));
@@ -580,6 +585,9 @@ namespace Test
                 }
             }
 
+            // These two are left as they were on purpose. They are PEP-derived, and a local replica of this
+            // test reproduces the raw and the 1 % FDR blocks exactly but not this one, so any value put here
+            // would be guessed rather than measured. CI supplies them.
             Assert.That(inter, Is.EqualTo(53));
             Assert.That(intra, Is.EqualTo(81));
             Assert.That(unnasignedCrossType, Is.EqualTo(0));
@@ -639,12 +647,14 @@ namespace Test
                 }
             }
 
+            // At 1 % FDR the crosslinks themselves are unchanged by the window correction - Inter, Intra and
+            // Loop all hold - and the attrition is in the non-crosslinked classes.
             Assert.That(inter, Is.EqualTo(55));
             Assert.That(intra, Is.EqualTo(83));
-            Assert.That(single, Is.EqualTo(229));
+            Assert.That(single, Is.EqualTo(221));
             Assert.That(loop, Is.EqualTo(8));
             Assert.That(deadend, Is.EqualTo(0));
-            Assert.That(deadendH2O, Is.EqualTo(62));
+            Assert.That(deadendH2O, Is.EqualTo(61));
             Assert.That(deadendNH2, Is.EqualTo(0));
             Assert.That(deadendTris, Is.EqualTo(0));
             Assert.That(unnasignedCrossType, Is.EqualTo(0));
