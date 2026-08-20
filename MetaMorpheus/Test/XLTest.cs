@@ -864,10 +864,13 @@ namespace Test
                 }
             }
 
+            // After ComputeXlinkQandPValues, at 1 % FDR. Inter and Intra hold; only Single moves, for the
+            // same reason it does in the block above - the window correction scores candidates that used to
+            // be clipped, and some of them are weak Single matches that FDR then removes.
             Assert.That(unnasignedCrossType, Is.EqualTo(0));
             Assert.That(inter, Is.EqualTo(40));
             Assert.That(intra, Is.EqualTo(49));
-            Assert.That(single, Is.EqualTo(231));
+            Assert.That(single, Is.EqualTo(223));
             Assert.That(loop, Is.EqualTo(0));
             Assert.That(deadend, Is.EqualTo(0));
             Assert.That(deadendH2O, Is.EqualTo(0));
