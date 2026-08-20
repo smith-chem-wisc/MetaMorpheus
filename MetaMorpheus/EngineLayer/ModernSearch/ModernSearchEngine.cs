@@ -238,19 +238,62 @@ namespace EngineLayer.ModernSearch
             if (!double.IsPositiveInfinity(highestPeptideMassToLookFor))
             {
                 end = BinarySearchBinForPrecursorIndex(bin, highestPeptideMassToLookFor, PeptideIndex);
+
+                // every peptide in this bin is heavier than the window allows
+                if (end < 0)
+                {
+                    return (0, -1);
+                }
             }
 
             if (!double.IsNegativeInfinity(lowestPeptideMassToLookFor))
             {
-                start = BinarySearchBinForPrecursorIndex(bin, lowestPeptideMassToLookFor, PeptideIndex);
+                start = BinarySearchBinForFirstAtOrAbove(bin, lowestPeptideMassToLookFor, PeptideIndex);
             }
 
             return (start, end);
         }
 
         /// <summary>
-        /// Returns the bin-index of the first peptide with a mass less than or equal to the specified mass. Returns 0 if there 
-        /// are no peptides with masses smaller than the specified mass.
+        /// The index of the first peptide in the bin with a mass at or above the specified mass, or the bin's
+        /// length if there is none, which makes the returned range empty.
+        ///
+        /// The start of the window needs a lower bound; the end needs an upper bound. Both used to be taken
+        /// from the upper-bound search below, which is the wrong question to ask for the start: it answers
+        /// with the LAST entry at or below the bound, so a run of equal masses sitting on the window's lower
+        /// edge was clipped down to its final member. Equal masses are not a corner case here - the same
+        /// peptide sequence occurs in several proteins, and a reversed decoy carries its target's mass - and
+        /// notch intervals are built off a peptide mass, so the lower edge lands exactly on such a run
+        /// routinely. Measured on the mouse proteome: five copies of QQAQNIEKMSK share one bin set for scan
+        /// 27831 and four of them scored nothing.
+        /// </summary>
+        protected static int BinarySearchBinForFirstAtOrAbove(ReadOnlySpan<int> bin, double peptideMassToLookFor, List<PeptideWithSetModifications> peptideIndex)
+        {
+            int low = 0;
+            int high = bin.Length - 1;
+            int result = bin.Length;
+
+            while (low <= high)
+            {
+                int mid = low + ((high - low) / 2);
+
+                if (peptideIndex[bin[mid]].MonoisotopicMass >= peptideMassToLookFor)
+                {
+                    result = mid;
+                    high = mid - 1;
+                }
+                else
+                {
+                    low = mid + 1;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// The index of the last peptide in the bin with a mass at or below the specified mass, or -1 if
+        /// there is none.
         /// </summary>
         protected static int BinarySearchBinForPrecursorIndex(ReadOnlySpan<int> bin, double peptideMassToLookFor, List<PeptideWithSetModifications> peptideIndex)
         {
@@ -266,7 +309,7 @@ namespace EngineLayer.ModernSearch
             // (bin length, target) pairs it was wrong 1,390 times, once returning 0 where 719 was correct.
             int low = 0;
             int high = bin.Length - 1;
-            int result = 0;
+            int result = -1;
 
             while (low <= high)
             {
@@ -283,7 +326,9 @@ namespace EngineLayer.ModernSearch
                 }
             }
 
-            // 0 when no peptide in the bin is at or below the looked-for mass, as before
+            // -1 rather than 0 when nothing is at or below the looked-for mass, so callers can tell that apart
+            // from index 0 being the answer. Conflating them made a bin whose peptides are all too heavy
+            // still score its first entry; that fired on a third of window lookups on the mouse proteome.
             return result;
         }
 
@@ -409,7 +454,7 @@ namespace EngineLayer.ModernSearch
                 }
 
                 //get index for minimum monoisotopic allowed
-                int lowestPeptideMassIndex = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, lowestMassPeptideToLookFor, peptideIndex);
+                int lowestPeptideMassIndex = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : BinarySearchBinForFirstAtOrAbove(peptideIdsInThisBin, lowestMassPeptideToLookFor, peptideIndex);
 
                 // get index for highest mass allowed
                 int highestPeptideMassIndex = peptideIdsInThisBin.Length - 1;
@@ -417,6 +462,12 @@ namespace EngineLayer.ModernSearch
                 if (!Double.IsInfinity(highestMassPeptideToLookFor)) //check if the highest mass is infinity
                 {
                     highestPeptideMassIndex = BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, highestMassPeptideToLookFor, peptideIndex); //get index for maximum monoisotopic allowed
+
+                    // nothing in this bin is light enough for the window
+                    if (highestPeptideMassIndex < 0)
+                    {
+                        continue;
+                    }
 
                     for (int j = highestPeptideMassIndex; j < peptideIdsInThisBin.Length; j++) //find the highest peptide mass index 
                     {

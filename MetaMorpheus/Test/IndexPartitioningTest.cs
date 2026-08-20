@@ -700,6 +700,9 @@ namespace Test
             internal static int Search(ReadOnlySpan<int> bin, double mass, List<PeptideWithSetModifications> peptideIndex)
                 => BinarySearchBinForPrecursorIndex(bin, mass, peptideIndex);
 
+            internal static int FirstAtOrAbove(ReadOnlySpan<int> bin, double mass, List<PeptideWithSetModifications> peptideIndex)
+                => BinarySearchBinForFirstAtOrAbove(bin, mass, peptideIndex);
+
             /// <summary>The window is an instance method because it reads PeptideIndex off the engine.</summary>
             internal static (int start, int end) Window(double lowest, double highest, ReadOnlySpan<int> bin,
                 List<PeptideWithSetModifications> peptideIndex)
@@ -759,7 +762,7 @@ namespace Test
                 {
                     int actual = BinSearchProbe.Search(CollectionsMarshal.AsSpan(bin), target, peptideIndex);
 
-                    int expected = 0;
+                    int expected = -1;
                     for (int k = binLength - 1; k >= 0; k--)
                     {
                         if (masses[bin[k]] <= target) { expected = k; break; }
@@ -968,6 +971,80 @@ namespace Test
 
             Assert.That(windowsChecked, Is.GreaterThan(100), "need a decent number of windows for this to mean anything");
             Assert.That(clipped, Is.Empty, string.Join("; ", clipped));
+        }
+
+        /// <summary>
+        /// The two ends of the window need different searches. The end is an upper bound, the start a lower
+        /// bound, and taking the start from the upper-bound search answers the wrong question: it gives the
+        /// LAST entry at or below the bound, so a run of equal masses sitting exactly on the window's lower
+        /// edge collapses to its final member and the rest score nothing.
+        ///
+        /// Equal masses are the normal case, not a corner case: the same sequence occurs in several proteins
+        /// and a reversed decoy carries its target's mass, and notch intervals are derived from a peptide
+        /// mass so the edge lands on such a run routinely. The fixture is built from anagram peptides for
+        /// exactly this reason.
+        /// </summary>
+        [Test]
+        public static void GetFirstAndLastIndexesInBinToIncrement_KeepsEveryEqualMassOnTheLowerEdge()
+        {
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 5);
+            var peptideIndex = MakeAnagramProteins()
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<PeptideWithSetModifications>()
+                .Where(p => !double.IsNaN(p.MonoisotopicMass))
+                .OrderBy(p => p.MonoisotopicMass)
+                .ToList();
+            var masses = peptideIndex.Select(p => p.MonoisotopicMass).ToList();
+
+            // the longest run of exactly equal masses
+            int runStart = 0, runLength = 1, bestStart = 0, bestLength = 1;
+            for (int i = 1; i < masses.Count; i++)
+            {
+                if (masses[i] == masses[i - 1]) { runLength++; }
+                else { runStart = i; runLength = 1; }
+                if (runLength > bestLength) { bestLength = runLength; bestStart = runStart; }
+            }
+            Assert.That(bestLength, Is.GreaterThan(2), "the fixture must contain a run of equal masses");
+
+            var bin = Enumerable.Range(0, masses.Count).ToList();
+            double edge = masses[bestStart];
+
+            var (start, end) = BinSearchProbe.Window(edge, masses[^1] + 1, CollectionsMarshal.AsSpan(bin), peptideIndex);
+
+            Assert.That(start, Is.EqualTo(bestStart),
+                $"the window starts at the first of the {bestLength} entries with mass {edge:F5}, not the last");
+            Assert.That(end, Is.GreaterThanOrEqualTo(bestStart + bestLength - 1), "and covers the whole run");
+
+            // stated directly on the search itself
+            Assert.That(BinSearchProbe.FirstAtOrAbove(CollectionsMarshal.AsSpan(bin), edge, peptideIndex), Is.EqualTo(bestStart));
+            Assert.That(BinSearchProbe.Search(CollectionsMarshal.AsSpan(bin), edge, peptideIndex),
+                Is.EqualTo(bestStart + bestLength - 1), "the upper bound still answers with the last of the run");
+        }
+
+        /// <summary>
+        /// A bin whose peptides are all heavier than the window must contribute nothing. Returning 0 for both
+        /// "nothing found" and "index 0 is the answer" made it score its first entry instead.
+        /// </summary>
+        [Test]
+        public static void GetFirstAndLastIndexesInBinToIncrement_WindowBelowTheWholeBinIsEmpty()
+        {
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 5);
+            var peptideIndex = MakeAnagramProteins()
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<PeptideWithSetModifications>()
+                .Where(p => !double.IsNaN(p.MonoisotopicMass))
+                .OrderBy(p => p.MonoisotopicMass)
+                .Take(10)
+                .ToList();
+            var bin = Enumerable.Range(0, peptideIndex.Count).ToList();
+            double lightest = peptideIndex[0].MonoisotopicMass;
+
+            var (start, end) = BinSearchProbe.Window(lightest - 200, lightest - 100, CollectionsMarshal.AsSpan(bin), peptideIndex);
+            Assert.That(end, Is.LessThan(start), "an empty range, so the scoring loop does not execute");
+
+            (start, end) = BinSearchProbe.Window(lightest - 200, peptideIndex[^1].MonoisotopicMass + 100, CollectionsMarshal.AsSpan(bin), peptideIndex);
+            Assert.That(start, Is.Zero);
+            Assert.That(end, Is.EqualTo(bin.Count - 1));
         }
 
         // ------------------------------------------- flat index serialization
