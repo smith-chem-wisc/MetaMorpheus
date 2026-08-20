@@ -952,10 +952,10 @@ namespace Test
                 .SetName("GetChronologer_ReturnsNull_OtherException");                       // any other construction failure
         }
 
-        // GetChronologer's fallback hangs off two private statics: the cached Lazy<> predictor and an
+        // GetChronologer's fallback hangs off two internal statics: the factory-override seam and an
         // "already warned" latch. These helpers reach both via reflection so the tests can drive and reset them.
-        private static System.Reflection.FieldInfo ChronologerInstanceField() =>
-            typeof(FdrAnalysisEngine).GetField("_chronologerInstance",
+        private static System.Reflection.FieldInfo ChronologerFactoryOverrideField() =>
+            typeof(FdrAnalysisEngine).GetField("_chronologerFactoryOverride",
                 System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
 
         private static System.Reflection.FieldInfo AlreadyWarnedAboutChronologerField() =>
@@ -967,22 +967,22 @@ namespace Test
         [TestCaseSource(nameof(GetChronologerFailureCases))]
         public static void GetChronologer_NativeLibrariesMissing_ReturnsNull_DoesNotThrow(Exception thrownException)
         {
-            // GetChronologer caches its predictor in a private static Lazy<>. Swap that field (via reflection)
-            // for a Lazy whose factory throws, so we can exercise the missing-native-library fallback without
-            // the TorchSharp natives present. Clear the "already warned" latch so each case actually takes the
-            // warning path, and restore both statics afterwards so the fault doesn't leak into other tests.
-            var instanceField = ChronologerInstanceField();
+            // Inject a throwing factory via the internal _chronologerFactoryOverride seam so we can exercise
+            // the missing-native-library fallback without the TorchSharp natives present. Clear the
+            // "already warned" latch so each case actually takes the warning path, and restore both statics
+            // afterwards so the fault doesn't leak into other tests.
+            var overrideField = ChronologerFactoryOverrideField();
             var warnedField = AlreadyWarnedAboutChronologerField();
-            Assert.That(instanceField, Is.Not.Null, "_chronologerInstance not found via reflection — signature changed?");
+            Assert.That(overrideField, Is.Not.Null, "_chronologerFactoryOverride not found via reflection — signature changed?");
             Assert.That(warnedField, Is.Not.Null, "_alreadyWarnedAboutChronologer not found via reflection — signature changed?");
 
-            var originalInstance = instanceField.GetValue(null);
+            var originalOverride = overrideField.GetValue(null);
             var originalWarned = warnedField.GetValue(null);
             try
             {
                 warnedField.SetValue(null, false);
-                instanceField.SetValue(null,
-                    new Lazy<ChronologerRetentionTimePredictor>(() => throw thrownException));
+                overrideField.SetValue(null,
+                    (Func<ChronologerRetentionTimePredictor>)(() => throw thrownException));
 
                 IRetentionTimePredictor result = null;
                 Assert.DoesNotThrow(() => result = FdrAnalysisEngine.GetChronologer());
@@ -990,7 +990,7 @@ namespace Test
             }
             finally
             {
-                instanceField.SetValue(null, originalInstance);   // don't leak the throwing instance into other tests
+                overrideField.SetValue(null, originalOverride);   // don't leak the throwing factory into other tests
                 warnedField.SetValue(null, originalWarned);
             }
         }
@@ -999,16 +999,15 @@ namespace Test
         [NonParallelizable] // subscribes to the static WarnHandler and mutates the Chronologer statics
         public static void GetChronologer_NativeLibrariesMissing_WarnsOnlyOncePerProcess()
         {
-            // The failing Lazy<> caches its exception, so every GetChronologer() call re-enters the catch.
             // GetRTPredictor is called once per protease group, so without the _alreadyWarnedAboutChronologer
             // latch a multi-protease search would emit the identical warning repeatedly. Verify the warning
             // surfaces exactly once no matter how many times GetChronologer is invoked.
-            var instanceField = ChronologerInstanceField();
+            var overrideField = ChronologerFactoryOverrideField();
             var warnedField = AlreadyWarnedAboutChronologerField();
-            Assert.That(instanceField, Is.Not.Null, "_chronologerInstance not found via reflection — signature changed?");
+            Assert.That(overrideField, Is.Not.Null, "_chronologerFactoryOverride not found via reflection — signature changed?");
             Assert.That(warnedField, Is.Not.Null, "_alreadyWarnedAboutChronologer not found via reflection — signature changed?");
 
-            var originalInstance = instanceField.GetValue(null);
+            var originalOverride = overrideField.GetValue(null);
             var originalWarned = warnedField.GetValue(null);
 
             int chronologerWarnings = 0;
@@ -1021,8 +1020,8 @@ namespace Test
             try
             {
                 warnedField.SetValue(null, false);
-                instanceField.SetValue(null,
-                    new Lazy<ChronologerRetentionTimePredictor>(
+                overrideField.SetValue(null,
+                    (Func<ChronologerRetentionTimePredictor>)(
                         () => throw new DllNotFoundException("Unable to load DLL 'LibTorchSharp'")));
 
                 for (int i = 0; i < 3; i++)
@@ -1036,7 +1035,7 @@ namespace Test
             finally
             {
                 MetaMorpheusEngine.WarnHandler -= handler;
-                instanceField.SetValue(null, originalInstance);
+                overrideField.SetValue(null, originalOverride);
                 warnedField.SetValue(null, originalWarned);
             }
         }

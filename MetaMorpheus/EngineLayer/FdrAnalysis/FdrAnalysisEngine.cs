@@ -15,12 +15,14 @@ namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {
-        // Not readonly so unit tests can swap in a throwing Lazy (via reflection) to exercise the
-        // missing-native-library fallback in GetChronologer without the TorchSharp natives present.
         private static readonly Lazy<ChronologerRetentionTimePredictor> _chronologerInstance =
             new Lazy<ChronologerRetentionTimePredictor>(
                 () => new ChronologerRetentionTimePredictor(),
                 System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+
+        // When non-null, GetChronologer() calls this factory instead of the real Lazy<>.
+        // Used exclusively by unit tests to inject a throwing factory without touching the readonly field.
+        internal static Func<ChronologerRetentionTimePredictor> _chronologerFactoryOverride = null;
 
         private List<SpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
@@ -448,7 +450,9 @@ namespace EngineLayer.FdrAnalysis
         {
             try
             {
-                return _chronologerInstance.Value;
+                return _chronologerFactoryOverride != null
+                    ? _chronologerFactoryOverride()
+                    : _chronologerInstance.Value;
             }
             catch (Exception e)
             {
