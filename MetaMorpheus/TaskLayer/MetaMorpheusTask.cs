@@ -613,7 +613,8 @@ namespace TaskLayer
                 productDeconParams: productDeconParams,
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
                 fragmentationParams: commonParams.FragmentationParameters,
-                precursorMassMatchMode: commonParams.PrecursorMassMatchMode);
+                precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
+                rtPredictorName: commonParams.RTPredictorName);
 
             return returnParams;
         }
