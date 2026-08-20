@@ -51,7 +51,7 @@ namespace Test
         }
 
         private static (IndexingEngine engine, List<DbForTask> dbList, List<Protein> proteins) SetUpIndexing(
-            string fastaContents, List<Protein> proteins)
+            string fastaContents, List<Protein> proteins, bool generatePrecursorIndex = false)
         {
             string dbPath = Path.Combine(_testDirectory, "test.fasta");
             File.WriteAllText(dbPath, fastaContents);
@@ -61,7 +61,7 @@ namespace Test
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("", commonParameters) };
 
             var engine = new IndexingEngine(proteins, new List<Modification>(), new List<Modification>(),
-                null, null, null, 1, DecoyType.None, commonParameters, fsp, 30000, false,
+                null, null, null, 1, DecoyType.None, commonParameters, fsp, 30000, generatePrecursorIndex,
                 new List<FileInfo> { new FileInfo(dbPath) }, TargetContaminantAmbiguity.RemoveContaminant,
                 new List<string>());
 
@@ -88,6 +88,34 @@ namespace Test
                 "a null peptide index reaches CrosslinkSearchEngine as ArgumentNullException(source)");
             Assert.That(peptideIndex, Is.Not.Empty);
             Assert.That(peptideIndex.Select(p => p.BaseSequence), Does.Contain("MNNNKQQQ"));
+        }
+
+        /// <summary>
+        /// The rebuild has to return the precursor index too when the engine was asked for one, matching
+        /// what the read path above it does. XLSearchTask is the only caller today and does not ask, but
+        /// leaving the rebuild's half of that pair untested is how the two halves drift apart.
+        /// </summary>
+        [Test]
+        public static void GenerateIndexesPeptideOnly_WhenAPrecursorIndexIsRequested_RebuildsThatToo()
+        {
+            var proteins = new List<Protein> { new Protein("MNNNKQQQ", "prot1") };
+            var (engine, dbList, allKnownProteins) = SetUpIndexing(">prot1\nMNNNKQQQ\n", proteins,
+                generatePrecursorIndex: true);
+
+            List<PeptideWithSetModifications> peptideIndex = null;
+            List<int>[] precursorIndex = null;
+
+            new XLSearchTask().GenerateIndexes_PeptideOnly(engine, dbList, ref peptideIndex, ref precursorIndex,
+                allKnownProteins, "test");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(peptideIndex, Is.Not.Null);
+                Assert.That(peptideIndex, Is.Not.Empty);
+                Assert.That(precursorIndex, Is.Not.Null, "the precursor index was requested, so it must come back");
+                Assert.That(precursorIndex.Any(bin => bin != null && bin.Count > 0),
+                    "the rebuilt precursor index should have at least one populated bin");
+            });
         }
 
         /// <summary>
