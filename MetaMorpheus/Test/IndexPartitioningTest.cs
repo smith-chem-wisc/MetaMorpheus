@@ -804,6 +804,81 @@ namespace Test
             Assert.That(BinSearchProbe.Score(fragmentIndex, new List<int> { 0, 2, 4 }, highestMass, peptideIndex), Is.Empty);
         }
 
+        /// <summary>
+        /// Every ambiguity-joined psmtsv column reads BestMatchingBioPolymersWithSetMods, which sorts by a
+        /// total order, so the printed order does not depend on which candidate reached AddOrReplace first.
+        /// Three properties read the backing list instead and so printed in arrival order: Mass Diff (Da),
+        /// Mass Diff (ppm), and the most-abundant-mode error. That made those columns move with the index
+        /// partition count, and SpectralMatch.CompareTo tie-breaks on PrecursorMassErrorPpm.First(), so it
+        /// reached psm ordering and the cumulative target/decoy counts too.
+        ///
+        /// The peptides here are added worst-score-first and best-score-first; both orders must print the
+        /// same, and must agree with the sorted view.
+        /// </summary>
+        [Test]
+        public static void PrecursorMassError_IsOrderedLikeEveryOtherAmbiguityColumn()
+        {
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 5);
+            var peptides = MakeAnagramProteins()
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<PeptideWithSetModifications>()
+                .Where(p => !double.IsNaN(p.MonoisotopicMass))
+                .GroupBy(p => p.MonoisotopicMass)
+                .Select(g => g.First())
+                .OrderBy(p => p.FullSequence, StringComparer.Ordinal)
+                .Take(4)
+                .ToList();
+            Assert.That(peptides.Select(p => p.MonoisotopicMass).Distinct().Count(), Is.EqualTo(4),
+                "distinct masses, so the mass-error list distinguishes the ordering");
+
+            static List<double> ErrorsFor(List<PeptideWithSetModifications> inAdditionOrder)
+            {
+                var spectrum = new MzSpectrum(new double[,] { });
+                var dataScan = new MsDataScan(spectrum, 1, 2, true, Polarity.Positive, 0, new MzRange(0, 2000), "",
+                    MZAnalyzerType.Orbitrap, 0, null, null, "");
+                var scan = new Ms2ScanWithSpecificMass(dataScan, 500, 1, "", new CommonParameters());
+
+                SpectralMatch match = null;
+                foreach (var peptide in inAdditionOrder)
+                {
+                    // one identical score for all of them, so every candidate is kept as ambiguous and the
+                    // only thing that can differ between the two calls is insertion order
+                    if (match == null)
+                    {
+                        match = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                    }
+                    else
+                    {
+                        match.AddOrReplace(peptide, 10, 0, true, new List<MatchedFragmentIon>());
+                    }
+                }
+
+                Assert.That(match.NumDifferentMatchingPeptides, Is.EqualTo(inAdditionOrder.Count),
+                    "all candidates must be retained, otherwise the ordering is not being exercised");
+                return match.PrecursorMassErrorDa;
+            }
+
+            List<double> forward = ErrorsFor(peptides);
+            List<double> reversed = ErrorsFor(Enumerable.Reverse(peptides).ToList());
+
+            Assert.That(reversed, Is.EqualTo(forward), "insertion order must not reach the printed column");
+
+            // and the order must be the sorted one the sibling columns use, not merely self-consistent
+            var spectrumForSorted = new MzSpectrum(new double[,] { });
+            var scanForSorted = new Ms2ScanWithSpecificMass(
+                new MsDataScan(spectrumForSorted, 1, 2, true, Polarity.Positive, 0, new MzRange(0, 2000), "",
+                    MZAnalyzerType.Orbitrap, 0, null, null, ""), 500, 1, "", new CommonParameters());
+            SpectralMatch sorted = new PeptideSpectralMatch(peptides[0], 0, 10, 0, scanForSorted, new CommonParameters(), new List<MatchedFragmentIon>());
+            foreach (var peptide in peptides.Skip(1))
+            {
+                sorted.AddOrReplace(peptide, 10, 0, true, new List<MatchedFragmentIon>());
+            }
+            var expected = sorted.BestMatchingBioPolymersWithSetMods
+                .Select(p => Math.Round(sorted.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass, 5))
+                .ToList();
+            Assert.That(forward, Is.EqualTo(expected));
+        }
+
         // ------------------------------------------- flat index serialization
 
         private static List<int>[] RoundTrip(List<int>[] precursorIndex, out long fileLength)
