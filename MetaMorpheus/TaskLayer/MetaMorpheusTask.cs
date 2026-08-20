@@ -466,6 +466,11 @@ namespace TaskLayer
                                         parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
                                     }
                                 }
+
+                                // Chimeric precursors share one spectrum but each carries its own
+                                // metadata, so every object has to re-read the count, not just the
+                                // one that happened to do the pre-processing.
+                                parentScan.RefreshPeakCount();
                             }
 
                             foreach (var childScan in parentScan.ChildScans)
@@ -481,6 +486,8 @@ namespace TaskLayer
                                             childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
                                         }
                                     }
+
+                                    childScan.RefreshPeakCount();
                                 }
                             }
                         }

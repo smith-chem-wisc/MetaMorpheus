@@ -66,7 +66,15 @@ namespace EngineLayer
         /// Designed to be passed to SpectralMatch so the heavyweight scan objects
         /// can be released from memory after scoring.
         /// </summary>
-        public ScanMetadata ScanMetadata { get; }
+        public ScanMetadata ScanMetadata { get; private set; }
+
+        /// <summary>
+        /// Re-reads the peak count after the spectrum has been altered in place. XCorr pre-processing
+        /// runs after these objects are built, so without this the recorded count is the one from
+        /// before pre-processing rather than the one the search actually scored against.
+        /// </summary>
+        public void RefreshPeakCount() =>
+            ScanMetadata = ScanMetadata with { NumPeaks = TheScan.MassSpectrum.Size };
 
         public double PrecursorMonoisotopicPeakMz { get; }
 
