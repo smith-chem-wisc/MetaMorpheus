@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Nullable>disable</Nullable>
+    <!-- net10.0, no PlatformTarget: this project exists to prove the extracted half really is free of
+         WPF, so it must be buildable and runnable on Linux and macOS. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="4.1.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <!-- Required by the "XPlat Code Coverage" collector. Without it the collector is simply absent:
+         the run reports "Unable to find a datacollector" on a line nobody reads, exits 0, and uploads
+         nothing, so the job looks like it collected coverage and did not. Referenced here rather than
+         added by the workflow, so a local run collects it too. -->
+    <PackageReference Include="coverlet.collector" Version="6.0.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GuiFunctions.Core\GuiFunctions.Core.csproj" />
+  </ItemGroup>
+
+  <!-- The existing tests are linked, not copied: the same source compiles into Test.csproj on Windows
+       and into this project everywhere, so there is one copy of each test and no risk of drift. The
+       Remove list is the set that still needs WPF, found by compiling to a fixed point rather than by
+       reading imports - four of these have no System.Windows reference at all and still fail. -->
+  <ItemGroup>
+    <Compile Include="..\Test\GuiTests\**\*.cs" LinkBase="GuiTests" />
+    <Compile Include="..\Test\MetaDraw\**\*.cs" LinkBase="MetaDraw" />
+    <Compile Remove="..\Test\GuiTests\CustomMIonLossTests.cs" />
+    <Compile Remove="..\Test\GuiTests\FragmentParamsVM.cs" />
+    <Compile Remove="..\Test\GuiTests\GuiFunctionsTest.cs" />
+    <Compile Remove="..\Test\GuiTests\GuiGlobalParamsTests.cs" />
+    <Compile Remove="..\Test\GuiTests\RelayAndDelegateCommandTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\BioPolymerCoverageColorMapperFactoryTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\BioPolymerCoverageColorMapperTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\BioPolymerCoverageColorScaleTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\BioPolymerCoverageMapViewModelTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\BioPolymerGroupViewModelTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\BioPolymerTabViewModelTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\ChimeraAnalysisTabViewModelTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\ChimeraDrawnSequenceTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\ChimeraGroupViewModelTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\ChimeraLegendCanvasTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\ChimeraSpectrumMatchPlotTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\ColorGradientTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\DeconExplorationTabViewModelTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\FragmentReanalysis.cs" />
+    <Compile Remove="..\Test\MetaDraw\FragmentReanalysisRaceConditionTest.cs" />
+    <Compile Remove="..\Test\MetaDraw\MetaDrawDataLoaderTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\MetaDrawSettingsAndViewsTest.cs" />
+    <Compile Remove="..\Test\MetaDraw\MetaDrawTest.cs" />
+    <Compile Remove="..\Test\MetaDraw\Ms1ChimeraPlotTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\PlotModelStatParametersTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\SpectrumMatchPlotTests.cs" />
+  </ItemGroup>
+
+  <!-- DATA -->
+  <ItemGroup>
+    <None Include="..\Test\TestData\SequenceCoverageTestPSM.psmtsv" Link="TestData\SequenceCoverageTestPSM.psmtsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Test\Transcriptomics\TestData\AllOligos.osmtsv" Link="Transcriptomics\TestData\AllOligos.osmtsv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
