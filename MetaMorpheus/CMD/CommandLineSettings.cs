@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using EngineLayer;
+using EngineLayer.Util;
 using Nett;
 using System;
 using System.Collections.Generic;
@@ -99,20 +100,13 @@ namespace MetaMorpheusCommandLine
 
             Spectra.AddRange(spectraFromDirectories);
 
-            // Correct Bruker inner-file paths (.tdf/.tdf_bin for timsTOF, .baf for regular TOF) to their parent .d directory
-            // This handles the case where a user provides a path to one of these files directly
+            // Correct Bruker inner-file paths (analysis.baf, analysis.tdf/.tdf_bin, analysis.tsf/.tsf_bin) to their
+            // parent .d directory. This handles the case where a user provides a path to one of these files directly.
             for (int i = 0; i < Spectra.Count; i++)
             {
-                string ext = Path.GetExtension(Spectra[i]).ToLowerInvariant();
-                if (ext == ".tdf" || ext == ".tdf_bin" || ext == ".baf")
+                if (BrukerDataDirectory.TryGetParentDotDFolder(Spectra[i], out string dotDFolder))
                 {
-                    string parentDir = Path.GetDirectoryName(Spectra[i]);
-                    if (parentDir != null &&
-                        parentDir.EndsWith(".d", StringComparison.OrdinalIgnoreCase) &&
-                        IsValidBrukerDirectory(parentDir))
-                    {
-                        Spectra[i] = parentDir;
-                    }
+                    Spectra[i] = dotDFolder;
                 }
             }
 
@@ -121,14 +115,14 @@ namespace MetaMorpheusCommandLine
 
             // remove spectra directories, after their spectra files have been added
             // but keep .d directories as they are valid Bruker spectra folders
-            Spectra.RemoveAll(p => Directory.Exists(p) && !p.EndsWith(".d", StringComparison.OrdinalIgnoreCase));
+            Spectra.RemoveAll(p => Directory.Exists(p) && !BrukerDataDirectory.IsDotDPath(p));
 
             IEnumerable<string> fileNames = Tasks.Concat(Databases).Concat(Spectra);
 
             foreach (string filename in fileNames)
             {
                 // .d folders are directories, so we need to check for both files and .d directories
-                bool isDotDDirectory = filename.EndsWith(".d", StringComparison.OrdinalIgnoreCase) && Directory.Exists(filename);
+                bool isDotDDirectory = BrukerDataDirectory.IsDotDPath(filename) && Directory.Exists(filename);
                 if (!File.Exists(filename) && !isDotDDirectory)
                 {
                     throw new MetaMorpheusException("The following file does not exist: " + filename);
@@ -205,7 +199,7 @@ namespace MetaMorpheusCommandLine
 
         /// <summary>
         /// Recursively finds spectra files in a directory.
-        /// For .d folders (timsTOF data), only adds them if they are valid (contain required tdf/tsf files).
+        /// For .d folders (Bruker data), only adds them if they hold data mzLib can read.
         /// If a .d folder is invalid, recurses into it to find nested valid .d folders.
         /// </summary>
         private static void FindSpectraFilesRecursive(string path, List<string> spectraFiles, VerbosityType verbosity)
@@ -214,13 +208,10 @@ namespace MetaMorpheusCommandLine
             {
                 if (GlobalVariables.AcceptedSpectraFormats.Contains(GlobalVariables.GetFileExtension(path).ToLowerInvariant()))
                 {
-                    // If a Bruker inner file is found (.tdf/.tdf_bin for timsTOF, .baf for regular TOF),
-                    // check if the parent directory is a valid .d folder and add that instead
-                    if (new[] { ".tdf", ".tdf_bin", ".baf" }.Contains(GlobalVariables.GetFileExtension(path).ToLowerInvariant()))
+                    // If a Bruker inner file is found, add its parent .d folder instead of the individual file
+                    if (BrukerDataDirectory.TryGetParentDotDFolder(path, out string dotDFolder))
                     {
-                        var parentDirectory = Directory.GetParent(path);
-                        if (GlobalVariables.GetFileExtension(parentDirectory.FullName).ToLowerInvariant() == ".d" && IsValidBrukerDirectory(parentDirectory.FullName))
-                            path = parentDirectory.FullName; // add the .d folder instead of the individual inner file
+                        path = dotDFolder;
                     }
 
                     spectraFiles.Add(path);
@@ -236,10 +227,10 @@ namespace MetaMorpheusCommandLine
             if (Directory.Exists(path))
             {
                 // Check if this is a .d folder
-                if (path.EndsWith(".d", StringComparison.OrdinalIgnoreCase))
+                if (BrukerDataDirectory.IsDotDPath(path))
                 {
-                    // Check if it's a valid Bruker data folder (timsTOF or regular TOF)
-                    if (IsValidBrukerDirectory(path))
+                    // Check if it's a valid Bruker data folder (qTOF or timsTOF)
+                    if (BrukerDataDirectory.IsValid(path))
                     {
                         spectraFiles.Add(path);
 
@@ -260,26 +251,5 @@ namespace MetaMorpheusCommandLine
             }
         }
 
-        /// <summary>
-        /// Checks if a .d directory is a valid Bruker data folder that MetaMorpheus can read,
-        /// i.e. a timsTOF folder (analysis.tdf + analysis.tdf_bin) or a regular TOF folder (analysis.baf).
-        /// </summary>
-        private static bool IsValidBrukerDirectory(string directoryPath)
-        {
-            // timsTOF data: needs both the .tdf and .tdf_bin files
-            if (File.Exists(Path.Combine(directoryPath, "analysis.tdf")) &&
-                File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin")))
-            {
-                return true;
-            }
-
-            // regular TOF data: has a .baf file
-            if (File.Exists(Path.Combine(directoryPath, "analysis.baf")))
-            {
-                return true;
-            }
-
-            return false;
-        }
     }
 }
