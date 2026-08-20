@@ -521,7 +521,11 @@ namespace TaskLayer
             foreach (var spectraFile in psmsGroupedByFile)
             {
                 var rawfileinfo = spectraFileInfo.FirstOrDefault(p => p.FullFilePathWithExtension.Equals(spectraFile.Key));
-                if (rawfileinfo == null) continue;
+                if (rawfileinfo == null)
+                {
+                    Warn($"No spectra file entry matched {spectraFile.Key}. Identifications from that file were left out of quantification.");
+                    continue;
+                }
 
                 foreach (var psm in spectraFile)
                 {
