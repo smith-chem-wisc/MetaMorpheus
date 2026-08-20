@@ -17,7 +17,7 @@ namespace EngineLayer.FdrAnalysis
     {
         // Not readonly so unit tests can swap in a throwing Lazy (via reflection) to exercise the
         // missing-native-library fallback in GetChronologer without the TorchSharp natives present.
-        private static Lazy<ChronologerRetentionTimePredictor> _chronologerInstance =
+        private static readonly Lazy<ChronologerRetentionTimePredictor> _chronologerInstance =
             new Lazy<ChronologerRetentionTimePredictor>(
                 () => new ChronologerRetentionTimePredictor(),
                 System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
