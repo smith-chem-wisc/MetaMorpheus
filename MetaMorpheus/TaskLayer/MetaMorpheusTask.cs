@@ -1458,6 +1458,7 @@ namespace TaskLayer
         public void GenerateIndexes_PeptideOnly(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
+            Exception readFailure = null;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
             if (pathToFolderWithIndices != null) //if indexes exist
@@ -1475,20 +1476,34 @@ namespace TaskLayer
 
                     successfullyReadIndices = true;
                 }
-                catch
+                catch (Exception e)
                 {
-                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
-
-                    // if the old index couldn't be read, a new one will be generated.
-
-                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
-                    // that wasn't written by old versions.
+                    // an old index may not be readable because it lacks information required by newer
+                    // versions of MetaMorpheus, or because the database cannot be indexed at all --
+                    // ReadPeptideIndex rejects duplicate accessions, for one. The index is rebuilt below
+                    // either way; the reason is kept so it can be reported rather than disappearing.
+                    readFailure = e;
                 }
             }
 
             if (!successfullyReadIndices) //if we didn't find indexes with the same params
             {
-                // This is for the second round search, so successfullyReadIndices must be true, otherwise there are problems.
+                if (readFailure != null)
+                {
+                    Warn("Could not read the existing peptide index, so it is being rebuilt. Reason: " + readFailure.Message);
+                }
+
+                // Rebuilt in memory and deliberately not written to disk: a folder holding a peptide
+                // index but no fragment index is never matched by CheckFiles, so writing one would only
+                // leave an unusable directory behind on every run.
+                Status("Running Index Engine...", new List<string> { taskId });
+                var indexResults = (IndexingResults)indexEngine.Run();
+                peptideIndex = indexResults.PeptideIndex;
+
+                if (indexEngine.GeneratePrecursorIndex)
+                {
+                    precursorIndex = indexResults.PrecursorIndex;
+                }
             }
         }
 
