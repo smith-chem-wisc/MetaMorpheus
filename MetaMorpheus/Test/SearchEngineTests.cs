@@ -598,7 +598,7 @@ namespace Test
             List<int> filledIndices = new List<int>();
             for (int i = 0; i < indexResults.FragmentIndex.Length; i++)
             {
-                if (indexResults.FragmentIndex[i] != null)
+                if (!indexResults.FragmentIndex[i].IsEmpty)
                 {
                     filledIndices.Add(i);
                 }

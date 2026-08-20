@@ -255,6 +255,26 @@ namespace EngineLayer.ModernSearch
         }
 
         /// <summary>
+        /// A peptide's mass as the bin searches must see it: an undefined mass reads as lower than everything.
+        ///
+        /// Both searches need the bin's masses to be monotone in their predicate, and every comparison against
+        /// NaN is false, so a raw NaN reads as "too heavy" to one search and "too light" to the other no matter
+        /// where it sits. Sorting the peptide index by mass puts NaNs at the front of every bin they occupy, so
+        /// reading them as negative infinity makes both predicates monotone: "at or below the upper bound" is
+        /// true for a prefix, and "at or above the lower bound" is false for a prefix.
+        ///
+        /// They are placed below the window rather than removed from the index. A tolerance-based acceptor can
+        /// never match one, but OpenSearchMode.Accepts returns 0 for anything, and an open search leaves both
+        /// bounds infinite so neither search runs and the whole bin is scored. Peptides with an unknown residue
+        /// are findable that way, and dropping them from the index would silently stop open and glyco searches
+        /// reporting them.
+        /// </summary>
+        private static double MassForBinSearch(double monoisotopicMass)
+        {
+            return double.IsNaN(monoisotopicMass) ? double.NegativeInfinity : monoisotopicMass;
+        }
+
+        /// <summary>
         /// The index of the first peptide in the bin with a mass at or above the specified mass, or the bin's
         /// length if there is none, which makes the returned range empty.
         ///
@@ -277,7 +297,7 @@ namespace EngineLayer.ModernSearch
             {
                 int mid = low + ((high - low) / 2);
 
-                if (peptideIndex[bin[mid]].MonoisotopicMass >= peptideMassToLookFor)
+                if (MassForBinSearch(peptideIndex[bin[mid]].MonoisotopicMass) >= peptideMassToLookFor)
                 {
                     result = mid;
                     high = mid - 1;
@@ -315,7 +335,7 @@ namespace EngineLayer.ModernSearch
             {
                 int mid = low + ((high - low) / 2);
 
-                if (peptideIndex[bin[mid]].MonoisotopicMass <= peptideMassToLookFor)
+                if (MassForBinSearch(peptideIndex[bin[mid]].MonoisotopicMass) <= peptideMassToLookFor)
                 {
                     result = mid;
                     low = mid + 1;

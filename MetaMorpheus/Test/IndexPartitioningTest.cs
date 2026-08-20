@@ -538,13 +538,6 @@ namespace Test
             var fragments = new List<Product>();
             for (int peptideId = 0; peptideId < results.PeptideIndex.Count; peptideId++)
             {
-                // peptides with an undefined mass are deliberately left out of the index; see
-                // FragmentIndex_UndefinedMassPeptidesCannotClipTheSearchWindow
-                if (double.IsNaN(results.PeptideIndex[peptideId].MonoisotopicMass))
-                {
-                    continue;
-                }
-
                 results.PeptideIndex[peptideId].Fragment(parameters.DissociationType,
                     parameters.DigestionParams.FragmentationTerminus, fragments, parameters.FragmentationParameters);
 
@@ -935,15 +928,18 @@ namespace Test
         }
 
         /// <summary>
-        /// The search binary-searches a bin by peptide mass, so the bin's masses have to ascend. A peptide
-        /// with an undefined mass breaks that: every comparison against NaN is false, so a NaN entry reads as
-        /// "too heavy" wherever it sits, and sorting the peptide index by mass puts the NaNs first, so they
-        /// head every bin they occupy. The predicate then reads false-true-false along the bin and the search
-        /// can land in the leading false run and clip real candidates off the window.
+        /// The search binary-searches a bin by peptide mass, which needs the bin to be monotone in whichever
+        /// predicate is being searched. A peptide with an undefined mass breaks that if taken literally: every
+        /// comparison against NaN is false, so it reads as "too heavy" to one search and "too light" to the
+        /// other, wherever it sits. Sorting the peptide index by mass puts NaNs at the front of every bin they
+        /// occupy, and the searches read them as negative infinity, which makes both predicates monotone.
         ///
-        /// Two things are asserted: no bin contains a NaN, and — the property that actually matters — the
-        /// window the engine computes never excludes an entry whose mass is inside it. The database here
-        /// includes proteins with X residues, so the index really does contain undefined masses.
+        /// The property that matters is that the window never excludes an entry whose mass is inside it, and
+        /// never includes an undefined one. Such peptides stay in the index: a tolerance acceptor can never
+        /// match one, but OpenSearchMode accepts anything and an open search leaves both bounds infinite, so
+        /// neither search runs and the whole bin is scored. Dropping them would silently stop open and glyco
+        /// searches reporting peptides with an unknown residue. The database here includes proteins with X
+        /// residues, so the index really does contain undefined masses.
         /// </summary>
         [Test]
         public static void FragmentIndex_UndefinedMassPeptidesCannotClipTheSearchWindow()
@@ -969,8 +965,8 @@ namespace Test
                     indexed.Add(id);
                 }
             }
-            Assert.That(indexed.Any(id => double.IsNaN(results.PeptideIndex[id].MonoisotopicMass)), Is.False,
-                "no bin may contain a peptide with an undefined mass");
+            Assert.That(indexed.Any(id => double.IsNaN(results.PeptideIndex[id].MonoisotopicMass)), Is.True,
+                "undefined-mass peptides must still be indexed, or an open search could never find them");
 
             // the invariant the search depends on, checked against a linear scan over real windows
             var masses = results.PeptideIndex.Select(p => p.MonoisotopicMass).ToList();
@@ -988,6 +984,11 @@ namespace Test
                 foreach (int anchorIndex in new[] { 0, entries.Length / 2, entries.Length - 1 })
                 {
                     double centre = masses[entries[anchorIndex]];
+                    if (double.IsNaN(centre))
+                    {
+                        continue;
+                    }
+
                     double lo = centre - 1.5;
                     double hi = centre + 1.5;
                     windowsChecked++;
@@ -1000,6 +1001,13 @@ namespace Test
                         if (mass >= lo && mass <= hi && (j < start || j > end))
                         {
                             clipped.Add($"bin {bin} entry {j} (mass {mass:F4}) is inside [{lo:F4},{hi:F4}] but outside [{start},{end}]");
+                            break;
+                        }
+
+                        // and an undefined mass must never be counted as inside a finite window
+                        if (double.IsNaN(mass) && j >= start && j <= end)
+                        {
+                            clipped.Add($"bin {bin} entry {j} has an undefined mass but is inside [{start},{end}]");
                             break;
                         }
                     }
@@ -1285,6 +1293,41 @@ namespace Test
             Assert.That(bins, Is.Not.Empty, "the scan's own fragments must land in populated bins");
             Assert.That(bins.All(b => !index.FragmentIndex[b].IsEmpty), Is.True,
                 "an empty bin must never be returned; downstream scoring indexes into it without checking");
+        }
+
+        /// <summary>
+        /// An open search accepts any precursor mass, so a peptide whose mass is undefined is a legitimate
+        /// answer. This is the case that regressed when such peptides were dropped from the index, and it is
+        /// why the binary-search problem is fixed in the searches rather than by removing them.
+        /// </summary>
+        [Test]
+        public static void FragmentIndex_UndefinedMassPeptideIsStillReachable()
+        {
+            var parameters = new CommonParameters(scoreCutoff: 1,
+                digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 1));
+            var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+
+            // trypsin cuts this into MNNNK and QXQ; QXQ has an undefined mass
+            var proteins = new List<Protein> { new Protein("MNNNKQXQ", "X-CONTAINING") };
+            var engine = new IndexingEngine(proteins, new List<Modification>(), new List<Modification>(), null, null, null,
+                1, DecoyType.Reverse, parameters, fsp, 30000, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var results = (IndexingResults)engine.Run();
+
+            Assert.That(results.PeptideIndex.Any(p => double.IsNaN(p.MonoisotopicMass)), Is.True,
+                "the fixture must produce a peptide with an undefined mass");
+
+            var indexed = new HashSet<int>();
+            for (int bin = 0; bin < results.FragmentIndex.Length; bin++)
+            {
+                foreach (int id in results.FragmentIndex[bin])
+                {
+                    indexed.Add(id);
+                }
+            }
+
+            Assert.That(indexed.Any(id => double.IsNaN(results.PeptideIndex[id].MonoisotopicMass)), Is.True,
+                "it must be reachable through the fragment index, or an open search cannot score it");
         }
 
         // ------------------------------------------- flat index serialization
