@@ -263,6 +263,12 @@ namespace TaskLayer
                     return;
                 }
 
+                // Spectral counts and count-based occupancy need no quantification, so fill them in
+                // before the returns below and before anything that can throw. Without an experimental
+                // design the columns are labelled per spectra file; the label-free path repopulates
+                // them with intensities once FlashLFQ has run.
+                PopulateCountBasedOccupancy();
+
                 if (!Parameters.SearchParameters.DoLabelFreeQuantification)
                 {
                     return;
@@ -639,6 +645,26 @@ namespace TaskLayer
             catch (Exception e)
             {
                 EngineCrashed("Quantification", e);
+            }
+        }
+
+        /// <summary>
+        /// Populates spectral counts and count-based occupancy from the PSMs alone, so those columns
+        /// survive searches where quantification is switched off, is skipped because the experimental
+        /// design could not be read, or fails partway through. Multiplex searches are excluded by the
+        /// caller: a reporter channel carries no spectral count of its own, so every channel would
+        /// report the same number.
+        /// </summary>
+        private void PopulateCountBasedOccupancy()
+        {
+            if (ProteinGroups == null)
+            {
+                return;
+            }
+
+            foreach (var proteinGroup in ProteinGroups)
+            {
+                proteinGroup.PopulateSampleGroupResults();
             }
         }
 

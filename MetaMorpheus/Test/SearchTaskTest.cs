@@ -354,9 +354,11 @@ namespace Test
                 var lines = File.ReadAllLines(pgPath);
                 Assert.That(lines.Length, Is.GreaterThan(1));
                 var header = lines[0];
-                Assert.That(header.Contains("SpectralCount_"), Is.False);
+                // Quantification is skipped, so nothing intensity-derived is reported. Spectral counts
+                // and count-based occupancy need no quantification and are reported per spectra file.
+                Assert.That(header.Contains("SpectralCount_"), Is.True);
+                Assert.That(header.Contains("CountOccupancy_"), Is.True);
                 Assert.That(header.Contains("Intensity_"), Is.False);
-                Assert.That(header.Contains("CountOccupancy_"), Is.False);
                 Assert.That(header.Contains("IntensityOccupancy_"), Is.False);
                 Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True);
             }
