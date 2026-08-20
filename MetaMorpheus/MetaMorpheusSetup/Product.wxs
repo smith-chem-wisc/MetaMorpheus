@@ -576,7 +576,14 @@
       <Component Id="Appsrc_Mods_tmt.txt" Guid="f064b7a0-c650-4a40-8a9f-301cc6cb946e" Condition="OVERWRITEAPPDATA">
         
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-        <File ReadOnly="no" Id="Appsrc_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
+        <File ReadOnly="no" Id="Appsrc_Mods_tmt.txt" Name="TMT.txt" Source="$(var.GUI_TargetDir)Mods\TMT.txt" />
+      </Component>
+
+      <!-- RnaMods.txt -->
+      <Component Id="Appsrc_Mods_RnaMods.txt" Guid="8BC69D83-0C35-49A1-A907-A30CFE46190D" Condition="OVERWRITEAPPDATA">
+        
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_Mods_RnaMods.txt" Name="RnaMods.txt" Source="$(var.GUI_TargetDir)Mods\RnaMods.txt" />
       </Component>
     </ComponentGroup>
   </Fragment>

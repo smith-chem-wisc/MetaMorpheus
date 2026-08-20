@@ -410,12 +410,13 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
-                if (modFile.Contains("glyco.txt"))
+                var modFileName = Path.GetFileName(modFile);
+                if (modFileName.Contains("glyco.txt", StringComparison.OrdinalIgnoreCase))
                 {
                     // Glycan modifications are handled separately in LoadGlycans()
                     continue;
                 }
-                if (modFile.Contains("Rna"))
+                if (modFileName.Contains("Rna", StringComparison.OrdinalIgnoreCase))
                     continue;
                 AddMods(ModificationLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
@@ -439,16 +440,10 @@ namespace EngineLayer
             _AllRnaModTypesKnown = new HashSet<string>();
             AllRnaModsKnownDictionary = new Dictionary<string, Modification>();
 
-            // RNA Mods is an embedded resources: It gets packed into the DLL so we do not need to worry about the installer. 
-            var assembly = typeof(GlobalVariables).Assembly;
-            var resourceName = "EngineLayer.Mods.RnaMods.txt";
-
-            using (var stream = assembly.GetManifestResourceStream(resourceName))
-            using (var reader = new StreamReader(stream))
+            var rnaModsPath = Path.Combine(DataDir, @"Mods", "RnaMods.txt");
+            if (File.Exists(rnaModsPath))
             {
-                string fileContent = reader.ReadToEnd();
-                var mods = ModificationLoader.ReadModsFromString(fileContent, out var errors);
-                AddMods(mods, false, true);
+                AddMods(ModificationLoader.ReadModsFromFile(rnaModsPath, out var errorMods), false, true);
             }
 
             var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
