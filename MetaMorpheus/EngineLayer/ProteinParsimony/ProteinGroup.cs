@@ -607,10 +607,15 @@ namespace EngineLayer
                 DisplayModsOnPeptides = DisplayModsOnPeptides
             };
 
+            // Both of these adapters rebuild their collection on every read, so take one snapshot
+            // each: this method runs once per protein group per spectra file.
+            var filesForQuantification = FilesForQuantification;
+            var intensitiesByFile = IntensitiesByFile;
+
             SpectraFileInfo spectraFileInfo = null;
-            if (FilesForQuantification != null)
+            if (filesForQuantification != null)
             {
-                spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath)
+                spectraFileInfo = filesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath)
                     .FirstOrDefault();
                 //check that file name wasn't changed (can occur in SILAC searches)
                 if (!MzLibUtil.ClassExtensions.IsNullOrEmpty(silacLabels) && spectraFileInfo == null)
@@ -620,7 +625,7 @@ namespace EngineLayer
                         string fakeFilePath = SilacConversions
                             .GetHeavyFileInfo(new SpectraFileInfo(fullFilePath, "", 0, 0, 0), label)
                             .FullFilePathWithExtension;
-                        spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath)
+                        spectraFileInfo = filesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath)
                             .FirstOrDefault();
                         if (spectraFileInfo != null)
                         {
@@ -636,7 +641,7 @@ namespace EngineLayer
                         string extension = Path.GetExtension(fullFilePath);
                         string fakeFilePath = filepathWithoutExtension + SilacConversions.ORIGINAL_TURNOVER_LABEL_NAME +
                                               extension;
-                        spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath)
+                        spectraFileInfo = filesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath)
                             .FirstOrDefault();
                     }
                 }
@@ -647,14 +652,14 @@ namespace EngineLayer
                 }
             }
 
-            if (IntensitiesByFile == null || spectraFileInfo == null)
+            if (intensitiesByFile == null || spectraFileInfo == null)
             {
                 subsetPg.IntensitiesByFile = null;
             }
             else
             {
                 subsetPg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>
-                    { { spectraFileInfo, IntensitiesByFile.GetValueOrDefault(spectraFileInfo, 0) } };
+                    { { spectraFileInfo, intensitiesByFile.GetValueOrDefault(spectraFileInfo, 0) } };
             }
 
             return subsetPg;
