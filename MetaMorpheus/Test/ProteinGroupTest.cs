@@ -468,17 +468,25 @@ namespace Test
                 new HashSet<IBioPolymerWithSetMods> { pwsm1, pwsm2 });
 
             // Branch 1: labels == null, DisplayModsOnPeptides == false → BaseSequence
+            // The quant columns are dynamic, so a literal index no longer lands on a fixed column.
+            // Resolve Unique Peptides from the header and read that.
+            string[] headerColumns = pg.GetTabSeparatedHeader().Split('\t');
+            int uniquePeptides = System.Array.IndexOf(headerColumns, "Unique Peptides");
+            Assert.That(uniquePeptides, Is.GreaterThanOrEqualTo(0), "Unique Peptides column not found in the header.");
+
             pg.DisplayModsOnPeptides = false;
             pg.GetIdentifiedPeptidesOutput(null);
             var tsv1 = pg.ToString();
-            Assert.That(tsv1, Does.Contain(pwsm1.BaseSequence));
-            Assert.That(tsv1.Split('\t')[4], Does.Not.Contain("[")); // unique-peptides column has no mod notation
+            string branch1 = tsv1.Split('\t')[uniquePeptides];
+            Assert.That(branch1, Does.Contain(pwsm1.BaseSequence));
+            Assert.That(branch1, Does.Not.Contain("["), "Base sequences carry no mod notation.");
 
             // Branch 2: labels == null, DisplayModsOnPeptides == true → FullSequence (includes mod)
             pg.DisplayModsOnPeptides = true;
             pg.GetIdentifiedPeptidesOutput(null);
-            var tsv2 = pg.ToString();
-            Assert.That(tsv2, Does.Contain(pwsm1.FullSequence));
+            string branch2 = pg.ToString().Split('\t')[uniquePeptides];
+            Assert.That(branch2, Does.Contain(pwsm1.FullSequence));
+            Assert.That(branch2, Does.Contain("["), "Full sequences carry mod notation.");
 
             // SILAC branches: use an empty label list (labels != null)
             var labels = new List<SilacLabel>();
@@ -486,14 +494,15 @@ namespace Test
             // Branch 3: labels != null, DisplayModsOnPeptides == false → light BaseSequence
             pg.DisplayModsOnPeptides = false;
             Assert.DoesNotThrow(() => pg.GetIdentifiedPeptidesOutput(labels));
-            var tsv3 = pg.ToString();
-            Assert.That(tsv3.Split('\t')[4], Is.Not.Empty); // unique-peptides column populated
+            string branch3 = pg.ToString().Split('\t')[uniquePeptides];
+            Assert.That(branch3, Does.Contain(pwsm1.BaseSequence));
+            Assert.That(branch3, Does.Not.Contain("["));
 
             // Branch 4: labels != null, DisplayModsOnPeptides == true → light FullSequence
             pg.DisplayModsOnPeptides = true;
             Assert.DoesNotThrow(() => pg.GetIdentifiedPeptidesOutput(labels));
-            var tsv4 = pg.ToString();
-            Assert.That(tsv4.Split('\t')[4], Is.Not.Empty);
+            string branch4 = pg.ToString().Split('\t')[uniquePeptides];
+            Assert.That(branch4, Does.Contain("["));
         }
     }
 }
