@@ -147,13 +147,10 @@ namespace EngineLayer
             return other.OneBasedScanNumber.CompareTo(this.ScanNumber); //reverse the comparision so that the lower scan number comes first.
         }
 
-        public bool Equals(ISpectralMatch? other)
-        {
-            if (other is null) return false;
-            return FullFilePath == other.FullFilePath
-                && ScanNumber == other.OneBasedScanNumber
-                && FullSequence == other.FullSequence;
-        }
+        // Reference equality keeps this consistent with the inherited GetHashCode. Comparing by
+        // file/scan/sequence would need a matching value hash, and that would start deduplicating
+        // AllPsmsBelowOnePercentFDR and change the reported PSM counts.
+        public bool Equals(ISpectralMatch? other) => ReferenceEquals(this, other);
 
         #endregion
 
