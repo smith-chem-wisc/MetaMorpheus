@@ -1,3 +1,4 @@
+using Chemistry;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.Indexing;
@@ -284,16 +285,38 @@ namespace Test
             {
                 Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", null);
                 int unconstrained = Suggest(proteins, parameters, 1, out long estimate, out long wideBudget, out _);
+                Assert.That(estimate, Is.GreaterThan(0));
 
-                // an allocation far smaller than the estimate must force more partitions than the same
-                // database needs when nothing is constraining it
                 Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", "512");
-                int constrained = Suggest(proteins, parameters, 1, out _, out long narrowBudget, out _);
-
+                Suggest(proteins, parameters, 1, out _, out long narrowBudget, out _);
                 Assert.That(narrowBudget, Is.LessThan(wideBudget), "the allocation must shrink the budget");
                 Assert.That(narrowBudget, Is.LessThanOrEqualTo(512L * 1024 * 1024), "budget cannot exceed the allocation");
-                Assert.That(constrained, Is.GreaterThan(unconstrained), "a tight allocation must raise partitions");
-                Assert.That(estimate, Is.GreaterThan(0));
+
+                // Tightening the allocation must never ask for fewer partitions, and at some point must ask
+                // for more. Which allocation crosses that line depends on the byte-cost constants and on how
+                // much memory the machine has; hard-coding one couples the test to both, which is how this
+                // test broke when the fragment-entry cost was corrected. Walk them instead.
+                long[] allocationsMb = { 65536, 16384, 4096, 1024, 512, 384, 320, 288, 272, 264, 224, 200 };
+                int previous = unconstrained;
+                int everRaised = 0;
+
+                foreach (long mb in allocationsMb)
+                {
+                    Environment.SetEnvironmentVariable("SLURM_MEM_PER_NODE", mb.ToString());
+                    int here = Suggest(proteins, parameters, 1, out _, out _, out _);
+
+                    Assert.That(here, Is.GreaterThanOrEqualTo(previous),
+                        $"a tighter allocation ({mb} MB) asked for fewer partitions than a looser one");
+                    previous = here;
+
+                    if (here > unconstrained)
+                    {
+                        everRaised = here;
+                    }
+                }
+
+                Assert.That(everRaised, Is.GreaterThan(unconstrained),
+                    "some Slurm allocation in this range must force more partitions than an unconstrained machine");
             }
             finally
             {
@@ -368,9 +391,17 @@ namespace Test
             Assert.That(IndexPartitioning.PartitionsForBudget(budget, 0, tenGb, 1, 5000, out _), Is.EqualTo(1));
             Assert.That(IndexPartitioning.PartitionsForBudget(budget, budget / 2, tenGb, 1, 5000, out _), Is.EqualTo(2));
 
-            // bin space alone exceeding the budget leaves nothing to divide into
-            Assert.That(IndexPartitioning.PartitionsForBudget(budget, budget, tenGb, 3, 5000, out bool capped), Is.EqualTo(3));
-            Assert.That(capped, Is.False);
+            // bin space alone exceeding the budget is a measurement, not a missing one: split as far as the
+            // protein count allows and report that it still will not fit, rather than returning the request
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget, budget, tenGb, 3, 5000, out bool capped), Is.EqualTo(256));
+            Assert.That(capped, Is.True);
+
+            // and never more partitions than there are proteins to put in them
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget, budget, tenGb, 1, 9, out _), Is.EqualTo(9));
+
+            // an unmeasurable machine is still a no-op, which is a different thing entirely
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget, budget, 0, 3, 5000, out bool unmeasured), Is.EqualTo(3));
+            Assert.That(unmeasured, Is.False);
         }
 
         /// <summary>A machine reporting no usable memory must be a no-op, not a divide-by-zero.</summary>
@@ -697,11 +728,17 @@ namespace Test
             private BinSearchProbe(List<PeptideWithSetModifications> peptideIndex)
                 : base(null, null, peptideIndex, null, 0, new CommonParameters(), null, new OpenSearchMode(), 0, new List<string>()) { }
 
+            private BinSearchProbe(CommonParameters parameters)
+                : base(null, null, null, null, 0, parameters, null, new OpenSearchMode(), 0, new List<string>()) { }
+
             internal static int Search(ReadOnlySpan<int> bin, double mass, List<PeptideWithSetModifications> peptideIndex)
                 => BinarySearchBinForPrecursorIndex(bin, mass, peptideIndex);
 
             internal static int FirstAtOrAbove(ReadOnlySpan<int> bin, double mass, List<PeptideWithSetModifications> peptideIndex)
                 => BinarySearchBinForFirstAtOrAbove(bin, mass, peptideIndex);
+
+            internal static List<int> BinsToSearch(Ms2ScanWithSpecificMass scan, FragmentIndex fragmentIndex, CommonParameters parameters)
+                => new BinSearchProbe(parameters).GetBinsToSearch(scan, fragmentIndex, parameters.DissociationType);
 
             /// <summary>The window is an instance method because it reads PeptideIndex off the engine.</summary>
             internal static (int start, int end) Window(double lowest, double highest, ReadOnlySpan<int> bin,
@@ -1045,6 +1082,209 @@ namespace Test
             (start, end) = BinSearchProbe.Window(lightest - 200, peptideIndex[^1].MonoisotopicMass + 100, CollectionsMarshal.AsSpan(bin), peptideIndex);
             Assert.That(start, Is.Zero);
             Assert.That(end, Is.EqualTo(bin.Count - 1));
+        }
+
+        /// <summary>
+        /// The bin an indexed fragment lands in is derived in one place, shared by the counting and the
+        /// filling pass. Low-resolution CID rounds the mass to the nearest 1.0005079 first, and fragments
+        /// outside the index are dropped. Both are exercised here because both passes have to agree: if only
+        /// one applied the rounding the two passes would disagree about how many entries a bin holds, and the
+        /// fill would write past its slice.
+        /// </summary>
+        [Test]
+        [TestCase(DissociationType.HCD)]
+        [TestCase(DissociationType.LowCID)]
+        public static void IndexingEngine_FragmentBinningAgreesBetweenBothPasses(DissociationType dissociationType)
+        {
+            // small enough that a good number of fragments fall outside it and take the discard branch
+            const double maxFragmentSize = 900;
+            var parameters = new CommonParameters(dissociationType: dissociationType, scoreCutoff: 1,
+                digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
+            var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+
+            var engine = new IndexingEngine(MakeAnagramProteins(), new List<Modification>(), new List<Modification>(),
+                null, null, null, 0, DecoyType.Reverse, parameters, fsp, maxFragmentSize, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var results = (IndexingResults)engine.Run();
+
+            // the count pass sized the arrays and the fill pass filled them; a disagreement shows up as a
+            // slice that was not completely written, which reads as a stray zero where an id should be
+            Assert.That(results.FragmentIndex.EntryCount, Is.GreaterThan(1000), "the fixture must populate the index");
+            Assert.That(results.FragmentIndex.BinStart[^1], Is.EqualTo(results.FragmentIndex.EntryCount),
+                "the last offset must be the total, so every counted entry has a slot");
+
+            int occupied = 0;
+            for (int bin = 0; bin < results.FragmentIndex.Length; bin++)
+            {
+                ReadOnlySpan<int> entries = results.FragmentIndex[bin];
+                if (entries.IsEmpty)
+                {
+                    continue;
+                }
+                occupied++;
+                for (int i = 1; i < entries.Length; i++)
+                {
+                    Assert.That(entries[i], Is.GreaterThanOrEqualTo(entries[i - 1]), $"bin {bin} is not ascending");
+                }
+            }
+            Assert.That(occupied, Is.GreaterThan(100));
+
+            // and nothing was indexed above the maximum fragment mass
+            Assert.That(results.FragmentIndex.Length, Is.EqualTo((int)Math.Ceiling(maxFragmentSize) * 1000 + 1));
+        }
+
+        /// <summary>The index type must reject arrays it cannot describe rather than fail later at a lookup.</summary>
+        [Test]
+        public static void FragmentIndex_RejectsArraysItCannotDescribe()
+        {
+            Assert.That(() => new FragmentIndex(null, new int[1]), Throws.ArgumentNullException);
+            Assert.That(() => new FragmentIndex(new int[2], null), Throws.ArgumentNullException);
+            Assert.That(() => new FragmentIndex(Array.Empty<int>(), Array.Empty<int>()),
+                Throws.ArgumentException, "no offsets at all cannot describe even an empty index");
+
+            // the smallest well-formed index: one offset, so zero bins
+            var empty = new FragmentIndex(new int[1], Array.Empty<int>());
+            Assert.That(empty.Length, Is.Zero);
+            Assert.That(empty.EntryCount, Is.Zero);
+        }
+
+        /// <summary>A database whose proteins have no residues must not divide by zero while sampling.</summary>
+        [Test]
+        public static void SuggestTotalPartitions_ProteinsWithNoResidues_ReturnsRequestedCount()
+        {
+            var parameters = new CommonParameters(digestionParams: new DigestionParams(protease: "trypsin"));
+            var empty = Enumerable.Range(0, 10).Select(i => new Protein("", "EMPTY" + i)).ToList();
+
+            Assert.That(Suggest(empty, parameters, 2, out long estimate, out _, out bool capped), Is.EqualTo(2));
+            Assert.That(estimate, Is.Zero);
+            Assert.That(capped, Is.False);
+        }
+
+        // ------------------------------------------------------ end-to-end modern search
+
+        /// <summary>
+        /// Builds a scan out of a peptide's own theoretical fragments, so the expected answer is known
+        /// without a fixture file. Returns the scan and the peptide index it should be searched against.
+        /// </summary>
+        private static (Ms2ScanWithSpecificMass Scan, List<Protein> Proteins) SyntheticScanFor(string target, string decoyFiller,
+            CommonParameters parameters = null)
+        {
+            parameters ??= new CommonParameters(digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
+            var protein = new Protein(target, "TARGET");
+            var peptide = protein.Digest(parameters.DigestionParams, new List<Modification>(), new List<Modification>())
+                .Cast<PeptideWithSetModifications>().First();
+
+            var products = new List<Product>();
+            peptide.Fragment(parameters.DissociationType, FragmentationTerminus.Both, products, parameters.FragmentationParameters);
+            var neutral = products.Select(p => p.NeutralMass).Where(m => m > 0).Distinct().OrderBy(m => m).ToList();
+            Assert.That(neutral.Count, Is.GreaterThan(6), "the target must produce enough fragments to clear the score cutoff");
+
+            double[] mz = neutral.Select(m => m.ToMz(1)).ToArray();
+            double[] intensity = neutral.Select(_ => 1000.0).ToArray();
+            var dataScan = new MsDataScan(new MzSpectrum(mz, intensity, false), 1, 2, true, Polarity.Positive, 1,
+                new MzRange(0, 5000), "", MZAnalyzerType.Orbitrap, intensity.Sum(), null, null, "");
+
+            var envelopes = neutral
+                .Select(m => new IsotopicEnvelope(new List<(double, double)> { (m.ToMz(1), 1000.0) }, m, 1, 1000.0, 0))
+                .ToArray();
+
+            var scan = new Ms2ScanWithSpecificMass(dataScan, peptide.MonoisotopicMass.ToMz(1), 1, "", parameters, envelopes);
+            return (scan, new List<Protein> { protein, new Protein(decoyFiller, "FILLER") });
+        }
+
+        /// <summary>
+        /// A whole modern search over a synthetic scan. This is the only test here that walks RunSpecific,
+        /// IndexScoreScan, IncrementPeptideScoresInBin and FineScorePeptide, which the span rewrite touched
+        /// in every one of them and which no unit test reached before.
+        /// </summary>
+        [Test]
+        [TestCase(DissociationType.HCD, false, TestName = "HCD")]
+        [TestCase(DissociationType.HCD, true, TestName = "HCD with complementary ions")]
+        public static void ModernSearchEngine_FindsThePeptideItsOwnFragmentsCameFrom(DissociationType dissociationType, bool addCompIons)
+        {
+            // Complementary ions add a second bin window per peak, which the span rewrite touched separately.
+            // Low-resolution CID is deliberately not asserted here: it does not find the peptide, because the
+            // indexing and scoring sides round the bin differently - Math.Round against a cast to int - and
+            // disagree on exactly half of all bins. That predates this branch and is not fixed here, so
+            // asserting either outcome would be asserting current behaviour rather than correct behaviour.
+            var parameters = new CommonParameters(dissociationType: dissociationType, addCompIons: addCompIons,
+                digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
+            var (scan, proteins) = SyntheticScanFor("MKPEPTIDERTIDEK", "MKAAAAAAAAKGGGGGGGGKSSSSSSSSK", parameters);
+            var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+
+            var indexEngine = new IndexingEngine(proteins, new List<Modification>(), new List<Modification>(), null, null, null,
+                0, DecoyType.Reverse, parameters, fsp, 30000, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var index = (IndexingResults)indexEngine.Run();
+
+            var matches = new SpectralMatch[1];
+            new ModernSearchEngine(matches, new[] { scan }, index.PeptideIndex, index.FragmentIndex, 0, parameters,
+                fsp, new OpenSearchMode(), 0, new List<string>()).Run();
+
+            Assert.That(matches[0], Is.Not.Null, "the peptide its own fragments came from must be found");
+            matches[0].ResolveAllAmbiguities();
+            Assert.That(matches[0].BaseSequence, Is.EqualTo("PEPTIDER"));
+            Assert.That(matches[0].Score, Is.GreaterThan(5));
+        }
+
+        /// <summary>
+        /// Fine scoring used to stop early once no remaining candidate's coarse score could beat the best
+        /// fine score, which made the runner-up depend on how the database had been split. Every candidate
+        /// is now scored, so a second, worse candidate still reaches the psm and sets RunnerUpScore. An
+        /// unset RunnerUpScore reads as the score cutoff, so that is what this distinguishes.
+        /// </summary>
+        [Test]
+        public static void FineScorePeptides_ScoresTheRunnerUpAndNotJustTheWinner()
+        {
+            // the filler shares a tryptic peptide mass region with the target, so it is coarse-scored too
+            var (scan, proteins) = SyntheticScanFor("MKPEPTIDERTIDEK", "MKPEPTLDERSSSSSSSSK");
+            var parameters = new CommonParameters(scoreCutoff: 3,
+                digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
+            var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+
+            var indexEngine = new IndexingEngine(proteins, new List<Modification>(), new List<Modification>(), null, null, null,
+                0, DecoyType.Reverse, parameters, fsp, 30000, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var index = (IndexingResults)indexEngine.Run();
+
+            var matches = new SpectralMatch[1];
+            new ModernSearchEngine(matches, new[] { scan }, index.PeptideIndex, index.FragmentIndex, 0, parameters,
+                fsp, new OpenSearchMode(), 0, new List<string>()).Run();
+
+            Assert.That(matches[0], Is.Not.Null);
+            Assert.That(matches[0].RunnerUpScore, Is.GreaterThan(parameters.ScoreCutoff),
+                "a runner-up was scored, rather than the loop stopping at the winner and leaving the cutoff behind");
+            Assert.That(matches[0].DeltaScore, Is.LessThan(matches[0].Score),
+                "delta score is measured against a real runner-up");
+        }
+
+        /// <summary>
+        /// GetBinsToSearch must return only populated bins. Under the old list-per-bin layout an unpopulated
+        /// bin was null and this filtered on that; a span is a struct and is never null, so the same test
+        /// compiled and silently became "always true". Every empty bin in the window then reached
+        /// IndexedScoring, which indexed element 0 of nothing — crosslink and glyco searches died on it.
+        /// </summary>
+        [Test]
+        [TestCase(DissociationType.HCD, false, TestName = "HCD")]
+        [TestCase(DissociationType.HCD, true, TestName = "HCD with complementary ions")]
+        [TestCase(DissociationType.LowCID, false, TestName = "low-resolution CID")]
+        public static void GetBinsToSearch_ReturnsOnlyPopulatedBins(DissociationType dissociationType, bool addCompIons)
+        {
+            var parameters = new CommonParameters(dissociationType: dissociationType, addCompIons: addCompIons,
+                digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
+            var (scan, proteins) = SyntheticScanFor("MKPEPTIDERTIDEK", "MKAAAAAAAAKGGGGGGGGKSSSSSSSSK", parameters);
+            var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+
+            var indexEngine = new IndexingEngine(proteins, new List<Modification>(), new List<Modification>(), null, null, null,
+                0, DecoyType.Reverse, parameters, fsp, 30000, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var index = (IndexingResults)indexEngine.Run();
+
+            List<int> bins = BinSearchProbe.BinsToSearch(scan, index.FragmentIndex, parameters);
+
+            Assert.That(bins, Is.Not.Empty, "the scan's own fragments must land in populated bins");
+            Assert.That(bins.All(b => !index.FragmentIndex[b].IsEmpty), Is.True,
+                "an empty bin must never be returned; downstream scoring indexes into it without checking");
         }
 
         // ------------------------------------------- flat index serialization

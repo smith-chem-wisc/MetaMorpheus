@@ -110,10 +110,21 @@ namespace EngineLayer.Indexing
             int requestedPartitions, int proteinCount, out bool cappedByLimit)
         {
             cappedByLimit = false;
-            long budget = (long)(availableBytes * MemoryBudgetFraction) - fixedBytes;
-            if (budget <= 0)
+
+            // nothing measurable to size against, so leave the setting alone
+            if (availableBytes <= 0)
             {
                 return requestedPartitions;
+            }
+
+            long budget = (long)(availableBytes * MemoryBudgetFraction) - fixedBytes;
+
+            // the part partitioning cannot shrink already exceeds the budget. This is a measurement, not a
+            // missing one, so split as far as possible and say so rather than returning the request unchanged
+            if (budget <= 0)
+            {
+                cappedByLimit = true;
+                return Math.Max(requestedPartitions, Math.Min(MaxPartitions, Math.Max(1, proteinCount)));
             }
 
             double exact = Math.Ceiling(estimatedBytes / (double)budget);
@@ -167,6 +178,13 @@ namespace EngineLayer.Indexing
                 if (sampledPeptides >= MaxSampledPeptides)
                 {
                     break;
+                }
+
+                // Digesting a zero-length sequence throws, and this runs while the task is still being
+                // configured, so it would surface as a crash report rather than as a search that ran.
+                if (proteins[i].BaseSequence.Length == 0)
+                {
+                    continue;
                 }
 
                 sampledResidues += proteins[i].BaseSequence.Length;
