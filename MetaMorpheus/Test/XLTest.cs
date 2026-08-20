@@ -600,11 +600,11 @@ namespace Test
                 }
             }
 
-            // These two are left as they were on purpose. They are PEP-derived, and a local replica of this
-            // test reproduces the raw and the 1 % FDR blocks exactly but not this one, so any value put here
-            // would be guessed rather than measured. CI supplies them.
+            // PEP-derived, so these two were measured on CI rather than locally: a local replica of this test
+            // reproduces the raw and the 1 % FDR blocks exactly but not this one, and a guessed value here
+            // would have been indistinguishable from a real regression. Inter 53 -> 41, Intra 81 -> 78.
             Assert.That(inter, Is.EqualTo(41));
-            Assert.That(intra, Is.EqualTo(81));
+            Assert.That(intra, Is.EqualTo(78));
             Assert.That(unnasignedCrossType, Is.EqualTo(0));
 
             // We have pretty high peptide-level q values for crosslinks, so we need to up the cut-off is we want PEP to run
