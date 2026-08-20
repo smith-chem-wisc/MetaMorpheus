@@ -817,6 +817,15 @@ namespace TaskLayer
         }
         private void UpdateSpectralLibrary()
         {
+            // SearchTask refuses this combination before searching, so reaching here without a library means
+            // some other caller built the parameters. Skip rather than throw: the search itself is finished
+            // and its results are already written.
+            if (Parameters.SpectralLibrary is null)
+            {
+                Warn("No spectral library was given, so there was nothing to update.");
+                return;
+            }
+
             try
             {
                 var peptidesForSpectralLibrary = FilteredPsms.Filter(Parameters.AllSpectralMatches,

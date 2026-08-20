@@ -223,6 +223,28 @@ namespace TaskLayer
             // start loading all data in the background while task is being set up
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
+            // Checked before the protein load starts, rather than where the library is updated after the
+            // whole search: there is nothing to update, and reporting it once the search has finished wastes
+            // the run. It has to precede RunAsync as well -- that is Task.Run with no cancellation, so
+            // throwing after it leaves the load running unobserved. Reads the same precondition
+            // LoadSpectralLibraries does, without opening the library.
+            // Checked before the protein load starts, rather than where the library is updated after the
+            // whole search: there is nothing to update, and reporting it once the search has finished wastes
+            // the run. It has to precede RunAsync as well -- that is Task.Run with no cancellation, so
+            // throwing after it leaves the load running unobserved. Reads the same precondition
+            // LoadSpectralLibraries does, without opening the library.
+            // Checked before the protein load starts, rather than where the library is updated after the
+            // whole search: there is nothing to update, and reporting it once the search has finished wastes
+            // the run. It has to precede RunAsync as well -- that is Task.Run with no cancellation, so
+            // throwing after it leaves the load running unobserved. Reads the same precondition
+            // LoadSpectralLibraries does, without opening the library.
+            if (SearchParameters.UpdateSpectralLibrary && !AnySpectralLibrary(dbFilenameList))
+            {
+                throw new MetaMorpheusException(
+                    "Updating a spectral library was requested, but no spectral library was given. Add one to " +
+                    "the list of databases, or select writing a new spectral library instead of updating one.");
+            }
+
             // start loading proteins in the background
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, SearchParameters.DecoyType, SearchParameters.SearchTarget, localizeableModificationTypes, SearchParameters.TCAmbiguity, SearchParameters.WriteTargetDecoyFasta, OutputFolder);
             var proteinLoadingTask = dbLoader.RunAsync();

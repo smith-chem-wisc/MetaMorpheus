@@ -87,6 +87,19 @@ namespace TaskLayer
                
                 var ok = TaskList[i];
 
+                // Checked per task rather than up front: an earlier task can add a library to the running
+                // database list, so a search that writes one followed by a search that updates it is legal.
+                if (ok.Item2 is SearchTask searchTask
+                    && searchTask.SearchParameters.UpdateSpectralLibrary
+                    && !CurrentXmlDbFilenameList.Any(p => p.IsSpectralLibrary))
+                {
+                    Warn("Cannot proceed. Updating a spectral library was requested, but no spectral library "
+                        + "was given. Add one to the list of databases, or select writing a new spectral "
+                        + "library instead of updating one.");
+                    FinishedAllTasks(OutputFolder);
+                    return;
+                }
+
                 // reset product types for custom fragmentation
                 ok.Item2.CommonParameters.SetCustomProductTypes();
 

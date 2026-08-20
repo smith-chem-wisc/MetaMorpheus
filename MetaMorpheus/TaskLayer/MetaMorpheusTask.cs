@@ -739,6 +739,16 @@ namespace TaskLayer
 
         #region Database Loading
 
+        /// <summary>
+        /// The precondition <see cref="LoadSpectralLibraries"/> reads before it opens anything, so a caller
+        /// can test for a library without paying for the byte-offset index the SpectralLibrary constructor
+        /// builds. Kept beside it so the two cannot drift apart.
+        /// </summary>
+        protected static bool AnySpectralLibrary(List<DbForTask> dbFilenameList)
+        {
+            return dbFilenameList.Any(p => p.IsSpectralLibrary);
+        }
+
         protected SpectralLibrary LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
         {
             Status("Loading spectral libraries...", new List<string> { taskId });
@@ -1115,7 +1125,7 @@ namespace TaskLayer
         protected static void WriteSpectrumLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
-            string spectrumFilePath = outputFolder + "\\SpectralLibrary" + "_" + startTimeForAllFilenames + ".msp";
+            string spectrumFilePath = Path.Combine(outputFolder, "SpectralLibrary_" + startTimeForAllFilenames + ".msp");
             using (StreamWriter output = new StreamWriter(spectrumFilePath))
             {
                 foreach (var x in spectrumLibrary)
@@ -1129,7 +1139,7 @@ namespace TaskLayer
         protected string UpdateSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
-            string spectrumFilePath = outputFolder + "\\updateSpectralLibrary" +"_" + startTimeForAllFilenames + ".msp";
+            string spectrumFilePath = Path.Combine(outputFolder, "updateSpectralLibrary_" + startTimeForAllFilenames + ".msp");
             using (StreamWriter output = new StreamWriter(spectrumFilePath))
             {
 
