@@ -247,6 +247,112 @@ namespace Test.DatabaseTests
             }
         }
 
+        /// <summary>
+        /// Writes a minimal protein database with one "modified residue" feature carrying the given description.
+        /// Deliberately omits the &lt;modification&gt; blocks a MetaMorpheus-written database embeds, because those
+        /// are loaded by GetPtmListFromProteinXml and would make any description resolvable.
+        /// </summary>
+        private static string WriteDbWithModificationDescription(string fileName, string modificationDescription)
+        {
+            return WriteDbWithModificationDescriptions(fileName, modificationDescription);
+        }
+
+        /// <summary>
+        /// As above, but one feature per description, all annotated on the same serine, so that a single database
+        /// can carry more unmatched modifications than the warning names individually.
+        /// </summary>
+        private static string WriteDbWithModificationDescriptions(string fileName, params string[] modificationDescriptions)
+        {
+            string features = string.Concat(modificationDescriptions.Select(description =>
+                $"    <feature type=\"modified residue\" description=\"{description}\">\n" +
+                "      <location>\n" +
+                "        <position position=\"3\" />\n" +
+                "      </location>\n" +
+                "    </feature>\n"));
+
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, fileName);
+            File.WriteAllText(path,
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<mzLibProteinDb>\n" +
+                "  <entry>\n" +
+                "  <accession>P12345</accession>\n" +
+                "    <name>TEST_PROTEIN</name>\n" +
+                "    <protein><recommendedName><fullName>Test protein</fullName></recommendedName></protein>\n" +
+                features +
+                "    <sequence length=\"11\">MPSPEPTIDEK</sequence>\n" +
+                "  </entry>\n" +
+                "</mzLibProteinDb>\n");
+            return path;
+        }
+
+        /// <summary>
+        /// A modification annotated in a database but absent from the known modifications is skipped by mzLib, which
+        /// records it in its unknownModifications dictionary. That dictionary used to be discarded here, so the
+        /// annotation vanished with nothing said about it (mzLib #417). It must now reach the user as a warning.
+        /// </summary>
+        [Test]
+        public static void UnmatchedModificationInDatabaseIsWarnedAbout()
+        {
+            string dbPath = WriteDbWithModificationDescription("unknownModDb.xml", "Nonexistent modification on S");
+
+            DatabaseLoadingEngine.LoadBioPolymers("TestTask", new List<DbForTask> { new DbForTask(dbPath, false) },
+                true, DecoyType.None, new List<string> { "UniProt" }, new CommonParameters(), out var errors);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(errors.Any(p => p.Contains("Nonexistent modification on S")),
+                    $"expected the unmatched modification to be named; got: {string.Join(" | ", errors)}");
+                Assert.That(errors.Any(p => p.Contains("unknownModDb.xml")),
+                    "expected the warning to name the database it came from");
+            });
+        }
+
+        /// <summary>
+        /// The counterpart: a modification that does resolve must not be reported. Without this, the warning above
+        /// could be satisfied by warning unconditionally, which would be worse than the silence it replaces.
+        /// </summary>
+        [Test]
+        public static void ResolvableModificationProducesNoUnmatchedModificationWarning()
+        {
+            string dbPath = WriteDbWithModificationDescription("knownModDb.xml", "Phosphoserine on S");
+
+            DatabaseLoadingEngine.LoadBioPolymers("TestTask", new List<DbForTask> { new DbForTask(dbPath, false) },
+                true, DecoyType.None, new List<string> { "UniProt" }, new CommonParameters(), out var errors);
+
+            Assert.That(errors.Any(p => p.Contains("could not be matched")), Is.False,
+                $"no unmatched-modification warning expected; got: {string.Join(" | ", errors)}");
+        }
+
+        /// <summary>
+        /// A database annotating more unmatched modifications than the warning names individually: the first five
+        /// in ordinal order are named and the remainder is reported as a count, so a database using many unknown
+        /// ids produces one bounded message rather than an unbounded list.
+        /// </summary>
+        [Test]
+        public static void UnmatchedModificationWarningNamesFiveThenCountsTheRest()
+        {
+            string[] descriptions = Enumerable.Range(1, 7)
+                .Select(i => $"Nonexistent modification {i} on S")
+                .ToArray();
+            string dbPath = WriteDbWithModificationDescriptions("manyUnknownModsDb.xml", descriptions);
+
+            DatabaseLoadingEngine.LoadBioPolymers("TestTask", new List<DbForTask> { new DbForTask(dbPath, false) },
+                true, DecoyType.None, new List<string> { "UniProt" }, new CommonParameters(), out var errors);
+
+            string warning = errors.SingleOrDefault(p => p.Contains("could not be matched"));
+            Assert.That(warning, Is.Not.Null,
+                $"expected exactly one unmatched-modification warning; got: {string.Join(" | ", errors)}");
+            Assert.Multiple(() =>
+            {
+                // the count covers every unmatched id, not just the named ones
+                Assert.That(warning, Does.Contain("7 annotated modification(s)"));
+                Assert.That(warning, Does.Contain("and 2 more"));
+                Assert.That(warning, Does.Contain("'Nonexistent modification 1 on S'"));
+                Assert.That(warning, Does.Contain("'Nonexistent modification 5 on S'"));
+                Assert.That(warning, Does.Not.Contain("'Nonexistent modification 6 on S'"));
+            });
+        }
+
         public class ProteinLoaderTask : MetaMorpheusTask
         {
             public ProteinLoaderTask(string x)
