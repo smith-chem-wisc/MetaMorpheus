@@ -218,6 +218,13 @@ jobs:
             "EntityFramework.SqlServer.dll",
             "System.Data.SqlClient.dll",
             "System.Data.SQLite.EF6.dll",
+            # Thermo's MassPrecisionEstimator is stamped AMD64 in its PE header, so an arm64
+            # runtime refuses to load it; nothing in MetaMorpheus or mzLib uses it, and
+            # smith-chem-wisc/mzLib#1156 stops referencing and shipping it. It still reaches the
+            # build through mzLib 1.0.584, whose published nuspec predates that PR, so it is in
+            # the build output while no longer being installed. This entry becomes dead and
+            # should be swept when MetaMorpheus moves to a post-#1156 mzLib.
+            "ThermoFisher.CommonCore.MassPrecisionEstimator.dll",
             "Microsoft.Win32.SystemEvents.dll",
             "Microsoft.Extensions.DependencyInjection.Abstractions.dll",
             "Microsoft.Extensions.DependencyInjection.dll",
