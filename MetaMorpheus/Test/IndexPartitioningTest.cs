@@ -507,6 +507,13 @@ namespace Test
             var fragments = new List<Product>();
             for (int peptideId = 0; peptideId < results.PeptideIndex.Count; peptideId++)
             {
+                // peptides with an undefined mass are deliberately left out of the index; see
+                // FragmentIndex_UndefinedMassPeptidesCannotClipTheSearchWindow
+                if (double.IsNaN(results.PeptideIndex[peptideId].MonoisotopicMass))
+                {
+                    continue;
+                }
+
                 results.PeptideIndex[peptideId].Fragment(parameters.DissociationType,
                     parameters.DigestionParams.FragmentationTerminus, fragments, parameters.FragmentationParameters);
 
@@ -687,8 +694,16 @@ namespace Test
         {
             private BinSearchProbe() : base(null, null, null, null, 0, new CommonParameters(), null, new OpenSearchMode(), 0, new List<string>()) { }
 
+            private BinSearchProbe(List<PeptideWithSetModifications> peptideIndex)
+                : base(null, null, peptideIndex, null, 0, new CommonParameters(), null, new OpenSearchMode(), 0, new List<string>()) { }
+
             internal static int Search(ReadOnlySpan<int> bin, double mass, List<PeptideWithSetModifications> peptideIndex)
                 => BinarySearchBinForPrecursorIndex(bin, mass, peptideIndex);
+
+            /// <summary>The window is an instance method because it reads PeptideIndex off the engine.</summary>
+            internal static (int start, int end) Window(double lowest, double highest, ReadOnlySpan<int> bin,
+                List<PeptideWithSetModifications> peptideIndex)
+                => new BinSearchProbe(peptideIndex).GetFirstAndLastIndexesInBinToIncrement(lowest, highest, bin, 0);
 
             /// <summary>Reaches the protected instance scoring method; the base constructor only assigns fields.</summary>
             internal static List<int> Score(FragmentIndex fragmentIndex, List<int> binsToSearch, double highestMass,
@@ -877,6 +892,82 @@ namespace Test
                 .Select(p => Math.Round(sorted.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass, 5))
                 .ToList();
             Assert.That(forward, Is.EqualTo(expected));
+        }
+
+        /// <summary>
+        /// The search binary-searches a bin by peptide mass, so the bin's masses have to ascend. A peptide
+        /// with an undefined mass breaks that: every comparison against NaN is false, so a NaN entry reads as
+        /// "too heavy" wherever it sits, and sorting the peptide index by mass puts the NaNs first, so they
+        /// head every bin they occupy. The predicate then reads false-true-false along the bin and the search
+        /// can land in the leading false run and clip real candidates off the window.
+        ///
+        /// Two things are asserted: no bin contains a NaN, and — the property that actually matters — the
+        /// window the engine computes never excludes an entry whose mass is inside it. The database here
+        /// includes proteins with X residues, so the index really does contain undefined masses.
+        /// </summary>
+        [Test]
+        public static void FragmentIndex_UndefinedMassPeptidesCannotClipTheSearchWindow()
+        {
+            const double maxFragmentSize = 3000;
+            var parameters = new CommonParameters(scoreCutoff: 1,
+                digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
+            var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+
+            var engine = new IndexingEngine(MakeAnagramProteins(), new List<Modification>(), new List<Modification>(),
+                null, null, null, 0, DecoyType.Reverse, parameters, fsp, maxFragmentSize, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var results = (IndexingResults)engine.Run();
+
+            int undefined = results.PeptideIndex.Count(p => double.IsNaN(p.MonoisotopicMass));
+            Assert.That(undefined, Is.GreaterThan(0), "the fixture must actually contain undefined masses");
+
+            var indexed = new HashSet<int>();
+            for (int bin = 0; bin < results.FragmentIndex.Length; bin++)
+            {
+                foreach (int id in results.FragmentIndex[bin])
+                {
+                    indexed.Add(id);
+                }
+            }
+            Assert.That(indexed.Any(id => double.IsNaN(results.PeptideIndex[id].MonoisotopicMass)), Is.False,
+                "no bin may contain a peptide with an undefined mass");
+
+            // the invariant the search depends on, checked against a linear scan over real windows
+            var masses = results.PeptideIndex.Select(p => p.MonoisotopicMass).ToList();
+            var clipped = new List<string>();
+            int windowsChecked = 0;
+
+            for (int bin = 0; bin < results.FragmentIndex.Length && clipped.Count < 5; bin++)
+            {
+                ReadOnlySpan<int> entries = results.FragmentIndex[bin];
+                if (entries.Length < 3)
+                {
+                    continue;
+                }
+
+                foreach (int anchorIndex in new[] { 0, entries.Length / 2, entries.Length - 1 })
+                {
+                    double centre = masses[entries[anchorIndex]];
+                    double lo = centre - 1.5;
+                    double hi = centre + 1.5;
+                    windowsChecked++;
+
+                    var (start, end) = BinSearchProbe.Window(lo, hi, entries, results.PeptideIndex);
+
+                    for (int j = 0; j < entries.Length; j++)
+                    {
+                        double mass = masses[entries[j]];
+                        if (mass >= lo && mass <= hi && (j < start || j > end))
+                        {
+                            clipped.Add($"bin {bin} entry {j} (mass {mass:F4}) is inside [{lo:F4},{hi:F4}] but outside [{start},{end}]");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            Assert.That(windowsChecked, Is.GreaterThan(100), "need a decent number of windows for this to mean anything");
+            Assert.That(clipped, Is.Empty, string.Join("; ", clipped));
         }
 
         // ------------------------------------------- flat index serialization

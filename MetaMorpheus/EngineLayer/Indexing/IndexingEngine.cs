@@ -176,6 +176,11 @@ namespace EngineLayer.Indexing
 
             for (int peptideId = 0; peptideId < peptides.Count; peptideId++)
             {
+                if (!IsIndexable(peptides[peptideId]))
+                {
+                    continue;
+                }
+
                 peptides[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, fragments, CommonParameters.FragmentationParameters);
 
                 foreach (var theoreticalFragment in fragments)
@@ -233,6 +238,11 @@ namespace EngineLayer.Indexing
 
             for (int peptideId = 0; peptideId < peptides.Count; peptideId++)
             {
+                if (!IsIndexable(peptides[peptideId]))
+                {
+                    continue;
+                }
+
                 peptides[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, fragments, CommonParameters.FragmentationParameters);
 
                 foreach (var theoreticalFragment in fragments)
@@ -267,6 +277,28 @@ namespace EngineLayer.Indexing
             binStart[0] = 0;
 
             return new IndexingResults(peptides, new FragmentIndex(binStart, peptideIds), precursorIndex, this);
+        }
+
+        /// <summary>
+        /// Whether a peptide belongs in the fragment index at all.
+        ///
+        /// A peptide with an undefined monoisotopic mass - an unknown residue such as X - can never be
+        /// accepted against a precursor mass, so indexing it gains nothing. It costs something, though: the
+        /// search binary-searches a bin by peptide mass, which needs the bin's masses to ascend, and every
+        /// comparison against NaN is false. Sorting the peptide index by mass puts the NaNs at the front, so
+        /// they head every bin they are in and the "mass is at or below the target" predicate reads
+        /// false-then-true-then-false along the bin. A binary search over that can land in the leading false
+        /// run and clip real candidates off the front of the window.
+        ///
+        /// Which bins contained a NaN depended on how the database had been partitioned, which is how a
+        /// memory decision reached the coarse score: measured on the mouse proteome, peptide TAGAAAK sat in
+        /// the same five bins for scan 4934 either way, but was inside the mass window in only four of them
+        /// at six partitions against all five at seven, so its coarse score was 4 against 5. Four is below
+        /// the score cutoff, so it was never a candidate, and an unrelated peptide won that scan instead.
+        /// </summary>
+        private static bool IsIndexable(PeptideWithSetModifications peptide)
+        {
+            return !double.IsNaN(peptide.MonoisotopicMass);
         }
 
         /// <summary>
