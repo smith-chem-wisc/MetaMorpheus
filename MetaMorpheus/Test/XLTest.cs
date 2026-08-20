@@ -767,7 +767,10 @@ namespace Test
             Assert.That(singleCsmPsmData.BetaIntensity, Is.EqualTo(0));
             Assert.That(singleCsmPsmData.ComplementaryIonCount, Is.EqualTo(2).Within(0.1));
             Assert.That(singleCsmPsmData.DeltaScore, Is.EqualTo(8).Within(0.1));
-            Assert.That(singleCsmPsmData.HydrophobicityZScore, Is.EqualTo(5).Within(0.1));
+            // Hydrophobicity is scored against the distribution of the other matches in the same retention
+            // time bin, so this shifts when the set of Single matches does - 318 to 310 raw, 229 to 221 at
+            // 1 % FDR. Same csm otherwise: its delta score, ion counts and mass error are unchanged.
+            Assert.That(singleCsmPsmData.HydrophobicityZScore, Is.EqualTo(4).Within(0.1));
             Assert.That(singleCsmPsmData.Intensity, Is.EqualTo(0).Within(0.1));
             Assert.That(singleCsmPsmData.IsDeadEnd, Is.EqualTo(0));
             Assert.That(singleCsmPsmData.IsInter, Is.EqualTo(0));
