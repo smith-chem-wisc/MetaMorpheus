@@ -118,13 +118,21 @@ namespace EngineLayer
         int ISpectralMatch.OneBasedScanNumber => ScanNumber;
 
         /// <summary>
-        /// Consolidates quantification intensities for ISpectralMatch compatibility.
-        /// Returns ReporterIonIntensities if available (isobaric), a singleton array of
-        /// PrecursorScanIntensity for LFQ, or null if neither is populated.
+        /// This PSM's share of the FlashLFQ peak area measured for its peptidoform in this file, or
+        /// null when the form was not quantified. The area is split evenly across the spectra that
+        /// identified the form, so summing over PSMs reconstitutes it once instead of once per
+        /// spectrum. Precursor intensity is deliberately not used: it is a single MS1 reading taken
+        /// wherever the MS2 happened to fire, not a measure of how much peptide was present.
+        /// </summary>
+        public double? QuantifiedIntensityShare { get; set; }
+
+        /// <summary>
+        /// Reporter-ion intensities for isobaric labelling, otherwise this PSM's share of its
+        /// peptidoform's quantified area.
         /// </summary>
         double[]? ISpectralMatch.Intensities =>
             IsobaricMassTagReporterIonIntensities ??
-            (PrecursorScanIntensity > 0 ? new[] { PrecursorScanIntensity } : null);
+            (QuantifiedIntensityShare is > 0 ? new[] { QuantifiedIntensityShare.Value } : null);
 
         /// <summary>
         /// Returns the identified biopolymers (peptides/proteoforms) for ISpectralMatch compatibility.

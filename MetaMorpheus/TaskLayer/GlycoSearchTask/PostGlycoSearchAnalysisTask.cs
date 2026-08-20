@@ -549,6 +549,10 @@ namespace TaskLayer
                 Parameters.FlashLfqResults = FlashLfqEngine.Run();
             }
 
+            // Intensity-based occupancy is weighted by FlashLFQ peak areas, one per quantified
+            // peptidoform, matching the search path.
+            bool quantifiedPeptidesAvailable = DistributeQuantifiedIntensities();
+
             // Propagate quantification data to protein groups
             if (ProteinGroups != null)
             {
@@ -568,6 +572,7 @@ namespace TaskLayer
                                 : 0);
                     }
                     proteinGroup.IntensitiesByFile = intensities;
+                    proteinGroup.HasPeptideLevelQuantification = quantifiedPeptidesAvailable;
 
                     // Populate SampleGroupResults from the shared spectraFileInfo so
                     // every PG carries the same dynamic-column schema. Without this, the writer
@@ -575,6 +580,59 @@ namespace TaskLayer
                     proteinGroup.PopulateSampleGroupResults();
                 }
             }
+        }
+
+        /// <summary>
+        /// Credits each quantified peptidoform's FlashLFQ peak area to the spectra that identified it
+        /// in that file, split evenly between them, so occupancy weights each feature once rather than
+        /// once per spectrum. Mirrors the search task; returns false when quantification produced no
+        /// results, which leaves occupancy count-based.
+        /// </summary>
+        private bool DistributeQuantifiedIntensities()
+        {
+            if (Parameters.FlashLfqResults == null)
+            {
+                return false;
+            }
+
+            var filesByPath = new Dictionary<string, SpectraFileInfo>();
+            foreach (var file in Parameters.FlashLfqResults.SpectraFiles)
+            {
+                filesByPath[file.FullFilePathWithExtension] = file;
+            }
+
+            foreach (var form in Parameters.AllPsms
+                .Where(p => p.FullSequence != null)
+                .GroupBy(p => (p.FullFilePath, p.FullSequence)))
+            {
+                if (!filesByPath.TryGetValue(form.Key.FullFilePath, out var spectraFile)
+                    || !Parameters.FlashLfqResults.PeptideModifiedSequences.TryGetValue(form.Key.FullSequence, out var peptide))
+                {
+                    continue;
+                }
+
+                var detectionType = peptide.GetDetectionType(spectraFile);
+                if (detectionType == DetectionType.NotDetected
+                    || detectionType == DetectionType.MSMSIdentifiedButNotQuantified)
+                {
+                    continue;
+                }
+
+                double area = peptide.GetIntensity(spectraFile);
+                if (area <= 0)
+                {
+                    continue;
+                }
+
+                var psms = form.ToList();
+                double share = area / psms.Count;
+                foreach (var psm in psms)
+                {
+                    psm.QuantifiedIntensityShare = share;
+                }
+            }
+
+            return true;
         }
 
         private void WriteQuantificationResults()

@@ -127,6 +127,14 @@ namespace EngineLayer
         /// </summary>
         public double BestPeptidePEP { get; set; }
 
+        /// <summary>
+        /// True when FlashLFQ peak areas were distributed onto this group's PSMs, which is what
+        /// intensity-based occupancy is weighted by. Separate from whether a group-level intensity
+        /// exists: a run can have protein intensities and still have nothing to weight occupancy by.
+        /// Gates the IntensityOccupancy columns in both the header and the row so the two cannot drift.
+        /// </summary>
+        public bool HasPeptideLevelQuantification { get; set; }
+
         // Sequence coverage stored as flat lists (MM-specific format).
         // BioPolymerGroup uses CoverageResult instead; these are kept for TSV output compatibility.
         public List<double> SequenceCoverageFraction { get; private set; }
@@ -229,7 +237,7 @@ namespace EngineLayer
                     if (group.HasIntensityData)
                         sb.Append($"Intensity_{group.Label}\t");
                     sb.Append($"CountOccupancy_{group.Label}\t");
-                    if (group.HasIntensityData)
+                    if (HasPeptideLevelQuantification)
                         sb.Append($"IntensityOccupancy_{group.Label}\t");
                 }
             }
@@ -363,7 +371,8 @@ namespace EngineLayer
                     sb.Append(GlobalVariables.CheckLengthOfOutput(group.FormatOccupancy(orderedKeys, isProteinLevel, intensityBased: false)));
                     sb.Append("\t");
 
-                    if (group.HasIntensityData)
+                    // Gated on the same flag as the header, so the two cannot drift apart.
+                    if (HasPeptideLevelQuantification)
                     {
                         sb.Append(GlobalVariables.CheckLengthOfOutput(group.FormatOccupancy(orderedKeys, isProteinLevel, intensityBased: true)));
                         sb.Append("\t");
@@ -661,6 +670,10 @@ namespace EngineLayer
                 subsetPg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>
                     { { spectraFileInfo, intensitiesByFile.GetValueOrDefault(spectraFileInfo, 0) } };
             }
+
+            // The PSMs carry their own share of the quantified area, so the subset inherits it by
+            // holding the same PSM objects; only the column gate needs passing along.
+            subsetPg.HasPeptideLevelQuantification = HasPeptideLevelQuantification;
 
             return subsetPg;
         }

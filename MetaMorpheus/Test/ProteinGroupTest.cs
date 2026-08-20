@@ -164,6 +164,9 @@ namespace Test
                 { fileA, 100.0 },
                 { fileB, 200.0 }
             };
+            // Intensity occupancy is weighted per quantified peptidoform, so the occupancy column
+            // needs peptide-level quantification and not just the group-level intensity above.
+            pg.HasPeptideLevelQuantification = true;
 
             pg.PopulateSampleGroupResults();
 
@@ -223,6 +226,7 @@ namespace Test
                 { light, 100.0 },
                 { heavy, 250.0 }
             };
+            pg.HasPeptideLevelQuantification = true;
             Assert.That(pg.SampleGroupResults, Is.Null);
 
             pg.PopulateSampleGroupResults();
@@ -433,8 +437,10 @@ namespace Test
                 "pos71[Oxidation on S,info:fraction=0.50(1/2)]|pos71[Oxidation on S,info:fraction=0.50(1/2)]"));
 
             // Tests intensity-based PTM occupancy: pos{residue}[{modName},info:fraction={intensity-fraction}({mod intensity}/{total intensity})]
+            // Intensities are FlashLFQ peak areas counted once per peptidoform, so a form observed by
+            // several spectra contributes its area once rather than once per spectrum.
             Assert.That(intensityOccupancy, Is.EqualTo(
-                "pos71[Oxidation on S,info:fraction=0.1899(1.279E+05/6.736E+05)]|pos71[Oxidation on S,info:fraction=0.1899(1.279E+05/6.736E+05)]"));
+                "pos71[Oxidation on S,info:fraction=0.1957(1.281E+05/6.543E+05)]|pos71[Oxidation on S,info:fraction=0.1957(1.281E+05/6.543E+05)]"));
 
             Directory.Delete(outputFolder, true);
         }

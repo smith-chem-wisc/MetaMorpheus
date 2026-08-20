@@ -634,10 +634,16 @@ namespace TaskLayer
 
                 // Populate SampleGroupResults AFTER all quant-state mutation (including SILAC
                 // re-labeling) so every PG carries the same dynamic-column schema for the writer.
+                // Built here rather than before the SILAC block above: SILAC rewrites the spectra-file
+                // list and reassigns peptides between files, so a map keyed off the pre-conversion
+                // files would no longer match the samples the protein groups now carry.
+                bool quantifiedPeptidesAvailable = DistributeQuantifiedIntensities();
+
                 if (ProteinGroups != null)
                 {
                     foreach (var proteinGroup in ProteinGroups)
                     {
+                        proteinGroup.HasPeptideLevelQuantification = quantifiedPeptidesAvailable;
                         proteinGroup.PopulateSampleGroupResults();
                     }
                 }
@@ -666,6 +672,67 @@ namespace TaskLayer
             {
                 proteinGroup.PopulateSampleGroupResults();
             }
+        }
+
+        /// <summary>
+        /// Credits each quantified peptidoform's FlashLFQ peak area to the spectra that identified it
+        /// in that file, split evenly between them, so occupancy weights each feature once rather than
+        /// once per spectrum. Peptides identified but never quantified are left out rather than
+        /// entering as a measured zero. Returns false when quantification produced no results, which
+        /// leaves occupancy count-based.
+        /// </summary>
+        /// <remarks>
+        /// The split is across every PSM of the form, so a protein group holding only some of them
+        /// sees a proportional share rather than the whole area. Weighting the forms directly would
+        /// avoid that, but the occupancy calculator sums per PSM.
+        /// </remarks>
+        private bool DistributeQuantifiedIntensities()
+        {
+            if (Parameters.FlashLfqResults == null)
+            {
+                return false;
+            }
+
+            // Keyed off the results' own file list, which SILAC rebuilds, so the lookup matches
+            // whatever files the peptides are filed under by the time occupancy is computed.
+            var filesByPath = new Dictionary<string, SpectraFileInfo>();
+            foreach (var file in Parameters.FlashLfqResults.SpectraFiles)
+            {
+                filesByPath[file.FullFilePathWithExtension] = file;
+            }
+
+            foreach (var form in Parameters.AllSpectralMatches
+                .Where(p => p.FullSequence != null)
+                .GroupBy(p => (p.FullFilePath, p.FullSequence)))
+            {
+                if (!filesByPath.TryGetValue(form.Key.FullFilePath, out var spectraFile)
+                    || !Parameters.FlashLfqResults.PeptideModifiedSequences.TryGetValue(form.Key.FullSequence, out var peptide))
+                {
+                    continue;
+                }
+
+                var detectionType = peptide.GetDetectionType(spectraFile);
+                if (detectionType == DetectionType.NotDetected
+                    || detectionType == DetectionType.MSMSIdentifiedButNotQuantified)
+                {
+                    continue;
+                }
+
+                double area = peptide.GetIntensity(spectraFile);
+                if (area <= 0)
+                {
+                    continue;
+                }
+
+                var psms = form.ToList();
+                double share = area / psms.Count;
+                foreach (var psm in psms)
+                {
+                    psm.QuantifiedIntensityShare = share;
+                }
+            }
+
+            return true;
         }
 
         private void HistogramAnalysis()
