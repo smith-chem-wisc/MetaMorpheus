@@ -926,6 +926,7 @@ namespace Test
             // so this coverage can never be excluded by that test's Explicit/Category("Koina") gate.
             var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
                 System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, "GetRTPredictor not found via reflection — signature changed?");
 
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
               {
