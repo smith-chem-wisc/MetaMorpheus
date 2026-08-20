@@ -7,12 +7,16 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Test")]
 namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {
-        private static readonly Lazy<ChronologerRetentionTimePredictor> _chronologerInstance =
+        // Not readonly so unit tests can swap in a throwing Lazy (via reflection) to exercise the
+        // missing-native-library fallback in GetChronologer without the TorchSharp natives present.
+        private static Lazy<ChronologerRetentionTimePredictor> _chronologerInstance =
             new Lazy<ChronologerRetentionTimePredictor>(
                 () => new ChronologerRetentionTimePredictor(),
                 System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
@@ -430,23 +434,38 @@ namespace EngineLayer.FdrAnalysis
             };
         }
 
+        private static bool _alreadyWarnedAboutChronologer = false;
+
         /// <summary>
         /// Chronologer runs on TorchSharp, whose native libraries aren't present in every installation.
         /// When they're missing, we return null (as GetRTPredictor already does for unrecognized predictors) so that
         /// PEP falls back to the default retention time predictor. A missing predictor should cost PEP accuracy,
         /// not the entire search.
         /// </summary>
-        private static IRetentionTimePredictor GetChronologer()
+        internal static IRetentionTimePredictor GetChronologer()
         {
             try
             {
                 return _chronologerInstance.Value;
             }
-            catch (DllNotFoundException e)
+            catch (Exception e)
             {
-                WarnStatic("Chronologer retention time prediction was skipped because its native libraries could not be loaded (" + e.Message.Trim() +
-                    "). PEP will be calculated using the default retention time predictor instead, and will be less accurate. " +
-                    "Reinstalling MetaMorpheus should restore the missing files.");
+                if (_alreadyWarnedAboutChronologer)
+                {
+                    return null;
+                }
+                _alreadyWarnedAboutChronologer = true;
+                if (e is DllNotFoundException || e.InnerException is DllNotFoundException)
+                {
+                    WarnStatic("Chronologer retention time prediction was skipped because its native libraries could not be loaded (" + e.Message.Trim() +
+                        "). PEP will be calculated using the SSRCalc3 retention time predictor instead, and will be less accurate. " +
+                        "Uninstalling, then reinstalling MetaMorpheus should restore the missing files.");
+                }
+                else
+                {
+                    WarnStatic("Chronologer retention time prediction was skipped due to an exception (" + e.Message.Trim() +
+                        "). PEP will be calculated using the SSRCalc3 retention time predictor instead, and will be less accurate." );
+                }
                 return null;
             }
         }
