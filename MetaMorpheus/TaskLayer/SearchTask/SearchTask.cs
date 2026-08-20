@@ -37,18 +37,23 @@ namespace TaskLayer
 
         public SearchParameters SearchParameters { get; set; }
 
+        /// <summary>
+        /// Builds the precursor search mode for a <see cref="MassDiffAcceptorType"/>.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately takes no <see cref="PrecursorMassMatchMode"/>. Whether candidates are matched on the
+        /// monoisotopic mass or the most-abundant isotopic mass is now carried entirely by
+        /// <paramref name="massDiffAcceptorType"/> (the <c>MostAbundant_*</c> members), so accepting the match
+        /// mode as well would let a caller ask for something this method cannot honour.
+        /// <see cref="RunSpecific"/> derives <see cref="CommonParameters.PrecursorMassMatchMode"/> from the
+        /// acceptor type instead, which is what keeps the theory and observed sides in step.
+        /// </remarks>
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac,
-            PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic, AverageResidue averagineModel = null,
-            double expectedIsotopeSpacing = Constants.C13MinusC12)
+            AverageResidue averagineModel = null, double expectedIsotopeSpacing = Constants.C13MinusC12)
         {
-            // Most-abundant mode matches candidates by their theoretical most-abundant isotopic peak,
-            // which directly solves the off-by-N problem. It replaces (rather than augments) the
-            // missed-monoisotopic notches, so it overrides the MassDiffAcceptorType selection.
-            if (precursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
-            {
-                return new MostAbundantMassDiffAcceptor("mostAbundant", precursorMassTolerance, averagineModel ?? new Averagine(),
-                    expectedIsotopeSpacing: expectedIsotopeSpacing);
-            }
+            averagineModel ??= GlobalVariables.AnalyteType == AnalyteType.Oligo
+                ? new OxyriboAveragine()
+                : new Averagine();
 
             switch (massDiffAcceptorType)
             {
@@ -95,14 +100,66 @@ namespace TaskLayer
                         },
                         precursorMassTolerance);
 
+                case MassDiffAcceptorType.MostAbundant_Exact:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant", precursorMassTolerance, averagineModel, 0, expectedIsotopeSpacing);
+
+                case MassDiffAcceptorType.MostAbundant_PlusMinusOne:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant_1", precursorMassTolerance, averagineModel, 1, expectedIsotopeSpacing);
+
+                case MassDiffAcceptorType.MostAbundant_PlusMinusTwo:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant_2", precursorMassTolerance, averagineModel, 2, expectedIsotopeSpacing);
+
                 default:
                     throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
             }
         }
 
+        /// <summary>
+        /// The acceptor type equivalent to the pre-<c>MostAbundant_*</c> way of asking for a most-abundant
+        /// search, i.e. <c>CommonParameters.PrecursorMassMatchMode = MostAbundant</c>. That setting used to
+        /// override <see cref="MassDiffAcceptorType"/> outright and build a
+        /// <see cref="MostAbundantMassDiffAcceptor"/> at <see cref="MostAbundantMassDiffAcceptor.DefaultMaxApexOffsetNeutrons"/>
+        /// (2) neutrons of apex tolerance, which is exactly what <see cref="MassDiffAcceptorType.MostAbundant_PlusMinusTwo"/>
+        /// builds today.
+        /// </summary>
+        private const MassDiffAcceptorType LegacyMostAbundantEquivalent = MassDiffAcceptorType.MostAbundant_PlusMinusTwo;
+
+        /// <summary>
+        /// Migrates a run that asks for most-abundant matching the old way — through
+        /// <see cref="CommonParameters.PrecursorMassMatchMode"/> rather than a <c>MostAbundant_*</c>
+        /// <see cref="MassDiffAcceptorType"/> — onto the acceptor type that now carries that request.
+        /// </summary>
+        /// <remarks>
+        /// The GUI migrates on open, so this only reaches TOML and command-line runs — which is where
+        /// most existing most-abundant configurations live, because the match mode was the only way to ask
+        /// for one before the <c>MostAbundant_*</c> members existed. Without this, the acceptor built below
+        /// would be monoisotopic and the run would come back silently changed. Migrating rather than merely
+        /// warning is what keeps those runs searching the way they used to; the warning is what stops the
+        /// change from being silent, and is the only record of it — <see cref="MetaMorpheusTask.RunTask"/>
+        /// writes the settings toml before it calls <see cref="RunSpecific"/>, so that file still shows the
+        /// original pairing.
+        /// </remarks>
+        private void MigrateLegacyMostAbundantRequest()
+        {
+            if (CommonParameters.PrecursorMassMatchMode != PrecursorMassMatchMode.MostAbundant
+                || SearchParameters.MassDiffAcceptorType.IsMostAbundant())
+            {
+                return;
+            }
+
+            Warn($"PrecursorMassMatchMode is {PrecursorMassMatchMode.MostAbundant} but MassDiffAcceptorType is " +
+                 $"{SearchParameters.MassDiffAcceptorType}, which is monoisotopic. Most-abundant matching is now selected " +
+                 $"by the mass difference acceptor, so this search will use {LegacyMostAbundantEquivalent} — the equivalent " +
+                 $"of the old setting. Set MassDiffAcceptorType explicitly to silence this.");
+
+            SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
+        }
+
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
             FileSpecificParameters[] fileSettingsList)
         {
+            MigrateLegacyMostAbundantRequest();
+
             MyTaskResults = new(this);
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
@@ -218,6 +275,7 @@ namespace TaskLayer
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>(); // key is filename, value is an int array of length 2, where the first element is the number of MS2 spectra in the file, and the second element is the number of different deconvoluted precursors assigned to those scans
             bool collectedDigestionInformation = false;
             IDictionary<(string Accession, string BaseSequence), int> digestionCountDictionary = null;
+            int numNotches = 0;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 if (GlobalVariables.StopLoops) { break; }
@@ -229,9 +287,17 @@ namespace TaskLayer
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
+                // The theory side is governed by SearchParameters.MassDiffAcceptorType, while the observed precursor
+                // mass comes from PrecursorMassMatchMode. Keep them aligned so a most-abundant acceptor actually
+                // searches against most-abundant masses (and vice versa).
+                combinedParams.PrecursorMassMatchMode = SearchParameters.MassDiffAcceptorType.IsMostAbundant()
+                    ? PrecursorMassMatchMode.MostAbundant
+                    : PrecursorMassMatchMode.Monoisotopic;
+
                 MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac,
-                    combinedParams.PrecursorMassMatchMode, combinedParams.GetAverageResidue(),
-                    combinedParams.IsotopeSpacing());
+                    combinedParams.GetAverageResidue(), combinedParams.IsotopeSpacing());
+
+                numNotches = massDiffAcceptor.NumNotches;
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -498,7 +564,6 @@ namespace TaskLayer
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            int numNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             //resolve category specific fdrs (for speedy semi and nonspecific
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
@@ -538,23 +603,6 @@ namespace TaskLayer
                 DigestionCountDictionary = digestionCountDictionary
             };
             return postProcessing.Run();
-        }
-
-        private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
-        {
-            switch (massDiffAcceptorType)
-            {
-                case MassDiffAcceptorType.Exact: return 1;
-                case MassDiffAcceptorType.OneMM: return 2;
-                case MassDiffAcceptorType.TwoMM: return 3;
-                case MassDiffAcceptorType.ThreeMM: return 4;
-                case MassDiffAcceptorType.ModOpen: return 1;
-                case MassDiffAcceptorType.Open: return 1;
-                case MassDiffAcceptorType.PlusOrMinusThreeMM: return 7;
-                case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
-
-                default: throw new MetaMorpheusException("Unknown mass difference acceptor type");
-            }
         }
 
         private static MassDiffAcceptor ParseSearchMode(string text)
