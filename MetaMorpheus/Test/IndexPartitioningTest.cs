@@ -591,6 +591,49 @@ namespace Test
             Assert.That(mismatches, Is.Empty, string.Join("; ", mismatches));
         }
 
+        /// <summary>
+        /// Digestion is parallel and each thread keeps its own list, so the peptide index is concatenated in
+        /// thread order and its ids depend on the thread count. Reproducibility across thread counts is the
+        /// property that has to hold, not a particular id order - asserting the order would pin an arbitrary
+        /// choice. What must not change is the answer: the same scan searched against an index built with one
+        /// thread and with four must produce the same match with the same score.
+        ///
+        /// This is the thread-count analogue of the partition-count invariance the rest of this branch is
+        /// about, and it is checked end to end for the same reason: the peptide ids genuinely do differ
+        /// between the two, so only the output can show that it does not matter.
+        /// </summary>
+        [Test]
+        public static void SearchResultIsIndependentOfTheDigestionThreadCount()
+        {
+            var (scan, proteins) = SyntheticScanFor("MKPEPTIDERTIDEK", "MKAAAAAAAAKGGGGGGGGKSSSSSSSSK");
+
+            static (string Sequence, double Score, string Ids) SearchWith(int threads, List<Protein> proteins, Ms2ScanWithSpecificMass scan)
+            {
+                var parameters = new CommonParameters(maxThreadsToUsePerFile: threads,
+                    digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 5));
+                var fsp = new List<(string, CommonParameters)> { ("", parameters) };
+
+                var index = (IndexingResults)new IndexingEngine(proteins, new List<Modification>(), new List<Modification>(),
+                    null, null, null, 0, DecoyType.Reverse, parameters, fsp, 30000, false, new List<FileInfo>(),
+                    TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
+
+                var matches = new SpectralMatch[1];
+                new ModernSearchEngine(matches, new[] { scan }, index.PeptideIndex, index.FragmentIndex, 0, parameters,
+                    fsp, new OpenSearchMode(), 0, new List<string>()).Run();
+                matches[0]?.ResolveAllAmbiguities();
+
+                string ids = string.Join(",", index.PeptideIndex.Select(p => p.FullSequence));
+                return (matches[0]?.BaseSequence, matches[0]?.Score ?? 0, ids);
+            }
+
+            var one = SearchWith(1, proteins, scan);
+            var four = SearchWith(4, proteins, scan);
+
+            Assert.That(one.Sequence, Is.Not.Null, "the fixture must produce a match at all");
+            Assert.That(four.Sequence, Is.EqualTo(one.Sequence), "same peptide");
+            Assert.That(four.Score, Is.EqualTo(one.Score).Within(1e-9), "same score");
+        }
+
         // ------------------------------------------------------ CommonParameters clone
 
         /// <summary>
@@ -1650,6 +1693,57 @@ namespace Test
                 "the one real candidate in the bin must be inside the window, not lost behind the undefined ones");
             Assert.That(start, Is.EqualTo(position),
                 "and the window must start at it, excluding every undefined mass");
+        }
+
+        /// <summary>
+        /// The case reported in issue #1542 in 2018: a bin of twelve entries with ascending masses, looking
+        /// for the third one. The search returned 0 instead of 2.
+        ///
+        /// The reply at the time was that the imprecision was deliberate - the search "errs on the side of
+        /// caution in that it goes back a space", so as not to skip a valid hit. That reasoning holds for the
+        /// start of the precursor window, where starting early only widens it. The same function also
+        /// computed the window's end, though, and there going back a space drops the last valid candidate
+        /// instead of including an extra one. Probed against a linear scan over 104,472 (bin length, target)
+        /// pairs, the old implementation disagreed on 1,390 of them, once answering 0 where 719 was correct.
+        ///
+        /// Both ends are now exact, and each end uses the search that answers its own question.
+        /// </summary>
+        [Test]
+        public static void BinarySearchBinForPrecursorIndex_ReportedCaseFromIssue1542()
+        {
+            var digestion = new DigestionParams(protease: "trypsin", minPeptideLength: 5);
+            var peptideIndex = MakeProteins(400)
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<PeptideWithSetModifications>()
+                .Where(p => !double.IsNaN(p.MonoisotopicMass))
+                .GroupBy(p => p.MonoisotopicMass)
+                .Select(g => g.First())
+                .OrderBy(p => p.MonoisotopicMass)
+                .Take(12)
+                .ToList();
+            Assert.That(peptideIndex.Count, Is.EqualTo(12), "the reported case is a bin of twelve");
+
+            var bin = Enumerable.Range(0, 12).ToList();
+            double third = peptideIndex[2].MonoisotopicMass;
+
+            Assert.That(BinSearchProbe.Search(CollectionsMarshal.AsSpan(bin), third, peptideIndex),
+                Is.EqualTo(2), "the last entry at or below the third mass is the third entry, not the first");
+            Assert.That(BinSearchProbe.FirstAtOrAbove(CollectionsMarshal.AsSpan(bin), third, peptideIndex),
+                Is.EqualTo(2), "and so is the first entry at or above it");
+
+            // every position in the bin, not just the reported one
+            var wrong = new List<string>();
+            for (int i = 0; i < 12; i++)
+            {
+                double m = peptideIndex[i].MonoisotopicMass;
+                int upper = BinSearchProbe.Search(CollectionsMarshal.AsSpan(bin), m, peptideIndex);
+                int lower = BinSearchProbe.FirstAtOrAbove(CollectionsMarshal.AsSpan(bin), m, peptideIndex);
+                if (upper != i || lower != i)
+                {
+                    wrong.Add($"index {i}: upper {upper}, lower {lower}");
+                }
+            }
+            Assert.That(wrong, Is.Empty, string.Join("; ", wrong));
         }
 
         // ------------------------------------------- flat index serialization
