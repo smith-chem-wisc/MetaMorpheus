@@ -91,6 +91,10 @@
                                     <RadioButton x:Name="RbtNGlycoSearch" Visibility="Visible"  Content="N-Glycopeptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
                                     <RadioButton x:Name="Rbt_N_O_GlycoSearch" Visibility="Visible"  Content="N-O-Glyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
                                 </StackPanel>
+                                <StackPanel>
+                                    <Button Content="Build Glycan Database" Click="BuildGlycanDatabase_Click" Margin="0,0,10,0"
+                                            Width ="150" Height="30" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </StackPanel>
                             </Grid>
                             <Grid Grid.Row="1">
                                 <Grid.RowDefinitions>
