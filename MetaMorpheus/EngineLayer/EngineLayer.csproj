@@ -76,9 +76,6 @@
     <None Update="Mods\Glyco.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods\ProteaseMods.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Proteomes\availableUniProtProteomes.txt.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

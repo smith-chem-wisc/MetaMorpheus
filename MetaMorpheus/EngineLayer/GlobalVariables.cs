@@ -421,6 +421,11 @@ namespace EngineLayer
                 AddMods(ModificationLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
+            // Cleavage modifications live with proteases.tsv in mzLib; this is the only
+            // place they reach AllModsKnown.
+            ProteaseMods = ProteaseDictionary.LoadEmbeddedProteaseMods();
+            AddMods(ProteaseMods, false);
+
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
             AddMods(UnimodDeserialized.OfType<Modification>(), false);
             
@@ -585,8 +590,7 @@ namespace EngineLayer
             {
                 try
                 {
-                    var mods = ProteaseDictionary.LoadEmbeddedProteaseMods();
-                    var result = ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, mods);
+                    ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, ProteaseMods);
                 }
                 catch (Exception e)
                 {
