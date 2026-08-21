@@ -1335,6 +1335,12 @@ namespace MetaMorpheusGUI
             dialog.ShowDialog();
         }
 
+        private void AddCustomMonosaccharide_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new CustomMonosaccharideWindow();
+            dialog.ShowDialog();
+        }
+
         private void AddCustomAminoAcid_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new CustomAminoAcidWindow();
