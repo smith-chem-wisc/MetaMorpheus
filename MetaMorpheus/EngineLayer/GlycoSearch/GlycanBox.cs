@@ -221,6 +221,16 @@ namespace EngineLayer
         /// </summary>
         /// <param name="ids"> The glycanBox composition, each number represent one glycan index in the database</param>
         /// <param name="targetDecoy"></param>
+        /// <summary>
+        /// Test-only constructor: a glycan box carrying nothing but a Kind[] composition, built without
+        /// the glycan database. Lets tests exercise composition-only logic (GlycoPeptides.DiagonsticFilter,
+        /// for one) against a real, fully-constructed object instead of an uninitialized one.
+        /// </summary>
+        internal GlycanBox(byte[] kind) : base(new int[0])
+        {
+            Kind = kind;
+        }
+
         public GlycanBox(int[] ids, bool Istarget = true):base(ids)
         {
             byte[] kind = new byte[Glycan.KindCapacity];
