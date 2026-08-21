@@ -1,15 +1,11 @@
 ﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.GlycoSearch;
-using Google.Protobuf.Collections;
-using Org.BouncyCastle.Asn1.BC;
 using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 using System.Windows;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MetaMorpheusGUI
 {
@@ -36,56 +32,18 @@ namespace MetaMorpheusGUI
             {
                 return;
             }
-
-            char code = codeText[0];
-            double massDa;
-            if (!string.IsNullOrEmpty(formulaText))
-            {
-                massDa = ChemicalFormula.ParseFormula(formulaText).MonoisotopicMass;
-            }
-            else 
-            {
-                massDa = double.Parse(massText, NumberStyles.Float, CultureInfo.InvariantCulture);
-            }
-            int massScaled = (int)Math.Round(massDa * 1E5);
-
-            int[] diagnosticIons = null;
-            if(!string.IsNullOrEmpty(ionsText))
-            {
-                diagnosticIons = ionsText.Split(',')
-                    .Select(p => (int)Math.Round(double.Parse(p.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture) * 1E5))
-                    .ToArray();
-            }
-
             try 
             {
-                Glycan.RegisterCustomMonosaccharide(name, code, massScaled, diagnosticIons);
+                string warning = GlycanDatabase.PersistCustomMonosaccharide(name, codeText, formulaText, massText, ionsText, descriptionText);
+                if (warning != null)
+                {
+                    MessageBox.Show(warning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
             }
-            catch (ArgumentException ex)
+            catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                MessageBox.Show("Error saving custom monosaccharide: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                 return;
-            }
-
-            //persist to file so the monosaccharide is still recognized on the next launch
-            string glycanModsDirectory = Path.Combine(GlobalVariables.DataDir, @"Glycan_Mods");
-            string customMonosaccharidePath = Path.Combine(glycanModsDirectory, "MonosaccharidesCustom.tsv");
-            string line = string.Join("\t", name, code.ToString(), massDa.ToString(CultureInfo.InvariantCulture), ionsText, descriptionText);
-            try
-            {
-                Directory.CreateDirectory(glycanModsDirectory);
-                if (!File.Exists(customMonosaccharidePath))
-                {
-                    File.WriteAllLines(customMonosaccharidePath, new[] { "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription", line });
-                }
-                else
-                {
-                    File.AppendAllLines(customMonosaccharidePath, new[] { line });
-                }
-            }
-            catch (Exception ex) 
-            {
-                MessageBox.Show("The monosaccharide '" + name + "' is available for this session, but could not be saved to file for future sessions: " + ex.Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             DialogResult = true;
         }
@@ -102,9 +60,15 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The monosaccharide name needs to be specified", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                 return true;
             }
-            else if(Glycan.NameCharDic.ContainsKey(name))
+            else if (Glycan.NameCharDic.ContainsKey(name))
             {
                 MessageBox.Show("A monosaccharide already exists with the name: " + name, "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                return true;
+            }
+            // Due to our tsv reader, any glycan name "Name" will be discarded on the next launch, so we don't want to allow it to be added in the glycan menu.
+            else if (name.Equals("Name", StringComparison.OrdinalIgnoreCase)) 
+            {
+                MessageBox.Show("'Name' is reserved for the column-header row and cannot be used as a monosaccharide name", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                 return true;
             }
             if (string.IsNullOrWhiteSpace(code))
@@ -128,29 +92,40 @@ namespace MetaMorpheusGUI
                 return true;
             }
 
-            if (string.IsNullOrWhiteSpace(formula) && string.IsNullOrWhiteSpace(mass)) 
+
+            double? formulaMassDa = null;
+            if (!string.IsNullOrWhiteSpace(formula))
+            {
+                try { formulaMassDa = ChemicalFormula.ParseFormula(formula).MonoisotopicMass; }
+                catch { MessageBox.Show("Could not parse chemical formula", "Error", MessageBoxButton.OK, MessageBoxImage.Hand); return true; }
+            }
+
+            double? typedMassDa = null;
+            if (!string.IsNullOrWhiteSpace(mass))
+            {
+                if (!double.TryParse(mass, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed) || parsed <= 0 || parsed > 20000)
+                {
+                    MessageBox.Show("Monoisotopic mass must be a positive number below 20000 Da", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                    return true;
+                }
+                typedMassDa = parsed;
+            }
+
+            if (formulaMassDa is null && typedMassDa is null)
             {
                 MessageBox.Show("Either the monoisotopic mass or chemical formula needs to be specified", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                 return true;
             }
-            else if (!string.IsNullOrWhiteSpace(formula))
+
+            if (formulaMassDa.HasValue && typedMassDa.HasValue && Math.Abs(formulaMassDa.Value - typedMassDa.Value) > 0.01)
             {
-                try
-                {
-                    ChemicalFormula.ParseFormula(formula);
-                }
-                catch 
-                {
-                    MessageBox.Show("Could not parse chemical formula", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
-                    return true;
-                } 
+                var result = MessageBox.Show(
+                    $"The chemical formula's mass ({formulaMassDa:F5} Da) does not match the entered monoisotopic mass ({typedMassDa:F5} Da).\n\n" +
+                    "The chemical formula's mass will be used and the typed mass will be discarded. Continue?",
+                    "Mass mismatch", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.No) return true;
             }
 
-            if (!string.IsNullOrEmpty(mass) && !double.TryParse(mass, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
-            {
-                MessageBox.Show("Could not parse monoisotopic mass", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
-                return true;
-            }
 
             if (!string.IsNullOrWhiteSpace(ions)) 
             {

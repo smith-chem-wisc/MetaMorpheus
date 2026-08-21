@@ -1,10 +1,9 @@
-﻿using System;
+﻿using EngineLayer.GlycoSearch;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 using System.IO;
 using System.Linq;
-using EngineLayer.GlycoSearch;
 
 namespace EngineLayer
 {
@@ -142,6 +141,70 @@ namespace EngineLayer
                             ex);
                     }
                 }
+            }
+        }
+
+        public static string PersistCustomMonosaccharide(string name, string codeText, string formulaText, string massText, string ionsText, string descriptionText) 
+        {
+            char code = codeText[0];
+            double massDa;
+            if (!string.IsNullOrEmpty(formulaText))
+            {
+                massDa = Chemistry.ChemicalFormula.ParseFormula(formulaText).MonoisotopicMass;
+            }
+            else
+            {
+                massDa = double.Parse(massText, NumberStyles.Float, CultureInfo.InvariantCulture);
+            }
+            int massScaled = (int)Math.Round(massDa * 1E5);
+
+            int[] diagnosticIons = null;
+            if (!string.IsNullOrEmpty(ionsText))
+            {
+                diagnosticIons = ionsText.Split(',')
+                    .Select(p => (int)Math.Round(double.Parse(p.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture) * 1E5))
+                    .ToArray();
+            }
+            try
+            {
+                Glycan.RegisterCustomMonosaccharide(name, code, massScaled, diagnosticIons);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new MetaMorpheusException(
+                            $"Could not register custom monosaccharide: {ex.Message}",
+                            ex);
+            }
+
+            //registration already succeeded -- the sugar works this session no matter what happens
+            //persist to file so the monosaccharide is still recognized on the next launch
+            string line = string.Join("\t", name, code.ToString(), massDa.ToString(CultureInfo.InvariantCulture), ionsText, descriptionText);
+            string customMonosaccharidePath = Path.Combine(GlobalVariables.DataDir, @"Glycan_Mods", "MonosaccharidesCustom.tsv");
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(customMonosaccharidePath));
+                if (!File.Exists(customMonosaccharidePath))
+                {
+                    File.WriteAllLines(customMonosaccharidePath, new[] { "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription", line });
+                }
+                else
+                {
+                    // AppendAllLines never checks whether the file already ends in a newline --
+                    // if a hand-edited TSV's last byte isn't one (easy to end up with outside the
+                    // shipped file, which is exactly who this window is for), the new row gets
+                    // glued onto the end of the last existing line instead of starting its own.
+                    string existing = File.ReadAllText(customMonosaccharidePath);
+                    if(existing.Length > 0 && !existing.EndsWith("\n"))
+                    {
+                        File.AppendAllText(customMonosaccharidePath, Environment.NewLine);
+                    }
+                    File.AppendAllLines(customMonosaccharidePath, new[] { line });
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return $"The monosaccharide is available for this session, but could not be saved to file for future sessions: {ex.Message}";
             }
         }
 

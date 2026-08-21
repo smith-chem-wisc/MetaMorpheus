@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Add custom monosaccharide" Height="270" Width="380" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+        Title="Add custom monosaccharide" Height="320" Width="380" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <StackPanel Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5">
             <!-- Monosaccharide name -->
@@ -73,73 +73,75 @@
                 </TextBox>
             </StackPanel>
             <!-- Chemical formula / monoisotopic mass -->
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Chemical Formula" Width="175"></Label>
-                <Label Content="*" Foreground="Red" FontWeight="Bold"/>
-                <TextBox x:Name="chemicalFormulaTextBox" Width="155" Height="20">
-                    <ToolTipService.ToolTip>
-                        <ToolTip Content="Chemical formula of the residue (optional if monoisotopic mass is specified), example: 'C6H8O6'" />
-                    </ToolTipService.ToolTip>
-                    <TextBox.Style>
-                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
-                            <Style.Resources>
-                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
-                                    <VisualBrush.Visual>
-                                        <Label Content="ex: 'C6H8O6'" Foreground="Gray" />
-                                    </VisualBrush.Visual>
-                                </VisualBrush>
-                            </Style.Resources>
-                            <Style.Triggers>
-                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
-                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                </Trigger>
-                                <Trigger Property="Text" Value="{x:Null}">
-                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                </Trigger>
-                                <Trigger Property="IsKeyboardFocused" Value="True">
-                                    <Setter Property="Background" Value="White" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBox.Style>
-                </TextBox>
-            </StackPanel>
-
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Monoisotopic Mass" Width="175"></Label>
-                <Label Content="*" Foreground="Red" FontWeight="Bold"/>
-                <TextBox x:Name="massTextBox" Width="155" Height="20">
-                    <ToolTipService.ToolTip>
-                        <ToolTip Content="Residue monoisotopic mass in Da (optional, if chemical formula is specified), example: '176.03209'"/>
-                    </ToolTipService.ToolTip>
-                    <TextBox.Style>
-                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
-                            <Style.Resources>
-                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
-                                    <VisualBrush.Visual>
-                                        <Label Content="ex: '176.03209'" Foreground="Gray" />
-                                    </VisualBrush.Visual>
-                                </VisualBrush>
-                            </Style.Resources>
-                            <Style.Triggers>
-                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
-                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                </Trigger>
-                                <Trigger Property="Text" Value="{x:Null}">
-                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                </Trigger>
-                                <Trigger Property="IsKeyboardFocused" Value="True">
-                                    <Setter Property="Background" Value="White" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBox.Style>
-                </TextBox>
+            <StackPanel Orientation="Vertical" Background="LightGray" Width="350">
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Chemical Formula" Width="190"></Label>
+                    <TextBox x:Name="chemicalFormulaTextBox" Width="155" Height="20">
+                        <ToolTipService.ToolTip>
+                            <ToolTip Content="Chemical formula of the residue (optional if monoisotopic mass is specified), example: 'C6H8O6' . Takes precedence over Monoisotopic Mass if both are given." />
+                        </ToolTipService.ToolTip>
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                <Style.Resources>
+                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                        <VisualBrush.Visual>
+                                            <Label Content="ex: 'C6H8O6'" Foreground="Gray" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="Text" Value="{x:Null}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter Property="Background" Value="White" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="and/or" Height="20" FontSize="9" Width="175"/>
+                    <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Monoisotopic Mass" Width="190"></Label>
+                    <TextBox x:Name="massTextBox" Width="155" Height="20">
+                        <ToolTipService.ToolTip>
+                            <ToolTip Content="Residue monoisotopic mass in Da (optional, if chemical formula is specified), example: '176.03209'"/>
+                        </ToolTipService.ToolTip>
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                <Style.Resources>
+                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                        <VisualBrush.Visual>
+                                            <Label Content="ex: '176.03209'" Foreground="Gray" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="Text" Value="{x:Null}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter Property="Background" Value="White" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </StackPanel>
             </StackPanel>
             <!--Diagnostic ions-->
             <StackPanel Orientation="Horizontal" Margin="2">
-                <Label Content="Diagnostic Ions (m/z)" Width="175"></Label>
-                <Label Content="*" Foreground="Red" FontWeight="Bold"/>
+                <Label Content="Diagnostic Ions (m/z)" Width="190"></Label>
                 <TextBox x:Name="diagnosticIonsTextBox" Width="155" Height="20">
                     <ToolTipService.ToolTip>
                         <ToolTip Content="Diagnostic ions (optional, separate with ','), the m/z you expect to observe, example: '175.02482,157.01425'"/>
@@ -170,18 +172,40 @@
             </StackPanel>
             <!--Description-->
             <StackPanel Orientation="Horizontal" Margin="2">
-                <Label Content="Description" Width="175" HorizontalAlignment="Center" FontSize="10"></Label>
+                <Label Content="Description" Width="190" FontSize="10"></Label>
                 <TextBox Name="descriptionTextBox" Width="155" Height="20">
                     <ToolTipService.ToolTip>
                         <ToolTip Content="Free text for human readers (optional), e.g. source or formula note"/>
                     </ToolTipService.ToolTip>
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                            <Style.Resources>
+                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                    <VisualBrush.Visual>
+                                        <Label Content="source or formula note" Foreground="Gray" />
+                                    </VisualBrush.Visual>
+                                </VisualBrush>
+                            </Style.Resources>
+                            <Style.Triggers>
+                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="Text" Value="{x:Null}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter Property="Background" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
                 </TextBox>
             </StackPanel>
-            <!--Save and cancel buttons-->
-            <StackPanel Orientation="Horizontal" Height="35" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="15">
-                <Button Name="saveButton" Content="Save Monosaccharide" FontSize="13" Margin="5" Width="140" Click="SaveCustomMonosaccharide_Click"/>
-                <Button Name="cancelButton" Content="Cancel" FontSize="13" Margin="5" Width="100" Click="CancelCustomMonosaccharide_Click"/>
-            </StackPanel>
+        </StackPanel>
+        <!--Save and cancel buttons-->
+        <StackPanel Orientation="Horizontal" Height="35" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+            <Button Name="saveButton" Content="Save Monosaccharide" FontSize="13" Margin="5" Width="140" Click="SaveCustomMonosaccharide_Click"/>
+            <Button Name="cancelButton" Content="Cancel" FontSize="13" Margin="5" Width="100" Click="CancelCustomMonosaccharide_Click"/>
         </StackPanel>
     </Grid>
 </Window>
