@@ -260,133 +260,21 @@ namespace MetaMorpheusCommandLine
             List<string> startingRawFilenameList = settings.Spectra.Select(b => Path.GetFullPath(b)).ToList();
             List<DbForTask> startingXmlDbFilenameList = settings.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
 
-            // check that experimental or TMT experimental design is defined if normalization is enabled
+            // check that an experimental design is defined if normalization is enabled
             var searchTasks = taskList
                 .Where(p => p.Item2.TaskType == MyTask.Search)
                 .Select(p => (SearchTask)p.Item2);
 
-            string designDirectory = Directory.GetParent(startingRawFilenameList.First()).FullName;
-            string pathToExperDesign = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName); // existing experimental design
-            string pathToTmtDesign = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName); // fixed TMT filename
+            int designExitCode = ResolveExperimentalDesign(
+                Directory.GetParent(startingRawFilenameList.First()).FullName,
+                startingRawFilenameList,
+                searchTasks.Any(p => p.SearchParameters.Normalize),
+                settings.Verbosity == CommandLineSettings.VerbosityType.minimal
+                    || settings.Verbosity == CommandLineSettings.VerbosityType.normal);
 
-            bool hasClassicDesign = File.Exists(pathToExperDesign);
-            bool hasTmtDesign = File.Exists(pathToTmtDesign);
-
-            // Mutual exclusivity check
-            if (hasClassicDesign && hasTmtDesign)
+            if (designExitCode != 0)
             {
-                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                {
-                    Console.WriteLine("Both ExperimentalDesign and TmtDesign.txt were found. Only one design file type may be present.");
-                }
-                return 5;
-            }
-
-            if (!hasClassicDesign && !hasTmtDesign)
-            {
-                // no design at all
-                if (searchTasks.Any(p => p.SearchParameters.Normalize))
-                {
-                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                    {
-                        Console.WriteLine("No experimental design file present. Normalization requires a design (ExperimentalDesign.tsv or TmtDesign.txt).");
-                    }
-                    return 5;
-                }
-            }
-            else if (hasClassicDesign)
-            {
-                // Original experimental design handling
-                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, startingRawFilenameList, out var errors);
-
-                if (errors.Any())
-                {
-                    if (searchTasks.Any(p => p.SearchParameters.Normalize))
-                    {
-                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                        {
-                            foreach (var error in errors)
-                            {
-                                Console.WriteLine(error);
-                            }
-                        }
-                        return 5;
-                    }
-                    else
-                    {
-                        // offer deletion (mirror existing logic)
-                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                        {
-                            Console.WriteLine("An experimental design file was found, but an error occurred reading it. Delete and continue empty? y/n");
-                            Console.WriteLine("First error: " + errors.First());
-                            var result = Console.ReadLine();
-                            if (result?.ToLowerInvariant() == "y" || result?.ToLowerInvariant() == "yes")
-                            {
-                                File.Delete(pathToExperDesign);
-                            }
-                            else
-                            {
-                                return 5;
-                            }
-                        }
-                        else
-                        {
-                            File.Delete(pathToExperDesign);
-                        }
-                    }
-                }
-                else
-                {
-                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                    {
-                        Console.WriteLine("Read ExperimentalDesign.tsv successfully");
-                    }
-                }
-            }
-            else if (hasTmtDesign)
-            {
-                // TMT experimental design handling
-                var tmtFiles = TmtExperimentalDesign.Read(pathToTmtDesign, startingRawFilenameList, out var tmtErrors);
-
-                if (tmtErrors.Any())
-                {
-                    if (searchTasks.Any(p => p.SearchParameters.Normalize))
-                    {
-                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                        {
-                            foreach (var error in tmtErrors)
-                                Console.WriteLine(error);
-                        }
-                        return 5;
-                    }
-                    else
-                    {
-                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                        {
-                            Console.WriteLine("A TMT design file was found, but an error occurred reading it. Delete and continue empty? y/n");
-                            Console.WriteLine("First error: " + tmtErrors.First());
-                            var result = Console.ReadLine();
-                            if (result?.ToLowerInvariant() == "y" || result?.ToLowerInvariant() == "yes")
-                            {
-                                File.Delete(pathToTmtDesign);
-                            }
-                            else
-                            {
-                                return 5;
-                            }
-                        }
-                        else
-                        {
-                            File.Delete(pathToTmtDesign);
-                        }
-                    }
-                }
-                else
-                {
-                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                        Console.WriteLine("Read TmtDesign.txt successfully");
-                    // tmtFiles now carries annotations with each file if needed downstream
-                }
+                return designExitCode;
             }
 
             EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
@@ -412,6 +300,124 @@ namespace MetaMorpheusCommandLine
             }
 
             return errorCode;
+        }
+
+        /// <summary>
+        /// Works out which experimental design this run will use, reports whatever is wrong with it,
+        /// and returns the process exit code: 0 to carry on, 5 to stop.
+        ///
+        /// Static, and parameterised over its console I/O, so the decision can be tested without
+        /// driving a whole command line run. These branches decide whether a search starts at all,
+        /// and before this they were reachable only by launching the CLI against real spectra.
+        /// </summary>
+        /// <param name="designDirectory">The folder beside the spectra files, where a design lives.</param>
+        /// <param name="startingRawFilenameList">Full paths of the spectra files this run will search.</param>
+        /// <param name="normalizationRequested">True when any search task asks for normalization, which is what makes a design mandatory rather than optional.</param>
+        /// <param name="reportToConsole">True at minimal or normal verbosity. At "none" there is nobody to ask, so a recoverable problem is recovered from silently.</param>
+        /// <param name="write">Console writer; defaults to <see cref="Console.WriteLine(string)"/>.</param>
+        /// <param name="readLine">Console reader; defaults to <see cref="Console.ReadLine"/>.</param>
+        public static int ResolveExperimentalDesign(
+            string designDirectory,
+            List<string> startingRawFilenameList,
+            bool normalizationRequested,
+            bool reportToConsole,
+            Action<string> write = null,
+            Func<string> readLine = null)
+        {
+            write ??= Console.WriteLine;
+            readLine ??= Console.ReadLine;
+
+            string pathToExperDesign = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
+            string pathToTmtDesign = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+
+            bool hasClassicDesign = File.Exists(pathToExperDesign);
+            bool hasTmtDesign = File.Exists(pathToTmtDesign);
+
+            // Only one may be present. Two files carrying replicate structure can drift apart, and
+            // nothing here could say which of them the user meant.
+            if (hasClassicDesign && hasTmtDesign)
+            {
+                if (reportToConsole)
+                {
+                    write("Both ExperimentalDesign and TmtDesign.txt were found. Only one design file type may be present.");
+                }
+
+                return 5;
+            }
+
+            if (!hasClassicDesign && !hasTmtDesign)
+            {
+                // A design is optional until something needs it. Normalization is that something.
+                if (normalizationRequested)
+                {
+                    if (reportToConsole)
+                    {
+                        write("No experimental design file present. Normalization requires a design (ExperimentalDesign.tsv or TmtDesign.txt).");
+                    }
+
+                    return 5;
+                }
+
+                return 0;
+            }
+
+            string designPath = hasClassicDesign ? pathToExperDesign : pathToTmtDesign;
+            List<string> errors;
+
+            if (hasClassicDesign)
+            {
+                ExperimentalDesign.ReadExperimentalDesign(designPath, startingRawFilenameList, out errors);
+            }
+            else
+            {
+                TmtExperimentalDesign.Read(designPath, startingRawFilenameList, out errors);
+            }
+
+            if (!errors.Any())
+            {
+                if (reportToConsole)
+                {
+                    write("Read " + Path.GetFileName(designPath) + " successfully");
+                }
+
+                return 0;
+            }
+
+            // Normalizing against a design that could not be read would silently produce different
+            // numbers, so this is the one case that cannot be recovered from.
+            if (normalizationRequested)
+            {
+                if (reportToConsole)
+                {
+                    foreach (string error in errors)
+                    {
+                        write(error);
+                    }
+                }
+
+                return 5;
+            }
+
+            // Otherwise the run can continue without a design -- but only by discarding the one that
+            // is there, which is the user's call whenever there is a user to ask.
+            if (!reportToConsole)
+            {
+                File.Delete(designPath);
+                return 0;
+            }
+
+            write((hasClassicDesign ? "An experimental design file" : "A TMT design file")
+                + " was found, but an error occurred reading it. Delete and continue empty? y/n");
+            write("First error: " + errors.First());
+
+            string answer = readLine();
+            if (answer?.ToLowerInvariant() == "y" || answer?.ToLowerInvariant() == "yes")
+            {
+                File.Delete(designPath);
+                return 0;
+            }
+
+            return 5;
         }
 
         private static void WriteMultiLineIndented(string toWrite)
