@@ -144,26 +144,51 @@ namespace EngineLayer
             }
         }
 
+        /// <summary>
+        /// Registers a custom monosaccharide in memory (via Glycan.RegisterCustomMonosaccharide) and
+        /// persists it to MonosaccharidesCustom.tsv, in the exact format LoadCustomMonosaccharides
+        /// reads -- column order, header row, invariant-culture decimal formatting all live here so
+        /// the two can't drift apart.
+        ///
+        /// Return contract: throws MetaMorpheusException if the input is invalid or registration
+        /// itself fails -- nothing happened, treat this as a hard failure. Returns null if
+        /// registration AND the file write both succeeded. 
+        /// Returns a non-null, user-facing warning
+        /// if registration succeeded but the file write failed -- the monosaccharide is already
+        /// usable for the current session even though it wasn't persisted for the next one.
+        /// </summary>
         public static string PersistCustomMonosaccharide(string name, string codeText, string formulaText, string massText, string ionsText, string descriptionText) 
         {
-            char code = codeText[0];
-            double massDa;
-            if (!string.IsNullOrEmpty(formulaText))
+            if (string.IsNullOrEmpty(codeText) || codeText.Length != 1) 
             {
-                massDa = Chemistry.ChemicalFormula.ParseFormula(formulaText).MonoisotopicMass;
+                throw new MetaMorpheusException(
+                    $"Could not persist custom monosaccharide: SingleCharCode must be exactly one character, got \"{codeText}\".");
             }
-            else
+            char code = codeText[0];
+
+            double massDa = !string.IsNullOrEmpty(formulaText) ? Chemistry.ChemicalFormula.ParseFormula(formulaText).MonoisotopicMass
+                            : double.Parse(massText, NumberStyles.Float, CultureInfo.InvariantCulture);
+
+            if (massDa <= 0 || massDa > 20000)
             {
-                massDa = double.Parse(massText, NumberStyles.Float, CultureInfo.InvariantCulture);
+                throw new MetaMorpheusException(
+                    $"Could not persist custom monosaccharide: MonoisotopicMass must be a positive number below 20000 Da, got {massDa}.");
             }
             int massScaled = (int)Math.Round(massDa * 1E5);
 
             int[] diagnosticIons = null;
             if (!string.IsNullOrEmpty(ionsText))
             {
-                diagnosticIons = ionsText.Split(',')
-                    .Select(p => (int)Math.Round(double.Parse(p.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture) * 1E5))
-                    .ToArray();
+                var parsedIons = ionsText.Split(',').Select(p => double.Parse(p.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture)).ToArray();
+                foreach (double ionDa in parsedIons)
+                {
+                    if (ionDa <= 0 || ionDa > 20000)
+                    {
+                        throw new MetaMorpheusException(
+                            $"Could not persist custom monosaccharide: DiagnosticIonMasses entry {ionDa} must be a positive number below 20000 Da.");
+                    }
+                }
+                diagnosticIons = parsedIons.Select(ionDa => (int)Math.Round(ionDa * 1E5)).ToArray();
             }
             try
             {
@@ -171,9 +196,7 @@ namespace EngineLayer
             }
             catch (ArgumentException ex)
             {
-                throw new MetaMorpheusException(
-                            $"Could not register custom monosaccharide: {ex.Message}",
-                            ex);
+                throw new MetaMorpheusException($"Could not register custom monosaccharide: {ex.Message}", ex);
             }
 
             //registration already succeeded -- the sugar works this session no matter what happens

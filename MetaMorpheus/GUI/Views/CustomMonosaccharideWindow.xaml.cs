@@ -1,9 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer;
-using EngineLayer.GlycoSearch;
 using System;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Windows;
 
@@ -98,6 +96,12 @@ namespace MetaMorpheusGUI
             {
                 try { formulaMassDa = ChemicalFormula.ParseFormula(formula).MonoisotopicMass; }
                 catch { MessageBox.Show("Could not parse chemical formula", "Error", MessageBoxButton.OK, MessageBoxImage.Hand); return true; }
+
+                if (formulaMassDa <= 0 || formulaMassDa > 20000)
+                {
+                    MessageBox.Show("The chemical formula's mass must be a positive number below 20000 Da", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                    return true;
+                }
             }
 
             double? typedMassDa = null;
@@ -127,19 +131,26 @@ namespace MetaMorpheusGUI
             }
 
 
-            if (!string.IsNullOrWhiteSpace(ions)) 
+            if (!string.IsNullOrWhiteSpace(ions))
             {
-                try 
+                double[] parsedIons;
+                try
                 {
-                    ions.Split(',').Select(p => double.Parse(p.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture)).ToList();
+                    parsedIons = ions.Split(',').Select(p => double.Parse(p.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture)).ToArray();
                 }
-                catch 
+                catch
                 {
                     MessageBox.Show("Diagnostic ions must be entered as numbers separated by ','", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                     return true;
                 }
+
+                if (parsedIons.Any(ionDa => ionDa <= 0 || ionDa > 20000))
+                {
+                    MessageBox.Show("Diagnostic ions must be positive numbers below 20000 Da", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                    return true;
+                }
             }
-            
+
             return false;
         }
     }
