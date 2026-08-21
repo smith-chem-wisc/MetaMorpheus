@@ -473,12 +473,6 @@ namespace MetaMorpheusGUI
             DialogResult = true;
         }
 
-        private void BuildGlycanDatabase_Click(object sender, RoutedEventArgs e)
-        {
-            // Todo: Part 2
-            // The glycan database designer is coming soon.
-        }
-
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
             DataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
