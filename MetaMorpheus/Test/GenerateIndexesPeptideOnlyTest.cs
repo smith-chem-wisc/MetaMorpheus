@@ -113,8 +113,13 @@ namespace Test
                 Assert.That(peptideIndex, Is.Not.Null);
                 Assert.That(peptideIndex, Is.Not.Empty);
                 Assert.That(precursorIndex, Is.Not.Null, "the precursor index was requested, so it must come back");
-                Assert.That(precursorIndex.Any(bin => bin != null && bin.Count > 0),
-                    "the rebuilt precursor index should have at least one populated bin");
+
+                // A precursor index files each peptide once, in the bin for its own mass. Asserting only
+                // that some bin is populated would be satisfied by any index at all -- the fragment index
+                // included, which repeats peptide ids across every one of their fragment bins.
+                var indexedPeptides = precursorIndex.Where(bin => bin != null).SelectMany(bin => bin).ToList();
+                Assert.That(indexedPeptides.OrderBy(i => i), Is.EqualTo(Enumerable.Range(0, peptideIndex.Count)),
+                    "every peptide should appear exactly once in the precursor index");
             });
         }
 
