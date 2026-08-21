@@ -19,6 +19,7 @@ using TopDownProteomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 using System.Security.Cryptography;
+using Omics.Modifications.IO;
 
 namespace EngineLayer
 {

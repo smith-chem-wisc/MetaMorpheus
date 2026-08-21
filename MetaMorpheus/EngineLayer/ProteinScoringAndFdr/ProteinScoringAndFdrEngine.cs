@@ -174,9 +174,13 @@ namespace EngineLayer
                     }
                 }
 
-                pg.BestPeptideScore = pg.AllPsmsBelowOnePercentFDR.Max(psm => psm.Score);
-                pg.BestPeptideQValue = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.QValueNotch);
-                pg.BestPeptidePEP = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.PEP);
+                // Downcast once and reuse so Score, QValueNotch, and PEP are all computed over the
+                // identical PSM population. Cast (not OfType) so an unexpected ISpectralMatch impl
+                // throws loudly instead of being silently dropped from the QValue/PEP minimums.
+                var bestPeptidePsms = pg.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>().ToList();
+                pg.BestPeptideScore = bestPeptidePsms.Max(psm => psm.Score);
+                pg.BestPeptideQValue = bestPeptidePsms.Min(psm => psm.FdrInfo.QValueNotch);
+                pg.BestPeptidePEP = bestPeptidePsms.Min(psm => psm.FdrInfo.PEP);
             }
 
             // pick the best for each paired accession based on filter type
