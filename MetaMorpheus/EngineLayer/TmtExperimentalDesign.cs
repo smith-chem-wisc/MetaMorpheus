@@ -1,4 +1,4 @@
-using FlashLFQ;
+﻿using FlashLFQ;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -262,19 +262,20 @@ namespace EngineLayer
         public int Fraction { get; }             // 1-based
         public int TechnicalReplicate { get; }   // 1-based
         public IReadOnlyList<TmtPlexAnnotation> Annotations { get; } // All tags for this file's plex
+        /// <summary>
+        /// Identity is the file path, compared the way <see cref="TmtExperimentalDesign.Read"/>
+        /// compares it -- case-insensitively, because that is how the design file keys files.
+        /// </summary>
         public override bool Equals(object obj)
         {
-            if (base.Equals(obj))
-            {
-                return ((TmtFileInfo)obj).FullFilePathWithExtension.Equals(FullFilePathWithExtension);
-            }
-
-            return false;
+            return obj is TmtFileInfo other
+                && string.Equals(FullFilePathWithExtension, other.FullFilePathWithExtension,
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         public override int GetHashCode()
         {
-            return FullFilePathWithExtension.GetHashCode();
+            return StringComparer.OrdinalIgnoreCase.GetHashCode(FullFilePathWithExtension ?? string.Empty);
         }
 
         public override string ToString()
