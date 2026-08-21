@@ -6,23 +6,17 @@
     <Version>1.0.0.0</Version>
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    <!-- Mods\ and Data\ modification files ship from the mzLib package; see build\mzLib.targets there. -->
+    <MzLibIncludeModificationData>true</MzLibIncludeModificationData>
   </PropertyGroup>
 
   <!-- Left architecture-neutral (no PlatformTarget) so the CLI can run on arm64; see CMD.csproj. -->
 
   <ItemGroup>
-    <None Remove="Mods\RnaMods.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Mods\RnaMods.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
-    <PackageReference Include="mzLib" Version="1.0.585" />
+    <PackageReference Include="mzLib" Version="1.0.586" />
     <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="SQLite.Interop.dll" Version="1.0.103" />
@@ -40,15 +34,6 @@
     <None Update="Data\Crosslinkers.tsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Data\elements.dat">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Data\PSI-MOD.obo.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Data\ptmlist.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Data\rnaCombos.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -56,9 +41,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\SmallYeast.fasta">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Data\unimod.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Glycan_Mods\MonosaccharidesCustom.tsv">
@@ -92,21 +74,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Mods\Glyco.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Mods\Mods.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Mods\ProteaseMods.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Mods\substitutions.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Mods\Surfactants.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Mods\Tmt.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Proteomes\availableUniProtProteomes.txt.gz">
