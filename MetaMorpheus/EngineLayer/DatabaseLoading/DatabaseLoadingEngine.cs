@@ -23,14 +23,18 @@ public class DatabaseLoadingEngine(
     string taskId,
     DecoyType decoyType,
     bool generateTargets = true,
-    List<string> localizableMods = null,
-    TargetContaminantAmbiguity tcAmbiguity = TargetContaminantAmbiguity.RemoveContaminant)
+    List<string>? localizableMods = null,
+    TargetContaminantAmbiguity tcAmbiguity = TargetContaminantAmbiguity.RemoveContaminant,
+    bool writeTargetDecoyFasta = false,
+    string? outputFolder = null)
     : MetaMorpheusEngine(commonParameters, fileSpecificParameters, nestedIds)
 {
-    private static readonly ListPool<string> _sequencePool = new();
+    private static readonly ListPool<string> SequencePool = new();
 
     public string TaskId { get; } = taskId;
     public bool GenerateTargets { get; } = generateTargets;
+    public bool WriteTargetDecoyFasta { get; } = writeTargetDecoyFasta;
+    public string? OutputFolder { get; } = outputFolder;
     public DecoyType DecoyType { get; } = decoyType;
     public TargetContaminantAmbiguity TcAmbiguity { get; } = tcAmbiguity;
     public List<string> LocalizableMods { get; } = localizableMods ?? [];
@@ -54,6 +58,22 @@ public class DatabaseLoadingEngine(
         (removed, renamed) = SanitizeBioPolymerDatabase(bioPolymers, TcAmbiguity, out errors);
         foreach (var error in errors)
             Warn(error);
+
+        if (WriteTargetDecoyFasta && OutputFolder != null)
+        {
+            string outPath = Path.Combine(OutputFolder, "TargetDecoy.fasta");
+            try
+            {
+                if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+                    ProteinDbWriter.WriteFastaDatabase(bioPolymers.Cast<RNA>().ToList(), outPath);
+                else
+                    ProteinDbWriter.WriteFastaDatabase(bioPolymers.Cast<Protein>().ToList(), outPath, " ");
+            }
+            catch (Exception e)
+            {
+                Warn($"Failed to write target-decoy FASTA: " + e.Message);
+            }
+        }
 
         Status($"Done loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s");
         var results = new DatabaseLoadingEngineResults(this, DbForTask, bioPolymers, removed, renamed, scrambled);
@@ -292,7 +312,7 @@ public class DatabaseLoadingEngine(
             {
                 if (targetPeptideSequences.Contains(peptide.BaseSequence))
                 {
-                    peptidesToReplace ??= _sequencePool.Get();
+                    peptidesToReplace ??= SequencePool.Get();
                     peptidesToReplace.Add(peptide.BaseSequence);
                 }
             }
@@ -304,7 +324,7 @@ public class DatabaseLoadingEngine(
                     digestionParams,
                     forbiddenSequences: targetPeptideSequences,
                     peptidesToReplace);
-                _sequencePool.Return(peptidesToReplace);
+                SequencePool.Return(peptidesToReplace);
                 scrambled++;
             }
         }

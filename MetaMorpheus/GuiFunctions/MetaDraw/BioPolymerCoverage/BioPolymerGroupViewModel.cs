@@ -10,19 +10,21 @@ public class BioPolymerGroupViewModel : BaseViewModel
     public string Accession { get; }
     public string ProteinName { get; }
     public string Sequence { get; }
+    public string DatabaseName { get; }
     public int Length => Sequence.Length;
     public int GroupCount { get; private set; }
     public double UniqueSequenceCoverage { get; private set; }
     public double MaximumSequenceCoverage { get; private set; }
     public ObservableCollection<BioPolymerCoverageResultModel> CoverageResults { get; }
 
-    public BioPolymerGroupViewModel(string accession, string proteinName, string sequence, IEnumerable<BioPolymerCoverageResultModel> results)
+    public BioPolymerGroupViewModel(string accession, string proteinName, string sequence, IEnumerable<BioPolymerCoverageResultModel> results, string? databaseName = null)
     {
         Accession = accession;
         ProteinName = proteinName;
         Sequence = sequence;
         CoverageResults = new(results);
         UpdatePropertiesAfterFilter();
+        DatabaseName = databaseName ?? string.Empty;
     }
 
     public void UpdatePropertiesAfterFilter()

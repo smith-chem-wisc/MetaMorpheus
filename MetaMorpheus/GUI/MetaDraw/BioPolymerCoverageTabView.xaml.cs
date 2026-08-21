@@ -31,20 +31,28 @@ public partial class BioPolymerCoverageTabView : UserControl
             Filter = "Database Files(" + filterString + ")|" + filterString,
             FilterIndex = 1,
             RestoreDirectory = true,
-            Multiselect = false
+            Multiselect = true
         };
 
         if (openFileDialog1.ShowDialog() == true)
         {
-            var toAdd = openFileDialog1.FileName;
-            if (GlobalVariables.AcceptedDatabaseFormats.Contains(GlobalVariables.GetFileExtension(toAdd).ToLowerInvariant()))
+            foreach (var filePath in openFileDialog1.FileNames)
             {
-                dataContext.DatabasePath = toAdd;
+                if (GlobalVariables.AcceptedDatabaseFormats.Contains(GlobalVariables.GetFileExtension(filePath).ToLowerInvariant()))
+                {
+                    if (!dataContext.DatabasePaths.Contains(filePath))
+                    {
+                        dataContext.DatabasePaths.Add(filePath);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Cannot read file type: " + GlobalVariables.GetFileExtension(filePath).ToLowerInvariant());
+                }
             }
-            else
-            {
-                MessageBox.Show("Cannot read file type: " + GlobalVariables.GetFileExtension(toAdd).ToLowerInvariant());
-            }
+            
+            dataContext.OnPropertyChanged(nameof(dataContext.DatabaseName));
+            dataContext.OnPropertyChanged(nameof(dataContext.DatabasePathsTooltip));
         }
     }
 

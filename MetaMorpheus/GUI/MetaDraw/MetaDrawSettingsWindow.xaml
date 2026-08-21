@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaMorpheusGUI.MetaDrawSettingsWindow"
+<Window x:Class="MetaMorpheusGUI.MetaDrawSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI" 
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
-        Title="Graphical Settings" Width="620" SizeToContent="Height" WindowStartupLocation="CenterScreen"
+        Title="Graphical Settings" Width="640" SizeToContent="Height" WindowStartupLocation="CenterScreen"
         Height="500" MaxHeight="700"
         d:DataContext="{x:Static guiFunctions:MetaDrawSettingsViewModel.Instance}">
 
@@ -30,7 +30,7 @@
                 <!-- main settings content -->
                 <Grid >
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
@@ -99,7 +99,7 @@
                         HorizontalAlignment="Center"
                         Background="Transparent"
                         Width="2"
-                        Margin="20,0,0,0"/>
+                        Margin="5, 0"/>
 
                     <!-- right column -->
                     <ScrollViewer Grid.Column="2" HorizontalAlignment="Stretch">
@@ -111,6 +111,8 @@
 
                                     <Grid Margin="15 0 0 0">
                                         <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
                                             <RowDefinition Height="*"/>
                                             <RowDefinition Height="*"/>
                                             <RowDefinition Height="*"/>
@@ -133,7 +135,28 @@
                                           Name="ShowInternalIonsCheckBox" Content="Show internal ions" Margin="5" />
                                 <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIonAnnotations}"
                                           Name="ShowInternalIonAnnotationsCheckBox" Content="Display internal ion annotations" Margin="5" />
+                                <CheckBox Grid.Column="0" Grid.Row="5" IsChecked="{Binding AnnotateIsotopicEnvelopes}"
+                                          Name="IsotopicEnvelopeCheckBox" Content="Annotate isotopic envelopes" Margin="5" />
 
+                                        <Grid  Grid.Column="0" Grid.Row="6" Margin="-5 0 0 0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Content="Min m/z:" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                            <local:DoubleTextBoxControl x:Name="MinMzBox" Grid.Column="1"  Width="60" Height="24"
+                                                                        Text="{Binding MinMzToPlot}" LowerBound="0"
+                                                                        VerticalContentAlignment="Center"
+                                                                        HorizontalContentAlignment="Center" />
+                                            <Label Content="Max m/z:" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                            <local:DoubleTextBoxControl x:Name="MaxMzBox" Grid.Column="3" Width="60" Height="24"
+                                                                        Text="{Binding MaxMzToPlot}" LowerBound="0"
+                                                                        VerticalContentAlignment="Center"
+                                                                        HorizontalContentAlignment="Center" />
+                                        </Grid>
+                                        
                                     </Grid>
 
                             <Expander Header="Advanced Ion Annotations" DockPanel.Dock="Top" Margin="10 5 5 5">
@@ -143,8 +166,11 @@
                                     <CheckBox Name="SubSuperScriptedIonAnnotations"
                                               IsChecked="{Binding SubAndSuperScriptIons}"
                                               Content="Sub/superscripted ion annotations" Margin="5" />
+                                            <CheckBox Name="UseShortIonAnnotationsWhenPossible"
+                                              IsChecked="{Binding UseShortIonAnnotationsWhenPossible}"
+                                              Content="Use short ion names (bWaterLoss -> b-H2O)" Margin="5" />
 
-                                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                                            <StackPanel Orientation="Horizontal" Margin="5 0">
                                         <Label Content="Annotation text size:" Width="165" />
                                         <local:IntegerTexBoxControl x:Name="TextSizeBox" Width="80" Height="24"
                                                                     Text="{Binding AnnotatedFontSize}"
@@ -201,19 +227,33 @@
                                         <local:DoubleTextBoxControl x:Name ="SpectrumDescriptionFontSizeBox" Width="80" Height="24" 
                                                                     VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                     </StackPanel>
-                                    <ItemsControl ItemsSource="{Binding SpectrumDescriptors}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <CheckBox Margin="3"
-                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                          Content="{Binding DisplayName}">
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock Text="{Binding DisplayName, Converter={StaticResource SpectrumDescriptorToolTipConverter}}"/>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                    <Grid Margin="0 3 0 0">
+                                        <ItemsControl Grid.Column="0" ItemsSource="{Binding SpectrumDescriptors}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <CheckBox Margin="3"
+                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                              Content="{Binding DisplayName}">
+                                                        <CheckBox.ToolTip>
+                                                            <TextBlock Text="{Binding DisplayName, Converter={StaticResource SpectrumDescriptorToolTipConverter}}"/>
+                                                        </CheckBox.ToolTip>
+                                                    </CheckBox>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <StackPanel Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                            <Button Content="Select All"
+                                                    Width="90"
+                                                    Margin="0 0 0 5"
+                                                    Command="{Binding SelectAllSpectrumDescriptorsCommand}"
+                                                    Style="{StaticResource MetaDrawButtonStyle}"/>
+                                            <Button Content="Deselect All"
+                                                    Width="90"
+                                                    Command="{Binding DeselectAllSpectrumDescriptorsCommand}"
+                                                    Style="{StaticResource MetaDrawButtonStyle}"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
 
                             </Expander>
@@ -384,6 +424,7 @@
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
                                 <RowDefinition Height="30"/>
+                                <RowDefinition Height="30"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -401,12 +442,32 @@
                                           Content="Show internal ions" Margin="5" />
                             <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIonAnnotations}"
                                           Content="Display internal ion annotations" Margin="5" />
-
-                            <CheckBox Content="Bold ion annotations"  Margin="7 5"  Grid.Column="1" Grid.Row="0" 
+                            <CheckBox Grid.Column="0" Grid.Row="5" IsChecked="{Binding AnnotateIsotopicEnvelopes}"
+                                          Content="Annotate isotopic envelopes" Margin="5" />
+                            <Grid  Grid.Column="0" Grid.Row="6" Margin="-10 0 10 0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Content="Min m/z:" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                <local:DoubleTextBoxControl x:Name="MinMzBox2" Grid.Column="1"  Width="60" Height="24"
+                                            Text="{Binding MinMzToPlot}" LowerBound="0"
+                                            VerticalContentAlignment="Center"
+                                            HorizontalContentAlignment="Center" />
+                                <Label Content="Max m/z:" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                <local:DoubleTextBoxControl x:Name="MaxMzBox2" Grid.Column="3" Width="60" Height="24"
+                                            Text="{Binding MaxMzToPlot}" LowerBound="0"
+                                            VerticalContentAlignment="Center"
+                                            HorizontalContentAlignment="Center" />
+                            </Grid>
+                            
+                            <CheckBox Content="Bold ion annotations"  Margin="7 5"  Grid.Column="1" Grid.Row="0"
                                           IsChecked="{Binding AnnotationBold}" />
                             <CheckBox IsChecked="{Binding SubAndSuperScriptIons}" Grid.Column="1" Grid.Row="1" 
                                           Content="Sub/superscripted ion annotations"  Margin="7 5"  />
-
+                            
                             <StackPanel Orientation="Horizontal" Margin="5 0"
                                             Grid.Column="1" Grid.Row="2" >
                                 <Label Content="Annotation text size:" Width="165" />
@@ -726,6 +787,10 @@
                                                             VerticalContentAlignment="Center"
                                                             HorizontalContentAlignment="Center"
                                                             Text="{Binding BioPolymerCoverageFontSize}"/>
+                                <Label Content="Gradient: " Width="80" Margin="15 0 0 0" VerticalAlignment="Center" />
+                                <ComboBox Width="100" Height="24" Margin="5 0 0 0"
+                                          ItemsSource="{Binding BioPolymerCoverageGradientTypes}"
+                                          SelectedItem="{Binding BioPolymerCoverageGradientType}" />
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>

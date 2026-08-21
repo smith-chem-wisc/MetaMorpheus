@@ -55,7 +55,6 @@ namespace EngineLayer.GlycoSearch
             this.OxoniumIonFilter = oxoniumIonFilter;
             this._oglycanDatabase = oglycanDatabase;
             this._nglycanDatabase = nglycanDatabase;
-
             SecondFragmentIndex = secondFragmentIndex;
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
             ProductSearchMode = new SinglePpmAroundZeroSearchMode(20); //For Oxonium ion only
@@ -306,11 +305,14 @@ namespace EngineLayer.GlycoSearch
 
             var fragmentsForEachGlycoPeptide = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.DissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
 
-            // if the peptide contains N-glycan, we need to add the Y ion from N-glycan.
-            if (peptideWithMod.AllModsOneIsNterminus.Any(p=>p.Value.ModificationType == "N-linked glycosylation"))
+            // Only Glycan-typed N-linked mods with generated Y ions contribute Y ions here.
+            // Non-Glycan annotations (DB/GPTMD) and mod-loaded glycans without ions are intentionally
+            // excluded; correct N-glycan ID is the NO-search's job.
+            var nGlycan = peptideWithMod.AllModsOneIsNterminus.Values
+                .OfType<Glycan>()
+                .FirstOrDefault(g => g.Type == GlycanType.N_glycan && g.HasIons);
+            if (nGlycan != null)
             {
-                Glycan nGlycan = peptideWithMod.AllModsOneIsNterminus.First(p =>
-                    p.Value.ModificationType == "N-linked glycosylation").Value as Glycan;
                 fragmentsForEachGlycoPeptide.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, nGlycan));
             }
 
@@ -333,8 +335,8 @@ namespace EngineLayer.GlycoSearch
             foreach (var childScan in theScan.ChildScans)
             {
                 var childFragments = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons, peptide, peptideWithMod);
-
-                var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters);
+                bool isIonTrapData = childScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap2D || childScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap3D;
+                var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters, isLowRes : isIonTrapData);
 
                 n += childFragments.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).Count();
 
@@ -356,14 +358,19 @@ namespace EngineLayer.GlycoSearch
                 //TO THINK:may think a different way to use childScore
                 score += childScore;
 
-                p += childScan.TheScan.MassSpectrum.Size * CommonParameters.ProductMassTolerance.GetRange(1000).Width / childScan.TheScan.MassSpectrum.Range.Width;
+                var productTolerance = isIonTrapData ? CommonParameters.ProductMassTolerance_LowRes : CommonParameters.ProductMassTolerance;
+                p += childScan.TheScan.MassSpectrum.Size * productTolerance.GetRange(1000).Width / childScan.TheScan.MassSpectrum.Range.Width;
 
             }
 
             var psmGlyco = new GlycoSpectralMatch(peptideWithMod, 0, PeptideScore, scanIndex, theScan, CommonParameters, matchedIons);
 
             //TO DO: This p is from childScan p, it works for HCD-pd-EThcD, which may not work for other type.
-            psmGlyco.ScanInfo_p = p;
+            psmGlyco.ScanInfo_p = p > 1? 1 : p;
+            // p is the probability of randomly matching a single theoretical fragment ion.
+            // With a wide mass tolerance (> 0.4 Da), the computed p may exceed 1,
+            // which is not physically meaningful and can cause numerical issues.
+            // In such cases, p is capped at 1.
 
             psmGlyco.Thero_n = n;
 
@@ -435,12 +442,16 @@ namespace EngineLayer.GlycoSearch
             SortedDictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, Motifs); //list all of the possible glycoslation site/postition
 
             var localizationScan = theScan;
+            var toleranceForLocalizationScan = CommonParameters.ProductMassTolerance;
             List<Product> products = new List<Product>(); // product list for the theoretical fragment ions
 
             //For HCD-pd-ETD or CD-pd-EThcD type of data, we generate the different rpoducts.
             if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons))
             {
-                localizationScan = theScan.ChildScans.First();
+                localizationScan = GetLocalizationScan(theScan);
+                // For the localization scan, if it is from ion trap, we will use a wider tolerance for the localization.
+                toleranceForLocalizationScan = localizationScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap2D ||
+                    localizationScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap3D ? CommonParameters.ProductMassTolerance_LowRes : CommonParameters.ProductMassTolerance;
                 theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
             }
 
@@ -473,7 +484,7 @@ namespace EngineLayer.GlycoSearch
                 if (GraphCheck(modPos, GlycanBoxes[iDLow])) // the glycosite number should be larger than the possible glycan number.
                 {
                     LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBoxes[iDLow], GlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
-                    LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, CommonParameters.ProductMassTolerance, products); //create the localization graph with the glycan mass and the possible glycosite.
+                    LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, toleranceForLocalizationScan, products); //create the localization graph with the glycan mass and the possible glycosite.
 
                     double currentLocalizationScore = localizationGraph.TotalScore;
                     if (currentLocalizationScore > bestLocalizedScore) //Try to find the best glycanBox with the highest score.
@@ -504,6 +515,43 @@ namespace EngineLayer.GlycoSearch
                     possibleMatches.Add(psmGlyco);
                 }
             }
+        }
+
+        /// <summary>
+        /// Chooses which child scan is used as the localization spectrum.
+        /// Glycosite localization is scored with c/zDot ions, so it is only meaningful against an
+        /// electron-based child scan. The child scans of a precursor are ordered by scan number, so
+        /// simply taking the first one selects the lowest-numbered child whatever its activation. On an
+        /// acquisition that places more than one activation on the same precursor (for example
+        /// HCD-ETciD-CID) that can select the collision-based child and score c/zDot theoretical ions
+        /// against a spectrum which cannot contain them.
+        /// The child scan header is consulted first, and the previous first-child behavior is kept as the
+        /// fallback when no child reports a usable activation. Files with a single child scan, which is
+        /// every acquisition shape this method was originally written for, are unaffected either way.
+        /// </summary>
+        /// <param name="theScan">The parent scan whose children are candidates. Must have at least one child.</param>
+        /// <returns>The child scan to localize against.</returns>
+        private Ms2ScanWithSpecificMass GetLocalizationScan(Ms2ScanWithSpecificMass theScan)
+        {
+            foreach (var childScan in theScan.ChildScans)
+            {
+                DissociationType? childDissociationType = childScan.TheScan.DissociationType;
+
+                // An absent or Autodetect header carries no activation information, so it cannot be trusted here.
+                if (childDissociationType == null || childDissociationType == DissociationType.Autodetect)
+                {
+                    continue;
+                }
+
+                if (GlycoPeptides.DissociationTypeContainETD(childDissociationType.Value, CommonParameters.CustomIons))
+                {
+                    return childScan;
+                }
+            }
+
+            // No child advertised an electron-based activation. Preserve the historical behavior rather than
+            // dropping localization, because the declared MS2ChildScanDissociationType already asserted ETD.
+            return theScan.ChildScans.First();
         }
 
         private void FindNGlycan(Ms2ScanWithSpecificMass theScan, int scanIndex, int scoreCutOff, PeptideWithSetModifications theScanBestPeptide, int ind, double possibleGlycanMassLow, double[] oxoniumIonIntensities, ref List<GlycoSpectralMatch> possibleMatches)

@@ -1,15 +1,28 @@
-﻿using EngineLayer.CrosslinkSearch;
+﻿using Chromatography.RetentionTimePrediction;
+using Chromatography.RetentionTimePrediction.Chronologer;
+using Chromatography.RetentionTimePrediction.SSRCalc;
+using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
+using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Transcriptomics.Digestion;
+using System.Runtime.CompilerServices;
 
 namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {
+        private static readonly Lazy<ChronologerRetentionTimePredictor> _chronologerInstance =
+            new Lazy<ChronologerRetentionTimePredictor>(
+                () => new ChronologerRetentionTimePredictor(),
+                System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+
+        // When non-null, GetChronologer() calls this factory instead of the real Lazy<>.
+        // Used exclusively by unit tests to inject a throwing factory without touching the readonly field.
+        internal static Func<ChronologerRetentionTimePredictor> _chronologerFactoryOverride = null;
+
         private List<SpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
         private readonly string AnalysisType;
@@ -64,9 +77,9 @@ namespace EngineLayer.FdrAnalysis
             return myAnalysisResults;
         }
 
-        private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults) => DoFalseDiscoveryRateAnalysis(AllPsms, DoPEP, FileSpecificParameters, OutputFolder, myAnalysisResults);
+        private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults) => DoFalseDiscoveryRateAnalysis(AllPsms, DoPEP, FileSpecificParameters, OutputFolder, myAnalysisResults, CommonParameters);
 
-        internal static void DoFalseDiscoveryRateAnalysis(List<SpectralMatch> allPsms, bool doPep, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, FdrAnalysisResults myAnalysisResults)
+        internal static void DoFalseDiscoveryRateAnalysis(List<SpectralMatch> allPsms, bool doPep, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, FdrAnalysisResults myAnalysisResults, CommonParameters commonParameters)
         {
             // Stop if canceled
             if (GlobalVariables.StopLoops) { return; }
@@ -77,11 +90,13 @@ namespace EngineLayer.FdrAnalysis
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
                 var psms = proteasePsms.OrderByDescending(p => p).ToList();
-                var peptides = psms
-                        .OrderByDescending(p => p)
-                        .GroupBy(b => b.FullSequence)
-                        .Select(b => b.FirstOrDefault())
-                        .ToList();
+                var peptides = FilteredPsms.Filter(psms,
+                    commonParameters,
+                    includeDecoys: true,
+                    includeContaminants: true,
+                    includeAmbiguous: true,
+                    includeHighQValuePsms: true,
+                    filterAtPeptideLevel: true).FilteredPsmsList;
 
                 if ((psms.Count > PsmCountThresholdForInvertedQvalue || QvalueThresholdOverride) & doPep)
                 {
@@ -400,7 +415,64 @@ namespace EngineLayer.FdrAnalysis
                 _ => "standard"
             };
 
-            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder).ComputePEPValuesForAllPSMs();
+            var rtPredictor = GetRTPredictor(searchType, fileSpecificParameters);
+            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder, rtPredictor).ComputePEPValuesForAllPSMs();
+        }
+
+        private static IRetentionTimePredictor GetRTPredictor(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
+        {
+            if (searchType != "standard")
+                return null;
+
+            // Get predictor name from the first file's parameters
+            var predictorName = fileSpecificParameters.FirstOrDefault().fileSpecificParameters?.RTPredictorName;
+
+            return predictorName switch
+            {
+                RTPredictorNames.Chronologer => GetChronologer(),
+                RTPredictorNames.SSRCalc => new SSRCalc3RetentionTimePredictor(),
+                RTPredictorNames.Prosit2019iRT => new Prosit2019iRT(),
+                RTPredictorNames.Prosit2020iRTTMT => new Prosit2020iRTTMT(),
+                _ => null
+            };
+        }
+
+        private static bool _alreadyWarnedAboutChronologer = false;
+
+        /// <summary>
+        /// Chronologer runs on TorchSharp, whose native libraries aren't present in every installation.
+        /// When they're missing, we return null (as GetRTPredictor already does for unrecognized predictors) so that
+        /// PEP falls back to the default retention time predictor. A missing predictor should cost PEP accuracy,
+        /// not the entire search.
+        /// </summary>
+        internal static IRetentionTimePredictor GetChronologer()
+        {
+            try
+            {
+                return _chronologerFactoryOverride != null
+                    ? _chronologerFactoryOverride()
+                    : _chronologerInstance.Value;
+            }
+            catch (Exception e)
+            {
+                if (_alreadyWarnedAboutChronologer)
+                {
+                    return null;
+                }
+                _alreadyWarnedAboutChronologer = true;
+                if (e is DllNotFoundException || e.InnerException is DllNotFoundException)
+                {
+                    WarnStatic("Chronologer retention time prediction was skipped because its native libraries could not be loaded (" + e.Message.Trim() +
+                        "). PEP will be calculated using the SSRCalc3 retention time predictor instead, and will be less accurate. " +
+                        "Uninstalling, then reinstalling MetaMorpheus should restore the missing files.");
+                }
+                else
+                {
+                    WarnStatic("Chronologer retention time prediction was skipped due to an exception (" + e.Message.Trim() +
+                        "). PEP will be calculated using the SSRCalc3 retention time predictor instead, and will be less accurate." );
+                }
+                return null;
+            }
         }
 
         /// <summary>

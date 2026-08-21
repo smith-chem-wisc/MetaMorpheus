@@ -16,7 +16,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using TaskLayer.MbrAnalysis;
 using Chemistry;
 using EngineLayer.DatabaseLoading;
 using MzLibUtil;
@@ -24,8 +23,6 @@ using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using Omics;
-using Readers.SpectralLibrary;
 using EngineLayer.SpectrumMatch;
 using ProteinGroup = FlashLFQ.ProteinGroup;
 
@@ -36,7 +33,6 @@ namespace TaskLayer
     {
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
-        private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
 
         public override string OutputFolder => Parameters?.OutputFolder;
 
@@ -110,14 +106,9 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WritePrunedDatabase)
                 WritePrunedDatabase(Parameters.AllSpectralMatches, Parameters.BioPolymerList, Parameters.SearchParameters.ModsToWriteSelection, Parameters.DatabaseFilenameList, Parameters.OutputFolder, Parameters.SearchTaskId);
 
-            var k = CommonParameters;
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
                 SpectralLibraryGeneration();
-                if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
-                {
-                    SpectralRecoveryResults = SpectralRecoveryRunner.RunSpectralRecoveryAlgorithm(Parameters, CommonParameters, FileSpecificParameters);
-                }      
             }
 
             if(Parameters.SearchParameters.UpdateSpectralLibrary)
@@ -163,7 +154,6 @@ namespace TaskLayer
 
             Status($"Done estimating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} FDR!", Parameters.SearchTaskId);
         }
-
         private void DisambiguateSpectralMatches()
         {
             try
@@ -201,19 +191,20 @@ namespace TaskLayer
                 }
             }
 
-            var psmForParsimony = FilteredPsms.Filter(Parameters.AllSpectralMatches,
-                commonParams: CommonParameters,
-                includeDecoys: true,
-                includeContaminants: true,
-                includeAmbiguous: false,
-                includeHighQValuePsms: false);
-
             // run parsimony
-            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmForParsimony.FilteredPsmsList, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(Parameters.AllSpectralMatches, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
-            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmForParsimony.FilteredPsmsList,
-                Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent, true, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run();
+            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                proteinAnalysisResults.ProteinGroups,
+                Parameters.AllSpectralMatches,
+                Parameters.SearchParameters.NoOneHitWonders,
+                Parameters.SearchParameters.ModPeptidesAreDifferent,
+                mergeIndistinguishableProteinGroups: true,
+                CommonParameters,
+                this.FileSpecificParameters,
+                new List<string> { Parameters.SearchTaskId }
+                ).Run();
 
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
@@ -852,7 +843,7 @@ namespace TaskLayer
                     {
                         Status("Running histogram analysis...", new List<string> { Parameters.SearchTaskId });
                         var myTreeStructure = new BinTreeStructure();
-                        myTreeStructure.GenerateBins(limitedpsms_with_fdr.FilteredPsmsList, Parameters.SearchParameters.HistogramBinTolInDaltons);
+                        myTreeStructure.GenerateBins(limitedpsms_with_fdr.FilteredPsmsList, Parameters.SearchParameters.HistogramBinTolInDaltons, CommonParameters);
                         var writtenFile = Path.Combine(Parameters.OutputFolder, "MassDifferenceHistogram.tsv");
                         WriteTree(myTreeStructure, writtenFile);
                         FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
@@ -1037,7 +1028,7 @@ namespace TaskLayer
                     includeContaminants: false,
                     includeAmbiguous: false,
                     includeHighQValuePsms: false
-                );
+                    );
 
 
                 //group psms by peptide and charge, then write highest scoring PSM to dictionary
@@ -1149,12 +1140,7 @@ namespace TaskLayer
             {
                 return;
             }
-            else
-            {
-                string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with q-value <= 0.01 (1% FDR): " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
-                ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
-            }
-            
+
             string fileName = $"All{GlobalVariables.AnalyteType.GetBioPolymerLabel()}Groups.tsv";
             if (Parameters.SearchParameters.DoLabelFreeQuantification)
             {
@@ -1163,16 +1149,34 @@ namespace TaskLayer
 
             //set peptide output values
             ProteinGroups.ForEach(x => x.GetIdentifiedPeptidesOutput(Parameters.SearchParameters.SilacLabels));
-            // write protein groups to tsv
-            string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
-            WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId });
 
-            var psmsGroupedByFile = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+            // Get filtered PSMs to determine the filter type being used
+            var filteredPsms = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                 CommonParameters,
                 includeDecoys: true,
                 includeContaminants: true,
                 includeAmbiguous: true,
-                includeHighQValuePsms: false).FilteredPsmsList.GroupBy(f => f.FullFilePath);
+                includeHighQValuePsms: false);
+
+            // write protein groups to tsv, passing the filter type
+            string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
+            WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, filteredPsms.FilterType);
+
+
+
+            var psmsGroupedByFile = Parameters.AllSpectralMatches.GroupBy(p => p.FullFilePath).ToList();
+
+
+            // Build the protein results summary text
+            // Add "(1% FDR)" suffix only when using q-value filtering with the standard 0.01 threshold for clarity
+            string fdrSuffix = filteredPsms.FilterType == FilterType.QValue && Math.Abs(filteredPsms.FilterThreshold - 0.01) < 0.0001 ? " (1% FDR)" : "";
+            
+            // Count protein groups that pass the configured filter threshold
+            // This uses the same threshold that was used for PSM and peptide filtering to ensure consistency
+            int proteinGroupCount = ProteinGroups.Count(b => b.QValue <= filteredPsms.FilterThreshold && !b.IsDecoy);
+            string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + fdrSuffix + ": " + proteinGroupCount;
+            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
+
 
             //if we're writing individual files, we need to reprocess the psms
             //If doing a SILAC search and no "unlabeled" labels were specified (i.e. multiple labels are used for multiplexing and no conditions are "unlabeled"),
@@ -1210,34 +1214,42 @@ namespace TaskLayer
             //write the individual result files for each datafile
             foreach (var fullFilePath in psmsGroupedByFile.Select(v => v.Key))
             {
+                
                 string strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                 List<SpectralMatch> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
+                FilteredPsms filteredPsmsByFile = FilteredPsms.Filter(psmsForThisFile,
+                    CommonParameters,
+                    includeDecoys: true,
+                    includeContaminants: true,
+                    includeAmbiguous: true,
+                    includeHighQValuePsms: false);
                 var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
 
-                ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
-                    Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent,
-                    false, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }).Run();
+                ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                    subsetProteinGroupsForThisFile,
+                    psmsForThisFile,
+                    Parameters.SearchParameters.NoOneHitWonders,
+                    Parameters.SearchParameters.ModPeptidesAreDifferent,
+                    false,
+                    CommonParameters,
+                    this.FileSpecificParameters,
+                    new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }
+                    ).Run();
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                 {
                     // write summary text
-                    string proteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups within 1 % FDR: " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
-                    ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
+                    string fileProteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsmsByFile.GetFilterTypeString() + " <= " 
+                        + Math.Round(filteredPsmsByFile.FilterThreshold, 2) + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= filteredPsmsByFile.FilterThreshold && !b.IsDecoy);
+                    ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = fileProteinResultsText;
 
                     // write result files
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + $"_{GlobalVariables.AnalyteType.GetBioPolymerLabel()}Groups.tsv");
-                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, filteredPsmsByFile.FilterType);
                 }
-
-                psmsForThisFile = FilteredPsms.Filter(psmsForThisFile,
-                    CommonParameters,
-                    includeDecoys: Parameters.SearchParameters.WriteDecoys,
-                    includeContaminants: Parameters.SearchParameters.WriteContaminants,
-                    includeAmbiguous: true,
-                    includeHighQValuePsms: true).FilteredPsmsList;
 
                 // Filter psms in place before writing mzID
                 if (Parameters.SearchParameters.WriteMzId)
@@ -1251,7 +1263,7 @@ namespace TaskLayer
                     }
 
                     MzIdentMLWriter.WriteMzIdentMl(
-                        psmsForThisFile,
+                        filteredPsmsByFile.FilteredPsmsList,
                         subsetProteinGroupsForThisFile, 
                         Parameters.VariableModifications, 
                         Parameters.FixedModifications, 
@@ -1277,7 +1289,7 @@ namespace TaskLayer
                         pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
                     }
 
-                    PepXMLWriter.WritePepXml(psmsForThisFile,
+                    PepXMLWriter.WritePepXml(filteredPsmsByFile.FilteredPsmsList,
                         Parameters.DatabaseFilenameList,
                         Parameters.VariableModifications,
                         Parameters.FixedModifications,
@@ -1295,25 +1307,11 @@ namespace TaskLayer
             if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
-                if (SpectralRecoveryResults != null)
-                {
-                    SpectralRecoveryResults.WritePeakQuantificationResultsToTsv(Parameters.OutputFolder, "AllQuantifiedPeaks");
-                }
-                else
-                {
-                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
-                }
+                WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
 
                 // write peptide quant results
                 string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
-                if (SpectralRecoveryResults != null)
-                {
-                    SpectralRecoveryResults.WritePeptideQuantificationResultsToTsv(Parameters.OutputFolder, filename);
-                }
-                else
-                {
-                    WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
-                }
+                WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
 
                 // write individual results
                 if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
@@ -1365,7 +1363,6 @@ namespace TaskLayer
                 }
             }
         }
-
         private void CompressIndividualFileResults()
         {
             if (Parameters.SearchParameters.CompressIndividualFiles && Directory.Exists(Parameters.IndividualResultsOutputFolder))
@@ -1506,9 +1503,9 @@ namespace TaskLayer
                 {
                     if (variantPWSM.IntersectsAndIdentifiesVariation(variant).identifies == true)
                     {
-                        if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
+                        if (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
                         {
-                            if (variant.Description.ReferenceAlleleString.Length == 1 && variant.Description.AlternateAlleleString.Length == 1)
+                            if (variant.VariantCallFormatDataString.ReferenceAlleleString.Length == 1 && variant.VariantCallFormatDataString.AlternateAlleleString.Length == 1)
                             {
                                 if (SNVmissenseIdentified == false)
                                 {
@@ -1527,7 +1524,7 @@ namespace TaskLayer
                                 MNVmissenseVariants.AddOrCreate(variantPWSM.Protein, variant);
                             }
                         }
-                        else if (culture.CompareInfo.IndexOf(variant.Description.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
+                        else if (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
                         {
                             if (frameshiftIdentified == false)
                             {
@@ -1536,7 +1533,7 @@ namespace TaskLayer
                             }
                             frameshiftVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
-                        else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
+                        else if (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
                         {
                             if (stopGainIdentified == false)
                             {
@@ -1545,7 +1542,7 @@ namespace TaskLayer
                             }
                             stopGainVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
-                        else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
+                        else if ((culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
                         {
                             if (insertionIdentified == false)
                             {
@@ -1554,7 +1551,7 @@ namespace TaskLayer
                             }
                             insertionVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
-                        else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
+                        else if ((culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
                         {
                             if (deletionIdentified == false)
                             {
@@ -1563,7 +1560,7 @@ namespace TaskLayer
                             }
                             deletionVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
-                        else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
+                        else if (culture.CompareInfo.IndexOf(variant.VariantCallFormatDataString.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
                         {
                             if (stopLossIdentifed == false)
                             {
@@ -1734,11 +1731,17 @@ namespace TaskLayer
             }
         }
 
-        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds)
+        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, FilterType filterType = FilterType.QValue)
         {
             if (proteinGroups != null && proteinGroups.Any())
             {
-                double qValueThreshold = Math.Min(CommonParameters.QValueThreshold, CommonParameters.PepQValueThreshold);
+                // Set threshold based on the filter type being used
+                double qValueThreshold = filterType switch
+                {
+                    FilterType.PepQValue => CommonParameters.PepQValueThreshold,
+                    _ => CommonParameters.QValueThreshold
+                };
+
                 using (StreamWriter output = new StreamWriter(filePath))
                 {
                     output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());

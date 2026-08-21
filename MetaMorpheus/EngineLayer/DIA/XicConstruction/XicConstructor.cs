@@ -1,6 +1,9 @@
 ﻿using MassSpectrometry;
 using MzLibUtil;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EngineLayer.DIA
 {
@@ -14,7 +17,7 @@ namespace EngineLayer.DIA
         public int MaxMissedScansAllowed { get; set; } 
         public double MaxPeakHalfWidth { get; set; }
         public int MinNumberOfPeaks { get; set; }
-        public XicSpline? XicSpline { get; set; }
+        public XicSpline? XicSplineEngine { get; set; }
 
         public XicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, XicSpline? xicSpline = null)
         {
@@ -22,9 +25,27 @@ namespace EngineLayer.DIA
             MaxMissedScansAllowed = maxMissedScansAllowed;
             MaxPeakHalfWidth = maxPeakHalfWidth;
             MinNumberOfPeaks = minNumberOfPeaks;
-            XicSpline = xicSpline;
+            XicSplineEngine = xicSpline;
         }
 
         public abstract List<ExtractedIonChromatogram> GetAllXics(MsDataScan[] scans, MzRange isolationRange = null);
+
+        public List<ExtractedIonChromatogram> GetAllXicsWithXicSpline(MsDataScan[] scans, MzRange isolationRange = null, int? numberOfThreads = null)
+        {
+            var allXics = GetAllXics(scans, isolationRange);
+            if (XicSplineEngine != null)
+            {
+                Parallel.ForEach(Partitioner.Create(0, allXics.Count), new ParallelOptions { MaxDegreeOfParallelism = numberOfThreads.HasValue ? numberOfThreads.Value : Environment.ProcessorCount - 2 },
+                (partitionRange, loopState) =>
+                {
+                    for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
+                    {
+                        var xic = allXics[i];
+                        XicSplineEngine.SetXicSplineXYData(xic);
+                    }
+                });
+            }
+            return allXics;
+        }
     }
 }

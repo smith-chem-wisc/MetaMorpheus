@@ -20,7 +20,6 @@ DoLabelFreeQuantification = false
 UseSharedPeptidesForLFQ = false
 DoMultiplexQuantification = false
 MultiplexModId = "TMT10"
-DoSpectralRecovery = false
 SearchType = "Classic"
 LocalFdrCategories = ["FullySpecific"]
 CustomMdac = ""

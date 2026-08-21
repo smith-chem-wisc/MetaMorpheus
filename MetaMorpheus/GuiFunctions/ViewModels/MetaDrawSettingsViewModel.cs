@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using Omics.Fragmentation;
 using System;
 using System.Collections.ObjectModel;
@@ -7,6 +7,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using GuiFunctions.MetaDraw;
 using Readers;
+using System.Windows.Input;
+using Easy.Common.Extensions;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {
@@ -80,11 +83,18 @@ namespace GuiFunctions
         public ObservableCollection<LegendDisplayProperty> ChimericLegendDisplayProperties { get; } = [..Enum.GetValues<LegendDisplayProperty>()];
         public ObservableCollection<string> AmbiguityFilters { get; } =  [..MetaDrawSettings.AmbiguityTypes];
         public ObservableCollection<LocalizationLevel> GlycanLocalizationLevels { get; } = [.. Enum.GetValues<LocalizationLevel>()];
+        public ObservableCollection<string> GroupingProperties { get; } = [..MetaDrawSettings.GroupingProperties];
 
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
         public static string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
+
+        public bool UseShortIonAnnotationsWhenPossible
+        {
+            get => MetaDrawSettings.UseShortIonAnnotationsWhenPossible;
+            set { MetaDrawSettings.UseShortIonAnnotationsWhenPossible = value; OnPropertyChanged(nameof(UseShortIonAnnotationsWhenPossible)); }
+        }
 
         public bool ShowDecoys
         {
@@ -181,6 +191,11 @@ namespace GuiFunctions
             get => MetaDrawSettings.SubAndSuperScriptIons;
             set { MetaDrawSettings.SubAndSuperScriptIons = value; OnPropertyChanged(nameof(SubAndSuperScriptIons)); }
         }
+        public bool AnnotateIsotopicEnvelopes
+        {
+            get => MetaDrawSettings.AnnotateIsotopicEnvelopes;
+            set { MetaDrawSettings.AnnotateIsotopicEnvelopes = value; OnPropertyChanged(nameof(AnnotateIsotopicEnvelopes)); }
+        }
 
         public int AnnotatedFontSize
         {
@@ -206,6 +221,34 @@ namespace GuiFunctions
         {
             get => MetaDrawSettings.StrokeThicknessUnannotated;
             set { MetaDrawSettings.StrokeThicknessUnannotated = value; OnPropertyChanged(nameof(StrokeThicknessUnannotated)); }
+        }
+
+        public double MinMzToPlot
+        {
+            get => MetaDrawSettings.MinMzToPlot;
+            set 
+            { 
+                if (value < 0) 
+                    value = 0;
+                if (value >= MaxMzToPlot)
+                    return;
+
+                MetaDrawSettings.MinMzToPlot = value; 
+                OnPropertyChanged(nameof(MinMzToPlot)); 
+            }
+        }
+
+        public double MaxMzToPlot
+        {
+            get => MetaDrawSettings.MaxMzToPlot;
+            set 
+            {
+                if (value < 0 || value <= MinMzToPlot)
+                    return;
+
+                MetaDrawSettings.MaxMzToPlot = value; 
+                OnPropertyChanged(nameof(MaxMzToPlot)); 
+            }
         }
 
         // Chimera Settings
@@ -248,6 +291,37 @@ namespace GuiFunctions
             set { MetaDrawSettings.NormalizeHistogramToFile = value; OnPropertyChanged(nameof(NormalizeHistogramToFile)); }
         }
 
+        // These properties now forward to PlotModelStatParametersViewModel
+        public bool UseLogScaleYAxis
+        {
+            get => PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis;
+            set { PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis = value; OnPropertyChanged(nameof(UseLogScaleYAxis)); }
+        }
+
+        public string GroupingProperty
+        {
+            get => PlotModelStatParametersViewModel.Instance.GroupingProperty;
+            set { PlotModelStatParametersViewModel.Instance.GroupingProperty = value; OnPropertyChanged(nameof(GroupingProperty)); }
+        }
+
+        public double MinRelativeCutoff
+        {
+            get => PlotModelStatParametersViewModel.Instance.MinRelativeCutoff;
+            set { PlotModelStatParametersViewModel.Instance.MinRelativeCutoff = value; OnPropertyChanged(nameof(MinRelativeCutoff)); }
+        }
+
+        public double MaxRelativeCutoff
+        {
+            get => PlotModelStatParametersViewModel.Instance.MaxRelativeCutoff;
+            set { PlotModelStatParametersViewModel.Instance.MaxRelativeCutoff = value; OnPropertyChanged(nameof(MaxRelativeCutoff)); }
+        }
+
+        public double RelativeIntensityCutoff
+        {
+            get => PlotModelStatParametersViewModel.Instance.MinRelativeCutoff;
+            set { PlotModelStatParametersViewModel.Instance.MinRelativeCutoff = value; OnPropertyChanged(nameof(RelativeIntensityCutoff)); }
+        }
+
         // BioPolymer Coverage Settings
         public ObservableCollection<ColorForTreeViewModel> BioPolymerCoverageColors
         {
@@ -264,6 +338,14 @@ namespace GuiFunctions
             get => MetaDrawSettings.BioPolymerCoverageFontSize;
             set { MetaDrawSettings.BioPolymerCoverageFontSize = value; OnPropertyChanged(nameof(BioPolymerCoverageFontSize)); }
         }
+
+        public ColorGradientType BioPolymerCoverageGradientType
+        {
+            get => MetaDrawSettings.BioPolymerCoverageGradientType;
+            set { MetaDrawSettings.BioPolymerCoverageGradientType = value; OnPropertyChanged(nameof(BioPolymerCoverageGradientType)); }
+        }
+
+        public ObservableCollection<ColorGradientType> BioPolymerCoverageGradientTypes { get; } = [.. Enum.GetValues<ColorGradientType>()];
 
         #endregion
 
@@ -295,6 +377,9 @@ namespace GuiFunctions
                 Initialization = Task.CompletedTask;
             }
 
+            SelectAllSpectrumDescriptorsCommand = new RelayCommand(SelectAllSpectrumDescriptors);
+            DeselectAllSpectrumDescriptorsCommand = new RelayCommand(DeselectAllSpectrumDescriptors);
+
             // This defaults to classic decon, and we set the charge to ensure it will work for top-down and bottom-up.
             // This is not the best approach, in the future we could try to locate the search toml when loading in a psm file and use those decon params. 
             DeconHostViewModel = new();
@@ -317,6 +402,17 @@ namespace GuiFunctions
             LoadBioPolymerCoverageColors();
             await Task.Delay(100);
         }
+
+        #endregion
+
+        #region Commands
+
+        public ICommand SelectAllSpectrumDescriptorsCommand { get; set; }
+        public ICommand DeselectAllSpectrumDescriptorsCommand { get; set; }
+
+        private void SelectAllSpectrumDescriptors() => SpectrumDescriptors.ForEach(p => p.IsSelected = true);
+        private void DeselectAllSpectrumDescriptors() => SpectrumDescriptors.ForEach(p => p.IsSelected = false);
+
 
         #endregion
 
@@ -427,6 +523,17 @@ namespace GuiFunctions
         public void LoadPTMs()
         {
             var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType);
+            foreach (var group in modGroups)
+            {
+                var theModType = new ModTypeForTreeViewModel(group.Key, false);
+                _Modifications.Add(theModType);
+                foreach (var mod in group)
+                {
+                    theModType.Children.Add(new ModForTreeViewModel(mod.ToString(), false, mod.IdWithMotif, false, theModType));
+                }
+            }
+
+            modGroups = GlobalVariables.AllRnaModsKnown.GroupBy(b => b.ModificationType);
             foreach (var group in modGroups)
             {
                 var theModType = new ModTypeForTreeViewModel(group.Key, false);

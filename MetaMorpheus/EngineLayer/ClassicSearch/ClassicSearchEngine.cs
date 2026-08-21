@@ -40,7 +40,10 @@ namespace EngineLayer.ClassicSearch
         {
             SpectralMatches = globalPsms;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
-            MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
+            // The search mode decides which observed mass candidates are selected with (monoisotopic, or
+            // the most-abundant isotopologue). The caller sorted the scans by that same quantity, which is
+            // what keeps the binary search below valid.
+            MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.GetPrecursorMassForSearch(commonParameters)).ToArray();
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
@@ -158,7 +161,7 @@ namespace EngineLayer.ClassicSearch
                                 // check if we've already generated theoretical fragments for this peptide+dissociation type
                                 if (peptideTheorProducts.Count == 0)
                                 {
-                                    specificBioPolymer.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                                    specificBioPolymer.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
                                 }
 
                                 // match theoretical target ions to spectrum
@@ -205,7 +208,7 @@ namespace EngineLayer.ClassicSearch
 
             if (decoyTheoreticalFragments.Count == 0)
             {
-                reversedOnTheFlyDecoy.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, decoyTheoreticalFragments);
+                reversedOnTheFlyDecoy.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, decoyTheoreticalFragments, CommonParameters.FragmentationParameters);
             }
             Ms2ScanWithSpecificMass theScan = ArrayOfSortedMS2Scans[scan.ScanIndex];
             var decoyMatchedIons = MatchFragmentIons(theScan, decoyTheoreticalFragments, CommonParameters,

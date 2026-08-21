@@ -22,6 +22,7 @@ public class BioPolymerGroupViewModelTests
         Assert.That(group.ProteinName, Is.EqualTo("Prot"));
         Assert.That(group.Sequence, Is.EqualTo("ABC"));
         Assert.That(group.Length, Is.EqualTo(3));
+        Assert.That(group.DatabaseName, Is.EqualTo(string.Empty));
         Assert.That(group.CoverageResults.Count, Is.EqualTo(2));
     }
 
@@ -35,10 +36,11 @@ public class BioPolymerGroupViewModelTests
             new BioPolymerCoverageResultModel(match, "ABC", 2, 3, BioPolymerCoverageType.UniqueMissedCleavage),
             new BioPolymerCoverageResultModel(match, "ABC", 1, 3, BioPolymerCoverageType.Shared)
         };
-        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", results);
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", results, "test.fasta");
         group.UpdatePropertiesAfterFilter();
 
         Assert.That(group.GroupCount, Is.EqualTo(3));
+        Assert.That(group.DatabaseName, Is.EqualTo("test.fasta"));
         Assert.That(group.UniqueSequenceCoverage, Is.GreaterThan(0));
         Assert.That(group.MaximumSequenceCoverage, Is.EqualTo(1.0));
     }

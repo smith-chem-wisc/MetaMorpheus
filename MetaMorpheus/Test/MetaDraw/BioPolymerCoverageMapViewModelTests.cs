@@ -5,19 +5,29 @@ using System.Linq;
 using System.Windows.Media;
 using Readers;
 using System.Threading;
+using System;
+using System.Collections.Generic;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace Test.MetaDraw;
+
+file sealed class AlwaysNullNumericMapper : NumericBioPolymerCoverageColorMapper
+{
+    public override ColorResultsBy ColorBy => ColorResultsBy.PrecursorIntensity;
+    public override string DisplayName => "Always Null";
+    public override bool DefaultUseLogScale => true;
+
+    public override double? GetNumericValue(BioPolymerCoverageResultModel result)
+    {
+        return null;
+    }
+
+    protected override NumericBioPolymerCoverageColorMapper? GetFallbackMapper() => new ScoreColorMapper();
+}
 
 [TestFixture]
 public class BioPolymerCoverageMapViewModelTests
 {
-    [Test]
-    public void LettersPerRow_Default_Is50()
-    {
-        var vm = new BioPolymerCoverageMapViewModel();
-        Assert.That(vm.LettersPerRow, Is.EqualTo(50));
-    }
-
     [Test]
     public void LettersPerRow_Setter_UpdatesValueAndRaisesPropertyChanged()
     {
@@ -110,6 +120,7 @@ public class BioPolymerCoverageMapViewModelTests
     {
         var vm = new BioPolymerCoverageMapViewModel();
         vm.ColorBy = ColorResultsBy.FileOrigin;
+        var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.FileOrigin);
 
         // Create two results from different files
         var match1 = new DummySpectralmatch(0.005, "1", "fileA.psmtsv");
@@ -123,21 +134,9 @@ public class BioPolymerCoverageMapViewModelTests
         // After setting Group, CoverageDrawing should be non-null
         Assert.That(vm.CoverageDrawing, Is.Not.Null);
 
-        // Use reflection to access the private IdentifierToColor dictionary
-        var idToColorField = typeof(BioPolymerCoverageMapViewModel)
-            .GetField("IdentifierToColor", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        Assert.That(idToColorField, Is.Not.Null);
-
-        var idToColor = idToColorField.GetValue(null) as System.Collections.IDictionary;
-        Assert.That(idToColor, Is.Not.Null);
-
-        // Both file names should be present and mapped to SolidColorBrush
-        Assert.That(idToColor.Contains("fileA.psmtsv"), Is.True);
-        Assert.That(idToColor.Contains("fileB.psmtsv"), Is.True);
-        var brushA = idToColor["fileA.psmtsv"] as SolidColorBrush;
-        var brushB = idToColor["fileB.psmtsv"] as SolidColorBrush;
-        Assert.That(brushA, Is.Not.Null);
-        Assert.That(brushB, Is.Not.Null);
+        mapper.Prepare([result1, result2], ColorGradientType.Viridis, false);
+        var brushA = mapper.GetBrush(result1);
+        var brushB = mapper.GetBrush(result2);
         Assert.That(brushA.Color, Is.Not.EqualTo(brushB.Color));
 
         // Legend items should include both files
@@ -149,7 +148,8 @@ public class BioPolymerCoverageMapViewModelTests
         var filteredResults = group.CoverageResults.ToList();
         double fontSize = 16; // typical font size
         double dpi = 96; // typical DPI
-        var legendItems = method.Invoke(vm, new object[] { filteredResults, fontSize, dpi, ColorResultsBy.FileOrigin }) as System.Collections.IEnumerable;
+        mapper.Prepare(filteredResults, ColorGradientType.Viridis, false);
+        var legendItems = method.Invoke(vm, new object[] { fontSize, dpi, mapper }) as System.Collections.IEnumerable;
         Assert.That(legendItems, Is.Not.Null);
 
         var legendLabels = legendItems.Cast<(SolidColorBrush Brush, System.Windows.Media.FormattedText Text)>().Select(li => li.Text.Text).ToList();
@@ -162,6 +162,7 @@ public class BioPolymerCoverageMapViewModelTests
     {
         var vm = new BioPolymerCoverageMapViewModel();
         vm.ColorBy = ColorResultsBy.CoverageType;
+        var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.CoverageType);
 
         // Create two results with different coverage types
         var match1 = new DummySpectralmatch(0.005, "1", "fileA.psmtsv");
@@ -183,7 +184,8 @@ public class BioPolymerCoverageMapViewModelTests
         var filteredResults = group.CoverageResults.ToList();
         double fontSize = 16; // typical font size
         double dpi = 96; // typical DPI
-        var legendItems = method.Invoke(vm, new object[] { filteredResults, fontSize, dpi, ColorResultsBy.CoverageType }) as System.Collections.IEnumerable;
+        mapper.Prepare(filteredResults, ColorGradientType.Viridis, false);
+        var legendItems = method.Invoke(vm, new object[] { fontSize, dpi, mapper }) as System.Collections.IEnumerable;
         Assert.That(legendItems, Is.Not.Null);
 
         var legendLabels = legendItems.Cast<(SolidColorBrush Brush, System.Windows.Media.FormattedText Text)>().Select(li => li.Text.Text).ToList();
@@ -200,6 +202,7 @@ public class BioPolymerCoverageMapViewModelTests
     {
         var vm = new BioPolymerCoverageMapViewModel();
         vm.ColorBy = ColorResultsBy.None;
+        var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.None);
 
         // Create two results with different coverage types and files
         var match1 = new DummySpectralmatch(0.005, "1", "fileA.psmtsv");
@@ -221,7 +224,8 @@ public class BioPolymerCoverageMapViewModelTests
         var filteredResults = group.CoverageResults.ToList();
         double fontSize = 16; // typical font size
         double dpi = 96; // typical DPI
-        var legendItems = method.Invoke(vm, new object[] { filteredResults, fontSize, dpi, ColorResultsBy.None }) as System.Collections.IEnumerable;
+        mapper.Prepare(filteredResults, ColorGradientType.Viridis, false);
+        var legendItems = method.Invoke(vm, new object[] { fontSize, dpi, mapper }) as System.Collections.IEnumerable;
         Assert.That(legendItems, Is.Not.Null);
         Assert.That(legendItems.Cast<object>().Any(), Is.False);
     }
@@ -243,7 +247,7 @@ public class BioPolymerCoverageMapViewModelTests
         logic.FilterPsms();
 
         var tabVm = new BioPolymerTabViewModel(logic);
-        tabVm.DatabasePath = dbPath;
+        tabVm.DatabasePaths.Add(dbPath);
         var method = typeof(BioPolymerTabViewModel)
             .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         method.Invoke(tabVm, null);
@@ -260,4 +264,395 @@ public class BioPolymerCoverageMapViewModelTests
             Assert.That(current, Is.Not.EqualTo(previous));
         }
     }
+
+    #region Viridis Intensity Tests
+
+    [Test]
+    public void MapperFactory_ReturnsNumericMapper_ForScore()
+    {
+        var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.Score);
+        Assert.That(mapper, Is.Not.Null);
+        Assert.That(mapper.ColorBy, Is.EqualTo(ColorResultsBy.Score));
+        Assert.That(mapper.IsNumeric, Is.True);
+    }
+
+    [Test]
+    public void NumericMapper_CreateRenderContext_FallsBackToScore()
+    {
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(50);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(500);
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+        var results = new List<BioPolymerCoverageResultModel> { result1, result2 };
+
+        var mapper = new AlwaysNullNumericMapper();
+        mapper.Prepare(results, ColorGradientType.Viridis, true);
+        Assert.That(mapper.GradientLegendTitle, Is.EqualTo("Score (log10)"));
+        Assert.That(mapper.GradientMinValue, Is.EqualTo(System.Math.Log10(50)).Within(1e-9));
+        Assert.That(mapper.GradientMaxValue, Is.EqualTo(System.Math.Log10(500)).Within(1e-9));
+    }
+
+    [Test]
+    public void ScoreColorMapper_CreateRenderContext_DerivesMinMax()
+    {
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(10);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(1000);
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+        var results = new List<BioPolymerCoverageResultModel> { result1, result2 };
+
+        var mapper = new ScoreColorMapper();
+        mapper.Prepare(results, ColorGradientType.Viridis, false);
+        Assert.That(mapper.GradientMinValue, Is.EqualTo(10));
+        Assert.That(mapper.GradientMaxValue, Is.EqualTo(1000));
+    }
+
+    [Test]
+    public void ColorResultsByExtensions_IsNumeric_ReturnsTrueForNumericModes()
+    {
+        Assert.That(ColorResultsBy.PrecursorIntensity.IsNumeric(), Is.True);
+        Assert.That(ColorResultsBy.Score.IsNumeric(), Is.True);
+    }
+
+    [Test]
+    public void ColorResultsByExtensions_IsNumeric_ReturnsFalseForNonNumericModes()
+    {
+        Assert.That(ColorResultsBy.None.IsNumeric(), Is.False);
+        Assert.That(ColorResultsBy.CoverageType.IsNumeric(), Is.False);
+        Assert.That(ColorResultsBy.FileOrigin.IsNumeric(), Is.False);
+    }
+
+    [Test]
+    public void IsNumericColorMode_TracksColorBy()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        Assert.That(vm.IsNumericColorMode, Is.False);
+
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.IsNumericColorMode, Is.True);
+
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.IsNumericColorMode, Is.True);
+
+        vm.ColorBy = ColorResultsBy.CoverageType;
+        Assert.That(vm.IsNumericColorMode, Is.False);
+    }
+
+    [Test]
+    public void AllGradients_ContainsViridis()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        Assert.That(vm.AllGradients, Is.Not.Null);
+        Assert.That(vm.AllGradients.Length, Is.EqualTo(Enum.GetValues(typeof(ColorGradientType)).Length));
+        Assert.That(vm.AllGradients[0], Is.EqualTo(ColorGradientType.Viridis));
+    }
+
+    [Test]
+    public void LogDefault_PerModeTracking_PrecursorThenScore()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.UseLogColorScale, Is.True);
+
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.UseLogColorScale, Is.False);
+    }
+
+    [Test]
+    public void LogDefault_PerModeTracking_BackToPrecursorKeepsDefault()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.UseLogColorScale, Is.False);
+
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.UseLogColorScale, Is.True);
+
+        // both modes have had defaults applied once; switching back keeps last value
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.UseLogColorScale, Is.True);
+    }
+
+    [Test]
+    public void LogDefault_PerModeTracking_NonNumericDoesNotSet()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.CoverageType;
+        Assert.That(vm.UseLogColorScale, Is.False);
+    }
+
+    [Test]
+    public void LogDefault_UserOverride_PerModeStillApplies()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.UseLogColorScale, Is.True);
+
+        vm.UseLogColorScale = false;
+        Assert.That(vm.UseLogColorScale, Is.False);
+
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.UseLogColorScale, Is.False);
+
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.UseLogColorScale, Is.False);
+    }
+
+    [Test]
+    public void ScoreColorMapper_CreateRenderContext_LogScale_TransformsValues()
+    {
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(10);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(10000);
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+        var results = new List<BioPolymerCoverageResultModel> { result1, result2 };
+
+        var mapper = new ScoreColorMapper();
+        mapper.Prepare(results, ColorGradientType.Viridis, true);
+        Assert.That(mapper.GradientMinValue, Is.EqualTo(1.0).Within(1e-9));
+        Assert.That(mapper.GradientMaxValue, Is.EqualTo(4.0).Within(1e-9));
+        Assert.That(mapper.GradientLegendTitle, Does.EndWith("(log10)"));
+    }
+
+    [Test]
+    public void ScoreColorMapper_CreateRenderContext_LogScale_ExcludesNonPositive()
+    {
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(0);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(1000);
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+        var results = new List<BioPolymerCoverageResultModel> { result1, result2 };
+
+        var mapper = new ScoreColorMapper();
+        mapper.Prepare(results, ColorGradientType.Viridis, true);
+        Assert.That(mapper.GradientMinValue, Is.EqualTo(3.0).Within(1e-9));
+        Assert.That(mapper.GradientMaxValue, Is.EqualTo(4.0).Within(1e-9));
+    }
+
+    [Test]
+    public void PrecursorIntensityColorMapper_HasFallback_AndDefaultLog()
+    {
+        var mapper = new PrecursorIntensityColorMapper();
+        Assert.That(mapper.DefaultUseLogScale, Is.True);
+        Assert.That(mapper.DisplayName, Is.EqualTo("Precursor Intensity"));
+    }
+
+    [Test]
+    public void ScoreColorMapper_HasNoFallback_AndDefaultLogFalse()
+    {
+        var mapper = new ScoreColorMapper();
+        Assert.That(mapper.DefaultUseLogScale, Is.False);
+        Assert.That(mapper.DisplayName, Is.EqualTo("Score"));
+    }
+
+    [Test]
+    public void UseLogColorScale_DefaultOnPrecursorIntensity()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.UseLogColorScale, Is.True);
+    }
+
+    [Test]
+    public void UseLogColorScale_DefaultOnScore()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.UseLogColorScale, Is.False);
+    }
+
+    [Test]
+    public void UseLogColorScale_UserOverride_PersistsAcrossColorBySwitches()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.UseLogColorScale, Is.True);
+        vm.UseLogColorScale = false; // user override
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.UseLogColorScale, Is.False); // persisted, not reset
+    }
+
+    [Test]
+    public void ColorBy_CanSetPrecursorIntensity()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        bool propertyChanged = false;
+        vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.ColorBy)) propertyChanged = true; };
+
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+        Assert.That(vm.ColorBy, Is.EqualTo(ColorResultsBy.PrecursorIntensity));
+        Assert.That(propertyChanged, Is.True);
+    }
+
+    [Test]
+    public void ColorBy_CanSetScore()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        bool propertyChanged = false;
+        vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.ColorBy)) propertyChanged = true; };
+
+        vm.ColorBy = ColorResultsBy.Score;
+        Assert.That(vm.ColorBy, Is.EqualTo(ColorResultsBy.Score));
+        Assert.That(propertyChanged, Is.True);
+    }
+
+    [Test]
+    public void CreateLegendItems_ReturnsEmpty_ForPrecursorIntensity()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        var method = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("CreateLegendItems", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var filteredResults = new List<BioPolymerCoverageResultModel>();
+        var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.PrecursorIntensity);
+        mapper.Prepare(filteredResults, ColorGradientType.Viridis, false);
+        var result = method.Invoke(vm, new object[] { 16.0, 96.0, mapper })
+            as System.Collections.IEnumerable;
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Cast<object>().Any(), Is.False);
+    }
+
+    [Test]
+    public void CreateLegendItems_ReturnsEmpty_ForScore()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        var method = typeof(BioPolymerCoverageMapViewModel)
+            .GetMethod("CreateLegendItems", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var filteredResults = new List<BioPolymerCoverageResultModel>();
+        var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.Score);
+        mapper.Prepare(filteredResults, ColorGradientType.Viridis, false);
+        var result = method.Invoke(vm, new object[] { 16.0, 96.0, mapper })
+            as System.Collections.IEnumerable;
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Cast<object>().Any(), Is.False);
+    }
+
+    [Test]
+    public void Plotting_WithPrecursorIntensity_CreatesDrawing()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+
+        var match = new DummySpectralmatch();
+        var backingField = typeof(SpectrumMatchFromTsv)
+            .GetField("<PrecursorIntensity>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        backingField.SetValue(match, 100000.0);
+        var result = new BioPolymerCoverageResultModel(match, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    [Test]
+    public void Plotting_WithScore_CreatesDrawing()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.Score;
+
+        var match = new DummySpectralmatch();
+        match.SetScore(100);
+        var result = new BioPolymerCoverageResultModel(match, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    [Test]
+    public void Plotting_WithScore_DifferentScores_CreatesDrawing()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.Score;
+
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(10);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(1000);
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result1, result2 });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    [Test]
+    public void Plotting_WithIntensityMode_AllEqual_DoesNotCrash()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.Score;
+
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(42);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(42);
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result1, result2 });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    [Test]
+    public void Plotting_WithPrecursorIntensity_SomeNull_DoesNotCrash()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+
+        var matchWithIntensity = new DummySpectralmatch();
+        matchWithIntensity.SetScore(200);
+        var matchNullIntensity = new DummySpectralmatch();
+        matchNullIntensity.SetScore(100);
+        var backingField = typeof(SpectrumMatchFromTsv)
+            .GetField("<PrecursorIntensity>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        backingField.SetValue(matchWithIntensity, 500000.0);
+        backingField.SetValue(matchNullIntensity, null);
+
+        var result1 = new BioPolymerCoverageResultModel(matchWithIntensity, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(matchNullIntensity, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result1, result2 });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    [Test]
+    public void Plotting_WithPrecursorIntensity_AllNull_FallsBackToScore()
+    {
+        var vm = new BioPolymerCoverageMapViewModel();
+        vm.ColorBy = ColorResultsBy.PrecursorIntensity;
+
+        var match1 = new DummySpectralmatch();
+        match1.SetScore(10);
+        var match2 = new DummySpectralmatch();
+        match2.SetScore(1000);
+        var backingField = typeof(SpectrumMatchFromTsv)
+            .GetField("<PrecursorIntensity>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        backingField.SetValue(match1, null);
+        backingField.SetValue(match2, null);
+
+        var result1 = new BioPolymerCoverageResultModel(match1, "ABC", 1, 2, BioPolymerCoverageType.Unique);
+        var result2 = new BioPolymerCoverageResultModel(match2, "ABC", 2, 3, BioPolymerCoverageType.Unique);
+
+        var group = new BioPolymerGroupViewModel("ACC", "Prot", "ABC", new[] { result1, result2 });
+        vm.Group = group;
+
+        Assert.That(vm.CoverageDrawing, Is.Not.Null);
+    }
+
+    #endregion
 }

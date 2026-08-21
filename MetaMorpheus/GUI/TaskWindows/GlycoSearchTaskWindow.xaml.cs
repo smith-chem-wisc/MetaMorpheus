@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics.ProteolyticDigestion;
@@ -90,6 +91,8 @@ namespace MetaMorpheusGUI
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
+            productMassTolerance_LowResComboBox.Items.Add("Da");
+            productMassTolerance_LowResComboBox.Items.Add("ppm");
 
             foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
@@ -122,7 +125,6 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GlycoSearchTask task)
         {
-            MetaMorpheusEngine.DetermineAnalyteType(TheTask.CommonParameters);
             RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.OGlycanSearch;
             RbtNGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
@@ -137,6 +139,22 @@ namespace MetaMorpheusGUI
             PrecusorMsTlTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+
+            switch (task.CommonParameters.RTPredictorName)
+            {
+                case RTPredictorNames.SSRCalc:
+                    SSRCalcRadioButton.IsChecked = true;
+                    break;
+                case RTPredictorNames.Prosit2019iRT:
+                    Prosit2019iRTRadioButton.IsChecked = true;
+                    break;
+                case RTPredictorNames.Prosit2020iRTTMT:
+                    Prosit2020iRTTMTRadioButton.IsChecked = true;
+                    break;
+                default:
+                    ChronologerRadioButton.IsChecked = true; // covers "Chronologer" and unknown/null
+                    break;
+            }
 
             TopNPeaksTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
@@ -185,6 +203,8 @@ namespace MetaMorpheusGUI
             TxtBoxMaxModPerPep.Text = task.CommonParameters.DigestionParams.MaxMods.ToString(CultureInfo.InvariantCulture);
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            productMassTolerance_LowResTextBox.Text = task.CommonParameters.ProductMassTolerance_LowRes?.Value.ToString(CultureInfo.InvariantCulture);
+            productMassTolerance_LowResComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance_LowRes is AbsoluteTolerance ? 0 : 1;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
@@ -258,7 +278,7 @@ namespace MetaMorpheusGUI
         {
             string fieldNotUsed = "1";
 
-            if (!TaskValidator.CheckTaskSettingsValidity(PrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+            if (!TaskValidator.CheckTaskSettingsValidity(PrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, productMassTolerance_LowResTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
                 fieldNotUsed, fieldNotUsed, fieldNotUsed, DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, TxtBoxMaxModPerPep.Text, 
                 fieldNotUsed, null, null, null))
@@ -363,7 +383,32 @@ namespace MetaMorpheusGUI
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
 
-            Tolerance PrecursorMassTolerance;
+            Tolerance ProductMassTolerance_lowRes;
+            var productMassTolerance_LowResToleranceText = productMassTolerance_LowResTextBox.Text;
+            if (string.IsNullOrWhiteSpace(productMassTolerance_LowResToleranceText))
+            {
+                // If no child scan mass tolerance is specified, fall back to product mass tolerance
+                ProductMassTolerance_lowRes = new AbsoluteTolerance(0.35);
+            }
+            else 
+            {
+                // we already validate via non-positive TaskValidator, but this local guard is still useful as defensive programming in case validation flow changes later.
+                if (!double.TryParse(productMassTolerance_LowResToleranceText, NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedChildTolerance) || parsedChildTolerance <= 0) 
+                {
+                    MessageBox.Show("The low-resolution product mass tolerance is invalid. Please enter a positive number.");
+                    return;
+                }
+                if (productMassTolerance_LowResComboBox.SelectedIndex == 0)
+                {
+                    ProductMassTolerance_lowRes = new AbsoluteTolerance(parsedChildTolerance);
+                }
+                else
+                {
+                    ProductMassTolerance_lowRes = new PpmTolerance(parsedChildTolerance);
+                }
+            }
+
+                Tolerance PrecursorMassTolerance;
             if (cbbPrecusorMsTl.SelectedIndex == 0)
             {
                 PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(PrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
@@ -390,11 +435,18 @@ namespace MetaMorpheusGUI
             DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
             bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
             bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
-            
+
+            string rtPredictorModelName;
+            if (SSRCalcRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.SSRCalc;
+            else if (Prosit2019iRTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2019iRT;
+            else if (Prosit2020iRTTMTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2020iRTTMT;
+            else rtPredictorModelName = RTPredictorNames.Chronologer; // default
+
             CommonParameters commonParamsToSave = new CommonParameters(
                 precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GlycoSearchTask",
                 productMassTolerance: ProductMassTolerance,
+                productMassTolerance_LowRes: ProductMassTolerance_lowRes,
                 doPrecursorDeconvolution: doPrecursorDeconvolution,
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                 digestionParams: digestionParamsToSave,
@@ -411,7 +463,8 @@ namespace MetaMorpheusGUI
                 listOfModsFixed: listOfModsFixed,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 precursorDeconParams: precursorDeconvolutionParameters,
-                productDeconParams: productDeconvolutionParameters);
+                productDeconParams: productDeconvolutionParameters,
+                rtPredictorName: rtPredictorModelName);
 
             TheTask._glycoSearchParameters.WritePrunedDataBase = WritePrunedDBCheckBox.IsChecked.Value;
             SetModSelectionForPrunedDB();

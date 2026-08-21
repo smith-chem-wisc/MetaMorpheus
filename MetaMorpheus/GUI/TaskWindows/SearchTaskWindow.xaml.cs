@@ -1,8 +1,12 @@
-﻿using EngineLayer;
+using EngineLayer;
+using EngineLayer.FdrAnalysis;
+using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
+using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Modifications;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -15,11 +19,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-using UsefulProteomicsDatabases;
-using GuiFunctions;
-using Omics.Digestion;
-using Omics.Modifications;
+using Transcriptomics;
 using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
 
 namespace MetaMorpheusGUI
 {
@@ -38,6 +40,7 @@ namespace MetaMorpheusGUI
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
         private MassDifferenceAcceptorSelectionViewModel _massDifferenceAcceptorViewModel;
+        private FragmentationParamsViewModel _fragmentationParamsViewModel;
         private string _defaultMultiplexType = "TMT10";
         private DeconHostViewModel DeconHostViewModel;
 
@@ -53,7 +56,7 @@ namespace MetaMorpheusGUI
                 {
                     Title = "RNA Search Task";
                     TheTask.SearchParameters = new RnaSearchParameters();
-                    TheTask.CommonParameters = new CommonParameters("RnaSearchTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20, precursorMassTolerance: new PpmTolerance(15));
+                    TheTask.CommonParameters = new CommonParameters("RnaSearchTask", digestionParams: new RnaDigestionParams("RNase T1", 3), dissociationType: DissociationType.CID, deconvolutionMaxAssumedChargeState: -20, precursorMassTolerance: new PpmTolerance(15), fragmentationParams: new RnaFragmentationParams());
                 }
                 else
                 {
@@ -192,7 +195,7 @@ namespace MetaMorpheusGUI
         /// <param name="task"></param>
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            MetaMorpheusEngine.DetermineAnalyteType(TheTask.CommonParameters);
+            GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
                 ProteaseComboBox.SelectedItem = digestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
@@ -294,12 +297,6 @@ namespace MetaMorpheusGUI
             CheckBoxUseSharedPeptidesForQuant.IsChecked = task.SearchParameters.UseSharedPeptidesForLFQ;
             CheckBoxMultiplex.IsChecked = task.SearchParameters.DoMultiplexQuantification;
             MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId ?? _defaultMultiplexType;
-            // If Spectral Recovery is enabled
-            if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
-            {
-                CheckBoxLFQwSpectralRecovery.IsChecked = task.SearchParameters.DoSpectralRecovery;
-            }
-            
             PeakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
             MbrFdrThresholdTextBox.Text = task.SearchParameters.MbrFdrThreshold.ToString(CultureInfo.InvariantCulture);
@@ -314,20 +311,14 @@ namespace MetaMorpheusGUI
             MissedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinLength.ToString(CultureInfo.InvariantCulture);
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxLength.ToString(CultureInfo.InvariantCulture);
-            MaxFragmentMassTextBox.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture); //put after max peptide length to allow for override of auto
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxMods.ToString(CultureInfo.InvariantCulture);
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             SeparationTypeComboBox.SelectedItem = task.CommonParameters.SeparationType.ToString();
-            NTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.N;
-            CTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.C;
-            InternalIonsCheckBox.IsChecked = task.SearchParameters.MinAllowedInternalFragmentLength != 0;
-            MinInternalFragmentLengthTextBox.Text = task.SearchParameters.MinAllowedInternalFragmentLength.ToString();
             ProductMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             ProductMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             PrecursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
-            AddCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             RemoveContaminantRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveContaminant;
             RemoveTargetRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveTarget;
@@ -384,6 +375,7 @@ namespace MetaMorpheusGUI
             UpdateSpectralLibraryCheckBox.IsChecked = task.SearchParameters.UpdateSpectralLibrary;
             CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
             IncludeMotifInModNamesCheckBox.IsChecked = task.SearchParameters.IncludeModMotifInMzid;
+            WriteTargetDecoyFastaCheckBox.IsChecked = task.SearchParameters.WriteTargetDecoyFasta;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -444,9 +436,27 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             }
 
-            _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac, task.CommonParameters.PrecursorMassTolerance.Value);
+            _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac, task.CommonParameters.PrecursorMassTolerance.Value, task.CommonParameters.PrecursorMassMatchMode);
+            switch (task.CommonParameters.RTPredictorName)
+            {
+                case RTPredictorNames.SSRCalc:
+                    SSRCalcRadioButton.IsChecked = true;
+                    break;
+                case RTPredictorNames.Prosit2019iRT:
+                    Prosit2019iRTRadioButton.IsChecked = true;
+                    break;
+                case RTPredictorNames.Prosit2020iRTTMT:
+                    Prosit2020iRTTMTRadioButton.IsChecked = true;
+                    break;
+                default:
+                    ChronologerRadioButton.IsChecked = true; // covers "Chronologer" and unknown/null
+                    break;
+            }
             WritePrunedDBCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
             UpdateModSelectionGrid();
+
+            _fragmentationParamsViewModel = new FragmentationParamsViewModel(task.CommonParameters, task.SearchParameters);
+            FragmentationParametersControl.DataContext = _fragmentationParamsViewModel;
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -462,7 +472,8 @@ namespace MetaMorpheusGUI
 
             if (!TaskValidator.CheckTaskSettingsValidity(
                 PrecursorMassToleranceTextBox.Text, 
-                ProductMassToleranceTextBox.Text, 
+                ProductMassToleranceTextBox.Text,
+                null, // no low-res product mass tolerance in search task
                 MissedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, 
                 MinPeptideLengthTextBox.Text, 
@@ -478,11 +489,11 @@ namespace MetaMorpheusGUI
                 WindowWidthThomsonsTextBox.Text, 
                 NumberOfWindowsTextBox.Text, 
                 NumberOfDatabaseSearchesTextBox.Text, 
-                MaxModNumTextBox.Text, 
-                MaxFragmentMassTextBox.Text, 
+                MaxModNumTextBox.Text,
+                _fragmentationParamsViewModel.MaxFragmentMassDa.ToString(), 
                 QValueThresholdTextBox.Text, 
-                PepQValueThresholdTextBox.Text, 
-                InternalIonsCheckBox.IsChecked.Value ? MinInternalFragmentLengthTextBox.Text : null))
+                PepQValueThresholdTextBox.Text,
+                _fragmentationParamsViewModel.GenerateInternalIons ? _fragmentationParamsViewModel.MinInternalIonLength.ToString() : null))
             {
                 return;
             }
@@ -566,7 +577,7 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(PrecursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            TheTask.SearchParameters.MaxFragmentSize = double.Parse(MaxFragmentMassTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.SearchParameters.MaxFragmentSize = _fragmentationParamsViewModel.MaxFragmentMassDa;
 
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in VariableModTypeForTreeViewObservableCollection)
@@ -622,7 +633,13 @@ namespace MetaMorpheusGUI
             DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
             bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
             bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
-            
+
+            string rtPredictorModelName;
+            if (SSRCalcRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.SSRCalc;
+            else if (Prosit2019iRTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2019iRT;
+            else if (Prosit2020iRTTMTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2020iRTTMT;
+            else rtPredictorModelName = RTPredictorNames.Chronologer; // default
+
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
@@ -648,12 +665,15 @@ namespace MetaMorpheusGUI
                 windowWidthThomsons: windowWidthThompsons,
                 numberOfWindows: numberOfWindows,//maybe change this some day
                 normalizePeaksAccrossAllWindows: normalizePeaksAccrossAllWindows,//maybe change this some day
-                addCompIons: AddCompIonCheckBox.IsChecked.Value,
+                addCompIons: _fragmentationParamsViewModel.GenerateComplementaryIons,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
                 maxHeterozygousVariants: MaxHeterozygousVariants,
                 precursorDeconParams: precursorDeconvolutionParameters,
-                productDeconParams: productDeconvolutionParameters);
+                productDeconParams: productDeconvolutionParameters,
+                precursorMassMatchMode: _massDifferenceAcceptorViewModel.PrecursorMassMatchMode,
+                fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
+                rtPredictorName: rtPredictorModelName);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {
@@ -674,12 +694,11 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            TheTask.SearchParameters.MinAllowedInternalFragmentLength = InternalIonsCheckBox.IsChecked.Value ? Convert.ToInt32(MinInternalFragmentLengthTextBox.Text) : 0;
+            TheTask.SearchParameters.MinAllowedInternalFragmentLength = _fragmentationParamsViewModel.GenerateInternalIons ? _fragmentationParamsViewModel.MinInternalIonLength : 0;
             TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoLabelFreeQuantification = !CheckBoxNoQuant.IsChecked.Value;
             TheTask.SearchParameters.UseSharedPeptidesForLFQ = CheckBoxUseSharedPeptidesForQuant.IsChecked.Value;
-            TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
             TheTask.SearchParameters.DoMultiplexQuantification = CheckBoxMultiplex.IsChecked.Value;
             TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
@@ -698,6 +717,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteDigestionProductCountFile = WriteDigestCountCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteTargetDecoyFasta = WriteTargetDecoyFastaCheckBox.IsChecked.Value;
 
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {
@@ -864,13 +884,13 @@ namespace MetaMorpheusGUI
             if (NonSpecificSearchRadioButton.IsChecked.Value)
             {
                 ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["non-specific"];
-                AddCompIonCheckBox.IsChecked = true;
+                _fragmentationParamsViewModel.GenerateComplementaryIons = true;
             }
             else
             {
-                AddCompIonCheckBox.IsChecked = false;
-                NTerminalIons.IsChecked = true;
-                CTerminalIons.IsChecked = true;
+                _fragmentationParamsViewModel.GenerateComplementaryIons = false;
+                _fragmentationParamsViewModel.RightSideFragmentIons = true;
+                _fragmentationParamsViewModel.LeftSideFragmentIons = true;
             }
         }
 
@@ -926,11 +946,11 @@ namespace MetaMorpheusGUI
                             {
                                 DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
                                 DeconHostViewModel.SetAllProductMaxChargeState(20);
-                                InternalIonsCheckBox.IsChecked = true;
-                                MinInternalFragmentLengthTextBox.Text = "10";
+                                _fragmentationParamsViewModel.GenerateInternalIons = true;
+                                _fragmentationParamsViewModel.MinInternalIonLength = 10;
                                 CheckBoxNoQuant.IsChecked = true; 
                                 _massDifferenceAcceptorViewModel.SelectedType =
-                                    _massDifferenceAcceptorViewModel.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
+                                    _massDifferenceAcceptorViewModel.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
 
                                 //uncheck all variable mods
                                 foreach (var mod in VariableModTypeForTreeViewObservableCollection)
@@ -1018,14 +1038,14 @@ namespace MetaMorpheusGUI
                 int maxLength = Convert.ToInt32(MaxPeptideLengthTextBox.Text);
                 if (maxLength > 0 && maxLength < 100) //default is 30000; 30000/300=100
                 {
-                    MaxFragmentMassTextBox.Text = (maxLength * 300).ToString(); //assume the average residue doesn't have a mass over 300 Da (largest is W @ 204, but mods exist)
+                    _fragmentationParamsViewModel.MaxFragmentMassDa = maxLength * 300; //assume the average residue doesn't have a mass over 300 Da (largest is W @ 204, but mods exist)
                 }
             }
         }
 
         private void SemiSpecificUpdate(object sender, RoutedEventArgs e)
         {
-            AddCompIonCheckBox.IsChecked = SemiSpecificSearchRadioButton.IsChecked.Value;
+            _fragmentationParamsViewModel.GenerateComplementaryIons = SemiSpecificSearchRadioButton.IsChecked.Value;
             if (SemiSpecificSearchRadioButton.IsChecked.Value)
             {
                 MissedCleavagesTextBox.Text = "2";
@@ -1033,20 +1053,8 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                NTerminalIons.IsChecked = true;
-                CTerminalIons.IsChecked = true;
-            }
-        }
-
-        private void SpectralRecoveryUpdate(object sender, RoutedEventArgs e)
-        {
-            if (CheckBoxLFQwSpectralRecovery.IsChecked.Value)
-            {
-                if (UpdateGUISettings.UseSpectralRecoveryMandatorySettings())
-                {
-                    CheckBoxMatchBetweenRuns.IsChecked = true;
-                    WriteSpectralLibraryCheckBox.IsChecked = true;
-                }
+                _fragmentationParamsViewModel.RightSideFragmentIons = true;
+                _fragmentationParamsViewModel.LeftSideFragmentIons = true;
             }
         }
 
@@ -1189,7 +1197,7 @@ namespace MetaMorpheusGUI
                 {
                     searchModeType = CleavageSpecificity.None; //prevents an accidental semi attempt of a non-specific protease
 
-                    if (CTerminalIons.IsChecked.Value)
+                    if (_fragmentationParamsViewModel.LeftSideFragmentIons)
                     {
                         Protease singleC = ProteaseDictionary.Dictionary["singleC"];
                         ProteaseComboBox.SelectedItem = singleC;
@@ -1200,41 +1208,48 @@ namespace MetaMorpheusGUI
                         ProteaseComboBox.SelectedItem = singleN;
                     }
                 }
-                if (!AddCompIonCheckBox.IsChecked.Value)
+                if (!_fragmentationParamsViewModel.GenerateComplementaryIons)
                 {
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
                 }
                 //only use N or C termini, not both
-                if (CTerminalIons.IsChecked.Value)
+                if (_fragmentationParamsViewModel.LeftSideFragmentIons)
                 {
-                    NTerminalIons.IsChecked = false;
+                    _fragmentationParamsViewModel.RightSideFragmentIons = false;
                 }
                 else
                 {
-                    NTerminalIons.IsChecked = true;
+                    _fragmentationParamsViewModel.LeftSideFragmentIons = true;
                 }
             }
         }
 
         private FragmentationTerminus GetFragmentationTerminus()
         {
-            if (NTerminalIons.IsChecked.Value && !CTerminalIons.IsChecked.Value)
+            FragmentationTerminus newTerm;
+            switch (_fragmentationParamsViewModel.LeftSideFragmentIons, _fragmentationParamsViewModel.RightSideFragmentIons)
             {
-                return FragmentationTerminus.N;
+                case (true, false) when !GuiGlobalParamsViewModel.Instance.IsRnaMode:
+                    newTerm = FragmentationTerminus.N;
+                    break;
+                case (false, true) when !GuiGlobalParamsViewModel.Instance.IsRnaMode:
+                    newTerm = FragmentationTerminus.C;
+                    break;
+                case (true, false) when GuiGlobalParamsViewModel.Instance.IsRnaMode:
+                    newTerm = FragmentationTerminus.FivePrime;
+                    break;
+                case (false, true) when GuiGlobalParamsViewModel.Instance.IsRnaMode:
+                    newTerm = FragmentationTerminus.ThreePrime;
+                    break;
+                case (false, false):
+                    MessageBox.Show("Warning: No ion types were selected. MetaMorpheus will be unable to search MS/MS spectra.");
+                    newTerm = FragmentationTerminus.None;
+                    break;
+                default:
+                    newTerm = FragmentationTerminus.Both;
+                    break;
             }
-            else if (!NTerminalIons.IsChecked.Value && CTerminalIons.IsChecked.Value)
-            {
-                return FragmentationTerminus.C;
-            }
-            else if (!NTerminalIons.IsChecked.Value && !CTerminalIons.IsChecked.Value) //why would you want this
-            {
-                MessageBox.Show("Warning: No ion types were selected. MetaMorpheus will be unable to search MS/MS spectra.");
-                return FragmentationTerminus.None;
-            }
-            else
-            {
-                return FragmentationTerminus.Both;
-            }
+            return newTerm;
         }
 
         //string out is for error messages
@@ -1389,16 +1404,6 @@ namespace MetaMorpheusGUI
             {
                 InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)InitiatorMethionineBehavior.Retain;
             }
-        }
-
-        /// <summary>
-        /// Sets the value of the Internal Ions TextBox upon being checked
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void InternalIonsCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            MinInternalFragmentLengthTextBox.Text = "4";
         }
     }
 

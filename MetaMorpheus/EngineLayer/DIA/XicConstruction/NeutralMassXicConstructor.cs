@@ -14,8 +14,7 @@ namespace EngineLayer.DIA
         public double MinMass { get; set; } 
         public int MinCharge { get; set; }
 
-        public NeutralMassXicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, DeconvolutionParameters deconParameters, double minMass = 0, int minCharge = 1, XicSpline? xicSpline = null)
-    : base(peakFindingTolerance, maxMissedScansAllowed, maxPeakHalfWidth, minNumberOfPeaks, xicSpline)
+        public NeutralMassXicConstructor(Tolerance peakFindingTolerance, int maxMissedScansAllowed, double maxPeakHalfWidth, int minNumberOfPeaks, DeconvolutionParameters deconParameters, double minMass = 0, int minCharge = 1, XicSpline? xicSpline = null) : base(peakFindingTolerance, maxMissedScansAllowed, maxPeakHalfWidth, minNumberOfPeaks, xicSpline)
         {
             DeconParameters = deconParameters;
             MinMass = minMass;

@@ -23,12 +23,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EngineLayer.DatabaseLoading;
+using EngineLayer.SpectrumMatch;
 using UsefulProteomicsDatabases;
-using UsefulProteomicsDatabases.Transcriptomics;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
+using EngineLayer.SpectrumMatch;
+using Omics.Fragmentation;
 
 namespace TaskLayer
 {
@@ -152,6 +154,27 @@ namespace TaskLayer
                     )
                 )
             )
+            .ConfigureType<List<MIonLoss>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => string.Join("\t", custom.Select(f => f.Annotation)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(typeName => MIonLoss.AllMIonLosses.GetValueOrDefault(typeName, null))
+                        .Where(t => t != null)
+                        .ToList()
+                    )
+                )
+            )
+            .ConfigureType<IFragmentationParams>(type => type
+                .WithConversionFor<TomlTable>(c => c
+                    .FromToml(tmlTable =>
+                        tmlTable.ContainsKey("ModificationsCanSuppressBaseLossIons")
+                            ? tmlTable.Get<RnaFragmentationParams>()
+                            : tmlTable.Get<FragmentationParams>())))
+            .ConfigureType<RnaFragmentationParams>(type => type
+                .CreateInstance(() => RnaFragmentationParams.Default))
+            .ConfigureType<FragmentationParams>(type => type
+                .CreateInstance(() => new()))
         );
        
 
@@ -252,8 +275,8 @@ namespace TaskLayer
                                     precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double? intensity = null;
-                                    if (commonParameters.UseMostAbundantPrecursorIntensity) 
-                                        intensity = envelope.Peaks.Max(p => p.intensity); 
+                                    if (commonParameters.UseMostAbundantPrecursorIntensity)
+                                        intensity = envelope.Peaks.Max(p => p.intensity);
 
                                     var fractionalIntensity = envelope.TotalIntensity /
                                           precursorSpectrum.MassSpectrum.YArray
@@ -263,7 +286,15 @@ namespace TaskLayer
                                               precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Maximum)
                                           ].Sum();
 
-                                    precursorSet.Add(new(envelope, intensity, fractionalIntensity));
+                                    // Method-agnostic envelope-quality score from mzLib (idempotent: caches on the
+                                    // envelope, so re-asking the same envelope is cheap).
+                                    double genericScore = envelope.GetOrComputeGenericScore(
+                                        commonParameters.PrecursorDeconvolutionParameters);
+
+                                    precursorSet.Add(new Precursor(envelope, intensity, fractionalIntensity)
+                                    {
+                                        DeconvolutionScore = genericScore
+                                    });
                                 }
                             }
                         }
@@ -304,10 +335,23 @@ namespace TaskLayer
 
                         foreach (var precursor in precursorSet)
                         {
+                            // The most-abundant (tallest) isotopologue mass of the deconvoluted envelope. Recorded
+                            // for every search, alongside the monoisotopic mass, because it is an observation and
+                            // not a search decision — the MassDiffAcceptor decides which of the two a search
+                            // matches on. Null when there is no envelope, or when the envelope reports no
+                            // most-abundant peak (the -1 sentinel, e.g. a neutral mass read from a pre-deconvoluted
+                            // file). (Isotopically unresolved high-mass species, which would instead be matched on
+                            // the average/centroid mass, are future work.)
+                            double? precursorMostAbundantMass = precursor.Envelope?.MostAbundantObservedNeutralMass > 0
+                                ? precursor.Envelope.MostAbundantObservedNeutralMass
+                                : null;
+
                             // assign precursor for this MS2 scan
                             var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.MonoisotopicPeakMz,
                                 precursor.Charge, fullFilePath, commonParameters, neutralExperimentalFragments,
-                                precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity);
+                                precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity,
+                                precursorMostAbundantMass: precursorMostAbundantMass,
+                                precursorDeconvolutionScore: precursor.DeconvolutionScore);
 
                             // assign precursors for MS2 child scans
                             if (ms2ChildScans != null)
@@ -322,7 +366,8 @@ namespace TaskLayer
                                     }
                                     var theChildScan = new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.MonoisotopicPeakMz,
                                         precursor.Charge, fullFilePath, commonParameters, childNeutralExperimentalFragments,
-                                        precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity);
+                                        precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity,
+                                        precursorMostAbundantMass: precursorMostAbundantMass);
                                     scan.ChildScans.Add(theChildScan);
                                 }
                             }
@@ -379,6 +424,9 @@ namespace TaskLayer
                     case DIAanalysisType.DIA:
                         var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
                         return diaEngine.GetPseudoMs2Scans();
+                    case DIAanalysisType.ISD:
+                        var isdEngine = new ISDEngine(myMSDataFile, commonParameters);
+                        return isdEngine.GetPseudoMs2Scans();
                     default:
                         throw new NotImplementedException("DIA analysis type not implemented.");
                 }
@@ -515,13 +563,21 @@ namespace TaskLayer
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            Tolerance productMassTolerance_LowRes = fileSpecificParams.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
+            DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
+            DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
+
+            // DoPrecursorDeconvolution and DoProductDeconvolution flow from CommonParameters only;
+            // file-specific PrecursorDeconvolutionParameters / ProductDeconvolutionParameters are stored
+            // independently and take effect when the corresponding Do* flag is true.
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
                 productMassTolerance: productMassTolerance,
+                productMassTolerance_LowRes: productMassTolerance_LowRes,
                 digestionParams: fileSpecificDigestionParams,
                 separationType: separationType,
 
@@ -553,9 +609,12 @@ namespace TaskLayer
                 maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
                 minVariantDepth: commonParams.MinVariantDepth,
                 addTruncations: commonParams.AddTruncations,
-                precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
-                productDeconParams: commonParams.ProductDeconvolutionParameters,
-                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity);
+                precursorDeconParams: precursorDeconParams,
+                productDeconParams: productDeconParams,
+                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
+                fragmentationParams: commonParams.FragmentationParameters,
+                precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
+                rtPredictorName: commonParams.RTPredictorName);
 
             return returnParams;
         }
@@ -571,6 +630,10 @@ namespace TaskLayer
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
             FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)>();
+
+            // The GUI re-runs the same task objects, so this survives between runs and would otherwise
+            // append a second copy of every sentence to AutoGeneratedManuscriptProse.txt.
+            ProseCreatedWhileRunning.Clear();
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
@@ -1037,10 +1100,14 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 bool includeOneOverK0Column = psms.Any(p => p.ScanOneOverK0.HasValue);
-                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column));
+                bool includeCollisionalEnergyColumn = psms.Any(p => p.CollisionalEnergy.HasValue);
+                // Only emit the most-abundant mass-error column when a run actually used most-abundant
+                // selection (its property is null otherwise), mirroring the data-driven gating above.
+                bool includeMostAbundantColumn = psms.Any(p => p.MostAbundantMassErrorPpm != null);
+                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
                 foreach (var psm in psms)
                 {
-                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column));
+                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
                 }
             }
         }
@@ -1547,6 +1614,30 @@ namespace TaskLayer
                     bioPolymers.RemoveAll(p => ReferenceEquals(p, accessionGroup[i]));
                 }
             }
+        }
+
+        /// <summary>
+        /// Legacy TOML compatibility when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
+        /// </summary>
+        /// <typeparam name="TTask"></typeparam>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public static TTask ReadTaskTomlWithLowResFallback<TTask>(string filePath) where TTask : MetaMorpheusTask
+        {
+            TomlTable raw = Toml.ReadFile(filePath, tomlConfig);
+            TTask task = raw.Get<TTask>();
+
+            if (raw.ContainsKey(nameof(CommonParameters)))
+            {
+                TomlTable common = raw.Get<TomlTable>(nameof(CommonParameters));
+                if (!common.ContainsKey(nameof(CommonParameters.ProductMassTolerance_LowRes)))
+                {
+                    // Legacy TOML behavior: omitted low-res follows product tolerance
+                    task.CommonParameters.ProductMassTolerance_LowRes = task.CommonParameters.ProductMassTolerance;
+                }
+            }
+
+            return task;
         }
     }
 }

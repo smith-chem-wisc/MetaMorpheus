@@ -55,7 +55,10 @@ namespace EngineLayer.Localization
                         MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                         Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, CommonParameters);
                         IBioPolymerWithSetMods peptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
-                        double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
+                        // A most-abundant search admits matches whose deconvoluted monoisotopic peak is off by
+                        // whole isotopologues; that offset must come out before the difference is localized,
+                        // or this engine localizes a ~1-2 Da modification that does not exist.
+                        double massDifference = psm.GetObservedMonoisotopicMass(peptide.MonoisotopicMass, CommonParameters) - peptide.MonoisotopicMass;
 
                         // this section will iterate through all residues of the peptide and try to localize the mass-diff at each residue and report a score for each residue
                         var localizedScores = new List<double>();
@@ -65,7 +68,7 @@ namespace EngineLayer.Localization
                             var peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
 
                             // this is the list of theoretical products for this peptide with mass-difference on this residue
-                            peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, productsWithLocalizedMassDiff);
+                            peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, productsWithLocalizedMassDiff, CommonParameters.FragmentationParameters);
 
                             var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, CommonParameters);
 

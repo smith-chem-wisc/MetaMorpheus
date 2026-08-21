@@ -10,14 +10,18 @@ namespace EngineLayer
     public class Ms2ScanWithSpecificMass
     {
         public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam,
-            IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null)
+            IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null,
+            double? precursorMostAbundantMass = null,
+            double precursorDeconvolutionScore = 0)
         {
             PrecursorMonoisotopicPeakMz = precursorMonoisotopicPeakMz;
             PrecursorCharge = precursorCharge;
             PrecursorMass = PrecursorMonoisotopicPeakMz.ToMass(precursorCharge);
+            PrecursorMostAbundantMass = precursorMostAbundantMass ?? 0;
             PrecursorIntensity = precursorIntensity ?? 1;
             PrecursorEnvelopePeakCount = envelopePeakCount ?? 1;
             PrecursorFractionalIntensity = precursorFractionalIntensity ?? -1;
+            PrecursorDeconvolutionScore = precursorDeconvolutionScore;
             FullFilePath = fullFilePath;
             ChildScans = new List<Ms2ScanWithSpecificMass>();
             NativeId = mzLibScan.NativeId;
@@ -40,11 +44,36 @@ namespace EngineLayer
 
         public MsDataScan TheScan { get; }
         public double PrecursorMonoisotopicPeakMz { get; }
+
+        /// <summary>
+        /// The observed monoisotopic precursor mass, in every search. This property does not change
+        /// meaning with the search type.
+        /// </summary>
         public double PrecursorMass { get; }
+
+        /// <summary>
+        /// The observed neutral mass of the most abundant (tallest) isotopologue of the precursor envelope,
+        /// or 0 when no envelope was deconvoluted for this precursor (a scan-header precursor, or a neutral
+        /// mass read from a pre-deconvoluted file). Like <see cref="PrecursorMass"/> this is a plain
+        /// observation, populated in every search and never redefined by one: it is what the detector saw,
+        /// not what the current search chose to match on.
+        /// <para>
+        /// Which of the two a search matches candidates against is decided by the
+        /// <see cref="EngineLayer.MassDiffAcceptor"/> — see
+        /// <see cref="PrecursorMassExtensions.GetPrecursorMassForSearch(Ms2ScanWithSpecificMass, MassDiffAcceptor)"/>.
+        /// </para>
+        /// </summary>
+        public double PrecursorMostAbundantMass { get; }
         public int PrecursorCharge { get; }
         public double PrecursorIntensity { get; }
         public int PrecursorEnvelopePeakCount { get; }
         public double PrecursorFractionalIntensity { get; }
+        /// <summary>
+        /// Method-agnostic envelope-quality score in [0, 1] from mzLib's DeconvolutionScorer.
+        /// 0 indicates either a maximally low-quality envelope or that no envelope was
+        /// deconvoluted for this scan (e.g. scan-header-only precursor path).
+        /// </summary>
+        public double PrecursorDeconvolutionScore { get; }
         public string FullFilePath { get; }
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan

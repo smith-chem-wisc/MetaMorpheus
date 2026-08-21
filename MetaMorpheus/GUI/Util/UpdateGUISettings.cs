@@ -211,40 +211,6 @@ namespace MetaMorpheusGUI
             return useRecommendedSettings;
         }
 
-        public static bool UseSpectralRecoveryMandatorySettings()
-        {
-            bool useMandatorySettings = false;
-            //check with the user to update params
-            if (GuiGlobalParamsViewModel.Instance.AskAboutSpectralRecoveryParams)
-            {
-                var results = ProteaseSpecificMsgBox.Show("Use Spectral Recovery Settings?",
-                    "The following parameters are necessary for the Spectral Recovery algorithm:\n" +
-                    "\t-Check 'Match between runs' (Search Task Only)\n" +
-                    "\t-Check 'Write Spectral Library' (Search Task Only)\n" +
-                    "\t-SEARCH TASK ONLY: Increase the maximum allowed modified isoforms to 4096'\n" +
-                    "Would you like to use these settings?");
-
-                if (results.UseSettings)
-                {
-                    useMandatorySettings = true;
-                }
-                //else do nothing
-
-                //if they don't want to see this again, save the answer
-                if (!results.AskAgain)
-                {
-                    GuiGlobalParamsViewModel.Instance.AskAboutSpectralRecoveryParams = false;
-                    GuiGlobalParamsViewModel.Instance.UseSpectralRecoveryParams = results.UseSettings;
-                }
-            }
-            else if (GuiGlobalParamsViewModel.Instance.UseSpectralRecoveryParams) //user didn't want to check in, but wanted to update last time
-            {
-                useMandatorySettings = true;
-            }
-            //else do nothing
-            return useMandatorySettings;
-        }
-
         public static List<(string, string)> TopDownModsForGPTMD = new List<(string, string)>
         {
             ("Common Variable", "Oxidation on M"),

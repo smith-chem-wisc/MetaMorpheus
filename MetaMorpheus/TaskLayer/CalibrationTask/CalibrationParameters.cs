@@ -10,10 +10,12 @@
             NumFragmentsNeededForEveryIdentification = 10;
             QValueCutoffForCalibratingPSMs = 0.01;
             WriteIndexedMzml = true;
+            SearchType = SearchType.Classic;
         }
 
         public bool WriteIntermediateFiles { get; set; }
         public bool WriteIndexedMzml { get; set; }
+        public SearchType SearchType { get; set; }
 
         public int MinMS1IsotopicPeaksNeededForConfirmedIdentification { get; set; }
         public int MinMS2IsotopicPeaksNeededForConfirmedIdentification { get; set; }

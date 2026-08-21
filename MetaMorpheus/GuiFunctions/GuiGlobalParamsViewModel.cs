@@ -105,12 +105,6 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         set { _current.AskAboutArgCParams = value; OnPropertyChanged(nameof(AskAboutArgCParams)); }
     }
 
-    public bool AskAboutSpectralRecoveryParams
-    {
-        get => _current.AskAboutSpectralRecoveryParams;
-        set { _current.AskAboutSpectralRecoveryParams = value; OnPropertyChanged(nameof(AskAboutSpectralRecoveryParams)); }
-    }
-
     public bool AskAboutModeSwitch
     {
         get => _current.AskAboutModeSwitch;
@@ -159,12 +153,6 @@ public class GuiGlobalParamsViewModel : BaseViewModel
         set { _current.UseArgCParams = value; OnPropertyChanged(nameof(UseArgCParams)); }
     }
 
-    public bool UseSpectralRecoveryParams
-    {
-        get => _current.UseSpectralRecoveryParams;
-        set { _current.UseSpectralRecoveryParams = value; OnPropertyChanged(nameof(UseSpectralRecoveryParams)); }
-    }
-
     public bool OverwriteOutputDirectory
     {
         get => _current.OverwriteOutputDirectory;
@@ -173,18 +161,32 @@ public class GuiGlobalParamsViewModel : BaseViewModel
 
 
     private AnalyteType? _previous;
+
+    /// <summary>
+    /// Controls the RNA vs Protein mode in the GUI.
+    /// This is the GUI's source of truth for mode - it immediately synchronizes GlobalVariables.AnalyteType.
+    /// Note: MetaMorpheusEngine.DetermineAnalyteType() will recalculate the analyte type at runtime 
+    /// based on CommonParameters (e.g., for file-specific params or top-down detection).
+    /// </summary>
     public bool IsRnaMode
     {
         get => _current.IsRnaMode;
         set
-        {   
+        {
+            if (value == _current.IsRnaMode)
+                return;
+
             // Invoke the event to check if the user wants to switch modes
             var args = new ModeSwitchRequestEventArgs();
 
+            // Sent from Test or other sources without UI initialization. 
+            if (RequestModeSwitchConfirmation is null)
+                args.Result = ModeSwitchResult.SwitchKeepFiles;
             // Ask the GUI how to move forward
             // - If we have a default saved and are told not to ask, it will skip the pop-up
             // - if no files are loaded it will tell us to switch, otherwise it will trigger a pop-up
-            RequestModeSwitchConfirmation?.Invoke(this, args);
+            else
+                RequestModeSwitchConfirmation.Invoke(this, args);
 
             if (args.RememberMyDecision)
             {
@@ -200,10 +202,18 @@ public class GuiGlobalParamsViewModel : BaseViewModel
             }
             
             _current.IsRnaMode = value;
+            
+            // Immediately synchronize GlobalVariables.AnalyteType - this is the GUI's source of truth
             if (_current.IsRnaMode)
+            {
                 GlobalVariables.AnalyteType = AnalyteType.Oligo;
+                _previous = null; // Reset when entering RNA mode
+            }
             else
+            {
+                // When exiting RNA mode, restore to Peptide (or previously saved protein mode type)
                 GlobalVariables.AnalyteType = _previous ??= AnalyteType.Peptide;
+            }
 
             OnPropertyChanged(nameof(IsRnaMode));
             OnPropertyChanged(nameof(MainWindowTitle));

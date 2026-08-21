@@ -41,7 +41,7 @@ public class DisambiguationEngine : MetaMorpheusEngine
                 psm.ResolveAllAmbiguities();
 
             // Recalculate Q-Values 
-            FdrAnalysisEngine.DoFalseDiscoveryRateAnalysis(_allSpectralMatches, false, FileSpecificParameters, null, null);
+            FdrAnalysisEngine.DoFalseDiscoveryRateAnalysis(_allSpectralMatches, false, FileSpecificParameters, null, null, CommonParameters);
         }
 
         Status("Done.");

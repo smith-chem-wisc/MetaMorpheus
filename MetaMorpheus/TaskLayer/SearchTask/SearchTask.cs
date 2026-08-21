@@ -36,8 +36,24 @@ namespace TaskLayer
 
         public SearchParameters SearchParameters { get; set; }
 
-        public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac)
+        /// <summary>
+        /// Builds the precursor search mode for a <see cref="MassDiffAcceptorType"/>.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately takes no <see cref="PrecursorMassMatchMode"/>. Whether candidates are matched on the
+        /// monoisotopic mass or the most-abundant isotopic mass is now carried entirely by
+        /// <paramref name="massDiffAcceptorType"/> (the <c>MostAbundant_*</c> members), so accepting the match
+        /// mode as well would let a caller ask for something this method cannot honour.
+        /// <see cref="RunSpecific"/> derives <see cref="CommonParameters.PrecursorMassMatchMode"/> from the
+        /// acceptor type instead, which is what keeps the theory and observed sides in step.
+        /// </remarks>
+        public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac,
+            AverageResidue averagineModel = null, double expectedIsotopeSpacing = Constants.C13MinusC12)
         {
+            averagineModel ??= GlobalVariables.AnalyteType == AnalyteType.Oligo
+                ? new OxyriboAveragine()
+                : new Averagine();
+
             switch (massDiffAcceptorType)
             {
                 case MassDiffAcceptorType.Exact:
@@ -83,14 +99,66 @@ namespace TaskLayer
                         },
                         precursorMassTolerance);
 
+                case MassDiffAcceptorType.MostAbundant_Exact:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant", precursorMassTolerance, averagineModel, 0, expectedIsotopeSpacing);
+
+                case MassDiffAcceptorType.MostAbundant_PlusMinusOne:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant_1", precursorMassTolerance, averagineModel, 1, expectedIsotopeSpacing);
+
+                case MassDiffAcceptorType.MostAbundant_PlusMinusTwo:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant_2", precursorMassTolerance, averagineModel, 2, expectedIsotopeSpacing);
+
                 default:
                     throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
             }
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, 
+        /// <summary>
+        /// The acceptor type equivalent to the pre-<c>MostAbundant_*</c> way of asking for a most-abundant
+        /// search, i.e. <c>CommonParameters.PrecursorMassMatchMode = MostAbundant</c>. That setting used to
+        /// override <see cref="MassDiffAcceptorType"/> outright and build a
+        /// <see cref="MostAbundantMassDiffAcceptor"/> at <see cref="MostAbundantMassDiffAcceptor.DefaultMaxApexOffsetNeutrons"/>
+        /// (2) neutrons of apex tolerance, which is exactly what <see cref="MassDiffAcceptorType.MostAbundant_PlusMinusTwo"/>
+        /// builds today.
+        /// </summary>
+        private const MassDiffAcceptorType LegacyMostAbundantEquivalent = MassDiffAcceptorType.MostAbundant_PlusMinusTwo;
+
+        /// <summary>
+        /// Migrates a run that asks for most-abundant matching the old way — through
+        /// <see cref="CommonParameters.PrecursorMassMatchMode"/> rather than a <c>MostAbundant_*</c>
+        /// <see cref="MassDiffAcceptorType"/> — onto the acceptor type that now carries that request.
+        /// </summary>
+        /// <remarks>
+        /// The GUI migrates on open, so this only reaches TOML and command-line runs — which is where
+        /// most existing most-abundant configurations live, because the match mode was the only way to ask
+        /// for one before the <c>MostAbundant_*</c> members existed. Without this, the acceptor built below
+        /// would be monoisotopic and the run would come back silently changed. Migrating rather than merely
+        /// warning is what keeps those runs searching the way they used to; the warning is what stops the
+        /// change from being silent, and is the only record of it — <see cref="MetaMorpheusTask.RunTask"/>
+        /// writes the settings toml before it calls <see cref="RunSpecific"/>, so that file still shows the
+        /// original pairing.
+        /// </remarks>
+        private void MigrateLegacyMostAbundantRequest()
+        {
+            if (CommonParameters.PrecursorMassMatchMode != PrecursorMassMatchMode.MostAbundant
+                || SearchParameters.MassDiffAcceptorType.IsMostAbundant())
+            {
+                return;
+            }
+
+            Warn($"PrecursorMassMatchMode is {PrecursorMassMatchMode.MostAbundant} but MassDiffAcceptorType is " +
+                 $"{SearchParameters.MassDiffAcceptorType}, which is monoisotopic. Most-abundant matching is now selected " +
+                 $"by the mass difference acceptor, so this search will use {LegacyMostAbundantEquivalent} — the equivalent " +
+                 $"of the old setting. Set MassDiffAcceptorType explicitly to silence this.");
+
+            SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
+        }
+
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
             FileSpecificParameters[] fileSettingsList)
         {
+            MigrateLegacyMostAbundantRequest();
+
             MyTaskResults = new(this);
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
@@ -156,7 +224,7 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
-            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, SearchParameters.DecoyType, SearchParameters.SearchTarget, localizeableModificationTypes, SearchParameters.TCAmbiguity);
+            var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, SearchParameters.DecoyType, SearchParameters.SearchTarget, localizeableModificationTypes, SearchParameters.TCAmbiguity, SearchParameters.WriteTargetDecoyFasta, OutputFolder);
             var proteinLoadingTask = dbLoader.RunAsync();
             List<IBioPolymer> bioPolymerList = null!;
 
@@ -199,12 +267,13 @@ namespace TaskLayer
             object indexLock = new object();
             object psmLock = new object();
 
-            Status("Searching files...", new List<string> { taskId } );
+            Status("Searching files...", new List<string> { taskId });
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>(); // key is filename, value is an int array of length 2, where the first element is the number of MS2 spectra in the file, and the second element is the number of different deconvoluted precursors assigned to those scans
             bool collectedDigestionInformation = false;
             IDictionary<(string Accession, string BaseSequence), int> digestionCountDictionary = null;
+            int numNotches = 0;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 if (GlobalVariables.StopLoops) { break; }
@@ -216,7 +285,17 @@ namespace TaskLayer
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
-                MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+                // The theory side is governed by SearchParameters.MassDiffAcceptorType, while the observed precursor
+                // mass comes from PrecursorMassMatchMode. Keep them aligned so a most-abundant acceptor actually
+                // searches against most-abundant masses (and vice versa).
+                combinedParams.PrecursorMassMatchMode = SearchParameters.MassDiffAcceptorType.IsMostAbundant()
+                    ? PrecursorMassMatchMode.MostAbundant
+                    : PrecursorMassMatchMode.Monoisotopic;
+
+                MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac,
+                    combinedParams.GetAverageResidue(), combinedParams.IsotopeSpacing());
+
+                numNotches = massDiffAcceptor.NumNotches;
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -236,7 +315,7 @@ namespace TaskLayer
 
                 // If we're doing multiplex quantification, and there are MS3 scans, we assume that
                 // MS3 was used for reporter ion detection, and adjust the parameters accordingly
-                if (SearchParameters.DoMultiplexQuantification && myMsDataFile.Scans.Any(s => s.MsnOrder ==3))
+                if (SearchParameters.DoMultiplexQuantification && myMsDataFile.Scans.Any(s => s.MsnOrder == 3))
                 {
                     // In most experiments with MS3 scans for reporter ion detection, MS2ChildScanDissociationType is LowCID.
                     // However, we do not set it here to allow for flexibility in dissociation type selection.
@@ -252,7 +331,13 @@ namespace TaskLayer
                 }
 
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
+                // Sort by the mass this search selects candidates on. ClassicSearchEngine binary-searches
+                // that same mass, so the array and the search key must use the same quantity.
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.GetPrecursorMassForSearch(combinedParams)).ToArray();
+                // A most-abundant search falls back to the monoisotopic mass for any scan with no observed
+                // apex. That is intended, but silent — report how often it happens so it is noticed.
+                string fallbackWarning = arrayOfMs2ScansSortedByMass.GetMonoisotopicFallbackWarning(combinedParams, Path.GetFileName(origDataFile));
+                if (fallbackWarning != null) { Warn(fallbackWarning); }
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
@@ -276,7 +361,7 @@ namespace TaskLayer
 
                 if (SearchParameters.DoMultiplexQuantification)
                 {
-                   IsobaricMassTag massTag = IsobaricMassTag.GetIsobaricMassTag(SearchParameters.MultiplexModId);
+                    IsobaricMassTag massTag = IsobaricMassTag.GetIsobaricMassTag(SearchParameters.MultiplexModId);
                     if (massTag == null) // Should probably warn/update results if null
                     {
                         throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + SearchParameters.MultiplexModId);
@@ -397,7 +482,25 @@ namespace TaskLayer
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
                             if (GlobalVariables.StopLoops) { break; }
                         }
+
+                        // Calculate spectral angles for non-specific search after each terminus iteration
+                        // This must happen before FDR analysis since spectral angles are used in PEP calculation
+                        // We use paramToUse (not combinedParams) because the FragmentationTerminus is used when 
+                        // generating theoretical fragments for decoy spectra fallback in CalculateSpectralAngles
+                        if (spectralLibrary != null)
+                        {
+                            Status("Calculating spectral library similarity...", thisId);
+                            foreach (var categoryPsms in fileSpecificPsmsSeparatedByFdrCategory)
+                            {
+                                if (categoryPsms != null)
+                                {
+                                    SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, categoryPsms, arrayOfMs2ScansSortedByMass, paramToUse);
+                                }
+                            }
+                            ReportProgress(new ProgressEventArgs(100, "Done with spectral library similarity!", thisId));
+                        }
                     }
+
                     lock (psmLock)
                     {
                         for (int i = 0; i < allCategorySpecificPsms.Length; i++)
@@ -414,11 +517,11 @@ namespace TaskLayer
                 {
                     Status("Starting search...", thisId);
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, bioPolymerList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary, SearchParameters.WriteDigestionProductCountFile);
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, bioPolymerList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId, SearchParameters.WriteSpectralLibrary, SearchParameters.WriteDigestionProductCountFile);
                     var result = newClassicSearchEngine.Run();
 
                     // The same proteins (all of them) get digested with each classic search engine, therefor we only need to calculate this for the first file that runs
-                    if (!collectedDigestionInformation) 
+                    if (!collectedDigestionInformation)
                     {
                         collectedDigestionInformation = true;
                         digestionCountDictionary = (result.MyEngine as ClassicSearchEngine).DigestionCountDictionary;
@@ -434,7 +537,8 @@ namespace TaskLayer
                 }
 
                 // calculate/set spectral angles if there is a spectral library being used
-                if (spectralLibrary != null)
+                // Note: Non-specific search handles spectral angle calculation separately (before adding to allCategorySpecificPsms)
+                if (spectralLibrary != null && SearchParameters.SearchType != SearchType.NonSpecific)
                 {
                     Status("Calculating spectral library similarity...", thisId);
                     SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
@@ -458,7 +562,6 @@ namespace TaskLayer
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            int numNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             //resolve category specific fdrs (for speedy semi and nonspecific
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
@@ -478,7 +581,7 @@ namespace TaskLayer
                 AllSpectralMatches = allPsms,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
-                ListOfDigestionParams = [..fileSpecificCommonParams.Select(p => p.DigestionParams)],
+                ListOfDigestionParams = [.. fileSpecificCommonParams.Select(p => p.DigestionParams)],
                 CurrentRawFileList = currentRawFileList,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,
@@ -498,23 +601,6 @@ namespace TaskLayer
                 DigestionCountDictionary = digestionCountDictionary
             };
             return postProcessing.Run();
-        }
-
-        private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
-        {
-            switch (massDiffAcceptorType)
-            {
-                case MassDiffAcceptorType.Exact: return 1;
-                case MassDiffAcceptorType.OneMM: return 2;
-                case MassDiffAcceptorType.TwoMM: return 3;
-                case MassDiffAcceptorType.ThreeMM: return 4;
-                case MassDiffAcceptorType.ModOpen: return 1;
-                case MassDiffAcceptorType.Open: return 1;
-                case MassDiffAcceptorType.PlusOrMinusThreeMM: return 7;
-                case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
-
-                default: throw new MetaMorpheusException("Unknown mass difference acceptor type");
-            }
         }
 
         private static MassDiffAcceptor ParseSearchMode(string text)

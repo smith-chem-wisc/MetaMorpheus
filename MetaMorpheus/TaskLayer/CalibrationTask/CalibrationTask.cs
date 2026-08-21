@@ -1,14 +1,16 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.Indexing;
+using EngineLayer.ModernSearch;
 using EngineLayer.Util;
-using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using Omics;
 using Omics.Modifications;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using System;
@@ -31,6 +33,7 @@ namespace TaskLayer
                 precursorMassTolerance: new PpmTolerance(InitialPrecursorTolerance)
                 );
 
+
             CalibrationParameters = new CalibrationParameters();
         }
 
@@ -46,12 +49,18 @@ namespace TaskLayer
 
         public const string CalibSuffix = "-calib";
 
+
         private List<string> _unsuccessfullyCalibratedFilePaths;
         private string _taskId;
         private List<IBioPolymer> _proteinList;
         private List<Modification> _variableModifications;
         private List<Modification> _fixedModifications;
         private MyFileManager _myFileManager;
+        private List<DbForTask> _dbFilenameList;
+
+        // Modern Search indexing fields
+        private List<PeptideWithSetModifications> _peptideIndex;
+        private List<int>[] _fragmentIndex;
 
         protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
@@ -68,6 +77,10 @@ namespace TaskLayer
                     continue;
                 }
 
+                // Reset indexes so they are regenerated with this file's combinedParams
+                _peptideIndex = null;
+                _fragmentIndex = null;
+
                 // get original file name, and file names for potential outputs
                 string originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 string uncalibratedNewFullFilePath = Path.Combine(outputFolder, Path.GetFileName(currentRawFileList[spectraFileIndex]));
@@ -79,11 +92,11 @@ namespace TaskLayer
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { _taskId, "Individual Spectra Files", originalUncalibratedFilePath });
 
                 // carry over file-specific parameters from the uncalibrated file to the calibrated one and update combined params
-                FileSpecificParameters fileSpecificParams = fileSettingsList[spectraFileIndex] == null 
-                    ? new() 
+                FileSpecificParameters fileSpecificParams = fileSettingsList[spectraFileIndex] == null
+                    ? new()
                     : fileSettingsList[spectraFileIndex].Clone();
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams);
-                
+
                 // load the file
                 Status("Loading spectra file...", new List<string> { _taskId, "Individual Spectra Files" });
                 MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams).LoadAllStaticData();
@@ -102,7 +115,7 @@ namespace TaskLayer
                     acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
                 }
                 // If there still aren't enough points, give up
-                if(!SufficientAcquisitionResults(acquisitionResultsFirst))
+                if (!SufficientAcquisitionResults(acquisitionResultsFirst))
                 {
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, _taskId);
                     continue;
@@ -137,7 +150,7 @@ namespace TaskLayer
                 _ = engine.Run();
 
                 // Third round of calibration
-                DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile,  combinedParams, originalUncalibratedFilePath);
+                DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile, combinedParams, originalUncalibratedFilePath);
 
                 if (CalibrationHasValue(acquisitionResultsSecond, acquisitionResultsThird))
                 {
@@ -181,22 +194,59 @@ namespace TaskLayer
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
         {
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalDataFile);
-            MassDiffAcceptor searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
-                new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
-                new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            // In most-abundant mode, find calibration PSMs with the apex acceptor. The calibration error
+            // itself is recomputed per-isotope from the identified peptide's theoretical distribution
+            // (DataPointAcquisitionEngine) and is independent of the precursor-matching convention.
+            // The apex acceptor is only usable when a most-abundant peak was actually observed, which
+            // requires precursor deconvolution. Calibration can run with deconvolution off (see ctor),
+            // and the scans then carry no most-abundant mass at all — so use the standard zero-centered
+            // (monoisotopic) acceptor there, and the scans' monoisotopic mass is what gets matched.
+            MassDiffAcceptor searchMode;
+            if (combinedParameters.UsesMostAbundantPeak()
+                && combinedParameters.DoPrecursorDeconvolution)
+            {
+                searchMode = new MostAbundantMassDiffAcceptor("mostAbundant", combinedParameters.PrecursorMassTolerance,
+                    combinedParameters.GetAverageResidue(),
+                    expectedIsotopeSpacing: combinedParameters.IsotopeSpacing());
+            }
+            else
+            {
+                searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
+                    new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
+                    new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            }
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.GetPrecursorMassForSearch(combinedParameters)).ToArray();
+            // A most-abundant search falls back to the monoisotopic mass for any scan with no observed apex.
+            // That is intended, but silent — report how often it happens so it is noticed.
+            string fallbackWarning = listOfSortedms2Scans.GetMonoisotopicFallbackWarning(combinedParameters, Path.GetFileName(originalDataFile));
+            if (fallbackWarning != null) { Warn(fallbackWarning); }
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
+            Log("Searching with searchType: " + CalibrationParameters.SearchType, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with precursorMassTolerance: " + combinedParameters.PrecursorMassTolerance, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + combinedParameters.ProductMassTolerance, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
-            _ = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, _variableModifications, _fixedModifications, null, null, null, _proteinList, searchMode, combinedParameters,
-                FileSpecificParameters, null, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }, false).Run();
+            if (CalibrationParameters.SearchType == SearchType.Classic)
+            {
+                _ = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, _variableModifications, _fixedModifications, null, null, null, _proteinList, searchMode, combinedParameters,
+                    FileSpecificParameters, null, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }, false).Run();
+            }
+            else // Modern Search
+            {
+                // Regenerate indexes whenever tolerances change to keep fragment index in sync with current parameters
+                GenerateIndexes(combinedParameters, fileNameWithoutExtension);
+
+                _ = new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, _peptideIndex, _fragmentIndex, 0, combinedParameters,
+                    FileSpecificParameters, searchMode, SearchParameters.DefaultMaxFragmentSize, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+            }
 
             List<SpectralMatch> allPsms = allPsmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
-                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                // Rank equal-scoring matches by how close the precursor is to the candidate. The isotope
+                // offset a most-abundant search allowed is not "closeness" - left in, it would rank a match
+                // with a 1-neutron apex misprediction behind an inferior one.
+                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, combinedParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                 .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
 
             _ = new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, FileSpecificParameters, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }, doPEP: false).Run();
@@ -233,6 +283,7 @@ namespace TaskLayer
             return currentResult;
         }
 
+
         /// <summary>
         /// Writes prose settings and initializes the following private fields used by the calibration engine:
         /// _taskId, _variableModifications, _fixedModifications, _proteinList, _myFileManager, _unsuccessfullyCalibratedFilePaths
@@ -250,12 +301,87 @@ namespace TaskLayer
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, DecoyType.Reverse, true, localizeableModificationTypes);
             var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
             _proteinList = loadingResults!.BioPolymers;
-            
+
             _myFileManager = new MyFileManager(true);
             _unsuccessfullyCalibratedFilePaths = new List<string>();
+            _dbFilenameList = dbFilenameList;
+
+            // Reset indexes for Modern Search (will be generated on first use)
+            _peptideIndex = null;
+            _fragmentIndex = null;
 
             // write prose settings
             WriteProse(_fixedModifications, _variableModifications, _proteinList);
+        }
+
+        /// <summary>
+        /// Filters a mixed biopolymer list down to <see cref="Protein"/> entries only, returning
+        /// the filtered list and the number of non-protein entries that were excluded.
+        /// Does not throw or warn — callers are responsible for acting on the returned counts.
+        /// </summary>
+        /// <param name="bioPolymers">The full list of biopolymers loaded from the database.</param>
+        /// <returns>
+        /// A tuple of the filtered <see cref="Protein"/> list and the count of excluded non-protein entries.
+        /// </returns>
+        public static (List<Protein> Proteins, int ExcludedCount) FilterBiopolymersForModernSearch(
+            List<IBioPolymer> bioPolymers)
+        {
+            var proteins = bioPolymers.OfType<Protein>().ToList();
+            int excludedCount = bioPolymers.Count - proteins.Count;
+            return (proteins, excludedCount);
+        }
+
+        /// <summary>
+        /// Generates peptide and fragment indexes for Modern Search.
+        /// Delegates biopolymer filtering to <see cref="FilterBiopolymersForModernSearch"/>.
+        /// Throws <see cref="MetaMorpheusException"/> if no Protein entries remain after filtering.
+        /// Warns if non-protein biopolymers were excluded.
+        /// </summary>
+        /// <param name="combinedParameters">The combined common parameters for the current search.</param>
+        /// <param name="fileNameWithoutExtension">The spectra file name (without extension) for status reporting.</param>
+        /// <exception cref="MetaMorpheusException">Thrown when the database contains no Protein entries compatible with Modern Search.</exception>
+        private void GenerateIndexes(CommonParameters combinedParameters, string fileNameWithoutExtension)
+        {
+            Status("Generating indexes for Modern Search...", new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
+
+            var (proteinList, excludedCount) = FilterBiopolymersForModernSearch(_proteinList);
+
+            if (proteinList.Count == 0)
+            {
+                throw new MetaMorpheusException(
+                    "Modern Search calibration requires protein sequences, but the loaded database contains no Protein entries " +
+                    $"({excludedCount} non-protein biopolymer(s) were filtered out). " +
+                    "Use Classic Search calibration for non-protein analytes, or provide a protein sequence database.");
+            }
+
+            if (excludedCount > 0)
+            {
+                Warn($"Modern Search calibration: {excludedCount} non-protein biopolymer(s) were excluded from the search index. " +
+                     "Only protein sequences are supported by Modern Search.");
+            }
+
+            var indexingEngine = new IndexingEngine(
+                proteinList,
+                _variableModifications,
+                _fixedModifications,
+                null, // silacLabels
+                null, // startLabel
+                null, // endLabel
+                0,    // currentPartition (using single partition for calibration)
+                DecoyType.Reverse,
+                combinedParameters,
+                FileSpecificParameters,
+                SearchParameters.DefaultMaxFragmentSize,
+                false, // generatePrecursorIndex
+                _dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(),
+                TargetContaminantAmbiguity.RemoveContaminant,
+                new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
+
+            var indexingResults = (IndexingResults)indexingEngine.Run();
+            _peptideIndex = indexingResults.PeptideIndex;
+            _fragmentIndex = indexingResults.FragmentIndex;
+
+            Status("Indexing complete.", new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
         }
 
         public void WriteProse(List<Modification> fixedModifications, List<Modification> variableModifications, List<IBioPolymer> bioPolymerList)
@@ -305,6 +431,18 @@ namespace TaskLayer
         {
             double newPrecursorPpmTolerance = Math.Round(PrecursorMultiplierForToml * acquisitionResults.PsmPrecursorIqrPpmError + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError), 1);
             double newProductPpmTolerance = Math.Round(ProductMultiplierForToml * acquisitionResults.PsmProductIqrPpmError + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1);
+
+            // Guardrail (most-abundant mode only): the neutron-misassignment error distribution can be
+            // pathologically wide there, and calibration must never write a tolerance wider than the one
+            // it searched with (that would explode the candidate space and memory in downstream
+            // GPTMD/Search). In default Monoisotopic mode the tolerance is left unclamped, preserving the
+            // historical multi-round calibration behavior.
+            if (combinedParams.UsesMostAbundantPeak())
+            {
+                newPrecursorPpmTolerance = Math.Min(newPrecursorPpmTolerance, combinedParams.PrecursorMassTolerance.Value);
+                newProductPpmTolerance = Math.Min(newProductPpmTolerance, combinedParams.ProductMassTolerance.Value);
+            }
+
             UpdateCombinedParameters(combinedParams, newPrecursorPpmTolerance, newProductPpmTolerance);
         }
 
@@ -320,7 +458,7 @@ namespace TaskLayer
             // if we didn't calibrate, write the uncalibrated file to the output folder as an mzML
             File.Copy(originalUncalibratedFilePath, uncalibratedNewFullFilePath, true);
             // and add it to the list of all unsuccessfully calibrated files
-            unsuccessfullyCalibratedFilePaths.Add(uncalibratedNewFullFilePath); 
+            unsuccessfullyCalibratedFilePaths.Add(uncalibratedNewFullFilePath);
 
             // provide a message indicating why we couldn't calibrate
             CalibrationWarnMessage(acquisitionResults);
@@ -340,7 +478,7 @@ namespace TaskLayer
             int peptidesCountFirst = acquisitionResultsFirst.Psms.Select(p => p.FullSequence).Distinct().Count();
             int peptidesCountSecond = acquisitionResultsSecond.Psms.Select(p => p.FullSequence).Distinct().Count();
             bool improvedCounts = psmsCountSecond > psmsCountFirst && peptidesCountSecond > peptidesCountFirst;
-            if(improvedCounts)
+            if (improvedCounts)
             {
                 return true;
             }
@@ -351,11 +489,11 @@ namespace TaskLayer
 
             return (numPsmsIncreased && numPeptidesIncreased && psmPrecursorMedianPpmErrorDecreased && psmProductMedianPpmErrorDecreased);
         }
-        
+
         private bool SufficientAcquisitionResults(DataPointAquisitionResults acquisitionResults)
         {
-            return acquisitionResults.Psms.Count >= NumRequiredPsms 
-                && acquisitionResults.Ms1List.Count >= NumRequiredMs1Datapoints 
+            return acquisitionResults.Psms.Count >= NumRequiredPsms
+                && acquisitionResults.Ms1List.Count >= NumRequiredMs1Datapoints
                 && acquisitionResults.Ms2List.Count >= NumRequiredMs2Datapoints;
         }
 

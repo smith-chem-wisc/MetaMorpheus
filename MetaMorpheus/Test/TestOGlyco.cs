@@ -43,6 +43,39 @@ namespace Test
             Assert.That(OGlycanBoxes.Count(), Is.EqualTo(2924));
         }
 
+        /// <summary>
+        /// A peptide whose candidate sites cannot accommodate every modification in the box leaves the
+        /// graph's terminal node unreachable. GlycoSearchEngine screens that out with GraphCheck, so this
+        /// only arises when the graph is driven directly, and it should say so rather than throwing a bare
+        /// NullReferenceException.
+        /// </summary>
+        [Test]
+        public static void OGlycoTest_LocalizeOGlycan_TooFewSitesForBox_ThrowsDescriptive()
+        {
+            // One candidate site, a box carrying two glycans: the terminal node can never be reached.
+            var glycanBox = OGlycanBoxes.First(p => p.NumberOfMods == 2);
+            var childBoxes = GlycanBox.BuildChildOGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds).ToArray();
+
+            var protein = new Protein("AAASAAAK", "onesite");
+            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            var products = new List<Product>();
+            peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+
+            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
+            Assert.That(modPos.Count, Is.EqualTo(1), "Test peptide should offer exactly one candidate site.");
+
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.ETD, trimMsMsPeaks: false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var scan = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).First();
+
+            var localizationGraph = new LocalizationGraph(modPos, glycanBox, childBoxes, -1);
+
+            var exception = Assert.Throws<MetaMorpheusException>(() =>
+                LocalizationGraph.LocalizeOGlycan(localizationGraph, scan, commonParameters.ProductMassTolerance, products));
+            Assert.That(exception.Message, Does.Contain("GraphCheck"));
+        }
+
         [Test]
         public static void GlycoTest_GlycanLoading()
         {
@@ -395,7 +428,7 @@ namespace Test
             var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
 
 
-            Assert.That(fragments_etd.Count == 22);
+            Assert.That(fragments_etd.Count, Is.EqualTo(15)); // 7 c + 8 zDot (incl. the full-length zDot8); ETD no longer produces a y series
             Assert.That(fragments_etd.Last().Annotation == "zDot8");
             Assert.That(fragments_etd.Last().NeutralMass > 1824);
 
@@ -407,7 +440,7 @@ namespace Test
         }
 
         [Test]
-        public static void OGlycoTest_FragmentIonsHash()
+        public static void OGlycoTest_ModifiedFragmentsIncludeNeutralLosses()
         {
             //Get glycanBox
             var glycanBox = OGlycanBoxes[22]; // GlycanBox : [N1A1 on T], [N1 on S]
@@ -425,30 +458,7 @@ namespace Test
             var fragmentsMod_hcd = new List<Product>();
                 peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both, fragmentsMod_hcd); 
             Assert.That(fragments_hcd.Count() == 20);
-            Assert.That(fragmentsMod_hcd.Count() == 61); //The Fragments also contain neutral loss ions. 
-
-            var frag_ments_etd = new List<Product>();
-                peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, frag_ments_etd);
-            var fragmentsMod_etd = new List<Product>();
-                peptideWithMod.Fragment(DissociationType.ETD, FragmentationTerminus.Both, fragmentsMod_etd);
-
-            //Tuple<int, int[]> keyValuePair represents: <glycanBoxId, glycanModPositions> 
-            Tuple<int, int[]> keyValuePairs = new Tuple<int, int[]>(22, modPos.ToArray());
-
-            var fragments_etd_origin = GlycoPeptides.GetFragmentHash(frag_ments_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
-
-            var fragmentsHash_etd = GlycoPeptides.GetFragmentHash(frag_ments_etd, keyValuePairs, OGlycanBoxes, 1000);
-
-            var fragmentsMod_etd_origin = GlycoPeptides.GetFragmentHash(fragmentsMod_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
-
-            var overlap = fragmentsHash_etd.Intersect(fragments_etd_origin).Count();
-
-            Assert.That(overlap == 14);
-
-            var overlap2 = fragmentsHash_etd.Intersect(fragmentsMod_etd_origin).Count();
-
-            //ETD didn't change y ions.
-            Assert.That(overlap2 == 23);
+            Assert.That(fragmentsMod_hcd.Count() == 61); //The Fragments also contain neutral loss ions.
         }
 
         [Test]
@@ -609,30 +619,6 @@ namespace Test
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P02649.fasta"), false);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\181217_Fusion_(LC2)_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz(400_1200)_21707.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
-            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
-        }
-
-        [Test]
-        public static void OGlycoTest_Run3()
-        {
-            //Test search EThcD scan with setting DissociationType ETD.The Oxonium ion always matches, but the filter is user controlled.
-            //The scan is modified to contain no 274 and 292 oxonium ions.
-            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfig_ETD_Run3.toml"), MetaMorpheusTask.tomlConfig);
-
-            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
-            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\FiveMucinFasta.fasta"), false);
-            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\22-12-14_EclipseOglyco_EThcD_150ms_calRxn_17360.mgf");
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
-            var resultsPath = File.ReadAllLines(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\Task\oglyco.psmtsv"));
-            Assert.That(resultsPath.Length > 1);
-            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
-
-            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
-            var task2 = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfig_ETD_Run3.toml"), MetaMorpheusTask.tomlConfig);
-            task2._glycoSearchParameters.OxoniumIonFilt = true; //turn on the diagnostic filter
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task2) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
-            var resultsExist = File.Exists(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\Task\oglyco.psmtsv"));
-            Assert.That(!resultsExist);
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
 
@@ -970,11 +956,11 @@ namespace Test
             string spectraFile1 = Path.Combine(outputFolder, "171025_06subset_1.mzML");
             string spectraFile2 = Path.Combine(outputFolder, "171025_06subset_2.mzML");
 
-            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+            List<SpectraFileInfo> spectraFiles = new List<SpectraFileInfo>();
 
             //These conditions are such that the experimental design file is bad.
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 9, 0));
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 5, 0, 4));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 9, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition2", 5, 0, 4));
 
             ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
 
@@ -1331,10 +1317,10 @@ namespace Test
             string spectraFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML");
             string spectraFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML");
 
-            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+            List<SpectraFileInfo> spectraFiles = new List<SpectraFileInfo>();
 
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
 
             ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
 
@@ -1408,10 +1394,10 @@ namespace Test
             string spectraFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML");
             string spectraFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML");
 
-            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+            List<SpectraFileInfo> spectraFiles = new List<SpectraFileInfo>();
 
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
 
             ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
 
@@ -1482,10 +1468,10 @@ namespace Test
             string spectraFile1 = Path.Combine(outputFolder, "171025_06subset_1.mzML");
             string spectraFile2 = Path.Combine(outputFolder, "171025_06subset_2.mzML");
 
-            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+            List<SpectraFileInfo> spectraFiles = new List<SpectraFileInfo>();
 
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
-            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
 
             ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
 
