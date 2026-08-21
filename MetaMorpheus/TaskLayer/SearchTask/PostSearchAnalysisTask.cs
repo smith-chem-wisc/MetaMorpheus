@@ -333,6 +333,15 @@ namespace TaskLayer
                     includeAmbiguousMods: false,
                     includeHighQValuePsms: false);
 
+                // FlashLFQ needs a mass. The filter above screens on sequence, which does not imply a
+                // resolved mass: a NaN residue mass, or two best matches whose mods share an IdWithMotif
+                // but not a mass, both leave BioPolymerWithSetModsMonoisotopicMass null.
+                int psmsWithoutMass = psmsForQuantification.RemovePsmsWithoutResolvedMass();
+                if (psmsWithoutMass > 0)
+                {
+                    Warn($"{psmsWithoutMass} PSM(s) were excluded from quantification because their monoisotopic mass could not be determined.");
+                }
+
                 // Only these peptides will be written to the AllQuantifiedPeptides.tsv output file
                 var peptideSequencesForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                     CommonParameters,
