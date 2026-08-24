@@ -37,6 +37,12 @@ namespace MetaMorpheusGUI
                 {
                     MessageBox.Show(warning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
+                else 
+                {
+                    MessageBox.Show(
+                          $"The monosaccharide \"{name}\" was added to your dictionary. It can now be recognized when you build your glycan database.",
+                          "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
             }
             catch (Exception ex)
             {
