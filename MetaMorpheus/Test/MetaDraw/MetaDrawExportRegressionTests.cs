@@ -17,6 +17,12 @@ namespace Test.MetaDraw
     [Apartment(ApartmentState.STA)]
     public class MetaDrawExportRegressionTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            MetaDrawSettings.ResetSettings();
+        }
+
         [Test]
         public void ExportPlot_WhenStationarySequenceDrawingIsDisabled_DoesNotThrow()
         {

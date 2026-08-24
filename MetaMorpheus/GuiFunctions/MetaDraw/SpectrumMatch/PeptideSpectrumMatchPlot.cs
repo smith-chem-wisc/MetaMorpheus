@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
 using Readers;
+using System;
 
 namespace GuiFunctions
 {
@@ -59,15 +60,30 @@ namespace GuiFunctions
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
             // render stationary sequence as bitmap and export as png
-            stationarySequence.Height += 30;
-            stationarySequence.Width += 30;
-            Size stationarySequenceSize = new Size((int)stationarySequence.Width, (int)stationarySequence.Height);
-            stationarySequence.Measure(stationarySequenceSize);
-            stationarySequence.Arrange(new Rect(stationarySequenceSize));
+            int stationarySequenceWidth = GetCanvasDimension(stationarySequence.Width, stationarySequence.ActualWidth) + 30;
+            int stationarySequenceHeight = GetCanvasDimension(stationarySequence.Height, stationarySequence.ActualHeight) + 30;
+            Size stationarySequenceSize = new Size(stationarySequenceWidth, stationarySequenceHeight);
+            double originalStationarySequenceWidth = stationarySequence.Width;
+            double originalStationarySequenceHeight = stationarySequence.Height;
+            RenderTargetBitmap renderStationaryBitmap;
+            Vector stationarySequenceLocationVector;
+            try
+            {
+                stationarySequence.Width = stationarySequenceWidth;
+                stationarySequence.Height = stationarySequenceHeight;
+                stationarySequence.Measure(stationarySequenceSize);
+                stationarySequence.Arrange(new Rect(stationarySequenceSize));
 
-            RenderTargetBitmap renderStationaryBitmap = new RenderTargetBitmap((int)(dpiScale * stationarySequence.Width), (int)(dpiScale * stationarySequence.Height),
-                                                  MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
-            renderStationaryBitmap.Render(stationarySequence);
+                renderStationaryBitmap = new RenderTargetBitmap((int)(dpiScale * stationarySequenceWidth), (int)(dpiScale * stationarySequenceHeight),
+                                                      MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+                renderStationaryBitmap.Render(stationarySequence);
+                stationarySequenceLocationVector = (Vector)stationarySequence.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(stationarySequence);
+            }
+            finally
+            {
+                stationarySequence.Width = originalStationarySequenceWidth;
+                stationarySequence.Height = originalStationarySequenceHeight;
+            }
 
             PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderStationaryBitmap));
@@ -82,10 +98,9 @@ namespace GuiFunctions
             points.Add(new Point(0, 0));
 
             var tempStatSequenceBitmap = new System.Drawing.Bitmap(tempStationarySequencePngPath);
-            System.Drawing.Bitmap stationarySequenceBitmap = new System.Drawing.Bitmap(tempStatSequenceBitmap, new System.Drawing.Size((int)stationarySequence.Width, (int)stationarySequence.Height));
+            System.Drawing.Bitmap stationarySequenceBitmap = new System.Drawing.Bitmap(tempStatSequenceBitmap, new System.Drawing.Size(stationarySequenceWidth, stationarySequenceHeight));
             bitmaps.Add(stationarySequenceBitmap);
-            var stationarySequenceLocationVector = (Vector)stationarySequence.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(stationarySequence);
-            Point stationarySequencePoint = new Point(stationarySequenceLocationVector.X, stationarySequenceLocationVector.Y);
+            Point stationarySequencePoint = new Point(stationarySequenceLocationVector.X + 50, stationarySequenceLocationVector.Y);
             points.Add(stationarySequencePoint);
 
             // render ptm legend as bitmap and export as png if used
@@ -94,7 +109,9 @@ namespace GuiFunctions
             if (ptmLegend != null && MetaDrawSettings.ShowLegend)
             {
                 // Saving Canvas as a usable Png
-                RenderTargetBitmap ptmLegendRenderBitmap = new((int)(dpiScale * ptmLegend.ActualWidth), (int)(dpiScale * ptmLegend.ActualHeight),
+                int ptmLegendWidth = GetCanvasDimension(ptmLegend.ActualWidth, 0);
+                int ptmLegendHeight = GetCanvasDimension(ptmLegend.ActualHeight, 0);
+                RenderTargetBitmap ptmLegendRenderBitmap = new((int)(dpiScale * ptmLegendWidth), (int)(dpiScale * ptmLegendHeight),
                          MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
                 ptmLegendRenderBitmap.Render(ptmLegend);
                 PngBitmapEncoder legendEncoder = new PngBitmapEncoder();
@@ -106,9 +123,9 @@ namespace GuiFunctions
 
                 // converting png to the final bitmap format
                 System.Drawing.Bitmap tempPtmLegendBitmap = new(tempPtmLegendPngPath);
-                ptmLegendBitmap = new System.Drawing.Bitmap(tempPtmLegendBitmap, new System.Drawing.Size((int)ptmLegend.ActualWidth, (int)ptmLegend.ActualHeight));
+                ptmLegendBitmap = new System.Drawing.Bitmap(tempPtmLegendBitmap, new System.Drawing.Size(ptmLegendWidth, ptmLegendHeight));
                 bitmaps.Add(ptmLegendBitmap);
-                ptmLegendPoint = new Point(ptmLegendLocationVector.X, ptmLegendLocationVector.Y);
+                ptmLegendPoint = new Point(ptmLegendLocationVector.X - 14, ptmLegendLocationVector.Y - 20);
                 points.Add(ptmLegendPoint);
                 tempPtmLegendBitmap.Dispose();
             }
@@ -120,6 +137,15 @@ namespace GuiFunctions
             File.Delete(tempStationarySequencePngPath);
             File.Delete(tempPtmLegendPngPath);
             ExportPlot(path, combinedBitmaps, width, height);
+        }
+
+        private static int GetCanvasDimension(double requestedDimension, double actualDimension)
+        {
+            double dimension = double.IsNaN(requestedDimension) || requestedDimension <= 0
+                ? actualDimension
+                : requestedDimension;
+
+            return Math.Max(1, (int)dimension);
         }
     }
 

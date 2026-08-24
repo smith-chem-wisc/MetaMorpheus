@@ -515,13 +515,11 @@ namespace GuiFunctions
                     if (plotView.Name == "plotView")
                     {
                         DisplaySequences(stationaryCanvas, null, null, psm);
-                        DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+                        DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
+                        if (displayErrors != null)
+                            errors.AddRange(displayErrors);
                     }
 
-                    if (errors != null)
-                    {
-                        errors.AddRange(errors);
-                    }
                 }
 
                 var rawSequence = psm.IsPeptide()
@@ -554,12 +552,12 @@ namespace GuiFunctions
                         case "PeptideSpectrumMatchPlot":
                             if (!plot.SpectrumMatch.FullSequence.Contains('['))
                                 legendCanvas = null;
-                            ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
+                            ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, stationaryCanvas,
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                             break;
 
                         case "CrosslinkSpectrumMatchPlot":
-                            ((CrosslinkSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
+                            ((CrosslinkSpectrumMatchPlot)plot).ExportPlot(filePath, stationaryCanvas,
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                             break;
                     }
@@ -583,7 +581,9 @@ namespace GuiFunctions
                     psm.MatchedIons = newIons;
                 }
                 DisplaySequences(stationaryCanvas, null, null, psm);
-                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
+                if (displayErrors != null)
+                    errors.AddRange(displayErrors);
 
                 // put the original ions back in place if they were altered
                 if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
@@ -655,14 +655,20 @@ namespace GuiFunctions
             sequenceAnnotaitonCanvas.Width = width;
             System.Drawing.Bitmap annotationBitmap = ConvertCanvasToBitmap(sequenceAnnotaitonCanvas, directory);
             Point annotationPoint = new(-100, 0);
-            
-            System.Drawing.Bitmap ptmLegendBitmap = ConvertUIElementToBitmap(ptmLegend, directory);
-            Point ptmLegendPoint = new((annotationBitmap.Width / 2) - (ptmLegend.RenderSize.Width / 2) - 50, sequenceAnnotaitonCanvas.Height);
 
-            List<System.Drawing.Bitmap> toCombine = new List<System.Drawing.Bitmap>() { annotationBitmap, ptmLegendBitmap };
-            List<Point> points = new List<Point>() { annotationPoint, ptmLegendPoint };
+            List<System.Drawing.Bitmap> toCombine = new() { annotationBitmap };
+            List<Point> points = new() { annotationPoint };
+            System.Drawing.Bitmap ptmLegendBitmap = ConvertUIElementToBitmap(ptmLegend, directory);
+            if (ptmLegendBitmap != null)
+            {
+                Point ptmLegendPoint = new((annotationBitmap.Width / 2) - (ptmLegend.RenderSize.Width / 2) - 50, sequenceAnnotaitonCanvas.Height);
+                toCombine.Add(ptmLegendBitmap);
+                points.Add(ptmLegendPoint);
+            }
+
             System.Drawing.Bitmap combinedBitmap = CombineBitmap(toCombine, points, false);
-            System.Drawing.Bitmap finalBitmap = combinedBitmap.Clone(new System.Drawing.Rectangle(0, 0, combinedBitmap.Width - 140, combinedBitmap.Height), combinedBitmap.PixelFormat);
+            int finalWidth = Math.Max(1, combinedBitmap.Width - 140);
+            System.Drawing.Bitmap finalBitmap = combinedBitmap.Clone(new System.Drawing.Rectangle(0, 0, finalWidth, combinedBitmap.Height), combinedBitmap.PixelFormat);
             ExportBitmap(finalBitmap, path);
             combinedBitmap.Dispose();
             finalBitmap.Dispose();
@@ -846,8 +852,8 @@ namespace GuiFunctions
         {
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
             string tempBitmapPath = System.IO.Path.Combine(directory, "temp.bmp");
-            int height = (int)canvas.Height == -2147483648 ? (int)canvas.ActualHeight : (int)canvas.Height;
-            int width = (int)canvas.Width == -2147483648 ? (int)canvas.ActualWidth : (int)canvas.Width;
+            int height = GetCanvasDimension(canvas.Height, canvas.ActualHeight);
+            int width = GetCanvasDimension(canvas.Width, canvas.ActualWidth);
             Size canvasSize = new Size(width, height);
             canvas.Measure(canvasSize);
             canvas.Arrange(new Rect(canvasSize));
@@ -867,6 +873,15 @@ namespace GuiFunctions
             unformattedBitmap.Dispose();
             File.Delete(tempBitmapPath);
             return bitmap;
+        }
+
+        private static int GetCanvasDimension(double requestedDimension, double actualDimension)
+        {
+            double dimension = double.IsNaN(requestedDimension) || requestedDimension <= 0
+                ? actualDimension
+                : requestedDimension;
+
+            return Math.Max(1, (int)dimension);
         }
 
         /// <summary>
@@ -932,7 +947,7 @@ namespace GuiFunctions
             switch (MetaDrawSettings.ExportType)
             {
                 case "Pdf":
-                    string tempImagePath = path.Replace(".Pdf", ".png");
+                    string tempImagePath = System.IO.Path.ChangeExtension(path, ".png");
                     bitmap.Save(tempImagePath, System.Drawing.Imaging.ImageFormat.Png);
                     ImageData imageData = ImageDataFactory.Create(tempImagePath);
                     File.Delete(tempImagePath);
