@@ -621,7 +621,7 @@
 
                     <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
-                        Add spectra file(s) in .mzML, .mgf, Thermo .raw, ms2.msalign, or Bruker .d formats. For Bruker files, either the .tdf or .tdf_bin file inside the .d folder can be selected.
+                        Add spectra file(s) in .mzML, .mgf, Thermo .raw, ms2.msalign, or Bruker .d formats. Bruker .d folders are supported for both timsTOF data (containing analysis.tdf / analysis.tdf_bin) and qTOF data (containing analysis.baf). You can select the .d folder itself or an inner data file (.tdf, .tdf_bin, or .baf).
                     </TextBlock>
 
                     <!--Button to add spectra files-->
