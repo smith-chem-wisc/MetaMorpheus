@@ -477,7 +477,7 @@ namespace GuiFunctions
             ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors,
             Canvas legendCanvas = null, Vector ptmLegendLocationVector = new(), FragmentationReanalysisViewModel? reFragment = null)
         {
-            errors = null;
+            errors = new List<string>();
 
             if (!Directory.Exists(directory))
             {
@@ -499,6 +499,7 @@ namespace GuiFunctions
                     // get the scan
                     if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out MsDataFile spectraFile))
                     {
+                        errors ??= new List<string>();
                         errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
                         return;
                     }
@@ -520,6 +521,10 @@ namespace GuiFunctions
                         {
                             errors ??= new List<string>();
                             errors.AddRange(displayErrors);
+                        }
+                        else if (errors?.Count == 0)
+                        {
+                            errors = null;
                         }
                     }
 
@@ -589,6 +594,10 @@ namespace GuiFunctions
                 {
                     errors ??= new List<string>();
                     errors.AddRange(displayErrors);
+                }
+                else if (errors?.Count == 0)
+                {
+                    errors = null;
                 }
 
                 // put the original ions back in place if they were altered
