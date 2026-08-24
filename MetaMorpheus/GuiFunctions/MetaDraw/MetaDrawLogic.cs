@@ -477,7 +477,7 @@ namespace GuiFunctions
             ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors,
             Canvas legendCanvas = null, Vector ptmLegendLocationVector = new(), FragmentationReanalysisViewModel? reFragment = null)
         {
-            errors = new List<string>();
+            errors = null;
 
             if (!Directory.Exists(directory))
             {
@@ -516,8 +516,11 @@ namespace GuiFunctions
                     {
                         DisplaySequences(stationaryCanvas, null, null, psm);
                         DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
-                        if (displayErrors != null)
+                        if (displayErrors?.Any() == true)
+                        {
+                            errors ??= new List<string>();
                             errors.AddRange(displayErrors);
+                        }
                     }
 
                 }
@@ -582,8 +585,11 @@ namespace GuiFunctions
                 }
                 DisplaySequences(stationaryCanvas, null, null, psm);
                 DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
-                if (displayErrors != null)
+                if (displayErrors?.Any() == true)
+                {
+                    errors ??= new List<string>();
                     errors.AddRange(displayErrors);
+                }
 
                 // put the original ions back in place if they were altered
                 if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
