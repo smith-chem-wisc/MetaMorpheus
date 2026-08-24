@@ -335,6 +335,10 @@ namespace Test
         /// through authoring does not silently lose the file.
         /// </summary>
         [Test]
+        /// <summary>
+        /// A file with no annotations still gets one row, with every per-channel cell blank —
+        /// including the trailing Sample Type cell, hence the tab at the end.
+        /// </summary>
         public static void WriteEmitsAPlaceholderRowForAFileWithNoAnnotations()
         {
             string folder = NewFolder("TmtDesignNoAnnotations");
@@ -346,7 +350,7 @@ namespace Test
             var lines = File.ReadAllLines(written);
             Assert.That(lines.Length == 2);
             Assert.That(lines[0] == TmtExperimentalDesign.Header);
-            Assert.That(lines[1] == $"{file1}\tPlexA\t\t\t\t\t2\t3");
+            Assert.That(lines[1] == $"{file1}\tPlexA\t\t\t\t\t2\t3\t");
 
             Directory.Delete(folder, true);
         }

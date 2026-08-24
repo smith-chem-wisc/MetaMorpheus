@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace MetaMorpheusGUI
@@ -10,6 +10,14 @@ namespace MetaMorpheusGUI
         public string SampleName { get; set; } = "";
         public string Condition { get; set; } = "";
         public int BiologicalReplicate { get; set; }
+
+        /// <summary>
+        /// What this channel is for, bound to the Sample Type column of the annotation grid.
+        /// Held as the design file's own spelling so the grid, the file and
+        /// EngineLayer.TmtSampleType cannot drift apart; TmtExperimentalDesign.TryParseSampleType
+        /// is the single place that interprets it.
+        /// </summary>
+        public string SampleType { get; set; } = "study sample";
     }
 
     // Mapping of an input file to its plex, fraction index, and technical replicate, plus the plex annotations.

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -18,6 +18,14 @@ namespace MetaMorpheusGUI
 
         public string SavedPlexName { get; private set; } = "";
         public List<PlexAnnotation> SavedAnnotations { get; private set; }
+
+        /// <summary>
+        /// The choices offered by the Sample Type column. Taken straight from
+        /// <see cref="EngineLayer.TmtExperimentalDesign.SampleTypeNames"/> so the drop-down cannot
+        /// offer a value the design-file parser would reject.
+        /// </summary>
+        public static IReadOnlyList<string> SampleTypeChoices =>
+            EngineLayer.TmtExperimentalDesign.SampleTypeNames;
 
         private List<PlexAnnotation> _currentRows = new();
         private Point _dragStartPoint;
@@ -60,7 +68,8 @@ namespace MetaMorpheusGUI
                         Tag = a.Tag,
                         SampleName = a.SampleName,
                         Condition = a.Condition,
-                        BiologicalReplicate = a.BiologicalReplicate
+                        BiologicalReplicate = a.BiologicalReplicate,
+                        SampleType = a.SampleType
                     }).ToList();
             }
             else
@@ -71,7 +80,9 @@ namespace MetaMorpheusGUI
                         Tag = lbl,
                         SampleName = "",
                         Condition = "",
-                        BiologicalReplicate = 0
+                        BiologicalReplicate = 0,
+                        SampleType = EngineLayer.TmtExperimentalDesign.ToDesignFileValue(
+                            EngineLayer.TmtSampleType.StudySample)
                     }).ToList();
             }
 
@@ -79,18 +90,19 @@ namespace MetaMorpheusGUI
             AnnotationGrid.Items.Refresh();
         }
 
-        private List<string> GetReporterIonLabels(IsobaricMassTagType type) => type switch
-        {
-            IsobaricMassTagType.TMT6 => new() { "126", "127", "128", "129", "130", "131" },
-            IsobaricMassTagType.TMT10 => new() { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131" },
-            IsobaricMassTagType.TMT11 => new() { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" },
-            IsobaricMassTagType.TMT18 => new() { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C", "132N", "132C", "133N", "133C", "134N", "134C", "135N" },
-            IsobaricMassTagType.iTRAQ4 => new() { "114", "115", "116", "117" },
-            IsobaricMassTagType.iTRAQ8 => new() { "113", "114", "115", "116", "117", "118", "119", "121" },
-            IsobaricMassTagType.diLeu4 => new() { "115", "116", "117", "118" },
-            IsobaricMassTagType.diLeu12 => new() { "115", "116", "117", "118", "119", "120", "121", "122", "123", "124", "125", "126" },
-            _ => new() { "126", "127", "128", "129", "130", "131" }
-        };
+        /// <summary>
+        /// The channel labels for a tag, from the single table in
+        /// <see cref="IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType)"/>.
+        /// </summary>
+        /// <remarks>
+        /// This used to be a second copy of that table, and the two had drifted: TMT10 ended "131"
+        /// here against "131N" there, iTRAQ8 ended "121" against "120", and diLeu12 disagreed
+        /// throughout. A label typed into the design file by this window then failed to match any
+        /// channel of the tag, so the design could not be projected onto mzLib's
+        /// <see cref="IExperimentalDesign"/> at all.
+        /// </remarks>
+        private static List<string> GetReporterIonLabels(IsobaricMassTagType type) =>
+            IsobaricMassTag.GetReporterIonLabels(type) ?? new List<string>();
 
         private void Paste_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {

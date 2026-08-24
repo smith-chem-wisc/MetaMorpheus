@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -458,7 +458,8 @@ namespace MetaMorpheusGUI
                         Tag = a.Tag,
                         SampleName = a.SampleName,
                         Condition = a.Condition,
-                        BiologicalReplicate = a.BiologicalReplicate
+                        BiologicalReplicate = a.BiologicalReplicate,
+                        SampleType = EngineLayer.TmtExperimentalDesign.ToDesignFileValue(a.SampleType)
                     }).ToList();
 
                     s_plexAnnotations[fi.Plex] = list; // overwrite with last occurrence for that plex
