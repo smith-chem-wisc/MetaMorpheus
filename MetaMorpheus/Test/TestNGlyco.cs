@@ -634,6 +634,101 @@ namespace Test
         }
 
         [Test]
+        public static void PersistCustomMonosaccharide_EmptyCode_Throws()
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "", "", "100.0", "", "Empty code"));
+            Assert.That(ex.Message, Does.Contain("Could not persist custom monosaccharide: SingleCharCode must be exactly one character"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_MultiCharCode_Throws() 
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "AB", "", "100.0", "", "Multi-char code"));
+            Assert.That(ex.Message, Does.Contain("Could not persist custom monosaccharide: SingleCharCode must be exactly one character"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_MassOutOfRange_Throws()
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "Z", "", "20000.1", "", "Mass too high"));
+            Assert.That(ex.Message, Does.Contain("Could not persist custom monosaccharide: MonoisotopicMass must be a positive number below 20000 Da"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_DiagnosticIonOutOfRange_Throws()
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "Z", "", "100.0", "100.0, 20000.1", "Ion too high"));
+            Assert.That(ex.Message, Does.Contain("Could not persist custom monosaccharide: DiagnosticIonMasses entry"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_ExistingName_Throws()
+        {
+            // "HexNAc" is always present as a built-in, regardless of test order.
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("HexNAc", "Q", "", "100.0", "", "Name collides with built-in"));
+            Assert.That(ex.Message, Does.Contain("Could not register custom monosaccharide"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_ExistingCode_Throws()
+        {
+            // 'N' is the built-in single-char code for HexNAc, regardless of test order.
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "N", "", "100.0", "", "Code collides with built-in"));
+            Assert.That(ex.Message, Does.Contain("Could not register custom monosaccharide"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_NonLetterCode_Throws()
+        {
+            // A single character, but not a letter -- passes PersistCustomMonosaccharide's own
+            // length==1 guard, only to be rejected by RegisterCustomMonosaccharide's ASCII-letter check.
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "5", "", "100.0", "", "Digit is not a letter"));
+            Assert.That(ex.Message, Does.Contain("Could not register custom monosaccharide"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_AppendsOnOwnLineWhenFileMissingTrailingNewline() 
+        {
+            string path = Path.Combine(GlobalVariables.DataDir, "Glycan_Mods", "MonosaccharidesCustom.tsv");
+            bool existedBefore = File.Exists(path);
+            string originalContent = existedBefore ? File.ReadAllText(path) : null;
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                //simulate a file that exists but has no trailing newline
+                File.WriteAllText(path, "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription\nHexA\tU\t178.04225\t\tExisting entry, no trailing newline");
+
+                string warning = GlycanDatabase.PersistCustomMonosaccharide("Pent", "T", null, "132.04226", null, "Appended after missing newline");
+                Assert.That(warning, Is.Null);
+
+                var lines = File.ReadAllLines(path);
+                Assert.That(lines.Length, Is.EqualTo(3)); // header + existing entry + new entry, each on its own line
+                Assert.That(lines[1], Is.EqualTo("HexA\tU\t178.04225\t\tExisting entry, no trailing newline"));
+                Assert.That(lines[2], Is.EqualTo("Pent\tT\t132.04226\t\tAppended after missing newline"));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                if (existedBefore)
+                {
+                    File.WriteAllText(path, originalContent);
+                }
+                else if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+        }
+
+
+        [Test]
         public static void PersistCustomMonosaccharide_RoundTripsThroughLoadCustomMonosaccharides()
         {
             // GlycanDatabase.PersistCustomMonosaccharide is the write side of the exact format
