@@ -418,6 +418,41 @@ namespace Test.MetaDraw
         }
 
         [Test]
+        public void ExportImage_PreservesTransparentCoverageBackground()
+        {
+            var logic = new DummyMetaDrawLogic();
+            var vm = new BioPolymerTabViewModel(logic, Path.GetTempPath());
+            var drawingVisual = new DrawingVisual();
+            using (var dc = drawingVisual.RenderOpen())
+            {
+                dc.DrawLine(new Pen(Brushes.Red, 2), new System.Windows.Point(20, 20), new System.Windows.Point(80, 80));
+            }
+
+            vm.CoverageMapViewModel.CoverageDrawing = new DrawingImage(drawingVisual.Drawing);
+            vm.SelectedGroup = new BioPolymerGroupViewModel("ACC", "Protein", "ABC", new List<BioPolymerCoverageResultModel>());
+            string expectedPath = Path.Combine(vm.ExportDirectory, "ACC_SequenceCoverage.Png");
+            string originalExportType = MetaDrawSettings.ExportType;
+
+            try
+            {
+                MetaDrawSettings.ExportType = "Png";
+                var method = typeof(BioPolymerTabViewModel)
+                    .GetMethod("ExportImage", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                MessageBoxHelper.SuppressMessageBoxes = true;
+                method.Invoke(vm, null);
+
+                using var bitmap = new System.Drawing.Bitmap(expectedPath);
+                Assert.That(bitmap.GetPixel(0, 0).A, Is.EqualTo(0));
+            }
+            finally
+            {
+                MetaDrawSettings.ExportType = originalExportType;
+                if (File.Exists(expectedPath))
+                    File.Delete(expectedPath);
+            }
+        }
+
+        [Test]
         public void ResetDatabase_ClearsAllBioPolymers()
         {
             // Prepare Files

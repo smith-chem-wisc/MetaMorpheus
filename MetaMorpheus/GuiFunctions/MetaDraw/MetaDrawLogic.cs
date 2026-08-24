@@ -851,7 +851,6 @@ namespace GuiFunctions
         private static System.Drawing.Bitmap ConvertCanvasToBitmap(Canvas canvas, string directory)
         {
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
-            string tempBitmapPath = System.IO.Path.Combine(directory, "temp.bmp");
             int height = GetCanvasDimension(canvas.Height, canvas.ActualHeight);
             int width = GetCanvasDimension(canvas.Width, canvas.ActualWidth);
             Size canvasSize = new Size(width, height);
@@ -859,20 +858,20 @@ namespace GuiFunctions
             canvas.Arrange(new Rect(canvasSize));
             RenderTargetBitmap renderCanvasBitmap = new((int)(dpiScale * width), (int)(dpiScale * height),
                 MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
-            renderCanvasBitmap.Render(canvas);
-
-            BmpBitmapEncoder encoder = new BmpBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(renderCanvasBitmap));
-            using (FileStream file = File.Create(tempBitmapPath))
+            DrawingVisual drawingVisual = new();
+            using (DrawingContext drawingContext = drawingVisual.RenderOpen())
             {
-                encoder.Save(file);
+                drawingContext.DrawRectangle(new VisualBrush(canvas), null, new Rect(0, 0, width, height));
             }
+            renderCanvasBitmap.Render(drawingVisual);
 
-            System.Drawing.Bitmap unformattedBitmap = new(tempBitmapPath);
-            System.Drawing.Bitmap bitmap = new(unformattedBitmap, new System.Drawing.Size(width, height));
-            unformattedBitmap.Dispose();
-            File.Delete(tempBitmapPath);
-            return bitmap;
+            PngBitmapEncoder encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(renderCanvasBitmap));
+            using MemoryStream stream = new();
+            encoder.Save(stream);
+            stream.Seek(0, SeekOrigin.Begin);
+            using System.Drawing.Bitmap sourceBitmap = new(stream);
+            return new System.Drawing.Bitmap(sourceBitmap, new System.Drawing.Size(width, height));
         }
 
         private static int GetCanvasDimension(double requestedDimension, double actualDimension)
@@ -894,7 +893,6 @@ namespace GuiFunctions
         {
             // initialize values
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
-            string tempBitmapPath = System.IO.Path.Combine(directory, "temp.bmp");
 
             if (visual == null)
             {
@@ -923,18 +921,13 @@ namespace GuiFunctions
             renderTargetBitmap.Render(drawingVisual);
 
             // export and reload bitmap in correct formatting
-            BitmapEncoder encoder = new BmpBitmapEncoder();
+            BitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
-            using (FileStream file = File.Create(tempBitmapPath))
-            {
-                encoder.Save(file);
-            }
-
-            System.Drawing.Bitmap unformattedBitmap = new System.Drawing.Bitmap(tempBitmapPath);
-            System.Drawing.Bitmap bitmap = new(unformattedBitmap, new System.Drawing.Size(width, height));
-            unformattedBitmap.Dispose();
-            File.Delete(tempBitmapPath);
-            return bitmap;
+            using MemoryStream stream = new();
+            encoder.Save(stream);
+            stream.Seek(0, SeekOrigin.Begin);
+            using System.Drawing.Bitmap sourceBitmap = new(stream);
+            return new System.Drawing.Bitmap(sourceBitmap, new System.Drawing.Size(width, height));
         }
 
         /// <summary>
