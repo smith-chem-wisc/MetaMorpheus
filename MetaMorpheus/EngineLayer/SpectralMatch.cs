@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
 using Proteomics;
@@ -11,11 +11,12 @@ using System;
 using Omics.Digestion;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
+using Omics.SpectralMatch;
 using System.Globalization;
 
 namespace EngineLayer
 {
-    public abstract class SpectralMatch : IComparable<SpectralMatch>
+    public abstract class SpectralMatch : IComparable<SpectralMatch>, ISpectralMatch
     {
         public const double ToleranceForScoreDifferentiation = 1e-9;
 
@@ -677,5 +678,75 @@ namespace EngineLayer
             return otherPsm.ScanNumber.CompareTo(this.ScanNumber); //reverse the comparision so that the lower scan number comes first.
         }
 
+        #region ISpectralMatch
+
+        // The members below let mzLib's QuantificationEngine consume MetaMorpheus PSMs directly,
+        // instead of the .psmtsv round-trip that was the only bridge before. They are explicit
+        // interface implementations wherever a public member would have collided with, or added
+        // noise to, SpectralMatch's own surface -- nothing here changes existing behaviour.
+
+        /// <remarks>
+        /// A rename, not a shift: <see cref="ScanNumber"/> is assigned from
+        /// <see cref="Ms2ScanWithSpecificMass.OneBasedScanNumber"/> and is already one-based.
+        /// </remarks>
+        /// <inheritdoc cref="ISpectralMatch.OneBasedScanNumber"/>
+        int ISpectralMatch.OneBasedScanNumber => ScanNumber;
+
+        /// <remarks>
+        /// For an isobaric run these are the reporter-ion intensities, in <b>ascending reporter m/z
+        /// order</b> -- the order <c>IsobaricMassTag.GetReporterIonIntensities</c> fills them, because
+        /// <c>IsobaricMassTag.ReporterIonMzs</c> is sorted by m/z when the tag is built.
+        ///
+        /// That ordering is load-bearing. mzLib maps this array <i>positionally</i> onto the
+        /// <see cref="MassSpectrometry.ISampleInfo"/> array the experimental design supplies for the
+        /// file, and <see cref="TmtExperimentalDesign.ToMzLibDesign"/> emits those channels in the same
+        /// ascending-m/z order for exactly this reason. Change either side alone and every channel is
+        /// silently mislabelled -- the values still look plausible, they just belong to other samples.
+        ///
+        /// Null for a label-free run: FlashLFQ does not populate a length-one intensity array yet, and
+        /// the engine skips matches whose intensities are null.
+        /// </remarks>
+        /// <inheritdoc cref="ISpectralMatch.Intensities"/>
+        double[] ISpectralMatch.Intensities => IsobaricMassTagReporterIonIntensities;
+
+        /// <summary>
+        /// The biopolymers identified for this match, best-scoring first and distinct -- the same
+        /// biopolymer can appear under more than one notch in <see cref="BestMatchingBioPolymersWithSetMods"/>.
+        /// </summary>
+        /// <inheritdoc cref="ISpectralMatch.GetIdentifiedBioPolymersWithSetMods"/>
+        public IEnumerable<IBioPolymerWithSetMods> GetIdentifiedBioPolymersWithSetMods() =>
+            BestMatchingBioPolymersWithSetMods.Select(h => h.SpecificBioPolymer).Distinct();
+
+        /// <summary>
+        /// Ordering against any <see cref="ISpectralMatch"/>. Another MetaMorpheus PSM goes through
+        /// <see cref="CompareTo(SpectralMatch)"/> so that ordering stays identical to everywhere else in
+        /// MetaMorpheus; anything else can only be compared on what the interface exposes.
+        /// </summary>
+        int IComparable<ISpectralMatch>.CompareTo(ISpectralMatch other)
+        {
+            if (other is null) return 1;
+            if (other is SpectralMatch otherPsm) return CompareTo(otherPsm);
+
+            if (Math.Abs(Score - other.Score) > ToleranceForScoreDifferentiation)
+                return Score.CompareTo(other.Score);
+
+            return other.OneBasedScanNumber.CompareTo(ScanNumber); // lower scan number first
+        }
+
+        /// <summary>
+        /// Reference equality, deliberately, and NOT the value equality mzLib's
+        /// <see cref="BaseSpectralMatch"/> uses.
+        /// </summary>
+        /// <remarks>
+        /// SpectralMatch does not override <see cref="object.GetHashCode"/>, so its hash is the
+        /// reference hash. <c>QuantMatrix</c> keys its rows in a <c>Dictionary&lt;ISpectralMatch, int&gt;</c>
+        /// with the default comparer, which pairs this method with that reference hash -- so a
+        /// value-based Equals here would produce keys that compare equal but hash differently, and rows
+        /// would go missing. Reference equality is also the right answer for the engine's purposes:
+        /// within one search every PSM object is a distinct identification.
+        /// </remarks>
+        bool IEquatable<ISpectralMatch>.Equals(ISpectralMatch other) => ReferenceEquals(this, other);
+
+        #endregion
     }
 }

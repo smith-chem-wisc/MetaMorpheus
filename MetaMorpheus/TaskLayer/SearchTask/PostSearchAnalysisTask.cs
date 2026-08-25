@@ -1,5 +1,9 @@
 ﻿using Easy.Common.Extensions;
 using EngineLayer;
+using Omics.BioPolymerGroup;
+using Omics.SpectralMatch;
+using Quantification.Strategies;
+using Quantification;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
@@ -250,6 +254,152 @@ namespace TaskLayer
             }
         }
 
+        /// <summary>
+        /// Runs isobaric (TMT/iTRAQ) quantification through mzLib's <see cref="QuantificationEngine"/>.
+        /// </summary>
+        /// <remarks>
+        /// Before this existed, multiplex quantification stopped at the PSM level: reporter-ion
+        /// intensities were extracted during the search and written as extra columns in the .psmtsv, and
+        /// nothing rolled them up to peptides or proteins. This is the step that closes that gap.
+        ///
+        /// The three inputs the engine needs are now satisfied directly, with no .psmtsv round trip:
+        /// <see cref="SpectralMatch"/> implements <c>ISpectralMatch</c> (its <c>Intensities</c> are the
+        /// reporter-ion intensities), <see cref="ProteinGroup"/> implements <c>IBioPolymerGroup</c>, and
+        /// <see cref="TmtExperimentalDesign.ToMzLibDesign"/> projects TmtDesign.txt onto
+        /// <c>IExperimentalDesign</c>.
+        ///
+        /// Nothing here is fatal. A missing or unreadable design file leaves the search exactly as it
+        /// was — the reporter-ion columns still reach the .psmtsv — because a TMT search without a
+        /// channel-to-sample mapping is a legitimate thing to run.
+        /// </remarks>
+        private void MultiplexQuantificationAnalysis()
+        {
+            if (Parameters.CurrentRawFileList.IsNullOrEmpty())
+            {
+                return;
+            }
+
+            string designDirectory = Directory.GetParent(Parameters.CurrentRawFileList.First())?.FullName;
+            string tmtDesignPath = designDirectory == null
+                ? null
+                : Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+
+            if (tmtDesignPath == null || !File.Exists(tmtDesignPath))
+            {
+                Warn($"No {GlobalVariables.TmtExperimentalDesignFileName} found next to the spectra files, so " +
+                     "reporter ion intensities were written per PSM but not quantified per channel.");
+                return;
+            }
+
+            Status("Quantifying multiplex channels...", Parameters.SearchTaskId);
+
+            // Copy the design into the output folder, as the label-free path does for ExperimentalDesign,
+            // so a result folder records the design it was quantified under.
+            try
+            {
+                string copiedDesign = Path.Combine(Parameters.OutputFolder, Path.GetFileName(tmtDesignPath));
+                File.Copy(tmtDesignPath, copiedDesign, overwrite: true);
+                FinishedWritingFile(copiedDesign, new List<string> { Parameters.SearchTaskId });
+            }
+            catch
+            {
+                Warn("Could not copy the TMT design file to the search task output. That's ok, the search will continue");
+            }
+
+            var tmtFiles = TmtExperimentalDesign.Read(tmtDesignPath, Parameters.CurrentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("Error reading TMT design file: " + designErrors.First() + ". Skipping multiplex quantification");
+                return;
+            }
+
+            var tag = IsobaricMassTag.GetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId);
+            var experimentalDesign = TmtExperimentalDesign.ToMzLibDesign(tmtFiles, tag, out var projectionErrors);
+            if (experimentalDesign == null || projectionErrors.Any())
+            {
+                Warn("Could not build a quantification design from the TMT design file: " +
+                     (projectionErrors.FirstOrDefault() ?? "unknown error") + ". Skipping multiplex quantification");
+                return;
+            }
+
+            // includeAmbiguous: false is the unambiguous filter the design calls for. A PSM that could be
+            // more than one peptide would otherwise have its channel intensities credited to whichever
+            // candidate happened to sort first.
+            var quantifiablePsms = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+                    CommonParameters,
+                    includeDecoys: false,
+                    includeContaminants: true,
+                    includeAmbiguous: false,
+                    includeAmbiguousMods: false,
+                    includeHighQValuePsms: false)
+                .Where(psm => psm.IsobaricMassTagReporterIonIntensities is { Length: > 0 })
+                .ToList();
+
+            if (quantifiablePsms.Count == 0)
+            {
+                Warn("No spectral matches carried reporter ion intensities. Skipping multiplex quantification");
+                return;
+            }
+
+            if (ProteinGroups.IsNullOrEmpty())
+            {
+                Warn("Multiplex quantification needs protein groups, which this search did not produce " +
+                     "(parsimony may be off). Skipping multiplex quantification");
+                return;
+            }
+
+            var peptides = quantifiablePsms
+                .SelectMany(psm => psm.GetIdentifiedBioPolymersWithSetMods())
+                .Distinct()
+                .ToList();
+
+            var quantParameters = new QuantificationParameters
+            {
+                // Deliberately conservative: sum reporter intensities up to peptides and proteins and
+                // normalize nothing. Every strategy mzLib offers -- reference-channel normalization in
+                // particular, which this design file can already describe via its Sample Type column --
+                // is a user-facing choice, and none of them should start applying themselves silently.
+                SpectralMatchNormalizationStrategy = new NoNormalization(),
+                SpectralMatchToPeptideRollUpStrategy = new SumRollUp(),
+                PeptideNormalizationStrategy = new NoNormalization(),
+                CollapseStrategy = new NoCollapse(),
+                CollapseAggregationStrategy = new SumAggregation(),
+                PeptideToProteinRollUpStrategy = new SumRollUp(),
+                ProteinNormalizationStrategy = new NoNormalization(),
+                UseSharedPeptidesForProteinQuant = false,
+
+                // Set explicitly. Left empty, the engine falls back to writing beside the spectra files,
+                // which is right for a caller that has no output folder of its own and wrong for a task
+                // that does.
+                OutputDirectory = Parameters.OutputFolder,
+                WriteRawInformation = true,
+                WritePeptideInformation = true,
+                WriteProteinInformation = true
+            };
+
+            var engine = new QuantificationEngine(
+                quantParameters,
+                experimentalDesign,
+                quantifiablePsms.Cast<ISpectralMatch>().ToList(),
+                peptides,
+                ProteinGroups.Cast<IBioPolymerGroup>().ToList());
+
+            var results = engine.Run();
+
+            if (!results.Success)
+            {
+                Warn("Multiplex quantification did not run: " + results.Summary);
+                return;
+            }
+
+            Parameters.MultiplexQuantificationResults = results;
+
+            foreach (string writtenFile in results.WrittenFiles.Where(f => f != null))
+            {
+                FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
+            }
+        }
+
         private void QuantificationAnalysis()
         {
             try
@@ -261,6 +411,8 @@ namespace TaskLayer
                     {
                         Parameters.MultiplexModification = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
                     }
+
+                    MultiplexQuantificationAnalysis();
                     return;
                 }
 

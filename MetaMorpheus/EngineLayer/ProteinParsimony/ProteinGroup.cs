@@ -8,10 +8,13 @@ using Omics.Modifications;
 using ThermoFisher.CommonCore.Data;
 using Omics;
 using Transcriptomics.Digestion;
+using Omics.BioPolymerGroup;
+using Omics.SpectralMatch;
+using System;
 
 namespace EngineLayer
 {
-    public class ProteinGroup
+    public class ProteinGroup : IBioPolymerGroup
     {
         public ProteinGroup(HashSet<IBioPolymer> proteins, HashSet<IBioPolymerWithSetMods> peptides,
             HashSet<IBioPolymerWithSetMods> uniquePeptides)
@@ -126,6 +129,41 @@ namespace EngineLayer
         public List<string> ModsInfo { get; private set; }
 
         public Dictionary<SpectraFileInfo, double> IntensitiesByFile { get; set; }
+
+        /// <summary>
+        /// Samples that carry quantification for this group, in output column order, as written back by
+        /// mzLib's QuantificationEngine.
+        /// </summary>
+        /// <remarks>
+        /// This is deliberately NOT <see cref="FilesForQuantification"/>. That pair
+        /// (<see cref="FilesForQuantification"/> / <see cref="IntensitiesByFile"/>) is keyed by
+        /// <see cref="SpectraFileInfo"/> and is the label-free path FlashLFQ fills; an isobaric run's
+        /// samples are <see cref="IsobaricQuantSampleInfo"/> channels, several per file, which that
+        /// dictionary cannot represent without losing the channel. Keeping the two side by side leaves
+        /// the LFQ path untouched while the engine populates this one.
+        /// </remarks>
+        public List<ISampleInfo> SamplesForQuantification { get; set; }
+
+        /// <summary>
+        /// Per-sample intensities for this group, written back by mzLib's QuantificationEngine.
+        /// A sample the group was not observed in is absent rather than present with a zero.
+        /// </summary>
+        public Dictionary<ISampleInfo, double> IntensitiesBySample { get; set; }
+
+        /// <summary>
+        /// Per-sample-group quantification and modification-occupancy results, built from
+        /// <see cref="IntensitiesBySample"/>. Null until something populates it.
+        /// </summary>
+        public List<SampleGroupResult> SampleGroupResults { get; set; }
+
+        /// <summary>
+        /// True if any protein in this group is an entrapment sequence.
+        /// </summary>
+        /// <remarks>
+        /// Computed on demand rather than in the constructor, unlike <see cref="IsDecoy"/> and
+        /// <see cref="IsContaminant"/>, so that adding it changes no existing construction path.
+        /// </remarks>
+        public bool IsEntrapment => Proteins != null && Proteins.Any(p => p.IsEntrapment);
 
         private List<IBioPolymer> ListOfProteinsOrderedByAccession;
 
@@ -767,5 +805,93 @@ namespace EngineLayer
 
             return true;
         }
+
+        #region IBioPolymerGroup
+
+        // mzLib's QuantificationEngine takes List<IBioPolymerGroup> in and writes its results back onto
+        // the same objects. Implementing the interface here -- rather than wrapping ProteinGroup in an
+        // adapter -- is what lets those results land on the real protein groups that MetaMorpheus's
+        // writers already hold.
+        //
+        // Every member below is an EXPLICIT implementation, because each one collides with a
+        // MetaMorpheus name that means the same thing ("Protein" where the interface says "BioPolymer").
+        // Nothing here introduces new state or changes existing behaviour; the members that already
+        // match by name and signature -- IsDecoy, IsContaminant, QValue, CumulativeTarget,
+        // CumulativeDecoy, Score(), CalculateSequenceCoverage(), GetTabSeparatedHeader(), and the three
+        // quantification properties above -- satisfy the interface as they stand.
+
+        HashSet<IBioPolymer> IBioPolymerGroup.BioPolymers { get => Proteins; set => Proteins = value; }
+
+        string IBioPolymerGroup.BioPolymerGroupName => ProteinGroupName;
+
+        double IBioPolymerGroup.BioPolymerGroupScore { get => ProteinGroupScore; set => ProteinGroupScore = value; }
+
+        HashSet<IBioPolymerWithSetMods> IBioPolymerGroup.AllBioPolymersWithSetMods { get => AllPeptides; set => AllPeptides = value; }
+
+        HashSet<IBioPolymerWithSetMods> IBioPolymerGroup.UniqueBioPolymersWithSetMods { get => UniquePeptides; set => UniquePeptides = value; }
+
+        double IBioPolymerGroup.BestBioPolymerWithSetModsQValue { get => BestPeptideQValue; set => BestPeptideQValue = value; }
+
+        double IBioPolymerGroup.BestBioPolymerWithSetModsScore { get => BestPeptideScore; set => BestPeptideScore = value; }
+
+        List<IBioPolymer> IBioPolymerGroup.ListOfBioPolymersOrderedByAccession => ListOfProteinsOrderedByAccession;
+
+        /// <remarks>
+        /// MetaMorpheus's ProteinGroup always represents parent sequences (proteins or nucleic acids),
+        /// never digestion products, so occupancy is calculated at parent-level positions.
+        /// </remarks>
+        BioPolymerGroupType IBioPolymerGroup.GroupType => BioPolymerGroupType.Parent;
+
+        /// <remarks>
+        /// A PROJECTION, not the live set. <see cref="AllPsmsBelowOnePercentFDR"/> is a
+        /// <c>HashSet&lt;SpectralMatch&gt;</c> and the interface asks for <c>HashSet&lt;ISpectralMatch&gt;</c>,
+        /// which are unrelated types however compatible their elements are. The getter therefore copies,
+        /// so mutating what it returns does nothing to the group -- assign a whole set instead. The
+        /// quantification engine only reads peptide membership, never this, so the copy is not on any
+        /// hot path.
+        /// </remarks>
+        HashSet<ISpectralMatch> IBioPolymerGroup.AllPsmsBelowOnePercentFDR
+        {
+            get => new HashSet<ISpectralMatch>(AllPsmsBelowOnePercentFDR);
+            set => AllPsmsBelowOnePercentFDR = value == null
+                ? new HashSet<SpectralMatch>()
+                : new HashSet<SpectralMatch>(value.OfType<SpectralMatch>());
+        }
+
+        void IBioPolymerGroup.MergeWith(IBioPolymerGroup otherBioPolymerGroup)
+        {
+            if (otherBioPolymerGroup is not ProteinGroup other)
+            {
+                throw new ArgumentException(
+                    "A ProteinGroup can only be merged with another ProteinGroup, not with " +
+                    $"{otherBioPolymerGroup?.GetType().Name ?? "null"}.", nameof(otherBioPolymerGroup));
+            }
+
+            MergeProteinGroupWith(other);
+        }
+
+        IBioPolymerGroup IBioPolymerGroup.ConstructSubsetBioPolymerGroup(string fullFilePath, List<SilacLabel> silacLabels)
+            => ConstructSubsetProteinGroup(fullFilePath, silacLabels);
+
+        /// <summary>
+        /// Reference equality, deliberately, and NOT the accession comparison of
+        /// <see cref="Equals(ProteinGroup)"/>.
+        /// </summary>
+        /// <remarks>
+        /// ProteinGroup does not override <see cref="object.GetHashCode"/>, so its hash is the reference
+        /// hash, and mzLib's QuantMatrix keys its rows in a
+        /// <c>Dictionary&lt;IBioPolymerGroup, int&gt;</c> with the default comparer -- which pairs this
+        /// method with that hash. An accession-based Equals here would give keys that compare equal but
+        /// hash differently, and rows would go missing.
+        ///
+        /// Overriding GetHashCode to fix that is not an option either: the hash would have to come from
+        /// <see cref="ProteinGroupName"/>, which <see cref="MergeProteinGroupWith"/> reassigns, and a
+        /// mutable hash key loses entries in any dictionary that already holds the group. Within one
+        /// search the distinction is moot -- protein groups are unique by accession and each exists
+        /// once -- so the two definitions agree on everything the engine actually does.
+        /// </remarks>
+        bool IEquatable<IBioPolymerGroup>.Equals(IBioPolymerGroup other) => ReferenceEquals(this, other);
+
+        #endregion
     }
 }
