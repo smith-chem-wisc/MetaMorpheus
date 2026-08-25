@@ -217,17 +217,38 @@ jobs:
       - name: Build solution
         run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
 
+      # Compares the DLLs in the build output against the DLLs the MSI installed, at two
+      # levels at once: the top-level assembly folder and the win-x64 native runtime folder
+      # (runtimes\win-x64\native). The native folder holds libraries loaded via DllImport at
+      # runtime (LibTorchSharp.dll, torch_cpu.dll, libSkiaSharp.dll, ...) that throw
+      # DllNotFoundException when the installer omits them; a plain top-level scan never saw
+      # them. Both levels share one whitelist, one folder list, and one diff below.
+      #
+      # Native coverage is scoped to win-x64 on purpose: the MSI is a Windows x64 installer,
+      # and it deliberately maps the other RIDs' native folders to non-standard names
+      # (runtimes\linux-x64\nativeLinux, runtimes\osx-x64\nativeOsx - see the Directory
+      # elements in MetaMorpheus/MetaMorpheusSetup/Product.wxs). Only win-x64 keeps the real
+      # "native" folder name, so only file names within that one folder are compared; a
+      # blanket recursive relative-path diff would report the renamed folders as false
+      # mismatches.
       - name: Compare built DLLs to installed DLLs
         run: |
-          $buildDir = $repoDir = Get-Location
           $installDir = "C:\Program Files\MetaMorpheus"
 
-          # Get DLL names
-          $buildDlls = Get-ChildItem -Path $buildDir -Filter *.dll | Select-Object -ExpandProperty Name
-          $installedDlls = Get-ChildItem -Path $installDir -Filter *.dll | Select-Object -ExpandProperty Name
+          # Relative subpaths compared under both the build output folders and the install
+          # directory. "" is the top-level assembly folder. Each file is keyed by its
+          # relative path (subpath\name, or just name at the top level), so a top-level DLL
+          # and a native DLL of the same name never collide, and each is diffed against the
+          # matching install location.
+          $subPathsToCheck = @(
+              "",
+              "runtimes\win-x64\native"
+          )
 
-          # Define whitelist for missing DLLs (build-only) - Okay to not be installed
-          $whitelistedMissingDlls = @(
+          # Define whitelist for missing DLLs (build-only) - Okay to not be installed.
+          # Entries are keyed the same way as the comparison: top-level names are bare, and a
+          # native would be listed as runtimes\win-x64\native\<name>.
+          $whitelistedMissing = @(
             "System.Configuration.ConfigurationManager.dll",
             "System.Security.Cryptography.ProtectedData.dll",
             # Same EntityFramework 4.7.0 chain as the two below, and it reaches the build only
@@ -242,7 +263,8 @@ jobs:
             # 1.0.584, whose published nuspec predates smith-chem-wisc/mzLib#1142. These four
             # entries become dead and should be swept when MetaMorpheus moves to a post-#1142
             # mzLib. sni.dll rides the same chain but lives in runtimes\win-x64\native\, which
-            # the non-recursive scan below never sees -- it needs an entry only if #2690 lands.
+            # the native scan below now covers -- it would need an entry keyed as
+            # runtimes\win-x64\native\sni.dll only if #2690 lands.
             "EntityFramework.dll",
             "EntityFramework.SqlServer.dll",
             "System.Data.SqlClient.dll",
@@ -263,13 +285,12 @@ jobs:
             "Microsoft.Extensions.Primitives.dll"
           )
 
-          # Define whitelist for extra DLLs (install-only)
-          $whitelistedExtraDlls = @(
+          # Define whitelist for extra DLLs (install-only), keyed the same way
+          $whitelistedExtra = @(
 
           )
 
-          # Get all unique DLLs in the entire build repository
-          # Define which folders to check in the repo
+          # Define which build output folders to check in the repo
           $foldersToCheck = @(
               "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\$env:DOTNET_FRAMEWORK",
               "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK",
@@ -277,10 +298,6 @@ jobs:
               "$(Get-Location)\MetaMorpheus\GUI\bin\Release\$env:DOTNET_FRAMEWORK-windows",
               "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\$env:DOTNET_FRAMEWORK-windows"
           )
-
-          # Collect DLLs and their source folders
-          $buildDlls = @()
-          $buildDllLocations = @{}
 
           # A folder that is not there means this list has drifted from where the projects
           # actually build, and the check quietly covers less than it claims. GuiFunctions was
@@ -293,25 +310,60 @@ jobs:
               exit 1
           }
 
+          # Collect build DLLs keyed by relative path, remembering where each was found
+          $buildDlls = @()
+          $buildDllLocations = @{}
           foreach ($folder in $foldersToCheck) {
-              if (Test-Path $folder) {
-                  Get-ChildItem -Path $folder -Filter *.dll | ForEach-Object {
-                      $dllName = $_.Name
-                      $buildDlls += $dllName
-                      $buildDllLocations[$dllName] = $folder
+              foreach ($subPath in $subPathsToCheck) {
+                  $searchFolder = if ($subPath) { Join-Path $folder $subPath } else { $folder }
+                  if (Test-Path $searchFolder) {
+                      Get-ChildItem -Path $searchFolder -Filter *.dll | ForEach-Object {
+                          $key = if ($subPath) { Join-Path $subPath $_.Name } else { $_.Name }
+                          $buildDlls += $key
+                          $buildDllLocations[$key] = $searchFolder
+                      }
                   }
               }
           }
-          $buildDlls = $buildDlls | Sort-Object -Unique
+          $buildDlls = @($buildDlls | Sort-Object -Unique)
 
-          # Get installed DLLs
-          $installedDlls = Get-ChildItem -Path $installDir -Filter *.dll | Select-Object -ExpandProperty Name -Unique
+          # Guard against a silent pass if a build output layout ever moves: every subpath we
+          # claim to cover must actually contribute at least one file, or the comparison for
+          # that level would trivially "match" nothing.
+          foreach ($subPath in $subPathsToCheck) {
+              $foundForSubPath = if ($subPath) {
+                  $buildDlls | Where-Object { $_ -like "$subPath\*" }
+              } else {
+                  $buildDlls | Where-Object { $_ -notlike "*\*" }
+              }
+              if (-not $foundForSubPath) {
+                  $label = if ($subPath) { $subPath } else { "the top-level output folder" }
+                  Write-Host "❌ No DLLs found for $label in any build output folder; the comparison cannot be trusted." -ForegroundColor Red
+                  $foldersToCheck | ForEach-Object {
+                      $where = if ($subPath) { Join-Path $_ $subPath } else { $_ }
+                      Write-Host "- looked in $where"
+                  }
+                  exit 1
+              }
+          }
+
+          # Collect installed DLLs keyed the same way
+          $installedDlls = @()
+          foreach ($subPath in $subPathsToCheck) {
+              $searchFolder = if ($subPath) { Join-Path $installDir $subPath } else { $installDir }
+              if (Test-Path $searchFolder) {
+                  Get-ChildItem -Path $searchFolder -Filter *.dll | ForEach-Object {
+                      $installedDlls += if ($subPath) { Join-Path $subPath $_.Name } else { $_.Name }
+                  }
+              }
+          }
+          $installedDlls = @($installedDlls | Sort-Object -Unique)
 
           # Find missing DLLs (in build, not in install), ignoring whitelist
-          $missingDlls = $buildDlls | Where-Object { $_ -notin $installedDlls -and $_ -notin $whitelistedMissingDlls }
+          $missingDlls = @($buildDlls | Where-Object { $_ -notin $installedDlls -and $_ -notin $whitelistedMissing })
 
           # Find extra DLLs (in install, not in build), ignoring whitelist
-          $extraDlls = $installedDlls | Where-Object { $_ -notin $buildDlls -and $_ -notin $whitelistedExtraDlls }
+          $extraDlls = @($installedDlls | Where-Object { $_ -notin $buildDlls -and $_ -notin $whitelistedExtra })
 
           $hasError = $false
 
@@ -320,6 +372,10 @@ jobs:
               $missingDlls | ForEach-Object {
                   $sourceFolder = $buildDllLocations[$_]
                   Write-Host "- $_ (from $sourceFolder)"
+              }
+              if ($missingDlls | Where-Object { $_ -like "runtimes\win-x64\native\*" }) {
+                  Write-Host "Native libraries under runtimes\win-x64\native are loaded by DllImport at runtime; when absent the installed app throws DllNotFoundException."
+                  Write-Host "Add missing natives to the WinNativeMathComponents ComponentGroup in MetaMorpheus/MetaMorpheusSetup/Product.wxs."
               }
               $hasError = $true
           }
@@ -333,5 +389,5 @@ jobs:
           if ($hasError) {
               exit 1
           } else {
-              Write-Host "✅ Installer DLLs match build output exactly." -ForegroundColor Green
+              Write-Host "✅ Installer DLLs match build output exactly (top-level and runtimes\win-x64\native)." -ForegroundColor Green
           }

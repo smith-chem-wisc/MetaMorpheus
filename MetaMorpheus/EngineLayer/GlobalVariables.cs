@@ -1,4 +1,4 @@
-﻿global using obo = Omics.Modifications.IO.obo;
+global using obo = Omics.Modifications.IO.obo;
 using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer.GlycoSearch;
@@ -76,7 +76,10 @@ namespace EngineLayer
         public static void SetUpGlobalVariables()
         {
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp", ".msl" };
-            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf", ".msalign", ".tdf", ".tdf_bin", ".d" };
+            // ".d" is the Bruker acquisition folder; the rest of the Bruker entries are the inner files a user may hand
+            // us instead, which BrukerDataDirectory redirects to their parent ".d". Keep this list lower-case: every
+            // consumer calls ToLowerInvariant() before Contains().
+            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf", ".msalign", ".baf", ".tdf", ".tdf_bin", ".tsf", ".tsf_bin", ".d" };
             AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
