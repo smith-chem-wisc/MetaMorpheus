@@ -895,5 +895,69 @@ namespace Test
             }
         }
 
+
+        /// <summary>
+        /// The null guards in the UniDec citation rule. RunTask does not produce any of these states
+        /// today, but each is a branch the rule explicitly defends, and the eleven-case decision matrix
+        /// reaches none of them because every scenario there is built from fully populated
+        /// CommonParameters.
+        ///
+        /// The MultipleDeconParameters pair is the one that could actually bite: mzLib validates only
+        /// that the collection is non-null and non-empty, so a null *element* is constructible, and the
+        /// descent has to skip it rather than throw on it or abandon the rest of the array.
+        /// </summary>
+        /// <param name="scenario">Which null-shaped arrangement to build.</param>
+        /// <param name="spectraFileCount">How many spectra files the task was handed.</param>
+        /// <param name="expectCitation">Whether IsoDec actually governed at least one file.</param>
+        [Test]
+        // FileSpecificParameters is null until RunTask builds it, so the null-coalesce has to hold.
+        [TestCase("NullFileSpecificParametersList", 1, true)]
+        // A per-file entry carrying no parameters must not be dereferenced.
+        [TestCase("PerFileEntryWithNullParameters", 1, false)]
+        // A null inside MultipleDeconParameters is skipped rather than fatal...
+        [TestCase("TaskMultipleContainingNull", 1, false)]
+        // ...and skipping it does not abandon the entries after it.
+        [TestCase("TaskMultipleContainingNullThenIsoDec", 1, true)]
+        public static void TestUniDecCitationNullGuards(string scenario, int spectraFileCount, bool expectCitation)
+        {
+            static DeconvolutionParameters Classic() => new ClassicDeconvolutionParameters(1, 12, 4, 3);
+            static DeconvolutionParameters IsoDec() => new IsoDecDeconvolutionParameters();
+            static DeconvolutionParameters Multiple(params DeconvolutionParameters[] wrapped) =>
+                new MultipleDeconParameters(wrapped, 1, 12);
+
+            CommonParameters taskParameters;
+            var perFileParameters = new List<(string FileName, CommonParameters Parameters)>();
+
+            switch (scenario)
+            {
+                case "NullFileSpecificParametersList":
+                    taskParameters = new CommonParameters(precursorDeconParams: IsoDec(), productDeconParams: IsoDec());
+                    perFileParameters = null;
+                    break;
+                case "PerFileEntryWithNullParameters":
+                    taskParameters = new CommonParameters(precursorDeconParams: IsoDec(), productDeconParams: IsoDec());
+                    perFileParameters.Add(("a.mzML", null));
+                    break;
+                case "TaskMultipleContainingNull":
+                    taskParameters = new CommonParameters(precursorDeconParams: Classic(),
+                        productDeconParams: Multiple(Classic(), null));
+                    break;
+                case "TaskMultipleContainingNullThenIsoDec":
+                    taskParameters = new CommonParameters(precursorDeconParams: Classic(),
+                        productDeconParams: Multiple(null, IsoDec()));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(scenario), scenario, "unknown scenario");
+            }
+
+            var task = new SearchTask { CommonParameters = taskParameters, FileSpecificParameters = perFileParameters };
+            var method = typeof(MetaMorpheusTask).GetMethod("UsedIsoDecDeconvolution",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.That(method, Is.Not.Null, "UsedIsoDecDeconvolution was renamed; this test needs updating");
+
+            bool citationWritten = (bool)method.Invoke(task, new object[] { spectraFileCount });
+            Assert.That(citationWritten, Is.EqualTo(expectCitation));
+        }
+
     }
 }
