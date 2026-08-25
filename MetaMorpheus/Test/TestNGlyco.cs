@@ -696,7 +696,7 @@ namespace Test
         [Test]
         public static void PersistCustomMonosaccharide_AppendsOnOwnLineWhenFileMissingTrailingNewline() 
         {
-            string path = Path.Combine(GlobalVariables.DataDir, "Glycan_Mods", "MonosaccharidesCustom.tsv");
+            string path = GlobalVariables.CustomMonosaccharidePath;
             bool existedBefore = File.Exists(path);
             string originalContent = existedBefore ? File.ReadAllText(path) : null;
             try
@@ -735,7 +735,7 @@ namespace Test
             // LoadCustomMonosaccharides reads (used by CustomMonosaccharideWindow's save handler).
             // Exercising both together, with no GUI involved, is what actually protects the two
             // from drifting apart.
-            string path = Path.Combine(GlobalVariables.DataDir, "Glycan_Mods", "MonosaccharidesCustom.tsv");
+            string path = GlobalVariables.CustomMonosaccharidePath;
             bool existedBefore = File.Exists(path);
             string originalContent = existedBefore ? File.ReadAllText(path) : null;
 

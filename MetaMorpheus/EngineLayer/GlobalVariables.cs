@@ -51,6 +51,7 @@ namespace EngineLayer
         public static string UserSpecifiedDataDir { get; set; }
         public static string CustomProteasePath => Path.Combine(DataDir, "proteases_custom.tsv");
         public static string CustomRnasePath => Path.Combine(DataDir, "rnase_custom.tsv");
+        public static string CustomMonosaccharidePath => Path.Combine(DataDir, "MonosaccharidesCustom.tsv");
 
         public static bool StopLoops { get; set; }
         public static string MetaMorpheusVersion { get; private set; }
@@ -473,9 +474,8 @@ namespace EngineLayer
             // Custom monosaccharides must be registered FIRST so any custom tokens are recognized
             // by the glycan-database parsers below. The file is optional; if it does not exist,
             // LoadCustomMonosaccharides is a no-op.
-            string customMonosaccharidePath = Path.Combine(DataDir, @"Glycan_Mods", "MonosaccharidesCustom.tsv");
-            GlycanDatabase.EnsureCustomMonosaccharideFileExists(customMonosaccharidePath);
-            GlycanDatabase.LoadCustomMonosaccharides(customMonosaccharidePath);
+            GlycanDatabase.EnsureCustomMonosaccharideFileExists(CustomMonosaccharidePath);
+            GlycanDatabase.LoadCustomMonosaccharides(CustomMonosaccharidePath);
 
             OGlycanDatabasePaths = new List<string>();
             NGlycanDatabasePaths = new List<string>();

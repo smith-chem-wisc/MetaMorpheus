@@ -205,7 +205,7 @@ namespace EngineLayer
             //registration already succeeded -- the sugar works this session no matter what happens
             //persist to file so the monosaccharide is still recognized on the next launch
             string line = string.Join("\t", name, code.ToString(), massDa.ToString(CultureInfo.InvariantCulture), ionsText, descriptionText);
-            string customMonosaccharidePath = Path.Combine(GlobalVariables.DataDir, @"Glycan_Mods", "MonosaccharidesCustom.tsv");
+            string customMonosaccharidePath = GlobalVariables.CustomMonosaccharidePath;
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(customMonosaccharidePath));
