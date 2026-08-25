@@ -686,8 +686,12 @@ namespace GuiFunctions
         /// <param name="images">list of objects to combine</param>
         /// <param name="points">the position to begin drawing each</param>
         /// <param name="overlap">true of they should overlap, false if they should stack ontop of one another vertically</param>
+        /// <param name="backgroundColor">background color painted over the combined canvas before drawing the source images.
+        /// When null (default), the background is chosen from <see cref="MetaDrawSettings.ExportType"/>: JPEG and BMP exports
+        /// use opaque white so uncovered regions render correctly in formats without alpha; PNG, TIFF, PDF, and WMF keep
+        /// a transparent background so uncovered regions stay see-through. Pass an explicit color to override the default.</param>
         /// <returns></returns>
-        public static System.Drawing.Bitmap CombineBitmap(List<System.Drawing.Bitmap> images, List<Point> points, bool overlap = true)
+        public static System.Drawing.Bitmap CombineBitmap(List<System.Drawing.Bitmap> images, List<Point> points, bool overlap = true, System.Drawing.Color? backgroundColor = null)
         {
             System.Drawing.Bitmap finalImage = null;
 
@@ -717,8 +721,11 @@ namespace GuiFunctions
                 //get a graphics object from the image so we can draw on it
                 using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(finalImage))
                 {
-                    // Keep the output transparent wherever no source image has content.
-                    g.Clear(System.Drawing.Color.Transparent);
+                    // Choose a format-appropriate background when the caller did not override it.
+                    // JPEG and BMP do not support alpha; opaque white keeps uncovered regions visible.
+                    System.Drawing.Color resolvedBackground = backgroundColor
+                        ?? GetDefaultCombineBackgroundColor();
+                    g.Clear(resolvedBackground);
 
                     //go through each image and draw it on the final image
                     for (int i = 0; i < images.Count; i++)
@@ -882,6 +889,24 @@ namespace GuiFunctions
                 : requestedDimension;
 
             return Math.Max(1, (int)dimension);
+        }
+
+        /// <summary>
+        /// Chooses the default background color for <see cref="CombineBitmap"/> based on the current
+        /// <see cref="MetaDrawSettings.ExportType"/>. JPEG and BMP have no alpha channel, so uncovered
+        /// regions must be painted opaque white to remain visible. PNG, TIFF, PDF (rendered through a
+        /// PNG temp), and WMF preserve transparency.
+        /// </summary>
+        internal static System.Drawing.Color GetDefaultCombineBackgroundColor()
+        {
+            string exportType = MetaDrawSettings.ExportType;
+            if (string.Equals(exportType, "Jpeg", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(exportType, "Bmp", StringComparison.OrdinalIgnoreCase))
+            {
+                return System.Drawing.Color.White;
+            }
+
+            return System.Drawing.Color.Transparent;
         }
 
         /// <summary>
