@@ -100,8 +100,8 @@ namespace GuiFunctions
             var tempStatSequenceBitmap = new System.Drawing.Bitmap(tempStationarySequencePngPath);
             System.Drawing.Bitmap stationarySequenceBitmap = new System.Drawing.Bitmap(tempStatSequenceBitmap, new System.Drawing.Size(stationarySequenceWidth, stationarySequenceHeight));
             bitmaps.Add(stationarySequenceBitmap);
-            // Preserve the legacy peptide export alignment correction; this compensates for the model bitmap origin.
-            // Preserve the legacy peptide export alignment correction for the model bitmap origin.
+
+            // Magic Number +50 is used to offset the stationary sequence to the right of the model plot. 
             Point stationarySequencePoint = new Point(stationarySequenceLocationVector.X + 50, stationarySequenceLocationVector.Y);
             points.Add(stationarySequencePoint);
 
@@ -127,8 +127,8 @@ namespace GuiFunctions
                 System.Drawing.Bitmap tempPtmLegendBitmap = new(tempPtmLegendPngPath);
                 ptmLegendBitmap = new System.Drawing.Bitmap(tempPtmLegendBitmap, new System.Drawing.Size(ptmLegendWidth, ptmLegendHeight));
                 bitmaps.Add(ptmLegendBitmap);
-                // Preserve the legacy peptide legend alignment correction relative to the annotation grid.
-                // Preserve the legacy peptide legend alignment correction relative to the annotation grid.
+
+                // Magic Number -14 and -20 is used to offset the ptm legend to the left and above the bottom left corner of the model plot.
                 ptmLegendPoint = new Point(ptmLegendLocationVector.X - 14, ptmLegendLocationVector.Y - 20);
                 points.Add(ptmLegendPoint);
                 tempPtmLegendBitmap.Dispose();
