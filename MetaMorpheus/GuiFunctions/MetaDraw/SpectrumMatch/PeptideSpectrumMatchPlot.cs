@@ -60,8 +60,8 @@ namespace GuiFunctions
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
             // render stationary sequence as bitmap and export as png
-            int stationarySequenceWidth = GetCanvasDimension(stationarySequence.Width, stationarySequence.ActualWidth) + 30;
-            int stationarySequenceHeight = GetCanvasDimension(stationarySequence.Height, stationarySequence.ActualHeight) + 30;
+            int stationarySequenceWidth = MetaDrawLogic.GetCanvasDimension(stationarySequence.Width, stationarySequence.ActualWidth) + 30;
+            int stationarySequenceHeight = MetaDrawLogic.GetCanvasDimension(stationarySequence.Height, stationarySequence.ActualHeight) + 30;
             Size stationarySequenceSize = new Size(stationarySequenceWidth, stationarySequenceHeight);
             double originalStationarySequenceWidth = stationarySequence.Width;
             double originalStationarySequenceHeight = stationarySequence.Height;
@@ -111,8 +111,8 @@ namespace GuiFunctions
             if (ptmLegend != null && MetaDrawSettings.ShowLegend)
             {
                 // Saving Canvas as a usable Png
-                int ptmLegendWidth = GetCanvasDimension(ptmLegend.ActualWidth, 0);
-                int ptmLegendHeight = GetCanvasDimension(ptmLegend.ActualHeight, 0);
+                int ptmLegendWidth = MetaDrawLogic.GetCanvasDimension(ptmLegend.ActualWidth, 0);
+                int ptmLegendHeight = MetaDrawLogic.GetCanvasDimension(ptmLegend.ActualHeight, 0);
                 RenderTargetBitmap ptmLegendRenderBitmap = new((int)(dpiScale * ptmLegendWidth), (int)(dpiScale * ptmLegendHeight),
                          MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
                 ptmLegendRenderBitmap.Render(ptmLegend);
@@ -142,15 +142,5 @@ namespace GuiFunctions
             File.Delete(tempPtmLegendPngPath);
             ExportPlot(path, combinedBitmaps, width, height);
         }
-
-        private static int GetCanvasDimension(double requestedDimension, double actualDimension)
-        {
-            double dimension = double.IsNaN(requestedDimension) || requestedDimension <= 0
-                ? actualDimension
-                : requestedDimension;
-
-            return Math.Max(1, (int)dimension);
-        }
     }
-
 }
