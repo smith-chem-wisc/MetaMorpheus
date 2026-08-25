@@ -784,5 +784,101 @@ namespace Test
                 }
             }
         }
+
+        [Test]
+        public static void MonoSaccharidesInstruction_EveryLineIsCommentOrBlank()
+        {
+            // GlycanDatabase.MonoSaccharidesInstruction is hand-written directly into the source file
+            // (issue #2752's fix), so nothing else guarantees every line is a comment or blank -- a
+            // stray non-'#' line breaks LoadCustomMonosaccharides the moment the file is freshly
+            // created (see EnsureCustomMonosaccharideFileExists_ThenLoadCustomMonosaccharides_DoesNotThrow).
+            // This test pinpoints exactly which line is wrong instead of relying on that indirect symptom.
+            var assembly = typeof(GlycanDatabase).Assembly;
+            using var stream = assembly.GetManifestResourceStream("EngineLayer.Glycan_Mods.MonosaccharidesCustom.tsv");
+            Assert.That(stream, Is.Not.Null, "Embedded resource 'EngineLayer.Glycan_Mods.MonosaccharidesCustom.tsv' not found -- check the <EmbeddedResource> entry in EngineLayer.csproj.");
+
+            using var reader = new StreamReader(stream);
+            string line;
+            int lineNumber = 0;
+            while ((line = reader.ReadLine()) != null)
+            {
+                lineNumber++;
+                string trimmed = line.TrimStart().TrimStart('"');
+                bool isHeader = trimmed.StartsWith("Name\t", StringComparison.OrdinalIgnoreCase);
+                Assert.That(string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#") || isHeader, Is.True,
+                    $"Line {lineNumber} is neither blank, a comment, nor the header row: \"{line}\". " +
+                    "LoadCustomMonosaccharides will try to parse it as a data row and throw.");
+            }
+
+        }
+
+        [Test]
+        public static void EnsureCustomMonosaccharideFileExists_CreatesHeaderedFileWhenMissing() 
+        {
+            string tempDir = Directory.CreateTempSubdirectory().FullName;
+            string path = Path.Combine(tempDir, "MonosaccharidesCustom.tsv");
+            try
+            {
+                Assert.That(File.Exists(path), Is.False);
+
+                GlycanDatabase.EnsureCustomMonosaccharideFileExists(path);
+
+                Assert.That(File.Exists(path), Is.True);
+                var lines = File.ReadAllLines(path);
+                Assert.That(lines, Does.Contain(GlycanDatabase.MonoSaccharidesHeader));
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Test]
+        public static void EnsureCustomMonosaccharideFileExists_ThenLoadCustomMonosaccharides_DoesNotThrow()
+        {
+            // Reproduces exactly what GlobalVariables.LoadGlycans does at startup when the file
+            // doesn't exist yet (fresh install / clean checkout): create it, then immediately load
+            // it. The freshly-created file must be fully parseable -- every line either the header,
+            // a comment, or blank -- with zero real data rows registered.
+            string tempDir = Directory.CreateTempSubdirectory().FullName;
+            string path = Path.Combine(tempDir, "MonosaccharidesCustom.tsv");
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+
+                GlycanDatabase.EnsureCustomMonosaccharideFileExists(path);
+
+                Assert.DoesNotThrow(() => GlycanDatabase.LoadCustomMonosaccharides(path));
+                Assert.That(Glycan.KindCapacity, Is.EqualTo(11)); // 11 built-ins, no data rows in the template
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Test]
+        public static void EnsureCustomMonosaccharideFileExists_DoesNotTouchExistingFile()
+        {
+            // If the file already exists, EnsureCustomMonosaccharideFileExists must not overwrite it.
+            // This test creates a file with one real data row, then calls the method and verifies the file is unchanged.
+            string tempDir = Directory.CreateTempSubdirectory().FullName;
+            string path = Path.Combine(tempDir, "MonosaccharidesCustom.tsv");
+            string existingContent = string.Join("\n", GlycanDatabase.MonoSaccharidesHeader, "HexA\tU\t176.03209\t\tHexuronic acid");
+            try
+            {
+
+                File.WriteAllText(path, existingContent);
+
+                GlycanDatabase.EnsureCustomMonosaccharideFileExists(path);
+
+                Assert.That(File.ReadAllText(path), Is.EqualTo(existingContent));
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
     }
 }

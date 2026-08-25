@@ -474,6 +474,7 @@ namespace EngineLayer
             // by the glycan-database parsers below. The file is optional; if it does not exist,
             // LoadCustomMonosaccharides is a no-op.
             string customMonosaccharidePath = Path.Combine(DataDir, @"Glycan_Mods", "MonosaccharidesCustom.tsv");
+            GlycanDatabase.EnsureCustomMonosaccharideFileExists(customMonosaccharidePath);
             GlycanDatabase.LoadCustomMonosaccharides(customMonosaccharidePath);
 
             OGlycanDatabasePaths = new List<string>();

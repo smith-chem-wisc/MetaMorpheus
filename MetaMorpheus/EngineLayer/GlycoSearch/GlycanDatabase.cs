@@ -1,4 +1,5 @@
-﻿using EngineLayer.GlycoSearch;
+﻿using CsvHelper;
+using EngineLayer.GlycoSearch;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -44,6 +45,8 @@ namespace EngineLayer
                 return LoadStructureGlycan(filePath, IsOGlycan);            // open the file of the structure format, example: (N(H(A))(A))
             }
         }
+
+        public const string MonoSaccharidesHeader = "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription";
 
         /// <summary>
         /// Load custom monosaccharide definitions from a tab-separated file and register them with
@@ -208,7 +211,7 @@ namespace EngineLayer
                 Directory.CreateDirectory(Path.GetDirectoryName(customMonosaccharidePath));
                 if (!File.Exists(customMonosaccharidePath))
                 {
-                    File.WriteAllLines(customMonosaccharidePath, new[] { "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription", line });
+                    File.WriteAllLines(customMonosaccharidePath, new[] { MonoSaccharidesHeader, line });
                 }
                 else
                 {
@@ -228,6 +231,37 @@ namespace EngineLayer
             catch (Exception ex)
             {
                 return $"The monosaccharide is available for this session, but could not be saved to file for future sessions: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Ensure the CustomMonoSaccharide.tsv existed in the directory. If the file is missing, 
+        /// write the header-only template; do nothing if it already exists.
+        /// </summary>
+        /// <param name="path"></param>
+        public static void EnsureCustomMonosaccharideFileExists(string path) 
+        {
+            if (!File.Exists(path)) 
+            { 
+                try
+                {
+                    // Make sure the directory exists before writing the file, however, it should be created while the installing
+                    // process. Just to guard the rare condition that the directory is missing.
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+                    // The default template(with instructions) is embedded in the DLL so it survives
+                    // install/repair/upgrade regardless of what the installer does to Glycan_Mods --
+                    // same pattern as RnaMods.txt (GlobalVariables.LoadRnaModifications) and the
+                    // mzLib-embedded default protease/rnase templates (GlobalVariables.LoadDigestionAgents).
+                    var assembly = typeof(GlycanDatabase).Assembly;
+                    using var stream = assembly.GetManifestResourceStream("EngineLayer.Glycan_Mods.MonosaccharidesCustom.tsv");
+                    using var reader = new StreamReader(stream);
+                    File.WriteAllText(path, reader.ReadToEnd());
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Could not create custom monosaccharide file '{path}': {ex.Message}");
+                }
             }
         }
 
