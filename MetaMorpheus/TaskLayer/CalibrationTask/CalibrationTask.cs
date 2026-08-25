@@ -409,7 +409,7 @@ namespace TaskLayer
         {
             string fileExtension = Path.GetExtension(originalUncalibratedFilePath);
             string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-            if (fileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase))
+            if (fileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase) || BrukerDataDirectory.IsInnerFileExtension(fileExtension))
             {
                 _unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
                 // provide a message indicating why we couldn't calibrate
