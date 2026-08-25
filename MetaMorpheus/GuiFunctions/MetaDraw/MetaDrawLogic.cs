@@ -489,6 +489,7 @@ namespace GuiFunctions
                 && CurrentlyDisplayedPlots.Count == 1
                 && reFragment == null
                 && SpectralMatchComparer.Instance.Equals(CurrentlyDisplayedPlots[0].SpectrumMatch, spectrumMatches[0]);
+            bool displayAttempted = false;
 
             foreach (var psm in spectrumMatches)
             {
@@ -499,7 +500,6 @@ namespace GuiFunctions
                     // get the scan
                     if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out MsDataFile spectraFile))
                     {
-                        errors ??= new List<string>();
                         errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
                         return;
                     }
@@ -515,17 +515,11 @@ namespace GuiFunctions
 
                     if (plotView.Name == "plotView")
                     {
+                        displayAttempted = true;
                         DisplaySequences(stationaryCanvas, null, null, psm);
                         DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
                         if (displayErrors?.Any() == true)
-                        {
-                            errors ??= new List<string>();
                             errors.AddRange(displayErrors);
-                        }
-                        else if (errors?.Count == 0)
-                        {
-                            errors = null;
-                        }
                     }
 
                 }
@@ -577,6 +571,7 @@ namespace GuiFunctions
 
             if (!skipPlotRegeneration && plotView.Name == "plotView")
             {
+                displayAttempted = true;
                 var psm = spectrumMatches.First();
 
                 // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
@@ -591,19 +586,15 @@ namespace GuiFunctions
                 DisplaySequences(stationaryCanvas, null, null, psm);
                 DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
                 if (displayErrors?.Any() == true)
-                {
-                    errors ??= new List<string>();
                     errors.AddRange(displayErrors);
-                }
-                else if (errors?.Count == 0)
-                {
-                    errors = null;
-                }
 
                 // put the original ions back in place if they were altered
                 if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
                     psm.MatchedIons = oldMatchedIons;
             }
+
+            if (displayAttempted && errors.Count == 0)
+                errors = null;
         }
 
         /// <summary>
@@ -720,14 +711,14 @@ namespace GuiFunctions
                     }
                 }
 
-                //create a bitmap to hold the combined image
-                finalImage = new System.Drawing.Bitmap(width, height);
+                // Create a transparent bitmap to hold the combined image without changing source alpha.
+                finalImage = new System.Drawing.Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
                 //get a graphics object from the image so we can draw on it
                 using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(finalImage))
                 {
-                    //set background color
-                    g.Clear(System.Drawing.Color.White);
+                    // Keep the output transparent wherever no source image has content.
+                    g.Clear(System.Drawing.Color.Transparent);
 
                     //go through each image and draw it on the final image
                     for (int i = 0; i < images.Count; i++)
@@ -873,12 +864,7 @@ namespace GuiFunctions
             canvas.Arrange(new Rect(canvasSize));
             RenderTargetBitmap renderCanvasBitmap = new((int)(dpiScale * width), (int)(dpiScale * height),
                 MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
-            DrawingVisual drawingVisual = new();
-            using (DrawingContext drawingContext = drawingVisual.RenderOpen())
-            {
-                drawingContext.DrawRectangle(new VisualBrush(canvas), null, new Rect(0, 0, width, height));
-            }
-            renderCanvasBitmap.Render(drawingVisual);
+            renderCanvasBitmap.Render(canvas);
 
             PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderCanvasBitmap));
@@ -889,7 +875,7 @@ namespace GuiFunctions
             return new System.Drawing.Bitmap(sourceBitmap, new System.Drawing.Size(width, height));
         }
 
-        private static int GetCanvasDimension(double requestedDimension, double actualDimension)
+        internal static int GetCanvasDimension(double requestedDimension, double actualDimension)
         {
             double dimension = double.IsNaN(requestedDimension) || requestedDimension <= 0
                 ? actualDimension
@@ -924,16 +910,7 @@ namespace GuiFunctions
 
             RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap((int)(width * dpiScale), (int)(height * dpiScale),
                 MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
-            VisualBrush visualBrush = new(visual);
-
-            // draw UIElement on a bitmap
-            DrawingVisual drawingVisual = new();
-            DrawingContext drawingContext = drawingVisual.RenderOpen();
-            using (drawingContext)
-            {
-                drawingContext.DrawRectangle(visualBrush, null, new Rect(new Point(0, 0), new Point(width, height)));
-            }
-            renderTargetBitmap.Render(drawingVisual);
+            renderTargetBitmap.Render(visual);
 
             // export and reload bitmap in correct formatting
             BitmapEncoder encoder = new PngBitmapEncoder();

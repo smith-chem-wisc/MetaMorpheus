@@ -103,6 +103,31 @@ namespace Test.MetaDraw
             });
         }
 
+        [Test]
+        public void CombineBitmap_PreservesTransparencyAndAbsoluteCoordinates()
+        {
+            var source = new System.Drawing.Bitmap(
+                100,
+                100,
+                System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            source.SetPixel(20, 30, System.Drawing.Color.Red);
+
+            var combined = MetaDrawLogic.CombineBitmap(
+                new List<System.Drawing.Bitmap> { source },
+                new List<Point> { new(7, 11) },
+                true);
+
+            try
+            {
+                Assert.That(combined.GetPixel(0, 0).A, Is.EqualTo(0));
+                Assert.That(combined.GetPixel(27, 41).ToArgb(), Is.EqualTo(System.Drawing.Color.Red.ToArgb()));
+            }
+            finally
+            {
+                combined.Dispose();
+            }
+        }
+
         private static void WithLoadedMetaDraw(Action<MetaDrawLogic, SpectrumMatchFromTsv, string> test)
         {
             string outputDirectory = Path.Combine(
