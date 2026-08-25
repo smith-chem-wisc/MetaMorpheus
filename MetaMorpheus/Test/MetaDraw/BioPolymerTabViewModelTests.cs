@@ -442,7 +442,7 @@ namespace Test.MetaDraw
                 method.Invoke(vm, null);
 
                 using var bitmap = new System.Drawing.Bitmap(expectedPath);
-                Assert.That(bitmap.GetPixel(0, 0).A, Is.EqualTo(0));
+                Assert.That(bitmap.GetPixel(0, bitmap.Height - 1).A, Is.EqualTo(0));
             }
             finally
             {
