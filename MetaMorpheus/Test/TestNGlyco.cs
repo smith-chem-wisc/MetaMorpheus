@@ -880,5 +880,72 @@ namespace Test
                 Directory.Delete(tempDir, true);
             }
         }
+        [Test]
+        public static void EnsureCustomMonosaccharideFileExists_UnwritableTarget_SwallowsAndDoesNotThrow()
+        {
+            // This seed runs inside GlobalVariables.LoadGlycans, which GlobalVariables.SetUpGlobalVariables
+            // calls from the MainWindow constructor before InitializeComponent. GUI/App.xaml.cs registers no
+            // DispatcherUnhandledException handler, so anything escaping here takes the application down at
+            // launch -- and LoadCustomMonosaccharides documents this file as optional (it returns early when
+            // the file is absent). A failed seed must therefore degrade quietly rather than abort startup.
+            //
+            // Standing a directory where the file should go is the portable way to force the write to fail:
+            // File.Exists is false for a directory, so the seed is attempted, and File.WriteAllText then
+            // throws UnauthorizedAccessException on Windows and Unix alike. No permissions games, no admin.
+            string tempDir = Directory.CreateTempSubdirectory().FullName;
+            string path = Path.Combine(tempDir, "MonosaccharidesCustom.tsv");
+            try
+            {
+                Directory.CreateDirectory(path);
+
+                Assert.DoesNotThrow(() => GlycanDatabase.EnsureCustomMonosaccharideFileExists(path));
+
+                // the write really did fail and was swallowed: the blocking directory is untouched
+                // and no file was created in its place
+                Assert.That(Directory.Exists(path), Is.True);
+                Assert.That(File.Exists(path), Is.False);
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Test]
+        public static void EnsureCustomMonosaccharideFileExists_WritesTheEmbeddedTemplateVerbatim()
+        {
+            // The instruction banner is the reason a file is embedded at all rather than a header string
+            // being written from code: a user who opens this file to hand-add a row finds the column spec,
+            // the reserved built-in name/code table and worked examples right in front of them. Assert the
+            // seeded file matches the embedded resource exactly, so a later "simplification" to
+            // File.WriteAllText(path, MonoSaccharidesHeader) fails here instead of quietly shipping users
+            // a bare file.
+            string tempDir = Directory.CreateTempSubdirectory().FullName;
+            string path = Path.Combine(tempDir, "MonosaccharidesCustom.tsv");
+            try
+            {
+                GlycanDatabase.EnsureCustomMonosaccharideFileExists(path);
+
+                var assembly = typeof(GlycanDatabase).Assembly;
+                using var stream = assembly.GetManifestResourceStream("EngineLayer.Glycan_Mods.MonosaccharidesCustom.tsv");
+                using var reader = new StreamReader(stream);
+                string expected = reader.ReadToEnd();
+
+                Assert.That(File.ReadAllText(path), Is.EqualTo(expected));
+
+                // The 11 built-ins appear in the template as '#' documentation only. They are owned by
+                // Glycan, never by this file, so the seeded template must contain no data row at all --
+                // only the header. A built-in written as an editable row could be shadowed by a user edit.
+                var dataLines = File.ReadAllLines(path)
+                    .Where(l => !string.IsNullOrWhiteSpace(l) && !l.TrimStart().StartsWith("#"))
+                    .ToList();
+                Assert.That(dataLines, Is.EqualTo(new[] { GlycanDatabase.MonoSaccharidesHeader }));
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
     }
 }
