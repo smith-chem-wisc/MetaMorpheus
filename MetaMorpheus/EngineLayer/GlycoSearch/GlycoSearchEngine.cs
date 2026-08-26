@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EngineLayer.Indexing;
 using MassSpectrometry;
 using EngineLayer.SpectrumMatch;
 
@@ -28,7 +29,7 @@ namespace EngineLayer.GlycoSearch
         private readonly Tolerance PrecusorSearchMode;
         private readonly MassDiffAcceptor ProductSearchMode;
 
-        private readonly List<int>[] SecondFragmentIndex;
+        private readonly MassBinIndex SecondFragmentIndex;
 
         protected string[] Motifs
         {
@@ -44,7 +45,7 @@ namespace EngineLayer.GlycoSearch
 
         // The constructor for GlycoSearchEngine, we can load the parameter for the searhcing like mode, topN, maxOGlycanNum, oxoniumIonFilter, datsbase, etc.
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
+            MassBinIndex fragmentIndex, MassBinIndex secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
              string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {

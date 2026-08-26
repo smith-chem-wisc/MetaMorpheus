@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -1304,26 +1304,16 @@ namespace TaskLayer
             return digestionParams;
         }
 
-        private static void WriteFragmentIndex(List<int>[] fragmentIndex, string fragmentIndexFileName)
+        private static void WriteFragmentIndex(MassBinIndex fragmentIndex, string fragmentIndexFileName)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.Create(fragmentIndexFileName))
-            {
-                ser.Serialize(file, fragmentIndex);
-            }
+            // Written as two flat int arrays rather than through NetSerializer: the index holds up to
+            // hundreds of millions of ints, and the per-element serializer overhead dominated the write.
+            fragmentIndex.Write(fragmentIndexFileName);
         }
 
-        private static List<int>[] ReadFragmentIndex(string fragmentIndexFileName)
+        private static MassBinIndex ReadFragmentIndex(string fragmentIndexFileName)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.OpenRead(fragmentIndexFileName))
-            {
-                return (List<int>[])ser.Deserialize(file);
-            }
+            return MassBinIndex.Read(fragmentIndexFileName);
         }
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
@@ -1391,7 +1381,7 @@ namespace TaskLayer
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref MassBinIndex fragmentIndex, ref MassBinIndex precursorIndex, List<Protein> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -1460,7 +1450,7 @@ namespace TaskLayer
             }
         }
 
-        public void GenerateIndexes_PeptideOnly(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateIndexes_PeptideOnly(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref MassBinIndex precursorIndex, List<Protein> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -1497,7 +1487,7 @@ namespace TaskLayer
             }
         }
 
-        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref MassBinIndex secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (!File.Exists(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName))) //if no indexes exist

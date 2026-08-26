@@ -126,12 +126,12 @@ namespace TaskLayer
                         UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, this.FileSpecificParameters, 30000.0, false,
                         dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
 
-                    List<int>[] fragmentIndex = null;
-                    List<int>[] precursorIndex = null;
+                    MassBinIndex fragmentIndex = null;
+                    MassBinIndex precursorIndex = null;
                     GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
 
                     //The second Fragment index is for 'MS1-HCD_MS1-ETD_MS2s' type of data. If LowCID is used for MS1, ion-index is not allowed to use.
-                    List<int>[] secondFragmentIndex = null;
+                    MassBinIndex secondFragmentIndex = null;
                     if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID && combinedParams.MS2ChildScanDissociationType!= DissociationType.Unknown
                     && !CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
                     {
@@ -167,7 +167,7 @@ namespace TaskLayer
                         UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, this.FileSpecificParameters, 30000.0, false,
                         dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
 
-                    List<int>[] precursorIndex_a = null;
+                    MassBinIndex precursorIndex_a = null;
                     GenerateIndexes_PeptideOnly(indexEngine_a, dbFilenameList, ref peptideIndex_a, ref precursorIndex_a, proteinList, taskId);
 
                     for (int nextPartition = 0; nextPartition < CommonParameters.TotalPartitions; nextPartition++)
@@ -188,7 +188,7 @@ namespace TaskLayer
                                 UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, this.FileSpecificParameters, 30000.0, false,
                                 dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
 
-                            List<int>[] precursorIndex_b = null;
+                            MassBinIndex precursorIndex_b = null;
                             GenerateIndexes_PeptideOnly(indexEngine_b, dbFilenameList, ref peptideIndex_b, ref precursorIndex_b, proteinList, taskId);
 
                         }

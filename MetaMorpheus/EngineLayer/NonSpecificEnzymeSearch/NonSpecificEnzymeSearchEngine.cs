@@ -5,6 +5,7 @@ using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
+using EngineLayer.Indexing;
 using MassSpectrometry;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
     {
         private static readonly double WaterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
-        private readonly List<int>[] PrecursorIndex;
+        private readonly MassBinIndex PrecursorIndex;
         private readonly int MinimumPeptideLength;
         readonly SpectralMatch[][] GlobalCategorySpecificPsms;
         readonly CommonParameters ModifiedParametersNoComp;
@@ -29,7 +30,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         readonly List<int>[] CoisolationIndex;
 
         public NonSpecificEnzymeSearchEngine(SpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<int>[] coisolationIndex,
-            List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition,
+            List<PeptideWithSetModifications> peptideIndex, MassBinIndex fragmentIndex, MassBinIndex precursorIndex, int currentPartition,
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
@@ -98,18 +99,24 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 int highestBin = obsPrecursorCeilingMz - dissociationBinShift;
                                 for (int bin = lowestBin; bin <= highestBin; bin++)
                                 {
-                                    if (bin < FragmentIndex.Length && FragmentIndex[bin] != null)
+                                    if (bin < FragmentIndex.Length)
                                     {
-                                        FragmentIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                                        foreach (int id in FragmentIndex[bin])
+                                        {
+                                            idsOfPeptidesPossiblyObserved.Add(id);
+                                        }
                                     }
                                 }
                             }
 
                             for (int bin = obsPrecursorFloorMz; bin <= obsPrecursorCeilingMz; bin++) //no bin shift, since they're precursor masses
                             {
-                                if (bin < PrecursorIndex.Length && PrecursorIndex[bin] != null)
+                                if (bin < PrecursorIndex.Length)
                                 {
-                                    PrecursorIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                                    foreach (int id in PrecursorIndex[bin])
+                                    {
+                                        idsOfPeptidesPossiblyObserved.Add(id);
+                                    }
                                 }
                             }
                         }
@@ -166,7 +173,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        private void SnesIndexedScoring(Ms2ScanWithSpecificMass scan, List<int>[] FragmentIndex, byte[] scoringTable, List<PeptideWithSetModifications> peptideIndex, DissociationType dissociationType)
+        private void SnesIndexedScoring(Ms2ScanWithSpecificMass scan, MassBinIndex FragmentIndex, byte[] scoringTable, List<PeptideWithSetModifications> peptideIndex, DissociationType dissociationType)
         {
             int obsPreviousFragmentCeilingMz = 0;
 
@@ -179,12 +186,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 {
                     //convert to an int since we're in discrete 1.0005...
                     int fragmentBin = (int)(Math.Round(masses[i].ToMass(1) / 1.0005079) * 1.0005079 * FragmentBinsPerDalton);
-                    List<int> bin = FragmentIndex[fragmentBin];
+                    ReadOnlySpan<int> bin = FragmentIndex[fragmentBin];
 
                     //score
-                    if (bin != null)
+                    if (!bin.IsEmpty)
                     {
-                        for (int pep = 0; pep < bin.Count; pep++)
+                        for (int pep = 0; pep < bin.Length; pep++)
                         {
                             scoringTable[bin[pep]]++;
                         }
@@ -206,9 +213,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     bin = FragmentIndex[fragmentBin];
 
                                     //score
-                                    if (bin != null)
+                                    if (!bin.IsEmpty)
                                     {
-                                        for (int pep = 0; pep < bin.Count; pep++)
+                                        for (int pep = 0; pep < bin.Length; pep++)
                                         {
                                             scoringTable[bin[pep]]++;
                                         }
@@ -255,12 +262,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         // search mass bins within a tolerance
                         for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
                         {
-                            List<int> bin = FragmentIndex[fragmentBin];
+                            ReadOnlySpan<int> bin = FragmentIndex[fragmentBin];
 
                             //score
-                            if (bin != null)
+                            if (!bin.IsEmpty)
                             {
-                                for (int pep = 0; pep < bin.Count; pep++)
+                                for (int pep = 0; pep < bin.Length; pep++)
                                 {
                                     scoringTable[bin[pep]]++;
                                 }
@@ -296,12 +303,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                                     for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
                                     {
-                                        List<int> bin = FragmentIndex[fragmentBin];
+                                        ReadOnlySpan<int> bin = FragmentIndex[fragmentBin];
 
                                         //score
-                                        if (bin != null)
+                                        if (!bin.IsEmpty)
                                         {
-                                            for (int pep = 0; pep < bin.Count; pep++)
+                                            for (int pep = 0; pep < bin.Length; pep++)
                                             {
                                                 scoringTable[bin[pep]]++;
                                             }

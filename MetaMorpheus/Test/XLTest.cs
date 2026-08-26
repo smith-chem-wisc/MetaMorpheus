@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.FdrAnalysis;
@@ -177,8 +177,7 @@ namespace Test
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
-            var indexedFragments = indexResults.FragmentIndex.Where(p => p != null).SelectMany(v => v).ToList();
-            Assert.That(indexedFragments.Count, Is.EqualTo(82));
+            Assert.That(indexResults.FragmentIndex.EntryCount, Is.EqualTo(82));
             Assert.That(indexResults.PeptideIndex.Count, Is.EqualTo(3));
 
             //Get MS2 scans.
@@ -926,7 +925,7 @@ namespace Test
         {
             var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
 
-            Assert.That(() => new CrosslinkSearchEngine([], [], [], [], [], 1, commonParameters, [], new Crosslinker(), 1, false, false, false, false, [], [], 1, [], []),
+            Assert.That(() => new CrosslinkSearchEngine([], [], [], null, null, 1, commonParameters, [], new Crosslinker(), 1, false, false, false, false, [], [], 1, [], []),
                 Throws.TypeOf<ArgumentException>()
                     .With.Message.Contain("Cross-link search engine does not currently support digestion of type"));
         }

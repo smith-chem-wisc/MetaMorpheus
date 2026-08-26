@@ -1,4 +1,5 @@
 ﻿using EngineLayer.ModernSearch;
+using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics.Fragmentation;
@@ -34,12 +35,12 @@ namespace EngineLayer.CrosslinkSearch
         private Modification NH2DeadEnd;
         private Modification Loop;
         private readonly char[] AllCrosslinkerSites;
-        private readonly List<int>[] SecondFragmentIndex;
+        private readonly MassBinIndex SecondFragmentIndex;
         private readonly double[] PrecursorMassTable;
         private readonly double[] NextPrecursorMassTable;
 
         public CrosslinkSearchEngine(List<CrosslinkSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
+            MassBinIndex fragmentIndex, MassBinIndex secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             Crosslinker crosslinker, int CrosslinkSearchTopNum, bool CleaveAtCrosslinkSite, bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds, 
             List<(int, int, int)>[] candidates, int nextPartition, 
