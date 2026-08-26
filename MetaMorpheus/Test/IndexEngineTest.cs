@@ -18,6 +18,98 @@ namespace Test
     [TestFixture]
     public static class IndexEngineTest
     {
+        /// <summary>
+        /// The fragment index is built in parallel over contiguous blocks of peptide ids, and the number
+        /// of blocks follows MaxThreadsToUsePerFile. The index that comes out has to be identical
+        /// regardless -- peptide ids must stay ascending within a bin, because the search binary searches
+        /// a bin by peptide mass and that only holds while ids ascend.
+        /// </summary>
+        [Test]
+        public static void TestIndexIsIdenticalRegardlessOfThreadCount()
+        {
+            var proteinList = new List<Protein>
+            {
+                new Protein("MNNNKQQQMNNNKQQQPEPTIDEKMSSSRTTTKAAAWWWKGGGYYYK", "prot1"),
+                new Protein("MKVLINGYGTIGKRVADAVSQQDDMKVIGVSKTRPDFEARMALQKGYDLYVAIPK", "prot2"),
+                new Protein("MSDKIIHLTDDSFDTDVLKADGAILVDFWAEWCGPCKMIAPILDEIADEYQGKLTVAK", "prot3"),
+            };
+
+            var fixedModifications = new List<Modification>();
+            var variableModifications = new List<Modification>();
+
+            FragmentIndex referenceFragmentIndex = null;
+            List<PeptideWithSetModifications> referencePeptideIndex = null;
+
+            foreach (int threadCount in new[] { 1, 2, 3, 8 })
+            {
+                var commonParameters = new CommonParameters(maxThreadsToUsePerFile: threadCount);
+
+                var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 0,
+                    DecoyType.Reverse, commonParameters, null, 30000, false, new List<FileInfo>(),
+                    TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+
+                var results = (IndexingResults)engine.Run();
+
+                if (referenceFragmentIndex == null)
+                {
+                    referenceFragmentIndex = results.FragmentIndex;
+                    referencePeptideIndex = results.PeptideIndex;
+                    Assert.That(referenceFragmentIndex.EntryCount, Is.GreaterThan(0), "index came out empty; the test proves nothing");
+                    continue;
+                }
+
+                Assert.That(results.PeptideIndex.Count, Is.EqualTo(referencePeptideIndex.Count), $"peptide count differs at {threadCount} threads");
+                Assert.That(results.FragmentIndex.Length, Is.EqualTo(referenceFragmentIndex.Length), $"bin count differs at {threadCount} threads");
+                Assert.That(results.FragmentIndex.EntryCount, Is.EqualTo(referenceFragmentIndex.EntryCount), $"entry count differs at {threadCount} threads");
+
+                for (int bin = 0; bin < referenceFragmentIndex.Length; bin++)
+                {
+                    if (referenceFragmentIndex[bin].Length == 0 && results.FragmentIndex[bin].Length == 0)
+                    {
+                        continue;
+                    }
+
+                    Assert.That(results.FragmentIndex[bin].ToArray(), Is.EqualTo(referenceFragmentIndex[bin].ToArray()),
+                        $"bin {bin} differs at {threadCount} threads");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Peptide ids ascend within every bin. BinarySearchBinForPrecursorIndex depends on it.
+        /// </summary>
+        [Test]
+        public static void TestFragmentIndexBinsAreSortedByPeptideId()
+        {
+            var proteinList = new List<Protein>
+            {
+                new Protein("MNNNKQQQMNNNKQQQPEPTIDEKMSSSRTTTKAAAWWWKGGGYYYK", "prot1"),
+                new Protein("MSDKIIHLTDDSFDTDVLKADGAILVDFWAEWCGPCKMIAPILDEIADEYQGKLTVAK", "prot2"),
+            };
+
+            var engine = new IndexingEngine(proteinList, new List<Modification>(), new List<Modification>(), null, null, null, 0,
+                DecoyType.Reverse, new CommonParameters(), null, 30000, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+
+            var results = (IndexingResults)engine.Run();
+
+            int binsChecked = 0;
+            for (int bin = 0; bin < results.FragmentIndex.Length; bin++)
+            {
+                ReadOnlySpan<int> ids = results.FragmentIndex[bin];
+                for (int i = 1; i < ids.Length; i++)
+                {
+                    Assert.That(ids[i], Is.GreaterThan(ids[i - 1]), $"bin {bin} is not ascending");
+                }
+                if (ids.Length > 1)
+                {
+                    binsChecked++;
+                }
+            }
+
+            Assert.That(binsChecked, Is.GreaterThan(0), "no multi-entry bins; the test proves nothing");
+        }
+
         [Test]
         public static void TestIndexEngine()
         {
