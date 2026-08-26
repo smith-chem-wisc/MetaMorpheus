@@ -292,6 +292,211 @@ namespace Test
         }
 
         /// <summary>
+        /// Regression test that a regular (non-tims) Bruker TOF .d folder, identified by an
+        /// analysis.baf file, is discovered as a spectra file when its parent directory is provided.
+        /// </summary>
+        [Test]
+        public static void TestBrukerBafDotDFolderDiscovery()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestBrukerBafDiscovery");
+
+            try
+            {
+                // Clean up if exists from previous failed run
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                // Create a valid regular-TOF .d folder (identified by analysis.baf)
+                string validDotD = Path.Combine(tempFolder, "baf_data.d");
+                Directory.CreateDirectory(validDotD);
+                File.WriteAllText(Path.Combine(validDotD, "analysis.baf"), "fake baf content");
+
+                // Also drop a file inside the .d that must NOT be picked up separately
+                File.WriteAllText(Path.Combine(validDotD, "some_file.mzML"), "<mzML></mzML>");
+
+                var settings = new CommandLineSettings
+                {
+                    _spectra = new[] { tempFolder },
+                    _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                    _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") }
+                };
+
+                settings.ValidateCommandLineSettings();
+
+                Assert.That(settings.Spectra.Count, Is.EqualTo(1), "Should find exactly one spectra entry");
+                Assert.That(settings.Spectra[0], Does.EndWith("baf_data.d"),
+                    "Should discover the regular-TOF .d folder");
+                Assert.That(settings.Spectra.Any(s => s.EndsWith(".mzML")), Is.False,
+                    "Should NOT find the mzML file inside the .d folder");
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Test that when a user provides a path to an analysis.baf file directly,
+        /// the CMD corrects it to use the parent .d directory instead.
+        /// </summary>
+        [Test]
+        public static void TestBafFilePathCorrectedToParentDotDDirectory()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestBafPathCorrection");
+
+            try
+            {
+                // Clean up if exists from previous failed run
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                // Create a valid regular-TOF .d folder (identified by analysis.baf)
+                string validDotD = Path.Combine(tempFolder, "data.d");
+                Directory.CreateDirectory(validDotD);
+
+                string bafFilePath = Path.Combine(validDotD, "analysis.baf");
+                File.WriteAllText(bafFilePath, "fake baf content");
+
+                // User provides the .baf file path directly instead of the .d folder
+                var settings = new CommandLineSettings
+                {
+                    _spectra = new[] { bafFilePath },
+                    _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                    _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") }
+                };
+
+                settings.ValidateCommandLineSettings();
+
+                Assert.That(settings.Spectra.Count, Is.EqualTo(1), "Should have exactly one spectra entry");
+                Assert.That(settings.Spectra[0], Does.EndWith("data.d"),
+                    "Should have corrected the .baf path to the parent .d directory");
+                Assert.That(settings.Spectra[0], Does.Not.Contain("analysis.baf"),
+                    "Should not contain the .baf filename");
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Test that Bruker inner files encountered during recursive directory search are collapsed
+        /// to their parent .d folder. A trailing directory separator on the .d path (which shells add
+        /// during tab-completion) prevents the .d folder from being recognized up front, so the search
+        /// recurses into it and reaches analysis.tdf/analysis.tdf_bin as individual files.
+        /// Both inner files map to the same .d folder, so the result must also be de-duplicated.
+        /// </summary>
+        [Test]
+        public static void TestInnerBrukerFilesFoundByRecursionCollapseToParentDotDDirectory()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestRecursiveInnerFileCollapse");
+
+            try
+            {
+                // Clean up if exists from previous failed run
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                // Create a valid timsTOF .d folder
+                string validDotD = Path.Combine(tempFolder, "data.d");
+                Directory.CreateDirectory(validDotD);
+                File.WriteAllText(Path.Combine(validDotD, "analysis.tdf"), "fake tdf content");
+                File.WriteAllText(Path.Combine(validDotD, "analysis.tdf_bin"), "fake tdf_bin content");
+
+                // The .d folder is given with a trailing separator, e.g. "data.d\"
+                var settings = new CommandLineSettings
+                {
+                    _spectra = new[] { validDotD + Path.DirectorySeparatorChar },
+                    _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                    _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") },
+                    Verbosity = CommandLineSettings.VerbosityType.normal
+                };
+
+                settings.ValidateCommandLineSettings();
+
+                Assert.That(settings.Spectra.Count, Is.EqualTo(1),
+                    "Both inner files should collapse to a single .d folder entry");
+                Assert.That(settings.Spectra[0], Does.EndWith("data.d"),
+                    "Should have collapsed the inner Bruker files to the parent .d directory");
+                Assert.That(settings.Spectra.Any(s => s.Contains("analysis.tdf")), Is.False,
+                    "Should not contain the individual inner Bruker files");
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Test that a Bruker inner file inside an *invalid* .d folder is not promoted to that folder.
+        /// An incomplete timsTOF folder (analysis.tdf with no analysis.tdf_bin) is not a readable .d
+        /// folder, so the .tdf file itself is kept. Non-spectra files in the same folder are ignored.
+        /// </summary>
+        [Test]
+        public static void TestInnerBrukerFileInInvalidDotDFolderIsNotCollapsed()
+        {
+            string tempFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestInvalidDotDInnerFile");
+
+            try
+            {
+                // Clean up if exists from previous failed run
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                // Create an incomplete .d folder: analysis.tdf present, analysis.tdf_bin missing
+                string invalidDotD = Path.Combine(tempFolder, "incomplete.d");
+                Directory.CreateDirectory(invalidDotD);
+                File.WriteAllText(Path.Combine(invalidDotD, "analysis.tdf"), "fake tdf content");
+
+                // A non-spectra file that must be ignored by the recursive search
+                File.WriteAllText(Path.Combine(invalidDotD, "notes.txt"), "not a spectra file");
+
+                var settings = new CommandLineSettings
+                {
+                    _spectra = new[] { tempFolder },
+                    _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                    _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") }
+                };
+
+                settings.ValidateCommandLineSettings();
+
+                Assert.That(settings.Spectra.Count, Is.EqualTo(1), "Should find exactly one spectra entry");
+                Assert.That(settings.Spectra[0], Does.EndWith(Path.Combine("incomplete.d", "analysis.tdf")),
+                    "Should keep the .tdf file, since its parent .d folder is not a readable Bruker folder");
+                Assert.That(settings.Spectra.Any(s => s.EndsWith(".txt")), Is.False,
+                    "Should not pick up non-spectra files");
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+        }
+
+        /// <summary>
         /// -g must emit a default toml for every MyTask type. Averaging was omitted, which left
         /// spectral averaging as the one task whose settings could not be discovered from the
         /// command line at all - the enum has six members and Program.cs runs all six.
