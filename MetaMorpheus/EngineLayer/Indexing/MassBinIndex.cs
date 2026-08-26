@@ -130,7 +130,34 @@ namespace EngineLayer.Indexing
             writer.Write(_binStarts.Length);
             writer.Write(_entries.Length);
 
-            WriteInts(file, _binStarts);
+            // Most bins are empty -- there are 30 million of them at the default fragment ceiling --
+            // so store only the occupied ones, as a gap from the previous occupied bin plus a count,
+            // both varint. Writing the offset table verbatim would cost 120 MB no matter how little
+            // of it was used.
+            int occupiedBins = 0;
+            for (int b = 0; b < Length; b++)
+            {
+                if (_binStarts[b + 1] > _binStarts[b])
+                {
+                    occupiedBins++;
+                }
+            }
+            writer.Write(occupiedBins);
+
+            int previousBin = 0;
+            for (int b = 0; b < Length; b++)
+            {
+                int count = _binStarts[b + 1] - _binStarts[b];
+                if (count == 0)
+                {
+                    continue;
+                }
+
+                WriteVarint(writer, (uint)(b - previousBin));
+                WriteVarint(writer, (uint)count);
+                previousBin = b;
+            }
+
             WriteInts(file, _entries);
         }
 
@@ -153,13 +180,67 @@ namespace EngineLayer.Indexing
                 throw new InvalidDataException("Index file header is corrupt.");
             }
 
-            int[] binStarts = new int[binStartsLength];
-            int[] entries = new int[entriesLength];
+            int binCount = binStartsLength - 1;
+            int occupiedBins = reader.ReadInt32();
+            if (occupiedBins < 0 || occupiedBins > binCount)
+            {
+                throw new InvalidDataException("Index file header is corrupt.");
+            }
 
-            ReadInts(file, binStarts);
+            // Rebuild the offset table by laying the counts back out and prefix-summing them.
+            int[] binStarts = new int[binStartsLength];
+            int bin = 0;
+            for (int i = 0; i < occupiedBins; i++)
+            {
+                bin += (int)ReadVarint(reader);
+                if ((uint)bin >= (uint)binCount)
+                {
+                    throw new InvalidDataException("Index file names a bin outside the index.");
+                }
+
+                binStarts[bin + 1] = (int)ReadVarint(reader);
+            }
+
+            for (int b = 0; b < binCount; b++)
+            {
+                binStarts[b + 1] += binStarts[b];
+            }
+
+            if (binStarts[binCount] != entriesLength)
+            {
+                throw new InvalidDataException("Index file bin counts do not add up to its entry count.");
+            }
+
+            int[] entries = new int[entriesLength];
             ReadInts(file, entries);
 
             return new MassBinIndex(binStarts, entries);
+        }
+
+        private static void WriteVarint(BinaryWriter writer, uint value)
+        {
+            while (value >= 0x80)
+            {
+                writer.Write((byte)(value | 0x80));
+                value >>= 7;
+            }
+            writer.Write((byte)value);
+        }
+
+        private static uint ReadVarint(BinaryReader reader)
+        {
+            uint value = 0;
+            for (int shift = 0; shift <= 28; shift += 7)
+            {
+                byte b = reader.ReadByte();
+                value |= (uint)(b & 0x7F) << shift;
+                if ((b & 0x80) == 0)
+                {
+                    return value;
+                }
+            }
+
+            throw new InvalidDataException("Index file contains a malformed varint.");
         }
 
         // Copy through a rented buffer rather than one BinaryWriter.Write(int) per element; an index

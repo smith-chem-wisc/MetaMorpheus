@@ -76,6 +76,58 @@ namespace Test
         }
 
         /// <summary>
+        /// The index cache round-trips exactly, and a file this version did not write is rejected
+        /// rather than misread -- MetaMorpheusTask catches that and rebuilds the index.
+        /// </summary>
+        [Test]
+        public static void TestIndexRoundTripsThroughDisk()
+        {
+            var proteinList = new List<Protein>
+            {
+                new Protein("MNNNKQQQMNNNKQQQPEPTIDEKMSSSRTTTKAAAWWWKGGGYYYK", "prot1"),
+                new Protein("MSDKIIHLTDDSFDTDVLKADGAILVDFWAEWCGPCKMIAPILDEIADEYQGKLTVAK", "prot2"),
+            };
+
+            var engine = new IndexingEngine(proteinList, new List<Modification>(), new List<Modification>(), null, null, null, 0,
+                DecoyType.Reverse, new CommonParameters(), null, 30000, false, new List<FileInfo>(),
+                TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+
+            var written = ((IndexingResults)engine.Run()).FragmentIndex;
+
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "roundTripFragmentIndex.ind");
+            try
+            {
+                written.Write(path);
+                var read = MassBinIndex.Read(path);
+
+                Assert.That(read.Length, Is.EqualTo(written.Length));
+                Assert.That(read.EntryCount, Is.EqualTo(written.EntryCount));
+                Assert.That(read.EntryCount, Is.GreaterThan(0), "index came out empty; the test proves nothing");
+
+                for (int bin = 0; bin < written.Length; bin++)
+                {
+                    if (written.CountInBin(bin) == 0 && read.CountInBin(bin) == 0)
+                    {
+                        continue;
+                    }
+
+                    Assert.That(read[bin].ToArray(), Is.EqualTo(written[bin].ToArray()), $"bin {bin} differs after a round trip");
+                }
+
+                // A file from some other version, or from before this format existed.
+                File.WriteAllBytes(path, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 });
+                Assert.That(() => MassBinIndex.Read(path), Throws.InstanceOf<InvalidDataException>());
+            }
+            finally
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+        }
+
+        /// <summary>
         /// Peptide ids ascend within every bin. BinarySearchBinForPrecursorIndex depends on it.
         /// </summary>
         [Test]
