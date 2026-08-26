@@ -883,13 +883,13 @@ namespace Test
             }
         }
         [Test]
-        public static void EnsureCustomMonosaccharideFileExists_UnwritableTarget_SwallowsAndDoesNotThrow()
+        public static void EnsureCustomMonosaccharideFileExists_UnwritableTarget_ThrowsMetaMorpheusException()
         {
-            // This seed runs inside GlobalVariables.LoadGlycans, which GlobalVariables.SetUpGlobalVariables
-            // calls from the MainWindow constructor before InitializeComponent. GUI/App.xaml.cs registers no
-            // DispatcherUnhandledException handler, so anything escaping here takes the application down at
-            // launch -- and LoadCustomMonosaccharides documents this file as optional (it returns early when
-            // the file is absent). A failed seed must therefore degrade quietly rather than abort startup.
+            // An unwritable target (disk full, locked file, permission issue) is a rare, environment-caused
+            // failure -- not something that needs a graceful degrade-and-warn path. Letting it throw a
+            // MetaMorpheusException keeps the failure visible instead of silently disabling custom
+            // monosaccharides for the session, and avoids building out a warning-collection mechanism
+            // for a condition users are unlikely to ever hit.
             //
             // Standing a directory where the file should go is the portable way to force the write to fail:
             // File.Exists is false for a directory, so the seed is attempted, and File.WriteAllText then
@@ -900,12 +900,7 @@ namespace Test
             {
                 Directory.CreateDirectory(path);
 
-                Assert.DoesNotThrow(() => GlycanDatabase.EnsureCustomMonosaccharideFileExists(path));
-
-                // the write really did fail and was swallowed: the blocking directory is untouched
-                // and no file was created in its place
-                Assert.That(Directory.Exists(path), Is.True);
-                Assert.That(File.Exists(path), Is.False);
+                Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.EnsureCustomMonosaccharideFileExists(path));
             }
             finally
             {

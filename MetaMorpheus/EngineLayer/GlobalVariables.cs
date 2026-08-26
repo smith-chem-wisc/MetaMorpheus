@@ -472,8 +472,9 @@ namespace EngineLayer
         private static void LoadGlycans()
         {
             // Custom monosaccharides must be registered FIRST so any custom tokens are recognized
-            // by the glycan-database parsers below. The file is optional; if it does not exist,
-            // LoadCustomMonosaccharides is a no-op.
+            // by the glycan-database parsers below. EnsureCustomMonosaccharideFileExists seeds the
+            // file (from the embedded template, or a carried-over legacy copy) if it's missing, so
+            // LoadCustomMonosaccharides always has a file to read here.
             GlycanDatabase.EnsureCustomMonosaccharideFileExists(CustomMonosaccharidePath);
             GlycanDatabase.LoadCustomMonosaccharides(CustomMonosaccharidePath);
 
