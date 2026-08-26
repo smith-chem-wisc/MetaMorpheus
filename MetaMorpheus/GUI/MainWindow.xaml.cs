@@ -1634,12 +1634,6 @@ namespace MetaMorpheusGUI
             }
             GlobalVariables.ErrorsReadingMods.Clear();
 
-            // print any startup warnings (e.g. failure to create the custom monosaccharide file)
-            foreach (var warning in GlobalVariables.StartupWarnings)
-            {
-                NotificationHandler(null, new StringEventArgs(warning, null));
-            }
-            GlobalVariables.StartupWarnings.Clear();
         }
 
         private void UpdateOutputFolderTextbox()

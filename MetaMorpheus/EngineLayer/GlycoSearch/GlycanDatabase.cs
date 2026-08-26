@@ -272,7 +272,7 @@ namespace EngineLayer
                 }
                 catch (Exception ex)
                 {
-                    GlobalVariables.StartupWarnings?.Add($"Could not create custom monosaccharide file '{path}': {ex.Message}");
+                    throw new MetaMorpheusException($"Could not create the custom monosaccharide file '{path}': {ex.Message}", ex);
                 }
             }
         }
