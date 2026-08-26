@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -16,6 +16,14 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Mods\RnaMods.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Glycan_Mods\MonosaccharidesCustom.tsv" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Include="Glycan_Mods\MonosaccharidesCustom.tsv" />
   </ItemGroup>
 
   <ItemGroup>
@@ -60,9 +68,6 @@
     </None>
     <None Update="Data\unimod.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Glycan_Mods\MonosaccharidesCustom.tsv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Glycan_Mods\NGlycan\NGlycan.gdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
