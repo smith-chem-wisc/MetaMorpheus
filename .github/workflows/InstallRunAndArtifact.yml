@@ -128,6 +128,22 @@ jobs:
             exit $LASTEXITCODE
           }
 
+      # Top-down is the only path that reaches the ProForma writer: the column is gated on
+      # AnalyteType.Proteoform, so every bottom-up search above skips ToProFormaString() entirely.
+      # A dependency needed only by that path can pass all of the above and still crash a real
+      # top-down run. The assertion script requires actual proteoform rows, because a search that
+      # finds nothing would leave the writer untested while still exiting 0.
+      - name: Run top-down search with installed CMD.dll
+        run: |
+          $tdDir = "$(Get-Location)\MetaMorpheus\Test\TopDownTestData"
+          $tdOut = "$(Get-Location)\MetaMorpheus\EngineLayer\Data\td_dll_output"
+          dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -s "$tdDir\slicedTDYeast.mzML" -d "$tdDir\CYB5_YEAST_P40312.fasta" -t "$tdDir\TopDownSearchToml.toml" -o "$tdOut" -v minimal
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Top-down search with installed CMD.dll failed with exit code $LASTEXITCODE" -ForegroundColor Red
+            exit $LASTEXITCODE
+          }
+          & "$(Get-Location)\.github\scripts\Assert-TopDownProFormaOutput.ps1" -SearchOutput $tdOut
+
   test_build:
     name: Search with Built
     runs-on: windows-latest
@@ -158,6 +174,19 @@ jobs:
             Write-Host "❌ Built CMD.dll search failed with exit code $LASTEXITCODE" -ForegroundColor Red
             exit $LASTEXITCODE
           }
+
+      # See the note on the installed-CMD top-down step above: bottom-up never exercises the
+      # ProForma writer, so this is the only smoke search that would catch a break in it.
+      - name: Run top-down search with built CMD.dll
+        run: |
+          $tdDir = "$(Get-Location)\MetaMorpheus\Test\TopDownTestData"
+          $tdOut = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\Data\td_built_output"
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\CMD.dll" -s "$tdDir\slicedTDYeast.mzML" -d "$tdDir\CYB5_YEAST_P40312.fasta" -t "$tdDir\TopDownSearchToml.toml" -o "$tdOut" -v minimal
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Top-down search with built CMD.dll failed with exit code $LASTEXITCODE" -ForegroundColor Red
+            exit $LASTEXITCODE
+          }
+          & "$(Get-Location)\.github\scripts\Assert-TopDownProFormaOutput.ps1" -SearchOutput $tdOut
 
   ## Installs and builds. Verifies that the same dlls exist
   validate_installer_contents:
