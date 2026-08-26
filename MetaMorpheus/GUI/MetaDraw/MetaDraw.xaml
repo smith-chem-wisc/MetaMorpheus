@@ -479,7 +479,7 @@
                                             <StackPanel >
 
                                                 <!-- sequence annotaiton canvas -->
-                                                <Canvas x:Name="sequenceAnnotationCanvas"  VerticalAlignment="Top" Margin="100 0 100 0"  />
+                                                <Canvas x:Name="sequenceAnnotationCanvas" VerticalAlignment="Top" Margin="100 0 100 0"  />
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
