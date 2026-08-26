@@ -23,11 +23,15 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Constructor should only be used when reading in toml files
+        /// Used when reading in toml files, and when writing the default toml that
+        /// `CMD -g` emits. Initialises its parameter objects the way the other task
+        /// types do in their parameterless constructors, so a default-constructed
+        /// task serialises to a complete, runnable config rather than null sections.
         /// </summary>
         public SpectralAveragingTask() : base(MyTask.Average)
         {
-
+            CommonParameters = new CommonParameters();
+            Parameters = new SpectralAveragingParameters();
         }
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
@@ -58,7 +62,7 @@ namespace TaskLayer
                 var averagedFilepath = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".mzML")
                     .ToSafeOutputPath( AveragingSuffix + ".mzML");
                 var originalFileExtension = GlobalVariables.GetFileExtension(originalUnaveragedFilepath);
-                if (originalFileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase))
+                if (originalFileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase) || BrukerDataDirectory.IsInnerFileExtension(originalFileExtension))
                 {
                     Warn("Averaging for " + originalFileExtension + " files is not supported.");
                     FinishedDataFile(originalUnaveragedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepath });

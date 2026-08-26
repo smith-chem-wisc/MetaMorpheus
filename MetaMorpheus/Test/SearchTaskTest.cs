@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework; 
@@ -50,6 +50,15 @@ namespace Test
 
             result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.PlusOrMinusThreeMM, searchTask.SearchParameters.CustomMdac);
             Assert.That(result.FileNameAddition.Equals("PlusOrMinus3Da"));
+
+            result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.MostAbundant_Exact, searchTask.SearchParameters.CustomMdac);
+            Assert.That(result.NumNotches == 1);
+
+            result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.MostAbundant_PlusMinusOne, searchTask.SearchParameters.CustomMdac);
+            Assert.That(result.NumNotches == 3);
+
+            result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.MostAbundant_PlusMinusTwo, searchTask.SearchParameters.CustomMdac);
+            Assert.That(result.NumNotches == 5);
         }
 
         /// <summary>

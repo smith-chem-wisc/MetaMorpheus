@@ -215,10 +215,10 @@ namespace GuiFunctions
                     // unsupported ions due to :
                     case ProductType.Y:
                     case ProductType.Ycore:
-                    case ProductType.D:
                         break;
 
                     // default case
+                    case ProductType.D:
                     default:
                         yield return new FragmentViewModel(false, product);
                         break;
@@ -272,6 +272,26 @@ namespace GuiFunctions
                 }
             }
             var allProducts = terminalProducts.Concat(internalProducts).ToList();
+
+            // Diagnostic Ions require a specific fragmentaiton type in PeptideWithSetMods.Fragment, not Custom Fragmentation Type, so we must handle it separately
+            if (productsSnapshot.Contains(ProductType.D))
+            {
+                var fragmentTypesToUse = bioPolymer.AllModsOneIsNterminus
+                    .SelectMany(p => p.Value.DiagnosticIons)
+                    .DistinctBy(p => p.Value.SequenceEqual(p.Value))
+                    .Select(p => p.Key);
+
+                HashSet<Product> diagnosticProducts = new HashSet<Product>();
+                List<Product> productList = new List<Product>();
+                foreach (var dissType in fragmentTypesToUse)
+                {
+                    productList.Clear();
+                    bioPolymer.Fragment(dissType, FragmentationTerminus.Both, productList, fragmentationParams);
+                    terminalProducts.AddRange(productList.Where(p => p.ProductType == ProductType.D));
+                }
+
+                allProducts.AddRange(terminalProducts);
+            }
 
             // These will either be default or parsed from the search toml leading to the PSMs. 
             var commonParams = new CommonParameters(

@@ -74,6 +74,8 @@ namespace MetaMorpheusGUI
             DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
                 TheTask.CommonParameters.ProductDeconvolutionParameters,
                 TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
+            UseMostAbundantMassCheckBox.IsChecked = task.CommonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
+
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
                 ProteaseComboBox.SelectedItem = digestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings
@@ -359,6 +361,7 @@ namespace MetaMorpheusGUI
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,
                     productDeconParams: productDeconvolutionParameters,
+                    precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic,
                     useProvidedPrecursorInfo: useProvidedPrecursorInfo);
                 TheTask.CommonParameters = commonParamsToSave;
             }
@@ -381,7 +384,8 @@ namespace MetaMorpheusGUI
                     useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,
-                    productDeconParams: productDeconvolutionParameters);
+                    productDeconParams: productDeconvolutionParameters,
+                    precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic);
                 TheTask.CommonParameters = commonParamsToSave;
             }
 

@@ -20,6 +20,11 @@ public class DummySpectralmatch : SpectrumMatchFromTsv
         StartAndEndResiduesInParentSequence = startAndEnd;
     }
 
+    public void SetScore(double score)
+    {
+        Score = score;
+    }
+
     // Header to ensure constructor runs. 
     public static Dictionary<string, int> HeaderToIndex = new Dictionary<string, int>
     {

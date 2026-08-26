@@ -11,6 +11,7 @@ using Easy.Common.Extensions;
 using Readers;
 using GuiFunctions.MetaDraw;
 using OxyPlot.Wpf;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {
@@ -60,6 +61,8 @@ namespace GuiFunctions
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double SpectrumDescriptionFontSize { get; set; } = 10;
         public static bool AnnotateIsotopicEnvelopes { get; set; } = true;
+        public static double MinMzToPlot { get; set; } = 0;
+        public static double MaxMzToPlot { get; set; } = 4000;
 
         // Chimera Settings
         public static bool DisplayChimeraLegend { get; set; } = true;
@@ -85,6 +88,7 @@ namespace GuiFunctions
         // biopolymer coverage settings
         public static int BioPolymerCoverageFontSize { get; set; } = 16;
         public static Dictionary<BioPolymerCoverageType, SolidColorBrush> BioPolymerCoverageColors { get; set; }
+        public static ColorGradientType BioPolymerCoverageGradientType { get; set; } = ColorGradientType.Viridis;
 
         #endregion
 
@@ -551,6 +555,8 @@ namespace GuiFunctions
                 AnnotateIsotopicEnvelopes = AnnotateIsotopicEnvelopes,
                 SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
                 SuppressMessageBoxes = SuppressMessageBoxes,
+                MinMzToPlot = MinMzToPlot,
+                MaxMzToPlot = MaxMzToPlot,
                 ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous,
                 ChimeraLegendMaxWidth = ChimeraLegendMaxWidth,
                 NormalizeHistogramToFile = NormalizeHistogramToFile,
@@ -558,6 +564,7 @@ namespace GuiFunctions
                 DataVisualizationColorOrder = DataVisualizationColorOrder?.Select(c => c.GetColorName()).ToList(),
                 BioPolymerCoverageFontSize = BioPolymerCoverageFontSize,
                 BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList(),
+                BioPolymerCoverageGradientType = BioPolymerCoverageGradientType,
                 
                 // Save from the new ViewModel structure
                 UseLogScaleYAxis = PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis,
@@ -605,12 +612,15 @@ namespace GuiFunctions
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
             SuppressMessageBoxes = settings.SuppressMessageBoxes;
+            MinMzToPlot = settings.MinMzToPlot;
+            MaxMzToPlot = settings.MaxMzToPlot;
             ChimeraLegendTakeFirstIfAmbiguous = settings.ChimeraLegendTakeFirstIfAmbiguous;
             ChimeraLegendMaxWidth = settings.ChimeraLegendMaxWidth;
             NormalizeHistogramToFile = settings.NormalizeHistogramToFile;
             DisplayFilteredOnly = settings.DisplayFilteredOnly;
             BioPolymerCoverageFontSize = settings.BioPolymerCoverageFontSize;
-            
+            BioPolymerCoverageGradientType = settings.BioPolymerCoverageGradientType;
+
             // Load into the new ViewModel structure
             var plotParams = new PlotModelStatParameters
             {
