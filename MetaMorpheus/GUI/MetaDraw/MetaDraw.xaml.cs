@@ -1159,9 +1159,9 @@ namespace MetaMorpheusGUI
             if (plotView.Model != null)
             {
                 var description =
-                    plotView.ActualModel.Annotations.First(p =>
+                    plotView.ActualModel.Annotations.FirstOrDefault(p =>
                         p is PlotTextAnnotation anno && anno.Text.Contains("\r\n")) as PlotTextAnnotation;
-                descriptionWidth = -description!.X - 60;
+                descriptionWidth = description is null ? 160 : -description.X - 60;
             }
             else
             {
