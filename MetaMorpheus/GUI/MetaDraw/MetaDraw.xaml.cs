@@ -1,5 +1,6 @@
 using Easy.Common.Extensions;
 using EngineLayer;
+using EngineLayer.Util;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
 using MassSpectrometry;
@@ -19,7 +20,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -100,7 +100,10 @@ namespace MetaMorpheusGUI
             {
                 foreach (var draggedFilePath in files)
                 {
-                    if (File.Exists(draggedFilePath) | (Directory.Exists(draggedFilePath) && Regex.IsMatch(draggedFilePath, @".d$")) )
+                    // the only directories worth dropping are Bruker ".d" folders. AddFile still decides whether the
+                    // contents are readable, so an unreadable folder is reported by the loader rather than ignored here.
+                    if (File.Exists(draggedFilePath)
+                        || (Directory.Exists(draggedFilePath) && BrukerDataDirectory.IsDotDPath(draggedFilePath)))
                     {
                         AddFile(draggedFilePath);
                     }
@@ -114,10 +117,10 @@ namespace MetaMorpheusGUI
 
             if (GlobalVariables.AcceptedSpectraFormats.Contains(theExtension))
             {
-                // If a bruker timsTof file was selected, we actually want the parent folder
-                if(theExtension == ".tdf" || theExtension == ".tdf_bin")
+                // If a Bruker inner file was selected, we actually want the parent .d folder
+                if (BrukerDataDirectory.TryGetParentDotDFolder(filePath, out string dotDFolder))
                 {
-                    filePath = Path.GetDirectoryName(filePath);
+                    filePath = dotDFolder;
                 }
                 if (!MetaDrawLogic.SpectraFilePaths.Contains(filePath))
                 {
@@ -509,6 +512,19 @@ namespace MetaMorpheusGUI
                 ClearPresentationArea();
                 MetaDrawLogic.FilteredListOfPsms.Clear();
             }
+
+            UpdateProFormaColumnVisibility();
+        }
+
+        /// <summary>
+        /// Shows the ProForma column only while the loaded results carry ProForma strings. Called after every
+        /// load and after every reset, so the column never lingers over results it does not describe.
+        /// </summary>
+        private void UpdateProFormaColumnVisibility()
+        {
+            proFormaColumn.Visibility = MetaDrawLogic.ShouldShowProFormaColumn(MetaDrawLogic.AllSpectralMatches)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         #endregion
@@ -595,6 +611,8 @@ namespace MetaMorpheusGUI
                 deconExplorationTabViewModel: DeconExplorationViewModel,
                 fragmentationReanalysisViewModel: FragmentationReanalysisViewModel);
             dataGridScanNums.IsEnabled = true;
+
+            UpdateProFormaColumnVisibility();
 
             if (errors.Any())
             {
@@ -1141,9 +1159,9 @@ namespace MetaMorpheusGUI
             if (plotView.Model != null)
             {
                 var description =
-                    plotView.ActualModel.Annotations.First(p =>
+                    plotView.ActualModel.Annotations.FirstOrDefault(p =>
                         p is PlotTextAnnotation anno && anno.Text.Contains("\r\n")) as PlotTextAnnotation;
-                descriptionWidth = -description!.X - 60;
+                descriptionWidth = description is null ? 160 : -description.X - 60;
             }
             else
             {
