@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Omics;
 using Omics.Fragmentation.Peptide;
@@ -148,18 +149,18 @@ namespace EngineLayer.Indexing
             // have produced -- and therefore the exact per-bin ordering the old List<int>[] build gave.
             // That ordering is load-bearing: BinarySearchBinForPrecursorIndex binary-searches a bin by
             // peptide mass, which only works while peptide ids ascend within the bin.
-            progress = 0;
-            oldPercentProgress = 0;
-
+            // Blocks are independent -- each one fragments its own peptides into its own run -- so they
+            // run in parallel. Digestion above this point was already parallel; fragmenting was not.
             List<PeptideBlock> blocks = PartitionPeptidesIntoBlocks(peptides.Count);
             var fragmentEmissions = new MassBinEmissionRun[blocks.Count];
             var interiorTerminalModEmissions = addInteriorTerminalModsToPrecursorIndex ? new MassBinEmissionRun[blocks.Count] : null;
+            var fragmentationProgress = new FragmentationProgress();
 
-            for (int blockIndex = 0; blockIndex < blocks.Count; blockIndex++)
+            Parallel.For(0, blocks.Count, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, CommonParameters.MaxThreadsToUsePerFile) }, blockIndex =>
             {
                 FragmentPeptideBlock(blocks[blockIndex], blockIndex, peptides, addInteriorTerminalModsToPrecursorIndex,
-                    terminalModifications, fragmentEmissions, interiorTerminalModEmissions, ref progress, ref oldPercentProgress);
-            }
+                    terminalModifications, fragmentEmissions, interiorTerminalModEmissions, fragmentationProgress);
+            });
 
             MassBinIndex fragmentIndex;
             MassBinIndex precursorIndex = null;
@@ -186,6 +187,25 @@ namespace EngineLayer.Indexing
             }
 
             return new IndexingResults(peptides, fragmentIndex, precursorIndex, this);
+        }
+
+        /// <summary>
+        /// Counts fragmented peptides across the parallel blocks. Each whole percent is announced by
+        /// exactly one thread -- whichever wins the compare-exchange that advances the counter.
+        /// </summary>
+        private sealed class FragmentationProgress
+        {
+            private long _peptidesFragmented;
+            private int _lastPercentReported;
+
+            internal bool AdvanceOnePeptide(int totalPeptides, out int percentProgress)
+            {
+                long done = Interlocked.Increment(ref _peptidesFragmented);
+                percentProgress = (int)(done * 100 / totalPeptides);
+
+                int last = Volatile.Read(ref _lastPercentReported);
+                return percentProgress > last && Interlocked.CompareExchange(ref _lastPercentReported, percentProgress, last) == last;
+            }
         }
 
         private readonly struct PeptideBlock
@@ -234,7 +254,7 @@ namespace EngineLayer.Indexing
         private void FragmentPeptideBlock(PeptideBlock block, int blockIndex, List<PeptideWithSetModifications> peptides,
             bool addInteriorTerminalModsToPrecursorIndex, List<Modification> terminalModifications,
             MassBinEmissionRun[] fragmentEmissions, MassBinEmissionRun[] interiorTerminalModEmissions,
-            ref double progress, ref int oldPercentProgress)
+            FragmentationProgress fragmentationProgress)
         {
             int blockLength = block.End - block.Start;
             var fragmentRun = new MassBinEmissionRun(block.Start, blockLength);
@@ -271,12 +291,8 @@ namespace EngineLayer.Indexing
                     AddInteriorTerminalModsToPrecursorIndex(interiorRun, fragments, peptides[peptideId], terminalModifications);
                 }
 
-                progress++;
-                var percentProgress = (int)((progress / peptides.Count) * 100);
-
-                if (percentProgress > oldPercentProgress)
+                if (fragmentationProgress.AdvanceOnePeptide(peptides.Count, out int percentProgress))
                 {
-                    oldPercentProgress = percentProgress;
                     ReportProgress(new ProgressEventArgs(percentProgress, "Fragmenting peptides...", NestedIds));
                 }
             }
