@@ -174,9 +174,8 @@ namespace EngineLayer
                     }
                 }
 
-                // Downcast once and reuse so Score, QValueNotch, and PEP are all computed over the
-                // identical PSM population. Cast (not OfType) so an unexpected ISpectralMatch impl
-                // throws loudly instead of being silently dropped from the QValue/PEP minimums.
+                // Cast rather than OfType: an unexpected ISpectralMatch implementation should throw, not
+                // vanish from the QValue and PEP minimums.
                 var bestPeptidePsms = pg.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>().ToList();
                 pg.BestPeptideScore = bestPeptidePsms.Max(psm => psm.Score);
                 pg.BestPeptideQValue = bestPeptidePsms.Min(psm => psm.FdrInfo.QValueNotch);

@@ -146,8 +146,8 @@ namespace EngineLayer
             if (other is null) return 1;
             if (other is SpectralMatch mm) return CompareTo(mm);
 
-            // Delta score and precursor mass error aren't on ISpectralMatch, so those were dropped from this
-            // CompareTo(SpectralMatch) method. Still, same ordering that mzLib's BaseSpectralMatch uses.
+            // Delta score and precursor mass error aren't on ISpectralMatch, so this overload cannot use
+            // them as tiebreakers. CompareTo(SpectralMatch) still does. Matches BaseSpectralMatch's ordering.
             if (Math.Abs(this.Score - other.Score) > ToleranceForScoreDifferentiation)
             {
                 return this.Score.CompareTo(other.Score);
@@ -492,7 +492,6 @@ namespace EngineLayer
             BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.SpecificBioPolymer.BaseSequence)).ResolvedValue;
             FullSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.SpecificBioPolymer.FullSequence)).ResolvedValue;
 
-            // Scan metadata is an immutable record — safe to share the reference
             ScanMetadata = psm.ScanMetadata;
             ScanIndex = psm.ScanIndex;
             PrecursorScanDeconvolutionScore = psm.PrecursorScanDeconvolutionScore;

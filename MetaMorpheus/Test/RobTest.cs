@@ -14,11 +14,6 @@ using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
 using Transcriptomics;
-using EngineLayer.ModernSearch;
-using EngineLayer.Indexing;
-using System.IO;
-using TaskLayer;
-using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -261,9 +256,19 @@ namespace Test
             ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, filteredPsms.FilteredPsmsList, false, false, true, new CommonParameters(), null, new List<string>());
             f.Run();
 
-            // Occupancy is now computed by BioPolymerGroup.PopulateSampleGroupResults().
-            // Without FlashLFQ, SampleGroupResults should be null or empty.
-            Assert.That(proteinGroups.First().SampleGroupResults, Is.Null);
+            // Nine PSMs over MNNNSKQQQI. Three cover residue 5 (match1 unmodified, match2/match3 carrying
+            // resMod) and six cover residue 10 (match4/match44 unmodified, match5/match55 iModOne,
+            // match6/match66 iModTwo), so the site fractions are 2/3, 2/6 and 2/6. The two mods sharing
+            // residue 10 are the case worth keeping: occupancy has to report them separately.
+            var proteinGroup = proteinGroups.First();
+            proteinGroup.FilesForQuantification = new List<SpectraFileInfo>
+                { new SpectraFileInfo(fullFilePathWithExtension: "File", condition: "", biorep: 0, fraction: 0, techrep: 0) };
+            proteinGroup.PopulateSampleGroupResults();
+
+            string row = proteinGroup.ToString();
+            Assert.That(row, Does.Contain("pos5[resMod on S,info:fraction=0.67(2/3)]"));
+            Assert.That(row, Does.Contain("pos10[iModOne on I,info:fraction=0.33(2/6)]"));
+            Assert.That(row, Does.Contain("pos10[iModTwo on I,info:fraction=0.33(2/6)]"));
         }
 
         [Test]

@@ -28,7 +28,6 @@ namespace EngineLayer
 
             TheScan = mzLibScan;
 
-            // Build the lightweight metadata snapshot
             ScanMetadata = new ScanMetadata(
                 OneBasedScanNumber: mzLibScan.OneBasedScanNumber,
                 OneBasedPrecursorScanNumber: mzLibScan.OneBasedPrecursorScanNumber,
