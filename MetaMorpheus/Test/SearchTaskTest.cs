@@ -10,10 +10,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EngineLayer.DatabaseLoading;
+using Omics;
 using Omics.Digestion;
 using Omics.Modifications;
 using Readers;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -361,6 +363,80 @@ namespace Test
                 Assert.That(header.Contains("Intensity_"), Is.False);
                 Assert.That(header.Contains("IntensityOccupancy_"), Is.False);
                 Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True);
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
+        // Count-only occupancy across more than one spectra file. Each protein group used to derive
+        // its columns from the files its own PSMs came from, so a group seen in only one of two files
+        // wrote a short row while the writer emitted the first group's header - sliding Number of PSMs
+        // and every column after it two positions left. The single-file guard above cannot see this.
+        [Test]
+        public static void PostSearchCountOnlyMultiFileWritesOneSchema()
+        {
+            var uniqueToFirst = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>());
+            var uniqueToSecond = new PeptideWithSetModifications("MYRIADPEPTIDER", new Dictionary<string, Modification>());
+            var inBothFiles = new PeptideWithSetModifications("ANOTHERLONGPEPTIDEK", new Dictionary<string, Modification>());
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestCountOnlyMultiFile");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+
+            string mzmlPathA = Path.Combine(inputFolder, "countOnlyA.mzML");
+            string mzmlPathB = Path.Combine(inputFolder, "countOnlyB.mzML");
+            MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(
+                new TestDataFile(new List<IBioPolymerWithSetMods> { uniqueToFirst, inBothFiles }), mzmlPathA, false);
+            MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(
+                new TestDataFile(new List<IBioPolymerWithSetMods> { uniqueToSecond, inBothFiles }), mzmlPathB, false);
+
+            string xmlPath = Path.Combine(inputFolder, "countOnlyDb.xml");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(),
+                new List<Protein>
+                {
+                    new Protein(uniqueToFirst.BaseSequence, "accA"),
+                    new Protein(uniqueToSecond.BaseSequence, "accB"),
+                    new Protein(inBothFiles.BaseSequence, "accShared")
+                }, xmlPath);
+
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoLabelFreeQuantification = false,
+                    DoParsimony = true
+                }
+            };
+
+            try
+            {
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlPath, false) },
+                    new List<string> { mzmlPathA, mzmlPathB }, "normal");
+
+                string pgPath = Path.Combine(outputFolder, "AllProteinGroups.tsv");
+                Assert.That(File.Exists(pgPath), Is.True);
+
+                var lines = File.ReadAllLines(pgPath);
+                Assert.That(lines.Length, Is.GreaterThan(2));
+
+                var headerFields = lines[0].Split('\t');
+                Assert.That(headerFields, Does.Contain("SpectralCount_countOnlyA"));
+                Assert.That(headerFields, Does.Contain("SpectralCount_countOnlyB"));
+                Assert.That(headerFields, Does.Contain("CountOccupancy_countOnlyA"));
+                Assert.That(headerFields, Does.Contain("CountOccupancy_countOnlyB"));
+                Assert.That(headerFields.Any(f => f.StartsWith("Intensity_")), Is.False);
+
+                Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True);
+
+                // Guards the guard: if every group happened to be seen in both files the row widths
+                // would agree even with per-group schemas, and the assertion above would prove nothing.
+                int countA = Array.IndexOf(headerFields, "SpectralCount_countOnlyA");
+                int countB = Array.IndexOf(headerFields, "SpectralCount_countOnlyB");
+                var rows = lines.Skip(1).Select(l => l.Split('\t')).ToList();
+                Assert.That(rows.Any(r => (r[countA] == "0") != (r[countB] == "0")), Is.True,
+                    "every protein group was observed in both files, so the shared schema went untested");
             }
             finally
             {

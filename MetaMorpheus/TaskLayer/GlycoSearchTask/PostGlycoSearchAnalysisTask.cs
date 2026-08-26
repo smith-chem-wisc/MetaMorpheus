@@ -73,6 +73,14 @@ namespace TaskLayer
                     if (Parameters.GlycoSearchParameters.DoParsimony)
                     {
                         GlycoProteinAnalysis(fspList, individualFileFolderPath, individualFileFolder); //Creat the proteinGroups file 
+
+                        // These reports are written long before QuantificationAnalysis runs, so without
+                        // this they carry no spectral count or occupancy at all. One file per report.
+                        PopulateCountBasedOccupancy(new List<SpectraFileInfo>
+                        {
+                            new SpectraFileInfo(fullFilePathWithExtension: fileSpecificPSMs.Key, condition: "", biorep: 0, fraction: 0, techrep: 0)
+                        });
+
                         WriteProteinResults(individualFileFolderPath, individualFileFolder);
                     }
                     
@@ -385,8 +393,54 @@ namespace TaskLayer
                 }
             }
         }
+
+        /// <summary>
+        /// Populates spectral counts and count-based occupancy from the PSMs alone, so those columns
+        /// survive glyco searches with quantification switched off and reach the individual-file
+        /// reports, which are written before quantification runs.
+        /// </summary>
+        /// <param name="spectraFiles">The files the current protein groups were built from. Every group
+        /// has to be given the same list: left unset, each derives its columns from the files its own
+        /// PSMs came from, and the rows stop matching the single header the writer emits.</param>
+        private void PopulateCountBasedOccupancy(List<SpectraFileInfo> spectraFiles)
+        {
+            if (ProteinGroups == null)
+            {
+                return;
+            }
+
+            foreach (var proteinGroup in ProteinGroups)
+            {
+                proteinGroup.FilesForQuantification = spectraFiles;
+                proteinGroup.PopulateSampleGroupResults();
+            }
+        }
+
+        /// <summary>
+        /// One <see cref="SpectraFileInfo"/> per raw file with no experimental design applied: no
+        /// condition, its own biological replicate, unfractionated.
+        /// </summary>
+        private List<SpectraFileInfo> BuildUndefinedExperimentalDesign()
+        {
+            var spectraFileInfo = new List<SpectraFileInfo>();
+
+            for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
+            {
+                var file = Parameters.CurrentRawFileList[i];
+
+                // experimental design info passed in here for each spectra file
+                spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: i, fraction: 0, techrep: 0));
+            }
+
+            return spectraFileInfo;
+        }
+
         private void QuantificationAnalysis()
         {
+            // Spectral counts and count-based occupancy need no quantification, so fill them in before
+            // the return below. The quantified path repopulates them with intensities further down.
+            PopulateCountBasedOccupancy(BuildUndefinedExperimentalDesign());
+
             if (!Parameters.GlycoSearchParameters.DoQuantification)
             {
                 return;
@@ -426,15 +480,7 @@ namespace TaskLayer
             }
             else
             {
-                spectraFileInfo = new List<SpectraFileInfo>();
-
-                for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
-                {
-                    var file = Parameters.CurrentRawFileList[i];
-
-                    // experimental design info passed in here for each spectra file
-                    spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: i, fraction: 0, techrep: 0));
-                }
+                spectraFileInfo = BuildUndefinedExperimentalDesign();
             }
 
             // get PSMs to pass to FlashLFQ
@@ -551,9 +597,8 @@ namespace TaskLayer
 
             // Intensity-based occupancy is weighted by FlashLFQ peak areas, one per quantified
             // peptidoform, matching the search path.
-            bool quantifiedPeptidesAvailable = DistributeQuantifiedIntensities();
+            bool quantifiedPeptidesAvailable = DistributeQuantifiedIntensities(unambiguousPsmsBelowOnePercentFdr);
 
-            // Propagate quantification data to protein groups
             if (ProteinGroups != null)
             {
                 foreach (var proteinGroup in ProteinGroups)
@@ -588,7 +633,7 @@ namespace TaskLayer
         /// once per spectrum. Mirrors the search task; returns false when quantification produced no
         /// results, which leaves occupancy count-based.
         /// </summary>
-        private bool DistributeQuantifiedIntensities()
+        private bool DistributeQuantifiedIntensities(List<GlycoSpectralMatch> psmsForQuantification)
         {
             if (Parameters.FlashLfqResults == null)
             {
@@ -601,7 +646,7 @@ namespace TaskLayer
                 filesByPath[file.FullFilePathWithExtension] = file;
             }
 
-            foreach (var form in Parameters.AllPsms
+            foreach (var form in psmsForQuantification
                 .Where(p => p.FullSequence != null)
                 .GroupBy(p => (p.FullFilePath, p.FullSequence)))
             {
@@ -619,17 +664,7 @@ namespace TaskLayer
                 }
 
                 double area = peptide.GetIntensity(spectraFile);
-                if (area <= 0)
-                {
-                    continue;
-                }
-
-                var psms = form.ToList();
-                double share = area / psms.Count;
-                foreach (var psm in psms)
-                {
-                    psm.QuantifiedIntensityShare = share;
-                }
+                PostSearchAnalysisTask.SplitAreaAcrossPsms(form.ToList(), area);
             }
 
             return true;

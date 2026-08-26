@@ -242,7 +242,7 @@ namespace Test
             Assert.That(headerFields.Length, Is.EqualTo(row.Split('\t').Length));
         }
 
-        // Guards #2: the protein-group TSV header is emitted once from proteinGroups.First()
+        // The protein-group TSV header is emitted once from proteinGroups.First()
         // (see PostSearchAnalysisTask / PostGlycoSearchAnalysisTask), while each row re-derives its
         // own dynamic columns. When groups are populated through the normal pipeline path
         // (IntensitiesByFile always assigned, with zeros where a protein had no measured intensity),
@@ -504,6 +504,38 @@ namespace Test
             string branch4 = pg.ToString().Split('\t')[uniquePeptides];
             Assert.That(branch4, Does.Contain("["));
         }
+        // The area split is what makes intensity occupancy a peak-area measure rather than a per-spectrum
+        // one: summing the shares back over the PSMs that identified a form has to reconstitute the area
+        // exactly once. Nothing else in the suite exercises this arithmetic directly.
+        [Test]
+        public static void SplitAreaAcrossPsmsReconstitutesTheAreaOnce()
+        {
+            var protein = new Protein("PEPTIDEK", "accession");
+            var pwsm = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 8,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var scan = new Ms2ScanWithSpecificMass(new TestDataFile(pwsm).GetOneBasedScan(2), 100, 1, "f.mzML", new CommonParameters());
+
+            List<SpectralMatch> FourPsms() => Enumerable.Range(0, 4)
+                .Select(_ => (SpectralMatch)new PeptideSpectralMatch(pwsm, 0, 10, 0, scan, new CommonParameters(), new List<Omics.Fragmentation.MatchedFragmentIon>()))
+                .ToList();
+
+            var psms = FourPsms();
+            PostSearchAnalysisTask.SplitAreaAcrossPsms(psms, 1000.0);
+            Assert.That(psms.Select(p => p.QuantifiedIntensityShare), Is.All.EqualTo(250.0));
+            Assert.That(psms.Sum(p => p.QuantifiedIntensityShare.Value), Is.EqualTo(1000.0).Within(1e-9));
+
+            // A form that was identified but never quantified must contribute nothing, rather than
+            // entering occupancy as a measured zero.
+            foreach (double unquantified in new[] { 0.0, -1.0 })
+            {
+                var untouched = FourPsms();
+                PostSearchAnalysisTask.SplitAreaAcrossPsms(untouched, unquantified);
+                Assert.That(untouched.All(p => p.QuantifiedIntensityShare == null), Is.True, unquantified.ToString());
+            }
+
+            Assert.DoesNotThrow(() => PostSearchAnalysisTask.SplitAreaAcrossPsms(new List<SpectralMatch>(), 1000.0));
+        }
+
     }
 }
 

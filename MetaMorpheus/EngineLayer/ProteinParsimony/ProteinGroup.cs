@@ -1,4 +1,4 @@
-using Proteomics;
+﻿using Proteomics;
 using FlashLFQ;
 using System.Collections.Generic;
 using System.IO;
@@ -30,6 +30,8 @@ namespace EngineLayer
     /// (GetAminoAcidCoverage, BestMatchingBioPolymersWithSetMods, FragmentCoveragePositionInPeptide)
     /// that are not on the ISpectralMatch interface, and GetTabSeparatedHeader() uses
     /// MetaMorpheus-specific column names and includes BestPeptidePEP.
+    /// Because ToString() overrides but GetTabSeparatedHeader() only hides, calling them through a
+    /// BioPolymerGroup reference pairs base column names with MetaMorpheus rows. Call both on ProteinGroup.
     /// </summary>
     public class ProteinGroup : BioPolymerGroup
     {
@@ -99,6 +101,7 @@ namespace EngineLayer
         /// Snapshot view of <see cref="BioPolymerGroup.SamplesForQuantification"/> filtered to SpectraFileInfo.
         /// The getter returns a fresh read-only copy on every call, so mutating the returned value has no
         /// effect on the protein group; assign a new collection through the setter to change it.
+        /// SpectraFileInfo only: isobaric samples are dropped by the getter, so a round-trip loses them.
         /// </summary>
         public IReadOnlyList<SpectraFileInfo> FilesForQuantification
         {
@@ -110,6 +113,7 @@ namespace EngineLayer
         /// Snapshot view of <see cref="BioPolymerGroup.IntensitiesBySample"/> keyed by SpectraFileInfo.
         /// The getter returns a fresh read-only copy on every call, so mutating the returned value has no
         /// effect on the protein group; assign a new dictionary through the setter to change it.
+        /// SpectraFileInfo only: the getter throws if an isobaric sample is present.
         /// </summary>
         public IReadOnlyDictionary<SpectraFileInfo, double> IntensitiesByFile
         {
@@ -128,12 +132,29 @@ namespace EngineLayer
         public double BestPeptidePEP { get; set; }
 
         /// <summary>
-        /// True when FlashLFQ peak areas were distributed onto this group's PSMs, which is what
-        /// intensity-based occupancy is weighted by. Separate from whether a group-level intensity
-        /// exists: a run can have protein intensities and still have nothing to weight occupancy by.
-        /// Gates the IntensityOccupancy columns in both the header and the row so the two cannot drift.
+        /// True when FlashLFQ returned results for this run. Gates the IntensityOccupancy columns in both
+        /// the header and the row, and is assigned uniformly so every group carries the same schema.
         /// </summary>
         public bool HasPeptideLevelQuantification { get; set; }
+
+        /// <summary>
+        /// The spectra files this run searched. A sample group whose files are all absent from this set
+        /// describes no file any spectrum could have come from, so its PSM-derived columns are omitted
+        /// rather than written as measured zeros. SILAC is the case that needs it: quantification invents
+        /// one file per label, and a PSM records the real file it was acquired in. Intensities are
+        /// unaffected, since those come from the quantifier rather than from a PSM lookup.
+        /// Null keeps every column, which is the behaviour wherever nothing sets this.
+        /// </summary>
+        public HashSet<string> SearchedSpectraFilePaths { get; set; }
+
+        // Fails open: an unset path list or a group with no file info means we cannot tell, and dropping
+        // columns on a guess is worse than keeping them.
+        private bool WasSearched(SampleGroupResult group) =>
+            SearchedSpectraFilePaths == null
+            || group.FilesInGroup == null
+            || group.FilesInGroup.Count == 0
+            || group.FilesInGroup.Values.Any(f => f is SpectraFileInfo spectraFile
+                && SearchedSpectraFilePaths.Contains(spectraFile.FullFilePathWithExtension));
 
         // Sequence coverage stored as flat lists (MM-specific format).
         // BioPolymerGroup uses CoverageResult instead; these are kept for TSV output compatibility.
@@ -225,19 +246,21 @@ namespace EngineLayer
             sb.Append("Sequence Coverage with Mods" + '\t');
             sb.Append("Fragment Sequence Coverage" + '\t');
 
-            // Quantification and occupancy columns from base SampleGroupResult system.
-            // Dynamic columns appear only when SampleGroupResults has been explicitly populated
-            // upstream (e.g., LFQ-success path). Workflows that return early from quantification
-            // leave it null/empty and emit only the static columns.
+            // Quantification and occupancy columns from the base SampleGroupResult system. Which of them
+            // appear depends on whether the sample group's files were searched and whether quantification ran.
             if (SampleGroupResults != null)
             {
                 foreach (var group in SampleGroupResults)
                 {
-                    sb.Append($"SpectralCount_{group.Label}\t");
+                    bool searched = WasSearched(group);
+
+                    if (searched)
+                        sb.Append($"SpectralCount_{group.Label}\t");
                     if (group.HasIntensityData)
                         sb.Append($"Intensity_{group.Label}\t");
-                    sb.Append($"CountOccupancy_{group.Label}\t");
-                    if (HasPeptideLevelQuantification)
+                    if (searched)
+                        sb.Append($"CountOccupancy_{group.Label}\t");
+                    if (searched && HasPeptideLevelQuantification)
                         sb.Append($"IntensityOccupancy_{group.Label}\t");
                 }
             }
@@ -346,9 +369,7 @@ namespace EngineLayer
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", FragmentSequenceCoverageDisplayList)));
             sb.Append("\t");
 
-            // Quantification and occupancy from base SampleGroupResult system.
-            // Mirrors the header: dynamic columns appear only when SampleGroupResults has been
-            // populated upstream so header and rows stay consistent within a file.
+            // Emitted under exactly the conditions the header uses, so the two cannot drift apart.
             if (SampleGroupResults != null)
             {
                 bool isProteinLevel = GroupType == BioPolymerGroupType.Parent;
@@ -358,8 +379,14 @@ namespace EngineLayer
 
                 foreach (var group in SampleGroupResults)
                 {
-                    sb.Append(group.SpectralCount);
-                    sb.Append("\t");
+                    // Gated exactly as the header is, so the two cannot drift apart.
+                    bool searched = WasSearched(group);
+
+                    if (searched)
+                    {
+                        sb.Append(group.SpectralCount);
+                        sb.Append("\t");
+                    }
 
                     if (group.HasIntensityData)
                     {
@@ -368,11 +395,13 @@ namespace EngineLayer
                         sb.Append("\t");
                     }
 
-                    sb.Append(GlobalVariables.CheckLengthOfOutput(group.FormatOccupancy(orderedKeys, isProteinLevel, intensityBased: false)));
-                    sb.Append("\t");
+                    if (searched)
+                    {
+                        sb.Append(GlobalVariables.CheckLengthOfOutput(group.FormatOccupancy(orderedKeys, isProteinLevel, intensityBased: false)));
+                        sb.Append("\t");
+                    }
 
-                    // Gated on the same flag as the header, so the two cannot drift apart.
-                    if (HasPeptideLevelQuantification)
+                    if (searched && HasPeptideLevelQuantification)
                     {
                         sb.Append(GlobalVariables.CheckLengthOfOutput(group.FormatOccupancy(orderedKeys, isProteinLevel, intensityBased: true)));
                         sb.Append("\t");
@@ -616,8 +645,7 @@ namespace EngineLayer
                 DisplayModsOnPeptides = DisplayModsOnPeptides
             };
 
-            // Both of these adapters rebuild their collection on every read, so take one snapshot
-            // each: this method runs once per protein group per spectra file.
+            // Both adapters rebuild their collection on every read, so snapshot each one.
             var filesForQuantification = FilesForQuantification;
             var intensitiesByFile = IntensitiesByFile;
 
@@ -668,12 +696,13 @@ namespace EngineLayer
             else
             {
                 subsetPg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>
-                    { { spectraFileInfo, intensitiesByFile.GetValueOrDefault(spectraFileInfo, 0) } };
+                    { { spectraFileInfo, intensitiesByFile[spectraFileInfo] } };
             }
 
             // The PSMs carry their own share of the quantified area, so the subset inherits it by
             // holding the same PSM objects; only the column gate needs passing along.
             subsetPg.HasPeptideLevelQuantification = HasPeptideLevelQuantification;
+            subsetPg.SearchedSpectraFilePaths = SearchedSpectraFilePaths;
 
             return subsetPg;
         }

@@ -986,11 +986,11 @@ namespace Test
         }
 
         [Test]
-        public static void TestTmtProteinGroupsHaveNoQuantColumns()
+        public static void TestTmtProteinGroupsHaveCountColumnsButNoIntensityColumns()
         {
-            // TMT runs return early from QuantificationAnalysis before FilesForQuantification
-            // is assigned, so protein groups must NOT emit Intensity_/IntensityOccupancy_/
-            // SpectralCount_ columns. This guards against future regressions.
+            // Spectral counts and count-based occupancy are per spectra file, so TMT gets them like any
+            // other run. Intensities do not follow: FlashLFQ never runs, and a reporter-ion array is not
+            // the single per-file intensity the occupancy calculator accepts.
             var searchTask = Toml.ReadFile<SearchTask>(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
                 MetaMorpheusTask.tomlConfig);
@@ -1013,11 +1013,13 @@ namespace Test
 
                 var header = pgLines[0].Split('\t').ToList();
 
-                // None of the per-file quant column families should appear for TMT
                 Assert.That(header.Any(h => h.StartsWith("Intensity_")), Is.False, "Unexpected Intensity_ column in TMT output");
-                Assert.That(header.Any(h => h.StartsWith("SpectralCount_")), Is.False, "Unexpected SpectralCount_ column in TMT output");
                 Assert.That(header.Any(h => h.StartsWith("IntensityOccupancy_")), Is.False, "Unexpected IntensityOccupancy_ column in TMT output");
-                Assert.That(header.Any(h => h.StartsWith("CountOccupancy_")), Is.False, "Unexpected CountOccupancy_ column in TMT output");
+
+                // One column per spectra file, not one per reporter channel - a channel has no spectral
+                // count of its own, so ten copies of one number is what we are avoiding here.
+                Assert.That(header.Count(h => h.StartsWith("SpectralCount_")), Is.EqualTo(1), "Expected one SpectralCount_ column per spectra file");
+                Assert.That(header.Count(h => h.StartsWith("CountOccupancy_")), Is.EqualTo(1), "Expected one CountOccupancy_ column per spectra file");
 
                 // All rows must still have consistent column counts
                 Assert.That(pgLines.Select(l => l.Split('\t').Length).AllSame(),

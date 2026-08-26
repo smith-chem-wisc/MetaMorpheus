@@ -253,6 +253,12 @@ namespace TaskLayer
         {
             try
             {
+                // Spectral counts and count-based occupancy need no quantification, so fill them in
+                // before every return below and before anything that can throw. Without an experimental
+                // design the columns are labelled per spectra file; the label-free path repopulates
+                // them with intensities once FlashLFQ has run.
+                PopulateCountBasedOccupancy();
+
                 if (Parameters.SearchParameters.DoMultiplexQuantification)
                 {
                     List<Modification> multiplexMods = Parameters.FixedModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
@@ -262,12 +268,6 @@ namespace TaskLayer
                     }
                     return;
                 }
-
-                // Spectral counts and count-based occupancy need no quantification, so fill them in
-                // before the returns below and before anything that can throw. Without an experimental
-                // design the columns are labelled per spectra file; the label-free path repopulates
-                // them with intensities once FlashLFQ has run.
-                PopulateCountBasedOccupancy();
 
                 if (!Parameters.SearchParameters.DoLabelFreeQuantification)
                 {
@@ -318,15 +318,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    spectraFileInfo = new List<SpectraFileInfo>();
-
-                    for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
-                    {
-                        var file = Parameters.CurrentRawFileList[i];
-
-                        // experimental design info passed in here for each spectra file
-                        spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: i, fraction: 0, techrep: 0));
-                    }
+                    spectraFileInfo = BuildUndefinedExperimentalDesign();
                 }
 
                 // get PSMs to pass to FlashLFQ
@@ -556,12 +548,7 @@ namespace TaskLayer
                 var flashLFQIdentifications = new List<Identification>();
                 foreach (var spectraFile in psmsGroupedByFile)
                 {
-                    var rawfileinfo = spectraFileInfo.FirstOrDefault(p => p.FullFilePathWithExtension.Equals(spectraFile.Key));
-                    if (rawfileinfo == null)
-                    {
-                        Warn($"No spectra file entry matched {spectraFile.Key}. Identifications from that file were left out of quantification.");
-                        continue;
-                    }
+                    var rawfileinfo = spectraFileInfo.First(p => p.FullFilePathWithExtension.Equals(spectraFile.Key));
 
                     foreach (var psm in spectraFile)
                     {
@@ -598,21 +585,18 @@ namespace TaskLayer
                     Parameters.FlashLfqResults = flashLfqEngine.Run();
                 }
 
-                // Propagate quantification data to protein groups so that PopulateSampleGroupResults()
-                // has the per-file context it needs to produce spectral-count and intensity-based occupancy columns.
-                //
-                // FilesForQuantification is always assigned once spectraFileInfo is available so that
-                // count-based occupancy is written even when FlashLFQ produced no peaks (e.g., when
-                // flashLFQIdentifications is empty and FlashLfqResults remains null).
-                // IntensitiesByFile is always assigned (with zeros if FlashLFQ produced no results)
-                // so that HasIntensityData is true and intensity-based occupancy columns are always written.
+                // Both are assigned unconditionally, even when FlashLFQ produced nothing: the columns are
+                // built per group, so a group that skipped assignment would emit a different set from the
+                // rest and the single header would stop describing every row.
                 if (ProteinGroups != null)
                 {
+                    var searchedFiles = new HashSet<string>(Parameters.CurrentRawFileList, StringComparer.OrdinalIgnoreCase);
+
                     foreach (var proteinGroup in ProteinGroups)
                     {
+                        proteinGroup.SearchedSpectraFilePaths = searchedFiles;
                         proteinGroup.FilesForQuantification = spectraFileInfo;
 
-                        // Build the dictionary locally, then assign in one shot.
                         var intensities = new Dictionary<SpectraFileInfo, double>();
                         foreach (var spectraFile in spectraFileInfo)
                         {
@@ -637,7 +621,7 @@ namespace TaskLayer
                 // Built here rather than before the SILAC block above: SILAC rewrites the spectra-file
                 // list and reassigns peptides between files, so a map keyed off the pre-conversion
                 // files would no longer match the samples the protein groups now carry.
-                bool quantifiedPeptidesAvailable = DistributeQuantifiedIntensities();
+                bool quantifiedPeptidesAvailable = DistributeQuantifiedIntensities(psmsForQuantification);
 
                 if (ProteinGroups != null)
                 {
@@ -650,6 +634,15 @@ namespace TaskLayer
             }
             catch (Exception e)
             {
+                try
+                {
+                    PopulateCountBasedOccupancy();
+                }
+                catch (Exception resetException)
+                {
+                    Warn("Could not restore count-based occupancy after the quantification failure: " + resetException.Message);
+                }
+
                 EngineCrashed("Quantification", e);
             }
         }
@@ -657,9 +650,9 @@ namespace TaskLayer
         /// <summary>
         /// Populates spectral counts and count-based occupancy from the PSMs alone, so those columns
         /// survive searches where quantification is switched off, is skipped because the experimental
-        /// design could not be read, or fails partway through. Multiplex searches are excluded by the
-        /// caller: a reporter channel carries no spectral count of its own, so every channel would
-        /// report the same number.
+        /// design could not be read, or fails partway through. The columns are per spectra file rather
+        /// than per reporter channel, so multiplex runs get them too: a channel carries no spectral
+        /// count of its own, but the file it was measured in does.
         /// </summary>
         private void PopulateCountBasedOccupancy()
         {
@@ -668,10 +661,41 @@ namespace TaskLayer
                 return;
             }
 
+            // Every group needs the same file list. Left unset, each group derives its columns from
+            // the files its own PSMs came from, so a group absent from one file writes fewer columns
+            // than the header, and every static column after them shifts left.
+            var spectraFileInfo = BuildUndefinedExperimentalDesign();
+
             foreach (var proteinGroup in ProteinGroups)
             {
+                // Full reset, not just a repopulate: this also runs from the catch below, where some
+                // groups may already carry intensities from a partly-finished propagation. Leaving those
+                // in place would give them an Intensity_ column the other groups lack.
+                proteinGroup.IntensitiesByFile = null;
+                proteinGroup.HasPeptideLevelQuantification = false;
+                proteinGroup.FilesForQuantification = spectraFileInfo;
                 proteinGroup.PopulateSampleGroupResults();
             }
+        }
+
+        /// <summary>
+        /// One <see cref="SpectraFileInfo"/> per raw file with no experimental design applied: no
+        /// condition, its own biological replicate, unfractionated. Shared by the count-only path and
+        /// by quantification when no design file is present, so the two label their columns alike.
+        /// </summary>
+        private List<SpectraFileInfo> BuildUndefinedExperimentalDesign()
+        {
+            var spectraFileInfo = new List<SpectraFileInfo>();
+
+            for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
+            {
+                var file = Parameters.CurrentRawFileList[i];
+
+                // experimental design info passed in here for each spectra file
+                spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: i, fraction: 0, techrep: 0));
+            }
+
+            return spectraFileInfo;
         }
 
         /// <summary>
@@ -682,13 +706,22 @@ namespace TaskLayer
         /// leaves occupancy count-based.
         /// </summary>
         /// <remarks>
-        /// The split is across every PSM of the form, so a protein group holding only some of them
-        /// sees a proportional share rather than the whole area. Weighting the forms directly would
-        /// avoid that, but the occupancy calculator sums per PSM.
+        /// The split is across every filtered PSM of the form, so a protein group holding only some
+        /// of them sees a proportional share rather than the whole area. Weighting the forms directly
+        /// would avoid that, but the occupancy calculator sums per PSM.
         /// </remarks>
-        private bool DistributeQuantifiedIntensities()
+        private bool DistributeQuantifiedIntensities(FilteredPsms psmsForQuantification)
         {
             if (Parameters.FlashLfqResults == null)
+            {
+                return false;
+            }
+
+            // Label-based runs file each channel's area under a spectra file that quantification invented,
+            // which no PSM belongs to. Splitting from the real file instead would hand light and heavy
+            // identifications a share of the light channel alone. Occupancy stays count-based for SILAC
+            // until it has an estimator meant for labelled data.
+            if (Parameters.SearchParameters.SilacLabels != null)
             {
                 return false;
             }
@@ -701,7 +734,7 @@ namespace TaskLayer
                 filesByPath[file.FullFilePathWithExtension] = file;
             }
 
-            foreach (var form in Parameters.AllSpectralMatches
+            foreach (var form in psmsForQuantification
                 .Where(p => p.FullSequence != null)
                 .GroupBy(p => (p.FullFilePath, p.FullSequence)))
             {
@@ -719,20 +752,31 @@ namespace TaskLayer
                 }
 
                 double area = peptide.GetIntensity(spectraFile);
-                if (area <= 0)
-                {
-                    continue;
-                }
-
-                var psms = form.ToList();
-                double share = area / psms.Count;
-                foreach (var psm in psms)
-                {
-                    psm.QuantifiedIntensityShare = share;
-                }
+                SplitAreaAcrossPsms(form.ToList(), area);
             }
 
             return true;
+        }
+
+
+        /// <summary>
+        /// Splits one peptidoform's quantified area evenly across the spectra that identified it, so that
+        /// summing the shares back over those PSMs reconstitutes the area once rather than once per
+        /// spectrum. A non-positive area leaves the shares unset, which keeps a form that was identified
+        /// but never quantified out of occupancy instead of entering it as a measured zero.
+        /// </summary>
+        public static void SplitAreaAcrossPsms(IReadOnlyList<SpectralMatch> psms, double area)
+        {
+            if (area <= 0 || psms.Count == 0)
+            {
+                return;
+            }
+
+            double share = area / psms.Count;
+            foreach (var psm in psms)
+            {
+                psm.QuantifiedIntensityShare = share;
+            }
         }
 
         private void HistogramAnalysis()
@@ -1147,10 +1191,8 @@ namespace TaskLayer
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
-                // Populate per-file quant/occupancy columns on the subset groups so the individual-file
-                // protein group TSV carries the same column schema as the combined file, computed from this
-                // file's own intensities and PSMs. ConstructSubsetProteinGroup only sets FilesForQuantification
-                // when quantification ran, so this is a no-op otherwise (matching the combined-file behavior).
+                // Per-file quant/occupancy columns on the subset groups, so the individual-file report
+                // carries the same schema as the combined one, computed from this file's own PSMs.
                 foreach (var subsetProteinGroup in subsetProteinGroupsForThisFile)
                 {
                     if (subsetProteinGroup.FilesForQuantification != null)
