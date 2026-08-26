@@ -1633,7 +1633,6 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs(error, null));
             }
             GlobalVariables.ErrorsReadingMods.Clear();
-
         }
 
         private void UpdateOutputFolderTextbox()

@@ -89,7 +89,6 @@ namespace MetaMorpheusCommandLine
 
             GlobalVariables.SetUpGlobalVariables();
 
-
             if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
