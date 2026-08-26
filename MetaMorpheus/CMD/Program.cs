@@ -39,6 +39,26 @@ namespace MetaMorpheusCommandLine
             return errorCode;
         }
 
+        /// <summary>
+        /// Writes the warnings collected by <see cref="GlobalVariables.SetUpGlobalVariables"/> (e.g. a failure to
+        /// create the custom monosaccharide file) to the console, then clears them so they are reported once.
+        /// The GUI does the same thing through its notifications pane; this is the command-line equivalent.
+        /// </summary>
+        /// <param name="verbosity">Nothing is written at <see cref="CommandLineSettings.VerbosityType.none"/>.</param>
+        public static void FlushStartupWarnings(CommandLineSettings.VerbosityType verbosity)
+        {
+            if (verbosity == CommandLineSettings.VerbosityType.minimal
+                || verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                foreach (var warning in GlobalVariables.StartupWarnings)
+                {
+                    Console.WriteLine(warning);
+                }
+            }
+
+            GlobalVariables.StartupWarnings.Clear();
+        }
+
         public static int DisplayHelp<T>(ParserResult<T> result, IEnumerable<Error> errs)
         {
             Console.WriteLine("Welcome to MetaMorpheus");
@@ -91,15 +111,7 @@ namespace MetaMorpheusCommandLine
 
             // Unconditionally surface startup warnings (e.g. custom monosaccharide file creation failure).
             // Not gated on database type -- unlike ErrorsReadingMods below, these must reach every CLI run.
-            foreach (var warning in GlobalVariables.StartupWarnings)
-            {
-                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal
-                    || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                {
-                    Console.WriteLine(warning);
-                }
-            }
-            GlobalVariables.StartupWarnings.Clear();
+            FlushStartupWarnings(settings.Verbosity);
 
             if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {

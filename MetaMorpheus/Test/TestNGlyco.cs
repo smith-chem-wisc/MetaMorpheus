@@ -913,6 +913,67 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// A swallowed failure still has to be visible somewhere. Console.WriteLine goes nowhere in the windowed
+        /// GUI, so the message is queued on GlobalVariables.StartupWarnings, which the GUI drains into its
+        /// notifications pane and the CLI writes through Program.FlushStartupWarnings.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.StartupWarnings
+        public static void EnsureCustomMonosaccharideFileExists_UnwritableTarget_RecordsStartupWarning()
+        {
+            var original = GlobalVariables.StartupWarnings.ToList();
+            string tempDir = Directory.CreateTempSubdirectory().FullName;
+            string path = Path.Combine(tempDir, "MonosaccharidesCustom.tsv");
+            List<string> recorded;
+            try
+            {
+                Directory.CreateDirectory(path); // same blocking-directory trick as the test above
+                GlobalVariables.StartupWarnings.Clear();
+
+                GlycanDatabase.EnsureCustomMonosaccharideFileExists(path);
+
+                recorded = GlobalVariables.StartupWarnings.ToList();
+            }
+            finally
+            {
+                GlobalVariables.StartupWarnings.Clear();
+                GlobalVariables.StartupWarnings.AddRange(original);
+                Directory.Delete(tempDir, true);
+            }
+
+            Assert.That(recorded.Count, Is.EqualTo(1));
+            Assert.That(recorded[0], Does.Contain("Could not create custom monosaccharide file"));
+            Assert.That(recorded[0], Does.Contain(path), "the warning has to name the file the user needs to fix");
+        }
+
+        /// <summary>
+        /// EnsureCustomMonosaccharideFileExists is public and its warning sink is a static field that
+        /// SetUpGlobalVariables assigns. A caller that has not been through SetUpGlobalVariables -- or one running
+        /// after it on a torn-down AppDomain -- must not get a NullReferenceException out of the failure path
+        /// itself, which would defeat the whole point of swallowing the failure.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.StartupWarnings
+        public static void EnsureCustomMonosaccharideFileExists_UnwritableTarget_NoWarningSink_DoesNotThrow()
+        {
+            var original = GlobalVariables.StartupWarnings;
+            string tempDir = Directory.CreateTempSubdirectory().FullName;
+            string path = Path.Combine(tempDir, "MonosaccharidesCustom.tsv");
+            try
+            {
+                Directory.CreateDirectory(path);
+                GlobalVariables.StartupWarnings = null;
+
+                Assert.DoesNotThrow(() => GlycanDatabase.EnsureCustomMonosaccharideFileExists(path));
+            }
+            finally
+            {
+                GlobalVariables.StartupWarnings = original;
+                Directory.Delete(tempDir, true);
+            }
+        }
+
         [Test]
         public static void EnsureCustomMonosaccharideFileExists_WritesTheEmbeddedTemplateVerbatim()
         {

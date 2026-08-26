@@ -865,5 +865,101 @@ namespace Test
                 GlobalVariables.GlobalSettings = globalSettingsBackup;
             }
         }
+        /// <summary>
+        /// Startup warnings collected during GlobalVariables.SetUpGlobalVariables (e.g. a failure to seed
+        /// MonosaccharidesCustom.tsv) have to reach the console on a command-line run -- the GUI shows them in the
+        /// notifications pane, and the CLI has nowhere else to put them. Written once, then cleared.
+        /// </summary>
+        [Test]
+        [TestCase(CommandLineSettings.VerbosityType.minimal)]
+        [TestCase(CommandLineSettings.VerbosityType.normal)]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.StartupWarnings
+        public static void TestFlushStartupWarningsWritesAndClears(CommandLineSettings.VerbosityType verbosity)
+        {
+            var original = GlobalVariables.StartupWarnings.ToList();
+            var originalOut = Console.Out;
+            var sw = new StringWriter();
+
+            try
+            {
+                GlobalVariables.StartupWarnings.Clear();
+                GlobalVariables.StartupWarnings.Add("could not create the custom monosaccharide file");
+                GlobalVariables.StartupWarnings.Add("second warning");
+                Console.SetOut(sw);
+
+                Program.FlushStartupWarnings(verbosity);
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+                GlobalVariables.StartupWarnings.Clear();
+                GlobalVariables.StartupWarnings.AddRange(original);
+            }
+
+            string written = sw.ToString();
+            Assert.That(written, Does.Contain("could not create the custom monosaccharide file"));
+            Assert.That(written, Does.Contain("second warning"));
+        }
+
+        /// <summary>
+        /// -v none means no output at all, so the warnings are dropped rather than written. They are still cleared,
+        /// so a later caller cannot report them a second time.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.StartupWarnings
+        public static void TestFlushStartupWarningsSilentAtVerbosityNone()
+        {
+            var original = GlobalVariables.StartupWarnings.ToList();
+            var originalOut = Console.Out;
+            var sw = new StringWriter();
+            int remaining;
+
+            try
+            {
+                GlobalVariables.StartupWarnings.Clear();
+                GlobalVariables.StartupWarnings.Add("could not create the custom monosaccharide file");
+                Console.SetOut(sw);
+
+                Program.FlushStartupWarnings(CommandLineSettings.VerbosityType.none);
+                remaining = GlobalVariables.StartupWarnings.Count;
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+                GlobalVariables.StartupWarnings.Clear();
+                GlobalVariables.StartupWarnings.AddRange(original);
+            }
+
+            Assert.That(sw.ToString(), Is.Empty, "nothing should be written at verbosity 'none'");
+            Assert.That(remaining, Is.EqualTo(0), "warnings should be cleared even when they are not written");
+        }
+
+        /// <summary>
+        /// The common case: nothing went wrong at startup, so nothing is written.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.StartupWarnings
+        public static void TestFlushStartupWarningsWritesNothingWhenThereAreNoWarnings()
+        {
+            var original = GlobalVariables.StartupWarnings.ToList();
+            var originalOut = Console.Out;
+            var sw = new StringWriter();
+
+            try
+            {
+                GlobalVariables.StartupWarnings.Clear();
+                Console.SetOut(sw);
+
+                Program.FlushStartupWarnings(CommandLineSettings.VerbosityType.normal);
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+                GlobalVariables.StartupWarnings.Clear();
+                GlobalVariables.StartupWarnings.AddRange(original);
+            }
+
+            Assert.That(sw.ToString(), Is.Empty);
+        }
     }
 }
