@@ -83,7 +83,7 @@ namespace Test
         [Test]
         public static void GlyTest_GetKindString()
         {
-            byte[] kind = new byte[] {3, 4, 0, 0, 1, 0, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[] { 3, 4, 0, 0, 1, 0, 0, 0, 0, 0, 0 };
             string kindString = Glycan.GetKindString(kind);
             Assert.That(kindString, Is.EqualTo("H3N4F1"));
         }
@@ -91,8 +91,8 @@ namespace Test
         [Test]
         public static void GlyTest_ModificationSites()
         {
-            PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 
-            string[] motifs = new string[] { "Nxs", "Nxt"};
+            PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null);
+            string[] motifs = new string[] { "Nxs", "Nxt" };
             var sites = GlycoSpectralMatch.GetPossibleModSites(pep, motifs).Select(p => p.Key).ToList();
             Assert.That(sites.Count() == 1 && sites[0] == 4);
 
@@ -105,7 +105,7 @@ namespace Test
             Assert.That(testSites.Count() == 1 && testSites[0] == 11);
 
 
-            var testC = new PeptideWithSetModifications("TELAAYLSC[Common Fixed:Carbamidomethyl on C]NATK", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 }});
+            var testC = new PeptideWithSetModifications("TELAAYLSC[Common Fixed:Carbamidomethyl on C]NATK", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 } });
             var testCSites = GlycoSpectralMatch.GetPossibleModSites(testC, motifs).Select(p => p.Key).ToList();
             Assert.That(testCSites.Count() == 1 && testCSites[0] == 11);
         }
@@ -177,20 +177,20 @@ namespace Test
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H(H(H)))(H(H(H(H(H))))))))", 0).FirstOrDefault();
 
             Tolerance tolerance = new PpmTolerance(20);
-            CommonParameters commonParameters = new CommonParameters(doPrecursorDeconvolution:false, trimMsMsPeaks:false, dissociationType:DissociationType.EThcD, productMassTolerance: tolerance);
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/11901_AIETD.mgf"); 
+            CommonParameters commonParameters = new CommonParameters(doPrecursorDeconvolution: false, trimMsMsPeaks: false, dissociationType: DissociationType.EThcD, productMassTolerance: tolerance);
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/11901_AIETD.mgf");
             MyFileManager myFileManager = new MyFileManager(true);
             var msDataFile = myFileManager.LoadFile(filePath, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
 
             var XLPrecusorSearchMode = new SinglePpmAroundZeroSearchMode(commonParameters.PrecursorMassTolerance.Value);
-            var precusorMatched = XLPrecusorSearchMode.Accepts(aPeptideWithSetModifications.Last().MonoisotopicMass + (double)glycan.Mass/1E5, listOfSortedms2Scans[0].PrecursorMass);
+            var precusorMatched = XLPrecusorSearchMode.Accepts(aPeptideWithSetModifications.Last().MonoisotopicMass + (double)glycan.Mass / 1E5, listOfSortedms2Scans[0].PrecursorMass);
             Assert.That(precusorMatched, Is.EqualTo(0));
 
             var glycopep = GlycoPeptides.GenerateGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
             List<Product> fragmentIons = new List<Product>();
             glycopep.Fragment(DissociationType.EThcD, FragmentationTerminus.Both, fragmentIons);
-               
+
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
 
             using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "11091_NGlyco_AIETD.tsv")))
@@ -284,7 +284,7 @@ namespace Test
             Assert.That(zid, Is.EqualTo(10)); //Index out range
             Assert.That(did, Is.EqualTo(2));
             Assert.That(tid, Is.EqualTo(9));
-        }         
+        }
 
         [Test]
         public static void GlyTest_NGlycanCompositionFragments()
@@ -630,6 +630,158 @@ namespace Test
             {
                 Glycan.ResetCustomMonosaccharides();
                 File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_EmptyCode_Throws()
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "", "", "100.0", "", "Empty code"));
+            Assert.That(ex.Message, Does.Contain("Could not persist custom monosaccharide: SingleCharCode must be exactly one character"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_MultiCharCode_Throws() 
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "AB", "", "100.0", "", "Multi-char code"));
+            Assert.That(ex.Message, Does.Contain("Could not persist custom monosaccharide: SingleCharCode must be exactly one character"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_MassOutOfRange_Throws()
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "Z", "", "20000.1", "", "Mass too high"));
+            Assert.That(ex.Message, Does.Contain("Could not persist custom monosaccharide: MonoisotopicMass must be a positive number below 20000 Da"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_DiagnosticIonOutOfRange_Throws()
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "Z", "", "100.0", "100.0, 20000.1", "Ion too high"));
+            Assert.That(ex.Message, Does.Contain("Could not persist custom monosaccharide: DiagnosticIonMasses entry"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_ExistingName_Throws()
+        {
+            // "HexNAc" is always present as a built-in, regardless of test order.
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("HexNAc", "Q", "", "100.0", "", "Name collides with built-in"));
+            Assert.That(ex.Message, Does.Contain("Could not register custom monosaccharide"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_ExistingCode_Throws()
+        {
+            // 'N' is the built-in single-char code for HexNAc, regardless of test order.
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "N", "", "100.0", "", "Code collides with built-in"));
+            Assert.That(ex.Message, Does.Contain("Could not register custom monosaccharide"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_NonLetterCode_Throws()
+        {
+            // A single character, but not a letter -- passes PersistCustomMonosaccharide's own
+            // length==1 guard, only to be rejected by RegisterCustomMonosaccharide's ASCII-letter check.
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide("Foo", "5", "", "100.0", "", "Digit is not a letter"));
+            Assert.That(ex.Message, Does.Contain("Could not register custom monosaccharide"));
+        }
+
+        [Test]
+        public static void PersistCustomMonosaccharide_AppendsOnOwnLineWhenFileMissingTrailingNewline() 
+        {
+            string path = Path.Combine(GlobalVariables.DataDir, "Glycan_Mods", "MonosaccharidesCustom.tsv");
+            bool existedBefore = File.Exists(path);
+            string originalContent = existedBefore ? File.ReadAllText(path) : null;
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                //simulate a file that exists but has no trailing newline
+                File.WriteAllText(path, "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription\nHexA\tU\t178.04225\t\tExisting entry, no trailing newline");
+
+                string warning = GlycanDatabase.PersistCustomMonosaccharide("Pent", "T", null, "132.04226", null, "Appended after missing newline");
+                Assert.That(warning, Is.Null);
+
+                var lines = File.ReadAllLines(path);
+                Assert.That(lines.Length, Is.EqualTo(3)); // header + existing entry + new entry, each on its own line
+                Assert.That(lines[1], Is.EqualTo("HexA\tU\t178.04225\t\tExisting entry, no trailing newline"));
+                Assert.That(lines[2], Is.EqualTo("Pent\tT\t132.04226\t\tAppended after missing newline"));
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                if (existedBefore)
+                {
+                    File.WriteAllText(path, originalContent);
+                }
+                else if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+        }
+
+
+        [Test]
+        public static void PersistCustomMonosaccharide_RoundTripsThroughLoadCustomMonosaccharides()
+        {
+            // GlycanDatabase.PersistCustomMonosaccharide is the write side of the exact format
+            // LoadCustomMonosaccharides reads (used by CustomMonosaccharideWindow's save handler).
+            // Exercising both together, with no GUI involved, is what actually protects the two
+            // from drifting apart.
+            string path = Path.Combine(GlobalVariables.DataDir, "Glycan_Mods", "MonosaccharidesCustom.tsv");
+            bool existedBefore = File.Exists(path);
+            string originalContent = existedBefore ? File.ReadAllText(path) : null;
+
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                if (existedBefore)
+                {
+                    File.Delete(path);
+                }
+
+                // one entry via chemical formula, one via a typed mass + diagnostic ions
+                string warning1 = GlycanDatabase.PersistCustomMonosaccharide("HexA", "U", "C6H8O6", null, null, "Hexuronic acid");
+                string warning2 = GlycanDatabase.PersistCustomMonosaccharide("Pent", "T", null, "132.04226", "12.34,56.78", "Generic pentose");
+
+                Assert.That(warning1, Is.Null);
+                Assert.That(warning2, Is.Null);
+
+                // clear the in-memory registry so the only way these come back is by actually reading
+                // the file -- otherwise the test would just re-prove registration works, not the format
+                Glycan.ResetCustomMonosaccharides();
+                GlycanDatabase.LoadCustomMonosaccharides(path);
+
+                int expectedHexAMass = (int)Math.Round(Chemistry.ChemicalFormula.ParseFormula("C6H8O6").MonoisotopicMass * 1E5);
+
+                Assert.That(Glycan.KindCapacity, Is.EqualTo(13)); // 11 built-ins + 2 customs
+                Assert.That(Glycan.NameCharDic["HexA"].Item1, Is.EqualTo('U'));
+                Assert.That(Glycan.CharMassDic['U'], Is.EqualTo(expectedHexAMass));
+                Assert.That(Glycan.NameCharDic["Pent"].Item1, Is.EqualTo('T'));
+                Assert.That(Glycan.CharMassDic['T'], Is.EqualTo(13204226));
+
+                var lines = File.ReadAllLines(path);
+                Assert.That(lines[0], Is.EqualTo("Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription"));
+                Assert.That(lines.Length, Is.EqualTo(3)); // header + 2 entries
+            }
+            finally
+            {
+                Glycan.ResetCustomMonosaccharides();
+                if (existedBefore)
+                {
+                    File.WriteAllText(path, originalContent);
+                }
+                else if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
             }
         }
     }

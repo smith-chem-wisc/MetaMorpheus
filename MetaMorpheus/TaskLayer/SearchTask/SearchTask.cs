@@ -5,6 +5,7 @@ using EngineLayer.DatabaseLoading;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
+using EngineLayer.Util;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
@@ -170,9 +171,10 @@ namespace TaskLayer
 
             if (SearchParameters.DoLabelFreeQuantification)
             {
-                // disable quantification if a .mgf or .d files are  being used
+                // disable quantification if a .mgf or Bruker file is being used. Bruker paths are normally the ".d"
+                // folder, but an inner file (analysis.baf, analysis.tdf, ...) can reach here too, so check for both.
                 if (currentRawFileList.Select(filepath => Path.GetExtension(filepath))
-                    .Any(ext => ext.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || ext.Equals(".d", StringComparison.OrdinalIgnoreCase) || ext.Equals(".msalign", StringComparison.OrdinalIgnoreCase)))
+                    .Any(ext => ext.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || ext.Equals(".d", StringComparison.OrdinalIgnoreCase) || ext.Equals(".msalign", StringComparison.OrdinalIgnoreCase) || BrukerDataDirectory.IsInnerFileExtension(ext)))
                 {
                     SearchParameters.DoLabelFreeQuantification = false;
                 }
