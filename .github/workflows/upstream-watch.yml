@@ -87,12 +87,13 @@ jobs:
 
           if [ ${#versions[@]} -gt 1 ]; then
             echo "drift=${versions[*]}" >> "$GITHUB_OUTPUT"
-            echo "::warning::pin sites disagree with each other: ${versions[*]}. The bump reconciles them to one version."
+            echo "::warning::pin sites disagree with each other: ${versions[*]}."
           fi
 
-          # The oldest pinned version decides whether there is anything to do. If the lowest site is
-          # already at the release, every site is.
+          # `versions` is sorted ascending, so these are the extremes of what the tree pins. They
+          # are the same value unless the sites disagree with each other.
           current=${versions[0]}
+          highest=${versions[-1]}
           echo "current=$current" >> "$GITHUB_OUTPUT"
 
           if [ "$current" = "$NEW" ] && [ ${#versions[@]} -eq 1 ]; then
@@ -103,9 +104,22 @@ jobs:
           # Direction matters. A pin is allowed to sit AHEAD of the latest release, and does when
           # someone takes an unreleased mzLib deliberately. Rolling that backwards onto an older
           # package would be a regression opened as a chore, so it is refused.
-          newest=$(printf '%s\n%s\n' "$current" "$NEW" | sort -V | tail -1)
+          #
+          # Compared against the HIGHEST pinned version, not the lowest, because the rewrite sets
+          # EVERY site to $NEW -- so it is the highest site that decides whether anything moves
+          # backwards. Comparing the lowest inverts the guard exactly when the sites disagree: with
+          # sites at 1.0.586 and 1.0.590 and a latest release of 1.0.586, the lowest equals the
+          # release, the already-pinned exit above is skipped because there is more than one
+          # version, the direction check passes, and the rewrite drags the 1.0.590 site back onto an
+          # older package -- the regression this guard exists to prevent. Mixed pins are a state
+          # that really happens here; ProteaseGuru held its csprojs and its nuspec apart.
+          newest=$(printf '%s\n%s\n' "$highest" "$NEW" | sort -V | tail -1)
           if [ "$newest" != "$NEW" ]; then
-            echo "::notice::this repository pins $current, which is newer than the latest release $NEW; leaving it alone."
+            if [ ${#versions[@]} -gt 1 ]; then
+              echo "::notice::pin sites disagree (${versions[*]}) and the highest, $highest, is newer than the latest release $NEW; bumping every site to $NEW would move that one backwards, so leaving it alone. Reconcile the drift by hand."
+            else
+              echo "::notice::this repository pins $highest, which is newer than the latest release $NEW; leaving it alone."
+            fi
             echo "action=none" >> "$GITHUB_OUTPUT"; exit 0
           fi
 
