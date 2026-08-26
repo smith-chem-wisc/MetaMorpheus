@@ -1250,6 +1250,9 @@ namespace TaskLayer
             Warn($"{engineName} engine Crashed! Error written to {outPath}");
         }
 
+        private static void WritePeptideIndex(List<IBioPolymerWithSetMods> peptideIndex, string peptideIndexFileName)
+            => WritePeptideIndex(peptideIndex.Cast<PeptideWithSetModifications>().ToList(), peptideIndexFileName);
+
         private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
@@ -1260,6 +1263,10 @@ namespace TaskLayer
                 ser.Serialize(file, peptideIndex);
             }
         }
+
+        private static List<IBioPolymerWithSetMods> ReadPeptideIndex(string peptideIndexFileName, IEnumerable<IBioPolymer> allKnownBioPolymers)
+            => ReadPeptideIndex(peptideIndexFileName, allKnownBioPolymers.OfType<Protein>().ToList())
+                .Cast<IBioPolymerWithSetMods>().ToList();
 
         private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> allKnownProteins)
         {
@@ -1391,10 +1398,30 @@ namespace TaskLayer
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        /// <summary>
+        /// Convenience overload for the protein-only tasks (cross-link, glyco, calibration, non-specific),
+        /// which index peptides and want them back typed as peptides. Distinguished by the ref parameter,
+        /// so it cannot be ambiguous with the general one.
+        /// </summary>
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex,
+            ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, IEnumerable<IBioPolymer> allKnownProteins, string taskId)
+        {
+            List<IBioPolymerWithSetMods> bioPolymerIndex = null;
+            GenerateIndexes(indexEngine, dbFilenameList, ref bioPolymerIndex, ref fragmentIndex, ref precursorIndex, allKnownProteins, taskId);
+            peptideIndex = bioPolymerIndex?.Cast<PeptideWithSetModifications>().ToList();
+        }
+
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<IBioPolymerWithSetMods> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, IEnumerable<IBioPolymer> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
-            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
+            // The on-disk peptide index only round-trips peptides: OligoWithSetMods is neither
+            // [Serializable] nor able to restore its parent the way SetNonSerializedPeptideInfo does for
+            // PeptideWithSetModifications. Nucleic acid databases are small, so build in memory each
+            // time rather than block oligo searches on an mzLib serialization change.
+            bool indexIsCacheable = GlobalVariables.AnalyteType != AnalyteType.Oligo;
+
+            string pathToFolderWithIndices = indexIsCacheable ? GetExistingFolderWithIndices(indexEngine, dbFilenameList) : null;
 
             if (pathToFolderWithIndices != null) //if indexes exist
             {
@@ -1427,6 +1454,16 @@ namespace TaskLayer
 
             if (!successfullyReadIndices) //if we didn't find indexes with the same params
             {
+                if (!indexIsCacheable)
+                {
+                    Status("Running Index Engine...", new List<string> { taskId });
+                    var inMemoryResults = (IndexingResults)indexEngine.Run();
+                    peptideIndex = inMemoryResults.PeptideIndex;
+                    fragmentIndex = inMemoryResults.FragmentIndex;
+                    precursorIndex = inMemoryResults.PrecursorIndex;
+                    return;
+                }
+
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, IndexEngineParamsFileName);

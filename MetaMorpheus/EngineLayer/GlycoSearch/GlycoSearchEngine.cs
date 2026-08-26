@@ -1,5 +1,6 @@
 ﻿using EngineLayer.ModernSearch;
 using MzLibUtil;
+using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -30,6 +31,12 @@ namespace EngineLayer.GlycoSearch
 
         private readonly List<int>[] SecondFragmentIndex;
 
+        /// <summary>
+        /// Glyco search is proteomics-only, so it keeps a peptide-typed view of the index that
+        /// ModernSearchEngine now holds as IBioPolymerWithSetMods. Same objects, narrower type.
+        /// </summary>
+        protected new readonly List<PeptideWithSetModifications> PeptideIndex;
+
         protected string[] Motifs
         {
             get
@@ -43,11 +50,12 @@ namespace EngineLayer.GlycoSearch
         }
 
         // The constructor for GlycoSearchEngine, we can load the parameter for the searhcing like mode, topN, maxOGlycanNum, oxoniumIonFilter, datsbase, etc.
-        public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
+        public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, IEnumerable<IBioPolymerWithSetMods> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
              string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
+            this.PeptideIndex = peptideIndex.Cast<PeptideWithSetModifications>().ToList();
             this.GlobalGsms = globalCsms;
             this.GlycoSearchType = glycoSearchType;
             this.TopN = glycoSearchTopNum;
@@ -149,7 +157,7 @@ namespace EngineLayer.GlycoSearch
                     var high_bound_limitation = scan.PrecursorMass + 1;
 
                     // first-pass scoring
-                    IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
+                    IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, base.PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
 
                     //child scan first-pass scoring
                     //List<int> childBinsToSearch = null;
@@ -166,7 +174,7 @@ namespace EngineLayer.GlycoSearch
                     //        childBinsToSearch.AddRange(x);
                     //    }
 
-                    //    IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
+                    //    IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, base.PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
 
                     //    foreach (var childId in childIdsOfPeptidesPossiblyObserved)
                     //    {
@@ -794,3 +802,4 @@ namespace EngineLayer.GlycoSearch
 
     }
 }
+
