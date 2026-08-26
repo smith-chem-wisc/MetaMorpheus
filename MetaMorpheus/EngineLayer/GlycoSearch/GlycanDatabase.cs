@@ -1,5 +1,4 @@
-﻿using CsvHelper;
-using EngineLayer.GlycoSearch;
+﻿using EngineLayer.GlycoSearch;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -235,21 +234,34 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Ensure the CustomMonoSaccharide.tsv existed in the directory. If the file is missing, 
-        /// write the header-only template; do nothing if it already exists.
+        /// Ensure the MonosaccharidesCustom.tsv exists in the directory. If the file is missing, 
+        /// write the embedded full 85-line documented template—instructions, column spec, the built-in name/code table,
+        /// worked examples — with the header row as its single non-comment line; do nothing if it already exists.
         /// </summary>
-        /// <param name="path"></param>
+        /// <param name="path">
+        /// The destination path — normally GlobalVariables.CustomMonosaccharidePath.
+        /// </param>
         public static void EnsureCustomMonosaccharideFileExists(string path) 
         {
             if (!File.Exists(path)) 
             { 
                 try
                 {
-                    // Make sure the directory exists before writing the file, however, it should be created while the installing
-                    // process. Just to guard the rare condition that the directory is missing.
+                    // Make sure the directory exists before writing the file, however, DataDir is created by
+                    // SetUpDataDirectory before this runs; this is defensive only.
                     Directory.CreateDirectory(Path.GetDirectoryName(path));
 
-                    // The default template(with instructions) is embedded in the DLL so it survives
+                    // Non-installer/portable runs (or a user-specified DataDir) may still have the old
+                    // Glycan_Mods\MonosaccharidesCustom.tsv from before this fix. Carry it over once so
+                    // those users don't silently lose custom entries; leave the old file alone.
+                    string legacyPath = Path.Combine(Path.GetDirectoryName(path), "Glycan_Mods", "MonosaccharidesCustom.tsv");
+                    if (File.Exists(legacyPath))
+                    {
+                        File.Copy(legacyPath, path);
+                        return;
+                    }
+
+                    // The default template—instructions is embedded in the DLL so it survives
                     // install/repair/upgrade regardless of what the installer does to Glycan_Mods --
                     // same pattern as RnaMods.txt (GlobalVariables.LoadRnaModifications) and the
                     // mzLib-embedded default protease/rnase templates (GlobalVariables.LoadDigestionAgents).
@@ -260,7 +272,7 @@ namespace EngineLayer
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Could not create custom monosaccharide file '{path}': {ex.Message}");
+                    GlobalVariables.StartupWarnings?.Add($"Could not create custom monosaccharide file '{path}': {ex.Message}");
                 }
             }
         }

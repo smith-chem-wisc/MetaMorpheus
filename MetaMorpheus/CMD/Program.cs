@@ -89,6 +89,18 @@ namespace MetaMorpheusCommandLine
 
             GlobalVariables.SetUpGlobalVariables();
 
+            // Unconditionally surface startup warnings (e.g. custom monosaccharide file creation failure).
+            // Not gated on database type -- unlike ErrorsReadingMods below, these must reach every CLI run.
+            foreach (var warning in GlobalVariables.StartupWarnings)
+            {
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal
+                    || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    Console.WriteLine(warning);
+                }
+            }
+            GlobalVariables.StartupWarnings.Clear();
+
             if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 Console.WriteLine(GlobalVariables.MetaMorpheusVersion);

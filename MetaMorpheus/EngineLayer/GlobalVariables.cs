@@ -45,6 +45,7 @@ namespace EngineLayer
         public static AnalyteType AnalyteType;
 
         public static List<string> ErrorsReadingMods;
+        public static List<string> StartupWarnings;
 
         // File locations
         public static string DataDir { get; private set; }
@@ -86,6 +87,7 @@ namespace EngineLayer
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
             SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };
 
+            StartupWarnings = new List<string>();
             SetMetaMorpheusVersion();
             SetUpDataDirectory();
             LoadCrosslinkers();
