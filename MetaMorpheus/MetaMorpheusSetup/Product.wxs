@@ -433,6 +433,18 @@
 		<Component Id="src_PredictionClients.dll" Guid="C6398A43-F845-47C2-9F35-0BB2435AFE16">
 			<File Id="src_PredictionClients.dll" Name="PredictionClients.dll" Source="$(var.GUI_TargetDir)PredictionClients.dll" />
 		</Component>
+		<Component Id="src_ProteaseGuru_Engine.dll" Guid="c8f3e773-9adb-4285-b364-aba840db1534">
+			<File Id="src_ProteaseGuru_Engine.dll" Name="Engine.dll" Source="$(var.GUI_TargetDir)Engine.dll" />
+		</Component>
+		<Component Id="src_ProteaseGuru_Tasks.dll" Guid="ab85cac7-da44-4434-ab55-4d2dc7dc23a2">
+			<File Id="src_ProteaseGuru_Tasks.dll" Name="Tasks.dll" Source="$(var.GUI_TargetDir)Tasks.dll" />
+		</Component>
+		<Component Id="src_ProteaseGuruGui.dll" Guid="259c3a81-39ad-4fa7-bdb3-25fd9751e271">
+			<File Id="src_ProteaseGuruGui.dll" Name="ProteaseGuruGui.dll" Source="$(var.GUI_TargetDir)ProteaseGuruGui.dll" />
+		</Component>
+		<Component Id="src_ProteaseGuruGuiFunctions.dll" Guid="5cec6708-011d-4e4b-912b-679b687a389f">
+			<File Id="src_ProteaseGuruGuiFunctions.dll" Name="ProteaseGuruGuiFunctions.dll" Source="$(var.GUI_TargetDir)ProteaseGuruGuiFunctions.dll" />
+		</Component>
 
       <!--Commandline Components-->
       <Component Id="src_CMD.deps.json" Guid="92190CCF-0138-4F0B-9356-02C914D5A439">
