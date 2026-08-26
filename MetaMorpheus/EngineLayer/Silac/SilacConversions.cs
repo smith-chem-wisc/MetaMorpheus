@@ -20,6 +20,11 @@ namespace EngineLayer
         public static readonly string ORIGINAL_TURNOVER_LABEL_NAME = "_Original";
         public static readonly string NEW_TURNOVER_LABEL_NAME = "_NewlySynthesized";
 
+        // Separates the real spectra file from a label channel that kept the original's condition, since
+        // sample groups bucket by condition. Never reaches the output: labels come from the filename
+        // whenever a file does not exist on disk, which is always true once channels are invented.
+        private static readonly string COUNT_ONLY_CONDITION = "_Acquired";
+
         public static string GetLabeledBaseSequence(string unlabeledBaseSequence, SilacLabel label)
         {
             if (label != null)
@@ -455,15 +460,32 @@ namespace EngineLayer
                 flashLfqResults.CalculateProteinResultsMedianPolish(true);
 
                 //update proteingroups to have all files for quantification
-                // Modification occupancy is now computed by BioPolymerGroup.PopulateSampleGroupResults()
                 if (proteinGroups != null)
                 {
                     List<SpectraFileInfo> allInfo = originalToLabeledFileInfoDictionary.SelectMany(x => x.Value).ToList();
+
+                    // Label channels are inventions of quantification: no spectrum was acquired into them, so
+                    // no PSM matches them and they carry no spectral count. Carry the real files alongside so
+                    // counts and count occupancy still describe what was measured. Skipped where the original
+                    // already survives as its own channel, which would put the same path in the list twice.
+                    //
+                    // Temporary shape: each real file also gets a zero intensity, purely so it has a key for
+                    // ConstructSubsetProteinGroup, which costs a blank Intensity_ column. Once mzLib gates
+                    // columns from a shared schema this can carry the file without the empty column.
+                    allInfo.AddRange(originalToLabeledFileInfoDictionary.Keys
+                        .Where(original => !allInfo.Any(labeled =>
+                            labeled.FullFilePathWithExtension == original.FullFilePathWithExtension))
+                        .Select(original => new SpectraFileInfo(
+                            original.FullFilePathWithExtension,
+                            original.Condition + COUNT_ONLY_CONDITION,
+                            original.BiologicalReplicate,
+                            original.TechnicalReplicate,
+                            original.Fraction)));
+
                     foreach (ProteinGroup proteinGroup in proteinGroups)
                     {
                         proteinGroup.FilesForQuantification = allInfo;
 
-                        // Build the dictionary locally, then assign in one shot.
                         // The IntensitiesByFile getter returns a copy, so .Add() on it would be lost.
                         var intensities = new Dictionary<SpectraFileInfo, double>();
                         foreach (var spectraFile in allInfo)
