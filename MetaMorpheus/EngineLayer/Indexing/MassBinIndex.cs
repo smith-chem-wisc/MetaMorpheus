@@ -20,6 +20,14 @@ namespace EngineLayer.Indexing
     /// Within a bin, peptide ids are ascending, exactly as appending in peptide order used to
     /// produce them. BinarySearchBinForPrecursorIndex relies on that: peptides are sorted by mass,
     /// so ascending peptide id within a bin means ascending mass within a bin.
+    ///
+    /// Holding every entry in one array caps a single index at int.MaxValue entries, which the
+    /// List&lt;int&gt;[] did not -- there, each bin carried its own list and only free memory set the
+    /// limit. The cap is reachable: the human UniProt XML with oxidation and acetylation as variable
+    /// mods needs about 3.9 billion entries in one partition, roughly 16 GB either way. Build throws
+    /// a MetaMorpheusException naming the partition count when that happens, since partitioning the
+    /// database is how MetaMorpheus already bounds index size. Lifting the cap would mean segmenting
+    /// the entry array on bin boundaries, which costs an extra indirection on every bin lookup.
     /// </summary>
     public sealed class MassBinIndex
     {
@@ -82,9 +90,15 @@ namespace EngineLayer.Indexing
 
             if (total > int.MaxValue)
             {
+                // Partitioning splits the protein list, so entries fall off roughly in proportion.
+                long partitionMultiplier = (total + int.MaxValue - 1) / int.MaxValue;
+
                 throw new MetaMorpheusException(
-                    "Fragment index is too large to address (" + total + " entries); reduce the maximum fragment mass, " +
-                    "raise the number of database partitions, or use Classic Search.");
+                    "This database needs " + total.ToString("N0") + " fragment index entries, more than the " +
+                    int.MaxValue.ToString("N0") + " a single index can hold. Multiply the number of database " +
+                    "partitions by at least " + partitionMultiplier + ", or reduce the maximum fragment mass, the " +
+                    "number of variable modifications, or the missed cleavages. Classic Search does not build a " +
+                    "fragment index at all and has no such limit.");
             }
 
             for (int b = 0; b < binCount; b++)
