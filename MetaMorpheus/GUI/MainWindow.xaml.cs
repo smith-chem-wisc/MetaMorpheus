@@ -1232,7 +1232,7 @@ namespace MetaMorpheusGUI
                     case "Visualize":
                         MenuItem_MetaDraw_Click(sender, e);
                         break;
-                    case "Protease Guru":
+                    case "ProteaseGuru":
                         {
                             OpenProteaseGuru_Click(sender, e);
                             break;
