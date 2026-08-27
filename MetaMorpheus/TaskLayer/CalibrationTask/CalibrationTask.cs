@@ -49,6 +49,15 @@ namespace TaskLayer
 
         public const string CalibSuffix = "-calib";
 
+        /// <summary>
+        /// Extension for the calibrated file, following <see cref="CalibrationParameters.OutputFormat"/>.
+        /// The next task in the chain is handed this file, so the extension has to match what was written
+        /// or the reader picked for it will not be the one that wrote it.
+        /// </summary>
+        private bool WritingMgf => CalibrationParameters.OutputFormat == SpectraFileOutputFormat.Mgf;
+
+        private string CalibratedFileExtension => WritingMgf ? ".mgf" : ".mzML";
+
 
         private List<string> _unsuccessfullyCalibratedFilePaths;
         private string _taskId;
@@ -85,8 +94,9 @@ namespace TaskLayer
                 string originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 string uncalibratedNewFullFilePath = Path.Combine(outputFolder, Path.GetFileName(currentRawFileList[spectraFileIndex]));
                 string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-                string calibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML")
-                    .ToSafeOutputPath(CalibSuffix + ".mzML");
+                string calibratedExtension = CalibratedFileExtension;
+                string calibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + calibratedExtension)
+                    .ToSafeOutputPath(CalibSuffix + calibratedExtension);
 
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { _taskId, "Individual Spectra Files", originalUncalibratedFilePath });
@@ -187,7 +197,7 @@ namespace TaskLayer
             assumedPathToExperDesign = Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
             if (File.Exists(assumedPathToExperDesign))
             {
-                WriteNewExperimentalDesignFile(assumedPathToExperDesign, outputFolder, currentRawFileList, _unsuccessfullyCalibratedFilePaths);
+                WriteNewExperimentalDesignFile(assumedPathToExperDesign, outputFolder, currentRawFileList, _unsuccessfullyCalibratedFilePaths, CalibratedFileExtension);
             }
         }
 
@@ -523,7 +533,21 @@ namespace TaskLayer
 
         private void CalibrationOutput(MsDataFile msDataFile, string mzFilePath, FileSpecificParameters fileParams, string tomlName, string taskId, string mzFilenameNoExtension)
         {
-            msDataFile.ExportAsMzML(mzFilePath, CalibrationParameters.WriteIndexedMzml);
+            if (WritingMgf)
+            {
+                // Temporary, and should be deleted once mgf carries these: dissociation type, precursor scan
+                // number and isolation width have no header in the format today, so a task run after this one
+                // sees fewer fields. Measured on the bundled yeast file, a Calibrate -> Search chain finds 85
+                // PSMs through mzML and 61 through mgf.
+                Warn("Writing calibrated spectra as mgf. Dissociation type, precursor scan number and "
+                     + "isolation width are not carried in mgf today, so a task run after this one will "
+                     + "identify fewer spectra than it would from mzML.");
+                msDataFile.ExportAsMgf(mzFilePath);
+            }
+            else
+            {
+                msDataFile.ExportAsMzML(mzFilePath, CalibrationParameters.WriteIndexedMzml);
+            }
             MyTaskResults.NewSpectra.Add(mzFilePath);
             Toml.WriteFile(fileParams, tomlName, tomlConfig);
             FinishedWritingFile(tomlName, new List<string> { taskId, "Individual Spectra Files", mzFilenameNoExtension });
@@ -532,7 +556,7 @@ namespace TaskLayer
         }
 
         private static void WriteNewExperimentalDesignFile(string pathToOldExperDesign, string outputFolder, List<string> originalUncalibratedFileNamesWithExtension,
-            List<string> unsuccessfullyCalibratedFilePaths)
+            List<string> unsuccessfullyCalibratedFilePaths, string calibratedExtension)
         {
             List<SpectraFileInfo> oldExperDesign = ExperimentalDesign.ReadExperimentalDesign(pathToOldExperDesign, originalUncalibratedFileNamesWithExtension, out var errors);
 
@@ -558,7 +582,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    SpectraFileInfo calibratedSpectraFile = new(Path.Combine(outputFolder, originalFileName + CalibSuffix + ".mzML"),
+                    SpectraFileInfo calibratedSpectraFile = new(Path.Combine(outputFolder, originalFileName + CalibSuffix + calibratedExtension),
                     originalSpectraFile.Condition, originalSpectraFile.BiologicalReplicate, originalSpectraFile.TechnicalReplicate, originalSpectraFile.Fraction);
                     newExperDesign.Add(calibratedSpectraFile);
                 }

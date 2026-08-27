@@ -10,11 +10,20 @@
             NumFragmentsNeededForEveryIdentification = 10;
             QValueCutoffForCalibratingPSMs = 0.01;
             WriteIndexedMzml = true;
+            OutputFormat = SpectraFileOutputFormat.MzML;
             SearchType = SearchType.Classic;
         }
 
         public bool WriteIntermediateFiles { get; set; }
         public bool WriteIndexedMzml { get; set; }
+
+        /// <summary>
+        /// Container for the calibrated spectra. mzML unless deliberately changed; see
+        /// <see cref="SpectraFileOutputFormat"/> for what MGF cannot carry. WriteIndexedMzml is
+        /// ignored when this is Mgf.
+        /// </summary>
+        public SpectraFileOutputFormat OutputFormat { get; set; }
+
         public SearchType SearchType { get; set; }
 
         public int MinMS1IsotopicPeaksNeededForConfirmedIdentification { get; set; }
