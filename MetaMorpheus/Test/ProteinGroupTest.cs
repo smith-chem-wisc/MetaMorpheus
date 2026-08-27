@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using FlashLFQ;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ using UsefulProteomicsDatabases;
 using System.Text.RegularExpressions;
 using EngineLayer.DatabaseLoading;
 using Omics;
+using MzLibUtil;
 
 namespace Test
 {
@@ -84,7 +86,8 @@ namespace Test
                 new HashSet<IBioPolymerWithSetMods>() { pwsm1, pwsm2 }, new HashSet<IBioPolymerWithSetMods>() { pwsm1, pwsm2 });
 
             //string exectedProteinGroupToString = proteinGroup1.ToString();
-            string exectedProteinGroupToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t0";
+            string exectedProteinGroupToString =
+    "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t0";
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupToString));
 
 
@@ -92,7 +95,8 @@ namespace Test
             List<Protein> proteinList3 = new List<Protein> { prot3 };
             ProteinGroup proteinGroup3 = new ProteinGroup(new HashSet<IBioPolymer>(proteinList3),
                                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
-            string exectedProteinGroupWithDecoyToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t0";
+            string exectedProteinGroupWithDecoyToString =
+    "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t0";
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupWithDecoyToString));
         }
 
@@ -116,7 +120,170 @@ namespace Test
             string[] rowEntries = pgRow.Split("\t");
             Assert.That(headerFields.Length, Is.EqualTo(rowEntries.Length));
             Assert.That(Regex.Matches(pgHeader, @"\t").Count, Is.EqualTo(Regex.Matches(pgRow, @"\t").Count));
-        }   
+        }
+
+        // No upstream quant setup -> no dynamic columns in header or row.
+        [Test]
+        public static void TestProteinGroupNoDynamicColumnsWhenSampleGroupResultsNotPopulated()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot1 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1 }, new HashSet<IBioPolymerWithSetMods> { pwsm1 });
+
+            Assert.That(pg.SampleGroupResults, Is.Null);
+
+            string header = pg.GetTabSeparatedHeader();
+            string row = pg.ToString();
+
+            Assert.That(header.Contains("SpectralCount_"), Is.False);
+            Assert.That(header.Contains("Intensity_"), Is.False);
+            Assert.That(header.Contains("CountOccupancy_"), Is.False);
+            Assert.That(header.Contains("IntensityOccupancy_"), Is.False);
+            Assert.That(header.Split('\t').Length, Is.EqualTo(row.Split('\t').Length));
+
+            // Header/row generation must not lazy-populate.
+            Assert.That(pg.SampleGroupResults, Is.Null);
+        }
+
+        // FilesForQuantification + IntensitiesByFile + populate -> all 4 column families appear,
+        // one per sample group, with matching header/row tab counts.
+        [Test]
+        public static void TestProteinGroupDynamicColumnsWithIntensitiesPopulated()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot1 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1 }, new HashSet<IBioPolymerWithSetMods> { pwsm1 });
+
+            var fileA = new SpectraFileInfo(@"X:\fakeA.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0);
+            var fileB = new SpectraFileInfo(@"X:\fakeB.mzML", condition: "", biorep: 1, fraction: 0, techrep: 0);
+            pg.FilesForQuantification = new List<SpectraFileInfo> { fileA, fileB };
+            pg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>
+            {
+                { fileA, 100.0 },
+                { fileB, 200.0 }
+            };
+            // Intensity occupancy is weighted per quantified peptidoform, so the occupancy column
+            // needs peptide-level quantification and not just the group-level intensity above.
+            pg.HasPeptideLevelQuantification = true;
+
+            pg.PopulateSampleGroupResults();
+
+            string header = pg.GetTabSeparatedHeader();
+            string row = pg.ToString();
+            string[] headerFields = header.Split('\t');
+
+            Assert.That(headerFields.Length, Is.EqualTo(row.Split('\t').Length));
+            Assert.That(headerFields.Count(h => h.StartsWith("SpectralCount_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("Intensity_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("CountOccupancy_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("IntensityOccupancy_")), Is.EqualTo(2));
+        }
+
+        // FilesForQuantification set without IntensitiesByFile -> only count-based dynamic columns.
+        [Test]
+        public static void TestProteinGroupCountOnlyColumnsWhenNoIntensities()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot1 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1 }, new HashSet<IBioPolymerWithSetMods> { pwsm1 });
+
+            var fileA = new SpectraFileInfo(@"X:\fakeA.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0);
+            pg.FilesForQuantification = new List<SpectraFileInfo> { fileA };
+
+            pg.PopulateSampleGroupResults();
+
+            string header = pg.GetTabSeparatedHeader();
+            string row = pg.ToString();
+
+            Assert.That(header.Contains("SpectralCount_"), Is.True);
+            Assert.That(header.Contains("CountOccupancy_"), Is.True);
+            Assert.That(header.Contains("Intensity_"), Is.False);
+            Assert.That(header.Contains("IntensityOccupancy_"), Is.False);
+            Assert.That(header.Split('\t').Length, Is.EqualTo(row.Split('\t').Length));
+        }
+
+        // Mutating FilesForQuantification/IntensitiesByFile (as SilacConversions does) invalidates
+        // SampleGroupResults; the post-mutation populate must reflect the new file list.
+        [Test]
+        public static void TestProteinGroupPopulateSampleGroupsReflectsPostSilacState()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot1 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1 }, new HashSet<IBioPolymerWithSetMods> { pwsm1 });
+
+            var light = new SpectraFileInfo(@"X:\sample_light.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0);
+            pg.FilesForQuantification = new List<SpectraFileInfo> { light };
+            pg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { light, 100.0 } };
+
+            var heavy = new SpectraFileInfo(@"X:\sample_heavy.mzML", condition: "", biorep: 1, fraction: 0, techrep: 0);
+            pg.FilesForQuantification = new List<SpectraFileInfo> { light, heavy };
+            pg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>
+            {
+                { light, 100.0 },
+                { heavy, 250.0 }
+            };
+            pg.HasPeptideLevelQuantification = true;
+            Assert.That(pg.SampleGroupResults, Is.Null);
+
+            pg.PopulateSampleGroupResults();
+
+            string header = pg.GetTabSeparatedHeader();
+            string row = pg.ToString();
+            string[] headerFields = header.Split('\t');
+
+            Assert.That(headerFields.Count(h => h.StartsWith("SpectralCount_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("Intensity_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("CountOccupancy_")), Is.EqualTo(2));
+            Assert.That(headerFields.Count(h => h.StartsWith("IntensityOccupancy_")), Is.EqualTo(2));
+            Assert.That(headerFields.Length, Is.EqualTo(row.Split('\t').Length));
+        }
+
+        // The protein-group TSV header is emitted once from proteinGroups.First()
+        // (see PostSearchAnalysisTask / PostGlycoSearchAnalysisTask), while each row re-derives its
+        // own dynamic columns. When groups are populated through the normal pipeline path
+        // (IntensitiesByFile always assigned, with zeros where a protein had no measured intensity),
+        // every row's column count must equal the single header's column count.
+        [Test]
+        public static void TestMultipleProteinGroupsHeaderAndRowsHaveSameColumnCount()
+        {
+            Protein protA = new Protein("MEDEEK", "protA");
+            Protein protB = new Protein("MENEEK", "protB");
+            PeptideWithSetModifications pwsmA = new PeptideWithSetModifications(protA, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            PeptideWithSetModifications pwsmB = new PeptideWithSetModifications(protB, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            ProteinGroup pgA = new ProteinGroup(new HashSet<IBioPolymer> { protA },
+                new HashSet<IBioPolymerWithSetMods> { pwsmA }, new HashSet<IBioPolymerWithSetMods> { pwsmA });
+            ProteinGroup pgB = new ProteinGroup(new HashSet<IBioPolymer> { protB },
+                new HashSet<IBioPolymerWithSetMods> { pwsmB }, new HashSet<IBioPolymerWithSetMods> { pwsmB });
+
+            var fileA = new SpectraFileInfo(@"X:\fakeA.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0);
+            var fileB = new SpectraFileInfo(@"X:\fakeB.mzML", condition: "", biorep: 1, fraction: 0, techrep: 0);
+            var files = new List<SpectraFileInfo> { fileA, fileB };
+
+            // pgA has measured intensity in both samples; pgB has none (zeros) -- mirrors how
+            // QuantificationAnalysis always assigns IntensitiesByFile, even for unmeasured proteins.
+            pgA.FilesForQuantification = files;
+            pgA.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { fileA, 100.0 }, { fileB, 200.0 } };
+            pgA.PopulateSampleGroupResults();
+
+            pgB.FilesForQuantification = files;
+            pgB.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { fileA, 0.0 }, { fileB, 0.0 } };
+            pgB.PopulateSampleGroupResults();
+
+            var proteinGroups = new List<ProteinGroup> { pgA, pgB };
+
+            // Header is generated once from the first group, exactly as the writers do.
+            int headerColumnCount = proteinGroups.First().GetTabSeparatedHeader().Split('\t').Length;
+            foreach (var pg in proteinGroups)
+            {
+                Assert.That(pg.ToString().Split('\t').Length, Is.EqualTo(headerColumnCount),
+                    $"Row column count for '{pg.ProteinGroupName}' does not match the header column count.");
+            }
+        }
 
         [Test]
         public static void ProteinGroupMergeTest()
@@ -212,7 +379,6 @@ namespace Test
                         ).Select(b => (b.ModificationType, b.IdWithMotif)).ToList()
                 }
             };
-
             SearchTask task2 = new SearchTask
             {
                 CommonParameters = new CommonParameters(),
@@ -226,13 +392,20 @@ namespace Test
                 }
             };
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2) };
-            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
-            string fastaName = @"TestData\DbForPrunedDb.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedGeneration");
+
+            // Copy inputs into a clean per-test folder so QuantificationAnalysis does not pick up
+            // a stale ExperimentalDesign.tsv left in the shared TestData\ directory by other tests.
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string mzmlName = Path.Combine(inputFolder, "PrunedDbSpectra.mzml");
+            string fastaName = Path.Combine(inputFolder, "DbForPrunedDb.fasta");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzmlName, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), fastaName, true);
 
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
-            string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
+            string final = Path.Combine(outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
             // ensures that protein out put contains the correct number of proteins to match the following conditions.
             // all proteins in DB have baseSequence!=null (not ambiguous)
@@ -244,12 +417,125 @@ namespace Test
             Assert.That(totalNumberOfMods, Is.EqualTo(4));
 
             List<string> proteinGroupsOutput = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllQuantifiedProteinGroups.tsv")).ToList();
-            string firstDataLine = proteinGroupsOutput[2];
-            string modInfoListProteinTwo = firstDataLine.Split('\t')[14];
-            Assert.That(modInfoListProteinTwo, Is.EqualTo("#aa71[Oxidation on S,info:occupancy=0.50(1/2)]"));
+            Assert.That(proteinGroupsOutput.Count, Is.EqualTo(8));
+
+            // Use the header row to locate occupancy columns dynamically,
+            // guarding against future column-order changes.
+            bool allEqualColumns = proteinGroupsOutput.Select(x => x.Split('\t').Length).AllSame();
+            Assert.That(allEqualColumns, Is.True, "All rows in the protein groups output should have the same number of columns.");
+
+            List<string> header = proteinGroupsOutput[0].Split('\t').ToList();
+            int countOccupancyIndex = header.IndexOf(header.First(h => h.StartsWith("CountOccupancy_")));
+            int intensityOccupancyIndex = header.IndexOf(header.First(h => h.StartsWith("IntensityOccupancy_")));
+
+            string[] testDataFields = proteinGroupsOutput.First(x => x.StartsWith("P10591")).Split('\t');
+            string countOccupancy = testDataFields[countOccupancyIndex];
+            string intensityOccupancy = testDataFields[intensityOccupancyIndex];
+
+            // Tests count-based PTM occupancy: pos{residue}[{modName},info:fraction={count-fraction}({modified PSMs}/{total PSMs})]
+            Assert.That(countOccupancy, Is.EqualTo(
+                "pos71[Oxidation on S,info:fraction=0.50(1/2)]|pos71[Oxidation on S,info:fraction=0.50(1/2)]"));
+
+            // Tests intensity-based PTM occupancy: pos{residue}[{modName},info:fraction={intensity-fraction}({mod intensity}/{total intensity})]
+            // Intensities are FlashLFQ peak areas counted once per peptidoform, so a form observed by
+            // several spectra contributes its area once rather than once per spectrum.
+            Assert.That(intensityOccupancy, Is.EqualTo(
+                "pos71[Oxidation on S,info:fraction=0.1957(1.281E+05/6.543E+05)]|pos71[Oxidation on S,info:fraction=0.1957(1.281E+05/6.543E+05)]"));
 
             Directory.Delete(outputFolder, true);
         }
+
+        [Test]
+        public static void TestGetIdentifiedPeptidesOutputOnAllBranches()
+        {
+            // Arrange: one protein with two peptides that differ only by a mod
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif);
+            var mod = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed",
+                _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146);
+
+            var oneBasedMods = new Dictionary<int, List<Modification>> { { 2, new List<Modification> { mod } } };
+            var protein = new Protein("MCPEPTIDE", "prot1", oneBasedModifications: oneBasedMods);
+
+            var modsOnPwsm1 = new Dictionary<int, Modification> { { 2, mod } };
+            var pwsm1 = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 9,
+                CleavageSpecificity.Full, "", 0, modsOnPwsm1, 0);   // FullSequence != BaseSequence
+            var pwsm2 = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 9,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            var pg = new EngineLayer.ProteinGroup(
+                new HashSet<IBioPolymer> { protein },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1, pwsm2 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1, pwsm2 });
+
+            // Branch 1: labels == null, DisplayModsOnPeptides == false → BaseSequence
+            // The quant columns are dynamic, so a literal index no longer lands on a fixed column.
+            // Resolve Unique Peptides from the header and read that.
+            string[] headerColumns = pg.GetTabSeparatedHeader().Split('\t');
+            int uniquePeptides = System.Array.IndexOf(headerColumns, "Unique Peptides");
+            Assert.That(uniquePeptides, Is.GreaterThanOrEqualTo(0), "Unique Peptides column not found in the header.");
+
+            pg.DisplayModsOnPeptides = false;
+            pg.GetIdentifiedPeptidesOutput(null);
+            var tsv1 = pg.ToString();
+            string branch1 = tsv1.Split('\t')[uniquePeptides];
+            Assert.That(branch1, Does.Contain(pwsm1.BaseSequence));
+            Assert.That(branch1, Does.Not.Contain("["), "Base sequences carry no mod notation.");
+
+            // Branch 2: labels == null, DisplayModsOnPeptides == true → FullSequence (includes mod)
+            pg.DisplayModsOnPeptides = true;
+            pg.GetIdentifiedPeptidesOutput(null);
+            string branch2 = pg.ToString().Split('\t')[uniquePeptides];
+            Assert.That(branch2, Does.Contain(pwsm1.FullSequence));
+            Assert.That(branch2, Does.Contain("["), "Full sequences carry mod notation.");
+
+            // SILAC branches: use an empty label list (labels != null)
+            var labels = new List<SilacLabel>();
+
+            // Branch 3: labels != null, DisplayModsOnPeptides == false → light BaseSequence
+            pg.DisplayModsOnPeptides = false;
+            Assert.DoesNotThrow(() => pg.GetIdentifiedPeptidesOutput(labels));
+            string branch3 = pg.ToString().Split('\t')[uniquePeptides];
+            Assert.That(branch3, Does.Contain(pwsm1.BaseSequence));
+            Assert.That(branch3, Does.Not.Contain("["));
+
+            // Branch 4: labels != null, DisplayModsOnPeptides == true → light FullSequence
+            pg.DisplayModsOnPeptides = true;
+            Assert.DoesNotThrow(() => pg.GetIdentifiedPeptidesOutput(labels));
+            string branch4 = pg.ToString().Split('\t')[uniquePeptides];
+            Assert.That(branch4, Does.Contain("["));
+        }
+        // The area split is what makes intensity occupancy a peak-area measure rather than a per-spectrum
+        // one: summing the shares back over the PSMs that identified a form has to reconstitute the area
+        // exactly once. Nothing else in the suite exercises this arithmetic directly.
+        [Test]
+        public static void SplitAreaAcrossPsmsReconstitutesTheAreaOnce()
+        {
+            var protein = new Protein("PEPTIDEK", "accession");
+            var pwsm = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 8,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var scan = new Ms2ScanWithSpecificMass(new TestDataFile(pwsm).GetOneBasedScan(2), 100, 1, "f.mzML", new CommonParameters());
+
+            List<SpectralMatch> FourPsms() => Enumerable.Range(0, 4)
+                .Select(_ => (SpectralMatch)new PeptideSpectralMatch(pwsm, 0, 10, 0, scan, new CommonParameters(), new List<Omics.Fragmentation.MatchedFragmentIon>()))
+                .ToList();
+
+            var psms = FourPsms();
+            PostSearchAnalysisTask.SplitAreaAcrossPsms(psms, 1000.0);
+            Assert.That(psms.Select(p => p.QuantifiedIntensityShare), Is.All.EqualTo(250.0));
+            Assert.That(psms.Sum(p => p.QuantifiedIntensityShare.Value), Is.EqualTo(1000.0).Within(1e-9));
+
+            // A form that was identified but never quantified must contribute nothing, rather than
+            // entering occupancy as a measured zero.
+            foreach (double unquantified in new[] { 0.0, -1.0 })
+            {
+                var untouched = FourPsms();
+                PostSearchAnalysisTask.SplitAreaAcrossPsms(untouched, unquantified);
+                Assert.That(untouched.All(p => p.QuantifiedIntensityShare == null), Is.True, unquantified.ToString());
+            }
+
+            Assert.DoesNotThrow(() => PostSearchAnalysisTask.SplitAreaAcrossPsms(new List<SpectralMatch>(), 1000.0));
+        }
+
     }
 }
 
