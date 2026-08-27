@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Omics;
 using Omics.Fragmentation.Peptide;
@@ -153,120 +154,167 @@ namespace EngineLayer.Indexing
                 NonSpecificEnzymeSearchEngine.GetVariableTerminalMods(CommonParameters.DigestionParams.FragmentationTerminus, VariableModifications) :
                 null;
 
-            // Create the fragment index in compressed sparse row form: count how many peptide ids land in each
-            // bin, prefix-sum those counts into offsets, then fill. Counting first costs a second pass over
-            // the fragments but removes the several million List<int> objects the previous representation
-            // allocated and grew, which dominated this loop.
+            // Create the fragment index in compressed sparse row form. Peptide ids are split into
+            // contiguous blocks, one per thread; each block fragments its own peptides into its own
+            // emission run, and the runs are concatenated in block order and counting-sorted into the
+            // two flat arrays. Concatenating in block order reproduces the sequence a single sequential
+            // pass produced, so the index does not depend on the thread count and peptide ids still
+            // ascend within every bin.
+            //
+            // Fragmenting once and recording where each fragment landed replaces counting in one pass
+            // and filling in a second: fragmentation is the expensive part of this loop, and the
+            // count-then-fill shape paid for it twice. Digestion above was already parallel; this stage
+            // was not, so a whole phase of indexing ran on one core.
             int binCount = (int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1;
-            int[] binStart;
 
-            try
-            {
-                binStart = new int[binCount + 1];
-            }
-            catch (OutOfMemoryException)
-            {
-                throw new MetaMorpheusException("Max fragment mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
-            }
+            List<PeptideBlock> blocks = PartitionPeptidesIntoBlocks(peptides.Count);
+            var fragmentEmissions = new FragmentEmissionRun[blocks.Count];
+            var interiorTerminalModEmissions = addInteriorTerminalModsToPrecursorIndex ? new List<(int Bin, int PeptideId)>[blocks.Count] : null;
+            var fragmentationProgress = new FragmentationProgress();
 
-            // pass one: count
             progress = 0;
             oldPercentProgress = 0;
-            List<Product> fragments = new List<Product>();
 
-            for (int peptideId = 0; peptideId < peptides.Count; peptideId++)
+            Parallel.For(0, blocks.Count, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, CommonParameters.MaxThreadsToUsePerFile) }, blockIndex =>
             {
-                peptides[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, fragments, CommonParameters.FragmentationParameters);
+                FragmentPeptideBlock(blocks[blockIndex], blockIndex, peptides, addInteriorTerminalModsToPrecursorIndex,
+                    terminalModifications, fragmentEmissions, interiorTerminalModEmissions, fragmentationProgress);
+            });
 
-                foreach (var theoreticalFragment in fragments)
+            FragmentIndex fragmentIndex = FragmentIndexBuilder.Build(binCount, fragmentEmissions);
+
+            // Replayed in block order, and within a block in ascending peptide id, which is the order the
+            // sequential loop appended them in. The precursor index is still a List<int>[] here, so the
+            // append order is the bin contents.
+            if (addInteriorTerminalModsToPrecursorIndex)
+            {
+                foreach (var blockEmissions in interiorTerminalModEmissions)
                 {
-                    if (TryGetFragmentBin(theoreticalFragment, out int fragmentBin))
+                    foreach ((int precursorBin, int peptideId) in blockEmissions)
                     {
-                        // counts land one slot right so the prefix sum below can run in place
-                        binStart[fragmentBin + 1]++;
+                        if (precursorIndex[precursorBin] == null)
+                        {
+                            precursorIndex[precursorBin] = new List<int> { peptideId };
+                        }
+                        else
+                        {
+                            precursorIndex[precursorBin].Add(peptideId);
+                        }
                     }
                 }
-
-                progress++;
-                var percentProgress = (int)((progress / peptides.Count) * 100);
-
-                if (percentProgress > oldPercentProgress)
-                {
-                    oldPercentProgress = percentProgress;
-                    ReportProgress(new ProgressEventArgs(percentProgress, "Fragmenting peptides...", NestedIds));
-                }
             }
 
-            // Total first, in a long: the prefix sum below is int arithmetic and would wrap silently.
-            long totalEntries = 0;
-            for (int bin = 1; bin <= binCount; bin++)
+
+            return new IndexingResults(peptides, fragmentIndex, precursorIndex, this);
+        }
+
+        /// <summary>
+        /// Counts fragmented peptides across the parallel blocks. Each whole percent is announced by
+        /// exactly one thread -- whichever wins the compare-exchange that advances the counter -- so the
+        /// progress bar neither stalls nor reports the same percent several times.
+        /// </summary>
+        private sealed class FragmentationProgress
+        {
+            private long _peptidesFragmented;
+            private int _lastPercentReported;
+
+            internal bool AdvanceOnePeptide(int totalPeptides, out int percentProgress)
             {
-                totalEntries += binStart[bin];
+                long done = Interlocked.Increment(ref _peptidesFragmented);
+                percentProgress = (int)(done * 100 / totalPeptides);
+
+                int last = Volatile.Read(ref _lastPercentReported);
+                return percentProgress > last && Interlocked.CompareExchange(ref _lastPercentReported, percentProgress, last) == last;
+            }
+        }
+
+        private readonly struct PeptideBlock
+        {
+            public PeptideBlock(int start, int end)
+            {
+                Start = start;
+                End = end;
             }
 
-            if (totalEntries > int.MaxValue)
+            /// <summary>First peptide id in the block.</summary>
+            public int Start { get; }
+
+            /// <summary>One past the last peptide id in the block.</summary>
+            public int End { get; }
+        }
+
+        /// <summary>
+        /// Splits the peptide ids into contiguous blocks, one per thread. Emissions are concatenated in
+        /// block order, so the index that comes out does not depend on how many blocks there are.
+        /// </summary>
+        private List<PeptideBlock> PartitionPeptidesIntoBlocks(int peptideCount)
+        {
+            var blocks = new List<PeptideBlock>();
+            if (peptideCount == 0)
             {
-                throw new MetaMorpheusException("Too many fragments to index; try \"Classic Search\" mode, more partitions, or a smaller maximum fragment mass");
+                return blocks;
             }
 
-            for (int bin = 1; bin <= binCount; bin++)
+            int blockCount = Math.Max(1, Math.Min(CommonParameters.MaxThreadsToUsePerFile, peptideCount));
+            int blockSize = (peptideCount + blockCount - 1) / blockCount;
+
+            for (int start = 0; start < peptideCount; start += blockSize)
             {
-                binStart[bin] += binStart[bin - 1];
+                blocks.Add(new PeptideBlock(start, Math.Min(start + blockSize, peptideCount)));
             }
 
-            int[] peptideIds;
-            try
-            {
-                peptideIds = new int[totalEntries];
-            }
-            catch (OutOfMemoryException)
-            {
-                throw new MetaMorpheusException("Max fragment mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
-            }
+            return blocks;
+        }
 
-            // Pass two: fill. Peptides are visited in ascending id, so each bin's slice comes out ascending,
-            // which is what the search's within-bin binary search over peptide mass relies on. binStart is
-            // consumed as the write cursor and repaired afterwards rather than copied - a copy would be
-            // another array the size of the bin space, which is the memory this whole change is saving.
-            progress = 0;
-            oldPercentProgress = 0;
+        /// <summary>
+        /// Fragments one contiguous block of peptides, recording the fragment bins each peptide lands in
+        /// and, when the search needs them, the interior terminal mod precursor bins -- which come out of
+        /// the same fragmentation, so peptides are still fragmented exactly once.
+        /// </summary>
+        private void FragmentPeptideBlock(PeptideBlock block, int blockIndex, List<PeptideWithSetModifications> peptides,
+            bool addInteriorTerminalModsToPrecursorIndex, List<Modification> terminalModifications,
+            FragmentEmissionRun[] fragmentEmissions, List<(int Bin, int PeptideId)>[] interiorTerminalModEmissions,
+            FragmentationProgress fragmentationProgress)
+        {
+            int blockLength = block.End - block.Start;
+            var fragmentRun = new FragmentEmissionRun(block.Start, blockLength);
+            var interiorEmissions = addInteriorTerminalModsToPrecursorIndex ? new List<(int Bin, int PeptideId)>() : null;
 
-            for (int peptideId = 0; peptideId < peptides.Count; peptideId++)
+            List<Product> fragments = new List<Product>();
+
+            for (int peptideId = block.Start; peptideId < block.End; peptideId++)
             {
+                fragmentRun.BeginPeptide();
+
                 peptides[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, fragments, CommonParameters.FragmentationParameters);
 
                 foreach (var theoreticalFragment in fragments)
                 {
                     if (TryGetFragmentBin(theoreticalFragment, out int fragmentBin))
                     {
-                        peptideIds[binStart[fragmentBin]++] = peptideId;
+                        fragmentRun.Add(fragmentBin);
                     }
                 }
 
                 //Add terminal mods if needed (do it here rather than earlier so that we don't have to fragment twice)
                 if (addInteriorTerminalModsToPrecursorIndex)
                 {
-                    AddInteriorTerminalModsToPrecursorIndex(precursorIndex, fragments, peptides[peptideId], peptideId, terminalModifications);
+                    CollectInteriorTerminalModPrecursorBins(interiorEmissions, fragments, peptides[peptideId], peptideId, terminalModifications);
                 }
 
-                progress++;
-                var percentProgress = (int)((progress / peptides.Count) * 100);
-
-                if (percentProgress > oldPercentProgress)
+                if (fragmentationProgress.AdvanceOnePeptide(peptides.Count, out int percentProgress))
                 {
-                    oldPercentProgress = percentProgress;
                     ReportProgress(new ProgressEventArgs(percentProgress, "Fragmenting peptides...", NestedIds));
                 }
             }
 
-            // Filling left binStart[bin] holding the start of bin + 1; shift it back.
-            for (int bin = binCount; bin > 0; bin--)
-            {
-                binStart[bin] = binStart[bin - 1];
-            }
-            binStart[0] = 0;
+            fragmentRun.Complete();
 
-            return new IndexingResults(peptides, new FragmentIndex(binStart, peptideIds), precursorIndex, this);
+            fragmentEmissions[blockIndex] = fragmentRun;
+            if (interiorTerminalModEmissions != null)
+            {
+                interiorTerminalModEmissions[blockIndex] = interiorEmissions;
+            }
         }
 
         /// <summary>
@@ -374,7 +422,13 @@ namespace EngineLayer.Indexing
 
         //add possible protein/peptide terminal modifications that aren't on the terminal amino acids
         //The purpose is for terminal mods that are contained WITHIN the Single peptide
-        private void AddInteriorTerminalModsToPrecursorIndex(List<int>[] precursorIndex, List<Product> fragmentMasses, PeptideWithSetModifications peptide, int peptideId, List<Modification> variableModifications)
+        /// <summary>
+        /// Records the interior terminal mod precursor bins for one peptide instead of writing them into
+        /// the precursor index directly. The blocks fragment in parallel and the precursor index is a
+        /// shared List&lt;int&gt;[], so the writes are replayed in block order afterwards -- which is the
+        /// order the sequential loop appended them in, and the bin contents are that order.
+        /// </summary>
+        private void CollectInteriorTerminalModPrecursorBins(List<(int Bin, int PeptideId)> emissions, List<Product> fragmentMasses, PeptideWithSetModifications peptide, int peptideId, List<Modification> variableModifications)
         {
             //Get database annotated mods
             Dictionary<int, List<Modification>> databaseAnnotatedMods = NonSpecificEnzymeSearchEngine.GetTerminalModPositions(peptide, CommonParameters.DigestionParams, variableModifications);
@@ -401,15 +455,7 @@ namespace EngineLayer.Indexing
                     if (modifiedMass <= MaxFragmentSize) //if the precursor is larger than the index allows, then don't add it
                     {
                         int precursorBin = (int)Math.Round(modifiedMass * FragmentBinsPerDalton);
-
-                        if (precursorIndex[precursorBin] == null)
-                        {
-                            precursorIndex[precursorBin] = new List<int> { peptideId };
-                        }
-                        else
-                        {
-                            precursorIndex[precursorBin].Add(peptideId);
-                        }
+                        emissions.Add((precursorBin, peptideId));
                     }
                 }
             }
