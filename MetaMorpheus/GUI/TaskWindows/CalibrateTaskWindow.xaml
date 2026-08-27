@@ -375,17 +375,22 @@
                                               ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ComboBox.ToolTip>
                                             <TextBlock>
-                                                    The container the calibrated spectra are written to. Leave this on mzML unless something downstream needs MGF.
+                                                    The container the calibrated spectra are written to. This file is handed to the next task in the chain, so it decides what
+                                                    a search that follows can see. Leave this on mzML unless something downstream needs MGF.
                                                     <LineBreak/>
                                                     <LineBreak/>
-                                                    MGF carries the title, MS level, precursor m/z and charge, scan number, retention time and the peaks. It has nowhere to put
-                                                    the dissociation type, analyzer type, scan filter, isolation window, precursor scan number or injection time.
+                                                    <Bold>mzML</Bold> — the default. Carries every field a later task reads.
                                                     <LineBreak/>
                                                     <LineBreak/>
-                                                    This file is handed to the next task in the chain, so a search that follows an MGF calibration will not see those fields.
+                                                    <Bold>Mgf</Bold> — MGF including the MS1 scans, so a later task can still deconvolute precursors. On the bundled yeast test
+                                                    file this gives the same 80 PSMs as mzML. The catch is portability: the MGF specification requires a PEPMASS in every block
+                                                    and an MS1 scan has none, so the file is out of spec. ProteoWizard and OpenMS read it anyway, but MSToolkit — and therefore
+                                                    Comet, and other search engines built on it — stops with "Error in MGF file: no PEPMASS found."
                                                     <LineBreak/>
                                                     <LineBreak/>
-                                                    On the bundled yeast test file, a Calibrate then Search chain finds 85 PSMs through mzML and 61 through MGF.
+                                                    <Bold>MgfMs2Only</Bold> — MS2 and above only, so every block has a PEPMASS and every reader accepts the file. Choose this
+                                                    when the MGF is destined for Comet or another MSToolkit-based tool. Without MS1 scans nothing downstream can deconvolute a
+                                                    precursor, which costs roughly a fifth of the identifications: 63 PSMs rather than 80 on the same test file.
                                             </TextBlock>
                                         </ComboBox.ToolTip>
                                     </ComboBox>

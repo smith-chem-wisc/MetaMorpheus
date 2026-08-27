@@ -4,19 +4,29 @@ namespace TaskLayer
     /// The container a task writes its processed spectra to.
     /// </summary>
     /// <remarks>
-    /// mzML is the default and should stay that way. MGF carries a title, MS level, precursor m/z and
-    /// charge, scan number, retention time and the peak list, and has nowhere to put dissociation type,
-    /// analyzer type, scan filter, isolation window, precursor scan number or injection time. A task's
-    /// output is fed to the next task in the chain, so choosing MGF means the search that follows sees a
-    /// file without those fields.
+    /// mzML is the default and should stay that way. A task's output is fed to the next task in the chain,
+    /// so this choice decides what the search that follows can see.
     ///
-    /// It is offered because "mgf in, mgf out" is a real workflow — smith-chem-wisc/MetaMorpheus#1673 —
-    /// not because it is equivalent. Measured on the bundled yeast test file, a Calibrate then Search chain
-    /// finds 85 PSMs through mzML and 61 through mgf.
+    /// Offered because "mgf in, mgf out" is a real workflow — smith-chem-wisc/MetaMorpheus#1673. Measured on
+    /// the bundled yeast file, a Calibrate then Search chain produces the same 80 PSMs through Mgf as
+    /// through MzML, and 63 through MgfMs2Only.
     /// </remarks>
     public enum SpectraFileOutputFormat
     {
+        /// <summary>Default. Carries every field a later task reads.</summary>
         MzML,
-        Mgf
+
+        /// <summary>
+        /// MGF including MS1 scans, so a later task can still deconvolute precursors. Out of spec: Matrix
+        /// Science requires a PEPMASS in every block and an MS1 has none. ProteoWizard and OpenMS read it,
+        /// MSToolkit — and so Comet — does not. Use <see cref="MgfMs2Only"/> to feed one of those.
+        /// </summary>
+        Mgf,
+
+        /// <summary>
+        /// MGF with MS2 and above only, which every reader accepts. No MS1 means no precursor
+        /// deconvolution downstream, costing roughly a fifth of the identifications.
+        /// </summary>
+        MgfMs2Only
     }
 }

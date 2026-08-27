@@ -54,7 +54,8 @@ namespace TaskLayer
         /// The next task in the chain is handed this file, so the extension has to match what was written
         /// or the reader picked for it will not be the one that wrote it.
         /// </summary>
-        private bool WritingMgf => CalibrationParameters.OutputFormat == SpectraFileOutputFormat.Mgf;
+        private bool WritingMgf => CalibrationParameters.OutputFormat is SpectraFileOutputFormat.Mgf
+                                                                       or SpectraFileOutputFormat.MgfMs2Only;
 
         private string CalibratedFileExtension => WritingMgf ? ".mgf" : ".mzML";
 
@@ -535,14 +536,21 @@ namespace TaskLayer
         {
             if (WritingMgf)
             {
-                // Temporary, and should be deleted once mgf carries these: dissociation type, precursor scan
-                // number and isolation width have no header in the format today, so a task run after this one
-                // sees fewer fields. Measured on the bundled yeast file, a Calibrate -> Search chain finds 85
-                // PSMs through mzML and 61 through mgf.
-                Warn("Writing calibrated spectra as mgf. Dissociation type, precursor scan number and "
-                     + "isolation width are not carried in mgf today, so a task run after this one will "
-                     + "identify fewer spectra than it would from mzML.");
-                msDataFile.ExportAsMgf(mzFilePath);
+                bool includeMs1Scans = CalibrationParameters.OutputFormat == SpectraFileOutputFormat.Mgf;
+                if (includeMs1Scans)
+                {
+                    Warn("Writing calibrated spectra as mgf, including MS1 scans. An MS1 block has no "
+                         + "PEPMASS, which the mgf specification requires, so some readers will reject the "
+                         + "file. Use MgfMs2Only if it is destined for one of those.");
+                }
+                else
+                {
+                    Warn("Writing calibrated spectra as mgf without MS1 scans. A task run after this one "
+                         + "cannot deconvolute precursors and will identify fewer spectra than it would "
+                         + "from mzML.");
+                }
+
+                msDataFile.ExportAsMgf(mzFilePath, includeMs1Scans);
             }
             else
             {

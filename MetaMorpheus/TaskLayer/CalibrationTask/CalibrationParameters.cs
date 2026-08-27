@@ -19,8 +19,8 @@
 
         /// <summary>
         /// Container for the calibrated spectra. mzML unless deliberately changed; see
-        /// <see cref="SpectraFileOutputFormat"/> for what MGF cannot carry. WriteIndexedMzml is
-        /// ignored when this is Mgf.
+        /// <see cref="SpectraFileOutputFormat"/> for the trade-off between the two MGF variants.
+        /// WriteIndexedMzml is ignored for either of them.
         /// </summary>
         public SpectraFileOutputFormat OutputFormat { get; set; }
 
