@@ -858,7 +858,7 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Name="ProteaseGuruTab" Header="Protease Guru" TabIndex="0" Style="{StaticResource TabItemStyle}">
+            <TabItem Name="ProteaseGuruTab" Header="ProteaseGuru" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="50"/>
@@ -867,7 +867,7 @@
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
-                    <Label Content="Protease Guru" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <Label Content="ProteaseGuru" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
                     <!--This tab doesn't actually have any content, it just opens Protease Guru-->
 
                     <TextBlock Grid.Row="2" Style="{StaticResource TextBlockStyle}">

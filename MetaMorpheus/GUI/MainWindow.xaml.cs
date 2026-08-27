@@ -38,6 +38,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> SelectedProteinDatabaseFiles = new ObservableCollection<ProteinDbForDataGrid>();
         private ObservableCollection<InRunTask> InProgressTasks;
+        private ProteaseGuruGui.MainWindow? _proteaseGuruWindow;
         public static string NewestKnownMetaMorpheusVersion { get; private set; }
 
         public MainWindow()
@@ -1335,11 +1336,20 @@ namespace MetaMorpheusGUI
 
         private void OpenProteaseGuru_Click(object sender, RoutedEventArgs e)
         {
-            var pgWindow = new ProteaseGuruGui.MainWindow
+            // ProteaseGuru relies on process-wide static state (static events, GlobalVariables,
+            // NotificationService singleton, shared DispatcherTimer), so only one window is safe.
+            if (_proteaseGuruWindow is { IsLoaded: true })
             {
-                Owner = this
-            };
-            pgWindow.Show();
+                if (_proteaseGuruWindow.WindowState == WindowState.Minimized)
+                    _proteaseGuruWindow.WindowState = WindowState.Normal;
+                _proteaseGuruWindow.Activate();
+                _proteaseGuruWindow.Focus();
+                return;
+            }
+
+            _proteaseGuruWindow = new ProteaseGuruGui.MainWindow();
+            _proteaseGuruWindow.Closed += (_, _) => _proteaseGuruWindow = null;
+            _proteaseGuruWindow.Show();
         }
 
         private void MenuItem_ResetDefaults_Click(object sender, RoutedEventArgs e)
