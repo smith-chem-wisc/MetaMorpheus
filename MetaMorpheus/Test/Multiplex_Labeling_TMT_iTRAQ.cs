@@ -869,8 +869,13 @@ namespace Test
             var itraq4Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.iTRAQ4);
             Assert.That(itraq4Labels, Is.EqualTo(new List<string> { "114", "115", "116", "117" }));
 
+            // The eighth channel is 121, not 120. iTRAQ 8-plex skips 120 because the phenylalanine
+            // immonium ion sits at 120.081, and the reporter ion this label names has always been
+            // 121.1215 -- so the old expectation here was pinning a name no kit has. See
+            // EveryTagsLabelsNameTheChannelAtTheirOwnIndex, which checks every label against the m/z
+            // at its own index rather than against a hardcoded list.
             var itraq8Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.iTRAQ8);
-            Assert.That(itraq8Labels, Is.EqualTo(new List<string> { "113", "114", "115", "116", "117", "118", "119", "120" }));
+            Assert.That(itraq8Labels, Is.EqualTo(new List<string> { "113", "114", "115", "116", "117", "118", "119", "121" }));
 
             var dileu4Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.diLeu4);
             Assert.That(dileu4Labels, Is.EqualTo(new List<string> { "115", "116", "117", "118" }));

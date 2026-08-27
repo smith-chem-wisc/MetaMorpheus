@@ -100,6 +100,11 @@ namespace MetaMorpheusGUI
         /// throughout. A label typed into the design file by this window then failed to match any
         /// channel of the tag, so the design could not be projected onto mzLib's
         /// <see cref="IExperimentalDesign"/> at all.
+        ///
+        /// The iTRAQ8 disagreement was the one where this window had it right: 8-plex has no 120
+        /// channel -- it is skipped because the phenylalanine immonium ion sits at 120.081 -- and the
+        /// eighth reagent is 121, which is what the reporter ion at that index has always been.
+        /// IsobaricMassTag was corrected rather than this window changed to match it.
         /// </remarks>
         private static List<string> GetReporterIonLabels(IsobaricMassTagType type) =>
             IsobaricMassTag.GetReporterIonLabels(type) ?? new List<string>();
