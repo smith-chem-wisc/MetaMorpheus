@@ -146,6 +146,182 @@ namespace Test
             return folder;
         }
 
+        /// <summary>
+        /// A design whose rows name no file in the run is a design pointed at the wrong data, not an
+        /// empty one. It previously returned no errors and an empty annotation set, so the command line
+        /// reported that it had read the design successfully while quantification had nothing to use.
+        /// </summary>
+        [Test]
+        public static void DesignThatMatchesNoFileInTheRunIsAnError()
+        {
+            string folder = NewFolder("TmtDesignNoMatch");
+            string designPath = Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName);
+
+            File.WriteAllLines(designPath, new[]
+            {
+                TmtExperimentalDesign.Header,
+                "someone_elses.raw	Plex1	S1	126	Control	1	1	1	study sample",
+                "someone_elses.raw	Plex1	S2	127N	Treated	1	1	1	study sample",
+            });
+
+            var files = TmtExperimentalDesign.Read(
+                designPath,
+                new List<string> { Path.Combine(folder, "actually_searched.raw") },
+                out var errors);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(files, Is.Empty);
+                Assert.That(errors.Any(e => e.Contains("None of the 2 row(s)")), Is.True,
+                    "a design that resolves to nothing must say so rather than reading as success");
+            });
+        }
+
+        /// <summary>
+        /// A design written with bare file names sits beside the raw files it names. Resolving those
+        /// against the process working directory made the same design file work or match nothing
+        /// depending on where MetaMorpheus was launched from; they resolve against the design file's
+        /// own directory now.
+        /// </summary>
+        [Test]
+        public static void BareFileNamesResolveAgainstTheDesignFileNotTheWorkingDirectory()
+        {
+            string folder = NewFolder("TmtDesignRelativePaths");
+            string rawPath = Path.Combine(folder, "sample.raw");
+            File.WriteAllText(rawPath, string.Empty);   // only its existence matters here
+
+            string designPath = Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName);
+            File.WriteAllLines(designPath, new[]
+            {
+                TmtExperimentalDesign.Header,
+                "sample.raw	Plex1	S1	126	Control	1	1	1	study sample",
+                "sample.raw	Plex1	S2	127N	Treated	1	1	1	reference",
+            });
+
+            // Deliberately not the design's directory -- this is the condition that used to break it.
+            string originalWorkingDirectory = Directory.GetCurrentDirectory();
+            Directory.SetCurrentDirectory(TestContext.CurrentContext.TestDirectory);
+            try
+            {
+                var files = TmtExperimentalDesign.Read(designPath, new List<string> { rawPath }, out var errors);
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(errors, Is.Empty);
+                    Assert.That(files, Has.Count.EqualTo(1));
+                    Assert.That(files.Single().FullFilePathWithExtension, Is.EqualTo(rawPath));
+                    Assert.That(files.Single().Annotations, Has.Count.EqualTo(2));
+                });
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(originalWorkingDirectory);
+            }
+        }
+
+        /// <summary>
+        /// A rooted path in the File column is taken as written, so a design that names absolute paths
+        /// keeps working regardless of where it or the process happens to sit.
+        /// </summary>
+        [Test]
+        public static void RootedPathsAreTakenAsWritten()
+        {
+            string folder = NewFolder("TmtDesignRootedPaths");
+            string rawPath = Path.Combine(folder, "rooted.raw");
+            File.WriteAllText(rawPath, string.Empty);
+
+            string designPath = Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName);
+            File.WriteAllLines(designPath, new[]
+            {
+                TmtExperimentalDesign.Header,
+                $"{rawPath}	Plex1	S1	126	Control	1	1	1	study sample",
+            });
+
+            var files = TmtExperimentalDesign.Read(designPath, new List<string> { rawPath }, out var errors);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(errors, Is.Empty);
+                Assert.That(files.Single().FullFilePathWithExtension, Is.EqualTo(rawPath));
+            });
+        }
+
+        /// <summary>
+        /// A row that stops short of the required columns is reported by line number rather than
+        /// silently dropped. The count is against the required width, not the full header, so a design
+        /// written before the optional Sample Type column existed still loads -- that case is covered
+        /// separately; this one is a genuinely truncated row.
+        /// </summary>
+        [Test]
+        public static void TruncatedRowIsReportedByLineNumber()
+        {
+            string folder = NewFolder("TmtDesignTruncatedRow");
+            string rawPath = Path.Combine(folder, "sample.raw");
+            File.WriteAllText(rawPath, string.Empty);
+
+            string designPath = Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName);
+            File.WriteAllLines(designPath, new[]
+            {
+                TmtExperimentalDesign.Header,
+                "sample.raw	Plex1	S1	126	Control	1	1	1	study sample",
+                "sample.raw	Plex1	S2",                                   // stops after three cells
+            });
+
+            TmtExperimentalDesign.Read(designPath, new List<string> { rawPath }, out var errors);
+
+            Assert.That(errors.Any(e => e.Contains("Line 3") && e.Contains("fewer columns")), Is.True,
+                "the offending line number is the only thing that makes this actionable");
+        }
+
+        /// <summary>
+        /// A non-numeric Biological Replicate is rejected rather than silently becoming zero, which
+        /// would collapse two samples onto one another during roll-up.
+        /// </summary>
+        [Test]
+        public static void NonNumericBiologicalReplicateIsRejected()
+        {
+            string folder = NewFolder("TmtDesignBadBioRep");
+            string rawPath = Path.Combine(folder, "sample.raw");
+            File.WriteAllText(rawPath, string.Empty);
+
+            string designPath = Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName);
+            File.WriteAllLines(designPath, new[]
+            {
+                TmtExperimentalDesign.Header,
+                "sample.raw	Plex1	S1	126	Control	first	1	1	study sample",
+            });
+
+            TmtExperimentalDesign.Read(designPath, new List<string> { rawPath }, out var errors);
+
+            Assert.That(errors.Any(e => e.Contains("Biological Replicate")), Is.True);
+        }
+
+        /// <summary>
+        /// One file cannot be in two plexes, or at two fractions, at once. The design is per-file for
+        /// those three fields, so a row that disagrees with an earlier row about them is a mistake that
+        /// would otherwise be resolved by whichever row happened to be read first.
+        /// </summary>
+        [Test]
+        public static void ConflictingPlexOrFractionForOneFileIsReported()
+        {
+            string folder = NewFolder("TmtDesignConflict");
+            string rawPath = Path.Combine(folder, "sample.raw");
+            File.WriteAllText(rawPath, string.Empty);
+
+            string designPath = Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName);
+            File.WriteAllLines(designPath, new[]
+            {
+                TmtExperimentalDesign.Header,
+                "sample.raw	Plex1	S1	126	Control	1	1	1	study sample",
+                "sample.raw	Plex2	S2	127N	Treated	1	2	1	study sample",   // different plex AND fraction
+            });
+
+            TmtExperimentalDesign.Read(designPath, new List<string> { rawPath }, out var errors);
+
+            Assert.That(errors.Any(e => e.Contains("inconsistent Plex")), Is.True,
+                "the same file cannot carry two plex or fraction assignments");
+        }
+
         [Test]
         public static void MissingDesignFileIsAnError()
         {

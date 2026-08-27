@@ -374,6 +374,41 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// The stronger half of the same invariant, and the one that actually protects the projection:
+        /// ToMzLibDesign pairs channelLabels[i] with ReporterIonMzs[i], so label i has to name the
+        /// channel whose m/z sits at i. A count cannot catch a mislabelled channel -- iTRAQ 8-plex
+        /// carried the name "120" for the 121 reagent for exactly that reason, extracting the right ion
+        /// under a name no kit has.
+        ///
+        /// Every label begins with its nominal mass, so the assertion is available cheaply.
+        /// </summary>
+        [Test]
+        public static void EveryTagsLabelsNameTheChannelAtTheirOwnIndex()
+        {
+            foreach (IsobaricMassTagType type in Enum.GetValues(typeof(IsobaricMassTagType)))
+            {
+                var tag = IsobaricMassTag.GetIsobaricMassTag(type);
+                if (tag == null) continue;   // modification not loaded in this environment
+
+                var labels = IsobaricMassTag.GetReporterIonLabels(type);
+                Assert.IsNotNull(labels, type.ToString());
+
+                for (int i = 0; i < labels.Count; i++)
+                {
+                    string digits = new string(labels[i].TakeWhile(char.IsDigit).ToArray());
+                    Assert.IsNotEmpty(digits, $"{type} label '{labels[i]}' does not begin with a nominal mass");
+
+                    int nominal = int.Parse(digits);
+                    int observed = (int)Math.Round(tag.ReporterIonMzs[i]);
+
+                    Assert.AreEqual(nominal, observed,
+                        $"{type} label '{labels[i]}' at index {i} names channel {nominal}, " +
+                        $"but the reporter ion at that index is {tag.ReporterIonMzs[i]:F4} (channel {observed})");
+                }
+            }
+        }
+
         #endregion
     }
 }

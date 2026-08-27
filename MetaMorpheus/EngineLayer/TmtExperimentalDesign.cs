@@ -52,6 +52,12 @@ namespace EngineLayer
             errors = new List<string>();
             var files = new List<TmtFileInfo>();
 
+            // How many data rows the file had, and how many named a file in this run. A design whose
+            // rows all fail to resolve is not an empty design -- it is a design pointed at the wrong
+            // place -- and it used to return no errors at all.
+            int dataRowsSeen = 0;
+            int dataRowsMatched = 0;
+
             // Collect per-plex annotations (unique by tag) and per-file (plex, frac, tech)
             var plexToAnnotations = new Dictionary<string, Dictionary<string, TmtPlexAnnotation>>(StringComparer.OrdinalIgnoreCase);
             var fileState = new Dictionary<string, (string Plex, int Fraction, int TechRep)>(StringComparer.OrdinalIgnoreCase);
@@ -65,6 +71,10 @@ namespace EngineLayer
                 errors.Add("TMT design file not found!");
                 return files;
             }
+
+            string designDirectory;
+            try { designDirectory = Path.GetDirectoryName(Path.GetFullPath(tmtDesignPath)); }
+            catch { designDirectory = null; }
 
             string[] lines;
             try
@@ -117,14 +127,21 @@ namespace EngineLayer
                 var file = cols[idxFile].Trim();
                 if (string.IsNullOrEmpty(file)) continue;
 
-                string full;
-                try { full = Path.GetFullPath(file); }
-                catch { full = file; }
+                // Resolve a relative name against the design file's own directory, not the process
+                // working directory. A TmtDesign.txt written with bare file names sits beside the raw
+                // files it names, and Path.GetFullPath alone would only match when the process happened
+                // to be running in that folder -- so the same design file worked or silently matched
+                // nothing depending on where MetaMorpheus was launched from.
+                string full = ResolveAgainstDesignFile(file, designDirectory);
 
                 // Only consider lines for files actually in this run (mirrors ExperimentalDesign behavior)
-                if (!fullFilePathsWithExtension.Any() ||
-                    fullFilePathsWithExtension.Contains(full, StringComparer.OrdinalIgnoreCase))
+                bool inThisRun = !fullFilePathsWithExtension.Any() ||
+                    fullFilePathsWithExtension.Contains(full, StringComparer.OrdinalIgnoreCase);
+
+                dataRowsSeen++;
+                if (inThisRun)
                 {
+                    dataRowsMatched++;
                     var plex    = cols[idxPlex].Trim();
                     var sample  = cols[idxSample].Trim();
                     var tag     = cols[idxChannel].Trim();
@@ -198,6 +215,16 @@ namespace EngineLayer
                 }
             }
 
+            // A design that named files, none of which belong to this run, is a mistake rather than an
+            // empty design -- most often a design written for different data, or one whose relative
+            // paths do not resolve. Reporting nothing here let the command line print success over an
+            // annotation set that was silently empty.
+            if (dataRowsSeen > 0 && dataRowsMatched == 0 && fullFilePathsWithExtension.Any())
+            {
+                errors.Add($"None of the {dataRowsSeen} row(s) in the TMT design name a file in this run. " +
+                           "Check that the File column matches the spectra files being searched.");
+            }
+
             // Consistency errors
             foreach (var kvp in fileStateConflicts)
                 errors.Add($"File '{kvp.Key}' has inconsistent Plex/Fraction/TechRep assignments: {string.Join(", ", kvp.Value)}");
@@ -238,6 +265,38 @@ namespace EngineLayer
             }
 
             return files;
+        }
+
+        /// <summary>
+        /// Resolves a File cell to a full path. A rooted path is taken as written; a bare or relative
+        /// name is resolved against the design file's own directory first, since that is where a
+        /// TmtDesign.txt written alongside its raw files expects to be read from, and only then
+        /// against the process working directory.
+        /// </summary>
+        private static string ResolveAgainstDesignFile(string file, string designDirectory)
+        {
+            try
+            {
+                if (Path.IsPathRooted(file))
+                {
+                    return Path.GetFullPath(file);
+                }
+
+                if (!string.IsNullOrEmpty(designDirectory))
+                {
+                    string besideDesign = Path.GetFullPath(Path.Combine(designDirectory, file));
+                    if (File.Exists(besideDesign))
+                    {
+                        return besideDesign;
+                    }
+                }
+
+                return Path.GetFullPath(file);
+            }
+            catch
+            {
+                return file;
+            }
         }
 
         public static string Write(List<TmtFileInfo> files)
