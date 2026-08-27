@@ -101,6 +101,8 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
+            outputFormatComboBox.ItemsSource = Enum.GetValues(typeof(SpectraFileOutputFormat));
+            outputFormatComboBox.SelectedItem = task.CalibrationParameters.OutputFormat;
             writeIndexMzmlCheckbox.IsChecked = task.CalibrationParameters.WriteIndexedMzml;
             NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
 
@@ -389,6 +391,7 @@ namespace MetaMorpheusGUI
                 TheTask.CommonParameters = commonParamsToSave;
             }
 
+            TheTask.CalibrationParameters.OutputFormat = (SpectraFileOutputFormat)outputFormatComboBox.SelectedItem;
             TheTask.CalibrationParameters.WriteIndexedMzml = writeIndexMzmlCheckbox.IsChecked.Value;
             TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
             if (ModernSearchRadioButton.IsChecked == true)

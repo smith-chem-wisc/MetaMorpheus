@@ -24,6 +24,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Chemistry;
 
+
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Test")]
+
 namespace TaskLayer
 {
     public class SearchTask : MetaMorpheusTask
@@ -153,6 +156,30 @@ namespace TaskLayer
                  $"of the old setting. Set MassDiffAcceptorType explicitly to silence this.");
 
             SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
+        }
+
+        /// <summary>
+        /// True only when every MS2 scan names an MS1 scan that is present in the file and has a resolvable
+        /// isolation range. Both are required to deconvolute a precursor: without a precursor scan number
+        /// <see cref="MetaMorpheusTask._GetMs2Scans"/> falls through to the scan header, and a null IsolationRange
+        /// makes GetIsolatedMassesAndCharges return nothing. IsolationRange needs an isolation width as well as a
+        /// centre, and the MGF reader defaults only the centre. A partially annotated file is treated as
+        /// header-only rather than deconvoluted for some scans and not others.
+        /// </summary>
+        internal static bool HasDeconvolutablePrecursorScans(MsDataFile file)
+        {
+            var scans = file.GetAllScansList();
+            var ms1ScanNumbers = scans.Where(s => s.MsnOrder == 1).Select(s => s.OneBasedScanNumber).ToHashSet();
+            if (ms1ScanNumbers.Count == 0)
+            {
+                return false;
+            }
+
+            var ms2Scans = scans.Where(s => s.MsnOrder == 2).ToList();
+            return ms2Scans.Count > 0
+                   && ms2Scans.All(s => s.OneBasedPrecursorScanNumber.HasValue
+                                        && ms1ScanNumbers.Contains(s.OneBasedPrecursorScanNumber.Value)
+                                        && s.IsolationRange != null);
         }
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
@@ -309,7 +336,9 @@ namespace TaskLayer
 
                 // If the file is one which does not have precursor scans, but only precursor information, then we need to set the parameters accordingly
                 // We do this by adjusting the transient combined params so that this can be done on a file by file basis. 
-                if (myMsDataFile is Mgf or Ms2Align)
+                // An MGF written by mzLib carries its MS1 scans and the headers deconvolution needs, so that
+                // case is decided by content. msalign is always header-only.
+                if (myMsDataFile is Ms2Align || (myMsDataFile is Mgf && !HasDeconvolutablePrecursorScans(myMsDataFile)))
                 {
                     combinedParams.DoPrecursorDeconvolution = false;
                     combinedParams.UseProvidedPrecursorInfo = true;
