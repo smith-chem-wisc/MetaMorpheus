@@ -45,6 +45,8 @@ namespace EngineLayer
             }
         }
 
+        public const string MonoSaccharidesHeader = "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription";
+
         /// <summary>
         /// Load custom monosaccharide definitions from a tab-separated file and register them with
         /// Glycan so they are recognized by both glycan-database formats and the structure validator.
@@ -202,13 +204,13 @@ namespace EngineLayer
             //registration already succeeded -- the sugar works this session no matter what happens
             //persist to file so the monosaccharide is still recognized on the next launch
             string line = string.Join("\t", name, code.ToString(), massDa.ToString(CultureInfo.InvariantCulture), ionsText, descriptionText);
-            string customMonosaccharidePath = Path.Combine(GlobalVariables.DataDir, @"Glycan_Mods", "MonosaccharidesCustom.tsv");
+            string customMonosaccharidePath = GlobalVariables.CustomMonosaccharidePath;
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(customMonosaccharidePath));
                 if (!File.Exists(customMonosaccharidePath))
                 {
-                    File.WriteAllLines(customMonosaccharidePath, new[] { "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription", line });
+                    File.WriteAllLines(customMonosaccharidePath, new[] { MonoSaccharidesHeader, line });
                 }
                 else
                 {
@@ -228,6 +230,50 @@ namespace EngineLayer
             catch (Exception ex)
             {
                 return $"The monosaccharide is available for this session, but could not be saved to file for future sessions: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Ensure the MonosaccharidesCustom.tsv exists in the directory. If the file is missing, 
+        /// write the embedded full 85-line documented template—instructions, column spec, the built-in name/code table,
+        /// worked examples — with the header row as its single non-comment line; do nothing if it already exists.
+        /// </summary>
+        /// <param name="path">
+        /// The destination path — normally GlobalVariables.CustomMonosaccharidePath.
+        /// </param>
+        public static void EnsureCustomMonosaccharideFileExists(string path) 
+        {
+            if (!File.Exists(path)) 
+            { 
+                try
+                {
+                    // Make sure the directory exists before writing the file, however, DataDir is created by
+                    // SetUpDataDirectory before this runs; this is defensive only.
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+                    // Non-installer/portable runs (or a user-specified DataDir) may still have the old
+                    // Glycan_Mods\MonosaccharidesCustom.tsv from before this fix. Carry it over once so
+                    // those users don't silently lose custom entries; leave the old file alone.
+                    string legacyPath = Path.Combine(Path.GetDirectoryName(path), "Glycan_Mods", "MonosaccharidesCustom.tsv");
+                    if (File.Exists(legacyPath))
+                    {
+                        File.Copy(legacyPath, path);
+                        return;
+                    }
+
+                    // The default template—instructions is embedded in the DLL so it survives
+                    // install/repair/upgrade regardless of what the installer does to Glycan_Mods --
+                    // same pattern as RnaMods.txt (GlobalVariables.LoadRnaModifications) and the
+                    // mzLib-embedded default protease/rnase templates (GlobalVariables.LoadDigestionAgents).
+                    var assembly = typeof(GlycanDatabase).Assembly;
+                    using var stream = assembly.GetManifestResourceStream("EngineLayer.Glycan_Mods.MonosaccharidesCustom.tsv");
+                    using var reader = new StreamReader(stream);
+                    File.WriteAllText(path, reader.ReadToEnd());
+                }
+                catch (Exception ex)
+                {
+                    throw new MetaMorpheusException($"Could not create the custom monosaccharide file '{path}': {ex.Message}", ex);
+                }
             }
         }
 
