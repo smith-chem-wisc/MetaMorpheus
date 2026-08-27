@@ -525,6 +525,16 @@ namespace TaskLayer
                     //update the list for FlashLFQ
                     silacPsms.ForEach(x => x.ResolveAllAmbiguities()); //update the monoisotopic mass
                     psmsForQuantification.SetSilacFilteredPsms(silacPsms);
+
+                    // SetSilacFilteredPsms replaces the list wholesale, so the guard above ran against
+                    // PSMs that no longer exist. These were rebuilt from synthesised labeled sequences
+                    // after it, and ResolveAllAmbiguities can still leave the mass null, so screen again
+                    // rather than letting a null-mass PSM reach FlashLFQ by the back door.
+                    int silacPsmsWithoutMass = psmsForQuantification.RemovePsmsWithoutResolvedMass();
+                    if (silacPsmsWithoutMass > 0)
+                    {
+                        Warn($"{silacPsmsWithoutMass} SILAC PSM(s) were excluded from quantification because their monoisotopic mass could not be determined.");
+                    }
                 }
 
                 //group psms by file

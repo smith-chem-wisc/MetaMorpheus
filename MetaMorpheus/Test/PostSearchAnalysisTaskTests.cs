@@ -1,4 +1,5 @@
 ﻿using Easy.Common.Extensions;
+using Chemistry;
 using EngineLayer;
 using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
@@ -700,6 +701,93 @@ namespace Test
         }
 
         /// <summary>
+        /// RemovePsmsWithoutResolvedMass is public API and was previously reachable only through
+        /// QuantificationAnalysis by reflection. Both halves of its contract are asserted here: the
+        /// null-mass PSM goes, the resolved one stays, and the return value is the number dropped.
+        /// </summary>
+        [Test]
+        public static void RemovePsmsWithoutResolvedMass_DropsOnlyTheMasslessOnes()
+        {
+            CommonParameters commonParameters = new();
+
+            var protein = new Protein("PEPTIDEKPEPTIDER", "ACC_DIRECT");
+            var digestionParams = new DigestionParams(protease: "trypsin", minPeptideLength: 1);
+            var resolved = (PeptideWithSetModifications)protein
+                .Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .First(p => p.BaseSequence == "PEPTIDER");
+
+            SpectralMatch withMass = new PeptideSpectralMatch(resolved, 0, 10, 0,
+                NullMassTestScan("fake.mzML", commonParameters, 1), commonParameters, new List<MatchedFragmentIon>());
+            withMass.ResolveAllAmbiguities();
+            withMass.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
+
+            var (light, heavy) = TwoPeptidesSharingAFullSequence();
+            SpectralMatch withoutMass = new PeptideSpectralMatch(light, 0, 10, 1,
+                NullMassTestScan("fake.mzML", commonParameters, 2), commonParameters, new List<MatchedFragmentIon>());
+            withoutMass.AddOrReplace(heavy, 10, 0, reportAllAmbiguity: true, new List<MatchedFragmentIon>());
+            withoutMass.ResolveAllAmbiguities();
+            withoutMass.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
+
+            Assert.That(withMass.BioPolymerWithSetModsMonoisotopicMass, Is.Not.Null);
+            Assert.That(withoutMass.BioPolymerWithSetModsMonoisotopicMass, Is.Null);
+
+            var filtered = FilteredPsms.Filter(new List<SpectralMatch> { withMass, withoutMass }, commonParameters,
+                includeDecoys: false, includeContaminants: true, includeAmbiguous: false,
+                includeAmbiguousMods: false, includeHighQValuePsms: false);
+            Assert.That(filtered.Count(), Is.EqualTo(2), "both PSMs must survive sequence filtering, or this proves nothing");
+
+            int dropped = filtered.RemovePsmsWithoutResolvedMass();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(dropped, Is.EqualTo(1));
+                Assert.That(filtered.Count(), Is.EqualTo(1));
+                Assert.That(filtered.Single(), Is.SameAs(withMass), "the PSM that has a mass must be the one kept");
+            });
+        }
+
+        /// <summary>
+        /// The other half of the guard's stated behaviour: a run where every mass resolves drops
+        /// nothing and emits no warning. Every other new test feeds at least one null-mass PSM, so an
+        /// inverted guard, or one returning a nonzero count when it removed nothing, would pass them all.
+        /// </summary>
+        [Test]
+        public static void RemovePsmsWithoutResolvedMass_KeepsEverythingWhenAllMassesResolve()
+        {
+            CommonParameters commonParameters = new();
+
+            var protein = new Protein("PEPTIDEKPEPTIDER", "ACC_ALLGOOD");
+            var digestionParams = new DigestionParams(protease: "trypsin", minPeptideLength: 1);
+            var peptides = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Cast<PeptideWithSetModifications>().ToList();
+
+            var psms = new List<SpectralMatch>();
+            int scan = 1;
+            foreach (var peptide in peptides)
+            {
+                SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, 10, scan - 1,
+                    NullMassTestScan("fake.mzML", commonParameters, scan++), commonParameters, new List<MatchedFragmentIon>());
+                psm.ResolveAllAmbiguities();
+                psm.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
+                Assert.That(psm.BioPolymerWithSetModsMonoisotopicMass, Is.Not.Null);
+                psms.Add(psm);
+            }
+
+            var filtered = FilteredPsms.Filter(psms, commonParameters,
+                includeDecoys: false, includeContaminants: true, includeAmbiguous: false,
+                includeAmbiguousMods: false, includeHighQValuePsms: false);
+            int before = filtered.Count();
+
+            int dropped = filtered.RemovePsmsWithoutResolvedMass();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(dropped, Is.Zero, "nothing should be dropped when every mass resolved");
+                Assert.That(filtered.Count(), Is.EqualTo(before));
+            });
+        }
+
+        /// <summary>
         /// One PSM without a resolvable mass used to throw out of QuantificationAnalysis, which
         /// EngineCrashed turns into a Quantification_crash.txt and a null FlashLfqResults -- losing
         /// quantification for the whole run. It should cost only the offending PSM, plus a warning.
@@ -737,13 +825,34 @@ namespace Test
             Assert.That(quantifiablePsm.BioPolymerWithSetModsMonoisotopicMass, Is.Not.Null);
             Assert.That(masslessPsm.BioPolymerWithSetModsMonoisotopicMass, Is.Null);
 
-            var dataFile = new GenericMsDataFile(
-                new[]
+            // The MS1 signal has to correspond to the surviving identification, or FlashLFQ finds
+            // nothing and every intensity comes back zero -- which would let this test pass while
+            // proving only that an Identification was constructed.
+            //
+            // A single monoisotopic peak is not enough: FlashLFQ accepts a feature only when it can
+            // build an isotopic envelope, so the fixture needs the real distribution. Derived from the
+            // peptide rather than hardcoded, so it cannot drift away from it.
+            ChemicalFormula quantifiableFormula =
+                new Proteomics.AminoAcidPolymer.Peptide("PEPTIDER").GetChemicalFormula();
+            IsotopicDistribution quantifiableDistribution =
+                IsotopicDistribution.GetDistribution(quantifiableFormula, 0.125, 1e-8);
+            double[] quantifiableMzs = quantifiableDistribution.Masses.Select(m => m.ToMz(2)).ToArray();
+
+            // Three scans spanning the identification's retention time (10.0), so the peak has a shape
+            // to integrate across rather than a single point.
+            var scans = new[] { 9.8, 10.0, 10.2 }
+                .Select((rt, i) =>
                 {
-                    new MsDataScan(new MzSpectrum(new[] { 500.0 }, new[] { 1e6 }, false), 1, 1, true,
-                        Polarity.Positive, 10.0, new MzRange(0, 2000), "f", MZAnalyzerType.Orbitrap, 1e6, 1.0, null, "scan=1"),
-                },
-                new SourceFile(null, null, null, null, null));
+                    double scale = i == 1 ? 1e6 : 5e5;
+                    double[] intensities = quantifiableDistribution.Intensities.Select(v => v * scale).ToArray();
+                    return new MsDataScan(
+                        new MzSpectrum(quantifiableMzs, intensities, false),
+                        i + 1, 1, true, Polarity.Positive, rt, new MzRange(0, 2000), "f",
+                        MZAnalyzerType.Orbitrap, intensities.Sum(), 1.0, null, $"scan={i + 1}");
+                })
+                .ToArray();
+
+            var dataFile = new GenericMsDataFile(scans, new SourceFile(null, null, null, null, null));
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(dataFile, mzmlPath, false);
 
             List<string> warnings = new();
@@ -786,9 +895,18 @@ namespace Test
                     .Invoke(task, null);
 
                 Assert.That(File.Exists(Path.Combine(outputFolder, "Quantification_crash.txt")), Is.False);
-                Assert.That(warnings.Any(w => w.Contains("monoisotopic mass could not be determined")), Is.True);
+                // The count, not just the tail of the message: exactly one PSM lacked a mass, and a
+                // method that dropped the wrong number would still match on the sentence alone.
+                Assert.That(warnings.Any(w => w.Contains("1 PSM(s) were excluded from quantification")), Is.True);
                 Assert.That(parameters.FlashLfqResults, Is.Not.Null);
                 Assert.That(parameters.FlashLfqResults.PeptideModifiedSequences.Count, Is.EqualTo(1));
+
+                // ...and that the survivor was actually quantified, rather than merely counted. Without
+                // a matching MS1 peak this is zero while every other assertion above still passes.
+                var survivor = parameters.FlashLfqResults.PeptideModifiedSequences.Single().Value;
+                var quantFile = parameters.FlashLfqResults.SpectraFiles.Single();
+                Assert.That(survivor.GetIntensity(quantFile), Is.GreaterThan(0),
+                    "the surviving PSM must be quantified, not just present in the results");
             }
             finally
             {
