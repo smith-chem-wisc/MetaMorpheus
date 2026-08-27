@@ -35,18 +35,21 @@ namespace EngineLayer.Indexing
         private static long BytesPerPeptide => System.Runtime.GCSettings.IsServerGC ? 1500 : 750;
 
         /// <summary>
-        /// Bytes per fragment-index entry: one int in the compressed sparse row array, and nothing else.
+        /// Bytes per fragment-index entry at the build's peak, which is more than the finished index costs.
+        /// The finished array is one int per entry; while FragmentIndexBuilder.Build runs, every block's
+        /// emission run is alive alongside it, and the runs grow by doubling, so their capacity overshoots.
+        /// Twelve covers all three. Under-counting is the direction that makes the guard useless.
+        ///
         /// This used to be measured (~11 B under workstation GC, ~20 B under server GC at 4,000 targets /
         /// 125.09 M binned fragments) and used to depend on the GC mode, because the entry carried a share
-        /// of per-bin List&lt;int&gt; overhead and of the garbage repeated doubling left behind. The flat
-        /// layout has neither, so the cost is now exact.
+        /// of per-bin List&lt;int&gt; overhead and of the garbage repeated doubling left behind.
         ///
         /// Counting fragments separately rather than folding them into a per-peptide constant is what makes
         /// the estimate hold for searches whose peptides are long: fragments per peptide grows with peptide
         /// length, so a top-down or unbounded-length search has far more index entries per peptide than the
         /// tryptic case the peptide constant was calibrated on.
         /// </summary>
-        private const long BytesPerFragmentEntry = sizeof(int);
+        private const long BytesPerFragmentEntry = 3 * sizeof(int);
 
         /// <summary>
         /// Bytes of bin offsets: one int per bin plus a terminator. Set by the maximum fragment mass, not by
