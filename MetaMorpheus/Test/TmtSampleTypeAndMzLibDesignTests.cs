@@ -409,6 +409,127 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// ToMzLibDesign pairs channelLabels[i] with ReporterIonMzs[i] positionally. If the two ever
+        /// differ in length that pairing is meaningless, and the failure is silent: every channel past
+        /// the shorter array would be assigned the wrong reporter ion, producing a design that looks
+        /// complete and reports the wrong sample's abundance. The guard has to refuse rather than
+        /// truncate, and this is what proves it does.
+        ///
+        /// The two lengths come from independent sources -- the DI block in Mods/tmt.txt and the label
+        /// table in IsobaricMassTag -- which is exactly how the iTRAQ 8-plex name drifted. A real tag
+        /// cannot currently reach this state (EveryTagsLabelsMatchItsReporterIonCount asserts as much),
+        /// so the mismatch is constructed by reflection.
+        /// </summary>
+        [Test]
+        public static void MismatchedChannelAndReporterIonCountsAreRefused()
+        {
+            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            Assert.That(tag, Is.Not.Null, "TMT11 must load, or this test proves nothing");
+
+            int realCount = tag.ReporterIonMzs.Length;
+            typeof(IsobaricMassTag)
+                .GetProperty(nameof(IsobaricMassTag.ReporterIonMzs))!
+                .SetValue(tag, tag.ReporterIonMzs.Take(realCount - 1).ToArray());
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(new[] { OneFile("a.raw", "Plex1", "126") }, tag, out var errors);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(design, Is.Null, "a design must not be produced from a misaligned tag");
+                Assert.That(errors.Any(e => e.Contains("disagree")), Is.True);
+                Assert.That(errors.Any(e => e.Contains($"{realCount} channels")), Is.True,
+                    "the error should name both counts, since the point is which source to fix");
+            });
+        }
+
+        /// <summary>
+        /// The design is keyed by file name, so two entries resolving to the same name would have one
+        /// silently overwrite the other's channels.
+        ///
+        /// The projection is all-or-nothing: any error yields a null design rather than a partial one.
+        /// That is the right call here -- a design missing a file quantifies that file's channels
+        /// against nothing and says so nowhere -- and the per-entry `continue` exists to collect every
+        /// problem in one pass rather than to salvage the rest.
+        /// </summary>
+        [Test]
+        public static void TwoEntriesSharingAFileNameAreRefusedWithoutLosingTheRest()
+        {
+            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            Assert.That(tag, Is.Not.Null);
+
+            var files = new[]
+            {
+                OneFile(Path.Combine("runA", "sample.raw"), "Plex1", "126"),
+                OneFile(Path.Combine("runB", "sample.raw"), "Plex1", "127N"),   // same name, different folder
+                OneFile("other.raw", "Plex1", "127C"),
+            };
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(files, tag, out var errors);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(errors.Any(e => e.Contains("share the file name")), Is.True);
+                Assert.That(design, Is.Null,
+                    "a colliding key must fail the whole projection, not yield a design missing a file");
+            });
+        }
+
+        /// <summary>
+        /// An entry whose path has no file-name component cannot be keyed at all. Reported, and the
+        /// whole projection refused, rather than producing an entry under an empty key that would
+        /// never match a spectra file.
+        /// </summary>
+        [Test]
+        public static void EntryWithNoFileNameIsReported()
+        {
+            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            Assert.That(tag, Is.Not.Null);
+
+            var files = new[]
+            {
+                OneFile(Path.Combine("some", "folder") + Path.DirectorySeparatorChar, "Plex1", "126"),
+                OneFile("good.raw", "Plex1", "127N"),
+            };
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(files, tag, out var errors);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(errors.Any(e => e.Contains("no file name")), Is.True);
+                Assert.That(design, Is.Null);
+            });
+        }
+
+        /// <summary>
+        /// Write round-trips a sample type through ToDesignFileValue, so an unrecognised value has to
+        /// produce something Read will accept rather than an empty cell that fails to parse on reload.
+        /// </summary>
+        [Test]
+        public static void UnknownSampleTypeWritesAsStudySample()
+        {
+            string written = TmtExperimentalDesign.ToDesignFileValue((TmtSampleType)999);
+
+            Assert.That(written, Is.EqualTo("study sample"));
+            Assert.That(TmtExperimentalDesign.TryParseSampleType(written, out var parsed), Is.True,
+                "whatever is written must survive a read back");
+            Assert.That(parsed, Is.EqualTo(TmtSampleType.StudySample));
+        }
+
+        /// <summary>A single-file, single-channel design entry, for the checks above.</summary>
+        private static TmtFileInfo OneFile(string path, string plex, string tag) =>
+            new TmtFileInfo(path, plex, 1, 1, new[]
+            {
+                new TmtPlexAnnotation
+                {
+                    Tag = tag,
+                    SampleName = "S1",
+                    Condition = "Control",
+                    BiologicalReplicate = 1,
+                    SampleType = TmtSampleType.StudySample
+                }
+            });
+
         #endregion
     }
 }
