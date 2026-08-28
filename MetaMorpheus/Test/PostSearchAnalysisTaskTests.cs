@@ -828,32 +828,7 @@ namespace Test
             // The MS1 signal has to correspond to the surviving identification, or FlashLFQ finds
             // nothing and every intensity comes back zero -- which would let this test pass while
             // proving only that an Identification was constructed.
-            //
-            // A single monoisotopic peak is not enough: FlashLFQ accepts a feature only when it can
-            // build an isotopic envelope, so the fixture needs the real distribution. Derived from the
-            // peptide rather than hardcoded, so it cannot drift away from it.
-            ChemicalFormula quantifiableFormula =
-                new Proteomics.AminoAcidPolymer.Peptide("PEPTIDER").GetChemicalFormula();
-            IsotopicDistribution quantifiableDistribution =
-                IsotopicDistribution.GetDistribution(quantifiableFormula, 0.125, 1e-8);
-            double[] quantifiableMzs = quantifiableDistribution.Masses.Select(m => m.ToMz(2)).ToArray();
-
-            // Three scans spanning the identification's retention time (10.0), so the peak has a shape
-            // to integrate across rather than a single point.
-            var scans = new[] { 9.8, 10.0, 10.2 }
-                .Select((rt, i) =>
-                {
-                    double scale = i == 1 ? 1e6 : 5e5;
-                    double[] intensities = quantifiableDistribution.Intensities.Select(v => v * scale).ToArray();
-                    return new MsDataScan(
-                        new MzSpectrum(quantifiableMzs, intensities, false),
-                        i + 1, 1, true, Polarity.Positive, rt, new MzRange(0, 2000), "f",
-                        MZAnalyzerType.Orbitrap, intensities.Sum(), 1.0, null, $"scan={i + 1}");
-                })
-                .ToArray();
-
-            var dataFile = new GenericMsDataFile(scans, new SourceFile(null, null, null, null, null));
-            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(dataFile, mzmlPath, false);
+            WriteMs1FixtureFor(mzmlPath, "PEPTIDER");
 
             List<string> warnings = new();
             void Handler(object sender, StringEventArgs e) => warnings.Add(e.S);
@@ -913,6 +888,198 @@ namespace Test
                 MetaMorpheusTask.WarnHandler -= Handler;
                 Directory.Delete(outputFolder, true);
             }
+        }
+
+        /// <summary>
+        /// The SILAC path rebuilds the quantification list after the first guard has already run:
+        /// SetSilacFilteredPsms replaces it wholesale with clones synthesised from labeled base
+        /// sequences, so a PSM whose mass resolved before the block can be replaced by one whose mass
+        /// does not. The label residue here has no defined mass -- the same NaN route as B, X and Z --
+        /// which is the state PostSearchAnalysisTask sees whenever the label residues were never added
+        /// to Residue's process-wide table, since it is SearchTask, not this task, that adds them.
+        /// Without the second guard that clone reaches BioPolymerWithSetModsMonoisotopicMass.Value and
+        /// takes quantification for the whole run down with it.
+        /// </summary>
+        [Test]
+        public static void SilacQuantificationSkipsLabeledPsmsWithUnresolvedMass()
+        {
+            // 'X' is one of GlobalVariables.InvalidAminoAcids, so SilacConversions.UpdateAminoAcidLabel
+            // never assigns it and nothing in the suite registers a mass for it. The label residue is
+            // therefore massless no matter what other tests have added to Residue's static table, which
+            // keeps this test independent of run order.
+            const char masslessLabelResidue = 'X';
+            Assert.That(double.IsNaN(Proteomics.AminoAcidPolymer.Residue.ResidueMonoisotopicMass[masslessLabelResidue]), Is.True,
+                "the label residue must have no defined mass, or the labeled clone would resolve and this test would prove nothing");
+
+            CommonParameters commonParameters = new();
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SilacNullMassQuant");
+            if (Directory.Exists(outputFolder))
+            {
+                Directory.Delete(outputFolder, true);
+            }
+            Directory.CreateDirectory(outputFolder);
+
+            string mzmlPath = Path.Combine(outputFolder, "fake.mzML");
+            var protein = new Protein("PEPTIDEKPEPTIDER", "ACC_SILAC");
+
+            // GeneratehUnlabeledProteinsForSilac is what puts the light form into the SILAC list
+            // alongside the labeled clone, so the run has something left to quantify once the clone is
+            // dropped -- which is the behaviour under test, not merely that nothing threw.
+            var digestionParams = new DigestionParams(protease: "trypsin", minPeptideLength: 1,
+                generateUnlabeledProteinsForSilac: true);
+            var digestionProducts = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Cast<PeptideWithSetModifications>().ToList();
+
+            // PEPTIDEK carries the labeled residue, so it gets a labeled clone. PEPTIDER does not, so
+            // SILAC leaves it as the light form only: one PSM must be dropped, not both.
+            SpectralMatch lysinePsm = ResolvedPsm(digestionProducts.First(p => p.BaseSequence == "PEPTIDEK"),
+                mzmlPath, commonParameters, 1);
+            SpectralMatch argininePsm = ResolvedPsm(digestionProducts.First(p => p.BaseSequence == "PEPTIDER"),
+                mzmlPath, commonParameters, 2);
+
+            // Both masses resolve, so the guard ahead of the SILAC block has nothing to do and only the
+            // second guard can account for what this test observes.
+            Assert.That(lysinePsm.BioPolymerWithSetModsMonoisotopicMass, Is.Not.Null);
+            Assert.That(argininePsm.BioPolymerWithSetModsMonoisotopicMass, Is.Not.Null);
+
+            WriteMs1FixtureFor(mzmlPath, "PEPTIDEK", "PEPTIDER");
+
+            List<string> warnings = new();
+            void Handler(object sender, StringEventArgs e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += Handler;
+
+            try
+            {
+                PostSearchAnalysisParameters parameters = new()
+                {
+                    SearchParameters = new SearchParameters
+                    {
+                        DoLabelFreeQuantification = true,
+                        DoMultiplexQuantification = false,
+                        MatchBetweenRuns = false,
+                        Normalize = false,
+                        SilacLabels = new List<SilacLabel>
+                        {
+                            new SilacLabel('K', masslessLabelResidue, "C{13}6", 6.020129)
+                        },
+                    },
+                    OutputFolder = outputFolder,
+                    IndividualResultsOutputFolder = outputFolder,
+                    SearchTaskId = "TestTask",
+                    AllSpectralMatches = new List<SpectralMatch> { lysinePsm, argininePsm },
+                    CurrentRawFileList = new List<string> { mzmlPath },
+                    MyFileManager = new MyFileManager(true),
+                    FixedModifications = new List<Modification>(),
+                    VariableModifications = new List<Modification>(),
+                    ListOfDigestionParams = new HashSet<IDigestionParams> { digestionParams },
+                    DatabaseFilenameList = new List<DbForTask>(),
+                    FileSettingsList = new FileSpecificParameters[] { null },
+                };
+
+                PostSearchAnalysisTask task = new()
+                {
+                    Parameters = parameters,
+                    CommonParameters = commonParameters,
+                    FileSpecificParameters = new List<(string, CommonParameters)> { (mzmlPath, commonParameters) },
+                };
+
+                typeof(PostSearchAnalysisTask)
+                    .GetMethod("QuantificationAnalysis", BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .Invoke(task, null);
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(File.Exists(Path.Combine(outputFolder, "Quantification_crash.txt")), Is.False,
+                        "the labeled clone must not take the whole quantification down with it");
+
+                    // The SILAC message, and the count in it: exactly one clone lacked a mass.
+                    Assert.That(warnings.Any(w => w.Contains("1 SILAC PSM(s) were excluded from quantification")), Is.True);
+
+                    // ...and not the message from the guard ahead of the SILAC block, which had nothing
+                    // to drop. Asserting on the shared tail alone would let either guard satisfy this.
+                    Assert.That(warnings.Any(w => w.Contains("PSM(s) were excluded") && !w.Contains("SILAC")), Is.False,
+                        "the first guard saw two resolved masses and must not have dropped anything");
+
+                    Assert.That(parameters.FlashLfqResults, Is.Not.Null);
+                });
+
+                // The labeled sequence is gone and both light forms are still quantified: dropping one
+                // clone cost that clone, not the run.
+                var quantifiedSequences = parameters.FlashLfqResults.PeptideModifiedSequences.Keys.ToList();
+                Assert.Multiple(() =>
+                {
+                    Assert.That(quantifiedSequences, Does.Not.Contain("PEPTIDE" + masslessLabelResidue));
+                    Assert.That(quantifiedSequences, Does.Contain("PEPTIDEK"));
+                    Assert.That(quantifiedSequences, Does.Contain("PEPTIDER"));
+                });
+
+                // Present in the results is not the same as measured. Without a matching MS1 envelope
+                // every intensity is zero while every assertion above still passes.
+                foreach (string sequence in new[] { "PEPTIDEK", "PEPTIDER" })
+                {
+                    var peptide = parameters.FlashLfqResults.PeptideModifiedSequences[sequence];
+                    Assert.That(parameters.FlashLfqResults.SpectraFiles.Any(f => peptide.GetIntensity(f) > 0), Is.True,
+                        sequence + " survived the guard but was never quantified");
+                }
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= Handler;
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// A PSM on a single unambiguous peptide, resolved and given passing FDR values, so it reaches
+        /// quantification with a mass.
+        /// </summary>
+        private static SpectralMatch ResolvedPsm(PeptideWithSetModifications peptide, string mzmlPath,
+            CommonParameters commonParameters, int scanNumber)
+        {
+            SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, 10, scanNumber - 1,
+                NullMassTestScan(mzmlPath, commonParameters, scanNumber), commonParameters, new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            psm.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
+            return psm;
+        }
+
+        /// <summary>
+        /// Writes an mzML whose MS1 scans carry the real isotopic envelope of each named peptide at
+        /// charge 2. A single monoisotopic peak is not enough -- FlashLFQ accepts a feature only when it
+        /// can build an envelope -- and the envelopes are derived from the sequences rather than
+        /// hardcoded, so the fixture cannot drift away from the identifications the tests build. Three
+        /// scans span the identifications' retention time (10.0) so the peak has a shape to integrate
+        /// across rather than a single point.
+        /// </summary>
+        private static void WriteMs1FixtureFor(string mzmlPath, params string[] baseSequences)
+        {
+            var envelopes = baseSequences
+                .Select(sequence =>
+                {
+                    ChemicalFormula formula = new Proteomics.AminoAcidPolymer.Peptide(sequence).GetChemicalFormula();
+                    return IsotopicDistribution.GetDistribution(formula, 0.125, 1e-8);
+                })
+                .ToList();
+
+            var scans = new[] { 9.8, 10.0, 10.2 }
+                .Select((rt, i) =>
+                {
+                    double scale = i == 1 ? 1e6 : 5e5;
+                    var peaks = envelopes
+                        .SelectMany(e => e.Masses.Select(m => m.ToMz(2)).Zip(e.Intensities, (mz, intensity) => (mz, intensity: intensity * scale)))
+                        .OrderBy(peak => peak.mz)
+                        .ToList();
+                    double[] mzs = peaks.Select(peak => peak.mz).ToArray();
+                    double[] intensities = peaks.Select(peak => peak.intensity).ToArray();
+                    return new MsDataScan(
+                        new MzSpectrum(mzs, intensities, false),
+                        i + 1, 1, true, Polarity.Positive, rt, new MzRange(0, 2000), "f",
+                        MZAnalyzerType.Orbitrap, intensities.Sum(), 1.0, null, "scan=" + (i + 1));
+                })
+                .ToArray();
+
+            var dataFile = new GenericMsDataFile(scans, new SourceFile(null, null, null, null, null));
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(dataFile, mzmlPath, false);
         }
 
         private static Ms2ScanWithSpecificMass NullMassTestScan(string filePath, CommonParameters commonParameters, int scanNumber)
