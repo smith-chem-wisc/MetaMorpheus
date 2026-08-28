@@ -113,11 +113,16 @@ namespace EngineLayer
         /// Snapshot view of <see cref="BioPolymerGroup.IntensitiesBySample"/> keyed by SpectraFileInfo.
         /// The getter returns a fresh read-only copy on every call, so mutating the returned value has no
         /// effect on the protein group; assign a new dictionary through the setter to change it.
-        /// SpectraFileInfo only: the getter throws if an isobaric sample is present.
+        /// SpectraFileInfo only: isobaric samples are dropped by the getter, so a round-trip loses them.
+        /// This matches <see cref="FilesForQuantification"/>, which is the companion view over the same
+        /// backing store -- the two describe the same subset and should agree on what happens to a
+        /// sample they cannot represent.
         /// </summary>
         public IReadOnlyDictionary<SpectraFileInfo, double> IntensitiesByFile
         {
-            get => IntensitiesBySample?.ToDictionary(kvp => (SpectraFileInfo)kvp.Key, kvp => kvp.Value);
+            get => IntensitiesBySample?
+                .Where(kvp => kvp.Key is SpectraFileInfo)
+                .ToDictionary(kvp => (SpectraFileInfo)kvp.Key, kvp => kvp.Value);
             set => IntensitiesBySample = value?.ToDictionary(kvp => (ISampleInfo)kvp.Key, kvp => kvp.Value);
         }
 
