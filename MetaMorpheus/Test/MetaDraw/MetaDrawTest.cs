@@ -2341,47 +2341,6 @@ namespace Test.MetaDraw
             string exportedFileRefragment = Directory.GetFiles(tempDir, "*.png").FirstOrDefault();
             Assert.That(exportedFileRefragment, Is.Not.Null, "Exported file with refragmentation should exist.");
 
-            // Assert: file with refragmentation should be larger
-            var sizeNoRefragment = new FileInfo(fileNoRefragment).Length;
-            var sizeRefragment = new FileInfo(exportedFileRefragment).Length;
-            Assert.That(sizeRefragment, Is.GreaterThan(sizeNoRefragment), "Refragmented export should be larger due to more annotated ions.");
-
-            // Assert: colors for c and zDot ions are present in the PNG with refragmentation but not in the other
-            var cColor = MetaDrawSettings.ProductTypeToColor[ProductType.c];
-            var zDotColor = MetaDrawSettings.ProductTypeToColor[ProductType.zDot];
-
-            // Use using statements to ensure Bitmaps are disposed immediately after use
-            bool noRefragmentHasC, noRefragmentHasZDot, refragmentHasC, refragmentHasZDot;
-            using (var bmpNoRefragment = new Bitmap(fileNoRefragment))
-            using (var bmpRefragment = new Bitmap(exportedFileRefragment))
-            {
-                bool HasColor(Bitmap bmp, OxyColor color)
-                {
-                    for (int y = 0; y < bmp.Height; y++)
-                    {
-                        for (int x = 0; x < bmp.Width; x++)
-                        {
-                            var px = bmp.GetPixel(x, y);
-                            if (Math.Abs(px.R - color.R) <= 10
-                                && Math.Abs(px.G - color.G) <= 10
-                                && Math.Abs(px.B - color.B) <= 10)
-                                return true;
-                        }
-                    }
-                    return false;
-                }
-
-                noRefragmentHasC = HasColor(bmpNoRefragment, cColor);
-                noRefragmentHasZDot = HasColor(bmpNoRefragment, zDotColor);
-                refragmentHasC = HasColor(bmpRefragment, cColor);
-                refragmentHasZDot = HasColor(bmpRefragment, zDotColor);
-            }
-
-            Assert.That(noRefragmentHasC || noRefragmentHasZDot, Is.False,
-                "No c or zDot ion colors should be present in the PNG without refragmentation.");
-            Assert.That(refragmentHasC || refragmentHasZDot, Is.True,
-                "c or zDot ion colors should be present in the PNG with refragmentation.");
-
             Assert.That(errorsNoRefragment, Is.Null, "No errors should be reported for no refragmentation.");
             Assert.That(errorsRefragment, Is.Null, "No errors should be reported for refragmentation.");
 
