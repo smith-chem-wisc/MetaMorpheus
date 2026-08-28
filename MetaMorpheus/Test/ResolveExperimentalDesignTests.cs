@@ -254,21 +254,25 @@ namespace Test
         }
         /// <summary>
         /// Every other test in this fixture calls ResolveExperimentalDesign directly, which leaves the
-        /// wiring itself unproven: Run could gate on the wrong directory, drop the returned code, or
-        /// never call the gate at all, and all three still pass the method-level tests. This drives
+        /// wiring unproven: Run could drop the returned exit code, never call the gate, or resolve the
+        /// design directory from somewhere other than the spectra. This drives
         /// MetaMorpheusCommandLine.Program.Main so the gate is reached the way a user reaches it.
         ///
-        /// The refusal is the only path safely drivable through Main -- every other outcome returns 0
-        /// and falls through into EverythingRunnerEngine, which is an actual search. That is also why
-        /// the .mzML here can be empty: what is being asserted is that the run stops before anything
-        /// opens it.
+        /// The design file here is malformed rather than absent, and that is what makes the assertion
+        /// discriminating. An absent design stops the run from any directory -- so a gate pointed at
+        /// the working directory would still return 5, and a test asserting only the exit code would
+        /// pass while the directory logic was wrong. A malformed design beside the spectra separates
+        /// them: read from the right directory the console carries that file's own parse error, and
+        /// read from anywhere else it carries "no design present" instead.
         ///
-        /// Exit code 5 rather than 2 is what separates "the design gate stopped it" from "settings
-        /// validation stopped it", and the captured console line names the branch inside the gate.
+        /// Exit code 5 and not 2 is what separates the design gate from settings validation, the other
+        /// way this argument list can stop early. The refusal is also the only path safely drivable
+        /// through Main, since every other outcome returns 0 and starts an actual search -- which is
+        /// why the .mzML can be empty. That the run stops before anything opens it is the point.
         /// </summary>
         [Test]
         [NonParallelizable]
-        public static void MainStopsANormalizingSearchThatHasNoDesignFile()
+        public static void MainStopsANormalizingSearchWhoseDesignFileCannotBeRead()
         {
             string folder = NewFolder("CmdMainDesignGate");
 
@@ -277,6 +281,9 @@ namespace Test
 
             string database = Path.Combine(folder, "db.fasta");
             File.WriteAllText(database, string.Empty);
+
+            // Beside the spectra, and unreadable. Only a gate looking here reports this file's error.
+            WriteTmtDesign(folder, spectra, valid: false);
 
             // Normalization is the one thing that makes a design file mandatory.
             SearchTask searchTask = new SearchTask();
@@ -301,9 +308,9 @@ namespace Test
             }
 
             Assert.That(exitCode == Stop,
-                "A normalizing search with no design file must stop, and stop with the design gate's code");
-            Assert.That(captured.ToString().Contains("Normalization requires a design"),
-                "The run stopped, but not at the design gate");
+                "A normalizing search whose design cannot be read must stop, and stop with the gate's code");
+            Assert.That(captured.ToString().Contains("Biological Replicate"),
+                "The design beside the spectra was not the one read -- the gate resolved a different directory");
             Assert.That(!Directory.Exists(output),
                 "The search ran anyway -- Run did not honour the gate's exit code");
 
