@@ -915,7 +915,7 @@ namespace GuiFunctions
         /// <param name="visual">element to be converted</param>
         /// <param name="directory">directory for temporary file storage</param>
         /// <returns></returns>
-        private static System.Drawing.Bitmap ConvertUIElementToBitmap(System.Windows.UIElement visual, string directory)
+        internal static System.Drawing.Bitmap ConvertUIElementToBitmap(System.Windows.UIElement visual, string directory)
         {
             // initialize values
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;

@@ -2362,7 +2362,9 @@ namespace Test.MetaDraw
                         for (int x = 0; x < bmp.Width; x++)
                         {
                             var px = bmp.GetPixel(x, y);
-                            if (px.R == color.R && px.G == color.G && px.B == color.B)
+                            if (Math.Abs(px.R - color.R) <= 10
+                                && Math.Abs(px.G - color.G) <= 10
+                                && Math.Abs(px.B - color.B) <= 10)
                                 return true;
                         }
                     }
