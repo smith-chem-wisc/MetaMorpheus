@@ -149,6 +149,12 @@
       <Component Id="src_Newtonsoft.Json.dll" Guid="7001FD86-E768-4C32-9747-0AB44A5A3DE9">
         <File Id="src_Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.GUI_TargetDir)Newtonsoft.Json.dll" />
       </Component>
+      <!-- Arrives with mzLib, which declared ZstdSharp.Port in its nuspec from 1.0.586 (mzLib #1179).
+           MetaMorpheus stayed on 1.0.585 until this bump, so this is the first build where the DLL
+           is actually restored into the output and therefore has to be installed. -->
+      <Component Id="src_ZstdSharp.dll" Guid="74BE256C-F581-4DA7-90C8-4D76E2FAA59D">
+        <File Id="src_ZstdSharp.dll" Name="ZstdSharp.dll" Source="$(var.GUI_TargetDir)ZstdSharp.dll" />
+      </Component>
       <Component Id="src_UsefulProteomicsDatabases.dll" Guid="e7f76fbf-d21c-4e57-bed4-33f71822ee18">
         <File Id="src_UsefulProteomicsDatabases.dll" Name="UsefulProteomicsDatabases.dll" Source="$(var.GUI_TargetDir)UsefulProteomicsDatabases.dll" />
       </Component>
