@@ -588,5 +588,59 @@ namespace Test
             Assert.That(info.Annotations.Count == 0, "Null annotations become an empty list");
             Assert.That(info.ToString() == "file.1.raw", "ToString is the bare file name");
         }
+        /// <summary>
+        /// A row is judged one cell at a time and reported once. Every validation guard in the row
+        /// loop ends in `continue`, so the first bad cell is the only one named -- the row is not
+        /// re-judged on the columns after it.
+        ///
+        /// This is a user-facing contract, not an internal one: Read's error list is what
+        /// ResolveExperimentalDesign prints to the console. Without the skip, one typo in a Sample
+        /// Type cell also reports an invalid Biological Replicate, because TryParse left the out
+        /// parameter at its default -- an error naming a cell the user filled in correctly.
+        ///
+        /// Each case is asserted by what the errors must NOT say, since a count cannot distinguish
+        /// them: the "did not contain the file(s)" error appears either way, because a row skipped
+        /// for being invalid and a row never reached both leave the file undefined.
+        /// </summary>
+        [Test]
+        public static void ARowIsReportedOnceAtItsFirstBadCell()
+        {
+            List<string> ErrorsForRow(string name, string row)
+            {
+                string folder = NewFolder(name);
+                string rawPath = Path.Combine(folder, "sample.raw");
+                File.WriteAllText(rawPath, string.Empty);
+
+                string designPath = Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName);
+                File.WriteAllLines(designPath, new[] { TmtExperimentalDesign.Header, row });
+
+                TmtExperimentalDesign.Read(designPath, new List<string> { rawPath }, out var errors);
+                return errors;
+            }
+
+            // Sample Type is unrecognised, and the Biological Replicate after it is also unparseable.
+            var badType = ErrorsForRow("TmtDesignFirstBadCellType",
+                "sample.raw\tPlex1\tS1\t126\tControl\tnot-a-number\t1\t1\tnot-a-sample-type");
+
+            // Biological Replicate is unparseable, and the Fraction after it is below one.
+            var badBio = ErrorsForRow("TmtDesignFirstBadCellBio",
+                "sample.raw\tPlex1\tS1\t126\tControl\tnot-a-number\t0\t1\tstudy sample");
+
+            // Fraction is below one, and the Technical Replicate after it is too.
+            var badFraction = ErrorsForRow("TmtDesignFirstBadCellFraction",
+                "sample.raw\tPlex1\tS1\t126\tControl\t1\t0\t0\tstudy sample");
+
+            Assert.That(badType.Any(e => e.Contains("Sample Type")), "the unrecognised Sample Type is reported");
+            Assert.That(!badType.Any(e => e.Contains("Biological Replicate")),
+                "the row was judged past its Sample Type, reporting a Biological Replicate the guard never parsed");
+
+            Assert.That(badBio.Any(e => e.Contains("Biological Replicate")), "the invalid Biological Replicate is reported");
+            Assert.That(!badBio.Any(e => e.Contains("Fraction")),
+                "the row was judged past its Biological Replicate, reporting a Fraction as well");
+
+            Assert.That(badFraction.Any(e => e.Contains("Fraction")), "the out-of-range Fraction is reported");
+            Assert.That(!badFraction.Any(e => e.Contains("Technical Replicate")),
+                "the row was judged past its Fraction, reporting a Technical Replicate as well");
+        }
     }
 }

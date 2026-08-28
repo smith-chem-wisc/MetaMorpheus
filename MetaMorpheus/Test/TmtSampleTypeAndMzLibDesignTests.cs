@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -529,6 +529,31 @@ namespace Test
                     SampleType = TmtSampleType.StudySample
                 }
             });
+
+        /// <summary>
+        /// Two entries that both lack a file name are two missing names, not a collision. The skip
+        /// after the first report is what keeps them separate: without it the first is keyed under
+        /// the empty string, and the second is then reported as sharing the file name '' -- naming a
+        /// fault the design does not have, and sending the user looking for a duplicate.
+        /// </summary>
+        [Test]
+        public static void TwoEntriesWithNoFileNameAreReportedAsMissingNamesNotACollision()
+        {
+            var tag = Tmt10();
+            var first = FileWith(@"C:\data\", "PlexA", 1, 1, ("126", "A", 1, TmtSampleType.StudySample));
+            var second = FileWith(@"D:\other\", "PlexA", 1, 1, ("126", "B", 1, TmtSampleType.StudySample));
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(new[] { first, second }, tag, out var errors);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(errors.Count(e => e.Contains("no file name")), Is.EqualTo(2),
+                    "each nameless entry is its own problem");
+                Assert.That(errors.Any(e => e.Contains("share the file name")), Is.False,
+                    "two missing names were reported as a name collision");
+                Assert.That(design, Is.Null);
+            });
+        }
 
         #endregion
     }
