@@ -21,7 +21,11 @@ public static class MzlibExtensions
     {
         if (digestionParams is DigestionParams proteolytic)
         {
-            return proteolytic.SpecificProtease?.Name ?? proteolytic.DigestionAgent?.Name;
+            // Unguarded on purpose: DigestionParams sets SpecificProtease unconditionally in its
+            // constructor, from a ProteaseDictionary lookup that throws rather than yielding null, and
+            // mzLib itself dereferences it bare in ToString and Equals. A null here is therefore not a
+            // state this can be reached in, and a fallback for it would be untestable by construction.
+            return proteolytic.SpecificProtease.Name;
         }
 
         return digestionParams?.DigestionAgent?.Name;

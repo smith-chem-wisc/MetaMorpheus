@@ -1,5 +1,7 @@
 using EngineLayer;
 using NUnit.Framework;
+using System.Collections.Generic;
+using System.Linq;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -72,6 +74,69 @@ namespace Test
         public static void UnknownDigestionParamsReportNoAgent()
         {
             Assert.That(((IDigestionParams)null).DigestionAgentName(), Is.Null);
+        }
+
+        /// <summary>
+        /// A digestion-parameter type that is neither proteolytic nor RNA and names no agent has to come
+        /// back null rather than throw. The call site is PostSearchAnalysisTask.QuantificationAnalysis,
+        /// which reaches it once per identification while assembling the FlashLFQ input, so a
+        /// NullReferenceException here would abort quantification for the whole run rather than degrade
+        /// it. Null is the answer FlashLfqEngine already handles: it reads an unknown agent as "do not
+        /// restrict match-between-runs", which is the safe direction.
+        /// </summary>
+        [Test]
+        public static void ParametersThatNameNoAgentReportNullRatherThanThrowing()
+        {
+            IDigestionParams namesNoAgent = new AgentlessDigestionParams();
+
+            Assert.That(namesNoAgent.DigestionAgent, Is.Null, "premise: this is the case the null check exists for");
+            Assert.That(() => namesNoAgent.DigestionAgentName(), Throws.Nothing);
+            Assert.That(namesNoAgent.DigestionAgentName(), Is.Null);
+        }
+
+        /// <summary>
+        /// DigestionAgentName reads SpecificProtease unguarded, which is only safe because DigestionParams
+        /// populates it unconditionally -- RecordSpecificProtease assigns it from a ProteaseDictionary
+        /// lookup that throws rather than returning null, and the property is private-set. mzLib relies on
+        /// the same invariant in ToString and Equals. This pins it across every way the parameters are
+        /// built, so that if it ever stops holding the failure lands here instead of as a
+        /// NullReferenceException inside quantification.
+        /// </summary>
+        [Test]
+        public static void ProteolyticParametersAlwaysCarryASpecificProtease()
+        {
+            var built = new List<DigestionParams>
+            {
+                new DigestionParams(),  // the parameterless constructor the toml reader needs
+                Params("trypsin", CleavageSpecificity.Full),
+                Params("trypsin", CleavageSpecificity.Semi),
+                Params("Glu-C", CleavageSpecificity.None),
+            };
+            built.Add((DigestionParams)built.Last().Clone(FragmentationTerminus.C));
+
+            foreach (var digestionParams in built)
+            {
+                Assert.That(digestionParams.SpecificProtease, Is.Not.Null);
+                Assert.That(digestionParams.DigestionAgentName(), Is.EqualTo(digestionParams.SpecificProtease.Name));
+            }
+        }
+
+        /// <summary>
+        /// Minimal stand-in for a digestion-parameter implementation that names no agent. ParameterTest
+        /// carries a similar double for its own unknown-type case, but that one is private to its fixture.
+        /// </summary>
+        private class AgentlessDigestionParams : IDigestionParams
+        {
+            public int MaxMissedCleavages { get; set; }
+            public int MinLength { get; set; }
+            public int MaxLength { get; set; }
+            public int MaxModificationIsoforms { get; set; }
+            public int MaxMods { get; set; }
+            public DigestionAgent DigestionAgent => null;
+            public FragmentationTerminus FragmentationTerminus => FragmentationTerminus.Both;
+            public CleavageSpecificity SearchModeType => CleavageSpecificity.Full;
+            public IDigestionParams Clone(FragmentationTerminus? newTerminus = null) => this;
+            public bool Equals(IDigestionParams other) => ReferenceEquals(this, other);
         }
     }
 }
