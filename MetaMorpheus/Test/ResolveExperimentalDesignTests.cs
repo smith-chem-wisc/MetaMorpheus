@@ -1,10 +1,12 @@
-using EngineLayer;
+﻿using EngineLayer;
 using MetaMorpheusCommandLine;
 using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Nett;
+using TaskLayer;
 
 namespace Test
 {
@@ -247,6 +249,63 @@ namespace Test
             Assert.That(code == Continue);
             Assert.That(!asked, "There is nobody to prompt at verbosity none");
             Assert.That(!File.Exists(designPath));
+
+            Directory.Delete(folder, true);
+        }
+        /// <summary>
+        /// Every other test in this fixture calls ResolveExperimentalDesign directly, which leaves the
+        /// wiring itself unproven: Run could gate on the wrong directory, drop the returned code, or
+        /// never call the gate at all, and all three still pass the method-level tests. This drives
+        /// MetaMorpheusCommandLine.Program.Main so the gate is reached the way a user reaches it.
+        ///
+        /// The refusal is the only path safely drivable through Main -- every other outcome returns 0
+        /// and falls through into EverythingRunnerEngine, which is an actual search. That is also why
+        /// the .mzML here can be empty: what is being asserted is that the run stops before anything
+        /// opens it.
+        ///
+        /// Exit code 5 rather than 2 is what separates "the design gate stopped it" from "settings
+        /// validation stopped it", and the captured console line names the branch inside the gate.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void MainStopsANormalizingSearchThatHasNoDesignFile()
+        {
+            string folder = NewFolder("CmdMainDesignGate");
+
+            string spectra = Path.Combine(folder, "file.1.mzML");
+            File.WriteAllText(spectra, string.Empty);
+
+            string database = Path.Combine(folder, "db.fasta");
+            File.WriteAllText(database, string.Empty);
+
+            // Normalization is the one thing that makes a design file mandatory.
+            SearchTask searchTask = new SearchTask();
+            searchTask.SearchParameters.Normalize = true;
+            string taskPath = Path.Combine(folder, "SearchTask.toml");
+            Toml.WriteFile(searchTask, taskPath, MetaMorpheusTask.tomlConfig);
+
+            string output = Path.Combine(folder, "output");
+
+            TextWriter originalOut = Console.Out;
+            StringWriter captured = new StringWriter();
+            int exitCode;
+
+            try
+            {
+                Console.SetOut(captured);
+                exitCode = Program.Main(new[] { "-s", spectra, "-d", database, "-t", taskPath, "-o", output });
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+
+            Assert.That(exitCode == Stop,
+                "A normalizing search with no design file must stop, and stop with the design gate's code");
+            Assert.That(captured.ToString().Contains("Normalization requires a design"),
+                "The run stopped, but not at the design gate");
+            Assert.That(!Directory.Exists(output),
+                "The search ran anyway -- Run did not honour the gate's exit code");
 
             Directory.Delete(folder, true);
         }
