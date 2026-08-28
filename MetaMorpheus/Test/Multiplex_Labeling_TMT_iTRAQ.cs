@@ -1071,6 +1071,23 @@ namespace Test
                         $"{type} label '{labels[i]}' at index {i} names channel {nominal}, but the reporter "
                         + $"ion at that index is {tag.ReporterIonMzs[i]:F4} (channel {observed})");
                 }
+
+                // The nominal mass cannot separate an N channel from a C channel -- 127N and 127C are
+                // both "127" -- so a swapped suffix would pass everything above while pairing each with
+                // the other's ion. They are told apart by mass: at one nominal mass the N form is the
+                // lighter, and ReporterIonMzs is sorted ascending, so N must come first.
+                for (int i = 1; i < labels.Count; i++)
+                {
+                    string prev = labels[i - 1], curr = labels[i];
+                    bool sameNominal = new string(prev.TakeWhile(char.IsDigit).ToArray())
+                                    == new string(curr.TakeWhile(char.IsDigit).ToArray());
+                    if (!sameNominal) continue;
+
+                    if (prev.EndsWith("C") && curr.EndsWith("N"))
+                        Assert.Fail($"{type} orders '{prev}' before '{curr}' at index {i - 1}, but the N form "
+                                    + $"is the lighter of the pair and the reporter ions ascend "
+                                    + $"({tag.ReporterIonMzs[i - 1]:F4} then {tag.ReporterIonMzs[i]:F4})");
+                }
             }
         }
     }
