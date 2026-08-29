@@ -1,0 +1,52 @@
+<Window x:Class="MetaMorpheusGUI.TmtExperimentalDesignWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TMT Experimental Design" Height="480" Width="960"
+        WindowStartupLocation="CenterOwner"
+        AllowDrop="True" Drop="Window_Drop">
+    <DockPanel Margin="8">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
+            <Button Name="AnnotatePlexButton" Content="Annotate Plex" Click="AnnotatePlexButton_Click" Margin="0,0,8,0" Width="120"/>
+            <Button Name="ValidateButton" Content="Validate" Click="ValidateButton_Click" Margin="0,0,8,0" Width="90"/>
+            <Button Name="SaveButton" Content="Save" Click="SaveButton_Click" Margin="0,0,8,0" Width="90"/>
+            <Button Name="CancelButton" Content="Cancel" Click="CancelButton_Click" Width="90"/>
+        </StackPanel>
+
+        <DataGrid x:Name="DgTmt"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  SelectionMode="Extended"
+                  SelectionUnit="FullRow"
+                  AllowDrop="True"
+                  Margin="0,0,0,8"
+                  CellEditEnding="DgTmt_CellEditEnding">
+            <DataGrid.Columns>
+                <!-- Column order: File, Fraction, Technical Replicate, Plex (Plex last) -->
+                <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Fraction"
+                                    Binding="{Binding Fraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="100"/>
+                <DataGridTextColumn Header="Technical Replicate"
+                                    Binding="{Binding TechnicalReplicate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="140"/>
+                <DataGridTextColumn Header="Plex" Binding="{Binding Plex}" Width="140" IsReadOnly="False"/>
+            </DataGrid.Columns>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="Row_PreviewMouseLeftButtonDown"/>
+                    <EventSetter Event="MouseMove" Handler="Row_MouseMove"/>
+                    <EventSetter Event="DragOver" Handler="Row_DragOver"/>
+                    <EventSetter Event="Drop" Handler="Row_Drop"/>
+                </Style>
+            </DataGrid.RowStyle>
+        </DataGrid>
+
+        <TextBlock Foreground="Gray" TextWrapping="Wrap">
+            Fractions start at 1. Technical Replicate starts at 1. You may duplicate a Fraction number with distinct Technical Replicate values.
+            No duplicate Fraction+Technical Replicate pairs are allowed. Each fraction used must cover 1..MaxFraction with no gaps.
+            For each fraction, technical replicates must cover 1..MaxTechRep(for that fraction) with no gaps.
+            Reorder rows by drag to renumber fractions automatically (unless manually edited).
+        </TextBlock>
+    </DockPanel>
+</Window>
