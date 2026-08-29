@@ -263,16 +263,32 @@ namespace GuiFunctions
         {
             ClearCanvas(stationarySequence.SequenceDrawingCanvas);
             IBioPolymerWithSetMods peptide = sm.ToBioPolymerWithSetMods();
-            string baseSequence = sm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+            int firstResidueOnScreen = MetaDrawSettings.FirstAAonScreenIndex;
+            int residuesOnScreen = MetaDrawSettings.NumberOfAAOnScreen;
+            string baseSequence = sm.BaseSeq.Substring(firstResidueOnScreen, residuesOnScreen);
             string fullSequence = baseSequence;
 
+            // AllModsOneIsNterminus keys: 1 is the N-terminus, zero-based residue r is r + 2, and the C-terminus is BaseSeq.Length + 2
+            var cTerminalMod = peptide.AllModsOneIsNterminus
+                .Where(p => p.Key == sm.BaseSeq.Length + 2)
+                .Select(p => p.Value)
+                .FirstOrDefault();
+
             // Trim full sequences selectively based upon what is show in scrollable sequence
-            var modDictionary = peptide.AllModsOneIsNterminus.Where(p => p.Key - 1 >= MetaDrawSettings.FirstAAonScreenIndex 
-            && p.Key - 1 < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).OrderByDescending(p => p.Key);
+            var modDictionary = peptide.AllModsOneIsNterminus.Where(p => p.Key == 1
+                    ? firstResidueOnScreen == 0
+                    : p.Key - 2 >= firstResidueOnScreen && p.Key - 2 < firstResidueOnScreen + residuesOnScreen)
+                .OrderByDescending(p => p.Key);
             foreach (var mod in modDictionary)
             {
                 // if modification is within the visible region
-                fullSequence = fullSequence.Insert(mod.Key - 1 - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
+                fullSequence = fullSequence.Insert(mod.Key - 1 - firstResidueOnScreen, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
+            }
+
+            // a C-terminal mod sits past the last residue, so it is appended rather than inserted
+            if (cTerminalMod != null && residuesOnScreen > 0 && firstResidueOnScreen + residuesOnScreen >= sm.BaseSeq.Length)
+            {
+                fullSequence += "-[" + cTerminalMod.ModificationType + ":" + cTerminalMod.IdWithMotif + "]";
             }
 
             List<MatchedFragmentIon> matchedIons = sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
