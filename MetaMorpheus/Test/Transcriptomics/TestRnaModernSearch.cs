@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using MassSpectrometry;
@@ -14,6 +15,7 @@ using TaskLayer;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
+using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace Test.Transcriptomics
 {
@@ -92,6 +94,72 @@ namespace Test.Transcriptomics
 
             Assert.That(multiEntryBins, Is.GreaterThan(0), "no multi-entry bins; the test proves nothing");
             Assert.That(results.PeptideIndex.Select(p => p.MonoisotopicMass), Is.Ordered, "index is not sorted by mass");
+        }
+
+        /// <summary>
+        /// The index cache is skipped for oligos, and this is the branch that decides it.
+        ///
+        /// The on-disk index only round-trips peptides: OligoWithSetMods is neither [Serializable] nor
+        /// able to restore its parent the way SetNonSerializedPeptideInfo does for
+        /// PeptideWithSetModifications, so a cached oligo index would come back unusable. GenerateIndexes
+        /// therefore builds in memory when the analyte type is Oligo.
+        ///
+        /// Asserting the index came back is not enough -- it comes back either way. What separates the
+        /// two paths is that the cacheable one WRITES, into a "DatabaseIndex" folder beside the database
+        /// file. So the database is copied somewhere of its own first and the test asserts nothing
+        /// appeared next to it; watching a folder GenerateIndexes was never given would have asserted
+        /// nothing at all. Verified against a build with the branch forced the other way, which writes
+        /// the folder and fails this.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void GenerateIndexes_ForOligos_BuildsInMemoryAndCachesNothing()
+        {
+            var original = GlobalVariables.AnalyteType;
+            string databaseFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "OligoIndexNotCached");
+            if (Directory.Exists(databaseFolder)) Directory.Delete(databaseFolder, true);
+            Directory.CreateDirectory(databaseFolder);
+
+            try
+            {
+                GlobalVariables.AnalyteType = AnalyteType.Oligo;
+
+                // A copy of its own, so "was anything cached" is a question about this run only. The
+                // shared TestData folder would answer it with somebody else's leftovers.
+                string dbPath = Path.Combine(databaseFolder, "20mer1.fasta");
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory,
+                    "Transcriptomics", "TestData", "20mer1.fasta"), dbPath);
+
+                var commonParameters = RnaCommonParameters;
+                var targets = RnaDbLoader.LoadRnaFasta(dbPath, true, DecoyType.None, false, out _)
+                    .Cast<IBioPolymer>().ToList();
+                Assert.That(targets, Is.Not.Empty, "premise: the fixture database has entries");
+
+                var indexEngine = new IndexingEngine(targets, [], [], null, null, null, 0, DecoyType.None,
+                    commonParameters, null, 30000, false, new List<FileInfo>(),
+                    TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+
+                var task = new SearchTask { CommonParameters = commonParameters };
+                List<IBioPolymerWithSetMods> oligoIndex = null;
+                List<int>[] fragmentIndex = null;
+                List<int>[] precursorIndex = null;
+
+                task.GenerateIndexes(indexEngine, new List<DbForTask> { new DbForTask(dbPath, false) },
+                    ref oligoIndex, ref fragmentIndex, ref precursorIndex, targets, "TestTaskId");
+
+                Assert.That(oligoIndex, Is.Not.Null.And.Not.Empty, "no oligos came back from the index");
+                Assert.That(oligoIndex.First(), Is.InstanceOf<OligoWithSetMods>());
+                Assert.That(fragmentIndex.Count(bin => bin != null), Is.GreaterThan(0), "no fragments were binned");
+
+                // The part that distinguishes the two paths.
+                Assert.That(Directory.Exists(Path.Combine(databaseFolder, MetaMorpheusTask.IndexFolderName)), Is.False,
+                    "an oligo index must not be cached to disk -- it cannot be read back");
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = original;
+                if (Directory.Exists(databaseFolder)) Directory.Delete(databaseFolder, true);
+            }
         }
 
         /// <summary>
