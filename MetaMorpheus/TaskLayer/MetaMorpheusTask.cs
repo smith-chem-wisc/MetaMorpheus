@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -175,6 +175,12 @@ namespace TaskLayer
                 .CreateInstance(() => RnaFragmentationParams.Default))
             .ConfigureType<FragmentationParams>(type => type
                 .CreateInstance(() => new()))
+            .ConfigureType<FastaHeaderParsingParameters>(type => type
+                .CreateInstance(() => new FastaHeaderParsingParameters()))
+            .ConfigureType<FastaHeaderFormat>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.ToString())
+                    .FromToml(tmlString => Enum.Parse<FastaHeaderFormat>(tmlString.Value, true))))
         );
        
 
@@ -621,7 +627,8 @@ namespace TaskLayer
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
-                rtPredictorName: commonParams.RTPredictorName);
+                rtPredictorName: commonParams.RTPredictorName,
+                fastaHeaderParsing: commonParams.FastaHeaderParsing);
 
             return returnParams;
         }

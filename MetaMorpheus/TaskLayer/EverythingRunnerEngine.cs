@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -86,6 +86,16 @@ namespace TaskLayer
                 }
                
                 var ok = TaskList[i];
+
+                // A malformed user-supplied header regex is a configuration mistake, not a crash.
+                if (ok.Item2.CommonParameters?.FastaHeaderParsing is { } headerParsing
+                    && !headerParsing.Validate(out var headerRegexErrors))
+                {
+                    foreach (string headerRegexError in headerRegexErrors)
+                        Warn($"Cannot proceed. {ok.Item1}: {headerRegexError}");
+                    FinishedAllTasks(OutputFolder);
+                    return;
+                }
 
                 // reset product types for custom fragmentation
                 ok.Item2.CommonParameters.SetCustomProductTypes();
