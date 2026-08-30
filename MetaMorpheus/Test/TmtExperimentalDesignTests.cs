@@ -642,5 +642,136 @@ namespace Test
             Assert.That(!badFraction.Any(e => e.Contains("Technical Replicate")),
                 "the row was judged past its Fraction, reporting a Technical Replicate as well");
         }
+
+        #region Review findings (#2774)
+
+        private static string WriteDesign(string name, params string[] rows)
+        {
+            string dir = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtDesignReview", name);
+            Directory.CreateDirectory(dir);
+            string path = Path.Combine(dir, "TmtDesign.txt");
+            var lines = new List<string>
+            {
+                "File\tPlex\tSample Name\tTMT Channel\tCondition\tBiological Replicate\tFraction\tTechnical Replicate\tSample Type"
+            };
+            lines.AddRange(rows);
+            File.WriteAllLines(path, lines);
+            return path;
+        }
+
+        /// <summary>
+        /// Two rows describing one channel differently must be reported, not silently collapsed.
+        ///
+        /// Fractions of a plex legitimately repeat the same channel-to-sample map, which is why a
+        /// repeat is collapsed rather than refused. But collapsing rows that DISAGREE keeps the first
+        /// and discards the second with nothing said -- and the uniqueness rule cannot catch it, since
+        /// two different sample names are two different tuples, so it only fires when the duplicates
+        /// agree, which is the harmless case.
+        /// </summary>
+        [Test]
+        public static void ChannelDescribedTwiceWithDifferentSamplesIsReported()
+        {
+            string path = WriteDesign("disagree",
+                "sample.raw\tPlex1\tTumour\t126\tDisease\t1\t1\t1\tstudy sample",
+                "sample.raw\tPlex1\tNormal\t126\tControl\t2\t1\t1\tstudy sample");
+
+            TmtExperimentalDesign.Read(path, new List<string>(), out var errors);
+
+            Assert.That(errors, Is.Not.Empty, "the second description was discarded silently");
+            Assert.That(string.Join(" ", errors), Does.Contain("126").And.Contain("disagree"));
+        }
+
+        /// <summary>
+        /// A bridge channel is by definition the same material carried in more than one plex under one
+        /// name -- which is what the Sample Type column added by this PR exists to describe. Collecting
+        /// the uniqueness tuples across the whole file rejected exactly that design; the only way
+        /// through was renaming the bridges apart, which throws away the fact that they are the same
+        /// material and so defeats the point of having them.
+        /// </summary>
+        [Test]
+        public static void ABridgeSharedAcrossPlexesIsNotADuplicate()
+        {
+            string path = WriteDesign("bridge",
+                "p1.raw\tPlex1\tTumour\t126\tDisease\t1\t1\t1\tstudy sample",
+                "p1.raw\tPlex1\tBridge\t127N\tBridge\t1\t1\t1\tbridge",
+                "p2.raw\tPlex2\tNormal\t126\tControl\t2\t1\t1\tstudy sample",
+                "p2.raw\tPlex2\tBridge\t127N\tBridge\t1\t1\t1\tbridge");
+
+            var files = TmtExperimentalDesign.Read(path, new List<string>(), out var errors);
+
+            Assert.That(errors, Is.Empty, string.Join(" | ", errors));
+            Assert.That(files, Has.Count.EqualTo(2));
+        }
+
+        /// <summary>
+        /// The same rule still fires within one plex, which is the case worth catching.
+        /// </summary>
+        [Test]
+        public static void TheSameSampleTwiceInOnePlexIsStillADuplicate()
+        {
+            string path = WriteDesign("dupInPlex",
+                "p1.raw\tPlex1\tTumour\t126\tDisease\t1\t1\t1\tstudy sample",
+                "p1.raw\tPlex1\tTumour\t127N\tDisease\t1\t1\t1\tstudy sample");
+
+            TmtExperimentalDesign.Read(path, new List<string>(), out var errors);
+
+            Assert.That(string.Join(" ", errors), Does.Contain("Duplicate combination"));
+        }
+
+        /// <summary>
+        /// Biological Replicate is validated the way Fraction and Technical Replicate are. A bare
+        /// int.TryParse accepted 0 and -3, and ToMzLibDesign passes the value straight through.
+        /// </summary>
+        [TestCase("0")]
+        [TestCase("-3")]
+        public static void BiologicalReplicateBelowOneIsRejected(string bio)
+        {
+            string path = WriteDesign("bio" + bio.Replace("-", "neg"),
+                $"sample.raw\tPlex1\tTumour\t126\tDisease\t{bio}\t1\t1\tstudy sample");
+
+            TmtExperimentalDesign.Read(path, new List<string>(), out var errors);
+
+            Assert.That(string.Join(" ", errors), Does.Contain("Biological Replicate must be >= 1"));
+        }
+
+        /// <summary>
+        /// Null means "do not filter", the same meaning the guard in ToMzLibDesign gives it. It used to
+        /// throw ArgumentNullException, so the two ends of the same parameter disagreed.
+        /// </summary>
+        [Test]
+        public static void ANullFileListMeansDoNotFilterRatherThanThrowing()
+        {
+            string path = WriteDesign("nullFiles",
+                "sample.raw\tPlex1\tTumour\t126\tDisease\t1\t1\t1\tstudy sample");
+
+            List<TmtFileInfo> files = null;
+            Assert.That(() => files = TmtExperimentalDesign.Read(path, null, out _), Throws.Nothing);
+            Assert.That(files, Has.Count.EqualTo(1));
+        }
+
+        /// <summary>
+        /// The placeholder row Write emits for a file with no annotations has to survive being read
+        /// back, since that is the whole reason it is written -- so a design someone is part-way
+        /// through authoring does not lose the file. It did not: the blank Biological Replicate failed
+        /// int.TryParse, the row was skipped, and the file was then reported missing from the design.
+        ///
+        /// This matters most for the GUI PR, where a part-authored design is the normal state rather
+        /// than an edge case.
+        /// </summary>
+        [Test]
+        public static void APlaceholderRowForAnUnannotatedFileSurvivesARoundTrip()
+        {
+            string path = WriteDesign("placeholder",
+                "sample.raw\tPlex1\t\t\t\t\t1\t1\t");
+
+            var files = TmtExperimentalDesign.Read(path, new List<string>(), out var errors);
+
+            Assert.That(errors, Is.Empty, string.Join(" | ", errors));
+            Assert.That(files, Has.Count.EqualTo(1), "the file the placeholder exists to preserve was lost");
+            Assert.That(files[0].Annotations, Is.Empty, "and it carries no annotations, which is the point");
+        }
+
+        #endregion
+
     }
 }

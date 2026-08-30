@@ -29,8 +29,20 @@ namespace EngineLayer
         /// <summary>The column name carrying <see cref="TmtSampleType"/>.</summary>
         public const string SampleTypeColumn = "Sample Type";
 
-        // New validation helper: every (SampleName, BioRep, Fraction, TechRep) must be unique
-        private static string ValidateUniqueSampleBioFracTech(IEnumerable<(string Sample, int Bio, int Fraction, int Tech)> tuples)
+        /// <summary>
+        /// Every (Sample, BioRep, Fraction, TechRep) must be unique WITHIN A PLEX.
+        /// </summary>
+        /// <remarks>
+        /// Per plex rather than per file, because a bridge channel is by definition the same material
+        /// carried in more than one plex under one name -- which is what <see cref="TmtSampleType.Bridge"/>
+        /// exists to describe. Collecting these across the whole file rejected exactly that design, and
+        /// the only way through was to rename the bridges apart, which throws away the fact that they
+        /// are the same material and so defeats the point of having them.
+        ///
+        /// Keyed per plex still catches the case worth catching: one plex describing the same sample
+        /// twice.
+        /// </remarks>
+        private static string ValidateUniqueSampleBioFracTech(IEnumerable<(string Plex, string Sample, int Bio, int Fraction, int Tech)> tuples)
         {
             var duplicates = tuples
                 .GroupBy(t => t)
@@ -42,14 +54,21 @@ namespace EngineLayer
                 return null;
 
             var msgs = duplicates.Select(d =>
-                $"Duplicate combination detected: Sample \"{d.Sample}\" Biorep {d.Bio} Fraction {d.Fraction} Techrep {d.Tech}");
+                $"Duplicate combination detected in plex \"{d.Plex}\": Sample \"{d.Sample}\" " +
+                $"Biorep {d.Bio} Fraction {d.Fraction} Techrep {d.Tech}");
             return string.Join(Environment.NewLine, msgs);
         }
 
         // RETURN: files where each file carries its plex annotations
+        /// <param name="fullFilePathsWithExtension">
+        /// The files this run actually searched, used to ignore design rows naming anything else.
+        /// Null or empty means "do not filter" -- the same meaning the guard in ToMzLibDesign gives it,
+        /// and the reason this no longer throws on null.
+        /// </param>
         public static List<TmtFileInfo> Read(string tmtDesignPath, List<string> fullFilePathsWithExtension, out List<string> errors)
         {
             errors = new List<string>();
+            fullFilePathsWithExtension ??= new List<string>();
             var files = new List<TmtFileInfo>();
 
             // How many data rows the file had, and how many named a file in this run. A design whose
@@ -64,7 +83,7 @@ namespace EngineLayer
             var fileStateConflicts = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
             // Collect tuples for uniqueness validation
-            var uniqueTuples = new List<(string Sample, int Bio, int Fraction, int Tech)>();
+            var uniqueTuples = new List<(string Plex, string Sample, int Bio, int Fraction, int Tech)>();
 
             if (!File.Exists(tmtDesignPath))
             {
@@ -127,6 +146,14 @@ namespace EngineLayer
                 var file = cols[idxFile].Trim();
                 if (string.IsNullOrEmpty(file)) continue;
 
+                // A row naming a file and no channel is the placeholder Write emits for a file with no
+                // annotations yet, so that a part-authored design does not lose the file. Read used to
+                // reject it -- the blank Biological Replicate failed int.TryParse, the row was skipped,
+                // and the file was then reported as missing from the design. The placeholder therefore
+                // lost exactly what it existed to preserve, and a part-authored design is the NORMAL
+                // state while someone is filling one in through the GUI.
+                bool channelless = string.IsNullOrWhiteSpace(cols[idxChannel]);
+
                 // Resolve a relative name against the design file's own directory, not the process
                 // working directory. A TmtDesign.txt written with bare file names sits beside the raw
                 // files it names, and Path.GetFullPath alone would only match when the process happened
@@ -142,6 +169,22 @@ namespace EngineLayer
                 if (inThisRun)
                 {
                     dataRowsMatched++;
+
+                    if (channelless)
+                    {
+                        // Register the file with no annotations and move on. Fraction and technical
+                        // replicate still parse when present, so a placeholder carrying them keeps them.
+                        int.TryParse(cols[idxFrac].Trim(), out int placeholderFrac);
+                        int.TryParse(cols[idxTech].Trim(), out int placeholderTech);
+                        if (!fileState.ContainsKey(full))
+                        {
+                            fileState[full] = (cols[idxPlex].Trim(),
+                                placeholderFrac < 1 ? 1 : placeholderFrac,
+                                placeholderTech < 1 ? 1 : placeholderTech);
+                        }
+                        continue;
+                    }
+
                     var plex    = cols[idxPlex].Trim();
                     var sample  = cols[idxSample].Trim();
                     var tag     = cols[idxChannel].Trim();
@@ -155,9 +198,13 @@ namespace EngineLayer
                         continue;
                     }
 
-                    if (!int.TryParse(cols[idxBio].Trim(), out var bio))
+                    // >= 1, matching Fraction and Technical Replicate. A bare TryParse accepted 0 and
+                    // -3 silently, and ToMzLibDesign passes the value straight through to
+                    // ISampleInfo.BiologicalReplicate. If these are ever meant to be 0-based, all three
+                    // columns have to change together rather than one drifting from the other two.
+                    if (!int.TryParse(cols[idxBio].Trim(), out var bio) || bio < 1)
                     {
-                        errors.Add($"Line {i + 1}: invalid Biological Replicate.");
+                        errors.Add($"Line {i + 1}: Biological Replicate must be >= 1.");
                         continue;
                     }
                     if (!int.TryParse(cols[idxFrac].Trim(), out var frac) || frac < 1)
@@ -173,7 +220,7 @@ namespace EngineLayer
 
                     // Record tuple for uniqueness validation (ignore completely blank sample name)
                     if (!string.IsNullOrWhiteSpace(sample))
-                        uniqueTuples.Add((sample, bio, frac, tech));
+                        uniqueTuples.Add((plex, sample, bio, frac, tech));
 
                     // Per-file consistency
                     if (fileState.TryGetValue(full, out var state))
@@ -201,7 +248,7 @@ namespace EngineLayer
                         byTag = new Dictionary<string, TmtPlexAnnotation>(StringComparer.OrdinalIgnoreCase);
                         plexToAnnotations[plex] = byTag;
                     }
-                    if (!byTag.ContainsKey(tag))
+                    if (!byTag.TryGetValue(tag, out var existing))
                     {
                         byTag[tag] = new TmtPlexAnnotation
                         {
@@ -211,6 +258,22 @@ namespace EngineLayer
                             BiologicalReplicate = bio,
                             SampleType = sampleType
                         };
+                    }
+                    // Fractions of one plex legitimately repeat the same channel-to-sample map, which is
+                    // why this is keyed per plex and why a repeat is collapsed rather than refused. But
+                    // collapsing rows that DISAGREE silently discards one of them: two rows naming
+                    // channel 126 as different samples kept the first and said nothing. The uniqueness
+                    // rule above cannot catch it either -- two different sample names are two different
+                    // tuples, so it only fires when the duplicates agree, which is the harmless case.
+                    else if (!string.Equals(existing.SampleName, sample, StringComparison.OrdinalIgnoreCase)
+                             || !string.Equals(existing.Condition, cond, StringComparison.OrdinalIgnoreCase)
+                             || existing.BiologicalReplicate != bio
+                             || existing.SampleType != sampleType)
+                    {
+                        errors.Add(
+                            $"Line {i + 1}: plex \"{plex}\" channel \"{tag}\" is described twice and the " +
+                            $"descriptions disagree — \"{existing.SampleName}\"/\"{existing.Condition}\" " +
+                            $"versus \"{sample}\"/\"{cond}\".");
                     }
                 }
             }
