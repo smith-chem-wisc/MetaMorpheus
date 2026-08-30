@@ -1,4 +1,4 @@
-using MassSpectrometry;
+﻿using MassSpectrometry;
 using MzLibUtil;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -11,6 +11,7 @@ using Transcriptomics.Digestion;
 using EngineLayer.DIA;
 using Transcriptomics;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.DatabaseLoading;
 
 namespace EngineLayer
 {
@@ -65,7 +66,8 @@ namespace EngineLayer
             DIAparameters diaParameters = null,
             IFragmentationParams fragmentationParams = null,
             PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
-            string rtPredictorName = RTPredictorNames.Chronologer)
+            string rtPredictorName = RTPredictorNames.Chronologer,
+            FastaHeaderParsingParameters fastaHeaderParsing = null)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -136,6 +138,7 @@ namespace EngineLayer
             }
 
             RTPredictorName = rtPredictorName;
+            FastaHeaderParsing = fastaHeaderParsing ?? new FastaHeaderParsingParameters();
 
             CustomIons = digestionParams.ProductsFromDissociationType()[DissociationType.Custom];
 
@@ -220,6 +223,11 @@ namespace EngineLayer
         public IFragmentationParams FragmentationParameters { get; set; }
         public string RTPredictorName { get; private set; }
 
+        /// <summary>
+        /// How protein FASTA deflines are split into accession, name, gene and organism.
+        /// </summary>
+        public FastaHeaderParsingParameters FastaHeaderParsing { get; private set; }
+
         public CommonParameters Clone()
         {
             CommonParameters c = new CommonParameters();
@@ -293,7 +301,8 @@ namespace EngineLayer
                                 DIAparameters,
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
-                                RTPredictorName);
+                                RTPredictorName,
+                                FastaHeaderParsing);
         }
 
         public void SetCustomProductTypes()
