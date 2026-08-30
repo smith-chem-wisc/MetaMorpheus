@@ -60,9 +60,10 @@ namespace Test
                 var scan = new Ms2ScanWithSpecificMass(
                     dataFile.GetOneBasedScan(2), peptide.MonoisotopicMass.ToMz(1), 1, null, CommonParams);
 
-                // Scan number 1 for every category: these are competing identifications of ONE spectrum,
-                // which is the situation the method exists to resolve.
-                var psm = new PeptideSpectralMatch(peptide, 0, scoresByCategory[category]!.Value, 1, scan,
+                // One scan number for every category -- these are competing identifications of ONE
+                // spectrum, which is the situation the method exists to resolve. It is scan 2 rather
+                // than 1 because GetOneBasedScan(2) is the MS2 scan in this fixture.
+                var psm = new PeptideSpectralMatch(peptide, 0, scoresByCategory[category]!.Value, 2, scan,
                     CommonParams, new List<MatchedFragmentIon>());
                 psm.ResolveAllAmbiguities();
                 allPsms[category] = new List<SpectralMatch> { psm };
@@ -134,35 +135,72 @@ namespace Test
 
         /// <summary>
         /// The returned list is ordered by q-value ascending, then by score descending -- the contract
-        /// the caller relies on to take the best identifications first. Asserted over several spectra,
-        /// since a single-element list is ordered by accident.
+        /// the caller relies on to take the best identifications first.
+        ///
+        /// HALF OF THIS WAS UNTESTABLE BEFORE A DECOY WAS ADDED. With a single target protein,
+        /// FdrAnalysisEngine gives every candidate a q-value of 0, so the ordering assertion compared
+        /// `0 <= 0` and mutating `OrderBy` to `OrderByDescending` survived: the q half of the contract
+        /// was unpinned while the test name claimed it. The decoy makes the q-values actually differ.
+        ///
+        /// These are candidate rows for ONE spectrum -- all carry scan number 2 -- not several spectra.
+        /// They are distinguished only by peptide mass, and that difference is load-bearing: it is what
+        /// stops the `GroupBy((FullFilePath, ScanNumber, mass))` dedup inside the method collapsing them
+        /// into one. Giving them distinct scan numbers to "tidy" this would quietly change what is
+        /// being exercised.
         /// </summary>
         [Test]
         public static void ResultIsOrderedByQValueThenDescendingScore()
         {
-            var protein = new Protein("MNKNNKNNNKNNNNKPEPTIDEKPEPTIDER", "target");
-            var peptides = protein
+            var target = new Protein("MNKNNKNNNKNNNNKPEPTIDEKPEPTIDER", "target");
+            // Compositionally different from the target rather than a reversal of it. A reversed decoy
+            // has peptides of IDENTICAL mass, and the method dedups on (file, scan, mass) -- so two
+            // candidates collapsed into one and the count assertion below failed for a reason that had
+            // nothing to do with ordering.
+            var decoy = new Protein("MAAGVLDTIQEWFYHKSAGVLDTIQEWFYHR", "DECOY_target", isDecoy: true);
+
+            List<PeptideWithSetModifications> Digest(Protein p) => p
                 .Digest(CommonParams.DigestionParams, new List<Modification>(), new List<Modification>())
                 .Cast<PeptideWithSetModifications>().ToList();
+
+            // Taken half and half EXPLICITLY. Concatenating the two digests and slicing the front of the
+            // list takes only targets, because the target protein alone yields more peptides than the
+            // slice -- which is how the first version of this test ended up with no decoys at all and a
+            // single q-value, the very thing it is here to avoid.
+            int perProtein = 4;
+            var targets = Digest(target).Take(perProtein).ToList();
+            var decoys = Digest(decoy).Take(perProtein).ToList();
+            Assert.That(targets, Has.Count.EqualTo(perProtein));
+            Assert.That(decoys, Has.Count.EqualTo(perProtein), "premise: the decoy contributes candidates");
+
+            var peptides = targets.Concat(decoys).ToList();
             var dataFile = new TestDataFile(peptides.Cast<IBioPolymerWithSetMods>().ToList());
 
-            // One category, several spectra, scores out of order so the ordering has work to do.
+            // Targets score above decoys, which is what gives FdrAnalysisEngine a q-value gradient to
+            // produce rather than a single value repeated.
             var psms = new List<SpectralMatch>();
-            double[] scores = { 4, 11, 7, 2, 9 };
-            for (int i = 0; i < scores.Length && i < peptides.Count; i++)
+            int wanted = peptides.Count;
+            for (int i = 0; i < wanted; i++)
             {
                 var peptide = peptides[i];
+                double score = peptide.Parent.IsDecoy ? 3 + i : 20 - i;
                 var scan = new Ms2ScanWithSpecificMass(
                     dataFile.GetOneBasedScan(2), peptide.MonoisotopicMass.ToMz(1), 1, null, CommonParams);
-                var psm = new PeptideSpectralMatch(peptide, 0, scores[i], i + 1, scan, CommonParams,
+                var psm = new PeptideSpectralMatch(peptide, 0, score, 2, scan, CommonParams,
                     new List<MatchedFragmentIon>());
                 psm.ResolveAllAmbiguities();
                 psms.Add(psm);
             }
+            Assert.That(psms, Has.Count.EqualTo(wanted),
+                "premise: the fixture yields enough peptides to build the candidates this asserts over");
 
             var best = Resolve(new[] { psms });
 
-            Assert.That(best, Is.Not.Empty);
+            Assert.That(best, Has.Count.EqualTo(wanted),
+                "every candidate should come back; a shorter list means the ordering loop below "
+                + "compares fewer pairs than this test claims");
+            Assert.That(best.Select(b => b.PsmFdrInfo.QValue).Distinct().Count(), Is.GreaterThan(1),
+                "premise: without more than one q-value the ordering assertion cannot fail");
+
             for (int i = 1; i < best.Count; i++)
             {
                 double previousQ = best[i - 1].PsmFdrInfo.QValue;
