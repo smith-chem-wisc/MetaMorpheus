@@ -956,15 +956,15 @@ namespace MetaMorpheusGUI
                     }
                     else
                     {
+                        // Proceed without reading the file rather than deleting it. The prompt only ever
+                        // offered to continue without an experimental design, and deleting was both
+                        // undisclosed and irreversible -- and it did not affect the run either way, since
+                        // PostSearchAnalysisTask resolves the design from the used-file list itself.
                         var result = MessageBox.Show("An experimental design file was found, but an error " +
-                            "occurred reading it. Do you wish to continue with an empty experimental design?" +
+                            "occurred reading it. Do you wish to continue without an experimental design?" +
                             "\nThe error was: " + errors.First(), "Error", MessageBoxButton.YesNo);
 
-                        if (result == MessageBoxResult.Yes)
-                        {
-                            File.Delete(pathToExperDesign);
-                        }
-                        else
+                        if (result != MessageBoxResult.Yes)
                         {
                             return;
                         }
