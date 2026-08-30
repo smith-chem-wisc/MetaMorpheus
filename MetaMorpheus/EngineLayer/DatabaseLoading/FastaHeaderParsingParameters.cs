@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UsefulProteomicsDatabases;
 
@@ -16,7 +17,6 @@ public enum FastaHeaderFormat
     Ensembl,
     Gencode,
     Ncbi,
-    Modomics,
     Custom
 }
 
@@ -42,14 +42,17 @@ public class FastaHeaderFieldRegexSet
 public class FastaHeaderParsingParameters
 {
     /// <summary>
-    /// Ceiling on a single validation match. The user supplies these patterns, so a pathological one
-    /// must be rejected at configuration time rather than stalling a load.
+    /// Ceiling on a single validation match. Applies to validation only: mzLib's
+    /// <see cref="FastaHeaderFieldRegex"/> compiles the pattern with no timeout, so a pattern that is
+    /// fast on the headers checked here can still stall a load. Passing real deflines to
+    /// <see cref="Validate"/> is what narrows that gap.
     /// </summary>
     public static readonly TimeSpan ValidationMatchTimeout = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
-    /// Deflines the validator matches each pattern against. Only used to smoke out catastrophic
-    /// backtracking; a pattern that matches nothing here is still accepted.
+    /// Deflines every validation run matches each pattern against, on top of any real ones supplied.
+    /// Only used to smoke out catastrophic backtracking; a pattern that matches nothing here is still
+    /// accepted, since a preset for one database format will not match another.
     /// </summary>
     internal static readonly string[] ValidationHeaders =
     [
@@ -84,14 +87,13 @@ public class FastaHeaderParsingParameters
         CustomOrganismIdRegex = organismIdRegex ?? "";
     }
 
-    public FastaHeaderParsingParameters Clone() => new(HeaderFormat, CustomAccessionRegex,
-        CustomFullNameRegex, CustomNameRegex, CustomGeneNameRegex, CustomOrganismRegex, CustomOrganismIdRegex);
-
     /// <summary>
-    /// Checks the custom patterns without touching a database. Returns false and fills
-    /// <paramref name="errors"/> with user-facing messages when the configuration cannot be used.
+    /// Checks the custom patterns. Returns false and fills <paramref name="errors"/> with user-facing
+    /// messages when the configuration cannot be used. <paramref name="sampleHeaders"/> should be real
+    /// deflines from the databases about to be loaded where the caller can get them: the canned
+    /// headers cannot prove a pattern is fast on the user's own file.
     /// </summary>
-    public bool Validate(out List<string> errors)
+    public bool Validate(out List<string> errors, IEnumerable<string>? sampleHeaders = null)
     {
         errors = new List<string>();
         if (HeaderFormat != FastaHeaderFormat.Custom)
@@ -107,7 +109,7 @@ public class FastaHeaderParsingParameters
         {
             if (string.IsNullOrWhiteSpace(pattern))
                 continue;
-            if (!TryValidatePattern(pattern, out string? reason))
+            if (!TryValidatePattern(pattern, sampleHeaders, out string? reason))
                 errors.Add($"The custom FASTA header regex for {fieldName} is not usable: {reason} Pattern: {pattern}");
         }
 
@@ -158,15 +160,6 @@ public class FastaHeaderParsingParameters
                     Organism = NcbiOrganismRegex,
                 };
 
-            case FastaHeaderFormat.Modomics:
-                return new FastaHeaderFieldRegexSet
-                {
-                    Accession = ModomicsAccessionRegex,
-                    FullName = ModomicsFullNameRegex,
-                    Name = ModomicsNameRegex,
-                    Organism = ModomicsOrganismRegex,
-                };
-
             case FastaHeaderFormat.Custom:
                 return new FastaHeaderFieldRegexSet
                 {
@@ -192,13 +185,6 @@ public class FastaHeaderParsingParameters
     public static readonly FastaHeaderFieldRegex NcbiFullNameRegex = new("fullName", @">[^ ]*\s(.*?)(\s\[|$)", 0, 1);
     public static readonly FastaHeaderFieldRegex NcbiOrganismRegex = new("organism", @"\[([^\[\]]+)\]\s*$", 0, 1);
 
-    // Patterns copied verbatim from mzLib RnaDbLoader.ModomicsFieldRegexes; only the mapping onto the
-    // protein fields is ours. Accession uses Name (unique per entry) rather than the repeating SOterm.
-    public static readonly FastaHeaderFieldRegex ModomicsAccessionRegex = new("accession", @"Name:(.+?)\|", 0, 1);
-    public static readonly FastaHeaderFieldRegex ModomicsNameRegex = new("name", @"SOterm:(.+?)\|", 0, 1);
-    public static readonly FastaHeaderFieldRegex ModomicsFullNameRegex = new("fullName", @"Type:(.+?)\|", 0, 1);
-    public static readonly FastaHeaderFieldRegex ModomicsOrganismRegex = new("organism", @"Species:(.+?)$", 0, 1);
-
     private static FastaHeaderFieldRegex? Build(string fieldName, string pattern) =>
         string.IsNullOrWhiteSpace(pattern) ? null : new FastaHeaderFieldRegex(fieldName, pattern, 0, 1);
 
@@ -212,7 +198,7 @@ public class FastaHeaderParsingParameters
         yield return ("organism id", CustomOrganismIdRegex);
     }
 
-    private static bool TryValidatePattern(string pattern, out string? reason)
+    private static bool TryValidatePattern(string pattern, IEnumerable<string>? sampleHeaders, out string? reason)
     {
         Regex compiled;
         try
@@ -231,7 +217,7 @@ public class FastaHeaderParsingParameters
             return false;
         }
 
-        foreach (string header in ValidationHeaders)
+        foreach (string header in ValidationHeaders.Concat(sampleHeaders ?? []))
         {
             try
             {

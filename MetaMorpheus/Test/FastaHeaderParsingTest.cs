@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using Nett;
@@ -93,19 +94,6 @@ namespace Test
             Assert.That(protein.Accession, Is.EqualTo("NP_414555.1"));
             Assert.That(protein.FullName, Is.EqualTo("thr operon leader peptide"));
             Assert.That(protein.Organism, Is.EqualTo("Escherichia coli str. K-12 substr. MG1655"));
-        }
-
-        [Test]
-        public static void ModomicsPresetParsesAModomicsDefline()
-        {
-            string path = WriteFasta(Path.Combine("FastaHeaderParsing", "modomicsPreset.fasta"), ModomicsHeader, "PEPTIDEK");
-            var protein = Load(path, new FastaHeaderParsingParameters(FastaHeaderFormat.Modomics)).Single();
-
-            // Name, not SOterm: SOterm repeats across entries, so it collides as an accession.
-            Assert.That(protein.Accession, Is.EqualTo("tdbR00000010"));
-            Assert.That(protein.Name, Is.EqualTo("SO:0000254"));
-            Assert.That(protein.FullName, Is.EqualTo("tRNA"));
-            Assert.That(protein.Organism, Is.EqualTo("Escherichia coli"));
         }
 
         [Test]
@@ -258,6 +246,45 @@ namespace Test
             Assert.That(engine.Warnings, Is.Not.Empty);
             Assert.That(engine.Warnings.Single(), Does.StartWith("Cannot proceed. Task1-SearchTask:")
                 .And.Contain("not usable"));
+        }
+
+        [Test]
+        public static void ARegexIsCheckedAgainstTheSuppliedHeadersNotOnlyTheCannedOnes()
+        {
+            // Fails at the second character of every canned defline, so it is fast on those, and
+            // backtracks catastrophically on the header supplied below.
+            var parameters = new FastaHeaderParsingParameters(FastaHeaderFormat.Custom,
+                accessionRegex: @"^>(a+)+X$");
+
+            Assert.That(parameters.Validate(out _), Is.True,
+                "the canned headers alone cannot show this pattern is slow");
+
+            string ownHeader = ">" + new string('a', 40);
+            Assert.That(parameters.Validate(out var errors, new[] { ownHeader }), Is.False);
+            Assert.That(errors.Single(), Does.Contain("longer than"));
+        }
+
+        [Test]
+        public static void AnUnrecognizedHeaderFormatNamesTheValidValues()
+        {
+            string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "FastaHeaderParsing", "badFormatName.toml");
+            Directory.CreateDirectory(Path.GetDirectoryName(tomlPath));
+            Toml.WriteFile(new SearchTask(), tomlPath, MetaMorpheusTask.tomlConfig);
+
+            string original = File.ReadAllText(tomlPath);
+            string corrupted = Regex.Replace(original, @"HeaderFormat\s*=\s*""[^""]*""",
+                "HeaderFormat = \"Uniprot2\"");
+            Assert.That(corrupted, Is.Not.EqualTo(original), "the written toml must carry a HeaderFormat to corrupt");
+            File.WriteAllText(tomlPath, corrupted);
+
+            // Catch, not Throws: Throws<T> is exact-type and Nett may wrap ours.
+            var thrown = Assert.Catch<Exception>(
+                () => Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig),
+                "an unknown format name must not read as a silent default")!;
+
+            // ToString() so the assertion holds whether or not Nett wraps ours.
+            Assert.That(thrown.ToString(), Does.Contain("Uniprot2").And.Contain("Valid values are"));
         }
     }
 }

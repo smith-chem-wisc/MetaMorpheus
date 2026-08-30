@@ -72,7 +72,6 @@ namespace MetaMorpheusGUI
             FastaHeaderFormat.Ensembl => "ENSP00000001 pep:... gene:ENSG00000001",
             FastaHeaderFormat.Gencode => "ENSP0000001.1|ENST...|...|gene symbol|...",
             FastaHeaderFormat.Ncbi => "gi|16128008|ref|NP_414555.1| description [organism]",
-            FastaHeaderFormat.Modomics => "id:1|Name:tdbR00000010|SOterm:...|Species:...",
             _ => ""
         };
     }

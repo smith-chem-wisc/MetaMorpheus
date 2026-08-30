@@ -46,6 +46,20 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
+        /// <summary>
+        /// Nett hands a bare ArgumentException to the caller on an unrecognized enum name, which does
+        /// not say what the legal values are.
+        /// </summary>
+        private static FastaHeaderFormat ParseFastaHeaderFormat(string value)
+        {
+            if (Enum.TryParse<FastaHeaderFormat>(value, true, out var parsed))
+                return parsed;
+
+            throw new MetaMorpheusException(
+                $"Unrecognized FASTA header format '{value}'. Valid values are: "
+                + string.Join(", ", Enum.GetNames<FastaHeaderFormat>()) + ".");
+        }
+
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
@@ -180,7 +194,7 @@ namespace TaskLayer
             .ConfigureType<FastaHeaderFormat>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())
-                    .FromToml(tmlString => Enum.Parse<FastaHeaderFormat>(tmlString.Value, true))))
+                    .FromToml(tmlString => ParseFastaHeaderFormat(tmlString.Value))))
         );
        
 

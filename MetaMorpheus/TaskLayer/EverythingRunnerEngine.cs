@@ -88,8 +88,10 @@ namespace TaskLayer
                 var ok = TaskList[i];
 
                 // A malformed user-supplied header regex is a configuration mistake, not a crash.
+                // Real deflines are passed in because mzLib compiles the pattern without a match
+                // timeout, so only the user's own headers can show it is fast enough on them.
                 if (ok.Item2.CommonParameters?.FastaHeaderParsing is { } headerParsing
-                    && !headerParsing.Validate(out var headerRegexErrors))
+                    && !headerParsing.Validate(out var headerRegexErrors, SampleFastaHeaders(CurrentXmlDbFilenameList)))
                 {
                     foreach (string headerRegexError in headerRegexErrors)
                         Warn($"Cannot proceed. {ok.Item1}: {headerRegexError}");
@@ -150,6 +152,44 @@ namespace TaskLayer
             }
             FinishedWritingAllResultsFileHandler?.Invoke(this, new StringEventArgs(resultsFileName, null));
             FinishedAllTasks(OutputFolder);
+        }
+
+        /// <summary>
+        /// The first few deflines of each FASTA in the run, for validating a user-supplied regex
+        /// against the headers it will actually meet. Unreadable files are skipped: this is
+        /// validation input, and the loader reports a bad path itself.
+        /// </summary>
+        private static List<string> SampleFastaHeaders(List<DbForTask> databases, int perFile = 5)
+        {
+            var headers = new List<string>();
+            foreach (var db in databases ?? new List<DbForTask>())
+            {
+                if (db.IsSpectralLibrary)
+                    continue;
+
+                string extension = Path.GetExtension(db.FilePath).ToLowerInvariant();
+                if (extension != ".fasta" && extension != ".fa")
+                    continue;
+
+                try
+                {
+                    int taken = 0;
+                    foreach (string line in File.ReadLines(db.FilePath))
+                    {
+                        if (!line.StartsWith('>'))
+                            continue;
+                        headers.Add(line);
+                        if (++taken == perFile)
+                            break;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Not this gate's job to report.
+                }
+            }
+
+            return headers;
         }
 
         private void Warn(string v)
