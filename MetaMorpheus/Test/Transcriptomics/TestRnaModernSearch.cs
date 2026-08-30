@@ -9,6 +9,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Omics;
+using Omics.Fragmentation;
 using Omics.Modifications;
 using Readers;
 using TaskLayer;
@@ -94,6 +95,74 @@ namespace Test.Transcriptomics
 
             Assert.That(multiEntryBins, Is.GreaterThan(0), "no multi-entry bins; the test proves nothing");
             Assert.That(results.PeptideIndex.Select(p => p.MonoisotopicMass), Is.Ordered, "index is not sorted by mass");
+        }
+
+        /// <summary>
+        /// Non-specific search refuses a nucleic acid database with an explanation, rather than casting
+        /// and letting the runtime say it.
+        ///
+        /// It is built around proteases -- terminal mod placement, the "single" agents, the FDR
+        /// categories -- and none of those has an oligo counterpart yet. Without the guard the next line
+        /// is `bioPolymerList.Cast&lt;Protein&gt;()`, which throws InvalidCastException naming Protein and
+        /// RNA and explaining neither. The distinction the test pins is not that it fails, but that it
+        /// fails as a MetaMorpheusException carrying a message a user can act on.
+        ///
+        /// RunTask writes the failure into results.txt and rethrows, so the exception is observable here.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void NonSpecificSearch_RefusesANucleicAcidDatabase()
+        {
+            var original = GlobalVariables.AnalyteType;
+            string outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, "RnaNonSpecificRefused");
+            if (Directory.Exists(outputDir)) Directory.Delete(outputDir, true);
+            Directory.CreateDirectory(outputDir);
+
+            try
+            {
+                GlobalVariables.AnalyteType = AnalyteType.Oligo;
+
+                var task = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        dissociationType: DissociationType.CID,
+                        deconvolutionMaxAssumedChargeState: -20,
+                        precursorMassTolerance: new PpmTolerance(10),
+                        productMassTolerance: new PpmTolerance(20),
+                        scoreCutoff: 5,
+                        totalPartitions: 1,
+                        maxThreadsToUsePerFile: 1,
+                        digestionParams: new RnaDigestionParams(
+                            rnase: "top-down", fragmentationTerminus: FragmentationTerminus.N)),
+                    SearchParameters = new RnaSearchParameters
+                    {
+                        SearchType = SearchType.NonSpecific,
+                        DecoyType = DecoyType.None,
+                        MassDiffAcceptorType = MassDiffAcceptorType.Custom,
+                        CustomMdac = "Custom interval [-5,5]",
+                        DisposeOfFileWhenDone = true
+                    }
+                };
+
+                var databases = new List<DbForTask>
+                {
+                    new(Path.Combine(TestContext.CurrentContext.TestDirectory,
+                        "Transcriptomics", "TestData", "6mer.fasta"), false)
+                };
+                var spectra = new List<string> { SixmerFilePath };
+
+                var thrown = Assert.Throws<MetaMorpheusException>(
+                    () => task.RunTask(outputDir, databases, spectra, "RefuseNonSpecific"));
+
+                Assert.That(thrown.Message, Does.Contain("only implemented for proteins"));
+                Assert.That(thrown.Message, Does.Contain("Classic or Modern"),
+                    "the message has to say what to do instead, not just what failed");
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = original;
+                if (Directory.Exists(outputDir)) Directory.Delete(outputDir, true);
+            }
         }
 
         /// <summary>
