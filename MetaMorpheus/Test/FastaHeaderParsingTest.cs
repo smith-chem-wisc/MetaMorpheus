@@ -24,6 +24,10 @@ namespace Test
         private const string ModomicsHeader =
             ">id:1|Name:tdbR00000010|SOterm:SO:0000254|Type:tRNA|Subtype:Ala|Feature:VGC|Cellular_Localization:prokaryotic cytosol|Species:Escherichia coli";
 
+        // Gencode: exactly seven pipes, which is what DetectFastaHeaderFormat keys on.
+        private const string GencodeHeader =
+            ">ENSMUSP00000034487.2|ENSMUST00000034487.3|ENSMUSG00000018620.3|OTTMUSG00000062304.1|OTTMUST00000151979.1|Mmp20-201|Mmp20|482";
+
         private const string UniProtHeader =
             ">sp|P12345|AATM_RABIT Aspartate aminotransferase, mitochondrial OS=Oryctolagus cuniculus OX=9986 GN=GOT2 PE=1 SV=2";
 
@@ -285,6 +289,79 @@ namespace Test
 
             // ToString() so the assertion holds whether or not Nett wraps ours.
             Assert.That(thrown.ToString(), Does.Contain("Uniprot2").And.Contain("Valid values are"));
+        }
+
+        [Test]
+        public static void AutoDetectsGencodeWhereTheUniProtPresetManglesIt()
+        {
+            string path = WriteFasta(Path.Combine("FastaHeaderParsing", "gencodeAuto.fasta"), GencodeHeader, "PEPTIDEK");
+
+            // Stated as an invariant rather than a value: the pinned mzLib captures every field
+            // between the outer pipes, and mzLib's pending accession fix would capture the last one
+            // (a gene symbol). Neither is the Gencode accession, which is the point.
+            var mangled = Load(path, new FastaHeaderParsingParameters(FastaHeaderFormat.UniProt)).Single();
+            Assert.That(mangled.Accession, Is.Not.EqualTo("ENSMUSP00000034487.2"));
+
+            var detected = Load(path, new FastaHeaderParsingParameters(FastaHeaderFormat.Auto)).Single();
+            Assert.That(detected.Accession, Is.EqualTo("ENSMUSP00000034487.2"));
+            Assert.That(detected.GeneNames.Single().Item2, Is.EqualTo("Mmp20"));
+        }
+
+        [Test]
+        public static void AutoChangesNameAndTaxonomyIdOnAUniProtHeader()
+        {
+            string path = WriteFasta(Path.Combine("FastaHeaderParsing", "uniprotAuto.fasta"), UniProtHeader, "PEPTIDEK");
+
+            var preset = Load(path, new FastaHeaderParsingParameters(FastaHeaderFormat.UniProt)).Single();
+            var auto = Load(path, new FastaHeaderParsingParameters(FastaHeaderFormat.Auto)).Single();
+
+            // Same accession, but Auto is not a synonym for the UniProt preset: mzLib's detection
+            // uses UniprotNameRegex for Name and defaults an organism id regex, neither of which
+            // MetaMorpheus has ever passed. Pinned so the difference is documented, not discovered.
+            Assert.That(auto.Accession, Is.EqualTo(preset.Accession));
+            Assert.That(preset.Name, Is.EqualTo("Aspartate aminotransferase, mitochondrial"));
+            Assert.That(auto.Name, Is.EqualTo("AATM_RABIT"));
+            Assert.That(preset.NcbiTaxonomyId, Is.Null.Or.Empty);
+            Assert.That(auto.NcbiTaxonomyId, Is.EqualTo("9986"));
+        }
+
+        [Test]
+        public static void AutoRefusesAnUndetectableHeaderWithAWarningInsteadOfThrowing()
+        {
+            var startedEngines = new List<string>();
+            void RecordEngine(object sender, SingleEngineEventArgs e) => startedEngines.Add(e.MyEngine.GetType().Name);
+
+            // Not UniProt (no two-letter code and pipe), no Ensembl field markers, not seven pipes.
+            // mzLib would throw MzLibException on this, which reaches a GUI user as a crash report.
+            string fastaPath = WriteFasta(Path.Combine("FastaHeaderParsing", "undetectable.fasta"),
+                ">rat_reductase", "PEPTIDEK");
+            string mzmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "PrunedDbSpectra.mzml");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastaHeaderAutoGate");
+
+            var task = new SearchTask
+            {
+                CommonParameters = new CommonParameters(fastaHeaderParsing:
+                    new FastaHeaderParsingParameters(FastaHeaderFormat.Auto))
+            };
+
+            MetaMorpheusEngine.StartingSingleEngineHander += RecordEngine;
+            EverythingRunnerEngine engine;
+            try
+            {
+                engine = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("Task1-SearchTask", task) },
+                    new List<string> { mzmlPath },
+                    new List<DbForTask> { new DbForTask(fastaPath, false) },
+                    outputFolder);
+                engine.Run();
+            }
+            finally
+            {
+                MetaMorpheusEngine.StartingSingleEngineHander -= RecordEngine;
+            }
+
+            Assert.That(startedEngines, Is.Empty, "no engine should start: " + string.Join(", ", startedEngines));
+            Assert.That(engine.Warnings.Single(), Does.Contain("could not be detected automatically"));
         }
     }
 }

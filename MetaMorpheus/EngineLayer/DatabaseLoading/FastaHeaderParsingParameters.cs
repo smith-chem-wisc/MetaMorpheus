@@ -9,7 +9,8 @@ namespace EngineLayer.DatabaseLoading;
 
 /// <summary>
 /// Named FASTA header layouts that MetaMorpheus can parse. <see cref="FastaHeaderFormat.Custom"/>
-/// takes the regexes from <see cref="FastaHeaderParsingParameters"/> instead of a preset.
+/// takes the regexes from <see cref="FastaHeaderParsingParameters"/> instead of a preset;
+/// <see cref="FastaHeaderFormat.Auto"/> passes none and lets mzLib detect the format per file.
 /// </summary>
 public enum FastaHeaderFormat
 {
@@ -17,6 +18,7 @@ public enum FastaHeaderFormat
     Ensembl,
     Gencode,
     Ncbi,
+    Auto,
     Custom
 }
 
@@ -96,6 +98,25 @@ public class FastaHeaderParsingParameters
     public bool Validate(out List<string> errors, IEnumerable<string>? sampleHeaders = null)
     {
         errors = new List<string>();
+
+        if (HeaderFormat == FastaHeaderFormat.Auto)
+        {
+            // mzLib throws on a header it cannot classify, which reaches a GUI user as a crash
+            // report. Refuse it here instead, while there is still a message to give.
+            foreach (string header in sampleHeaders ?? [])
+            {
+                if (ProteinDbLoader.DetectFastaHeaderFormat(header) != FastaHeaderType.Unknown)
+                    continue;
+
+                errors.Add("The FASTA header format could not be detected automatically for this "
+                           + $"header: {header}. Pick a preset FASTA header format, or use Custom "
+                           + "and supply an accession regex.");
+                break;
+            }
+
+            return errors.Count == 0;
+        }
+
         if (HeaderFormat != FastaHeaderFormat.Custom)
             return true;
 
@@ -159,6 +180,11 @@ public class FastaHeaderParsingParameters
                     FullName = NcbiFullNameRegex,
                     Organism = NcbiOrganismRegex,
                 };
+
+            // All null on purpose: LoadProteinFasta only calls DetectFastaHeaderFormat when the
+            // accession regex is null, so an empty set is how detection is requested.
+            case FastaHeaderFormat.Auto:
+                return new FastaHeaderFieldRegexSet();
 
             case FastaHeaderFormat.Custom:
                 return new FastaHeaderFieldRegexSet

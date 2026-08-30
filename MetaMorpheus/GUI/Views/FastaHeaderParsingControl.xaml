@@ -22,6 +22,10 @@
                             <LineBreak />
                             Choose Custom to enter your own regular expressions below.
                             <LineBreak />
+                            Auto lets the library detect UniProt, Ensembl or Gencode per file. It also
+                            changes Name to the short form (ADH1_YEAST rather than the description) and
+                            fills in the NCBI taxonomy id, so its output differs from UniProt.
+                            <LineBreak />
                             Applies to .fasta databases only; a UniProt XML carries its own fields.
                         </TextBlock>
                     </ComboBox.ToolTip>
