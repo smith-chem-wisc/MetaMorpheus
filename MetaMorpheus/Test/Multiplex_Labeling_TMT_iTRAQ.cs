@@ -626,7 +626,7 @@ namespace Test
             //The below theoretical does not accurately represent B-Y ions
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.ProtonMass) - 275.1350, precursorMass + (2 * Constants.ProtonMass) - 258.127, precursorMass + (2 * Constants.ProtonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.ProtonMass) - 147.0764, precursorMass + (2 * Constants.ProtonMass) - 70, precursorMass + (2 * Constants.ProtonMass) - 60, precursorMass + (2 * Constants.ProtonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
             List<Product> productsWithLocalizedMassDiff = new();
-            
+
             //add one diagnostic ion
             productsWithLocalizedMassDiff.Add(new Product(ProductType.D, FragmentationTerminus.Both, sorted_theoretical_product_masses_for_this_peptide[11], 1, 1, 0));
 
@@ -870,7 +870,10 @@ namespace Test
             Assert.That(itraq4Labels, Is.EqualTo(new List<string> { "114", "115", "116", "117" }));
 
             var itraq8Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.iTRAQ8);
-            Assert.That(itraq8Labels, Is.EqualTo(new List<string> { "113", "114", "115", "116", "117", "118", "119", "120" }));
+            // "121", not "120": 8-plex has no 120 channel. See EveryTagsLabelsNameTheChannelAtTheirOwnIndex,
+            // which checks every label against the reporter ion at its own index rather than against a
+            // hardcoded list -- a hardcoded list can only ever pin whatever was there when it was written.
+            Assert.That(itraq8Labels, Is.EqualTo(new List<string> { "113", "114", "115", "116", "117", "118", "119", "121" }));
 
             var dileu4Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.diLeu4);
             Assert.That(dileu4Labels, Is.EqualTo(new List<string> { "115", "116", "117", "118" }));
@@ -982,6 +985,109 @@ namespace Test
             if (massTag == null)
             {
                 Assert.Throws<MetaMorpheusException>(() => throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + invalidModId));
+            }
+        }
+
+        [Test]
+        public static void TestTmtProteinGroupsHaveCountColumnsButNoIntensityColumns()
+        {
+            // Spectral counts and count-based occupancy are per spectra file, so TMT gets them like any
+            // other run. Intensities do not follow: FlashLFQ never runs, and a reporter-ion array is not
+            // the single per-file intensity the occupancy calculator accepts.
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
+            // DoParsimony must be true to generate protein groups output file
+            searchTask.SearchParameters.DoParsimony = true;
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtNoQuantColumns");
+            var engine = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                new List<string> { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\VA084TQ_6.mzML") },
+                new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta"), false) },
+                outputFolder);
+            try
+            {
+                engine.Run();
+
+                var pgLines = File.ReadAllLines(
+                    Path.Combine(outputFolder, "search", "AllProteinGroups.tsv")).ToList();
+                Assert.That(pgLines.Count, Is.GreaterThan(1), "No protein groups written");
+
+                var header = pgLines[0].Split('\t').ToList();
+
+                Assert.That(header.Any(h => h.StartsWith("Intensity_")), Is.False, "Unexpected Intensity_ column in TMT output");
+                Assert.That(header.Any(h => h.StartsWith("IntensityOccupancy_")), Is.False, "Unexpected IntensityOccupancy_ column in TMT output");
+
+                // One column per spectra file, not one per reporter channel - a channel has no spectral
+                // count of its own, so ten copies of one number is what we are avoiding here.
+                Assert.That(header.Count(h => h.StartsWith("SpectralCount_")), Is.EqualTo(1), "Expected one SpectralCount_ column per spectra file");
+                Assert.That(header.Count(h => h.StartsWith("CountOccupancy_")), Is.EqualTo(1), "Expected one CountOccupancy_ column per spectra file");
+
+                // All rows must still have consistent column counts
+                Assert.That(pgLines.Select(l => l.Split('\t').Length).AllSame(),
+                    Is.True, "Column count mismatch across protein group rows");
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder))
+                    Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// The invariant a hardcoded label list cannot express: GetReporterIonLabels(i) has to name the
+        /// channel whose reporter ion sits at ReporterIonMzs[i], because everything downstream pairs the
+        /// two positionally. A count check cannot catch a mislabelled channel -- iTRAQ 8-plex carried the
+        /// name "120" for the 121 reagent for exactly that reason, extracting the correct ion under a name
+        /// no kit sells.
+        ///
+        /// Every label begins with its nominal mass, so the assertion is available cheaply. This is the
+        /// guard that makes the fix safe rather than merely correct today.
+        /// </summary>
+        [Test]
+        public static void EveryTagsLabelsNameTheChannelAtTheirOwnIndex()
+        {
+            foreach (IsobaricMassTagType type in Enum.GetValues(typeof(IsobaricMassTagType)))
+            {
+                var tag = IsobaricMassTag.GetIsobaricMassTag(type);
+                if (tag == null) continue;   // modification not loaded in this environment
+
+                var labels = IsobaricMassTag.GetReporterIonLabels(type);
+                Assert.That(labels, Is.Not.Null, type.ToString());
+                Assert.That(labels.Count, Is.EqualTo(tag.ReporterIonMzs.Length),
+                    $"{type} has {labels.Count} labels but {tag.ReporterIonMzs.Length} reporter ions");
+
+                for (int i = 0; i < labels.Count; i++)
+                {
+                    string digits = new string(labels[i].TakeWhile(char.IsDigit).ToArray());
+                    Assert.That(digits, Is.Not.Empty,
+                        $"{type} label '{labels[i]}' does not begin with a nominal mass");
+
+                    int nominal = int.Parse(digits);
+                    int observed = (int)Math.Round(tag.ReporterIonMzs[i]);
+
+                    Assert.That(observed, Is.EqualTo(nominal),
+                        $"{type} label '{labels[i]}' at index {i} names channel {nominal}, but the reporter "
+                        + $"ion at that index is {tag.ReporterIonMzs[i]:F4} (channel {observed})");
+                }
+
+                // The nominal mass cannot separate an N channel from a C channel -- 127N and 127C are
+                // both "127" -- so a swapped suffix would pass everything above while pairing each with
+                // the other's ion. They are told apart by mass: at one nominal mass the N form is the
+                // lighter, and ReporterIonMzs is sorted ascending, so N must come first.
+                for (int i = 1; i < labels.Count; i++)
+                {
+                    string prev = labels[i - 1], curr = labels[i];
+                    bool sameNominal = new string(prev.TakeWhile(char.IsDigit).ToArray())
+                                    == new string(curr.TakeWhile(char.IsDigit).ToArray());
+                    if (!sameNominal) continue;
+
+                    if (prev.EndsWith("C") && curr.EndsWith("N"))
+                        Assert.Fail($"{type} orders '{prev}' before '{curr}' at index {i - 1}, but the N form "
+                                    + $"is the lighter of the pair and the reporter ions ascend "
+                                    + $"({tag.ReporterIonMzs[i - 1]:F4} then {tag.ReporterIonMzs[i]:F4})");
+                }
             }
         }
     }
