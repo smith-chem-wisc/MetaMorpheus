@@ -19,6 +19,7 @@ using System.Text;
 using EngineLayer.DatabaseLoading;
 using MzLibUtil;
 using Omics.Digestion;
+using Omics;
 using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
@@ -351,6 +352,9 @@ namespace TaskLayer
 
                 // pass protein group info for each PSM
                 var psmToProteinGroups = new Dictionary<SpectralMatch, List<ProteinGroup>>();
+                // Lets a PSM that parsimony left unassociated be matched back to the group its proteins
+                // ended up in. See ResolveProteinGroupsFromParsimony below.
+                var proteinToFlashLfqGroups = new Dictionary<IBioPolymer, List<ProteinGroup>>();
                 if (ProteinGroups != null && ProteinGroups.Count != 0) //ProteinGroups can be null if parsimony wasn't done, and it can be empty if you're doing the two peptide rule
                 {
                     foreach (var proteinGroup in ProteinGroups)
@@ -360,6 +364,18 @@ namespace TaskLayer
                         var flashLfqProteinGroup = new ProteinGroup(proteinGroup.ProteinGroupName,
                             string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
                             string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
+
+                        foreach (var protein in proteinGroup.Proteins)
+                        {
+                            if (proteinToFlashLfqGroups.TryGetValue(protein, out var groupsForThisProtein))
+                            {
+                                groupsForThisProtein.Add(flashLfqProteinGroup);
+                            }
+                            else
+                            {
+                                proteinToFlashLfqGroups.Add(protein, new List<ProteinGroup> { flashLfqProteinGroup });
+                            }
+                        }
 
                         foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>()
                             .Where(v => v.FullSequence != null))
@@ -557,7 +573,8 @@ namespace TaskLayer
                 {
                     if (!psmToProteinGroups.ContainsKey(psm))
                     {
-                        psmToProteinGroups.Add(psm, new List<ProteinGroup> { undefinedPg });
+                        var resolved = ResolveProteinGroupsFromParsimony(psm, proteinToFlashLfqGroups);
+                        psmToProteinGroups.Add(psm, resolved ?? new List<ProteinGroup> { undefinedPg });
                     }
 
                     proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
@@ -664,6 +681,48 @@ namespace TaskLayer
 
                 EngineCrashed("Quantification", e);
             }
+        }
+
+        /// <summary>
+        /// Finds the protein groups a quantified PSM belongs to when parsimony never associated it with
+        /// one. Returns null when none of the PSM's proteins ended up in a surviving group, which is the
+        /// case <see cref="ProteinGroup"/> "UNDEFINED" is for (e.g. the two-peptide rule dropped them).
+        /// </summary>
+        /// <remarks>
+        /// Parsimony excludes ambiguous PSMs, then narrows every PSM to its parsimonious proteins and
+        /// re-resolves the sequence. A PSM that was ambiguous beforehand can therefore become unambiguous
+        /// afterwards, at which point quantification accepts it but the protein groups were already built
+        /// without it.
+        /// </remarks>
+        private static List<ProteinGroup> ResolveProteinGroupsFromParsimony(SpectralMatch psm,
+            Dictionary<IBioPolymer, List<ProteinGroup>> proteinToFlashLfqGroups)
+        {
+            if (proteinToFlashLfqGroups.Count == 0)
+            {
+                return null;
+            }
+
+            List<ProteinGroup> resolved = null;
+            foreach (var protein in psm.BestMatchingBioPolymersWithSetMods
+                .Select(b => b.SpecificBioPolymer.Parent)
+                .Distinct())
+            {
+                if (protein == null || !proteinToFlashLfqGroups.TryGetValue(protein, out var groups))
+                {
+                    continue;
+                }
+
+                resolved ??= new List<ProteinGroup>();
+                foreach (var group in groups)
+                {
+                    if (!resolved.Contains(group))
+                    {
+                        resolved.Add(group);
+                    }
+                }
+            }
+
+            return resolved;
         }
 
         /// <summary>
