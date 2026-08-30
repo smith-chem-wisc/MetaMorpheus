@@ -194,7 +194,13 @@ namespace EngineLayer
                 IsobaricMassTagType.TMT11 => new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" },
                 IsobaricMassTagType.TMT18 => new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C", "132N", "132C", "133N", "133C", "134N", "134C", "135N" },
                 IsobaricMassTagType.iTRAQ4 => new List<string> { "114", "115", "116", "117" },
-                IsobaricMassTagType.iTRAQ8 => new List<string> { "113", "114", "115", "116", "117", "118", "119", "120" },
+                // iTRAQ 8-plex has no 120 channel: it is skipped because the phenylalanine immonium
+                // ion sits at 120.081, and the eighth reagent is 121. The m/z extracted here has
+                // always been the right one -- H12 C{13}6 N{15}2 plus a proton is 121.1215 against a
+                // published 121.122 -- so only the NAME was wrong, and it reached users as a column
+                // header in the .psmtsv. The "# 120" comment on that DI line in Mods/tmt.txt is where
+                // it came from.
+                IsobaricMassTagType.iTRAQ8 => new List<string> { "113", "114", "115", "116", "117", "118", "119", "121" },
                 IsobaricMassTagType.diLeu4 => new List<string> { "115", "116", "117", "118" },
                 IsobaricMassTagType.diLeu12 => new List<string> { "115a", "115b", "116a", "116b", "116c", "117a", "117b", "117c", "118a", "118b", "118c", "118d" },
                 _ => null
