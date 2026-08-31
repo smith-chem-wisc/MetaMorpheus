@@ -502,7 +502,7 @@ namespace Test
         {
             var tag = Tmt10();
             var first = FileWith(FixturePath("data") + Path.DirectorySeparatorChar, "PlexA", 1, 1, ("126", "A", 1, TmtSampleType.StudySample));
-            var second = FileWith(@"D:\other\", "PlexA", 1, 1, ("126", "B", 1, TmtSampleType.StudySample));
+            var second = FileWith(FixturePath("other") + Path.DirectorySeparatorChar, "PlexA", 1, 1, ("126", "B", 1, TmtSampleType.StudySample));
 
             var design = TmtExperimentalDesign.ToMzLibDesign(new[] { first, second }, tag, out var errors);
 
