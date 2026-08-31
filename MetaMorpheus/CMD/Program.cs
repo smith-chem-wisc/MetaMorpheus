@@ -398,22 +398,24 @@ namespace MetaMorpheusCommandLine
                 return 5;
             }
 
-            // Otherwise the run can continue without a design -- but only by discarding the one that
-            // is there, which is the user's call whenever there is a user to ask.
+            // Otherwise the run continues without reading the design, leaving the file alone. It used
+            // to be deleted -- silently at verbosity none, and on a y/n whose question was about
+            // continuing rather than about deletion. Deleting an input the user cannot be asked about
+            // is a lot to infer from a verbosity flag, and #2256 is a user who lost their design that
+            // way. The GUI side stops deleting in #2780; the CLI and the GUI have to agree about
+            // whether a design that fails to parse is the user's file or ours to discard.
             if (!reportToConsole)
             {
-                File.Delete(designPath);
                 return 0;
             }
 
             write((hasClassicDesign ? "An experimental design file" : "A TMT design file")
-                + " was found, but an error occurred reading it. Delete and continue empty? y/n");
+                + " was found, but an error occurred reading it. Continue without an experimental design? y/n");
             write("First error: " + errors.First());
 
             string answer = readLine();
             if (answer?.ToLowerInvariant() == "y" || answer?.ToLowerInvariant() == "yes")
             {
-                File.Delete(designPath);
                 return 0;
             }
 
