@@ -43,6 +43,7 @@ namespace TaskLayer
             ModsToWriteSelection = DefaultModsToWriteSelection();
 
             WriteHighQValuePsms = true;
+            ComputeTailorScore = false;
             WriteDecoys = true;
             WriteContaminants = true;
             WriteIndividualFiles = true;
@@ -102,6 +103,9 @@ namespace TaskLayer
         public bool WriteMzId { get; set; }
         public bool WritePepXml { get; set; }
         public bool WriteHighQValuePsms { get; set; }
+        /// <summary>Adds a per-spectrum calibrated score column to the PSM output. Classic search
+        /// only, and it costs about 1 kB per MS2 scan while the search runs.</summary>
+        public bool ComputeTailorScore { get; set; }
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
         public bool WriteIndividualFiles { get; set; }
