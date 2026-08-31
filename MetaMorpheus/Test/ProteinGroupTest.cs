@@ -285,6 +285,134 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// The companion of TestMultipleProteinGroupsHeaderAndRowsHaveSameColumnCount, for the case that
+        /// test cannot reach. It assigns zeros for unmeasured samples, mirroring QuantificationAnalysis,
+        /// so HasIntensityData is true for every group and the columns line up by accident of the
+        /// label-free writer.
+        ///
+        /// mzLib's QuantificationEngine OMITS zero-valued cells instead, so a protein it found nothing
+        /// for gets an assigned-but-empty dictionary. Gating the Intensity_ column on the per-group
+        /// HasIntensityData then emits fewer columns for that protein than for its neighbour, while the
+        /// header is written once from the first group -- so every value after the gap lands under the
+        /// wrong column name. That is the shape the isobaric path produces.
+        /// </summary>
+        [Test]
+        public static void ProteinGroupsWithOmittedIntensitiesStillLineUpWithTheHeader()
+        {
+            Protein protA = new Protein("MEDEEK", "protA");
+            Protein protB = new Protein("MENEEK", "protB");
+            PeptideWithSetModifications pwsmA = new PeptideWithSetModifications(protA, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            PeptideWithSetModifications pwsmB = new PeptideWithSetModifications(protB, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            ProteinGroup pgA = new ProteinGroup(new HashSet<IBioPolymer> { protA },
+                new HashSet<IBioPolymerWithSetMods> { pwsmA }, new HashSet<IBioPolymerWithSetMods> { pwsmA });
+            ProteinGroup pgB = new ProteinGroup(new HashSet<IBioPolymer> { protB },
+                new HashSet<IBioPolymerWithSetMods> { pwsmB }, new HashSet<IBioPolymerWithSetMods> { pwsmB });
+
+            var fileA = new SpectraFileInfo(@"X:akeA.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0);
+            var fileB = new SpectraFileInfo(@"X:akeB.mzML", condition: "", biorep: 1, fraction: 0, techrep: 0);
+            var files = new List<SpectraFileInfo> { fileA, fileB };
+
+            // Both groups were quantified -- both carry the full sample list. pgB simply had nothing
+            // observed, so its dictionary is assigned and empty rather than full of zeros.
+            pgA.FilesForQuantification = files;
+            pgA.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { fileA, 100.0 }, { fileB, 200.0 } };
+            pgA.PopulateSampleGroupResults();
+
+            pgB.FilesForQuantification = files;
+            pgB.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
+            pgB.PopulateSampleGroupResults();
+
+            var proteinGroups = new List<ProteinGroup> { pgA, pgB };
+
+            int headerColumnCount = proteinGroups.First().GetTabSeparatedHeader().Split('	').Length;
+            foreach (var pg in proteinGroups)
+            {
+                Assert.That(pg.ToString().Split('	').Length, Is.EqualTo(headerColumnCount),
+                    $"Row column count for '{pg.ProteinGroupName}' does not match the header column count.");
+            }
+
+            // And the header must not depend on which group happens to be first: the writer takes it
+            // from proteinGroups.First(), which is not necessarily one that had observations.
+            Assert.That(pgB.GetTabSeparatedHeader(), Is.EqualTo(pgA.GetTabSeparatedHeader()),
+                "A quantified group with no observations must describe the same columns as one with them.");
+        }
+
+        /// <summary>
+        /// The other half of the gate, which the rectangularity test cannot see because it assigns both
+        /// fields on both groups. A group that knows its samples but was never given intensities -- the
+        /// state a quantifier leaves when it does not run -- must describe no intensity columns, because
+        /// nothing could ever fill them. This is what stops the gate from being satisfied by the sample
+        /// list alone.
+        /// </summary>
+        [Test]
+        public static void ProteinGroupWithSamplesButNoAssignedIntensities_HasNoIntensityColumns()
+        {
+            Protein prot = new Protein("MEDEEK", "protA");
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(prot, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot },
+                new HashSet<IBioPolymerWithSetMods> { pwsm }, new HashSet<IBioPolymerWithSetMods> { pwsm });
+
+            pg.FilesForQuantification = new List<SpectraFileInfo>
+            {
+                new SpectraFileInfo(@"X:akeA.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0)
+            };
+            // IntensitiesByFile deliberately not assigned.
+            pg.PopulateSampleGroupResults();
+
+            string header = pg.GetTabSeparatedHeader();
+            Assert.Multiple(() =>
+            {
+                Assert.That(header, Does.Not.Contain("Intensity_"),
+                    "no intensities were assigned, so nothing could fill an intensity column");
+                Assert.That(header, Does.Contain("SpectralCount_"),
+                    "spectral counts do not depend on quantification");
+                Assert.That(pg.ToString().Split('	').Length, Is.EqualTo(header.Split('	').Length));
+            });
+        }
+
+        /// <summary>
+        /// <summary>
+        /// The third state, and the reason the gate tests a NON-EMPTY sample list rather than merely an
+        /// assigned one. ConstructSubsetProteinGroup, which builds the per-file protein groups, assigns
+        /// an empty sample list beside an empty-but-non-null dictionary whenever no sample matches the
+        /// requested file -- the ordinary case for a protein not seen in that file. With no samples,
+        /// PopulateSampleGroupResults falls back to grouping by spectral-match file path, so the group
+        /// still renders columns; gating on the dictionary alone, or on the list being merely assigned,
+        /// would advertise intensity columns that nothing can ever fill.
+        ///
+        /// The PSM is what makes this observable: without one there are no sample groups at all and the
+        /// row is empty either way.
+        /// </summary>
+        [Test]
+        public static void ProteinGroupWithNoSamplesButPsms_HasNoIntensityColumns()
+        {
+            Protein prot = new Protein("MEDEEK", "protA");
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(prot, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot },
+                new HashSet<IBioPolymerWithSetMods> { pwsm }, new HashSet<IBioPolymerWithSetMods> { pwsm });
+
+            // A PSM gives PopulateSampleGroupResults something to group by when there is no design.
+            pg.AllPsmsBelowOnePercentFDR.Add(GptmdFilterTests.DummySpectralMatch());
+
+            // Assigned, but empty -- both. This is what a subset for an unmatched file looks like.
+            pg.FilesForQuantification = new List<SpectraFileInfo>();
+            pg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
+            pg.PopulateSampleGroupResults();
+
+            Assert.That(pg.SampleGroupResults, Is.Not.Empty,
+                "the PSM should have produced a sample group, or this test cannot see the difference");
+
+            string header = pg.GetTabSeparatedHeader();
+            Assert.Multiple(() =>
+            {
+                Assert.That(header, Does.Not.Contain("Intensity_"),
+                    "there are no samples, so an intensity column could never be filled");
+                Assert.That(pg.ToString().Split('	').Length, Is.EqualTo(header.Split('	').Length));
+            });
+        }
+
         [Test]
         public static void ProteinGroupMergeTest()
         {
