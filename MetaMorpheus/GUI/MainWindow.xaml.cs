@@ -38,7 +38,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> SelectedProteinDatabaseFiles = new ObservableCollection<ProteinDbForDataGrid>();
         private ObservableCollection<InRunTask> InProgressTasks;
-        private ProteaseGuruGui.MainWindow? _proteaseGuruWindow;
+        private ProteaseGuru.Gui.MainWindow? _proteaseGuruWindow;
         public static string NewestKnownMetaMorpheusVersion { get; private set; }
 
         public MainWindow()
@@ -1347,7 +1347,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            _proteaseGuruWindow = new ProteaseGuruGui.MainWindow();
+            _proteaseGuruWindow = new ProteaseGuru.Gui.MainWindow();
             _proteaseGuruWindow.Closed += (_, _) => _proteaseGuruWindow = null;
             _proteaseGuruWindow.Show();
         }

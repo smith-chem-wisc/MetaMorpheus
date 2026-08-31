@@ -439,18 +439,18 @@
 		<Component Id="src_PredictionClients.dll" Guid="C6398A43-F845-47C2-9F35-0BB2435AFE16">
 			<File Id="src_PredictionClients.dll" Name="PredictionClients.dll" Source="$(var.GUI_TargetDir)PredictionClients.dll" />
 		</Component>
-		<Component Id="src_ProteaseGuru_Engine.dll" Guid="c8f3e773-9adb-4285-b364-aba840db1534">
-			<File Id="src_ProteaseGuru_Engine.dll" Name="Engine.dll" Source="$(var.GUI_TargetDir)Engine.dll" />
+		<Component Id="src_ProteaseGuru.Engine.dll" Guid="be5f7976-a458-4795-aea6-46fdc80f24f8">
+			<File Id="src_ProteaseGuru.Engine.dll" Name="ProteaseGuru.Engine.dll" Source="$(var.GUI_TargetDir)ProteaseGuru.Engine.dll" />
 		</Component>
-		<Component Id="src_ProteaseGuru_Tasks.dll" Guid="ab85cac7-da44-4434-ab55-4d2dc7dc23a2">
-			<File Id="src_ProteaseGuru_Tasks.dll" Name="Tasks.dll" Source="$(var.GUI_TargetDir)Tasks.dll" />
+		<Component Id="src_ProteaseGuru.Tasks.dll" Guid="12936dfe-69f3-462f-9c07-5a84d8e81dd2">
+			<File Id="src_ProteaseGuru.Tasks.dll" Name="ProteaseGuru.Tasks.dll" Source="$(var.GUI_TargetDir)ProteaseGuru.Tasks.dll" />
 		</Component>
-		<Component Id="src_ProteaseGuruGui.dll" Guid="259c3a81-39ad-4fa7-bdb3-25fd9751e271">
-			<File Id="src_ProteaseGuruGui.dll" Name="ProteaseGuruGui.dll" Source="$(var.GUI_TargetDir)ProteaseGuruGui.dll" />
+		<Component Id="src_ProteaseGuru.Gui.dll" Guid="56b3800c-17f4-4a8b-a8d1-e8c0e62828f0">
+			<File Id="src_ProteaseGuru.Gui.dll" Name="ProteaseGuru.Gui.dll" Source="$(var.GUI_TargetDir)ProteaseGuru.Gui.dll" />
 		</Component>
- 		<Component Id="src_ProteaseGuruGuiFunctions.dll" Guid="5cec6708-011d-4e4b-912b-679b687a389f">
- 			<File Id="src_ProteaseGuruGuiFunctions.dll" Name="ProteaseGuruGuiFunctions.dll" Source="$(var.GUI_TargetDir)ProteaseGuruGuiFunctions.dll" />
- 		</Component>
+		<Component Id="src_ProteaseGuru.GuiFunctions.dll" Guid="b5cae3e1-f169-4e6a-be20-48b7ccb95dca">
+			<File Id="src_ProteaseGuru.GuiFunctions.dll" Name="ProteaseGuru.GuiFunctions.dll" Source="$(var.GUI_TargetDir)ProteaseGuru.GuiFunctions.dll" />
+		</Component>
  		<Component Id="src_HarfBuzzSharp.dll" Guid="735de1c4-c216-452c-9111-0506a287da2c">
  			<File Id="src_HarfBuzzSharp.dll" Name="HarfBuzzSharp.dll" Source="$(var.GUI_TargetDir)HarfBuzzSharp.dll" />
  		</Component>
