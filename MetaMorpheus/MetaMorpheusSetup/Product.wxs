@@ -668,6 +668,11 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)Data\combos.txt" />
       </Component>
+      <Component Id="Appsrc_Data_rnaCombos.txt" Guid="6f1a9a8d-5f0d-4cbe-a1eb-f1f7fa7e8f5b" Condition="OVERWRITEAPPDATA">
+
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_Data_rnaCombos.txt" Name="rnaCombos.txt" Source="$(var.GUI_TargetDir)Data\rnaCombos.txt" />
+      </Component>
       <Component Id="Appsrc_Data_PSI_MOD.obo.xml" Guid="348109bd-4645-448e-b272-19a126e4c3cf" Condition="OVERWRITEAPPDATA">
         
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
