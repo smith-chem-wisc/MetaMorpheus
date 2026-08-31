@@ -230,16 +230,6 @@ namespace TaskLayer
             // the run. It has to precede RunAsync as well -- that is Task.Run with no cancellation, so
             // throwing after it leaves the load running unobserved. Reads the same precondition
             // LoadSpectralLibraries does, without opening the library.
-            // Checked before the protein load starts, rather than where the library is updated after the
-            // whole search: there is nothing to update, and reporting it once the search has finished wastes
-            // the run. It has to precede RunAsync as well -- that is Task.Run with no cancellation, so
-            // throwing after it leaves the load running unobserved. Reads the same precondition
-            // LoadSpectralLibraries does, without opening the library.
-            // Checked before the protein load starts, rather than where the library is updated after the
-            // whole search: there is nothing to update, and reporting it once the search has finished wastes
-            // the run. It has to precede RunAsync as well -- that is Task.Run with no cancellation, so
-            // throwing after it leaves the load running unobserved. Reads the same precondition
-            // LoadSpectralLibraries does, without opening the library.
             if (SearchParameters.UpdateSpectralLibrary && !AnySpectralLibrary(dbFilenameList))
             {
                 throw new MetaMorpheusException(
