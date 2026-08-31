@@ -45,6 +45,24 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * MS1 and MS2 scans
 * If you would like to know more about the types of files that can be searched with MetaMorpheus, please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[Mass Spectra Files Video](https://www.youtube.com/watch?v=SN6_T2JyxhA&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb&index=3) on YouTube.
 
+### Agreeing to the Thermo licence
+
+Reading Thermo `.raw` files requires agreeing to Thermo's RawFileReader licence. The GUI asks the first time a `.raw` file is added; the command line asks the first time a run includes one.
+
+Where there is no console to answer that prompt — a container, a scheduled cluster job, a CI runner, anything with stdin redirected or closed — pass `--acceptThermoLicence`. It prints the licence, records the agreement, and does not prompt:
+
+```
+dotnet CMD.dll --acceptThermoLicence
+```
+
+It may also be given alongside a run, which then proceeds without prompting:
+
+```
+dotnet CMD.dll --acceptThermoLicence -t SearchTask.toml -d database.fasta -s spectra.raw -o output
+```
+
+The agreement is stored as `UserHasAgreedToThermoRawFileReaderLicence` in `settings.toml` in the MetaMorpheus data directory. For a Windows installation that is `%LOCALAPPDATA%\MetaMorpheus`, so it is recorded once per user and survives upgrades. Otherwise it is the folder MetaMorpheus was extracted into, so a new download, conda environment or container layer will need the agreement again.
+
 ## Database Requirements
 
 UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you would like to know how to obtain a UniProt .XML databases, please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[Protein Databases Video](https://www.youtube.com/watch?v=LFvCj04r5kU&index=2&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb) on YouTube.
