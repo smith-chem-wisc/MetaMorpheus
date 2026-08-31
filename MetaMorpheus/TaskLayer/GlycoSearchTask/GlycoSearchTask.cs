@@ -214,7 +214,6 @@ namespace TaskLayer
                 GlycoSearchTaskResults = MyTaskResults,
                 SearchTaskId = taskId,
                 GlycoSearchParameters = _glycoSearchParameters,
-                ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => (DigestionParams)p.DigestionParams)),
                 ProteinList = proteinList,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
