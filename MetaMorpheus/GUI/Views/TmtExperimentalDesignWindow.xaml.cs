@@ -1,4 +1,5 @@
 ﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -34,6 +35,15 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             _spectraFiles = spectraFiles;
             DgTmt.ItemsSource = _rows;
+
+            if (s_seedErrors.Count > 0)
+            {
+                MessageBox.Show(
+                    "A TMT design file was found next to the spectra files, but it could not be read in full. "
+                    + "The grid below shows only what could be loaded." + Environment.NewLine + Environment.NewLine
+                    + string.Join(Environment.NewLine, s_seedErrors),
+                    "TMT experimental design", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
 
             // seed rows with existing SpectraFiles.Use == true
             foreach (var file in _spectraFiles.Where(p => p.Use).Select(p => p.FilePath))
@@ -416,9 +426,17 @@ namespace MetaMorpheusGUI
             DgTmt.CommitEdit(DataGridEditingUnit.Row, true);
         }
 
+        /// <summary>
+        /// Every problem the last seeding run reported, in the order the design files were read.
+        /// Surfaced when the window opens rather than at drag-drop time: seeding happens while the
+        /// user is still adding files, and a message box per dropped folder would be noise.
+        /// </summary>
+        private static readonly List<string> s_seedErrors = new();
+
         // Load TMT design .txt files in same folders as the provided raw files and seed caches
         public static void SeedFromDesignFiles(IEnumerable<string> rawFilePaths)
         {
+            s_seedErrors.Clear();
             if (rawFilePaths == null) return;
 
             var rawSet = new HashSet<string>(
@@ -439,7 +457,16 @@ namespace MetaMorpheusGUI
                 var filesInDir = rawSet.Where(f => string.Equals(Path.GetDirectoryName(f), dir, StringComparison.OrdinalIgnoreCase))
                                        .ToList();
 
-                var tmtFiles = TmtExperimentalDesign.Read(designPath, filesInDir, out var _);
+                // Read reports a design that is present but unusable -- a channel described twice with
+                // disagreeing samples, a Biological Replicate below one, a row too short, an
+                // unrecognised Sample Type, or no row naming a file in this run. Discarding the list
+                // here opened a partial design, or an empty grid indistinguishable from having no
+                // design at all, and said nothing.
+                var tmtFiles = TmtExperimentalDesign.Read(designPath, filesInDir, out var readErrors);
+                foreach (var error in readErrors)
+                {
+                    s_seedErrors.Add($"{designPath}: {error}");
+                }
 
                 // Persist file state (Fraction, TechRep, Plex)
                 foreach (var fi in tmtFiles)
