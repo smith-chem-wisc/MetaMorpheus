@@ -247,6 +247,40 @@ namespace Test
         }
 
         /// <summary>
+        /// A provided path that is not already normalized -- here one routed through a '..' segment --
+        /// still matches the design row that names the same file. Both the row-level in-this-run test
+        /// and the "did not contain the file(s)" check normalize their inputs, so they cannot disagree
+        /// and report a file as missing from a design that names it.
+        /// </summary>
+        [Test]
+        public static void AnUnnormalizedProvidedPathStillMatchesItsDesignRow()
+        {
+            string folder = NewFolder("TmtDesignUnnormalizedPath");
+            string rawPath = Path.Combine(folder, "unnormalized.raw");
+            File.WriteAllText(rawPath, string.Empty);
+
+            // Same file, reached through a redundant directory hop.
+            string detoured = Path.Combine(folder, "sub", "..", "unnormalized.raw");
+            Assert.That(detoured, Is.Not.EqualTo(rawPath));
+
+            string designPath = Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName);
+            File.WriteAllLines(designPath, new[]
+            {
+                TmtExperimentalDesign.Header,
+                $"{rawPath}	Plex1	S1	126	Control	1	1	1	study sample",
+            });
+
+            var files = TmtExperimentalDesign.Read(designPath, new List<string> { detoured }, out var errors);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(errors, Is.Empty);
+                Assert.That(files.Single().FullFilePathWithExtension, Is.EqualTo(rawPath));
+                Assert.That(files.Single().Annotations, Has.Count.EqualTo(1));
+            });
+        }
+
+        /// <summary>
         /// A row that stops short of the required columns is reported by line number rather than
         /// silently dropped. The count is against the required width, not the full header, so a design
         /// written before the optional Sample Type column existed still loads -- that case is covered
@@ -508,13 +542,10 @@ namespace Test
 
         /// <summary>
         /// A file with no channel annotations still gets a row, so a design the user is part-way
-        /// through authoring does not silently lose the file.
+        /// through authoring does not silently lose the file. Every per-channel cell on that row is
+        /// blank — including the trailing Sample Type cell, hence the tab at the end.
         /// </summary>
         [Test]
-        /// <summary>
-        /// A file with no annotations still gets one row, with every per-channel cell blank —
-        /// including the trailing Sample Type cell, hence the tab at the end.
-        /// </summary>
         public static void WriteEmitsAPlaceholderRowForAFileWithNoAnnotations()
         {
             string folder = NewFolder("TmtDesignNoAnnotations");

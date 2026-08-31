@@ -127,6 +127,15 @@ namespace EngineLayer
             // How many cells a row needs to carry every required column.
             int minimumCells = new[] { idxFile, idxPlex, idxSample, idxChannel, idxCond, idxBio, idxFrac, idxTech }.Max() + 1;
 
+            // Normalize the provided paths ONCE, the same way the "did not contain the file(s)" check
+            // below normalizes them. The row-level in-this-run test used to compare a resolved path
+            // against these strings raw, so a provided path carrying a '..' segment matched there but
+            // not here: the row was skipped and the file was then reported as missing from a design
+            // that names it. Both file checks now read the same set.
+            var providedFullPaths = new HashSet<string>(
+                fullFilePathsWithExtension.Select(NormalizePath),
+                StringComparer.OrdinalIgnoreCase);
+
             for (int i = 1; i < lines.Length; i++)
             {
                 var line = lines[i];
@@ -162,8 +171,7 @@ namespace EngineLayer
                 string full = ResolveAgainstDesignFile(file, designDirectory);
 
                 // Only consider lines for files actually in this run (mirrors ExperimentalDesign behavior)
-                bool inThisRun = !fullFilePathsWithExtension.Any() ||
-                    fullFilePathsWithExtension.Contains(full, StringComparer.OrdinalIgnoreCase);
+                bool inThisRun = providedFullPaths.Count == 0 || providedFullPaths.Contains(full);
 
                 dataRowsSeen++;
                 if (inThisRun)
@@ -312,15 +320,11 @@ namespace EngineLayer
             if (fullFilePathsWithExtension != null && fullFilePathsWithExtension.Count > 0)
             {
                 // normalize and compare case-insensitively using full paths
-                var provided = new HashSet<string>(
-                    fullFilePathsWithExtension.Select(p => { try { return Path.GetFullPath(p); } catch { return p; } }),
-                    StringComparer.OrdinalIgnoreCase);
-
                 var defined = new HashSet<string>(
-                    fileState.Keys.Select(p => { try { return Path.GetFullPath(p); } catch { return p; } }),
+                    fileState.Keys.Select(NormalizePath),
                     StringComparer.OrdinalIgnoreCase);
 
-                var notDefined = provided.Where(p => !defined.Contains(p)).ToList();
+                var notDefined = providedFullPaths.Where(p => !defined.Contains(p)).ToList();
                 if (notDefined.Any())
                 {
                     errors.Add("Error: The TMT design did not contain the file(s): " + string.Join(", ", notDefined));
@@ -336,6 +340,16 @@ namespace EngineLayer
         /// TmtDesign.txt written alongside its raw files expects to be read from, and only then
         /// against the process working directory.
         /// </summary>
+        /// <summary>
+        /// Full path when the runtime can produce one, the original string when it cannot. Used on both
+        /// sides of every file comparison so the two file checks can never disagree.
+        /// </summary>
+        private static string NormalizePath(string path)
+        {
+            try { return Path.GetFullPath(path); }
+            catch { return path; }
+        }
+
         private static string ResolveAgainstDesignFile(string file, string designDirectory)
         {
             try
