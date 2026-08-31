@@ -9,7 +9,6 @@ using System.Linq;
 using EngineLayer.DatabaseLoading;
 using FlashLFQ;
 using MassSpectrometry;
-using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using Proteomics.ProteolyticDigestion;
@@ -541,25 +540,12 @@ namespace TaskLayer
             // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
             // the peptides should still be quantified but not considered for protein quantification
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
-            //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-            Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
-            Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
-
-            foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
-            {
-                if (!proteaseSortedPsms.ContainsKey(dp.Protease))
-                {
-                    proteaseSortedPsms.Add(dp.Protease, new List<SpectralMatch>());
-                }
-            }
             foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
             {
                 if (!psmToProteinGroups.ContainsKey(psm))
                 {
                     psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { undefinedPg });
                 }
-
-                proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
             }
 
             // pass PSM info to FlashLFQ
@@ -576,7 +562,8 @@ namespace TaskLayer
                 foreach (var psm in spectraFile)
                 {
                     flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.BioPolymerWithSetModsMonoisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                        psm.BioPolymerWithSetModsMonoisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm],
+                        digestionAgentName: psm.DigestionParams.DigestionAgentName()));
                 }
             }
 

@@ -989,6 +989,15 @@ namespace Test
         }
 
         [Test]
+        /// <remarks>
+        /// The absence asserted here describes master, where QuantificationAnalysis returns before
+        /// quantifying anything for a multiplex search, so no group is ever assigned intensities. It is
+        /// not a statement that TMT output should have no intensity columns -- when the isobaric path
+        /// starts populating them, this expectation is the one to revisit, and the companion to add is
+        /// the design-file-present case, which nothing covers today.
+        ///
+        /// The AllSame() assertion below is the one that stays true either way.
+        /// </remarks>
         public static void TestTmtProteinGroupsHaveCountColumnsButNoIntensityColumns()
         {
             // Spectral counts and count-based occupancy are per spectra file, so TMT gets them like any
