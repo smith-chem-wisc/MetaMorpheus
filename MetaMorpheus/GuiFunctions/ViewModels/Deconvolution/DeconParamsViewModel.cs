@@ -125,7 +125,7 @@ public abstract class DeconParamsViewModel : BaseViewModel
 
         }
     }
-    
+
     public override string ToString() => DeconvolutionType.ToString();
 
     public override int GetHashCode()
