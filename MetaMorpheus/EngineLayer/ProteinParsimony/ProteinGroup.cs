@@ -113,11 +113,16 @@ namespace EngineLayer
         /// Snapshot view of <see cref="BioPolymerGroup.IntensitiesBySample"/> keyed by SpectraFileInfo.
         /// The getter returns a fresh read-only copy on every call, so mutating the returned value has no
         /// effect on the protein group; assign a new dictionary through the setter to change it.
-        /// SpectraFileInfo only: the getter throws if an isobaric sample is present.
+        /// SpectraFileInfo only: isobaric samples are dropped by the getter, so a round-trip loses them.
+        /// This matches <see cref="FilesForQuantification"/>, which is the companion view over the same
+        /// backing store -- the two describe the same subset and should agree on what happens to a
+        /// sample they cannot represent.
         /// </summary>
         public IReadOnlyDictionary<SpectraFileInfo, double> IntensitiesByFile
         {
-            get => IntensitiesBySample?.ToDictionary(kvp => (SpectraFileInfo)kvp.Key, kvp => kvp.Value);
+            get => IntensitiesBySample?
+                .Where(kvp => kvp.Key is SpectraFileInfo)
+                .ToDictionary(kvp => (SpectraFileInfo)kvp.Key, kvp => kvp.Value);
             set => IntensitiesBySample = value?.ToDictionary(kvp => (ISampleInfo)kvp.Key, kvp => kvp.Value);
         }
 
@@ -146,6 +151,30 @@ namespace EngineLayer
         /// Null keeps every column, which is the behaviour wherever nothing sets this.
         /// </summary>
         public HashSet<string> SearchedSpectraFilePaths { get; set; }
+
+        /// <summary>
+        /// Whether sample intensities were assigned to this group at all. Gates the Intensity_ columns
+        /// in both the header and the row.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately not the per-group SampleGroupResult.HasIntensityData. Whether a column EXISTS
+        /// has to be a property of the group as a whole, or a row cannot line up with a header written
+        /// from a different group -- and AllProteinGroups.tsv writes one header, from
+        /// proteinGroups.First(), then a row per group.
+        ///
+        /// It did line up until now, but by accident: QuantificationAnalysis assigns IntensitiesByFile
+        /// for every protein including unmeasured ones, so the zeros were present and HasIntensityData
+        /// was uniformly true. mzLib's QuantificationEngine omits zero-valued cells instead, leaving an
+        /// assigned-but-empty dictionary, and that is what the isobaric path produces.
+        ///
+        /// Both fields are required: a subset group built for a file none of the samples match gets an
+        /// empty sample list beside an empty dictionary, and gating on the dictionary alone would
+        /// advertise columns nothing can fill. Mirrors BioPolymerGroup.HasAssignedSampleIntensities from
+        /// the mzLib release after 1.0.587; this copy goes away when the pin moves and ProteinGroup
+        /// overrides the header rather than hiding it.
+        /// </remarks>
+        private bool HasAssignedSampleIntensities =>
+            SamplesForQuantification is { Count: > 0 } && IntensitiesBySample is not null;
 
         // Fails open: an unset path list or a group with no file info means we cannot tell, and dropping
         // columns on a guess is worse than keeping them.
@@ -256,7 +285,7 @@ namespace EngineLayer
 
                     if (searched)
                         sb.Append($"SpectralCount_{group.Label}\t");
-                    if (group.HasIntensityData)
+                    if (HasAssignedSampleIntensities)
                         sb.Append($"Intensity_{group.Label}\t");
                     if (searched)
                         sb.Append($"CountOccupancy_{group.Label}\t");
@@ -388,9 +417,11 @@ namespace EngineLayer
                         sb.Append("\t");
                     }
 
-                    if (group.HasIntensityData)
+                    if (HasAssignedSampleIntensities)
                     {
-                        if (group.Intensity > 0)
+                        // Empty rather than 0 when this group has nothing: the cell must not
+                        // assert a measurement that was not made.
+                        if (group.HasIntensityData && group.Intensity > 0)
                             sb.Append(group.Intensity);
                         sb.Append("\t");
                     }

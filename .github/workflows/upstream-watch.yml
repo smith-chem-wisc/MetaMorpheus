@@ -1,0 +1,213 @@
+# Notices when mzLib cuts a release, and opens the pull request that bumps this repository's pin to
+# it.
+#
+# Nothing connected an mzLib release to this repository. The pins live in six csproj
+# PackageReference elements, so they moved only when a human remembered to move all six -- and
+# MetaMorpheus is the consumer that matters most, because mzLib's own integration job clones this
+# repository's master and runs its suite, so a bad pairing reddens every open mzLib pull request.
+#
+# What this does NOT do is push the bump. It opens a pull request, because this repository's CI runs
+# on `pull_request` and that run is precisely the evidence needed to decide whether the new mzLib is
+# safe to take. Bumping by push would skip the one check that makes the bump trustworthy.
+#
+# It also does not decide whether the bump is SAFE, only whether it is available. Of the four
+# consumers bumped for mzLib 1.0.585, exactly one was a version string and nothing else: another
+# needed a target-framework migration, another had drifted so far that a namespace move broke it,
+# and another failed thirteen tests because mzLib had added file formats its documentation counted.
+# The pull request body says as much, and the checks on it are what settle the question.
+
+name: upstream-watch
+
+on:
+  schedule:
+    # Mondays, 07:00 UTC. mzLib releases every few weeks, so anything more frequent is noise; the
+    # workflow is a no-op on a week with no release and costs one API call to find that out.
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+# Least privilege: enough to push a branch and open a pull request against this repository, nothing
+# more. Note this workflow deliberately touches no file under .github/workflows/ -- GitHub rejects a
+# push from the default GITHUB_TOKEN that modifies one.
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-watch
+  cancel-in-progress: false
+
+jobs:
+  mzlib:
+    name: check mzLib for a new release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve mzLib's latest release
+        id: upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # `releases/latest` excludes drafts and prereleases, which is what we want: the pin should
+          # follow what mzLib considers shipped, not whatever tag exists. mzLib tags carry no `v`
+          # prefix, so the tag IS the NuGet version.
+          tag=$(gh api repos/smith-chem-wisc/mzLib/releases/latest --jq .tag_name)
+          if ! [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::mzLib's latest release tag '$tag' is not a bare three-part version"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "mzLib's latest release is $tag"
+
+      - name: Find what this repository pins today
+        id: pin
+        env:
+          NEW: ${{ steps.upstream.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          # Discovered rather than hard-coded. A list of csproj paths in this file is a list that
+          # goes stale silently the first time someone adds a project; grepping for the reference
+          # cannot.
+          mapfile -t files < <(grep -rlE '(Include="mzLib"|id="mzLib")' --include='*.csproj' --include='*.nuspec' . | sort)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::found no file referencing mzLib; this workflow's assumptions no longer hold"
+            exit 1
+          fi
+          printf 'pin sites:\n'; printf '  %s\n' "${files[@]}"
+          printf '%s\n' "${files[@]}" > /tmp/files.txt
+
+          # Every distinct version currently pinned. More than one means this repository is
+          # internally inconsistent, which has really happened here -- ProteaseGuru held its csprojs
+          # and its nuspec at different mzLib versions -- so it is reported rather than smoothed over.
+          mapfile -t versions < <(grep -rhoE '(Include="mzLib"[^>]*Version="|id="mzLib"[^>]*version=")[0-9]+\.[0-9]+\.[0-9]+' "${files[@]}" \
+            | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -uV)
+          printf 'currently pinned: %s\n' "${versions[*]}"
+
+          if [ ${#versions[@]} -gt 1 ]; then
+            echo "drift=${versions[*]}" >> "$GITHUB_OUTPUT"
+            echo "::warning::pin sites disagree with each other: ${versions[*]}."
+          fi
+
+          # `versions` is sorted ascending, so these are the extremes of what the tree pins. They
+          # are the same value unless the sites disagree with each other.
+          current=${versions[0]}
+          highest=${versions[-1]}
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+
+          if [ "$current" = "$NEW" ] && [ ${#versions[@]} -eq 1 ]; then
+            echo "Already pinned to $NEW everywhere. Nothing to do."
+            echo "action=none" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+
+          # Direction matters. A pin is allowed to sit AHEAD of the latest release, and does when
+          # someone takes an unreleased mzLib deliberately. Rolling that backwards onto an older
+          # package would be a regression opened as a chore, so it is refused.
+          #
+          # Compared against the HIGHEST pinned version, not the lowest, because the rewrite sets
+          # EVERY site to $NEW -- so it is the highest site that decides whether anything moves
+          # backwards. Comparing the lowest inverts the guard exactly when the sites disagree: with
+          # sites at 1.0.586 and 1.0.590 and a latest release of 1.0.586, the lowest equals the
+          # release, the already-pinned exit above is skipped because there is more than one
+          # version, the direction check passes, and the rewrite drags the 1.0.590 site back onto an
+          # older package -- the regression this guard exists to prevent. Mixed pins are a state
+          # that really happens here; ProteaseGuru held its csprojs and its nuspec apart.
+          newest=$(printf '%s\n%s\n' "$highest" "$NEW" | sort -V | tail -1)
+          if [ "$newest" != "$NEW" ]; then
+            if [ ${#versions[@]} -gt 1 ]; then
+              echo "::notice::pin sites disagree (${versions[*]}) and the highest, $highest, is newer than the latest release $NEW; bumping every site to $NEW would move that one backwards, so leaving it alone. Reconcile the drift by hand."
+            else
+              echo "::notice::this repository pins $highest, which is newer than the latest release $NEW; leaving it alone."
+            fi
+            echo "action=none" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+
+          echo "action=bump" >> "$GITHUB_OUTPUT"
+
+      - name: Rewrite every pin site
+        if: steps.pin.outputs.action == 'bump'
+        env:
+          NEW: ${{ steps.upstream.outputs.tag }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r f; do
+            # Anchored on the mzLib reference itself so no other package's version can be caught by
+            # a stray match on the same line.
+            sed -i -E "s|(Include=\"mzLib\"[^>]*Version=\")[0-9]+\.[0-9]+\.[0-9]+|\1$NEW|g; s|(id=\"mzLib\"[^>]*version=\")[0-9]+\.[0-9]+\.[0-9]+|\1$NEW|g" "$f"
+          done < /tmp/files.txt
+          echo "--- resulting references:"
+          grep -rhE '(Include="mzLib"|id="mzLib")' $(cat /tmp/files.txt) || true
+
+          # Belt and braces: if anything still points at another version the rewrite missed a shape
+          # of reference, and silently opening a half-bumped pull request is worse than failing here.
+          remaining=$(grep -rhoE '(Include="mzLib"[^>]*Version="|id="mzLib"[^>]*version=")[0-9]+\.[0-9]+\.[0-9]+' $(cat /tmp/files.txt)             | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -u | grep -vFx "$NEW" || true)
+          if [ -n "$remaining" ]; then
+            echo "::error::these versions survived the rewrite: $remaining -- refusing to open a partial bump"
+            exit 1
+          fi
+
+      - name: Compose the pull request body
+        if: steps.pin.outputs.action == 'bump'
+        id: body
+        env:
+          NEW: ${{ steps.upstream.outputs.tag }}
+          CURRENT: ${{ steps.pin.outputs.current }}
+          DRIFT: ${{ steps.pin.outputs.drift }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          {
+            echo "mzLib released **$NEW**. This repository pinned \`$CURRENT\`."
+            echo
+            if [ -n "${DRIFT:-}" ]; then
+              echo "> **Note** — the pin sites did not agree with each other before this change: \`$DRIFT\`."
+              echo "> They are now reconciled to a single version."
+              echo
+            fi
+            echo "### Pin sites updated"
+            echo
+            sed 's|^\./||; s|^|- `|; s|$|`|' /tmp/files.txt
+            echo
+            echo "### What to look at before merging"
+            echo
+            echo "The checks on this pull request are the gate: they say whether this repository still"
+            echo "builds and still passes its own tests against the new package. What they cannot say is"
+            echo "whether mzLib **changed a value it reports**, because a re-baselined expectation is"
+            echo "indistinguishable from a correct one until someone reads the release notes."
+            echo
+            echo "A version bump here is only sometimes a version string. Of the four consumers bumped"
+            echo "for mzLib 1.0.585, one was; the others needed a framework migration, a namespace fix"
+            echo "after drifting nineteen releases, and thirteen test updates. **If CI is red, read it"
+            echo "as work to do rather than as a broken release.**"
+            echo
+            echo "Release notes: https://github.com/smith-chem-wisc/mzLib/releases/tag/$NEW"
+            echo
+            echo "---"
+            echo "Opened by \`.github/workflows/upstream-watch.yml\`."
+          } > /tmp/body.md
+          cat /tmp/body.md
+          echo "path=/tmp/body.md" >> "$GITHUB_OUTPUT"
+
+      - name: Open (or update) the bump pull request
+        if: steps.pin.outputs.action == 'bump'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          # A PAT when one is configured, the default token otherwise. What it buys is not extra
+          # checks: a pull request authored by github-actions[bot] DOES queue this repository's
+          # workflows, but they land as `action_required`, held behind the approval gate GitHub
+          # applies to a first-time contributor. The PAT makes the pull request come from a human
+          # account instead, which removes the click. Nothing breaks without it; the checks simply
+          # wait for a person.
+          token: ${{ secrets.UPSTREAM_WATCH_TOKEN || github.token }}
+          # Reused across re-runs so a weekly cron updates one pull request per mzLib release rather
+          # than opening a duplicate every Monday until it is merged.
+          branch: upstream/mzlib-${{ steps.upstream.outputs.tag }}
+          title: "chore(mzlib): bump the pin to ${{ steps.upstream.outputs.tag }}"
+          body-path: ${{ steps.body.outputs.path }}
+          commit-message: |
+            chore(mzlib): bump the pin to ${{ steps.upstream.outputs.tag }}
+
+            Opened automatically by upstream-watch.yml when mzLib released
+            ${{ steps.upstream.outputs.tag }}. The checks on the pull request decide
+            whether the bump is safe to take.

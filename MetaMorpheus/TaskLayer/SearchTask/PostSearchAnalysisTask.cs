@@ -330,6 +330,15 @@ namespace TaskLayer
                     includeAmbiguousMods: false,
                     includeHighQValuePsms: false);
 
+                // FlashLFQ needs a mass. The filter above screens on sequence, which does not imply a
+                // resolved mass: a NaN residue mass, or two best matches whose mods share an IdWithMotif
+                // but not a mass, both leave BioPolymerWithSetModsMonoisotopicMass null.
+                int psmsWithoutMass = psmsForQuantification.RemovePsmsWithoutResolvedMass();
+                if (psmsWithoutMass > 0)
+                {
+                    Warn($"{psmsWithoutMass} PSM(s) were excluded from quantification because their monoisotopic mass could not be determined.");
+                }
+
                 // Only these peptides will be written to the AllQuantifiedPeptides.tsv output file
                 var peptideSequencesForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                     CommonParameters,
@@ -516,6 +525,16 @@ namespace TaskLayer
                     //update the list for FlashLFQ
                     silacPsms.ForEach(x => x.ResolveAllAmbiguities()); //update the monoisotopic mass
                     psmsForQuantification.SetSilacFilteredPsms(silacPsms);
+
+                    // SetSilacFilteredPsms replaces the list wholesale, so the guard above ran against
+                    // PSMs that no longer exist. These were rebuilt from synthesised labeled sequences
+                    // after it, and ResolveAllAmbiguities can still leave the mass null, so screen again
+                    // rather than letting a null-mass PSM reach FlashLFQ by the back door.
+                    int silacPsmsWithoutMass = psmsForQuantification.RemovePsmsWithoutResolvedMass();
+                    if (silacPsmsWithoutMass > 0)
+                    {
+                        Warn($"{silacPsmsWithoutMass} SILAC PSM(s) were excluded from quantification because their monoisotopic mass could not be determined.");
+                    }
                 }
 
                 //group psms by file
@@ -524,24 +543,12 @@ namespace TaskLayer
                 // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
                 // the peptides should still be quantified but not considered for protein quantification
                 var undefinedPg = new ProteinGroup("UNDEFINED", "", "");
-                //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-                Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
-
-                foreach (IDigestionParams dp in Parameters.ListOfDigestionParams)
-                {
-                    if (!proteaseSortedPsms.ContainsKey(dp.DigestionAgent))
-                    {
-                        proteaseSortedPsms.Add(dp.DigestionAgent, new List<SpectralMatch>());
-                    }
-                }
                 foreach (var psm in psmsForQuantification)
                 {
                     if (!psmToProteinGroups.ContainsKey(psm))
                     {
                         psmToProteinGroups.Add(psm, new List<ProteinGroup> { undefinedPg });
                     }
-
-                    proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
                 }
 
                 // pass PSM info to FlashLFQ
@@ -563,7 +570,10 @@ namespace TaskLayer
                                 psmToProteinGroups[psm],
                                 psmScore: psm.Score,
                                 qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
-                                decoy: psm.IsDecoy));
+                                decoy: psm.IsDecoy,
+                                // lets FlashLFQ keep match-between-runs within a digestion agent, while
+                                // normalization and protein quantification still span every file
+                                digestionAgentName: psm.DigestionParams.DigestionAgentName()));
                     }
                 }
 
