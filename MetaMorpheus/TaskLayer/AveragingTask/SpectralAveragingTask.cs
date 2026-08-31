@@ -64,6 +64,8 @@ namespace TaskLayer
                 var originalFileExtension = GlobalVariables.GetFileExtension(originalUnaveragedFilepath);
                 if (originalFileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase) || BrukerDataDirectory.IsInnerFileExtension(originalFileExtension))
                 {
+                    // record it, or the new experimental design names a -averaged.mzML that was never written
+                    unsuccessfulyAveragedFilePaths.Add(originalUnaveragedFilepath);
                     Warn("Averaging for " + originalFileExtension + " files is not supported.");
                     FinishedDataFile(originalUnaveragedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepath });
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion }));
