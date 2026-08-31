@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EngineLayer;
@@ -157,6 +157,66 @@ namespace Test.Transcriptomics
                 Assert.That(thrown.Message, Does.Contain("only implemented for proteins"));
                 Assert.That(thrown.Message, Does.Contain("Classic or Modern"),
                     "the message has to say what to do instead, not just what failed");
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = original;
+                if (Directory.Exists(outputDir)) Directory.Delete(outputDir, true);
+            }
+        }
+
+        /// <summary>
+        /// The refusal a user actually meets. SearchTask still throws -- the test above pins that as a
+        /// backstop for a caller invoking RunTask directly -- but a MetaMorpheusException out of
+        /// RunSpecific is written into results.txt with a stack trace and rethrown, and the GUI routes
+        /// the faulted task to EverythingRunnerExceptionHandler, which offers to report a crash. So the
+        /// message telling the user to switch to Classic or Modern is the one thing they never see.
+        ///
+        /// EverythingRunnerEngine refuses first, next to the existing "No protein database files
+        /// selected" gates, and the assertion is on Warnings rather than on a thrown exception --
+        /// which is what makes it a refusal rather than a crash.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void NonSpecificSearch_OverANucleicAcidDatabase_IsRefusedByTheRunnerNotThrown()
+        {
+            var original = GlobalVariables.AnalyteType;
+            string outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, "RnaNonSpecificRunnerRefused");
+            if (Directory.Exists(outputDir)) Directory.Delete(outputDir, true);
+            Directory.CreateDirectory(outputDir);
+
+            try
+            {
+                GlobalVariables.AnalyteType = AnalyteType.Oligo;
+
+                var task = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        digestionParams: new RnaDigestionParams(
+                            rnase: "top-down", fragmentationTerminus: FragmentationTerminus.N)),
+                    SearchParameters = new RnaSearchParameters { SearchType = SearchType.NonSpecific }
+                };
+
+                var databases = new List<DbForTask>
+                {
+                    new(Path.Combine(TestContext.CurrentContext.TestDirectory,
+                        "Transcriptomics", "TestData", "6mer.fasta"), false)
+                };
+
+                var runner = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("RefuseNonSpecific", task) },
+                    new List<string> { SixmerFilePath },
+                    databases,
+                    outputDir);
+
+                Assert.DoesNotThrow(() => runner.Run(), "the runner refuses; it does not fault the task");
+
+                Assert.That(runner.Warnings.Any(w => w.Contains("only implemented for proteins")),
+                    "the refusal has to reach the user as a warning");
+                Assert.That(runner.Warnings.Any(w => w.Contains("Classic or Modern")),
+                    "the message has to say what to do instead, not just what failed");
+                Assert.That(Directory.Exists(Path.Combine(outputDir, "RefuseNonSpecific")), Is.False,
+                    "refused before the task ran, so it never got an output folder");
             }
             finally
             {

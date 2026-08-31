@@ -192,9 +192,23 @@ namespace EngineLayer.Indexing
                 }
 
                 //Add terminal mods if needed (do it here rather than earlier so that we don't have to fragment twice)
-                // Only reachable for the "single" proteases, which are protein-only, so the cast is safe.
-                if (addInteriorTerminalModsToPrecursorIndex && peptides[peptideId] is PeptideWithSetModifications peptideForTerminalMods)
+                // The "single" agents are NOT protein-only: mzLib's rnases.tsv ships RNases named
+                // singleN and singleC, which the Name.Contains("single") test above matches. What makes
+                // this reachable only for peptides is the refusal in SearchTask.RunSpecific -- a
+                // non-specific search rejects a nucleic acid database before it gets here. That guard
+                // lives in another file, so throw rather than skip if it is ever relaxed: silently
+                // omitting interior terminal mods would cost identifications with nothing reporting why.
+                if (addInteriorTerminalModsToPrecursorIndex)
                 {
+                    if (peptides[peptideId] is not PeptideWithSetModifications peptideForTerminalMods)
+                    {
+                        throw new MetaMorpheusException(
+                            "Interior terminal modifications are only implemented for peptides, but a " +
+                            $"{peptides[peptideId].GetType().Name} reached the precursor index under digestion agent " +
+                            $"'{CommonParameters.DigestionParams.DigestionAgent.Name}'. Non-specific search is " +
+                            "supposed to refuse a nucleic acid database before indexing.");
+                    }
+
                     AddInteriorTerminalModsToPrecursorIndex(precursorIndex, fragments, peptideForTerminalMods, peptideId, terminalModifications);
                 }
 

@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -1271,8 +1271,15 @@ namespace TaskLayer
             }
         }
 
+        /// <summary>
+        /// Cast rather than OfType, to match the write side one method up. Both respond to the same
+        /// violated precondition -- a cached index is only reachable when indexIsCacheable, which is
+        /// AnalyteType != Oligo -- and they must fail the same way. OfType here would drop the oligos
+        /// and carry on with whatever proteins remained, returning a plausible index silently built
+        /// from a subset of the database; the write side already throws on the first oligo.
+        /// </summary>
         private static List<IBioPolymerWithSetMods> ReadPeptideIndex(string peptideIndexFileName, IEnumerable<IBioPolymer> allKnownBioPolymers)
-            => ReadPeptideIndex(peptideIndexFileName, allKnownBioPolymers.OfType<Protein>().ToList())
+            => ReadPeptideIndex(peptideIndexFileName, allKnownBioPolymers.Cast<Protein>().ToList())
                 .Cast<IBioPolymerWithSetMods>().ToList();
 
         private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> allKnownProteins)
