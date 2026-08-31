@@ -155,7 +155,9 @@ namespace TaskLayer
             {
                 var originalUnaveragedFilePath = unaveragedSpectraFile.FullFilePathWithExtension;
                 var originalUnaveragedFilenameWithoutExtension = GlobalVariables.GetFilenameWithoutExtension(originalUnaveragedFilePath);
-                string averagedFilePath = Path.Combine(outputFolder, originalUnaveragedFilenameWithoutExtension + AveragingSuffix + ".mzML");
+                // ToSafeOutputPath here too, or a name the run loop trimmed is named untrimmed.
+                string averagedFilePath = Path.Combine(outputFolder, originalUnaveragedFilenameWithoutExtension + AveragingSuffix + ".mzML")
+                    .ToSafeOutputPath(AveragingSuffix + ".mzML");
 
                 var averagedSpectraFile = new SpectraFileInfo(averagedFilePath,
                     unaveragedSpectraFile.Condition, unaveragedSpectraFile.BiologicalReplicate, unaveragedSpectraFile.TechnicalReplicate, unaveragedSpectraFile.Fraction);
