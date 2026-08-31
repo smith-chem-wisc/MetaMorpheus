@@ -452,6 +452,9 @@ namespace GuiFunctions
 
                 foreach (string sourceFile in psmsBySourceFile.Keys)
                 {
+                    // XAxisKey/YAxisKey are load-bearing: with a value axis Key "Primary" at Left and a
+                    // CategoryAxis Key "Category" at Bottom, omitting either key makes OxyPlot 2.2.0's
+                    // BarSeries render nothing at all, silently, with no exception. Do not remove them.
                     BarSeries column = new BarSeries
                     {
                         BarWidth = 200,

@@ -2328,21 +2328,68 @@ namespace Test.MetaDraw
 
             // Act
             // Export without refragmentation 
-            string fileNoRefragment = Path.Combine(tempDir, "no_refragment.png");
             logic.ExportPlot(plotView, stationaryCanvas, spectrumMatches, parentChildScanPlotsView, tempDir, out var errorsNoRefragment, null, new System.Windows.Vector(), null);
             string exportedFileNoRefragment = Directory.GetFiles(tempDir, "*.png").FirstOrDefault();
             Assert.That(exportedFileNoRefragment, Is.Not.Null, "Exported file without refragmentation should exist.");
 
-            // Rename File so it is not overriden by next export. 
-            File.Move(exportedFileNoRefragment, fileNoRefragment);
+            // The app-level export goes through ConvertUIElementToBitmap, which renders a blank
+            // 200x100 bitmap when RenderSize is zero (every headless test run), so the exported
+            // PNG carries no pixels to assert on. Render the displayed model headlessly instead;
+            // OxyPlot 2.2.0 removed the OxyColor parameter, so this is the current signature.
+            string fileNoRefragment = Path.Combine(tempDir, "no_refragment_model.png");
+            OxyPlot.Wpf.PngExporter.Export(plotView.Model, fileNoRefragment, 700, 370);
 
             // Export with refragmentation
             logic.ExportPlot(plotView, stationaryCanvas, spectrumMatches, parentChildScanPlotsView, tempDir, out var errorsRefragment, null, new System.Windows.Vector(), reFragment);
             string exportedFileRefragment = Directory.GetFiles(tempDir, "*.png").FirstOrDefault();
             Assert.That(exportedFileRefragment, Is.Not.Null, "Exported file with refragmentation should exist.");
 
+            string fileRefragment = Path.Combine(tempDir, "refragment_model.png");
+            OxyPlot.Wpf.PngExporter.Export(plotView.Model, fileRefragment, 700, 370);
+
             Assert.That(errorsNoRefragment, Is.Null, "No errors should be reported for no refragmentation.");
             Assert.That(errorsRefragment, Is.Null, "No errors should be reported for refragmentation.");
+
+            // Assert: file with refragmentation should be larger
+            var sizeNoRefragment = new FileInfo(fileNoRefragment).Length;
+            var sizeRefragment = new FileInfo(fileRefragment).Length;
+            Assert.That(sizeRefragment, Is.GreaterThan(sizeNoRefragment), "Refragmented export should be larger due to more annotated ions.");
+
+            // Assert: colors for c and zDot ions are present in the PNG with refragmentation but not in the other
+            var cColor = MetaDrawSettings.ProductTypeToColor[ProductType.c];
+            var zDotColor = MetaDrawSettings.ProductTypeToColor[ProductType.zDot];
+
+            // Use using statements to ensure Bitmaps are disposed immediately after use
+            bool noRefragmentHasC, noRefragmentHasZDot, refragmentHasC, refragmentHasZDot;
+            using (var bmpNoRefragment = new Bitmap(fileNoRefragment))
+            using (var bmpRefragment = new Bitmap(fileRefragment))
+            {
+                bool HasColor(Bitmap bmp, OxyColor color)
+                {
+                    for (int y = 0; y < bmp.Height; y++)
+                    {
+                        for (int x = 0; x < bmp.Width; x++)
+                        {
+                            var px = bmp.GetPixel(x, y);
+                            if (Math.Abs(px.R - color.R) <= 10
+                                && Math.Abs(px.G - color.G) <= 10
+                                && Math.Abs(px.B - color.B) <= 10)
+                                return true;
+                        }
+                    }
+                    return false;
+                }
+
+                noRefragmentHasC = HasColor(bmpNoRefragment, cColor);
+                noRefragmentHasZDot = HasColor(bmpNoRefragment, zDotColor);
+                refragmentHasC = HasColor(bmpRefragment, cColor);
+                refragmentHasZDot = HasColor(bmpRefragment, zDotColor);
+            }
+
+            Assert.That(noRefragmentHasC || noRefragmentHasZDot, Is.False,
+                "No c or zDot ion colors should be present in the PNG without refragmentation.");
+            Assert.That(refragmentHasC || refragmentHasZDot, Is.True,
+                "c or zDot ion colors should be present in the PNG with refragmentation.");
 
             // Clean up
             Directory.Delete(tempDir, true);
