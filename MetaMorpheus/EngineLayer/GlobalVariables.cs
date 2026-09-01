@@ -611,7 +611,12 @@ namespace EngineLayer
             {
                 try
                 {
-                    ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, ProteaseMods);
+                    // Result deliberately kept rather than discarded, to match the rnase call below.
+                    // mzLib reports a custom entry that collides with an embedded one through
+                    // CustomDigestionAgentLoadResult.Skipped instead of throwing, precisely so a caller
+                    // can warn the user; neither call site consumes it yet. Doing so is the subject of a
+                    // separate PR covering every custom file, not this one.
+                    var result = ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, ProteaseMods);
                 }
                 catch (Exception e)
                 {
