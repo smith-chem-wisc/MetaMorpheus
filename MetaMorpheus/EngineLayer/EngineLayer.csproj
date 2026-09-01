@@ -4,13 +4,21 @@
     <TargetFramework>net10.0</TargetFramework>
     <Configurations>Debug;Release</Configurations>
     <Version>1.0.0.0</Version>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <!-- Mods\ and Data\ modification files ship from the mzLib package; see build\mzLib.targets there. -->
     <MzLibIncludeModificationData>true</MzLibIncludeModificationData>
   </PropertyGroup>
 
   <!-- Left architecture-neutral (no PlatformTarget) so the CLI can run on arm64; see CMD.csproj. -->
+
+  <ItemGroup>
+    <None Remove="Glycan_Mods\MonosaccharidesCustom.tsv" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Glycan_Mods\MonosaccharidesCustom.tsv" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
@@ -42,9 +50,6 @@
     </None>
     <None Update="Data\SmallYeast.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Glycan_Mods\MonosaccharidesCustom.tsv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Glycan_Mods\NGlycan\NGlycan.gdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

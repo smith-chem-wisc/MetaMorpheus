@@ -1,4 +1,4 @@
-﻿global using obo = Omics.Modifications.IO.obo;
+global using obo = Omics.Modifications.IO.obo;
 using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer.GlycoSearch;
@@ -38,9 +38,12 @@ namespace EngineLayer
         public static List<Modification> ProteaseMods = new List<Modification>();
 
         /// <summary>
-        /// Files in the Mods folder that LoadModifications must skip because something else parses them:
-        /// glyco.txt is turned into Glycan objects by LoadTxtGlycan, and the two RNA files are read into
-        /// the separate RNA collection by LoadRnaModifications.
+        /// Files in the Mods folder that LoadModifications must skip. glyco.txt is turned into Glycan
+        /// objects by LoadTxtGlycan; RnaCustomModifications.txt is read into the separate RNA collection
+        /// by LoadRnaModifications; and RnaMods.txt is not read from disk at all -- the mzLib package
+        /// ships it into this folder as part of one opt-in group, but LoadRnaModifications takes the RNA
+        /// mods from mzLib's embedded copy instead, so reading the file here would double them into the
+        /// protein collection.
         /// Matched by whole file name rather than by substring. The folder's contents now arrive from the
         /// mzLib package rather than from this repository, so a file added upstream -- or a user's own
         /// "MyGlycoScratch.txt" dropped in beside them -- must not be skipped silently on the strength of
@@ -67,6 +70,7 @@ namespace EngineLayer
         public static string UserSpecifiedDataDir { get; set; }
         public static string CustomProteasePath => Path.Combine(DataDir, "proteases_custom.tsv");
         public static string CustomRnasePath => Path.Combine(DataDir, "rnase_custom.tsv");
+        public static string CustomMonosaccharidePath => Path.Combine(DataDir, "MonosaccharidesCustom.tsv");
 
         public static bool StopLoops { get; set; }
         public static string MetaMorpheusVersion { get; private set; }
@@ -92,7 +96,10 @@ namespace EngineLayer
         public static void SetUpGlobalVariables()
         {
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp", ".msl" };
-            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf", ".msalign", ".tdf", ".tdf_bin", ".d" };
+            // ".d" is the Bruker acquisition folder; the rest of the Bruker entries are the inner files a user may hand
+            // us instead, which BrukerDataDirectory redirects to their parent ".d". Keep this list lower-case: every
+            // consumer calls ToLowerInvariant() before Contains().
+            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf", ".msalign", ".baf", ".tdf", ".tdf_bin", ".tsf", ".tsf_bin", ".d" };
             AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
@@ -457,11 +464,12 @@ namespace EngineLayer
             _AllRnaModTypesKnown = new HashSet<string>();
             AllRnaModsKnownDictionary = new Dictionary<string, Modification>();
 
-            var rnaModsPath = Path.Combine(DataDir, @"Mods", "RnaMods.txt");
-            if (File.Exists(rnaModsPath))
-            {
-                AddMods(ModificationLoader.ReadModsFromFile(rnaModsPath, out var errorMods), false, true);
-            }
+            // The RNA modifications come from mzLib's embedded copy, the same one this branch already
+            // takes the protease cleavage mods from. That keeps a single source of truth with
+            // Omics.dll while preserving the property #2752 established when it made these an
+            // embedded resource here: they are carried in an assembly, so no installer, repair or
+            // upgrade can leave them missing. A file in Mods\ could.
+            AddMods(Omics.Modifications.Mods.MetaMorpheusRnaModifications, false, true);
 
             var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
             if (File.Exists(customModsPath))
@@ -480,10 +488,11 @@ namespace EngineLayer
         private static void LoadGlycans()
         {
             // Custom monosaccharides must be registered FIRST so any custom tokens are recognized
-            // by the glycan-database parsers below. The file is optional; if it does not exist,
-            // LoadCustomMonosaccharides is a no-op.
-            string customMonosaccharidePath = Path.Combine(DataDir, @"Glycan_Mods", "MonosaccharidesCustom.tsv");
-            GlycanDatabase.LoadCustomMonosaccharides(customMonosaccharidePath);
+            // by the glycan-database parsers below. EnsureCustomMonosaccharideFileExists seeds the
+            // file (from the embedded template, or a carried-over legacy copy) if it's missing, so
+            // LoadCustomMonosaccharides always has a file to read here.
+            GlycanDatabase.EnsureCustomMonosaccharideFileExists(CustomMonosaccharidePath);
+            GlycanDatabase.LoadCustomMonosaccharides(CustomMonosaccharidePath);
 
             OGlycanDatabasePaths = new List<string>();
             NGlycanDatabasePaths = new List<string>();

@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ApplicationManifest>app1.manifest</ApplicationManifest>
     <Configurations>Debug;Release</Configurations>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <ApplicationIcon></ApplicationIcon>
   </PropertyGroup>
