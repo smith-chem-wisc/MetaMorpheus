@@ -68,6 +68,30 @@ namespace EngineLayer.Truncation
             return prefix;
         }
 
+        /// <summary>
+        /// Enumerates internal fragments directly: for every scan, every parent, and every start residue, the
+        /// prefix array is binary-searched for the ends whose span mass lands in the notch window; each
+        /// surviving span is built, fragmented and matched.
+        /// </summary>
+        /// <remarks>
+        /// COST. There is no fragment index here, so the work is proportional to (parent count x parent
+        /// length) per scan -- it is the PARENT SET that sets the price, not the database the parents came
+        /// from. Measured on this branch rather than asserted (Release, one scan so the outer Parallel.For
+        /// over scans is not hiding anything, synthetic repeat-alphabet parents, exact-notch acceptor):
+        ///
+        ///   * linear in parent count -- 0.023 ms per 50-residue parent, flat from 25 through 800 parents;
+        ///   * linear in parent length -- 0.111, 0.192 and 0.386 ms per parent at 100, 200 and 400 residues.
+        ///
+        /// That is about 1 microsecond per residue, per parent, per scan on one thread. Extrapolating to
+        /// 5,000 MS2 scans against parents averaging 350 residues, on 60 threads: roughly 350 ms per scan and
+        /// half a minute in total against a tag-filtered set of ~1,000 parents, and roughly 7 s per scan and
+        /// ten minutes in total against an unfiltered ~20,000-parent human set.
+        ///
+        /// So the sequence-tag filter buys about a factor of twenty, but this search is not GATED on it --
+        /// the unfiltered case is minutes, not hours, on a many-core box. The default stays off for the FDR
+        /// reason documented on the parameter, not for cost. Synthetic parents make these a floor: real
+        /// proteoforms carry modifications, which multiply the forms per parent.
+        /// </remarks>
         public static List<TruncationPsm> Run(IReadOnlyList<TruncationParent> parents, Ms2ScanWithSpecificMass[] scans,
             CommonParameters commonParameters, MassDiffAcceptor chopAcceptor, int minIonsPerTerminus, double maxParentMass)
         {
@@ -125,7 +149,7 @@ namespace EngineLayer.Truncation
                             }
                             if (nIons < minIonsPerTerminus || cIons < minIonsPerTerminus) continue; // strong bilateral gate
 
-                            double score = FragmentationPropensity.Score(matched, form.BaseSequence, totalIntensity);
+                            double score = FragmentationPropensity.Score(matched, form.BaseSequence, totalIntensity, dissociationType);
                             if (best == null || score > best.Score)
                             {
                                 var psm = new PeptideSpectralMatch(form, notch, score, scanIndex, scan, commonParameters, matched);
