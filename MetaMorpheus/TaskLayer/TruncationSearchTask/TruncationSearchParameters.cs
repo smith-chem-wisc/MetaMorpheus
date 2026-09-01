@@ -82,11 +82,20 @@ namespace TaskLayer
         /// </summary>
         public bool UsePerScanTagRestriction { get; set; } = false;
 
+        /// <summary>
+        /// Default <see cref="TagLength"/>. Also the value TruncationSearchTask substitutes, with a warning,
+        /// when a TOML supplies one below 1 -- ProteinTagIndex throws on that.
+        /// </summary>
+        public const int DefaultTagLength = 4;
+
+        /// <summary>Default <see cref="MinTagHits"/>, substituted the same way when a TOML supplies one below 1.</summary>
+        public const int DefaultMinTagHits = 2;
+
         /// <summary>Length (residues) of the de-novo sequence tags and the matching protein k-mer index.</summary>
-        public int TagLength { get; set; } = 4;
+        public int TagLength { get; set; } = DefaultTagLength;
 
         /// <summary>Minimum number of distinct extracted tags a protein must contain to be a tag-filter candidate.</summary>
-        public int MinTagHits { get; set; } = 2;
+        public int MinTagHits { get; set; } = DefaultMinTagHits;
 
         /// <summary>
         /// Maximum parent proteoform monoisotopic mass (Da) placed in the Pass 2 index (decision #6); heavier

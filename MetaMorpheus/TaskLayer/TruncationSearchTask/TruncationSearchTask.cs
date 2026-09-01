@@ -459,6 +459,25 @@ namespace TaskLayer
 
             int tagLength = TruncationSearchParameters.TagLength;
             int minTagHits = TruncationSearchParameters.MinTagHits;
+
+            // TagLength and MinTagHits are user-settable in the TOML and reach ProteinTagIndex unchecked.
+            // A tag length below 1 throws ArgumentOutOfRangeException from its constructor -- a CMD stack
+            // trace today, and the crash-report dialog the moment this task is wired into the GUI. An
+            // impossible configuration gets a Warn and the default here, which is the house channel for it.
+            if (tagLength < 1)
+            {
+                Warn($"TagLength must be at least 1; {tagLength} was given. Using the default of " +
+                     $"{TaskLayer.TruncationSearchParameters.DefaultTagLength} instead.");
+                tagLength = TaskLayer.TruncationSearchParameters.DefaultTagLength;
+            }
+            if (minTagHits < 1)
+            {
+                Warn($"MinTagHits must be at least 1; {minTagHits} was given. Using the default of " +
+                     $"{TaskLayer.TruncationSearchParameters.DefaultMinTagHits} instead -- a value below 1 asks no protein to carry any tag, " +
+                     $"which selects the whole database and defeats the filter.");
+                minTagHits = TaskLayer.TruncationSearchParameters.DefaultMinTagHits;
+            }
+
             int threads = Math.Max(1, CommonParameters.MaxThreadsToUsePerFile);
             var index = new ProteinTagIndex(proteins, tagLength, threads);
             MzLibUtil.Tolerance productTolerance = CommonParameters.ProductMassTolerance;
@@ -501,21 +520,32 @@ namespace TaskLayer
                  $"(tag length {tagLength}, min {minTagHits} tag hits).");
 
             // Digest only the candidate proteins (in parallel) into theoretical full-length parents.
-            var perThreadParents = new ConcurrentBag<List<TruncationParent>>();
-            Parallel.ForEach(candidateProteinIds, parallelOptions, () => new List<TruncationParent>(), (id, _, local) =>
+            //
+            // One slot per candidate protein, concatenated in protein-id order, rather than a
+            // ConcurrentBag of per-thread lists. This is the first parent-building path that is
+            // parallel -- BuildParentsFromDatabase is a serial nested foreach, so its parent order is a
+            // function of the database -- and parent order is observable: TruncationSearchEngine sorts
+            // parents by mass with OrderBy, which is stable, so equal-mass parents keep their arrival
+            // order, and Pass 2 breaks a score tie with `nScore > bestScore`, giving the win to whichever
+            // arrived first. Left as a bag, two runs over the same database could name different
+            // proteins for the same scan.
+            int[] orderedCandidateIds = candidateProteinIds.OrderBy(id => id).ToArray();
+            var parentsByCandidate = new List<TruncationParent>[orderedCandidateIds.Length];
+            Parallel.For(0, orderedCandidateIds.Length, parallelOptions, i =>
             {
-                Protein protein = proteins[id];
+                Protein protein = proteins[orderedCandidateIds[i]];
+                var local = new List<TruncationParent>();
                 foreach (PeptideWithSetModifications proteoform in protein
                     .Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications)
                     .OfType<PeptideWithSetModifications>())
                 {
                     local.Add(new TruncationParent(proteoform, protein.Accession, protein.Accession, isDecoy: false));
                 }
-                return local;
-            }, local => perThreadParents.Add(local));
+                parentsByCandidate[i] = local;
+            });
 
             var parents = new List<TruncationParent>();
-            foreach (List<TruncationParent> list in perThreadParents) parents.AddRange(list);
+            foreach (List<TruncationParent> list in parentsByCandidate) parents.AddRange(list);
             return parents;
         }
 

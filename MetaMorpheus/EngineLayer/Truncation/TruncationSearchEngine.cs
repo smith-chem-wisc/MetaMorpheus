@@ -134,9 +134,15 @@ namespace EngineLayer.Truncation
             var allParents = parents.ToList();
 
             // Exclude oversized parents from the index; emit a single summary line (#6).
+            // OrderBy is stable, so a mass-only sort leaves equal-mass parents in the order they were
+            // built -- and Pass 2 breaks a score tie with `nScore > bestScore`, handing the win to
+            // whichever of them came first. Tie-breaking on accession and then full sequence makes the
+            // winner a function of the parents themselves, whatever order the caller assembled them in.
             _parents = allParents
                 .Where(p => p.MonoisotopicMass <= maxFragmentSize)
                 .OrderBy(p => p.MonoisotopicMass)
+                .ThenBy(p => p.ProteinAccession, StringComparer.Ordinal)
+                .ThenBy(p => p.Proteoform.FullSequence, StringComparer.Ordinal)
                 .ToList();
             ExcludedOversizedParentCount = allParents.Count - _parents.Count;
             if (ExcludedOversizedParentCount > 0)
