@@ -37,6 +37,22 @@ namespace EngineLayer
         private static List<Crosslinker> _KnownCrosslinkers;
         public static List<Modification> ProteaseMods = new List<Modification>();
 
+        /// <summary>
+        /// Files in the Mods folder that LoadModifications must skip because something else parses them:
+        /// glyco.txt is turned into Glycan objects by LoadTxtGlycan, and the two RNA files are read into
+        /// the separate RNA collection by LoadRnaModifications.
+        /// Matched by whole file name rather than by substring. The folder's contents now arrive from the
+        /// mzLib package rather than from this repository, so a file added upstream -- or a user's own
+        /// "MyGlycoScratch.txt" dropped in beside them -- must not be skipped silently on the strength of
+        /// containing "glyco" or "rna" somewhere in its name.
+        /// </summary>
+        private static readonly HashSet<string> ModFilesLoadedElsewhere = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "glyco.txt",
+            "RnaMods.txt",
+            "RnaCustomModifications.txt",
+        };
+
 
         //Characters that aren't amino acids, but are reserved for special uses (motifs, delimiters, mods, etc)
         private static char[] _InvalidAminoAcids;
@@ -410,14 +426,10 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
-                var modFileName = Path.GetFileName(modFile);
-                if (modFileName.Contains("glyco.txt", StringComparison.OrdinalIgnoreCase))
+                if (ModFilesLoadedElsewhere.Contains(Path.GetFileName(modFile)))
                 {
-                    // Glycan modifications are handled separately in LoadGlycans()
                     continue;
                 }
-                if (modFileName.Contains("Rna", StringComparison.OrdinalIgnoreCase))
-                    continue;
                 AddMods(ModificationLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
