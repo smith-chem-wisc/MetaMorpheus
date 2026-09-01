@@ -4,10 +4,12 @@ using EngineLayer.ModificationAnalysis;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Digestion;
+using Omics.Modifications;
 
 namespace Test
 {
@@ -69,7 +71,7 @@ namespace Test
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
 
-            var newPsms = new List<PeptideSpectralMatch>
+            var newPsms = new List<SpectralMatch>
             {
                 new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters, new List<MatchedFragmentIon>()),
                 new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters, new List<MatchedFragmentIon>()),
@@ -91,18 +93,18 @@ namespace Test
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), fsp, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins.Count());
-            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins[mod1.IdWithMotif]);
-            Assert.AreEqual(1, res.CountOfEachModSeenOnProteins[mod2.IdWithMotif]);
+            Assert.That(res.CountOfEachModSeenOnProteins.Count(), Is.EqualTo(2));
+            Assert.That(res.CountOfEachModSeenOnProteins[mod1.IdWithMotif], Is.EqualTo(2));
+            Assert.That(res.CountOfEachModSeenOnProteins[mod2.IdWithMotif], Is.EqualTo(1));
 
-            Assert.AreEqual(1, res.CountOfModsSeenAndLocalized.Count());
-            Assert.AreEqual(2, res.CountOfModsSeenAndLocalized[mod1.IdWithMotif]);
+            Assert.That(res.CountOfModsSeenAndLocalized.Count(), Is.EqualTo(1));
+            Assert.That(res.CountOfModsSeenAndLocalized[mod1.IdWithMotif], Is.EqualTo(2));
 
-            Assert.AreEqual(0, res.CountOfAmbiguousButLocalizedModsSeen.Count());
+            Assert.That(res.CountOfAmbiguousButLocalizedModsSeen.Count(), Is.EqualTo(0));
 
-            Assert.AreEqual(0, res.CountOfUnlocalizedMods.Count());
+            Assert.That(res.CountOfUnlocalizedMods.Count(), Is.EqualTo(0));
 
-            Assert.AreEqual(0, res.CountOfUnlocalizedFormulas.Count());
+            Assert.That(res.CountOfUnlocalizedFormulas.Count(), Is.EqualTo(0));
         }
 
         [Test]
@@ -137,25 +139,25 @@ namespace Test
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
 
-            PeptideSpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
-            myPsm.AddOrReplace(pwsm2, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            SpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            myPsm.AddOrReplace(pwsm2, 10, 0, true, new List<MatchedFragmentIon>());
             
             myPsm.ResolveAllAmbiguities();
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(new List<PeptideSpectralMatch> { myPsm }, searchMode.NumNotches, CommonParameters, fsp, new List<string>());
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(new List<SpectralMatch> { myPsm }, searchMode.NumNotches, CommonParameters, fsp, new List<string>());
             fdrAnalysisEngine.Run();
-            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(new List<PeptideSpectralMatch> { myPsm }, new CommonParameters(), fsp, new List<string>());
+            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(new List<SpectralMatch> { myPsm }, new CommonParameters(), fsp, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(1, res.CountOfEachModSeenOnProteins.Count());
-            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins[mod1.IdWithMotif]);
-            Assert.AreEqual(0, res.CountOfModsSeenAndLocalized.Count());
-            Assert.AreEqual(0, res.CountOfAmbiguousButLocalizedModsSeen.Count);
-            Assert.AreEqual(1, res.CountOfUnlocalizedMods[mod1.IdWithMotif]); // Saw it, but not sure where!
-            Assert.AreEqual(0, res.CountOfUnlocalizedFormulas.Count());
+            Assert.That(res.CountOfEachModSeenOnProteins.Count(), Is.EqualTo(1));
+            Assert.That(res.CountOfEachModSeenOnProteins[mod1.IdWithMotif], Is.EqualTo(2));
+            Assert.That(res.CountOfModsSeenAndLocalized.Count(), Is.EqualTo(0));
+            Assert.That(res.CountOfAmbiguousButLocalizedModsSeen.Count, Is.EqualTo(0));
+            Assert.That(res.CountOfUnlocalizedMods[mod1.IdWithMotif], Is.EqualTo(1)); // Saw it, but not sure where!
+            Assert.That(res.CountOfUnlocalizedFormulas.Count(), Is.EqualTo(0));
         }
     }
 }

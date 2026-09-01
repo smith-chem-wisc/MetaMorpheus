@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using EngineLayer;
+using EngineLayer.Util;
 using Nett;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace MetaMorpheusCommandLine
         [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats); space-delimited")]
         public IEnumerable<string> _databases { get; set; }
 
-        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats) or folder(s) containing spectra; space-delimited")]
+        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf, ms2.msalign file formats) or folder(s) containing spectra; space-delimited")]
         public IEnumerable<string> _spectra { get; set; }
 
         [Option('o', HelpText = "[Optional] Output folder")]
@@ -39,6 +40,9 @@ namespace MetaMorpheusCommandLine
         [Option("mmsettings", HelpText = "[Optional] Path to MetaMorpheus settings")]
         public string CustomDataDirectory { get; set; }
 
+        [Option("acceptThermoLicence", HelpText = "[Optional] Agree to the Thermo RawFileReader licence, which is required to read .raw files, and record the agreement. Prints the licence and does not prompt, so it can be used where no console is available to answer one. May be given on its own as a setup step, or alongside a run.")]
+        public bool AcceptThermoLicence { get; set; }
+
         public enum VerbosityType { none, minimal, normal };
 
         public void ValidateCommandLineSettings()
@@ -53,6 +57,14 @@ namespace MetaMorpheusCommandLine
             }
 
             if (GenerateDefaultTomls || RunMicroVignette)
+            {
+                return;
+            }
+
+            // --acceptThermoLicence on its own is a setup step - record the agreement and stop - so it
+            // must not be held to the requirements of a run. Given alongside one it is only a modifier,
+            // and falls through to the usual validation.
+            if (AcceptThermoLicence && Tasks.Count < 1 && Databases.Count < 1 && Spectra.Count < 1)
             {
                 return;
             }
@@ -89,20 +101,7 @@ namespace MetaMorpheusCommandLine
             {
                 if (Directory.Exists(item))
                 {
-                    string[] directoryFiles = Directory.GetFiles(item);
-
-                    foreach (var file in directoryFiles)
-                    {
-                        if (GlobalVariables.AcceptedSpectraFormats.Contains(GlobalVariables.GetFileExtension(file).ToLowerInvariant()))
-                        {
-                            spectraFromDirectories.Add(file);
-
-                            if (Verbosity == VerbosityType.normal)
-                            {
-                                Console.WriteLine("Found spectra file: " + file);
-                            }
-                        }
-                    }
+                    FindSpectraFilesRecursive(item, spectraFromDirectories, Verbosity);
                 }
                 else if (!File.Exists(item))
                 {
@@ -112,14 +111,30 @@ namespace MetaMorpheusCommandLine
 
             Spectra.AddRange(spectraFromDirectories);
 
+            // Correct Bruker inner-file paths (analysis.baf, analysis.tdf/.tdf_bin, analysis.tsf/.tsf_bin) to their
+            // parent .d directory. This handles the case where a user provides a path to one of these files directly.
+            for (int i = 0; i < Spectra.Count; i++)
+            {
+                if (BrukerDataDirectory.TryGetParentDotDFolder(Spectra[i], out string dotDFolder))
+                {
+                    Spectra[i] = dotDFolder;
+                }
+            }
+
+            // Remove duplicate spectra entries (can occur if both .tdf and .tdf_bin were specified)
+            Spectra = Spectra.Distinct().ToList();
+
             // remove spectra directories, after their spectra files have been added
-            Spectra.RemoveAll(p => Directory.Exists(p));
+            // but keep .d directories as they are valid Bruker spectra folders
+            Spectra.RemoveAll(p => Directory.Exists(p) && !BrukerDataDirectory.IsDotDPath(p));
 
             IEnumerable<string> fileNames = Tasks.Concat(Databases).Concat(Spectra);
 
             foreach (string filename in fileNames)
             {
-                if (!File.Exists(filename))
+                // .d folders are directories, so we need to check for both files and .d directories
+                bool isDotDDirectory = BrukerDataDirectory.IsDotDPath(filename) && Directory.Exists(filename);
+                if (!File.Exists(filename) && !isDotDDirectory)
                 {
                     throw new MetaMorpheusException("The following file does not exist: " + filename);
                 }
@@ -181,11 +196,71 @@ namespace MetaMorpheusCommandLine
 
                 GlycoSearchTask glyco = new GlycoSearchTask();
                 Toml.WriteFile(glyco, Path.Combine(folderLocation, @"GlycoSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                // The filename stem matches the output folder Program.cs creates for this task
+                // ("Task{N}AveragingTask"), keeping it consistent with the five above.
+                SpectralAveragingTask averaging = new SpectralAveragingTask();
+                Toml.WriteFile(averaging, Path.Combine(folderLocation, @"AveragingTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {
                 throw new MetaMorpheusException("Default tomls could not be written: " + e.Message);
             }
         }
+
+        /// <summary>
+        /// Recursively finds spectra files in a directory.
+        /// For .d folders (Bruker data), only adds them if they hold data mzLib can read.
+        /// If a .d folder is invalid, recurses into it to find nested valid .d folders.
+        /// </summary>
+        private static void FindSpectraFilesRecursive(string path, List<string> spectraFiles, VerbosityType verbosity)
+        {
+            if (File.Exists(path))
+            {
+                if (GlobalVariables.AcceptedSpectraFormats.Contains(GlobalVariables.GetFileExtension(path).ToLowerInvariant()))
+                {
+                    // If a Bruker inner file is found, add its parent .d folder instead of the individual file
+                    if (BrukerDataDirectory.TryGetParentDotDFolder(path, out string dotDFolder))
+                    {
+                        path = dotDFolder;
+                    }
+
+                    spectraFiles.Add(path);
+
+                    if (verbosity == VerbosityType.normal)
+                    {
+                        Console.WriteLine("Found spectra file: " + path);
+                    }
+                }
+                return;
+            }
+
+            if (Directory.Exists(path))
+            {
+                // Check if this is a .d folder
+                if (BrukerDataDirectory.IsDotDPath(path))
+                {
+                    // Check if it's a valid Bruker data folder (qTOF or timsTOF)
+                    if (BrukerDataDirectory.IsValid(path))
+                    {
+                        spectraFiles.Add(path);
+
+                        if (verbosity == VerbosityType.normal)
+                        {
+                            Console.WriteLine("Found spectra file: " + path);
+                        }
+                        return; // Valid .d folder - don't recurse into it
+                    }
+                    // Invalid .d folder - fall through to recurse and find nested valid .d folders
+                }
+
+                // Recurse into directory
+                foreach (var entry in Directory.EnumerateFileSystemEntries(path))
+                {
+                    FindSpectraFilesRecursive(entry, spectraFiles, verbosity);
+                }
+            }
+        }
+
     }
 }

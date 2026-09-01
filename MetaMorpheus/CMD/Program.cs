@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using EngineLayer.DatabaseLoading;
+using Omics.Modifications;
 using TaskLayer;
 
 namespace MetaMorpheusCommandLine
@@ -119,6 +121,17 @@ namespace MetaMorpheusCommandLine
                 return errorCode;
             }
 
+            // --acceptThermoLicence records the agreement without asking for it, for the situations that
+            // cannot answer the prompt further down: a container, a scheduled cluster job, a CI runner,
+            // anything with stdin closed. Those are also the situations most likely to need it, because
+            // outside a Windows installation SetUpDataDirectory() leaves DataDir at the application
+            // folder rather than a per-user one, so the agreement is recorded per extracted copy and
+            // every new download, conda environment and container layer starts unagreed.
+            if (AgreeToThermoLicence(settings, GlobalVariables.DataDir, Console.Out))
+            {
+                return errorCode;
+            }
+
             // set up microvignette
             if (settings.RunMicroVignette)
             {
@@ -177,7 +190,7 @@ namespace MetaMorpheusCommandLine
 
             foreach (var db in settings.Databases)
             {
-                if (!Path.GetExtension(db).Equals(".fasta"))
+                if (Path.GetExtension(db).Equals(".xml"))
                 {
                     GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<Modification>(), true);
 
@@ -226,8 +239,13 @@ namespace MetaMorpheusCommandLine
                         break;
 
                     case "GlycoSearch":
-                        var GlycoTask = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        var GlycoTask = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(filePath);
                         taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
+                        break;
+
+                    case "Average":
+                        var AveragingTask = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
                         break;
 
                     default:
@@ -393,6 +411,56 @@ namespace MetaMorpheusCommandLine
             {
                 WriteMultiLineIndented("Finished writing file: " + e.WrittenFile);
             }
+        }
+
+        /// <summary>
+        /// Carries out --acceptThermoLicence: prints the licence, records the agreement, and reports
+        /// whether this was the flag on its own, in which case the caller has no run to continue into.
+        /// Does nothing and reports false when the flag was not given.
+        /// The data directory and the output writer are parameters rather than reached for through
+        /// Console and GlobalVariables so that this can be exercised directly, Run() being private.
+        /// </summary>
+        public static bool AgreeToThermoLicence(CommandLineSettings settings, string dataDirectory, TextWriter output)
+        {
+            if (!settings.AcceptThermoLicence)
+            {
+                return false;
+            }
+
+            if (!GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence)
+            {
+                // Print the licence whatever the verbosity. The flag is an affirmative act by
+                // whoever typed it, and this is what puts the terms they agreed to in the log.
+                output.WriteLine(ThermoRawFileReaderLicence.ThermoLicenceText);
+                output.WriteLine("\nThe --acceptThermoLicence flag was given, which agrees to the above terms.");
+
+                RecordThermoLicenceAgreement(dataDirectory);
+            }
+
+            if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                output.WriteLine("Agreed to the Thermo RawFileReader licence. Recorded in "
+                    + Path.Combine(dataDirectory, @"settings.toml"));
+            }
+
+            // On its own the flag is a setup step, so there is no run to continue into.
+            return settings.Tasks.Count + settings.Databases.Count + settings.Spectra.Count == 0;
+        }
+
+        /// <summary>
+        /// Records agreement to the Thermo RawFileReader licence, in memory and in settings.toml,
+        /// carrying the one other setting that file holds so recording the agreement does not reset it.
+        /// </summary>
+        private static void RecordThermoLicenceAgreement(string dataDirectory)
+        {
+            var newGlobalSettings = new GlobalSettings
+            {
+                UserHasAgreedToThermoRawFileReaderLicence = true,
+                WriteExcelCompatibleTSVs = GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs
+            };
+
+            Toml.WriteFile<GlobalSettings>(newGlobalSettings, Path.Combine(dataDirectory, @"settings.toml"));
+            GlobalVariables.GlobalSettings = newGlobalSettings;
         }
 
         private static void MyTaskEngine_finishedSingleTaskHandler(object sender, SingleTaskEventArgs e)

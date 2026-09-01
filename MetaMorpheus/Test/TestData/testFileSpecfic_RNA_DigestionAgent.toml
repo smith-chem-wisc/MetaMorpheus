@@ -1,0 +1,3 @@
+DigestionAgent = "RNase U2"
+DissociationType = "ETD"
+CustomIons = ["b", "c", "zDot"]

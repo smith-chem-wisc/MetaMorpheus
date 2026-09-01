@@ -1,17 +1,13 @@
-﻿using MzLibUtil;
+﻿namespace EngineLayer;
 
-namespace EngineLayer
+public class AllowedIntervalWithNotch(double minimum, double maximum, int notch)
 {
-    public class AllowedIntervalWithNotch
+    public readonly double Minimum = minimum;
+    public readonly double Maximum = maximum;
+    public readonly int Notch = notch;
+
+    public bool Contains(double value)
     {
-        public DoubleRange AllowedInterval;
-
-        public AllowedIntervalWithNotch(DoubleRange doubleRange, int j)
-        {
-            AllowedInterval = doubleRange;
-            Notch = j;
-        }
-
-        public int Notch { get; }
+        return value >= Minimum && value <= Maximum;
     }
 }

@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<mzLibProteinDb>
+  <modification>ID   Methylation on A
+TG   A
+PP   Anywhere.
+MT   Biological
+CF   C1 H2
+DR   Unimod; 34.
+//</modification>
+  <modification>ID   Methylation on C
+TG   C
+PP   Anywhere.
+MT   Biological
+CF   C1 H2
+DR   Unimod; 34.
+//</modification>
+  <modification>ID   Methylation on G
+TG   G
+PP   Anywhere.
+MT   Biological
+CF   C1 H2
+DR   Unimod; 34.
+//</modification>
+  <modification>ID   Methylation on U
+TG   U
+PP   Anywhere.
+MT   Biological
+CF   C1 H2
+DR   Unimod; 34.
+//</modification>
+	<entry>
+		<accession>accession1</accession>
+		<gene />
+		<feature type="chain" description="description" id="PRO_0000000000">
+			<location>
+				<begin position="4"/>
+				<end position="13"/>
+			</location>
+		</feature>
+		<feature type="chain" description="description" id="PRO_0000000000">
+			<location>
+				<begin position="1"/>
+				<end position="7"/>
+			</location>
+		</feature>
+		<feature type="sequence variant" description="3\t42566831\t.\tTT\tCC,CT,&lt;NON_REF&gt;\t68.73\t.\tANN=CC|missense_variant|MODERATE|SEC22C|ENSG00000093183|transcript|ENST00000383750.8|nonsense_mediated_decay|3/5|c.187_188delAAinsGG|p.Lys63Gly|321/752|187/219|63/72||\tGT:AD:DP:GQ:PL:SB\t0/1:10,3,5,0:18:14:106,14,686,0,247,310,131,548,356,634:5,5,6,2">
+			<original>A</original>
+			<variation>U</variation>
+			<location>
+				<position position="3" />
+			</location>
+		</feature>
+		<feature type="modified residue" description="Methylation on A">
+			<location>
+				<position position="3" />
+			</location>
+		</feature>
+		<feature type="modified residue" description="Methylation on U">
+			<location>
+				<position position="12" />
+			</location>
+		</feature>
+		<sequence length="13">GUACUGUAGCCUA</sequence>
+	</entry>
+</mzLibProteinDb>

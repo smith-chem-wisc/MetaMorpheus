@@ -1,0 +1,85 @@
+# ============================================================================
+# CUSTOM MONOSACCHARIDE DICTIONARY
+# ============================================================================
+# This file lets you add monosaccharides that MetaMorpheus does not ship with,
+# so they can be used inside custom glycan database entries
+# (NGlycan_Custom.gdb / OGlycan_Custom.gdb, or any user-supplied .gdb file).
+#
+# Definitions added here are shared across BOTH O-glycan and N-glycan searches.
+# They are loaded once at startup, BEFORE any glycan database is parsed.
+#
+# Lines starting with '#' are comments and are ignored by the parser.
+# Blank lines are also ignored. Indentation before '#' is allowed.
+#
+# ============================================================================
+# FILE FORMAT (tab-separated)
+# ============================================================================
+# Each data line defines ONE custom monosaccharide. Columns:
+#
+#   1. Name                Required. Unique. Must not collide with a built-in
+#                          (Hex, HexNAc, NeuAc, NeuGc, Fuc, dHex, Phospho,
+#                          Sulfo, Na, Ac, Xylose, Kdn) or with another entry.
+#                          Use this name in composition-format glycan files,
+#                          e.g.  HexNAc(2)Hex(5)HexA(1)
+#
+#   2. SingleCharCode      Required. Exactly one ASCII letter (A-Z or a-z).
+#                          Unique. Must not collide with a built-in code
+#                          (H, N, A, G, F, P, S, Y, C, X, K) or with another
+#                          custom entry. Use this code in structure-format
+#                          glycan files, e.g.  (N(H)(U))
+#
+#   3. MonoisotopicMass    Required. The monoisotopic mass in Daltons of the
+#                          monosaccharide RESIDUE (the form integrated into
+#                          the glycan chain after water loss). Decimal, e.g.
+#                          176.03209
+#
+#   4. DiagnosticIonMasses Optional. Zero or more diagnostic-ion m/z values
+#                          (in Daltons) that should be added to MetaMorpheus's
+#                          diagnostic-ion set whenever a glycan contains at
+#                          least one of this monosaccharide. Comma-separated,
+#                          no spaces required:
+#                              175.02482,157.01425
+#                          Provide the m/z you would EXPECT TO OBSERVE in the
+#                          spectrum (no hydrogen-mass offset is applied).
+#                          Leave blank or omit the column for no extra
+#                          diagnostic ions.
+#
+#   5. Description         Optional. Free text for human readers. Ignored by
+#                          the parser. Use it to record source, formula, or
+#                          a note about the residue.
+#
+# A column-header row beginning with "Name" followed by a tab is recognized
+# and skipped, so the template line below the next banner is safe to keep.
+#
+# ============================================================================
+# BUILT-IN MONOSACCHARIDES (do NOT redefine these)
+# ============================================================================
+#   Name      Code   Monoisotopic mass (Da)   Notes
+#   --------  ----   ----------------------   -----------------------------
+#   Hex       H      162.05282                Hexose (Gal, Glc, Man, ...)
+#   HexNAc    N      203.07937                N-Acetylhexosamine (GlcNAc, GalNAc)
+#   NeuAc     A      291.09542                N-Acetylneuraminate (Neu5Ac)
+#   NeuGc     G      307.09033                N-Glycolylneuraminate (Neu5Gc)
+#   Fuc       F      146.05791                Fucose / dHex
+#   Phospho   P       79.96633                Phosphate
+#   Sulfo     S       79.95681                Sulfate
+#   Na        Y       22.98977                Sodium adduct
+#   Ac        C       42.01056                Acetyl
+#   Xylose    X      150.05282                Xylose
+#   Kdn       K      250.06897                KDN (deaminoneuraminate)
+#
+# Attempting to register a custom entry whose Name OR SingleCharCode collides
+# with any built-in (or any earlier line in this file) is an error and the
+# file will fail to load.
+#
+# ============================================================================
+# EXAMPLES (remove the leading '#' to enable any of these)
+# ============================================================================
+# HexA	U	176.03209	175.02482,157.01425	Hexuronic acid (GlcA, GalA)
+# Pent	T	132.04226		Generic pentose (e.g. Ara, Rib not covered by Xylose)
+# Me	M	14.01565		Methyl group as a residue contribution
+#
+# ============================================================================
+# CUSTOM DEFINITIONS (add your monosaccharides below this line)
+# ============================================================================
+Name	SingleCharCode	MonoisotopicMass	DiagnosticIonMasses	Description

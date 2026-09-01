@@ -23,8 +23,8 @@ namespace Test
             GlobalVariables.LoadCustomAminoAcids(); //read the file
 
             //test that we read the new amino acid
-            Assert.IsTrue(Residue.TryGetResidue('f', out Residue r));
-            Assert.IsTrue(r.MonoisotopicMass.Equals(60));
+            Assert.That(Residue.TryGetResidue('f', out Residue r));
+            Assert.That(r.MonoisotopicMass.Equals(60));
 
             //now crash it intentionally with an invalid character
             lines.Add("evenFaker\tX\t72\tC6");
@@ -33,7 +33,7 @@ namespace Test
             {
                 GlobalVariables.LoadCustomAminoAcids(); //read the file
                 //we're trying to crash it, so if we didn't, we failed :/
-                Assert.IsTrue(false);
+                Assert.That(false);
             }
             catch(MetaMorpheusException)
             {
@@ -48,7 +48,7 @@ namespace Test
             {
                 GlobalVariables.LoadCustomAminoAcids(); //read the file
                 //we're trying to crash it, so if we didn't, we failed :/
-                Assert.IsTrue(false);
+                Assert.That(false);
             }
             catch (MetaMorpheusException)
             {

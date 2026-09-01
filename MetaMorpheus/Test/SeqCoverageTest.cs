@@ -1,13 +1,16 @@
 ﻿using System;
 using EngineLayer;
+using EngineLayer.SpectrumMatch;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
 using MassSpectrometry;
 using FlashLFQ;
+using Omics.Digestion;
+using Omics.Modifications;
 using TaskLayer;
 
 namespace Test
@@ -72,7 +75,7 @@ namespace Test
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
 
-            List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>
+            List<SpectralMatch> newPsms = new List<SpectralMatch>
             {
                 psm1,
                 psm2,
@@ -80,28 +83,40 @@ namespace Test
             };
 
             newPsms.ForEach(p => p.ResolveAllAmbiguities());
+            FilteredPsms filteredPsms = FilteredPsms.Filter(newPsms, new CommonParameters(), includeDecoys: false, includeContaminants: false, includeAmbiguous: true, includeAmbiguousMods: true, includeHighQValuePsms: true);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, new CommonParameters(), null, new List<string>());
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, true, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
-            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, filteredPsms.FilteredPsmsList, true, true, true, new CommonParameters(), null, new List<string>());
 
             psafe.Run();
 
             fjkd.ProteinGroups.First().CalculateSequenceCoverage();
 
             var firstSequenceCoverageDisplayList = fjkd.ProteinGroups.First().SequenceCoverageDisplayList.First();
-            Assert.AreEqual("MMKMMK", firstSequenceCoverageDisplayList);
+            Assert.That(firstSequenceCoverageDisplayList, Is.EqualTo("MMKMMK"));
             var firstSequenceCoverageDisplayListWithMods = fjkd.ProteinGroups.First().SequenceCoverageDisplayListWithMods.First();
-            Assert.AreEqual("[mod1 on M]-MM[mod3 on M]KM[mod3 on M]MK-[mod5 on K]", firstSequenceCoverageDisplayListWithMods);
+            Assert.That(firstSequenceCoverageDisplayListWithMods, Is.EqualTo("[mod1 on M]-MM[mod3 on M]KM[mod3 on M]MK-[mod5 on K]"));
 
-            var firstModInfo = fjkd.ProteinGroups.First().ModsInfo.First();
-            Assert.IsTrue(firstModInfo.Contains(@"#aa1[mod1 on M,info:occupancy=1.00(2/2)]"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa2[mod3 on M,info:occupancy=0.50(1/2)]"));
-            Assert.IsFalse(firstModInfo.Contains(@"#aa3"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa4[mod3 on M,info:occupancy=0.50(1/2)]"));
-            Assert.IsFalse(firstModInfo.Contains(@"#aa5"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa6[mod5 on K,info:occupancy=1.00(2/2)]"));
+            // Three PSMs over MMKMMK. mod1 and mod5 are on every PSM covering their site (2/2); mod3 is
+            // on one of the two covering residues 2 and 4 (1/2). Residues 3 and 5 carry no modification
+            // and must not appear. mod1 and mod5 are terminal rather than side-chain, so they report at
+            // pos0 and pos(length+1) instead of on residues 1 and 6.
+            var proteinGroup = fjkd.ProteinGroups.First();
+            proteinGroup.FilesForQuantification = new List<SpectraFileInfo>
+                { new SpectraFileInfo(fullFilePathWithExtension: "", condition: "", biorep: 0, fraction: 0, techrep: 0) };
+            proteinGroup.PopulateSampleGroupResults();
+
+            string row = proteinGroup.ToString();
+            Assert.That(row, Does.Contain("pos0[mod1 on M,info:fraction=1.00(2/2)]"));
+            Assert.That(row, Does.Contain("pos2[mod3 on M,info:fraction=0.50(1/2)]"));
+            Assert.That(row, Does.Not.Contain("pos3["));
+            Assert.That(row, Does.Contain("pos4[mod3 on M,info:fraction=0.50(1/2)]"));
+            Assert.That(row, Does.Not.Contain("pos5["));
+            Assert.That(row, Does.Contain("pos7[mod5 on K,info:fraction=1.00(2/2)]"));
+
             Console.WriteLine("Test output: " + firstSequenceCoverageDisplayList);
         }
 
@@ -121,10 +136,10 @@ namespace Test
             Product producty1 = new (ProductType.y, FragmentationTerminus.C, 0, 1, 3, 0);
             Product producty2 = new (ProductType.y, FragmentationTerminus.C, 0, 2, 2, 0);
 
-            MatchedFragmentIon mfib1 = new MatchedFragmentIon(ref productb1, 0, 0, 1);
-            MatchedFragmentIon mfib2 = new MatchedFragmentIon(ref productb2, 0, 0, 2);
-            MatchedFragmentIon mfiy1 = new MatchedFragmentIon(ref producty1, 0, 0, 2);
-            MatchedFragmentIon mfiy2 = new MatchedFragmentIon(ref producty2, 0, 0, 2);
+            MatchedFragmentIon mfib1 = new MatchedFragmentIon(productb1, 0, 0, 1);
+            MatchedFragmentIon mfib2 = new MatchedFragmentIon(productb2, 0, 0, 2);
+            MatchedFragmentIon mfiy1 = new MatchedFragmentIon(producty1, 0, 0, 2);
+            MatchedFragmentIon mfiy2 = new MatchedFragmentIon(producty2, 0, 0, 2);
 
             List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfib1 };
             List<MatchedFragmentIon> mfis2 = new List<MatchedFragmentIon> { mfib2, mfiy1, mfiy2 };
@@ -141,7 +156,7 @@ namespace Test
             var psm3 = new PeptideSpectralMatch(pwsm3, 0, 1, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
-            List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>
+            List<SpectralMatch> newPsms = new List<SpectralMatch>
             {
                 psm1,
                 psm2,
@@ -150,18 +165,19 @@ namespace Test
 
             newPsms.ForEach(p => p.ResolveAllAmbiguities());
             newPsms.ForEach(p => p.GetAminoAcidCoverage());
+            FilteredPsms filteredPsms = FilteredPsms.Filter(newPsms, new CommonParameters(), includeDecoys: false, includeContaminants: false, includeAmbiguous: true, includeAmbiguousMods: true, includeHighQValuePsms: true);
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, true, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
-            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, filteredPsms.FilteredPsmsList, true, true, true, new CommonParameters(), null, new List<string>());
             psafe.Run();
 
             fjkd.ProteinGroups.ForEach(g => g.CalculateSequenceCoverage());
 
             var firstSequenceCoverageDisplayList = fjkd.ProteinGroups.First().FragmentSequenceCoverageDisplayList.First();
             
-            Assert.IsTrue(firstSequenceCoverageDisplayList == "MmkMMK");
+            Assert.That(firstSequenceCoverageDisplayList == "MmkMMK");
         }
     }
 }

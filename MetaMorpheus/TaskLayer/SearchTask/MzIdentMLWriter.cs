@@ -10,13 +10,15 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
+using Omics.Digestion;
+using Omics.Modifications;
 
 namespace TaskLayer
 {
     public static class MzIdentMLWriter
     {
-        public static void WriteMzIdentMl(IEnumerable<PeptideSpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
-            List<Modification> fixedMods, List<SilacLabel> silacLabels, List<Protease> proteases, Tolerance productTolerance, 
+        public static void WriteMzIdentMl(IEnumerable<SpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
+            List<Modification> fixedMods, List<SilacLabel> silacLabels, List<DigestionAgent> proteases, Tolerance productTolerance, 
             Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames)
         {
 
@@ -35,10 +37,17 @@ namespace TaskLayer
                         }
                     }
                 }
-                psms = psms.Where(p => p.BaseSequence != null && !p.FullSequence.Contains("|") && !labelsToSearch.Any(x => p.BaseSequence.Contains(x)));
+                // SpectralMatch.FullSequence is assigned from PsmTsvWriter.Resolve(...).ResolvedValue,
+                // which is null whenever the candidate sequences disagree -- the pipe-joined form is
+                // ResolvedString and is discarded. So FullSequence is either a clean sequence or null,
+                // never "|"-delimited, and the old !FullSequence.Contains("|") conjunct could only ever
+                // be true or throw a NullReferenceException on an ambiguous PSM. Dropping it fixes the
+                // crash without narrowing psms, which also feeds peptides/proteins/filenames below;
+                // ambiguous PSMs are excluded from the identification data by unambiguousPsms instead.
+                psms = psms.Where(p => p.BaseSequence != null && !labelsToSearch.Any(x => p.BaseSequence.Contains(x)));
             }
 
-            List<PeptideWithSetModifications> peptides = psms.SelectMany(i => i.BestMatchingPeptides.Select(v => v.Peptide)).Distinct().ToList();
+            List<PeptideWithSetModifications> peptides = psms.SelectMany(i => i.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer as PeptideWithSetModifications)).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
             List<string> filenames = psms.Select(i => i.FullFilePath).Distinct().ToList();
             Dictionary<string, string> database_reference = new Dictionary<string, string>();
@@ -323,9 +332,9 @@ namespace TaskLayer
 
             var unambiguousPsms = psms.Where(psm => psm.FullSequence != null);
 
-            foreach (PeptideSpectralMatch psm in unambiguousPsms)
+            foreach (SpectralMatch psm in unambiguousPsms)
             {
-                foreach (PeptideWithSetModifications peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Distinct())
+                foreach (PeptideWithSetModifications peptide in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).Distinct())
                 {
                     //if first peptide on list hasn't been added, add peptide and peptide evidence
                     if (!peptide_ids.TryGetValue(peptide.FullSequence, out Tuple<int, HashSet<string>> peptide_id))
@@ -367,11 +376,11 @@ namespace TaskLayer
                             dBSequence_ref = "DBS_" + peptide.Protein.Accession,
                             isDecoy = peptide.Protein.IsDecoy,
                             startSpecified = true,
-                            start = peptide.OneBasedStartResidueInProtein,
+                            start = peptide.OneBasedStartResidue,
                             endSpecified = true,
-                            end = peptide.OneBasedEndResidueInProtein,
-                            pre = peptide.PreviousAminoAcid.ToString(),
-                            post = (peptide.OneBasedEndResidueInProtein < peptide.Protein.BaseSequence.Length) ? peptide.Protein[peptide.OneBasedEndResidueInProtein].ToString() : "-",
+                            end = peptide.OneBasedEndResidue,
+                            pre = peptide.PreviousResidue.ToString(),
+                            post = (peptide.OneBasedEndResidue < peptide.Protein.BaseSequence.Length) ? peptide.Protein[peptide.OneBasedEndResidue].ToString() : "-",
                         };
                         peptide_evidence_ids.Add(peptide, pe_index);
                         pe_index++;
@@ -406,7 +415,7 @@ namespace TaskLayer
                     psm_per_scan[new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber)] = new Tuple<int, int>(scan_result_scan_item.Item1, scan_result_scan_item.Item2 + 1);
                     scan_result_scan_item = psm_per_scan[new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber)];
                 }
-                foreach (PeptideWithSetModifications p in psm.BestMatchingPeptides.Select(p => p.Peptide).Distinct())
+                foreach (PeptideWithSetModifications p in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).Distinct())
                 {
                     peptide_ids[p.FullSequence].Item2.Add("SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2);
                 }
@@ -419,7 +428,7 @@ namespace TaskLayer
                     passThreshold = psm.FdrInfo.QValue <= 0.01,
                     //NOTE:ONLY CAN HAVE ONE PEPTIDE REF PER SPECTRUM IDENTIFICATION ITEM
                     peptide_ref = "P_" + peptide_ids[psm.FullSequence].Item1,
-                    PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.BestMatchingPeptides.Select(p => p.Peptide).Distinct().Count()],
+                    PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).Distinct().Count()],
                     cvParam = new mzIdentML110.Generated.CVParamType[2]
                     {
                         new mzIdentML110.Generated.CVParamType
@@ -438,14 +447,14 @@ namespace TaskLayer
                         }
                     }
                 };
-                if (psm.PeptideMonisotopicMass.HasValue)
+                if (psm.BioPolymerWithSetModsMonoisotopicMass.HasValue)
                 {
-                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].calculatedMassToCharge = Math.Round(psm.PeptideMonisotopicMass.Value.ToMz(psm.ScanPrecursorCharge), 5);
+                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].calculatedMassToCharge = Math.Round(psm.BioPolymerWithSetModsMonoisotopicMass.Value.ToMz(psm.ScanPrecursorCharge), 5);
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].calculatedMassToChargeSpecified = true;
                 }
 
                 int pe = 0;
-                foreach (PeptideWithSetModifications p in psm.BestMatchingPeptides.Select(p => p.Peptide).Distinct())
+                foreach (PeptideWithSetModifications p in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).Distinct())
                 {
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].PeptideEvidenceRef[pe]
                         = new mzIdentML110.Generated.PeptideEvidenceRefType
@@ -561,7 +570,7 @@ namespace TaskLayer
             };
 
             int protease_index = 0;
-            foreach (Protease protease in proteases)
+            foreach (DigestionAgent protease in proteases)
             {
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].Enzymes.Enzyme[protease_index] = new mzIdentML110.Generated.EnzymeType()
                 {
@@ -576,8 +585,8 @@ namespace TaskLayer
                         {
                             new mzIdentML110.Generated.CVParamType
                             {
-                                accession = protease.PsiMsAccessionNumber,
-                                name = protease.PsiMsName,
+                                accession = protease is Protease prot ? prot.PsiMsAccessionNumber : protease.Name,
+                                name = protease is Protease prot2 ? prot2.PsiMsName: protease.Name,
                                 cvRef = "PSI-MS"
                             }
                         }
@@ -638,30 +647,61 @@ namespace TaskLayer
 
             if (groups != null)
             {
-                _mzid.DataCollection.AnalysisData.ProteinDetectionList = new mzIdentML110.Generated.ProteinDetectionListType()
-                {
-                    id = "PDL",
-                    ProteinAmbiguityGroup = new mzIdentML110.Generated.ProteinAmbiguityGroupType[groups.Count]
-                };
+                // Built up in lists rather than fixed-size arrays because a ProteinDetectionHypothesis
+                // with no PeptideHypothesis, and a ProteinAmbiguityGroup with no
+                // ProteinDetectionHypothesis, are both schema-invalid and have to be left out.
+                var ambiguityGroups = new List<mzIdentML110.Generated.ProteinAmbiguityGroupType>();
 
                 int group_id = 0;
                 int protein_id = 0;
                 foreach (EngineLayer.ProteinGroup proteinGroup in groups)
                 {
-                    _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id] = new mzIdentML110.Generated.ProteinAmbiguityGroupType()
-                    {
-                        id = "PAG_" + group_id,
-                        ProteinDetectionHypothesis = new mzIdentML110.Generated.ProteinDetectionHypothesisType[proteinGroup.Proteins.Count]
-                    };
-                    int pag_protein_index = 0;
+                    var detectionHypotheses = new List<mzIdentML110.Generated.ProteinDetectionHypothesisType>();
                     foreach (Protein protein in proteinGroup.Proteins)
                     {
-                        _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index] = new mzIdentML110.Generated.ProteinDetectionHypothesisType()
+                        var peptideHypotheses = new List<mzIdentML110.Generated.PeptideHypothesisType>();
+                        foreach (PeptideWithSetModifications peptide in proteinGroup.AllPeptides)
                         {
-                            id = "PDH_" + protein_id,
+                            if (peptide_evidence_ids.ContainsKey(peptide))
+                            {
+                                if (peptide.Protein == protein)
+                                {
+                                    var peptideHypothesis = new mzIdentML110.Generated.PeptideHypothesisType()
+                                    {
+                                        peptideEvidence_ref = "PE_" + peptide_evidence_ids[peptide],
+                                        SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.FullSequence].Item2.Count],
+                                    };
+
+                                    int i = 0;
+                                    foreach (string sii in peptide_ids[peptide.FullSequence].Item2)
+                                    {
+                                        peptideHypothesis.SpectrumIdentificationItemRef[i] = new mzIdentML110.Generated.SpectrumIdentificationItemRefType()
+                                        {
+                                            spectrumIdentificationItem_ref = sii
+                                        };
+                                        i++;
+                                    }
+                                    peptideHypotheses.Add(peptideHypothesis);
+                                }
+                            }
+                        }
+
+                        int this_protein_id = protein_id;
+                        protein_id++;
+
+                        // No peptide evidence written for this protein, e.g. a group supported only
+                        // by PSMs whose sequence could not be resolved.
+                        if (peptideHypotheses.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        detectionHypotheses.Add(new mzIdentML110.Generated.ProteinDetectionHypothesisType()
+                        {
+                            id = "PDH_" + this_protein_id,
                             dBSequence_ref = "DBS_" + protein.Accession,
                             passThreshold = proteinGroup.QValue <= 0.01, // hardcoded as 1% FDR but we could change this to the provided threshold
-                            PeptideHypothesis = new mzIdentML110.Generated.PeptideHypothesisType[proteinGroup.AllPeptides.Count],
+                            PeptideHypothesis = peptideHypotheses.ToArray(),
                             cvParam = new mzIdentML110.Generated.CVParamType[4]
                             {
                             new mzIdentML110.Generated.CVParamType
@@ -693,38 +733,29 @@ namespace TaskLayer
                                 value = proteinGroup.UniquePeptides.Count.ToString()
                             }
                             }
-                        };
-                        int peptide_id = 0;
-                        foreach (PeptideWithSetModifications peptide in proteinGroup.AllPeptides)
-                        {
-                            if (peptide_evidence_ids.ContainsKey(peptide))
-                            {
-                                if (peptide.Protein == protein)
-                                {
-                                    _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id] = new mzIdentML110.Generated.PeptideHypothesisType()
-                                    {
-                                        peptideEvidence_ref = "PE_" + peptide_evidence_ids[peptide],
-                                        SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.FullSequence].Item2.Count],
-                                    };
-
-                                    int i = 0;
-                                    foreach (string sii in peptide_ids[peptide.FullSequence].Item2)
-                                    {
-                                        _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id].SpectrumIdentificationItemRef[i] = new mzIdentML110.Generated.SpectrumIdentificationItemRefType()
-                                        {
-                                            spectrumIdentificationItem_ref = sii
-                                        };
-                                        i++;
-                                    }
-                                    peptide_id++;
-                                }
-                            }
-                        }
-                        pag_protein_index++;
-                        protein_id++;
+                        });
                     }
+
+                    int this_group_id = group_id;
                     group_id++;
+
+                    if (detectionHypotheses.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    ambiguityGroups.Add(new mzIdentML110.Generated.ProteinAmbiguityGroupType()
+                    {
+                        id = "PAG_" + this_group_id,
+                        ProteinDetectionHypothesis = detectionHypotheses.ToArray()
+                    });
                 }
+
+                _mzid.DataCollection.AnalysisData.ProteinDetectionList = new mzIdentML110.Generated.ProteinDetectionListType()
+                {
+                    id = "PDL",
+                    ProteinAmbiguityGroup = ambiguityGroups.ToArray()
+                };
             }
             XmlWriter writer = XmlWriter.Create(outputPath, settings);
             _indexedSerializer.Serialize(writer, _mzid);

@@ -768,7 +768,7 @@
             </binaryDataArray>
           </binaryDataArrayList>
         </spectrum>
-        <spectrum index="12" id="controllerType=0 controllerNumber=1 scan=28812" defaultArrayLength="502">
+        <spectrum index="12" id="controllerType=0 controllerNumber=1 scan=13" defaultArrayLength="502">
           <cvParam cvRef="MS" accession="MS:1000580" name="MSn spectrum" value=""/>
           <cvParam cvRef="MS" accession="MS:1000511" name="ms level" value="2"/>
           <cvParam cvRef="MS" accession="MS:1000130" name="positive scan" value=""/>

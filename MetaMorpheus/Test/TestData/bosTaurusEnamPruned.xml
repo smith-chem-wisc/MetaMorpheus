@@ -1,0 +1,5181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<mzLibProteinDb>
+  <modification>ID   Acetylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   C2H2O
+MM   42.010564684
+DR   Unimod; 1
+NL   ETD:45.0204
+DI   HCD:125.084063979
+
+//</modification>
+  <modification>ID   ADP-ribosylation on S
+MT   Common Biological
+TG   S
+PP   Anywhere.
+CF   C15H21N5O13P2
+MM   541.06110975
+DR   Unimod; 213
+
+//</modification>
+  <modification>ID   Ammonia loss on N
+MT   Common Artifact
+TG   N
+PP   Anywhere.
+CF   H-3N-1
+MM   -17.026549101
+DR   Unimod; 385
+
+//</modification>
+  <modification>ID   Butyrylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   C4H6O
+MM   70.041864813
+DR   Unimod; 1289
+DI   HCD:153.115323533
+
+//</modification>
+  <modification>ID   Calcium on E
+MT   Metal
+TG   E
+PP   Anywhere.
+CF   H-2Ca
+MM   37.946940799
+DR   Unimod; 951
+
+//</modification>
+  <modification>ID   Carbamyl on K
+MT   Common Artifact
+TG   K
+PP   Anywhere.
+CF   CHNO
+MM   43.005813656
+DR   Unimod; 5
+
+//</modification>
+  <modification>ID   Carbamyl on M
+MT   Common Artifact
+TG   M
+PP   Anywhere.
+CF   CHNO
+MM   43.005813656
+DR   Unimod; 5
+
+//</modification>
+  <modification>ID   Carbamyl on R
+MT   Common Artifact
+TG   R
+PP   Anywhere.
+CF   CHNO
+MM   43.005813656
+DR   Unimod; 5
+
+//</modification>
+  <modification>ID   Carbamyl on X
+MT   Common Artifact
+TG   X
+PP   Peptide N-terminal.
+CF   CHNO
+MM   43.005813656
+DR   Unimod; 5
+
+//</modification>
+  <modification>ID   Carboxylation on D
+MT   Common Biological
+TG   D
+PP   Anywhere.
+CF   CO2
+MM   43.989829239
+DR   Unimod; 299
+
+//</modification>
+  <modification>ID   Carboxylation on E
+MT   Common Biological
+TG   E
+PP   Anywhere.
+CF   CO2
+MM   43.989829239
+DR   Unimod; 299
+
+//</modification>
+  <modification>ID   Carboxylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   CO2
+MM   43.989829239
+DR   Unimod; 299
+
+//</modification>
+  <modification>ID   Citrullination on R
+MT   Common Biological
+TG   R
+PP   Anywhere.
+CF   H-1N-1O
+MM   0.984015583
+DR   Unimod; 7
+NL   HCD:43.0058
+DI   HCD:129.090223533
+
+//</modification>
+  <modification>ID   Cu[I] on D
+MT   Metal
+TG   D
+PP   Anywhere.
+CF   H-1Cu
+MM   61.921772688
+DR   Unimod; 531
+
+//</modification>
+  <modification>ID   Cu[I] on E
+MT   Metal
+TG   E
+PP   Anywhere.
+CF   H-1Cu
+MM   61.921772688
+DR   Unimod; 531
+
+//</modification>
+  <modification>ID   Deamidation on N
+MT   Common Artifact
+TG   N
+PP   Anywhere.
+CF   H-1N-1O
+MM   0.984015583
+DR   Unimod; 7
+
+//</modification>
+  <modification>ID   Deamidation on Q
+MT   Common Artifact
+TG   Q
+PP   Anywhere.
+CF   H-1N-1O
+MM   0.984015583
+DR   Unimod; 7
+
+//</modification>
+  <modification>ID   Dimethylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   C2H4
+MM   28.031300129
+DR   Unimod; 36
+
+//</modification>
+  <modification>ID   Dimethylation on R
+MT   Common Biological
+TG   R
+PP   Anywhere.
+CF   C2H4
+MM   28.031300129
+DR   Unimod; 36
+NL   ETD:31.0422 or ETD:45.0579
+
+//</modification>
+  <modification>ID   Fe[II] on D
+MT   Metal
+TG   D
+PP   Anywhere.
+CF   H-2Fe
+MM   53.919286266
+DR   Unimod; 952
+
+//</modification>
+  <modification>ID   Fe[II] on E
+MT   Metal
+TG   E
+PP   Anywhere.
+CF   H-2Fe
+MM   53.919286266
+DR   Unimod; 952
+
+//</modification>
+  <modification>ID   Formylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   CO
+MM   27.99491462
+DR   Unimod; 122
+DI   HCD:111.068423533
+
+//</modification>
+  <modification>ID   Glutarylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   C5H6O3
+MM   114.031694052
+DR   Unimod; 1848
+NL   ETD:115.0395
+DI   HCD:181.110323533
+
+//</modification>
+  <modification>ID   HexNAc on Nxs
+MT   Common Biological
+TG   Nxs
+PP   Anywhere.
+CF   C8H13NO5
+MM   203.079372521
+DR   Unimod; 43
+NL   AnyActivationType:203.079372521
+
+//</modification>
+  <modification>ID   HexNAc on S
+MT   Common Biological
+TG   S
+PP   Anywhere.
+CF   C8H13NO5
+MM   203.079372521
+DR   Unimod; 43
+NL   AnyActivationType:203.079372521
+
+//</modification>
+  <modification>ID   HexNAc on T
+MT   Common Biological
+TG   T
+PP   Anywhere.
+CF   C8H13NO5
+MM   203.079372521
+DR   Unimod; 43
+NL   AnyActivationType:203.079372521
+
+//</modification>
+  <modification>ID   Hydroxybutyrylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   C4H6O2
+MM   86.036779433
+DI   HCD:169.110323533
+
+//</modification>
+  <modification>ID   Hydroxylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   O
+MM   15.99491462
+DR   Unimod; 35
+
+//</modification>
+  <modification>ID   Hydroxylation on N
+MT   Common Biological
+TG   N
+PP   Anywhere.
+CF   O
+MM   15.99491462
+DR   Unimod; 35
+
+//</modification>
+  <modification>ID   Hydroxylation on P
+MT   Common Biological
+TG   P
+PP   Anywhere.
+CF   O
+MM   15.99491462
+DR   Unimod; 35
+DI   HCD:170.069143
+
+//</modification>
+  <modification>ID   Magnesium on D
+MT   Metal
+TG   D
+PP   Anywhere.
+CF   H-2Mg
+MM   21.969391633
+DR   Unimod; 956
+
+//</modification>
+  <modification>ID   Magnesium on E
+MT   Metal
+TG   E
+PP   Anywhere.
+CF   H-2Mg
+MM   21.969391633
+DR   Unimod; 956
+
+//</modification>
+  <modification>ID   Malonylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   C3H2O3
+MM   86.000393923
+DR   Unimod; 747
+NL   ETD:87.0082
+NL   HCD:43.9898
+DI   HCD:125.084063979 or HCD:169.073923533
+
+//</modification>
+  <modification>ID   Methylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   CH2
+MM   14.015650064
+DR   Unimod; 34
+
+//</modification>
+  <modification>ID   Methylation on R
+MT   Common Biological
+TG   R
+PP   Anywhere.
+CF   CH2
+MM   14.015650064
+DR   Unimod; 34
+
+//</modification>
+  <modification>ID   Phosphorylation on S
+MT   Common Biological
+TG   S
+PP   Anywhere.
+CF   HO3P
+MM   79.966330889
+DR   Unimod; 21
+NL   HCD:0 or HCD:97.976895573
+
+//</modification>
+  <modification>ID   Phosphorylation on T
+MT   Common Biological
+TG   T
+PP   Anywhere.
+CF   HO3P
+MM   79.966330889
+DR   Unimod; 21
+NL   HCD:0 or HCD:97.976895573
+
+//</modification>
+  <modification>ID   Phosphorylation on Y
+MT   Common Biological
+TG   Y
+PP   Anywhere.
+CF   HO3P
+MM   79.966330889
+DR   Unimod; 21
+NL   HCD:0 or HCD:97.976895573
+DI   HCD:215.034744803
+
+//</modification>
+  <modification>ID   Potassium on E
+MT   Metal
+TG   E
+PP   Anywhere.
+CF   H-1K
+MM   37.955881454
+DR   Unimod; 530
+
+//</modification>
+  <modification>ID   Pyridoxal phosphate on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   C8H8NO5P
+MM   229.014009359
+DR   Unimod; 46
+
+//</modification>
+  <modification>ID   Sodium on D
+MT   Metal
+TG   D
+PP   Anywhere.
+CF   H-1Na
+MM   21.98194425
+DR   Unimod; 30
+
+//</modification>
+  <modification>ID   Sodium on E
+MT   Metal
+TG   E
+PP   Anywhere.
+CF   H-1Na
+MM   21.98194425
+DR   Unimod; 30
+
+//</modification>
+  <modification>ID   Succinylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   C4H4O3
+MM   100.016043988
+DR   Unimod; 64
+NL   ETD:101.0239
+DI   HCD:183.089523533
+
+//</modification>
+  <modification>ID   Sulfonation on Y
+MT   Common Biological
+TG   Y
+PP   Anywhere.
+CF   O3S
+MM   79.956815033
+DR   Unimod; 40
+NL   AnyActivationType:79.956815033
+
+//</modification>
+  <modification>ID   Trimethylation on K
+MT   Common Biological
+TG   K
+PP   Anywhere.
+CF   C3H6
+MM   42.046950193
+DR   Unimod; 37
+NL   ETD:45.0204
+
+//</modification>
+  <modification>ID   Water Loss on E
+MT   Common Artifact
+TG   E
+PP   Peptide N-terminal.
+CF   H-2O-1
+MM   -18.010564684
+DR   Unimod; 23
+
+//</modification>
+  <modification>ID   Zinc on D
+MT   Metal
+TG   D
+PP   Anywhere.
+CF   H-2Zn
+MM   61.913491946
+DR   Unimod; 954
+
+//</modification>
+  <modification>ID   Zinc on E
+MT   Metal
+TG   E
+PP   Anywhere.
+CF   H-2Zn
+MM   61.913491946
+DR   Unimod; 954
+
+//</modification>
+  <entry>
+    <accession>Q9XSX7</accession>
+    <name>Ameloblastin</name>
+    <protein>
+      <recommendedName>
+        <fullName>Ameloblastin</fullName>
+      </recommendedName>
+    </protein>
+    <gene>
+      <name type="primary">AMBN</name>
+    </gene>
+    <organism>
+      <name type="scientific">Bos taurus</name>
+    </organism>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="28" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="31" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="32" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="33" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="37" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="41" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="41" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="41" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="43" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="43" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="43" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="45" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="45" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on E">
+      <location>
+        <position position="45" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="46" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on T">
+      <location>
+        <position position="46" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="48" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="48" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="49" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="52" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="52" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="52" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="54" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="57" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="57" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Ammonia loss on N">
+      <location>
+        <position position="57" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="60" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="60" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="60" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="61" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="62" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="62" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="63" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="63" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="64" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="64" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="69" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="69" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="69" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Glutarylation on K">
+      <location>
+        <position position="69" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="69" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="69" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="69" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="69" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="70" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="70" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="72" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="72" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="77" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="77" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="81" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="82" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="96" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="97" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="98" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="99" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="100" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="102" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="103" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="104" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="105" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="106" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="108" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="109" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="109" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="110" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="113" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="121" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="122" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="130" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="135" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="138" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="139" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="141" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="142" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="146" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="150" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="151" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="154" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="157" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="158" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="159" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="164" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="172" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="174" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="175" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="178" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="195" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="198" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="205" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="205" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="209" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="213" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="213" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on D">
+      <location>
+        <position position="215" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on D">
+      <location>
+        <position position="215" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="216" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="219" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="219" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="224" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="231" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="237" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="239" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="239" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="240" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="258" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="258" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on K">
+      <location>
+        <position position="258" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="258" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="260" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="261" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="261" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on E">
+      <location>
+        <position position="261" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="262" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="262" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on K">
+      <location>
+        <position position="262" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="262" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="264" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="264" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on E">
+      <location>
+        <position position="264" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="268" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on D">
+      <location>
+        <position position="269" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on D">
+      <location>
+        <position position="269" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on D">
+      <location>
+        <position position="269" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="270" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="271" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="273" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="274" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="274" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on E">
+      <location>
+        <position position="274" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="280" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="283" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="291" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="300" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="300" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="301" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="304" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="304" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="306" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="307" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="312" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="354" />
+      </location>
+    </feature>
+    <sequence length="392">MPALKIPLFKMKDMILILCLLKMSSAVPAFPQQPGIPGMASLSLETMRQLGSLQGLNLLSQYSRFGFGKSFNSLWMNGLLPPHSSFPWMRPREHETQQPSLQPQQPGQKPFLQPTVVTSMQNAVQKGVPQPPIYQGHPPLQQAEGPMVEQQVAPSEKPPTTELPGMDFADLQDPPMFPIAHLISRGPMPQNKPSQLYPGIFYVTYGANQLGGRGDPLAYGAIFPGFGGMRPRLGGMPHNPDMGGDFTLEFDSPVAATKGPEKGEGGAQDSPVPEAHLADPESPALLSELAPGALEGLLANPEGNIPNLARGPAGRSRGFLRGVTPAAADPLMTPGLAEVYETYGADETTTLGLQEETTVDSTATPDTQHTLMPRNKAQQPQIKHDAWHFQEP</sequence>
+  </entry>
+  <entry>
+    <accession>P02817</accession>
+    <name>Amelogenin, X isoform</name>
+    <protein>
+      <recommendedName>
+        <fullName>Amelogenin, X isoform</fullName>
+      </recommendedName>
+    </protein>
+    <gene>
+      <name type="primary">AMELX</name>
+    </gene>
+    <organism>
+      <name type="scientific">Bos taurus</name>
+    </organism>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="16" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="16" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on X">
+      <location>
+        <position position="17" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on M">
+      <location>
+        <position position="17" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="18" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on X">
+      <location>
+        <position position="18" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="20" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="21" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="23" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="26" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="28" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="28" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="30" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="30" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Ammonia loss on N">
+      <location>
+        <position position="30" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on Nxs">
+      <location>
+        <position position="30" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="32" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="32" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="32" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="33" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="33" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Potassium on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Calcium on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="37" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on T">
+      <location>
+        <position position="37" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="38" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Acetylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Glutarylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Butyrylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Trimethylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="42" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="42" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="43" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="44" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="44" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="44" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on M">
+      <location>
+        <position position="45" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="49" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="50" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="50" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="51" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="52" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="52" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="53" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="53" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="55" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="55" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="57" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="65" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="68" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="72" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="73" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="75" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="76" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="77" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="77" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="92" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="93" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="97" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="98" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="99" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="100" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="103" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="105" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="107" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="112" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="114" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="117" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="118" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="119" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="119" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="121" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="123" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="125" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="126" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="127" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="129" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="130" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="131" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="134" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="135" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="136" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="137" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="139" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="142" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="145" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="146" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="148" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="149" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="151" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="152" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="154" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="155" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="157" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="158" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="160" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="164" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="165" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="166" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="167" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="170" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="172" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="173" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="175" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="176" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="177" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="178" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="179" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="181" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="182" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="188" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="190" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="191" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="194" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Fe[II] on D">
+      <location>
+        <position position="195" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on D">
+      <location>
+        <position position="195" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on D">
+      <location>
+        <position position="195" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="197" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on X">
+      <location>
+        <position position="198" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Fe[II] on E">
+      <location>
+        <position position="199" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="199" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="199" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Water Loss on E">
+      <location>
+        <position position="199" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="202" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on T">
+      <location>
+        <position position="204" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="204" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Fe[II] on D">
+      <location>
+        <position position="205" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on D">
+      <location>
+        <position position="205" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on D">
+      <location>
+        <position position="205" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on D">
+      <location>
+        <position position="205" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on D">
+      <location>
+        <position position="205" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Glutarylation on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Trimethylation on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Acetylation on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Butyrylation on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on K">
+      <location>
+        <position position="206" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on T">
+      <location>
+        <position position="207" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="207" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Glutarylation on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Trimethylation on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Acetylation on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Butyrylation on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on K">
+      <location>
+        <position position="208" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="209" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="209" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on R">
+      <location>
+        <position position="209" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on R">
+      <location>
+        <position position="209" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Fe[II] on E">
+      <location>
+        <position position="210" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on E">
+      <location>
+        <position position="210" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on E">
+      <location>
+        <position position="210" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="210" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="210" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Fe[II] on E">
+      <location>
+        <position position="211" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on E">
+      <location>
+        <position position="211" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on E">
+      <location>
+        <position position="211" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="211" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="211" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Fe[II] on D">
+      <location>
+        <position position="213" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on D">
+      <location>
+        <position position="213" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on D">
+      <location>
+        <position position="213" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on D">
+      <location>
+        <position position="213" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on D">
+      <location>
+        <position position="213" />
+      </location>
+    </feature>
+    <sequence length="213">MGTWILFACLLGAAFSMPLPPHPGHPGYINFSYEVLTPLKWYQSMIRHPYPSYGYEPMGGWLHHQIIPVVSQQTPQNHALQPHHHIPMVPAQQPVVPQQPMMPVPGQHSMTPTQHHQPNLPLPAQQPFQPQSIQPQPHQPLQPHQPLQPMQPMQPLQPLQPLQPQPPVHPIQPLPPQPPLPPIFPMQPLPPMLPDLPLEAWPATDKTKREEVD</sequence>
+  </entry>
+  <entry>
+    <accession>Q99004</accession>
+    <name>Amelogenin, Y isoform</name>
+    <protein>
+      <recommendedName>
+        <fullName>Amelogenin, Y isoform</fullName>
+      </recommendedName>
+    </protein>
+    <gene>
+      <name type="primary">AMELY</name>
+    </gene>
+    <organism>
+      <name type="scientific">Bos taurus</name>
+    </organism>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="15" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="15" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="16" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on X">
+      <location>
+        <position position="17" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on M">
+      <location>
+        <position position="17" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="18" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on X">
+      <location>
+        <position position="19" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="20" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="21" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on X">
+      <location>
+        <position position="21" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on X">
+      <location>
+        <position position="22" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="23" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="26" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="28" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="28" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="30" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="30" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Ammonia loss on N">
+      <location>
+        <position position="30" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on Nxs">
+      <location>
+        <position position="30" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="32" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="32" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="32" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="33" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="33" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Potassium on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Calcium on E">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="37" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on T">
+      <location>
+        <position position="37" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="38" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Acetylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Glutarylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Butyrylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Trimethylation on K">
+      <location>
+        <position position="40" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="42" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="42" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="43" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="44" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="44" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Ammonia loss on N">
+      <location>
+        <position position="44" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on M">
+      <location>
+        <position position="45" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on R">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on R">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="48" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="48" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="49" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="50" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="50" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="51" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="57" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="65" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="68" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="72" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="73" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="75" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="76" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="77" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="77" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="92" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="93" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="98" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="99" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="107" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="112" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="118" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="119" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="121" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="123" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="130" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="132" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="135" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="137" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="140" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="143" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="145" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="146" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="149" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="154" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="155" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="156" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="157" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="158" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="160" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="161" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="164" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="166" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="167" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="169" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="170" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="173" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on D">
+      <location>
+        <position position="174" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on D">
+      <location>
+        <position position="174" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on D">
+      <location>
+        <position position="174" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="176" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on X">
+      <location>
+        <position position="177" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="178" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="178" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on E">
+      <location>
+        <position position="178" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Water Loss on E">
+      <location>
+        <position position="178" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="181" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on T">
+      <location>
+        <position position="183" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="183" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on D">
+      <location>
+        <position position="184" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on D">
+      <location>
+        <position position="184" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on D">
+      <location>
+        <position position="184" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on D">
+      <location>
+        <position position="184" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on D">
+      <location>
+        <position position="184" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Butyrylation on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Glutarylation on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on K">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on T">
+      <location>
+        <position position="186" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="186" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Butyrylation on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Glutarylation on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on K">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="188" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="188" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on R">
+      <location>
+        <position position="188" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="189" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="189" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on E">
+      <location>
+        <position position="189" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on E">
+      <location>
+        <position position="189" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on E">
+      <location>
+        <position position="189" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="190" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="190" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on E">
+      <location>
+        <position position="190" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on E">
+      <location>
+        <position position="190" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on E">
+      <location>
+        <position position="190" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on D">
+      <location>
+        <position position="192" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on D">
+      <location>
+        <position position="192" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on D">
+      <location>
+        <position position="192" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on D">
+      <location>
+        <position position="192" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carboxylation on D">
+      <location>
+        <position position="192" />
+      </location>
+    </feature>
+    <sequence length="192">MGTWILFACLLGAAYSMPLPPHPGHPGYINFSYEVLTPLKWYQNMLRYPYPSYGYEPVGGWLHHQIIPVVSQQSPQNHALQPHHHNPMVPAQQPVVPQQPMMPVPGQHSMTPIQHHQPNLPLPAQQSFQPQPIQPQPHQPLQPQPPVHPIQRLPPQPPLPPIFPMQPLPPVLPDLPLEAWPATDKTKREEVD</sequence>
+  </entry>
+  <entry>
+    <accession>F1MKR5</accession>
+    <name>Enamelin</name>
+    <protein>
+      <recommendedName>
+        <fullName>Enamelin</fullName>
+      </recommendedName>
+    </protein>
+    <gene>
+      <name type="primary">ENAM</name>
+    </gene>
+    <organism>
+      <name type="scientific">Bos taurus</name>
+    </organism>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="43" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="48" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="50" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="53" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="53" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="54" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="54" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="55" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="55" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="55" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="55" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="56" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="56" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="57" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="57" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="58" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="58" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="61" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="62" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="62" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="66" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="66" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="69" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="69" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="71" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="78" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="82" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="85" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="88" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="92" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="94" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="100" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="104" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="105" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="106" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="109" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="110" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="117" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="118" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="118" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="118" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="118" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="119" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="122" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="124" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="127" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="129" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="130" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="130" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="131" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="132" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="133" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="134" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="138" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="139" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="140" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="140" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="141" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="144" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="145" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="146" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="152" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="153" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="154" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="159" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="161" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="162" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="165" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="166" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="169" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="169" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="173" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="175" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="176" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="177" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="178" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="182" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="HexNAc on S">
+      <location>
+        <position position="185" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="187" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="188" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="192" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="192" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on R">
+      <location>
+        <position position="192" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="193" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="194" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="196" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="ADP-ribosylation on S">
+      <location>
+        <position position="196" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="197" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Ammonia loss on N">
+      <location>
+        <position position="197" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="197" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="198" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="198" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on E">
+      <location>
+        <position position="198" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on E">
+      <location>
+        <position position="198" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="199" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Magnesium on E">
+      <location>
+        <position position="199" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Zinc on E">
+      <location>
+        <position position="199" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Cu[I] on E">
+      <location>
+        <position position="199" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="202" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Ammonia loss on N">
+      <location>
+        <position position="202" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="202" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="203" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="210" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="210" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="216" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on R">
+      <location>
+        <position position="216" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on R">
+      <location>
+        <position position="216" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="217" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="218" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="219" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="219" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="220" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="220" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on X">
+      <location>
+        <position position="221" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="221" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Water Loss on E">
+      <location>
+        <position position="222" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on M">
+      <location>
+        <position position="224" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Water Loss on E">
+      <location>
+        <position position="226" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Trimethylation on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Acetylation on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Butyrylation on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="230" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="231" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Trimethylation on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Acetylation on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Butyrylation on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Pyridoxal phosphate on K">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on X">
+      <location>
+        <position position="234" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Water Loss on E">
+      <location>
+        <position position="234" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="236" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="237" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Methylation on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Formylation on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylation on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Trimethylation on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Acetylation on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Succinylation on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Butyrylation on K">
+      <location>
+        <position position="238" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="239" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="241" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="242" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="244" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="246" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="247" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="249" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="249" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="250" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="251" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="253" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="255" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="256" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="256" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="257" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="258" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="259" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="260" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="263" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="264" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="265" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="266" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbamyl on R">
+      <location>
+        <position position="266" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="269" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="272" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="272" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="276" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="279" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="279" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="280" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="280" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="282" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="284" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="285" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="285" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="289" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="289" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="290" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="293" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="294" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="295" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="296" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="299" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="306" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="311" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="335" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="336" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="346" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="346" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="347" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="348" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="349" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="349" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="351" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="354" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="355" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="355" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="356" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="357" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="391" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="393" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="396" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="400" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="403" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="405" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="406" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="411" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="413" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="415" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="421" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="462" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="470" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="472" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="474" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="476" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="478" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="558" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="560" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="562" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="565" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="566" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="566" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="569" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="569" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="570" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="571" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="575" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="605" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="606" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="612" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="613" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="614" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="619" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="651" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="653" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="657" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="660" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="667" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="669" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="671" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="678" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="678" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="680" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="683" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="686" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="690" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="691" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="695" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="695" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="696" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="697" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="698" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="702" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="707" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="709" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="728" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="733" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="798" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="801" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="802" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="805" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="807" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="809" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="829" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="831" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="835" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="933" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="934" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="935" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="940" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="946" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="947" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="1010" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="1013" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="1016" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="1021" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="1029" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="1033" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="1034" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="1035" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="1069" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="1078" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="1083" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="1084" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="1091" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="1094" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="1098" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="1099" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="1109" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="1111" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="1112" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="1114" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="1119" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="1130" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="1134" />
+      </location>
+    </feature>
+    <sequence length="1147">KMLLQCRHEASSPKLDYLVPSGKMKILLVFLSLLGYSIAMPLQMHMPRIPGFSSKSEEMMRYGHFNFMNFPHLAHLSPFYGNGIQLPQLFPQYQMPMWPQPPPNKKSPQKPSSPAAPKQTDQAPETPSPNQPQPTDSPPNQHLKQPSTTTAQPQEEETQTPQAFPPFGNGLFPYQQPPWHIPHVSIPPGFGRPPGSNEEGGNPFFGFFGYHGFGGRPPYYSEEMFEDFEKPKEEDPPKTETPATDPSVNSTVPETNSTQPGAPSPRAGQGGNDTSPAGNNGQDPNTVSNPTVQNNPVVNVSGQGVPRSQTPWRPSQTNIHENYPYPNIRNFPAGRQWHPTGTSMGNRRNGPFYRNQQIQRAPRWNSFVLEGKQAIRLGYPIYRRAYASTVRGNYPNYAGNPVNFRRKPEGPSKQPEGTIAPLGPKHGTTGHNENIQNPKEKPVSQKERIVIPTRDPNGPWRNSQDYGVTKSNYKLPHPEGNILVPNFNSIDQHENSYYPRGDSRGTPNSNGQTQSQNLPKGIILEPRRIPYESEINQPEIKHSTHQPVYPEGSPSPARERFPAGRNTWNQQEISPPFKEDPGRKEEHLPHPSLGSRGRIYYTDYNPYDRRENPPYLRSNSWDERNDPPNTMGQSENPHYPMNTPDPKETIPYNEEGPADPTGDETFPGQTRWSVDESNFKTAPTARYEGKQYTSNQPKEYSPYSLDNLPKPREYFPYGEFYPWSPDENFPSYNTAPTIPLLVENRGYYPTNAVGQEENTMFPSWNSWDHMVQVQGQKERRPYFTRTFWGQPTNLPKAPASPPYHKENQPYFSNSPTGLQKDPTWHEGENLNYGMQITRLNSPEGGHLAFPDLIPPHYPGSQKETRLFHLSQRGPCCAGGSIGPKDNPLALQDYTLFFGLAPGENQDTSPLYTEDSHTKHERYTISPTSILPGQRNSSEKRLPGESQNPSPFRDDVSTLRRNTPCSINNQLSQRGIRPLPEASSLQSKNIPCLKSDLEDGNHVLEQTLEGNQLNERPVDLTPEQLVMDTPDEGPKPEGIPSEVQGNGGKRQQQRPSTILKLPCFDSKLTKYYTSSTGTPSSLGRQGSFDGDPIMPTEIPNSLAELATGAQFQNINVDPLNADDHTPFDPLQVGTNPQDQVQDCLLLQA</sequence>
+  </entry>
+  <entry>
+    <accession>O18767</accession>
+    <name>Matrix metalloproteinase-20</name>
+    <protein>
+      <recommendedName>
+        <fullName>Matrix metalloproteinase-20</fullName>
+      </recommendedName>
+    </protein>
+    <gene>
+      <name type="primary">MMP20</name>
+    </gene>
+    <organism>
+      <name type="scientific">Bos taurus</name>
+    </organism>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="16" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="19" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="22" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="23" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="25" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="28" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="29" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="30" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="31" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on S">
+      <location>
+        <position position="32" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="33" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="34" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="35" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="36" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="36" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="42" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="42" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="46" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="46" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sulfonation on Y">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on Y">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphorylation on T">
+      <location>
+        <position position="48" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="129" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="133" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="179" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="183" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="184" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="193" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="255" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="265" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="271" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="272" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="281" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="284" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="285" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="287" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="287" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="288" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="291" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="297" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="418" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="419" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="421" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="424" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="427" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="428" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="448" />
+      </location>
+    </feature>
+    <sequence length="481">MLPASGLAVLLVTALKFSTAAPSLPAASPRTSRNNYRLAQAYLDKYYTKKGGPQIGEMVARGGNSTVKKIKELQEFFGLRVTGKLDRATMDVIKRPRCGVPDVANYRLFPGEPKWKKNTLTYRISKYTPSMTPAEVDRAMEMALRAWSSAVPLNFVRINAGEADIMISFETGDHGDSYPFDGPRGTLAHAFAPGEGLGGDTHFDNAEKWTMGTNGFNLFTVAAHEFGHALGLAHSTDPSALMFPTYKYQNPYGFRLPKDDVKGIQALYGPRRAFSGKPTAPHGPPHNPSIPDLCDSNLSFDAVTMLGKELLLFRDRIFWRRQVHLMSGIRPSTITSSFPQLMSNVDAAYEVAERGTAYFFKGPHYWITRGFQMQGPPRTIYDFGFPRYVQRIDAAVYLKDAQKTLFFVGDEYYSYDERKRKMEKDYPKSTEEEFSGVNGQIDAAVELNGYIYFFSGPKAYKSDTEKEDVVSELKSSSWIGC</sequence>
+  </entry>
+  <entry>
+    <accession>F1MLB5</accession>
+    <name>Kallikrein B1</name>
+    <protein>
+      <recommendedName>
+        <fullName>Kallikrein B1</fullName>
+      </recommendedName>
+    </protein>
+    <gene>
+      <name type="primary">KLK4</name>
+    </gene>
+    <organism>
+      <name type="scientific">Bos taurus</name>
+    </organism>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="42" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="45" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="52" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="90" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="92" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="95" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="127" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="128" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="133" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="215" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="219" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="226" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="228" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="231" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="232" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="235" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on N">
+      <location>
+        <position position="240" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="243" />
+      </location>
+    </feature>
+    <sequence length="255">MTTAGNSWGWFLGHLLLSVTGSLAWGGSSRIINGEDCRPHSQPWQAALFLENEFFCGGVLVHPQWVLSAAHCFQKSYTIGLGLHSLEADQEPGSQMIEAHLSIQHPEYNKPSLANDLMLIKLEESVPPSDTIQDISIASQCPAAGGDSCLVSGWGRLVNGKLPKVLQCVNISVVSEKICSELYAHVYHPSMFCAGGGQDQKDSCHGDSGGPLVCNGSLQGLVSFGQAQCGQPYVPSVYTNLCKFTDWIQKTIQAS</sequence>
+  </entry>
+  <entry>
+    <accession>A1YQ93</accession>
+    <name>Odontogenic ameloblast-associated protein</name>
+    <protein>
+      <recommendedName>
+        <fullName>Odontogenic ameloblast-associated protein</fullName>
+      </recommendedName>
+    </protein>
+    <gene>
+      <name type="primary">ODAM</name>
+    </gene>
+    <organism>
+      <name type="scientific">Bos taurus</name>
+    </organism>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="110" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="113" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="117" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="118" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="120" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Citrullination on R">
+      <location>
+        <position position="121" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="124" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="124" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="125" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxybutyrylation on K">
+      <location>
+        <position position="133" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Malonylation on K">
+      <location>
+        <position position="133" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="136" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="138" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="140" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="143" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="155" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="157" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="158" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="162" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on K">
+      <location>
+        <position position="174" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="177" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="186" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="191" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="194" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="200" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="204" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="210" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Hydroxylation on P">
+      <location>
+        <position position="216" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="224" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="229" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="231" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on N">
+      <location>
+        <position position="234" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Deamidation on Q">
+      <location>
+        <position position="244" />
+      </location>
+    </feature>
+    <sequence length="277">MRTLILLGILGATMSAPLIPQHLMSASNSNELLLNLNNAQLRPLQLQGPFNSWFPPFPGILQQQQQNQVPGLSPFSLSTREWFAGLVPNQIFVPGQVSFAQGTQAGQLDPSQPQTPQQTQRGPKNVMPSVFFKMPQEQAQMLQYYPVYMFLPWEQPQQTVAQSPPQTREQLFEKQMPFYTEFGYIPQQVEPVMPVEQQQPVFDPFLGTAPEIAAMPAEVSPYLQKEMINFQHTNAGIFIPSTSQKPSTTIFFTSAVDPIITRELTEKKAKTDSLKEP</sequence>
+  </entry>
+</mzLibProteinDb>

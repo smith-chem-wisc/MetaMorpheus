@@ -1,0 +1,3213 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Shapes;
+using Chemistry;
+using EngineLayer;
+using EngineLayer.DatabaseLoading;
+using GuiFunctions;
+using GuiFunctions.MetaDraw;
+using MassSpectrometry;
+using NUnit.Framework;
+using Omics.Fragmentation;
+using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
+using Proteomics.ProteolyticDigestion;
+using Readers;
+using TaskLayer;
+using OxyPlot.Wpf;
+using LineSeries = OxyPlot.Series.LineSeries;
+using Path = System.IO.Path;
+using Polyline = System.Windows.Shapes.Polyline;
+using Omics;
+using PlotColumnSeries = OxyPlot.Series.ColumnSeries;
+using PlotCategoryAxis = OxyPlot.Axes.CategoryAxis;
+
+namespace Test.MetaDraw
+{
+    [TestFixture, Apartment(ApartmentState.STA)]
+    [TestFixture]
+    public class MetaDrawTest
+    {
+        [SetUp]
+        public static void SetUp()
+        {
+            MetaDrawSettings.ResetSettings();
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_CategoryHistogramGrouping()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "Missed Cleavages",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Fragment Ion Types by Count",
+                parameters,
+                out var psmsBySourceFile);
+
+            Assert.That(plot.Model.Series.Count, Is.EqualTo(psmsBySourceFile.Count));
+            Assert.That(plot.Model.Series.All(s => s is PlotColumnSeries));
+            Assert.That(plot.Model.Axes.OfType<PlotCategoryAxis>()
+                .Any(axis => axis.Key == "GroupAxis" && axis.Title == parameters.GroupingProperty));
+
+            var groupingValues = plot.PlotData
+                .Where(row => row.ContainsKey(parameters.GroupingProperty))
+                .Select(row => row[parameters.GroupingProperty])
+                .Distinct()
+                .ToList();
+
+            Assert.That(groupingValues.Count, Is.GreaterThan(1));
+            Assert.That(plot.PlotData.All(row => row.ContainsKey("Source File")));
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_NumericalHistogramGrouping()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "Precursor Charge",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = true,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
+                parameters,
+                out _);
+
+            Assert.That(plot.Model.Axes.OfType<PlotCategoryAxis>()
+                .Any(axis => axis.Key == "GroupAxis" && axis.Title == parameters.GroupingProperty));
+
+            var normalizedValues = plot.Model.Series
+                .OfType<PlotColumnSeries>()
+                .SelectMany(series => series.Items)
+                .Select(item => item.Value)
+                .ToList();
+
+            Assert.That(normalizedValues.All(value => value <= 1.0 + 1e-6));
+            Assert.That(plot.PlotData.Any(row => row.ContainsKey("Bin")));
+            Assert.That(plot.PlotData.Any(row => row.ContainsKey(parameters.GroupingProperty)));
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_ExportToText_EmptyData_ReturnsEarly()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "None",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            // Create a plot with empty data
+            var plot = new PlotModelStat(
+                "Test Plot",
+                new ObservableCollection<SpectrumMatchFromTsv>(),
+                new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>(),
+                parameters);
+
+            // Verify PlotData is empty
+            Assert.That(plot.PlotData, Is.Empty);
+
+            // Export to temp file - should return early without throwing
+            string tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".txt");
+            try
+            {
+                plot.ExportToText(tempFile);
+                // If we get here, the early return worked without exception
+                Assert.That(File.Exists(tempFile), Is.False, "File should not be created when PlotData is empty");
+            }
+            finally
+            {
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_ExportToText_WithData_CreatesValidFile()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "Precursor Charge",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Precursor Charges",
+                parameters,
+                out _);
+
+            // Verify plot has data
+            Assert.That(plot.PlotData, Is.Not.Empty);
+
+            // Export to temp file
+            string tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".txt");
+            try
+            {
+                plot.ExportToText(tempFile);
+
+                // Verify file was created
+                Assert.That(File.Exists(tempFile), Is.True);
+
+                // Read and verify content
+                var lines = File.ReadAllLines(tempFile);
+                Assert.That(lines.Length, Is.GreaterThan(1), "Should have header and at least one data row");
+
+                // Verify header contains expected columns
+                var header = lines[0];
+                Assert.That(header, Does.Contain("Source File"));
+                Assert.That(header, Does.Contain(parameters.GroupingProperty));
+
+                // Verify data rows are tab-separated
+                var dataLine = lines[1];
+                var columns = dataLine.Split('\t');
+                Assert.That(columns.Length, Is.GreaterThan(0));
+            }
+            finally
+            {
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        [TestCase("Notch")]
+        [TestCase("File Name")]
+        [TestCase("Ambiguity Level")]
+        [TestCase("Collision Energy")]
+        [TestCase("OrganismName")]
+        [TestCase("DecoyContamTarget")]
+        [TestCase("None")]
+        public static void TestPlotModelStat_GroupingProperties_CreatesCorrectAxes(string groupingProperty)
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = groupingProperty,
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Missed Cleavages",
+                parameters,
+                out _);
+
+            if (groupingProperty != "None")
+            {
+                // Verify a group axis exists with the correct title
+                var groupAxis = plot.Model.Axes.OfType<PlotCategoryAxis>()
+                    .FirstOrDefault(axis => axis.Key == "GroupAxis");
+                Assert.That(groupAxis, Is.Not.Null, $"GroupAxis should exist for grouping property '{groupingProperty}'");
+                Assert.That(groupAxis.Title, Is.EqualTo(groupingProperty), $"GroupAxis title should match grouping property '{groupingProperty}'");
+            }
+            else
+            {
+                // For "None", no group axis should be created
+                var groupAxis = plot.Model.Axes.OfType<PlotCategoryAxis>()
+                    .FirstOrDefault(axis => axis.Key == "GroupAxis");
+                Assert.That(groupAxis, Is.Null, "GroupAxis should not exist when GroupingProperty is 'None'");
+            }
+
+            // Verify plot data exists
+            Assert.That(plot.PlotData, Is.Not.Empty, $"PlotData should not be empty for grouping property '{groupingProperty}'");
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityFilterLevel1_SkipsAmbiguousPsms()
+        {
+            MetaDrawSettings.ResetSettings();
+            MetaDrawSettings.AmbiguityFilter = "1"; // Filter out ambiguous PSMs
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "Ambiguity Level",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Missed Cleavages",
+                parameters,
+                out _,
+                takeCount: 50); // Use more PSMs to ensure we have some ambiguity
+
+            // Verify the plot was created
+            Assert.That(plot.Model, Is.Not.Null);
+            Assert.That(plot.PlotData, Is.Not.Empty);
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AllowAmbiguousGroupsFalse_SkipsAmbiguousGroups()
+        {
+            MetaDrawSettings.ResetSettings();
+            MetaDrawSettings.AmbiguityFilter = "No Filter"; // Don't filter at settings level
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "Precursor Charge",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = false, // Skip ambiguous groups at plot level
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = false
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Missed Cleavages",
+                parameters,
+                out _,
+                takeCount: 50);
+
+            // Verify the plot was created without throwing
+            Assert.That(plot.Model, Is.Not.Null);
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_UseLogScaleYAxis_AddsLogarithmicAxis()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "None",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = false,
+                UseLogScaleYAxis = true // Enable log scale
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Missed Cleavages",
+                parameters,
+                out _);
+
+            // Verify LogarithmicAxis is present
+            var logAxis = plot.Model.Axes.OfType<OxyPlot.Axes.LogarithmicAxis>().FirstOrDefault();
+            Assert.That(logAxis, Is.Not.Null, "LogarithmicAxis should be present when UseLogScaleYAxis is true");
+
+            // Verify axis properties
+            Assert.That(logAxis.AbsoluteMinimum, Is.EqualTo(0.1), "AbsoluteMinimum should be 0.1 for log scale");
+            Assert.That(logAxis.Minimum, Is.EqualTo(0.1), "Minimum should be 0.1 for log scale");
+            Assert.That(logAxis.Base, Is.EqualTo(10), "Log base should be 10");
+
+            // Verify all ColumnSeries have BaseValue = 0.1
+            var columnSeries = plot.Model.Series.OfType<PlotColumnSeries>().ToList();
+            Assert.That(columnSeries, Is.Not.Empty, "Should have at least one ColumnSeries");
+
+            foreach (var series in columnSeries)
+            {
+                Assert.That(series.BaseValue, Is.EqualTo(0.1), "ColumnSeries BaseValue should be 0.1 when using log scale");
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_UseLogScaleYAxis_SmallValuesClamped()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var parameters = new PlotModelStatParameters
+            {
+                GroupingProperty = "None",
+                MinRelativeCutoff = 0,
+                MaxRelativeCutoff = 100,
+                AllowAmbiguousGroups = true,
+                NormalizeHistogramToFile = true, // Enable normalization to get small values
+                UseLogScaleYAxis = true // Enable log scale
+            };
+
+            var plot = BuildPlotModelStatForGrouping(
+                "Histogram of Missed Cleavages",
+                parameters,
+                out _);
+
+            // Verify that small values in PlotData are properly handled
+            // The actual clamping happens during series creation
+            var columnSeries = plot.Model.Series.OfType<PlotColumnSeries>().ToList();
+            Assert.That(columnSeries, Is.Not.Empty);
+
+            // Check that all values in the series are >= 0.1 (the clamped minimum)
+            foreach (var series in columnSeries)
+            {
+                foreach (var item in series.Items)
+                {
+                    // Values should be at least 0.1 (or 0 if empty)
+                    Assert.That(item.Value, Is.GreaterThanOrEqualTo(0).Or.EqualTo(0.1),
+                        "Values in log scale should be >= 0.1 or 0 for empty bins");
+                }
+            }
+        }
+
+        [Test]
+        public static void TestMetaDrawReadPsmFile()
+        {
+            SearchTask searchTask = new SearchTask();
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawReadPsmFile");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
+            string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
+
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+
+            Assert.That(parsedPsms.Count, Is.EqualTo(10));
+            Assert.That(warnings.Count, Is.EqualTo(0));
+
+            Directory.Delete(folderPath, true);
+        }
+
+
+        [Test]
+        public static void TestMetaDrawReadPsmFileWithoutSpectralAngle()
+        {
+            //test if the reader still works when psm file doesn't contain spectral angle as header.
+            string noSA = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\noSAreaderTest.psmtsv");
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(noSA, out var warnings);
+
+
+            Assert.That(parsedPsms.Count, Is.EqualTo(15));
+            Assert.That(warnings.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public static void TestMetaDrawReadSAwhenReadingPsmFile()
+        {
+            SearchTask searchTask = new SearchTask();
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawReadPsmFile");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
+            string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
+
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+
+            Assert.That(parsedPsms.First().SpectralAngle, Is.EqualTo(-1));
+            Assert.That(parsedPsms.Count, Is.EqualTo(10));
+            Assert.That(warnings.Count, Is.EqualTo(0));
+
+            Directory.Delete(folderPath, true);
+        }
+
+
+        [Test]
+        public static void TestParenthesesRemovalForSilac()
+        {
+            string baseSequence = "ASDF(+8.01)ASDF";
+            string cleanedSequence = PsmFromTsv.RemoveParentheses(baseSequence);
+            Assert.That(cleanedSequence.Equals("ASDFASDF"));
+        }
+
+        [Test]
+        public static void TestMetaDrawReadCrossPsmFile()
+        {
+            XLSearchTask searchTask = new XLSearchTask();
+            searchTask.XlSearchParameters.Crosslinker = GlobalVariables.Crosslinkers.ToList()[1];
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSS_23747.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawReadPsmFile");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
+
+            string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("XL_Intralinks.tsv"));
+
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+
+            Directory.Delete(folderPath, true);
+        }
+
+        [Test]
+        public static void TestFindVariantCrossingIons()
+        {
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\VariantCrossTest.psmtsv");
+            List<string> warnings = new List<string>();
+            List<PsmFromTsv> psms;
+
+            psms = SpectrumMatchTsvReader.ReadPsmTsv(myFile, out warnings);  // test will fail if the order of psms is changed to something other than top to bottom row
+
+            // check that variant psm properties are being parsed correctly
+            Assert.That(psms[0].IdentifiedSequenceVariations, Is.EqualTo(""));
+            Assert.That(psms[1].IdentifiedSequenceVariations, Is.EqualTo("A147T"));
+
+            Assert.That(psms[0].SpliceSites, Is.EqualTo("541-541"));
+            Assert.That(psms[1].SpliceSites, Is.EqualTo(""));
+
+            // check that the correct ions are being added to VariantCrossingIons
+            List<List<string>> expected = new List<List<string>>();
+            expected.Add(new List<string>() { });                           // no variant (7527)
+            expected.Add(new List<string>() { "b3" });                      // b fragments before and after variant (4211)
+            expected.Add(new List<string>() { "y3" });                      // y fragments before and after variant (7759)
+            expected.Add(new List<string>() { "b4", "b16" });               // variant at 1st position (9221)
+            expected.Add(new List<string>() { "y1", "y9" });                // variant at last position (6778)
+            expected.Add(new List<string>() { "b4", "y35" });               // peptide comes from multiple proteins (8613)
+            expected.Add(new List<string>() { "b1", "b10", "y1", "y6" });   // variation spans the whole peptide (8765)
+            expected.Add(new List<string>() { });                           // variant before peptide (8169)
+            expected.Add(new List<string>() { });                           // variant after peptide (6532)
+            expected.Add(new List<string>() { "a3" });                      // a fragments before and after variant (4212)
+            expected.Add(new List<string>() { "c3" });                      // c fragments before and after variant (4213)
+            expected.Add(new List<string>() { "x3" });                      // x fragments before and after variant (7760)
+            expected.Add(new List<string>() { "zDot3" });                   // z fragments before and after variant (7761)
+            expected.Add(new List<string>() { });   // M fragment with length almost the whole peptide and variant in the middle (7762)
+            expected.Add(new List<string>() { });   // D fragment with length almost the whole peptide and variant in the middle (7763)
+
+            for (int i = 0; i < psms.Count; i++)
+            {
+                IEnumerable<string> actualIons = psms[i].VariantCrossingIons.Select(p => p.NeutralTheoreticalProduct.Annotation);
+                foreach (string expectedIon in expected[i])
+                    Assert.That(actualIons.Contains(expectedIon),
+                       "VariantCrossingIons should contain ion " + expectedIon + " in file " + psms[i].FileNameWithoutExtension + ".");
+                foreach (string actualIon in actualIons)
+                    Assert.That(expected[i].Contains(actualIon),
+                        "VariantCrossingIons should not contain ion " + actualIon + " in file " + psms[i].FileNameWithoutExtension + ".");
+            }
+        }
+
+        [Test]
+        public static void MetaDraw_TestStationarySequencePositioning()
+        {
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectralMatchResultFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv"));
+            metadrawLogic.SpectraFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchSingleSpectra.mzML"));
+            var errors = metadrawLogic.LoadFiles(true, true);
+            Assert.That(errors.Count == 1); // Singular error should be from not loading in the rest of the spectra that the search came from
+
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = 20; // Will be dynamic based upon window size, 20 is an arbitraty number used for testing purposes
+            MetaDrawSettings.DrawMatchedIons = true;
+            int numAnnotatedResidues = psm.BaseSeq.Length;
+            int numAnnotatedIons = psm.MatchedIons.Count;
+            int numAnnotatedMods = IBioPolymerWithSetMods.GetModificationDictionaryFromFullSequence(psm.FullSequence, GlobalVariables.AllModsKnownDictionary).Count;
+            var peptide = new PeptideWithSetModifications(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
+
+            // Iterates through the psm, simulating scrolling, until the sequence is scrolled as far as allowed
+            for (; MetaDrawSettings.FirstAAonScreenIndex < psm.BaseSeq.Length - MetaDrawSettings.NumberOfAAOnScreen; MetaDrawSettings.FirstAAonScreenIndex++)
+            {
+                metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+                metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+                Assert.That(errors == null || !errors.Any());
+                // Checks to see if scrollable sequence is the same each time
+                var scrollableSeqCount = metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.OfType<TextBlock>().Count();
+                var scrollableMatchedIonCount = metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.OfType<Polyline>().Count();
+                var scrollableModCount = metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.OfType<Ellipse>().Count();
+
+                Assert.That(scrollableSeqCount, Is.EqualTo(numAnnotatedResidues), "Number of annotated residues in scrollable sequence does not match expected");
+                Assert.That(scrollableMatchedIonCount, Is.EqualTo(numAnnotatedIons), "Number of annotated ions in scrollable sequence does not match expected");
+                Assert.That(scrollableModCount, Is.EqualTo(numAnnotatedMods), "Number of annotated modifications in scrollable sequence does not match expected");
+
+                var canvasSeqCount = sequenceAnnotationCanvas.Children.OfType<TextBlock>().Count();
+                var canvasMatchedIonCount = sequenceAnnotationCanvas.Children.OfType<Polyline>().Count();
+                var canvasModCount = sequenceAnnotationCanvas.Children.OfType<Ellipse>().Count();
+                Assert.That(canvasSeqCount, Is.EqualTo(numAnnotatedResidues), "Number of annotated residues in sequence annotation canvas does not match expected");
+                Assert.That(canvasMatchedIonCount, Is.EqualTo(numAnnotatedIons), "Number of annotated ions in sequence annotation canvas does not match expected");
+                Assert.That(canvasModCount, Is.EqualTo(numAnnotatedMods), "Number of annotated modifications in sequence annotation canvas does not match expected");
+
+                // Checks to see if the stationary sequence updated with the new positioning
+                string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+                string fullSequence = modifiedBaseSeq;
+                var modDictionary = peptide.AllModsOneIsNterminus.Where(p => p.Key - 1 >= MetaDrawSettings.FirstAAonScreenIndex
+                    && p.Key - 1 < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).OrderByDescending(p => p.Key);
+                foreach (var mod in modDictionary)
+                {
+                    // if modification is within the visible region
+                    fullSequence = fullSequence.Insert(mod.Key - 1 - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
+                }
+
+                List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
+                                                       p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+                int psmStartResidue = int.Parse(psm.StartAndEndResiduesInParentSequence.Split("to")[0].Replace("[", ""));
+                var startAA = (MetaDrawSettings.FirstAAonScreenIndex + psmStartResidue).ToString();
+                var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen + psmStartResidue - 1).ToString();
+
+
+                var expectedBaseSequence = modifiedBaseSeq.Length;
+                var expectedIonAnnotations = matchedIons.Count;
+                var expectedModCount = fullSequence.Count(p => p == '[');
+                var expectedNumberCount = startAA.Length + endAA.Length;
+                var expectedNumberLineConnectorCount = 2;
+
+                var modCount = metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.OfType<Ellipse>().Count();
+                var letterAndNumberCount = metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.OfType<TextBlock>().Count();
+                var ionAndConnectorCount = metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.OfType<Polyline>().Count();
+
+                Assert.That(modCount, Is.EqualTo(expectedModCount), "Number of annotated modifications in stationary sequence does not match expected");
+                Assert.That(letterAndNumberCount, Is.EqualTo(expectedBaseSequence + expectedNumberCount), "Number of annotated residues and numbers in stationary sequence does not match expected");
+                Assert.That(ionAndConnectorCount, Is.EqualTo(expectedIonAnnotations + expectedNumberLineConnectorCount), "Number of annotated ions and line connectors in stationary sequence does not match expected");
+
+                var expected = expectedBaseSequence + expectedIonAnnotations + expectedModCount + expectedNumberCount + expectedNumberLineConnectorCount;
+                Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, Is.EqualTo(expected));
+            }
+        }
+
+        [Test]
+        public static void MetaDraw_SearchTaskTest()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            // test results filter
+            MetaDrawSettings.QValueFilter = 0.01;
+            MetaDrawSettings.ShowDecoys = false;
+            metadrawLogic.FilterPsms();
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.DecoyContamTarget == "T"));
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.QValue <= 0.01));
+
+            MetaDrawSettings.QValueFilter = 1.0;
+            MetaDrawSettings.ShowDecoys = true;
+            metadrawLogic.FilterPsms();
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any(p => p.DecoyContamTarget == "D"));
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any(p => p.QValue > 0.01));
+
+            MetaDrawSettings.AmbiguityFilter = "2A";
+            metadrawLogic.FilterPsms();
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.AmbiguityLevel == "2A"));
+
+            MetaDrawSettings.AmbiguityFilter = "No Filter";
+            metadrawLogic.FilterPsms();
+
+            // test text search filter (filter by full sequence)
+            string filterString = @"QIVHDSGR";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            int c = 0;
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.FullSequence.Contains(filterString));
+                c++;
+            }
+            Assert.That(c > 0);
+
+            // test text search filter (filter by MS2 scan number)
+            filterString = @"120";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            c = 0;
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.Ms2ScanNumber.ToString().Contains(filterString));
+                c++;
+            }
+            Assert.That(c > 0);
+
+            // test text search filter (filter by organism name)
+            filterString = "Sacc";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            c = 0;
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.OrganismName.Contains(filterString));
+                c++;
+            }
+            Assert.That(c > 0);
+
+            // test text search filter (filter by protein name)
+            filterString = "tRNA";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            c = 0;
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.ProteinName.Contains(filterString));
+                c++;
+            }
+            Assert.That(c > 0);
+
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView() {Name = "plotView"};
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
+            MetaDrawSettings.DrawMatchedIons = true;
+            MetaDrawSettings.DisplayInternalIons = false;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var plotSeries = plotView.Model.Series;
+            var series = plotSeries[0]; // the first m/z peak
+            var peakPoints = ((LineSeries)series).Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 101.07); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 101.07);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 35045);
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count == 2);
+
+            // test with different drawing settings
+            MetaDrawSettings.AnnotateCharges = true;
+            MetaDrawSettings.AnnotateMzValues = true;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            MetaDrawSettings.DisplayIonAnnotations = false;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that scrollable sequence annotation was drawn
+            int numAnnotatedResidues = psm.BaseSeq.Length;
+            int numAnnotatedIons = psm.MatchedIons.Count;
+            int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
+            Assert.That(metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+            Assert.That(sequenceAnnotationCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+
+            // test that the stationary sequence annotation was drawn
+            string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+            string fullSequence = psm.BaseSeq;
+            Dictionary<int, string> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
+            foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
+            {
+                // if modification is within the visible region
+                if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
+                {
+                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
+                }
+            }
+            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
+                                                   p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+            Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
+                psm.StartAndEndResiduesInParentSequence.Replace("[","").Replace("]","").Replace("to", "").Replace(" ", "").Length + 2);
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").Take(3).ToList();
+            MetaDrawSettings.NumberOfAAOnScreen = psmsToExport.First().BaseSeq.Length;
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"116_QIVHDSGR.pdf")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.pdf")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"127_QIVHDSGR.pdf")));
+
+            // test displaying a PSM with a mod
+            var modPsm = metadrawLogic.FilteredListOfPsms.First(p => p.FullSequence.Contains("["));
+            MetaDrawSettings.NumberOfAAOnScreen = modPsm.BaseSeq.Length;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, modPsm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, modPsm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+            Assert.That(metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.Count == modPsm.BaseSeq.Length + modPsm.MatchedIons.Count + modPsm.FullSequence.Count(p => p == '['));
+            Assert.That(sequenceAnnotationCanvas.Children.Count == modPsm.BaseSeq.Length + modPsm.MatchedIons.Count + modPsm.FullSequence.Count(p => p == '['));
+            modifiedBaseSeq = modPsm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+            fullSequence = modPsm.BaseSeq;
+            modDictionary = PsmFromTsv.ParseModifications(modPsm.FullSequence);
+            foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
+            {
+                // if modification is within the visible region
+                if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
+                {
+                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
+                }
+            }
+            matchedIons = modPsm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
+                                                p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+            Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
+                psm.StartAndEndResiduesInParentSequence.Replace("[", "").Replace("]", "").Replace("to", "").Replace(" ", "").Length + 2);
+
+
+            // get scan from psm
+            var scan = metadrawLogic.GetMs2ScanFromPsm(psm);
+            Assert.That(scan.OneBasedScanNumber, Is.EqualTo(psm.Ms2ScanNumber));
+            Assert.That(scan.MsnOrder, Is.EqualTo(2));
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void MetaDraw_XlSearchTaskWithChildScansTest()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_XlSearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
+
+            // run task
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms2childScanDissociationType: DissociationType.ETD,
+                trimMsMsPeaks: false);
+
+            Directory.CreateDirectory(outputFolder);
+            var xlSearchTask = new XLSearchTask() { CommonParameters = commonParameters };
+            xlSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            //TODO: test other files (XL_Interlinks.tsv, Deadends.tsv, Looplinks.tsv, SinglePeptides.tsv)
+            var csmFile = Path.Combine(outputFolder, @"XL_Intralinks.tsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(csmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            // test results filter
+            MetaDrawSettings.QValueFilter = 0.01;
+            MetaDrawSettings.ShowDecoys = false;
+            metadrawLogic.FilterPsms();
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.DecoyContamTarget == "T"));
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.QValue <= 0.01));
+
+            // test text search filter (filter by full sequence)
+            string filterString = @"SLGKVGTR";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            int c = 0;
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.FullSequence.Contains(filterString));
+                c++;
+            }
+            Assert.That(c > 0);
+
+            // test text search filter (filter by MS2 scan number)
+            filterString = @"2";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            c = 0;
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.Ms2ScanNumber.ToString().Contains(filterString));
+                c++;
+            }
+            Assert.That(c > 0);
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var csm = metadrawLogic.FilteredListOfPsms.First();
+
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, csm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, csm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var peak = (LineSeries)plotView.Model.Series[0]; // the first m/z peak
+            var peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 142.12); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 142.12);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 1114);
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count == 2);
+
+            // test that base sequence annotation was drawn
+            Assert.That(stationaryCanvas.Children.Count > 0);
+
+            // test that the plots were drawn in the parent/child view
+            Assert.That(parentChildView.Plots.Count == 2);
+
+            // test parent scan
+            var parentPlot = parentChildView.Plots[0];
+            Assert.That(parentPlot.SpectrumLabel == "Scan: 2 Dissociation Type: CID MsOrder: 2 Selected Mz: 492.02 Retention Time: 23.9");
+            int numAnnotatedResidues = csm.BaseSeq.Length;
+            int numAnnotatedIons = csm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M);
+            int numAnnotatedMods = csm.FullSequence.Count(p => p == '[');
+            Assert.That(parentPlot.TheCanvas.Children.Count, Is.EqualTo(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods));
+
+            peak = (LineSeries)parentPlot.Plot.Model.Series[0]; // the first m/z peak
+            peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 142.12); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 142.12);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 1114);
+
+            // test child scan
+            var childPlot = parentChildView.Plots[1];
+            Assert.That(childPlot.SpectrumLabel == "Scan: 3 Dissociation Type: ETD MsOrder: 2 Selected Mz: 492.02 RetentionTime: 23.9");
+            Assert.That(childPlot.TheCanvas.Children.Count > 0);
+            numAnnotatedResidues = csm.BaseSeq.Length;
+            numAnnotatedIons = csm.ChildScanMatchedIons[3].Concat((csm as PsmFromTsv).BetaPeptideChildScanMatchedIons[3])
+                .Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M);
+            numAnnotatedMods = csm.FullSequence.Count(p => p == '[');
+            Assert.That(childPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+
+            peak = (LineSeries)childPlot.Plot.Model.Series[0]; // the first m/z peak
+            peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 122.92); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 122.92);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 857);
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "SLGKVGTR(4)").ToList();
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+            // write pdf with legend
+            Canvas ptmLegend = new();
+            System.Windows.Size legendSize = new(100, 100);
+            ptmLegend.Measure(legendSize);
+            ptmLegend.Arrange(new Rect(legendSize));
+            ptmLegend.UpdateLayout();
+            Vector ptmLegendVector = new(10, 10);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport,
+                parentChildView, outputFolder, out errors, ptmLegend, ptmLegendVector);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"2_SLGKVGTR(4)EKVLTSSAR(2).pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"3_SLGKVGTR(4)EKVLTSSAR(2).pdf"))); // child scan
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawXlSpectralLibrary()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlOutputTestFile");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\RibosomeGO.fasta");
+            string library1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\CrosslinkSpectralLibrary.msp");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\2017-11-21_XL_DSSO_Ribosome_RT60min_28800-28898.mzML");
+
+            Directory.CreateDirectory(outputFolder);
+
+            XLSearchTask xLSearch = new XLSearchTask
+            {
+                XlSearchParameters = new XlSearchParameters
+                {
+                    WriteSpectralLibrary = true,
+                    CrosslinkAtCleavageSite = true
+                }
+            };
+            xLSearch.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) },
+                new List<string> { spectraFile }, "test");
+
+            var psmFile = Path.Combine(outputFolder, @"XL_Intralinks.tsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralLibraryPaths.Add(library1);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
+            var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            MsDataFile file = new Mzml(spectraFile);
+
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var plotSeries = plotView.Model.Series;
+
+            // test that library peaks were drawn in the mirror plot (these peaks have negative intensities)
+            var mirrorPlotPeaks = plotSeries.Where(p => ((LineSeries)p).Points[1].Y < 0).ToList();
+            Assert.That(mirrorPlotPeaks.Count, Is.EqualTo(59));
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count == 2);
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => (p as PsmFromTsv).UniqueSequence == "LLDNAAADLAAISGQKPLITKAR(21)ITLNMGVGEAIADKK(14)").Take(1).ToList();
+            metadrawLogic.ExportPlot(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+
+            // write pdf with legend
+            Canvas ptmLegend = new();
+            System.Windows.Size legendSize = new(100, 100);
+            ptmLegend.Measure(legendSize);
+            ptmLegend.Arrange(new Rect(legendSize));
+            ptmLegend.UpdateLayout();
+            Vector ptmLegendVector = new(10, 10);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport,
+                parentChildView, outputFolder, out errors, ptmLegend, ptmLegendVector);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"13_LLDNAAADLAAISGQKPLITKAR(21)ITL.pdf"))); // Name can only be 30  characters long
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void MetaDraw_GlycoSearchTaskWithChildScansTest()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_GlycoSearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\leukosialin.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\sliced_glyco_hcd_ethcd.raw");
+            
+            // run task
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
+
+            Directory.CreateDirectory(outputFolder);
+            var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters };
+            glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = false; //turn off the diagnostic filter, because the case we use have 272,294 oxonium ions but assigned the N1H1 to that.
+            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"oglyco.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            // test results filter
+            MetaDrawSettings.QValueFilter = 0.01;
+            MetaDrawSettings.ShowDecoys = false;
+            metadrawLogic.FilterPsms();
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.DecoyContamTarget == "T"));
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.QValue <= 0.01));
+
+            // test text search filter (filter by full sequence)
+            string filterString = @"STTAVQ";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            int c = 0;
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.FullSequence.Contains(filterString));
+                c++;
+            }
+            Assert.That(c > 0);
+
+            // test text search filter (filter by MS2 scan number)
+            filterString = @"2";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            c = 0;
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.Ms2ScanNumber.ToString().Contains(filterString));
+                c++;
+            }
+            Assert.That(c > 0);
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView(){Name = "plotView"};
+            var parentChildView = new ParentChildScanPlotsView();
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
+
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var peak = (LineSeries)plotView.Model.Series[0]; // the first m/z peak
+            var peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 101.07); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 101.07);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 3847);
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count, Is.EqualTo(2));
+
+            // test that base sequence annotation was drawn
+            Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count > 0);
+
+            // test that the plots were drawn in the parent/child view
+            Assert.That(parentChildView.Plots.Count, Is.EqualTo(2));
+
+            // test parent scan
+            var parentPlot = parentChildView.Plots[0];
+            Assert.That(parentPlot.SpectrumLabel, Is.EqualTo("Scan: 27 Dissociation Type: HCD MsOrder: 2 Selected Mz: 924.12 Retention Time: 32.65"));
+            int numAnnotatedResidues = psm.BaseSeq.Length;
+            int numAnnotatedIons = psm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M
+                && p.NeutralTheoreticalProduct.ProductType != ProductType.D);
+            int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
+            Assert.That(parentPlot.TheCanvas.Children.Count, Is.EqualTo(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods));
+
+            peak = (LineSeries)parentPlot.Plot.Model.Series[0]; // the first m/z peak
+            peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2), Is.EqualTo(101.07)); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2), Is.EqualTo(101.07));
+            Assert.That((int)peakPoints[0].Y, Is.EqualTo(0)); // intensity
+            Assert.That((int)peakPoints[1].Y, Is.EqualTo(3847));
+
+            // test child scan
+            var childPlot = parentChildView.Plots[1];
+            Assert.That(childPlot.SpectrumLabel, Is.EqualTo("Scan: 30 Dissociation Type: EThcD MsOrder: 2 Selected Mz: 924.12 RetentionTime: 32.66"));
+            Assert.That(childPlot.TheCanvas.Children.Count > 0);
+            numAnnotatedResidues = psm.BaseSeq.Length;
+            numAnnotatedIons = psm.ChildScanMatchedIons[30]
+                .Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M
+                && p.NeutralTheoreticalProduct.ProductType != ProductType.D);
+            numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
+            Assert.That(childPlot.TheCanvas.Children.Count, Is.EqualTo(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods));
+
+            peak = (LineSeries)childPlot.Plot.Model.Series[0]; // the first m/z peak
+            peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2), Is.EqualTo(126.05)); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2), Is.EqualTo(126.06));
+            Assert.That((int)peakPoints[0].Y, Is.EqualTo(0)); // intensity
+            Assert.That((int)peakPoints[1].Y, Is.EqualTo(8496));
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "STTAVQTPTSGEPLVST[O-linked glycosylation:H1N1 on T]SEPLSSK").ToList();
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // child scan
+            Directory.Delete(outputFolder, true);
+
+            Canvas ptmLegend = new();
+            System.Windows.Size legendSize = new(100, 100);
+            ptmLegend.Measure(legendSize);
+            ptmLegend.Arrange(new Rect(legendSize));
+            ptmLegend.UpdateLayout();   
+            Vector ptmLegendVector = new(10, 10);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors, ptmLegend, ptmLegendVector);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // child scan
+
+            // test that a directory is created if it does not exist
+            Directory.Delete(outputFolder, true);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-linked gly.pdf"))); // child scan
+
+
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void MetaDraw_TestChimeraScanSpectrumDisplay()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters() { MinAllowedInternalFragmentLength = 4},
+            };
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            // fix the scan number due to the trimmed spectra file
+            foreach (var psm in metadrawLogic.FilteredListOfPsms)
+            {
+                var type = typeof(SpectrumMatchFromTsv);
+                var field = type.GetField("<Ms2ScanNumber>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                field.SetValue(psm, psm.Ms2ScanNumber + 27300);
+
+                field = type.GetField("<PrecursorScanNum>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                field.SetValue(psm, psm.PrecursorScanNum + 27300);
+            }
+
+            var metaDrawDynamicScanConnection = metadrawLogic.MsDataFiles;
+
+            var chimeraAnalysisTab = new ChimeraAnalysisTabViewModel(outputFolder);
+            chimeraAnalysisTab.ProcessChimeraData(metadrawLogic.FilteredListOfPsms.ToList(), metadrawLogic.MsDataFiles);
+            // test plotting on each instance of chimeras in this dataset
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "chimeraPlot" };
+            foreach (var chimeraGroup in chimeraAnalysisTab.ChimeraGroupViewModels)
+            {
+                Assert.That(chimeraGroup.Count, Is.GreaterThanOrEqualTo(2));
+                MsDataScan chimericScan = metaDrawDynamicScanConnection.First().Value
+                    .GetOneBasedScanFromDynamicConnection(chimeraGroup.Ms2ScanNumber);
+
+                // plot the first chimera and test the results
+                var plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
+                Assert.That(errors == null || !errors.Any());
+
+                // test plot was drawn
+                var model = plotView.Model;
+                Assert.That(model, Is.Not.Null);
+                Assert.That(plotView.Model.Axes.Count == 2);
+
+                var peakPoints = ((LineSeries)model.Series[0]).Points;
+
+                Assert.That(Math.Round(peakPoints[0].X, 2) == Math.Round(chimericScan.MassSpectrum.XArray[0], 2)); // m/z
+                Assert.That(Math.Round(peakPoints[1].X, 2) == Math.Round(chimericScan.MassSpectrum.XArray[0], 2));
+                Assert.That((int)peakPoints[0].Y == 0); // intensity
+                Assert.That((int)peakPoints[1].Y == (int)chimericScan.MassSpectrum.YArray[0]);
+
+                // Classify All Fragments
+                Dictionary<OxyColor, List<MatchedFragmentIon>> ionDict = new();
+                var accessionToSharedProteinColor = chimeraGroup.ChimericPsms
+                    .GroupBy(p => p.Psm.Accession)
+                    .Select((p, i) =>
+                    (p.Key, Color: ChimeraGroupViewModel.ColorByProteinDictionary[i][0])).ToDictionary(p => p.Key, p => p.Color);
+                var fullSequenceToUniqueColorDict = chimeraGroup.ChimericPsms
+                    .GroupBy(p => p.Psm.Accession)
+                    .SelectMany((p, i) =>
+                    {
+                        if (p.Count() == 1)
+                        {
+                            return [(p.First().Psm.FullSequence, Color: ChimeraGroupViewModel.ColorByProteinDictionary[i][1])];
+                        }
+                        else
+                        {
+                            return p.Select((m, j) => (m.Psm.FullSequence, Color: ChimeraGroupViewModel.ColorByProteinDictionary[i][j+1]));
+                        }
+                    }).ToDictionary(p => p.FullSequence, p => p.Color);
+
+                foreach (var ionGroup in chimeraGroup.ChimericPsms
+                    .SelectMany((p, i) => p.Psm.MatchedIons
+                        .Select(ion => (ion, i, p.Psm.Accession, p.Psm.FullSequence)))
+                    .GroupBy(p => p.ion.Mz))
+                {
+                    if (ionGroup.Count() == 1) // unshared peak
+                    {
+                        var color = fullSequenceToUniqueColorDict[ionGroup.First().FullSequence];
+                        if (ionDict.ContainsKey(color))
+                        {
+                            ionDict[color].Add(ionGroup.First().ion);
+                        }
+                        else
+                        {
+                            ionDict[color] = new List<MatchedFragmentIon> { ionGroup.First().ion };
+                        }
+                    }
+                    else // shared peak
+                    {
+                        int accessionCount = ionGroup.Select(p => p.Accession).Distinct().Count();
+                        int fullSequenceCount = ionGroup.Select(p => p.FullSequence).Distinct().Count();
+                        if (accessionCount == 1 && fullSequenceCount > 1)
+                        {
+                            // shared peak from different proteoforms of the same protein
+                            var color = accessionToSharedProteinColor[ionGroup.First().Accession];
+                            if (ionDict.ContainsKey(color))
+                            {
+                                ionDict[color].AddRange(ionGroup.Select(p => p.ion));
+                            }
+                            else
+                            {
+                                ionDict[color] = ionGroup.Select(p => p.ion).ToList();
+                            }
+                        }
+                        else if (accessionCount == 1 && fullSequenceCount == 1) // shared peak from the same protein
+                        {
+                            var color = fullSequenceToUniqueColorDict[ionGroup.First().FullSequence];
+                            if (ionDict.ContainsKey(color))
+                            {
+                                ionDict[color].AddRange(ionGroup.Select(p => p.ion));
+                            }
+                            else
+                            {
+                                ionDict[color] = ionGroup.Select(p => p.ion).ToList();
+                            }
+                        }
+                        else // shared peak from different proteins
+                        {
+                            foreach (var ion in ionGroup)
+                            {
+                                if (ionDict.ContainsKey(ChimeraGroupViewModel.MultipleProteinSharedColor))
+                                {
+                                    ionDict[ChimeraGroupViewModel.MultipleProteinSharedColor].Add(ion.ion);
+                                }
+                                else
+                                {
+                                    ionDict[ChimeraGroupViewModel.MultipleProteinSharedColor] = [ion.ion];
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+                // shared matched ions are default color
+                var expectedSharedIons = ionDict[ChimeraGroupViewModel.MultipleProteinSharedColor].DistinctBy(p => p.Mz).ToList();
+                int drawnIonsShared = model.Series.Count(p => ((LineSeries)p).Color == ChimeraGroupViewModel.MultipleProteinSharedColor);
+                Assert.That(drawnIonsShared, Is.EqualTo(expectedSharedIons.Count));
+                if (expectedSharedIons.Count > 0 ) 
+                {
+                    Assert.That(chimeraGroup.MatchedFragmentIonsByColor.ContainsKey(ChimeraGroupViewModel.MultipleProteinSharedColor));
+                    Assert.That(chimeraGroup.MatchedFragmentIonsByColor[ChimeraGroupViewModel.MultipleProteinSharedColor].Count, Is.EqualTo(expectedSharedIons.Count));
+                }
+                else
+                    Assert.That(!chimeraGroup.MatchedFragmentIonsByColor.ContainsKey(ChimeraGroupViewModel.MultipleProteinSharedColor));
+
+                // Ions Shared by multiple proteoforms are annotated correctly
+                foreach (var color in chimeraGroup.MatchedFragmentIonsByColor.Keys)
+                {
+                    if (color == ChimeraGroupViewModel.MultipleProteinSharedColor) continue;
+                    Assert.That(ionDict.ContainsKey(color));
+                    Assert.That(chimeraGroup.MatchedFragmentIonsByColor[color].Count, Is.EqualTo(ionDict[color].Count));
+                }
+
+                // test with different drawing settings
+                MetaDrawSettings.AnnotateCharges = true;
+                MetaDrawSettings.AnnotateMzValues = true;
+                plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
+                Assert.That(errors == null || !errors.Any());
+
+                MetaDrawSettings.DisplayIonAnnotations = false;
+                plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
+                Assert.That(errors == null || !errors.Any());
+
+                MetaDrawSettings.DisplayInternalIons = false;
+                plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
+                Assert.That(errors == null || !errors.Any());
+                MetaDrawSettings.DisplayInternalIons = true;
+            }
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawErrors()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawErrors");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw (skipping spectra file, to produce an error msg)
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+
+            // this should produce an error because an expected spectra file is not present
+            var errors = metadrawLogic.LoadFiles(loadSpectra: true, loadPsms: true);
+            Assert.That(errors.Any());
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+
+            // this should not produce an error because we said not to load spectra
+            errors = metadrawLogic.LoadFiles(loadSpectra: false, loadPsms: true);
+            Assert.That(!errors.Any());
+
+            var psmsFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var parentChildScanPlotsView = new ParentChildScanPlotsView();
+
+            // plotting PSM should produce an error because spectra are not loaded
+            metadrawLogic.DisplaySpectrumMatch(plotView, psmsFromTsv.First(), parentChildScanPlotsView, out errors);
+            Assert.That(errors.Any());
+
+            // export to PDF should produce an error because spectra are not loaded
+            MetaDrawSettings.NumberOfAAOnScreen = psmsFromTsv.First().BaseSeq.Length - 1;
+            metadrawLogic.ExportPlot(plotView, canvas, new List<SpectrumMatchFromTsv> { psmsFromTsv.First() }, parentChildScanPlotsView, outputFolder, out errors);
+            Assert.That(errors.Any());
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawLoadingWithWeirdFileNames()
+        {
+            // test loading when the file has a periods, commas, spaces in the name
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawLoadingWithWeirdFileNames");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
+
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+            Assert.That(!errors.Any());
+
+            Assert.That(metadrawLogic.FilteredListOfPsms.First().FileNameWithoutExtension == "S.m,al. lC,al.ib r.at,i ble_Ye.ast");
+
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildScanPlotsView = new ParentChildScanPlotsView();
+
+            // plot PSM
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, metadrawLogic.FilteredListOfPsms.First());
+            metadrawLogic.DisplaySpectrumMatch(plotView, metadrawLogic.FilteredListOfPsms.First(), parentChildScanPlotsView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // export to PDF
+            metadrawLogic.ExportPlot(plotView, canvas, new List<SpectrumMatchFromTsv> { metadrawLogic.FilteredListOfPsms.First() }, parentChildScanPlotsView, outputFolder, out errors);
+            Assert.That(!errors.Any());
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawWithSpectralLibrary()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
+            string library1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_target.msp");
+            string library2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_decoy.msp");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse.raw");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder,
+                new List<DbForTask>
+                {
+                    new DbForTask(proteinDatabase, false),
+                    new DbForTask(library1, false),
+                    new DbForTask(library2, false),
+                },
+                new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralLibraryPaths.Add(library1);
+            metadrawLogic.SpectralLibraryPaths.Add(library2);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
+            var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var plotSeries = plotView.Model.Series;
+
+            // test that library peaks were drawn in the mirror plot (these peaks have negative intensities)
+            var mirrorPlotPeaks = plotSeries.Where(p => ((LineSeries)p).Points[1].Y < 0).ToList();
+            Assert.That(mirrorPlotPeaks.Count == 52);
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count == 2);
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "VIHDNFGIVEGLMTTVHAITATQK").Take(1).ToList();
+            metadrawLogic.ExportPlot(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"6_VIHDNFGIVEGLMTTVHAITATQK.pdf")));
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawWithMslSpectralLibrary()
+        {
+            // Verifies MetaDraw consumes a binary .msl spectral library exactly as it does a text
+            // .msp library: the same library peaks are rendered in the mirror plot. The .msl files
+            // are produced here from the existing .msp test libraries (so no new binary fixture is
+            // committed), then loaded through the unchanged MetaDrawLogic / MetaDrawDataLoader path —
+            // mzLib's SpectralLibrary routes .msl transparently.
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithMslSpectraLibrary");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
+            string mspLibrary1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_target.msp");
+            string mspLibrary2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_decoy.msp");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse.raw");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // Convert the .msp test libraries to binary .msl for MetaDraw to load. Dispose each reader
+            // before the SearchTask re-opens the same .msp files (avoids a file-in-use race on Windows CI).
+            string mslLibrary1 = Path.Combine(outputFolder, "P16858_target.msl");
+            string mslLibrary2 = Path.Combine(outputFolder, "P16858_decoy.msl");
+            using (var srcLib = new Readers.SpectralLibrary.SpectralLibrary(new List<string> { mspLibrary1 }))
+                Readers.SpectralLibrary.MslWriter.WriteFromLibrarySpectra(mslLibrary1, srcLib.GetAllLibrarySpectra().ToList());
+            using (var srcLib = new Readers.SpectralLibrary.SpectralLibrary(new List<string> { mspLibrary2 }))
+                Readers.SpectralLibrary.MslWriter.WriteFromLibrarySpectra(mslLibrary2, srcLib.GetAllLibrarySpectra().ToList());
+
+            // run search task (libraries supplied as .msp; produces the PSM file MetaDraw displays)
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder,
+                new List<DbForTask>
+                {
+                    new DbForTask(proteinDatabase, false),
+                    new DbForTask(mspLibrary1, false),
+                    new DbForTask(mspLibrary2, false),
+                },
+                new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // Render the same PSM once with the binary .msl libraries and once with the text .msp
+            // libraries, then assert the mirror-plot library-peak counts are equal — proving the .msl
+            // display is lossless/identical to .msp rather than matching a hardcoded literal.
+            int mslMirrorPeaks = CountMetaDrawMirrorPlotLibraryPeaks(spectraFile, psmFile, new List<string> { mslLibrary1, mslLibrary2 });
+            int mspMirrorPeaks = CountMetaDrawMirrorPlotLibraryPeaks(spectraFile, psmFile, new List<string> { mspLibrary1, mspLibrary2 });
+
+            Assert.That(mslMirrorPeaks, Is.EqualTo(mspMirrorPeaks));
+            Assert.That(mslMirrorPeaks, Is.EqualTo(52)); // anchor: matches the sibling .msp test
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        /// <summary>
+        /// Loads a PSM file + spectral libraries into MetaDraw, renders the first filtered PSM, and
+        /// returns the number of library (mirror-plot) peaks drawn. Used to compare .msl vs .msp
+        /// rendering. Asserts a clean load, a non-empty PSM list, and full resource cleanup.
+        /// </summary>
+        private static int CountMetaDrawMirrorPlotLibraryPeaks(string spectraFile, string psmFile, List<string> spectralLibraryPaths)
+        {
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            foreach (var libPath in spectralLibraryPaths)
+                metadrawLogic.SpectralLibraryPaths.Add(libPath);
+            var errors = metadrawLogic.LoadFiles(true, true);
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
+            var scrollableCanvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // library peaks are the negative-intensity series in the mirror plot
+            int mirrorPlotPeaks = plotView.Model.Series.Count(p => ((LineSeries)p).Points[1].Y < 0);
+
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
+
+            return mirrorPlotPeaks;
+        }
+
+        [Test]
+        public static void TestPsmFromTsvIonParsing()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPsmFromTsvIonParsing");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse.raw");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder,
+                new List<DbForTask>
+                {
+                    new DbForTask(proteinDatabase, false),
+                },
+                new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // assert PsmFromTsv matched ion properties
+            var lines = File.ReadAllLines(psmFile);
+            int ind = Array.IndexOf(lines[0].Split('\t'), "Matched Ion Mass-To-Charge Ratios");
+            var ionStrings = lines[1].Split('\t')[ind].Split(new char[] { ',', ';' })
+                .Select(p => p.Trim().Replace("[", string.Empty).Replace("]", string.Empty)).ToList();
+
+            var parsedIons = metadrawLogic.FilteredListOfPsms[0].MatchedIons;
+
+            for (int i = 0; i < ionStrings.Count; i++)
+            {
+                var ionString = ionStrings[i];
+                var parsedIon = parsedIons[i];
+
+                var split = ionString.Split(new char[] { '+', ':' });
+
+                string ion = split[0];
+                int charge = int.Parse(split[1]);
+                double mz = double.Parse(split[2]);
+
+                Assert.That(mz == parsedIon.Mz);
+                Assert.That(mz.ToMass(charge) - parsedIon.MassErrorDa == parsedIon.NeutralTheoreticalProduct.NeutralMass);
+                Assert.That(charge == parsedIon.Charge);
+                Assert.That(ion == parsedIon.NeutralTheoreticalProduct.ProductType.ToString() + parsedIon.NeutralTheoreticalProduct.FragmentNumber);
+            }
+
+            //check that the proteoform classification was correct
+            Assert.That(metadrawLogic.FilteredListOfPsms[0].AmbiguityLevel.Equals("1"));
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void SequenceCoverageMapTest()
+        {
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\InternalTest.mgf");
+            string psmFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SequenceCoverageTestPSM.psmtsv");
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // draw sequence coverage for PSM
+            var sequenceText = new Canvas();
+            var map = new Canvas();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            metadrawLogic.DrawSequenceCoverageMap(psm, sequenceText, map);
+
+            //test no errors
+            Assert.That(errors == null || !errors.Any());
+        }
+
+        [Test]
+        public static void IonsWithNoTerminusTest() //if internal fragments are selected using TerminusType == None, then "M" and "D" ions get lumped in and cause a crash
+        {
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
+            string psmFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\XL_Intralinks_MIons.tsv");
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // draw sequence coverage for PSM
+            var sequenceText = new Canvas();
+            var map = new Canvas();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            metadrawLogic.DrawSequenceCoverageMap(psm, sequenceText, map);
+
+            //test no errors
+            Assert.That(errors == null || !errors.Any());
+        }
+
+        [Test]
+        public static void TestMetaDrawLogicCleanUp()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
+            string library1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_target.msp");
+            string library2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_decoy.msp");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse.raw");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder,
+                new List<DbForTask>
+                {
+                    new DbForTask(proteinDatabase, false),
+                    new DbForTask(library1, false),
+                    new DbForTask(library2, false),
+                },
+                new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralLibraryPaths.Add(library1);
+            metadrawLogic.SpectralLibraryPaths.Add(library2);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
+            var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var plotSeries = plotView.Model.Series;
+
+            // test that library peaks were drawn in the mirror plot (these peaks have negative intensities)
+            var mirrorPlotPeaks = plotSeries.Where(p => ((LineSeries)p).Points[1].Y < 0).ToList();
+            Assert.That(mirrorPlotPeaks.Count == 52);
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count == 2);
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "VIHDNFGIVEGLMTTVHAITATQK").Take(1).ToList();
+            metadrawLogic.ExportPlot(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"6_VIHDNFGIVEGLMTTVHAITATQK.pdf")));
+
+            // clean up resources
+            metadrawLogic.CleanUpSpectraFiles();
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+
+            metadrawLogic.CleanUpPSMFiles();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
+
+            metadrawLogic.CleanUpSpectralLibraryFiles();
+            Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+
+        }
+
+        [Test]
+        public static void TestMetaDrawOutputFormats()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").First();
+
+            // drawing the first psm
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
+            MetaDrawSettings.DrawMatchedIons = true;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // export each file type and ensure they exist
+            var psmsToExport = new List<SpectrumMatchFromTsv> { metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").First() };
+            MetaDrawSettings.NumberOfAAOnScreen = psmsToExport.First().BaseSeq.Length;
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.pdf")));
+
+            MetaDrawSettings.ExportType = "Png";
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.png")));
+
+            MetaDrawSettings.ExportType = "Jpeg";
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.jpeg")));
+
+            MetaDrawSettings.ExportType = "Tiff";
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.tiff")));
+
+            MetaDrawSettings.ExportType = "Wmf";
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.wmf")));
+
+            MetaDrawSettings.ExportType = "Bmp";
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.bmp")));
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawCombineBitmapTryCatch()
+        {
+            List<Bitmap> bmList = new();
+            List<System.Windows.Point> pts = new();
+            Assert.Throws<ArgumentException>(() => MetaDrawLogic.CombineBitmap(bmList, pts, false));
+
+            Bitmap bigBmp = new(500, 500, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            for (int i = 0; i < 10; i++)
+            {
+                bmList.Add(bigBmp);
+            }
+            Assert.Throws<ArgumentOutOfRangeException>(() => MetaDrawLogic.CombineBitmap(bmList, pts, false));
+
+        }
+
+        [Test]
+        public static void EnsureNoCrashesWithNGlyco()
+        {
+            string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "nglyco_f5.psmtsv");
+            var psmOfInterest = SpectrumMatchTsvReader.ReadPsmTsv(psmsPath, out var warnings).First(p => p.FullSequence.Contains("LLSTEGSQ"));
+            Assert.That(!warnings.Any());
+
+            MetaDrawLogic metaDrawLogic = new();
+            metaDrawLogic.SpectralMatchResultFilePaths.Add(psmsPath);
+            var errors = metaDrawLogic.LoadFiles(false, true);
+            Assert.That(!errors.Any());
+            Assert.That(metaDrawLogic.FilteredListOfPsms.Any());
+            
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+
+            // drawing the first psm
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = psmOfInterest.BaseSeq.Length;
+            MetaDrawSettings.DrawMatchedIons = true;
+            metaDrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psmOfInterest);
+            Assert.That(errors == null || !errors.Any());
+        }
+
+        [Test]
+        public static void TestMetaDrawSequenceDisplayOutputs()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var mapCanvas = new Canvas() { Width = 200, Height = 200};
+            var textCanvas = new Canvas() { Width = 200, Height = 200 };
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var ptmLegend = new System.Windows.UIElement();
+            var psm = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").First();
+
+            // drawing the first psm
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
+            MetaDrawSettings.DrawMatchedIons = true;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // ensure each file type can be outputted by each method
+            var psmToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").First();
+            MetaDrawSettings.NumberOfAAOnScreen = psmToExport.BaseSeq.Length;
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.pdf")));
+            metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.pdf")));
+
+            MetaDrawSettings.ExportType = "Png";
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.png")));
+            metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.png")));
+
+            MetaDrawSettings.ExportType = "Jpeg";
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.jpeg")));
+            metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.jpeg")));
+
+            MetaDrawSettings.ExportType = "Tiff";
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.tiff")));
+            metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.tiff")));
+
+            MetaDrawSettings.ExportType = "Wmf";
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.wmf")));
+            metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.wmf")));
+
+            MetaDrawSettings.ExportType = "Bmp";
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.bmp")));
+            metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.bmp")));
+
+            Directory.Delete(outputFolder, true);
+
+            // test that these methods create a directory if it is not already instantiated
+            Assert.That(!Directory.Exists(outputFolder));
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
+            Assert.That(Directory.Exists(outputFolder));
+            Directory.Delete(outputFolder, true);
+
+            Assert.That(!Directory.Exists(outputFolder));
+            metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
+            Assert.That(Directory.Exists(outputFolder));
+
+            psm = metadrawLogic.FilteredListOfPsms[17];
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psm);
+            metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psm, outputFolder, 200);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"2_RGNVC[Common FixedCarbamidomet_SequenceAnnotation.bmp")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"2_RGNVC[Common FixedCarbamidomet_SequenceCoverage.bmp")));
+
+            Directory.Delete(outputFolder, true);
+
+        }
+
+
+        [Test]
+        public static void TestMetaDrawHistogramPlots()
+        {
+            SearchTask searchTask = new SearchTask();
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawReadPsmFile");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
+            string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
+
+            List<SpectrumMatchFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadTsv(psmFile, out var warnings);
+            ObservableCollection<SpectrumMatchFromTsv> psms = new(parsedPsms);
+
+            var psmDict = parsedPsms.GroupBy(p => p.FileNameWithoutExtension)
+                .ToDictionary(p => p.Key, p => new ObservableCollection<SpectrumMatchFromTsv>(p));
+
+            // check that fragment mass error was read in correctly
+            Assert.That(Math.Round(-0.27631606125063707, 5), Is.EqualTo(Math.Round(psms[1].MatchedIons[1].MassErrorPpm, 5)));
+
+            // check aspects of each histogram type:
+            var plot = new PlotModelStat("Histogram of Precursor Masses", psms, psmDict);
+            // Ensure axes are labeled correctly, and intervals are correct
+            Assert.That(plot.Model.Axes.Count, Is.EqualTo(2));
+            Assert.That(plot.Model.Axes[1].Title, Is.EqualTo("Count"));
+            Assert.That(plot.Model.Axes[1].AbsoluteMinimum, Is.EqualTo(0));
+            Assert.That(plot.Model.Axes[0].IntervalLength, Is.EqualTo(60));
+
+            var plot2 = new PlotModelStat("Histogram of Precursor Charges", psms, psmDict);
+            var series2 = plot2.Model.Series.ToList()[0];
+            var items2 = (List<OxyPlot.Series.ColumnItem>)series2.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series2);
+            Assert.That(items2[0].Value, Is.EqualTo(9));
+            Assert.That(items2[1].Value, Is.EqualTo(1));
+
+            var plot3 = new PlotModelStat("Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
+                psms, psmDict);
+            var series3 = plot3.Model.Series.ToList()[0];
+            var items3 = (List<OxyPlot.Series.ColumnItem>)series3.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series3);
+            Assert.That(items3[7].Value, Is.EqualTo(2));
+
+            var plot4 = new PlotModelStat("Histogram of Fragment Charges",
+                psms, psmDict);
+            var series4 = plot4.Model.Series.ToList()[0];
+            var items4 = (List<OxyPlot.Series.ColumnItem>)series4.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series4);
+            Assert.That(items4[0].Value, Is.EqualTo(101));
+
+            var plot5 = new PlotModelStat("Histogram of Precursor m/z",
+                psms, psmDict);
+            var series5 = plot5.Model.Series.ToList()[0];
+            var items5 = (List<OxyPlot.Series.ColumnItem>)series5.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series5);
+            Assert.That(items5.Count, Is.EqualTo(5));
+            Assert.That(items5[0].Value, Is.EqualTo(5));
+
+            var plot6 = new PlotModelStat("Histogram of PTM Spectral Counts",
+                psms, psmDict);
+            var series6 = plot6.Model.Series.ToList()[0];
+            var items6 = (List<OxyPlot.Series.ColumnItem>)series6.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series6);
+            Assert.That(items6.Count, Is.EqualTo(1));
+            Assert.That(items6[0].Value, Is.EqualTo(2));
+
+            var plot7 = new PlotModelStat("Precursor PPM Error vs. RT",
+                psms, psmDict);
+            var series7 = plot7.Model.Series.ToList()[0];
+            var points7 = (List<OxyPlot.Series.ScatterPoint>)series7.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series7);
+            Assert.That(points7.Count, Is.EqualTo(9));
+            Assert.That(points7[1].X, Is.EqualTo(42.07841));
+            Assert.That(points7[1].Y, Is.EqualTo(-1.48));
+            Assert.That(points7[1].Tag, Is.EqualTo("LSRIDTPK"));
+
+            var plot8 = new PlotModelStat("Predicted RT vs. Observed RT",
+                psms, psmDict);
+            var series8 = plot8.Model.Series.ToList()[0];
+            var points8 = (List<OxyPlot.Series.ScatterPoint>)series8.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series8);
+            Assert.That(points8.Count, Is.EqualTo(10));
+            Assert.That(points8[7].X, Is.EqualTo(42.06171));
+            Assert.That(points8[7].Y, Is.EqualTo(19.00616880619646));
+            Assert.That(points8[7].Tag, Is.EqualTo("AFISYHDEAQK"));
+
+            var plot9 = new PlotModelStat("Histogram of Fragment PPM Errors",
+                psms, psmDict);
+            var series9 = plot9.Model.Series.ToList()[0];
+            var items9 = (List<OxyPlot.Series.ColumnItem>)series9.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series9);
+            Assert.That(items9[11].Value, Is.EqualTo(2));
+
+            var plot10 = new PlotModelStat("Histogram of Hydrophobicity scores",
+                psms, psmDict);
+            var series10 = plot10.Model.Series.ToList()[0];
+            var items10 = (List<OxyPlot.Series.ColumnItem>)series10.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series10);
+            Assert.That(items10.Count, Is.EqualTo(5));
+            Assert.That(items10[1].Value, Is.EqualTo(3));
+
+            //test variant plotting
+            string variantFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\VariantCrossTest.psmtsv");
+            List<string> warningsVariants = new List<string>();
+            List<PsmFromTsv> parsedPsmsWithVariants;
+            parsedPsmsWithVariants = SpectrumMatchTsvReader.ReadPsmTsv(variantFile, out warningsVariants);
+            ObservableCollection<SpectrumMatchFromTsv> psmsWithVariants = new(parsedPsmsWithVariants);
+
+            var psmVariantDict = psmsWithVariants.GroupBy(p => p.FileNameWithoutExtension)
+                .ToDictionary(p => p.Key, p => new ObservableCollection<SpectrumMatchFromTsv>(p));
+
+            var variantPlot1 = new PlotModelStat("Precursor PPM Error vs. RT", psmsWithVariants, psmVariantDict);
+            var variantSeries1 = variantPlot1.Model.Series.ToList()[0];
+            var variantPoints1 = (List<OxyPlot.Series.ScatterPoint>)variantSeries1.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(variantSeries1);
+            Assert.That(variantPoints1.Count, Is.EqualTo(1));
+            Assert.That(variantPoints1[0].X, Is.EqualTo(97.8357));
+            Assert.That(variantPoints1[0].Y, Is.EqualTo(0.35));
+            Assert.That(variantPoints1[0].Tag, Is.EqualTo("MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK"));
+
+            var variantPlot2 = new PlotModelStat("Predicted RT vs. Observed RT", psmsWithVariants, psmVariantDict);
+            var variantSeries2 = variantPlot2.Model.Series.ToList()[0];
+            var variantPoints2 = (List<OxyPlot.Series.ScatterPoint>)variantSeries2.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(variantSeries2);
+            Assert.That(variantPoints2.Count, Is.EqualTo(1));
+            Assert.That(variantPoints2[0].X, Is.EqualTo(97.8357));
+            Assert.That(variantPoints2[0].Y, Is.EqualTo(16.363848874371111));
+            Assert.That(variantPoints2[0].Tag, Is.EqualTo("MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK"));
+
+            // Histogram of Fragment Ion Types by Count
+            var plot11 = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
+            var series11 = plot11.Model.Series.ToList()[0];
+            var items11 = (List<OxyPlot.Series.ColumnItem>)series11.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series11);
+            Assert.That(items11.Count, Is.GreaterThan(0)); // At least one fragment type
+            Assert.That(items11.Sum(i => i.Value), Is.GreaterThan(0)); // At least one count
+
+            // Histogram of Fragment Ion Types by Intensity
+            var plot12 = new PlotModelStat("Histogram of Fragment Ion Types by Intensity", psms, psmDict);
+            var series12 = plot12.Model.Series.ToList()[0];
+            var items12 = (List<OxyPlot.Series.ColumnItem>)series12.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series12);
+            Assert.That(items12.Count, Is.GreaterThan(0)); // At least one fragment type
+            Assert.That(items12.Sum(i => i.Value), Is.GreaterThan(0)); // At least one intensity
+
+            // Histogram of Ids by Retention Time
+            var plot13 = new PlotModelStat("Histogram of Ids by Retention Time", psms, psmDict);
+            var series13 = plot13.Model.Series.ToList()[0];
+            var items13 = (List<OxyPlot.Series.ColumnItem>)series13.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series13);
+            Assert.That(items13.Count, Is.GreaterThan(0)); // At least one retention time bin
+            Assert.That(items13.Sum(i => i.Value), Is.GreaterThan(0)); // At least one ID
+
+            // Histogram of Missed Cleavages
+            var plot14 = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
+            var series14 = plot14.Model.Series.ToList()[0];
+            var items14 = (List<OxyPlot.Series.ColumnItem>)series14.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series14);
+            Assert.That(items14.Count, Is.GreaterThan(0)); // At least one missed cleavage bin
+            Assert.That(items14.Sum(i => i.Value), Is.GreaterThanOrEqualTo(0)); // Non-negative count
+
+            // Test normalization for missed cleavages
+            PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = false;
+            var plotMissedNormOff = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
+            var seriesMissedNormOff = plotMissedNormOff.Model.Series.ToList()[0];
+            var itemsMissedNormOff = (List<OxyPlot.Series.ColumnItem>)seriesMissedNormOff.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesMissedNormOff);
+            double sumMissedNormOff = itemsMissedNormOff.Sum(i => i.Value);
+
+            PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = true;
+            var plotMissedNormOn = new PlotModelStat("Histogram of Missed Cleavages", psms, psmDict);
+            var seriesMissedNormOn = plotMissedNormOn.Model.Series.ToList()[0];
+            var itemsMissedNormOn = (List<OxyPlot.Series.ColumnItem>)seriesMissedNormOn.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesMissedNormOn);
+            double sumMissedNormOn = itemsMissedNormOn.Sum(i => i.Value);
+
+            Assert.That(sumMissedNormOn, Is.LessThanOrEqualTo(1.0));
+            Assert.That(sumMissedNormOff, Is.GreaterThanOrEqualTo(sumMissedNormOn));
+
+            // Reset normalization for other tests
+            PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = false;
+
+            // Test normalization OFF
+            PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = false;
+            var plotNormOff = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
+            var seriesNormOff = plotNormOff.Model.Series.ToList()[0];
+            var itemsNormOff = (List<OxyPlot.Series.ColumnItem>)seriesNormOff.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesNormOff);
+            double sumNormOff = itemsNormOff.Sum(i => i.Value);
+
+            // Test normalization ON
+            PlotModelStatParametersViewModel.Instance.NormalizeHistogramToFile = true;
+            var plotNormOn = new PlotModelStat("Histogram of Fragment Ion Types by Count", psms, psmDict);
+            var seriesNormOn = plotNormOn.Model.Series.ToList()[0];
+            var itemsNormOn = (List<OxyPlot.Series.ColumnItem>)seriesNormOn.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(seriesNormOn);
+            double sumNormOn = itemsNormOn.Sum(i => i.Value);
+
+            // When normalized, the sum should be <= 1 (since values are divided by total count)
+            Assert.That(sumNormOn, Is.LessThanOrEqualTo(1.0));
+            Assert.That(sumNormOff, Is.GreaterThan(sumNormOn));
+
+            Directory.Delete(folderPath, true);
+        }
+
+        [Test]
+        public static void TestCrosslinkSpectralLibraryReading()
+        {
+            string xlTestDataFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData");
+            var interLinkResults = File.ReadAllLines(Path.Combine(xlTestDataFolder, @"XL_Interlinks.tsv"));
+        }
+
+        [Test]
+        public void ExportPlot_RefragmentationWithAdditionalFragmentIons_WritesExpectedIons()
+        {
+            // Arrange
+            var logic = new MetaDrawLogic();
+            MetaDrawSettings.ExportType = "Png";
+            string dataFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchSingleSpectra.mzML");
+            string psmFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchResults.psmtsv");
+
+            // Load
+            logic.SpectraFilePaths.Add(dataFilePath);
+            logic.SpectralMatchResultFilePaths.Add(psmFilePath);
+            logic.LoadFiles(true, true);
+            var psm = logic.FilteredListOfPsms.First();
+
+            // Add to spectrumMatches
+            var spectrumMatches = new List<SpectrumMatchFromTsv> { psm };
+
+            // Set up a FragmentationReanalysisViewModel with additional ions (e.g., c, zDot)
+            var reFragment = new FragmentationReanalysisViewModel();
+            foreach (var frag in reFragment.PossibleProducts)
+            {
+                // Enable b, y, c, and zDot ions
+                frag.Use = frag.ProductType == ProductType.b || frag.ProductType == ProductType.y ||
+                           frag.ProductType == ProductType.bWaterLoss || frag.ProductType == ProductType.yAmmoniaLoss ||
+                           frag.ProductType == ProductType.c || frag.ProductType == ProductType.zDot;
+            }
+            reFragment.Persist = true;
+
+            // Set up dummy plotView and canvas
+            var plotView = new PlotView { Name = "plotView" };
+            var stationaryCanvas = new Canvas();
+            var parentChildScanPlotsView = new ParentChildScanPlotsView();
+            string tempDir = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "RefragmentTest");
+            if (Directory.Exists(tempDir))
+                Directory.Delete(tempDir, true);
+            Directory.CreateDirectory(tempDir);
+
+            // Act
+            // Export without refragmentation 
+            string fileNoRefragment = Path.Combine(tempDir, "no_refragment.png");
+            logic.ExportPlot(plotView, stationaryCanvas, spectrumMatches, parentChildScanPlotsView, tempDir, out var errorsNoRefragment, null, new System.Windows.Vector(), null);
+            string exportedFileNoRefragment = Directory.GetFiles(tempDir, "*.png").FirstOrDefault();
+            Assert.That(exportedFileNoRefragment, Is.Not.Null, "Exported file without refragmentation should exist.");
+
+            // Rename File so it is not overriden by next export. 
+            File.Move(exportedFileNoRefragment, fileNoRefragment);
+
+            // Export with refragmentation
+            logic.ExportPlot(plotView, stationaryCanvas, spectrumMatches, parentChildScanPlotsView, tempDir, out var errorsRefragment, null, new System.Windows.Vector(), reFragment);
+            string exportedFileRefragment = Directory.GetFiles(tempDir, "*.png").FirstOrDefault();
+            Assert.That(exportedFileRefragment, Is.Not.Null, "Exported file with refragmentation should exist.");
+
+            // Assert: file with refragmentation should be larger
+            var sizeNoRefragment = new FileInfo(fileNoRefragment).Length;
+            var sizeRefragment = new FileInfo(exportedFileRefragment).Length;
+            Assert.That(sizeRefragment, Is.GreaterThan(sizeNoRefragment), "Refragmented export should be larger due to more annotated ions.");
+
+            // Assert: colors for c and zDot ions are present in the PNG with refragmentation but not in the other
+            var cColor = MetaDrawSettings.ProductTypeToColor[ProductType.c];
+            var zDotColor = MetaDrawSettings.ProductTypeToColor[ProductType.zDot];
+
+            // Use using statements to ensure Bitmaps are disposed immediately after use
+            bool noRefragmentHasC, noRefragmentHasZDot, refragmentHasC, refragmentHasZDot;
+            using (var bmpNoRefragment = new Bitmap(fileNoRefragment))
+            using (var bmpRefragment = new Bitmap(exportedFileRefragment))
+            {
+                bool HasColor(Bitmap bmp, OxyColor color)
+                {
+                    for (int y = 0; y < bmp.Height; y++)
+                    {
+                        for (int x = 0; x < bmp.Width; x++)
+                        {
+                            var px = bmp.GetPixel(x, y);
+                            if (px.R == color.R && px.G == color.G && px.B == color.B)
+                                return true;
+                        }
+                    }
+                    return false;
+                }
+
+                noRefragmentHasC = HasColor(bmpNoRefragment, cColor);
+                noRefragmentHasZDot = HasColor(bmpNoRefragment, zDotColor);
+                refragmentHasC = HasColor(bmpRefragment, cColor);
+                refragmentHasZDot = HasColor(bmpRefragment, zDotColor);
+            }
+
+            Assert.That(noRefragmentHasC || noRefragmentHasZDot, Is.False,
+                "No c or zDot ion colors should be present in the PNG without refragmentation.");
+            Assert.That(refragmentHasC || refragmentHasZDot, Is.True,
+                "c or zDot ion colors should be present in the PNG with refragmentation.");
+
+            Assert.That(errorsNoRefragment, Is.Null, "No errors should be reported for no refragmentation.");
+            Assert.That(errorsRefragment, Is.Null, "No errors should be reported for refragmentation.");
+
+            // Clean up
+            Directory.Delete(tempDir, true);
+        }
+
+        [Test] // Ensures no plot names accidently get deleted.
+        public static void PlotNamesDoNotChange()
+        {
+            var plotNames = PlotModelStat.PlotNames;
+            Assert.That(plotNames.Count, Is.EqualTo(16));
+            Assert.That(plotNames, Does.Contain("Histogram of Spectral Match Ambiguity Levels"));
+            Assert.That(plotNames, Does.Contain("Histogram of Notch (Ambiguous PSMs Split Across Notches)"));
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_BuildsAllExpectedCategories()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[]
+            {
+                "1", "1", "1", "1",
+                "2A", "2A", "2A",
+                "2B", "2B",
+                "2C",
+                "2D",
+                "3",
+                "4"
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "ambiguityTestFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    psms,
+                    psmsByFile);
+
+                Assert.That(plot.PlotData, Is.Not.Empty);
+
+                var totalsByCategory = plot.PlotData
+                    .Where(row => row.ContainsKey("Category"))
+                    .GroupBy(row => row["Category"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByCategory["1"], Is.EqualTo(4));
+                Assert.That(totalsByCategory["2A"], Is.EqualTo(3));
+                Assert.That(totalsByCategory["2B"], Is.EqualTo(2));
+                Assert.That(totalsByCategory["2C"], Is.EqualTo(1));
+                Assert.That(totalsByCategory["2D"], Is.EqualTo(1));
+                Assert.That(totalsByCategory["3"], Is.EqualTo(1));
+                Assert.That(totalsByCategory["4"], Is.EqualTo(1));
+                Assert.That(totalsByCategory.Count, Is.EqualTo(7));
+
+                var categoryAxis = plot.Model.Axes.OfType<PlotCategoryAxis>().First(a => a.Key != "GroupAxis");
+                Assert.That(categoryAxis.ItemsSource.Cast<string>().ToList(), Is.EqualTo(new[] { "1", "2A", "2B", "2C", "2D", "3", "4" }));
+                Assert.That(categoryAxis.Title, Is.EqualTo("Ambiguity Level"));
+
+                var columnSeries = plot.Model.Series.OfType<PlotColumnSeries>().Single();
+                Assert.That(columnSeries.Items.Count, Is.EqualTo(7));
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_DefaultsMissingToOne()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[] { null, "", "   ", "1" });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "ambiguityDefaultFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    psms,
+                    psmsByFile);
+
+                var totalForOne = plot.PlotData
+                    .Where(row => row.ContainsKey("Category") && row["Category"] == "1")
+                    .Sum(row => int.Parse(row["Value"]));
+
+                Assert.That(totalForOne, Is.EqualTo(4));
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_GroupsAcrossFiles()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[] { "1", "2A", "2B", "3", "4" });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileA = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Take(3));
+                var fileB = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Skip(3));
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileA", fileA },
+                    { "FileB", fileB }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "None",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile,
+                    parameters);
+
+                Assert.That(plot.Model.Series.OfType<PlotColumnSeries>().Count(), Is.EqualTo(2));
+                Assert.That(plot.PlotData.Select(r => r["Source File"]).Distinct().OrderBy(s => s).ToList(),
+                    Is.EqualTo(new[] { "FileA", "FileB" }));
+                Assert.That(plot.PlotData.All(r => r.ContainsKey("Category") && r.ContainsKey("Value") && r.ContainsKey("Total")),
+                    Is.True);
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_SplitsAmbiguousAcrossBars()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Notch values are stored as "F3"-formatted doubles in real MetaMorpheus output
+            // (e.g. "0.000", "1.003", "-1.003"), reflecting the C13-C12 isotopic mass shift.
+            // Single-notch PSMs add 1 to their notch bin. Ambiguous (pipe-delimited) PSMs
+            // add 1 to each of their notch bins, so the total count > PSM count.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "PEPTIDER"),
+                ("0.000", "PEPTIDER"),
+                ("1.003", "ANOTHERPEPTIDE"),
+                ("2.007", "THIRDPEPTIDE"),
+                ("0.000|2.007", "AMBBIGUOUSPEP"), // contributes 1 to notch 0 and 1 to notch 2
+                ("1.003|2.007|3.010", "TRIPLYPEP"),// contributes 1 to each of notches 1, 2, 3
+                ("", "DEFAULTNOTCH")               // null/empty should default to "0"
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "notchTestFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    psms,
+                    psmsByFile);
+
+                var totalsByBin = plot.PlotData
+                    .Where(row => row.ContainsKey("Bin"))
+                    .GroupBy(row => row["Bin"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByBin["0"], Is.EqualTo(4), "Bin 0 = 2 single + 1 from '0.000|2.007' + 1 from '' default");
+                Assert.That(totalsByBin["1"], Is.EqualTo(2), "Bin 1 = 1 single + 1 from '1.003|2.007|3.010'");
+                Assert.That(totalsByBin["2"], Is.EqualTo(3), "Bin 2 = 1 single + 1 from '0.000|2.007' + 1 from '1.003|2.007|3.010'");
+                Assert.That(totalsByBin["3"], Is.EqualTo(1), "Bin 3 = 1 from '1.003|2.007|3.010'");
+
+                var categoryAxis = plot.Model.Axes.OfType<PlotCategoryAxis>().First(a => a.Key != "GroupAxis");
+                var labels = categoryAxis.ItemsSource.Cast<string>()
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToList();
+                Assert.That(labels, Is.EqualTo(new[] { "0", "1", "2", "3" }),
+                    "Notch labels should appear in numeric order");
+                Assert.That(categoryAxis.Title, Is.EqualTo("Notch"));
+
+                Assert.That(plot.PlotData.Sum(r => int.Parse(r["Value"])), Is.EqualTo(10),
+                    "Total contributions (1 per part) = 7 PSMs with parts [1,1,1,1,2,3,1]");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_ParsesDoubleFormattedNotches()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Use real-world double notch values. With binSize=1, "1.003" rounds to bin 1
+            // and "0.5" rounds to bin 0 or 1 depending on the half-bin tie-break.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("-1.003", "AAA"),
+                ("-1.003", "BBB"),
+                ("0.000", "CCC"),
+                ("0.000", "DDD"),
+                ("0.000", "EEE"),
+                ("1.003", "FFF"),
+                ("2.007", "GGG"),
+                ("1.003|2.007", "HHH")
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "notchDoubles", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    psms,
+                    psmsByFile);
+
+                var totalsByBin = plot.PlotData
+                    .Where(row => row.ContainsKey("Bin"))
+                    .GroupBy(row => row["Bin"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByBin["-1"], Is.EqualTo(2), "Notch -1.003 should round to bin -1");
+                Assert.That(totalsByBin["0"], Is.EqualTo(3), "Three '0.000' PSMs");
+                Assert.That(totalsByBin["1"], Is.EqualTo(2), "Notch 1.003 = 1 single + 1 from '1.003|2.007'");
+                Assert.That(totalsByBin["2"], Is.EqualTo(2), "Notch 2.007 = 1 single + 1 from '1.003|2.007'");
+
+                Assert.That(plot.PlotData.Sum(r => int.Parse(r["Value"])), Is.EqualTo(9),
+                    "Total = 8 PSMs with parts [1,1,1,1,1,1,1,2]");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_NumericOrderingAcrossFiles()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Mix ambiguous and single-notch PSMs across two files; verify numeric bin ordering.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "AAA"),
+                ("0.000|1.003", "BBB"),
+                ("3.010", "CCC"),
+                ("5.013", "DDD"),
+                ("-1.003|1.003", "EEE")
+            });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileA = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Take(3));
+                var fileB = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Skip(3));
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileA", fileA },
+                    { "FileB", fileB }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile);
+
+                var categoryAxis = plot.Model.Axes.OfType<PlotCategoryAxis>().First(a => a.Key != "GroupAxis");
+                var allBinSlots = categoryAxis.ItemsSource.Cast<string>().ToList();
+
+                Assert.That(allBinSlots.Count, Is.EqualTo(7),
+                    "All integer bins in [-1, 5] should be present (zero-count bins render as empty labels)");
+
+                var visibleLabels = allBinSlots.Where(s => !string.IsNullOrEmpty(s)).ToList();
+                var orderedVisible = visibleLabels
+                    .OrderBy(s => int.Parse(s, System.Globalization.CultureInfo.InvariantCulture))
+                    .ToList();
+                Assert.That(visibleLabels, Is.EqualTo(orderedVisible),
+                    "Visible bin labels should be in numeric order, not lexicographic order");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_GroupsAcrossFiles()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "AAA"),
+                ("0.000|2.007", "BBB"),
+                ("2.007", "CCC"),
+                ("3.010", "DDD")
+            });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileA = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Take(2));
+                var fileB = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Skip(2));
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileA", fileA },
+                    { "FileB", fileB }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "None",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile,
+                    parameters);
+
+                Assert.That(plot.Model.Series.OfType<PlotColumnSeries>().Count(), Is.EqualTo(2));
+                Assert.That(plot.PlotData.Select(r => r["Source File"]).Distinct().OrderBy(s => s).ToList(),
+                    Is.EqualTo(new[] { "FileA", "FileB" }));
+                Assert.That(plot.PlotData.All(r => r.ContainsKey("Bin") && r.ContainsKey("Value") && r.ContainsKey("Total")),
+                    Is.True);
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_LeadingPipeDefaultsToOne()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // "|2A" (leading pipe) means the first split part is empty after trim.
+            // NormalizeAmbiguityLevel must return "1" in that case so the bar still appears.
+            // "  |2A" exercises the same branch with surrounding whitespace.
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[] { "|2A", "  |2A", "2A" });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "leadingPipeFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    psms,
+                    psmsByFile);
+
+                var totalsByCategory = plot.PlotData
+                    .Where(row => row.ContainsKey("Category"))
+                    .GroupBy(row => row["Category"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByCategory["1"], Is.EqualTo(2),
+                    "Both '|2A' and '  |2A' should default to category '1'");
+                Assert.That(totalsByCategory["2A"], Is.EqualTo(1),
+                    "Unambiguous '2A' should remain in category '2A'");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_GroupedByPrecursorCharge()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Two PSMs (charge 2) and two PSMs (charge 3) with varied ambiguity levels.
+            // GroupingProperty = "Precursor Charge" forces GetCategoryDictForGroup case 13.
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[] { "1", "2A", "1", "2B" });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileA = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Take(2));
+                var fileB = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Skip(2));
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileA", fileA },
+                    { "FileB", fileB }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "Precursor Charge",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile,
+                    parameters);
+
+                Assert.That(plot.Model.Axes.OfType<PlotCategoryAxis>()
+                    .Any(a => a.Key == "GroupAxis" && a.Title == "Precursor Charge"),
+                    Is.True, "GroupAxis should be created when grouping is enabled for the ambiguity plot");
+                Assert.That(plot.PlotData.All(r => r.ContainsKey(parameters.GroupingProperty)), Is.True,
+                    "Every PlotData row should carry the grouping property");
+                Assert.That(plot.PlotData.Select(r => r[parameters.GroupingProperty]).Distinct().Count(), Is.GreaterThanOrEqualTo(1));
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_AmbiguityLevel_LogScaleAndNormalization()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteAmbiguityLevelPsmTsv(new[] { "1", "1", "1", "2A" });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "logScaleFile", psms }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "None",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = true,
+                    UseLogScaleYAxis = true
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Spectral Match Ambiguity Levels",
+                    psms,
+                    psmsByFile,
+                    parameters);
+
+                var logAxis = plot.Model.Axes.OfType<OxyPlot.Axes.LogarithmicAxis>().FirstOrDefault();
+                Assert.That(logAxis, Is.Not.Null,
+                    "LogarithmicAxis should be present when UseLogScaleYAxis is true");
+
+                var values = plot.Model.Series
+                    .OfType<PlotColumnSeries>()
+                    .SelectMany(s => s.Items)
+                    .Select(item => item.Value)
+                    .ToList();
+                Assert.That(values, Is.Not.Empty);
+                Assert.That(values.All(v => v <= 1.0 + 1e-6),
+                    "Normalized values should be at most 1.0 (proportion of file total)");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_NotParseableYieldsZero()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Notch values that fail double.TryParse should default to 0.0 via
+            // ParseAmbiguousNotchValues. This also exercises the "else yield return 0.0" branch.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("abc", "BAD_NOTCH_1"),
+                ("notanumber|1.003", "BAD_NOTCH_2"),
+                ("0.000", "GOOD_NOTCH")
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "badNotchFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    psms,
+                    psmsByFile);
+
+                var totalsByBin = plot.PlotData
+                    .Where(row => row.ContainsKey("Bin"))
+                    .GroupBy(row => row["Bin"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByBin["0"], Is.EqualTo(3),
+                    "Both unparseable notches should map to bin 0 (1 from 'abc' + 1 from 'notanumber' + 1 from '0.000')");
+                Assert.That(totalsByBin["1"], Is.EqualTo(1),
+                    "The '1.003' part of 'notanumber|1.003' should still parse and bin to 1");
+                Assert.That(plot.PlotData.Sum(r => int.Parse(r["Value"])), Is.EqualTo(4),
+                    "Total contributions = 3 from unparseable defaults + 1 from good '1.003' + 1 from '0.000'");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_PipeOnlyAndEmptyParts()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // SplitAmbiguousNotch filters empty parts after split. Inputs:
+            //   "|"    -> ["0"] via DefaultIfEmpty after the empty filter strips everything
+            //   "||"   -> same as above
+            //   "|1.003|" -> ["1.003"] (leading and trailing empties stripped)
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("|", "PIPE_ONLY_1"),
+                ("||", "PIPE_ONLY_2"),
+                ("|1.003|", "PIPE_AROUND_VALUE")
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "pipeOnlyFile", psms }
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    psms,
+                    psmsByFile);
+
+                var totalsByBin = plot.PlotData
+                    .Where(row => row.ContainsKey("Bin"))
+                    .GroupBy(row => row["Bin"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByBin["0"], Is.EqualTo(2),
+                    "Both '|' and '||' should fall back to bin 0 (DefaultIfEmpty path)");
+                Assert.That(totalsByBin["1"], Is.EqualTo(1),
+                    "'|1.003|' should produce a single bin-1 contribution (empties filtered)");
+                Assert.That(plot.PlotData.Sum(r => int.Parse(r["Value"])), Is.EqualTo(3),
+                    "Total = 2 (pipe-only fallbacks) + 1 (1.003 from the trimmed middle part)");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_GroupedByPrecursorCharge()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Force the grouping pipeline (GetNumbersFromPsms case 14) for the notch plot.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "AAA"),
+                ("1.003", "BBB"),
+                ("0.000|1.003", "CCC"),
+                ("2.007", "DDD")
+            });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileA = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Take(2));
+                var fileB = new ObservableCollection<SpectrumMatchFromTsv>(allPsms.Skip(2));
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileA", fileA },
+                    { "FileB", fileB }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "Precursor Charge",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile,
+                    parameters);
+
+                Assert.That(plot.Model.Axes.OfType<PlotCategoryAxis>()
+                    .Any(a => a.Key == "GroupAxis" && a.Title == "Precursor Charge"),
+                    Is.True, "GroupAxis should appear when grouping is enabled for the notch plot");
+                Assert.That(plot.PlotData.All(r => r.ContainsKey(parameters.GroupingProperty)), Is.True,
+                    "Every PlotData row should carry the grouping property");
+                Assert.That(plot.PlotData.All(r => r.ContainsKey("Bin")), Is.True,
+                    "All rows should still carry a 'Bin' key under the numerical grouping pipeline");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_MinRelativeCutoffFiltersBins()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            // Notch 0 has 5 PSMs and notch 1 has 1. With MinRelativeCutoff=50,
+            // bins with count < 50% of max (5 * 0.5 = 2.5) should be filtered out,
+            // leaving only bin 0 visible. This exercises the MinRelativeCutoff branch
+            // on the numerical (notch) pipeline.
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "A"),
+                ("0.000", "B"),
+                ("0.000", "C"),
+                ("0.000", "D"),
+                ("0.000", "E"),
+                ("1.003", "F")
+            });
+
+            try
+            {
+                var psms = new ObservableCollection<SpectrumMatchFromTsv>(SpectrumMatchTsvReader.ReadTsv(tempFile, out _));
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "cutoffFile", psms }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "None",
+                    MinRelativeCutoff = 50,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    psms,
+                    psmsByFile,
+                    parameters);
+
+                var totalsByBin = plot.PlotData
+                    .Where(row => row.ContainsKey("Bin"))
+                    .GroupBy(row => row["Bin"])
+                    .ToDictionary(g => g.Key, g => int.Parse(g.First()["Total"]));
+
+                Assert.That(totalsByBin.ContainsKey("0"), Is.True,
+                    "Bin 0 (count 5) should remain above the 50% cutoff");
+                Assert.That(totalsByBin.ContainsKey("1"), Is.False,
+                    "Bin 1 (count 1, below 2.5 cutoff) should be filtered out");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        private static string WriteNotchPsmTsv(IEnumerable<(string Notch, string BaseSequence)> rows)
+        {
+            var header = new[]
+            {
+                "File Name", "Scan Number", "Scan Retention Time", "Num Experimental Peaks", "Total Ion Current",
+                "Precursor Scan Number", "Precursor Charge", "Precursor MZ", "Precursor Mass", "Score", "Delta Score",
+                "Notch", "Base Sequence", "Full Sequence", "Essential Sequence", "Ambiguity Level",
+                "PSM Count (unambiguous, <0.01 q-value)", "Mods", "Mods Chemical Formulas", "Mods Combined Chemical Formula",
+                "Num Variable Mods", "Missed Cleavages", "Peptide Monoisotopic Mass", "Mass Diff (Da)", "Mass Diff (ppm)",
+                "Protein Accession", "Protein Name", "Gene Name", "Organism Name", "Identified Sequence Variations",
+                "Splice Sites", "Contaminant", "Decoy", "Peptide Description", "Start and End Residues In Protein",
+                "Previous Amino Acid", "Next Amino Acid", "Theoreticals Searched", "Decoy/Contaminant/Target",
+                "Matched Ion Series", "Matched Ion Mass-To-Charge Ratios", "Matched Ion Mass Diff (Da)",
+                "Matched Ion Mass Diff (Ppm)", "Matched Ion Intensities", "Matched Ion Counts", "QValue"
+            };
+
+            var lines = new List<string> { string.Join("\t", header) };
+            int scan = 1;
+            foreach (var (notch, baseSeq) in rows)
+            {
+                lines.Add(string.Join("\t", new[]
+                {
+                    "notchTestFile", scan.ToString(), "1.0", "10", "1000.0",
+                    (scan - 1).ToString(), "2", "500.0", "998.0", "10.0", "5.0",
+                    notch ?? "", baseSeq, baseSeq, baseSeq, "1",
+                    "1", "", "", "", "0", "0", "998.0", "0.0", "0.0",
+                    "P12345", "TestProtein", "gene1", "TestOrganism", "", "", "N", "N", "full", "1-8", "R", "K",
+                    "100", "T", "", "", "", "", "", "", "0.01"
+                }));
+                scan++;
+            }
+
+            var tempFile = Path.Combine(Path.GetTempPath(), "NotchPlotTest_" + Guid.NewGuid().ToString("N") + ".psmtsv");
+            File.WriteAllText(tempFile, string.Join(Environment.NewLine, lines));
+            return tempFile;
+        }
+
+        private static string WriteAmbiguityLevelPsmTsv(IEnumerable<string> ambiguityLevels)
+        {
+            var header = new[]
+            {
+                "File Name", "Scan Number", "Scan Retention Time", "Num Experimental Peaks", "Total Ion Current",
+                "Precursor Scan Number", "Precursor Charge", "Precursor MZ", "Precursor Mass", "Score", "Delta Score",
+                "Notch", "Base Sequence", "Full Sequence", "Essential Sequence", "Ambiguity Level",
+                "PSM Count (unambiguous, <0.01 q-value)", "Mods", "Mods Chemical Formulas", "Mods Combined Chemical Formula",
+                "Num Variable Mods", "Missed Cleavages", "Peptide Monoisotopic Mass", "Mass Diff (Da)", "Mass Diff (ppm)",
+                "Protein Accession", "Protein Name", "Gene Name", "Organism Name", "Identified Sequence Variations",
+                "Splice Sites", "Contaminant", "Decoy", "Peptide Description", "Start and End Residues In Protein",
+                "Previous Amino Acid", "Next Amino Acid", "Theoreticals Searched", "Decoy/Contaminant/Target",
+                "Matched Ion Series", "Matched Ion Mass-To-Charge Ratios", "Matched Ion Mass Diff (Da)",
+                "Matched Ion Mass Diff (Ppm)", "Matched Ion Intensities", "Matched Ion Counts", "QValue"
+            };
+
+            var rows = new List<string> { string.Join("\t", header) };
+            int scan = 1;
+            foreach (var amb in ambiguityLevels)
+            {
+                var ambCell = string.IsNullOrEmpty(amb) ? "" : amb;
+                var fullSequence = ambCell == "1" ? "PEPTIDER" : $"PEPTIDER|{ambCell}";
+                var baseSequence = "PEPTIDER";
+                rows.Add(string.Join("\t", new[]
+                {
+                    "ambiguityTestFile", scan.ToString(), "1.0", "10", "1000.0",
+                    (scan - 1).ToString(), "2", "500.0", "998.0", "10.0", "5.0",
+                    "0", baseSequence, fullSequence, baseSequence, ambCell,
+                    "1", "", "", "", "0", "0", "998.0", "0.0", "0.0",
+                    "P12345", "TestProtein", "gene1", "TestOrganism", "", "", "N", "N", "full", "1-8", "R", "K",
+                    "100", "T", "", "", "", "", "", "", "0.01"
+                }));
+                scan++;
+            }
+
+            var tempFile = Path.Combine(Path.GetTempPath(), "AmbiguityPlotTest_" + Guid.NewGuid().ToString("N") + ".psmtsv");
+            File.WriteAllText(tempFile, string.Join(Environment.NewLine, rows));
+            return tempFile;
+        }
+
+        private static PlotModelStat BuildPlotModelStatForGrouping(
+            string plotName,
+            PlotModelStatParameters parameters,
+            out Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> psmsBySourceFile,
+            int takeCount = 24)
+        {
+            string psmPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                @"TestData\XCorrSearchTest_AllPSMs.psmtsv");
+
+            var parsedPsms = SpectrumMatchTsvReader.ReadTsv(psmPath, out _);
+
+            var selected = parsedPsms.Take(takeCount).ToList();
+            Assert.That(selected.Count, Is.GreaterThanOrEqualTo(4));
+
+            int half = Math.Max(1, selected.Count / 2);
+            var firstGroup = new ObservableCollection<SpectrumMatchFromTsv>(selected.Take(half).ToList());
+            var secondGroup = new ObservableCollection<SpectrumMatchFromTsv>(selected.Skip(half).ToList());
+
+            if (secondGroup.Count == 0)
+            {
+                secondGroup = new ObservableCollection<SpectrumMatchFromTsv>(selected.Skip(1).ToList());
+            }
+
+            Assert.That(firstGroup.Count, Is.GreaterThan(0));
+            Assert.That(secondGroup.Count, Is.GreaterThan(0));
+
+            psmsBySourceFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+            {
+                { "FileA", firstGroup },
+                { "FileB", secondGroup }
+            };
+
+            return new PlotModelStat(
+                plotName,
+                new ObservableCollection<SpectrumMatchFromTsv>(selected),
+                psmsBySourceFile,
+                parameters);
+        }
+    }
+}

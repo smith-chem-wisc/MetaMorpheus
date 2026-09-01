@@ -25,6 +25,10 @@ namespace TaskLayer
         public bool CrosslinkAtCleavageSite { get; set; }
         public bool WritePepXml { get; set; }
         public bool WriteOutputForPercolator { get; set; }
+        /// <summary>
+        /// Writes single peptides, interlinks and intralinks to a spectral library
+        /// </summary>
+        public bool WriteSpectralLibrary { get; set; }
         public bool XlQuench_H2O { get; set; }
         public bool XlQuench_Tris { get; set; }
         public bool XlQuench_NH2 { get; set; }

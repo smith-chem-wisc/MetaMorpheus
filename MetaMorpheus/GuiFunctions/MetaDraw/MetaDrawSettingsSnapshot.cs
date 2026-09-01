@@ -1,11 +1,7 @@
-﻿using EngineLayer.GlycoSearch;
-using OxyPlot;
-using Proteomics.Fragmentation;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Readers;
+using GuiFunctions.MetaDraw;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {
@@ -17,20 +13,50 @@ namespace GuiFunctions
         // graphic settings
         public bool DisplayIonAnnotations { get; set; } = true;
         public bool AnnotateMzValues { get; set; } = false;
-        public bool AnnotateCharges { get; set; } = false;
+        public bool AnnotateCharges { get; set; } = true;
         public bool AnnotationBold { get; set; } = false;
         public bool DisplayInternalIons { get; set; } = true;
         public bool DisplayInternalIonAnnotations { get; set; } = true;
+        public bool UseShortIonAnnotationsWhenPossible { get; set; } = false;
+        public bool SubAndSuperScriptIons { get; set; } = true;
         public bool DrawStationarySequence { get; set; } = true;
         public bool DrawNumbersUnderStationary { get; set; } = true;
         public bool ShowLegend { get; set; } = true;
-        public List<bool> SpectrumDescriptionValues { get; set; }
+        public List<string> SpectrumDescriptionValues { get; set; }
         public List<string> ProductTypeToColorValues { get; set; }
         public List<string> BetaProductTypeToColorValues { get; set; }
         public List<string> ModificationTypeToColorValues { get; set; }
         public List<string> CoverageTypeToColorValues { get; set; }
         public string UnannotatedPeakColor { get; set; }
         public string InternalIonColor { get; set; }
+        public int AnnotatedFontSize { get; set; } = 14;
+        public int AxisTitleTextSize { get; set; } = 14;
+        public int AxisLabelTextSize { get; set; } = 12;
+        public double StrokeThicknessUnannotated { get; set; } = 0.7;
+        public double StrokeThicknessAnnotated { get; set; } = 1.0;
+        public bool AnnotateIsotopicEnvelopes { get; set; } = true;
+        public double SpectrumDescriptionFontSize { get; set; } = 10;
+        public bool DisplayChimeraLegend { get; set; } = true;
+        public bool SuppressMessageBoxes { get; set; } = false;
+        public double MinMzToPlot { get; set; } = 0;
+        public double MaxMzToPlot { get; set; } = double.MaxValue;
+
+        // Chimera Settings
+        public bool ChimeraLegendTakeFirstIfAmbiguous { get; set; }
+        public double ChimeraLegendMaxWidth { get; set; } = 420;
+        public LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
+        public LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
+
+        // Data Visualization Settings
+        public bool DisplayFilteredOnly { get; set; } = true;
+        public bool NormalizeHistogramToFile { get; set; } = false;
+        public List<string> DataVisualizationColorOrder { get; set; }
+        public bool UseLogScaleYAxis { get; set; } = false;
+        public string GroupingProperty { get; set; } = "None";
+        public double MinRelativeCutoff { get; set; } = 0.0;
+        public double MaxRelativeCutoff { get; set; } = 100.0;
+        public bool AllowAmbiguousGroups { get; set; } = false;
+
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;
@@ -40,5 +66,11 @@ namespace GuiFunctions
         public LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
         public string ExportType { get; set; }
+
+        // BioPolymer coverage settings
+
+        public int BioPolymerCoverageFontSize { get; set; } = 16;
+        public List<string> BioPolymerCoverageColors { get; set; }
+        public ColorGradientType BioPolymerCoverageGradientType { get; set; } = ColorGradientType.Viridis;
     }
 }
