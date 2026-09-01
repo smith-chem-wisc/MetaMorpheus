@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using MassSpectrometry;
 using System.Globalization;
@@ -75,6 +76,13 @@ namespace EngineLayer
             return cleaveDissociationTypes;
         }
 
+        /// <summary>
+        /// Columns in a crosslinker tsv row: Name, CrosslinkAminoAcid, CrosslinkerAminoAcid2, Cleavable,
+        /// DissociationType, CrosslinkerTotalMass, CrosslinkerShortMass, CrosslinkerLongMass, QuenchMassH2O,
+        /// QuenchMassNH2, QuenchMassTris.
+        /// </summary>
+        private const int ExpectedColumnCount = 11;
+
         public static IEnumerable<Crosslinker> LoadCrosslinkers(string CrosslinkerLocation)
         {
             using (StreamReader crosslinkers = new StreamReader(CrosslinkerLocation))
@@ -88,6 +96,20 @@ namespace EngineLayer
                     if (lineCount == 1)
                     {
                         continue;
+                    }
+
+                    // CustomCrosslinkers.tsv is edited by hand, so a blank line or a '#' note in it is a
+                    // thing that happens. Both used to reach ParseCrosslinkerFromString and come back as
+                    // an unhandled IndexOutOfRangeException during startup, before any window opened.
+                    if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    if (line.Split('\t').Length < ExpectedColumnCount)
+                    {
+                        throw new MetaMorpheusException($"Line {lineCount} of {Path.GetFileName(CrosslinkerLocation)} has "
+                            + $"{line.Split('\t').Length} tab-separated column(s); {ExpectedColumnCount} are required. The line was: {line}");
                     }
 
                     yield return ParseCrosslinkerFromString(line);
