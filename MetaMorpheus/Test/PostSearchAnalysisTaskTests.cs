@@ -891,6 +891,112 @@ namespace Test
         }
 
         /// <summary>
+        /// DigestionAgentNameTests pins what the extension method returns, but nothing there observes the
+        /// Identification that FlashLFQ actually receives -- so every one of those tests still passes if
+        /// the digestionAgentName argument is dropped at this call site. That failure is silent rather
+        /// than loud: FlashLfqEngine reads a null name as "agent unknown" rather than as a conflict, so
+        /// the match-between-runs restriction switches itself off and quantification still completes.
+        ///
+        /// The search here is deliberately non-specific, so the assertion also fails if the call site is
+        /// changed to read DigestionAgent directly -- every identification would then report "singleN",
+        /// which is the collapse the extension method exists to prevent, expressed at the point where it
+        /// reaches FlashLFQ.
+        /// </summary>
+        [Test]
+        public static void QuantificationTellsFlashLfqWhichEnzymeDigestedEachIdentification()
+        {
+            // The name reaches FlashLFQ from the file's search settings -- SpectralMatch copies
+            // CommonParameters.DigestionParams -- not from the peptide's own digestion, so the enzyme
+            // has to be configured here to be the one under test.
+            var digestionParams = new DigestionParams(protease: "Glu-C", maxMissedCleavages: 25,
+                minPeptideLength: 1, searchModeType: CleavageSpecificity.None,
+                fragmentationTerminus: FragmentationTerminus.N);
+            CommonParameters commonParameters = new(digestionParams: digestionParams);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "DigestionAgentQuant");
+            if (Directory.Exists(outputFolder))
+            {
+                Directory.Delete(outputFolder, true);
+            }
+            Directory.CreateDirectory(outputFolder);
+
+            string mzmlPath = Path.Combine(outputFolder, "fake.mzML");
+            var protein = new Protein("PEPTIDEKPEPTIDERPEPTIDEK", "ACC_AGENT");
+
+            // A fully non-specific search: singleN does the digesting, while SpecificProtease keeps the
+            // enzyme that actually prepared the sample -- which is the one that bounds what the file can
+            // contain, and therefore the one FlashLFQ has to compare.
+            Assert.That(digestionParams.DigestionAgent.Name, Is.EqualTo("singleN"),
+                "premise: the enzyme is not what digests here, so reading DigestionAgent would lose it");
+
+            var peptide = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Cast<PeptideWithSetModifications>().First(p => p.BaseSequence == "PEPTIDEK");
+
+            SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, 10, 0,
+                NullMassTestScan(mzmlPath, commonParameters, 1), commonParameters, new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            psm.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
+
+            // Without a matching MS1 peak FlashLFQ builds no ChromatographicPeak at all, and the
+            // assertions below would pass over an empty sequence.
+            WriteMs1FixtureFor(mzmlPath, "PEPTIDEK");
+
+            try
+            {
+                PostSearchAnalysisParameters parameters = new()
+                {
+                    SearchParameters = new SearchParameters
+                    {
+                        DoLabelFreeQuantification = true,
+                        DoMultiplexQuantification = false,
+                        MatchBetweenRuns = false,
+                        Normalize = false,
+                    },
+                    OutputFolder = outputFolder,
+                    IndividualResultsOutputFolder = outputFolder,
+                    SearchTaskId = "TestTask",
+                    AllSpectralMatches = new List<SpectralMatch> { psm },
+                    CurrentRawFileList = new List<string> { mzmlPath },
+                    MyFileManager = new MyFileManager(true),
+                    FixedModifications = new List<Modification>(),
+                    VariableModifications = new List<Modification>(),
+                    ListOfDigestionParams = new HashSet<IDigestionParams> { digestionParams },
+                    DatabaseFilenameList = new List<DbForTask>(),
+                    FileSettingsList = new FileSpecificParameters[] { null },
+                };
+
+                PostSearchAnalysisTask task = new()
+                {
+                    Parameters = parameters,
+                    CommonParameters = commonParameters,
+                    FileSpecificParameters = new List<(string, CommonParameters)> { (mzmlPath, commonParameters) },
+                };
+
+                typeof(PostSearchAnalysisTask)
+                    .GetMethod("QuantificationAnalysis", BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .Invoke(task, null);
+
+                Assert.That(parameters.FlashLfqResults, Is.Not.Null);
+
+                var agentNames = parameters.FlashLfqResults.Peaks.Values
+                    .SelectMany(peaks => peaks)
+                    .SelectMany(peak => peak.Identifications)
+                    .Select(id => id.DigestionAgentName)
+                    .ToList();
+
+                Assert.That(agentNames, Is.Not.Empty,
+                    "no identification reached FlashLFQ, so the name assertion below would be vacuous");
+                Assert.That(agentNames.Distinct(), Is.EquivalentTo(new[] { "Glu-C" }),
+                    "FlashLFQ compares this name to decide whether match-between-runs may transfer a peptide "
+                    + "into another file: null disables the restriction, and \"singleN\" makes every protease "
+                    + "look alike, which is the same thing one step later");
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
         /// The SILAC path rebuilds the quantification list after the first guard has already run:
         /// SetSilacFilteredPsms replaces it wholesale with clones synthesised from labeled base
         /// sequences, so a PSM whose mass resolved before the block can be replaced by one whose mass
