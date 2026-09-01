@@ -1541,17 +1541,50 @@ namespace TaskLayer
             return null;
         }
 
+        /// <summary>
+        /// A folder is a cache hit only if its binary indexes carry a header this build can read. On existence
+        /// alone a stale folder fails in the reader instead, which GenerateSecondIndexes does not recover from.
+        /// </summary>
         private static string CheckFiles(IndexingEngine indexEngine, DirectoryInfo folder)
         {
-            if (File.Exists(Path.Combine(folder.FullName, IndexEngineParamsFileName)) &&
+            string paramsFile = Path.Combine(folder.FullName, IndexEngineParamsFileName);
+            string fragmentIndexFile = Path.Combine(folder.FullName, FragmentIndexFileName);
+            string precursorIndexFile = Path.Combine(folder.FullName, PrecursorIndexFileName);
+            string secondFragmentIndexFile = Path.Combine(folder.FullName, SecondFragmentIndexFileName);
+
+            if (File.Exists(paramsFile) &&
                 File.Exists(Path.Combine(folder.FullName, PeptideIndexFileName)) &&
-                File.Exists(Path.Combine(folder.FullName, FragmentIndexFileName)) &&
-                (File.Exists(Path.Combine(folder.FullName, PrecursorIndexFileName)) || !indexEngine.GeneratePrecursorIndex) &&
-                SameSettings(Path.Combine(folder.FullName, IndexEngineParamsFileName), indexEngine))
+                File.Exists(fragmentIndexFile) &&
+                (File.Exists(precursorIndexFile) || !indexEngine.GeneratePrecursorIndex) &&
+                SameSettings(paramsFile, indexEngine) &&
+                HasReadableIndexHeader(fragmentIndexFile, FragmentIndexMagic) &&
+                (!indexEngine.GeneratePrecursorIndex || HasReadableIndexHeader(precursorIndexFile, PrecursorIndexMagic)) &&
+                // written on demand by GenerateSecondIndexes, so absent is fine and stale is not
+                (!File.Exists(secondFragmentIndexFile) || HasReadableIndexHeader(secondFragmentIndexFile, FragmentIndexMagic)))
             {
                 return folder.FullName;
             }
             return null;
+        }
+
+        /// <summary>
+        /// The magic and format version the readers check, read at folder-selection time. Any failure to get
+        /// at them is a miss, since the reader would fail on the same file.
+        /// </summary>
+        private static bool HasReadableIndexHeader(string indexFileName, int expectedMagic)
+        {
+            Span<int> header = stackalloc int[2];
+            try
+            {
+                using var file = new FileStream(indexFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+                file.ReadExactly(MemoryMarshal.AsBytes(header));
+            }
+            catch
+            {
+                return false;
+            }
+
+            return header[0] == expectedMagic && header[1] == FragmentIndexFormatVersion;
         }
 
         private static void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName)
@@ -1609,14 +1642,11 @@ namespace TaskLayer
 
                     successfullyReadIndices = true;
                 }
-                catch
+                catch (Exception e)
                 {
-                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
-
-                    // if the old index couldn't be read, a new one will be generated.
-
-                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
-                    // that wasn't written by old versions.
+                    // a new one is generated below; CheckFiles cannot anticipate every way a cached index
+                    // goes bad, so report why rather than losing the reason
+                    Warn("Could not read the existing index, so it is being rebuilt. Reason: " + e.Message);
                 }
             }
 
