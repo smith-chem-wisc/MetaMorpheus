@@ -161,9 +161,18 @@ namespace Test
         /// Every custom file is seeded by startup, and none of them is a file the installer or the build
         /// also writes -- so listing them here is the inventory that a new custom file has to join.
         /// </summary>
+        /// <remarks>
+        /// Runs the startup itself rather than reading whatever the process happens to have lying around.
+        /// Test order is not fixed, and CustomAminoAcidsTest deletes CustomAminoAcids.txt when it finishes
+        /// ("Delete so it doesn't crash the next time") without seeding it again -- so asserting on ambient
+        /// state passes or fails depending on what ran first. Re-running SetUpGlobalVariables is what the
+        /// application does on launch, and is the pattern LoadDigestionAgentTest already uses to put the
+        /// globals back.
+        /// </remarks>
         [Test]
         public static void EveryKnownCustomFileIsSeededByStartup()
         {
+            GlobalVariables.SetUpGlobalVariables();
             string d = GlobalVariables.DataDir;
             var expected = new Dictionary<string, string>
             {
