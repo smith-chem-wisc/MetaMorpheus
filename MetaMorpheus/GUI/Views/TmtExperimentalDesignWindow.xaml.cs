@@ -131,32 +131,47 @@ namespace MetaMorpheusGUI
 
             CommitPendingEdits();
 
-            var distinctFractions = _rows.Select(r => r.Fraction).Distinct().OrderBy(i => i).ToList();
-            if (distinctFractions.First() != 1)
-                return "Fractions must start at 1.";
-            int maxFraction = distinctFractions.Last();
-            for (int i = 1; i <= maxFraction; i++)
-                if (!distinctFractions.Contains(i))
-                    return $"Missing fraction number {i} in distinct set.";
-
             if (_rows.Any(r => r.TechnicalReplicate < 1))
                 return "Technical Replicate values must be >= 1.";
 
-            foreach (var grp in _rows.GroupBy(r => r.Fraction))
+            // Every check below is scoped to one plex, because _rows spans plexes and a plex is its
+            // own labelling experiment. Unscoped, two files in different plexes both sitting at
+            // (Fraction 1, Technical Replicate 1) -- which is the correct design for a two-plex run
+            // with one fraction and one technical replicate, and the value the TmtDesignRow
+            // constructor assigns -- read as a duplicate and Save was refused. It also broke the
+            // round trip: SeedFromDesignFiles stores fraction, replicate and plex per file, so a
+            // two-plex design the parser accepts loaded into this grid and then could not be saved
+            // back out. TmtExperimentalDesign keys its own per-file state on plex the same way.
+            foreach (var plexGroup in _rows.GroupBy(r => r.Plex ?? string.Empty, StringComparer.OrdinalIgnoreCase))
             {
-                var techs = grp.Select(r => r.TechnicalReplicate).Distinct().OrderBy(t => t).ToList();
-                if (techs.First() != 1)
-                    return $"Fraction {grp.Key}: technical replicates must start at 1.";
-                int maxTech = techs.Last();
-                for (int t = 1; t <= maxTech; t++)
-                    if (!techs.Contains(t))
-                        return $"Fraction {grp.Key}: missing technical replicate {t}.";
-            }
+                string plexLabel = string.IsNullOrWhiteSpace(plexGroup.Key)
+                    ? "Files with no plex assigned"
+                    : $"Plex {plexGroup.Key}";
 
-            var duplicatePair = _rows.GroupBy(r => (r.Fraction, r.TechnicalReplicate))
-                                     .FirstOrDefault(g => g.Count() > 1);
-            if (duplicatePair != null)
-                return $"Duplicate Fraction/Technical Replicate combination: Fraction {duplicatePair.Key.Fraction}, Technical Replicate {duplicatePair.Key.TechnicalReplicate}.";
+                var distinctFractions = plexGroup.Select(r => r.Fraction).Distinct().OrderBy(i => i).ToList();
+                if (distinctFractions.First() != 1)
+                    return $"{plexLabel}: fractions must start at 1.";
+                int maxFraction = distinctFractions.Last();
+                for (int i = 1; i <= maxFraction; i++)
+                    if (!distinctFractions.Contains(i))
+                        return $"{plexLabel}: missing fraction number {i} in distinct set.";
+
+                foreach (var grp in plexGroup.GroupBy(r => r.Fraction))
+                {
+                    var techs = grp.Select(r => r.TechnicalReplicate).Distinct().OrderBy(t => t).ToList();
+                    if (techs.First() != 1)
+                        return $"{plexLabel}, fraction {grp.Key}: technical replicates must start at 1.";
+                    int maxTech = techs.Last();
+                    for (int t = 1; t <= maxTech; t++)
+                        if (!techs.Contains(t))
+                            return $"{plexLabel}, fraction {grp.Key}: missing technical replicate {t}.";
+                }
+
+                var duplicatePair = plexGroup.GroupBy(r => (r.Fraction, r.TechnicalReplicate))
+                                             .FirstOrDefault(g => g.Count() > 1);
+                if (duplicatePair != null)
+                    return $"{plexLabel}: duplicate Fraction/Technical Replicate combination: Fraction {duplicatePair.Key.Fraction}, Technical Replicate {duplicatePair.Key.TechnicalReplicate}.";
+            }
 
             return null;
         }
