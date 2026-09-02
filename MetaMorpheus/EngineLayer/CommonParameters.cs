@@ -1,4 +1,4 @@
-using MassSpectrometry;
+﻿using MassSpectrometry;
 using MzLibUtil;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -236,15 +236,7 @@ namespace EngineLayer
         }
 
         public CommonParameters CloneWithNewDissociationType(DissociationType dissociationType)
-        {
-            CommonParameters c = new CommonParameters();
-            foreach (PropertyInfo property in typeof(CommonParameters).GetProperties())
-            {
-                property.SetValue(c, property.GetValue(this));
-            }
-            c.DissociationType = dissociationType;
-            return c;
-        }
+            => CloneWithNewValues(dissociationType: dissociationType);
 
         /// <summary>
         /// Copies every setting from this instance and then overrides only the ones supplied.

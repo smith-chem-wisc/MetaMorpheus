@@ -14,11 +14,7 @@ namespace MetaMorpheusGUI
         {
             Use = true;
             this.FilePath = FilePath;
-            if (FilePath.ToUpperInvariant().Contains("contaminant".ToUpperInvariant())
-                || FilePath.ToUpperInvariant().Contains("CRAP"))
-            {
-                Contaminant = true;
-            }
+            Contaminant = DbForTask.LooksLikeContaminant(FilePath);
             FileName = Path.GetFileName(FilePath);
         }
 
