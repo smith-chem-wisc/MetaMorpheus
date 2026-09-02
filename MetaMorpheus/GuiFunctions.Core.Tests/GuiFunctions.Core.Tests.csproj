@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -54,6 +54,7 @@
     <Compile Remove="..\Test\MetaDraw\FragmentReanalysis.cs" />
     <Compile Remove="..\Test\MetaDraw\FragmentReanalysisRaceConditionTest.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawDataLoaderTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\MetaDrawExportRegressionTests.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawSettingsAndViewsTest.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawTest.cs" />
     <Compile Remove="..\Test\MetaDraw\Ms1ChimeraPlotTests.cs" />
