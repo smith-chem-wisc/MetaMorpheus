@@ -80,7 +80,9 @@ namespace MetaMorpheusGUI
                         Tag = lbl,
                         SampleName = "",
                         Condition = "",
-                        BiologicalReplicate = 0,
+                        // 1, not 0: TmtExperimentalDesign.Read rejects a Biological Replicate below 1,
+                        // so seeding 0 made the DEFAULT grid produce a design that would not load at all.
+                        BiologicalReplicate = 1,
                         SampleType = EngineLayer.TmtExperimentalDesign.ToDesignFileValue(
                             EngineLayer.TmtSampleType.StudySample)
                     }).ToList();
@@ -100,6 +102,11 @@ namespace MetaMorpheusGUI
         /// throughout. A label typed into the design file by this window then failed to match any
         /// channel of the tag, so the design could not be projected onto mzLib's
         /// <see cref="IExperimentalDesign"/> at all.
+        ///
+        /// The iTRAQ8 disagreement was the one where this window had it right: 8-plex has no 120
+        /// channel -- it is skipped because the phenylalanine immonium ion sits at 120.081 -- and the
+        /// eighth reagent is 121, which is what the reporter ion at that index has always been.
+        /// IsobaricMassTag was corrected rather than this window changed to match it.
         /// </remarks>
         private static List<string> GetReporterIonLabels(IsobaricMassTagType type) =>
             IsobaricMassTag.GetReporterIonLabels(type) ?? new List<string>();
@@ -176,8 +183,10 @@ namespace MetaMorpheusGUI
 
         private void AutoFillReplicates_Click(object sender, RoutedEventArgs e)
         {
+            // i + 1: replicates are 1-based in the design file, matching Fraction and Technical
+            // Replicate. Filling from 0 silently dropped the first channel on read.
             for (int i = 0; i < _currentRows.Count; i++)
-                _currentRows[i].BiologicalReplicate = i;
+                _currentRows[i].BiologicalReplicate = i + 1;
 
             AnnotationGrid.Items.Refresh();
         }
@@ -196,8 +205,8 @@ namespace MetaMorpheusGUI
 
             foreach (var r in _currentRows)
             {
-                if (r.BiologicalReplicate < 0)
-                    return $"Biological replicate must be >= 0 (row tag {r.Tag}).";
+                if (r.BiologicalReplicate < 1)
+                    return $"Biological replicate must be >= 1 (row tag {r.Tag}).";
             }
             return null;
         }
@@ -227,27 +236,17 @@ namespace MetaMorpheusGUI
             SavedPlexName = plex;
             SavedAnnotations = _currentRows.Select(a => a).ToList();
 
-            // ENSURE: fixed filename "TmtDesign.txt" is used for saving (overwrites if exists)
-            var defaultDir = Path.GetDirectoryName(fileEntries.First().FilePath) ?? Environment.CurrentDirectory;
-            var defaultName = "TmtDesign.txt";
-            var savePath = Path.Combine(defaultDir, defaultName);
+            // Write through the model instead of a second hand-rolled writer. TmtExperimentalDesign.Write
+            // owns the header -- including the Sample Type column this grid collects and the old writer
+            // dropped -- and it takes the WHOLE design, so annotating one plex no longer truncates the file
+            // and deletes the others. Those were the two defects behind "there is no path through this GUI
+            // to a working two-plex experiment".
+            var allFiles = BuildWholeDesign(plex);
 
+            string savePath;
             try
             {
-                using var writer = new StreamWriter(savePath, false);
-                writer.WriteLine("File\tPlex\tSample Name\tTMT Channel\tCondition\tBiological Replicate\tFraction\tTechnical Replicate");
-
-                foreach (var fe in fileEntries)
-                {
-                    int fractionValue = fe.Fraction; // USE USER-DEFINED FRACTION
-                    int techRepValue = fe.TechnicalReplicate;
-
-                    foreach (var ann in _currentRows)
-                    {
-                        writer.WriteLine(
-                            $"{fe.FilePath}\t{plex}\t{Escape(ann.SampleName)}\t{ann.Tag}\t{Escape(ann.Condition)}\t{ann.BiologicalReplicate}\t{fractionValue}\t{techRepValue}");
-                    }
-                }
+                savePath = TmtExperimentalDesign.Write(allFiles);
             }
             catch (Exception ex)
             {
@@ -255,9 +254,61 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            MessageBox.Show($"Saved TMT design (files x channels = {fileEntries.Count} x {_currentRows.Count}) to:\n{savePath}");
+            int plexCount = allFiles.Select(f => f.Plex).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+            MessageBox.Show("Saved TMT design (" + allFiles.Count + " file(s), " + plexCount + " plex(es)) to:" + Environment.NewLine + savePath);
             DialogResult = true;
             Close();
+        }
+
+        /// <summary>
+        /// Every plex's files, not only the one being annotated, so that
+        /// <see cref="TmtExperimentalDesign.Write"/> rewrites a complete design rather than a fragment.
+        /// The plex open in the grid takes its annotations from the grid; every other plex keeps what it
+        /// was seeded with. A plex with no annotations yet is still emitted, as the file-only placeholder
+        /// row Read understands, so a part-authored design does not lose its files.
+        /// </summary>
+        private List<TmtFileInfo> BuildWholeDesign(string currentPlex)
+        {
+            var files = new List<TmtFileInfo>();
+
+            foreach (var kvp in _plexFileMap.OrderBy(k => k.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                var rows = string.Equals(kvp.Key, currentPlex, StringComparison.OrdinalIgnoreCase)
+                    ? _currentRows
+                    : (_existingAnnotations.TryGetValue(kvp.Key, out var saved) ? saved : null);
+
+                var annotations = ToModelAnnotations(rows);
+
+                foreach (var fe in kvp.Value.OrderBy(f => f.Fraction).ThenBy(f => f.TechnicalReplicate))
+                    files.Add(new TmtFileInfo(fe.FilePath, kvp.Key, fe.Fraction, fe.TechnicalReplicate, annotations));
+            }
+
+            return files;
+        }
+
+        /// <summary>
+        /// Grid rows to model annotations. Sample Type goes through
+        /// <see cref="TmtExperimentalDesign.TryParseSampleType"/>, the single place that interprets the
+        /// spelling, and the free-text cells keep the tab/newline scrubbing this window has always applied:
+        /// the model's writer does not escape, so dropping it here would let a pasted tab split a row.
+        /// </summary>
+        private static IReadOnlyList<TmtPlexAnnotation> ToModelAnnotations(List<PlexAnnotation> rows)
+        {
+            if (rows == null)
+                return Array.Empty<TmtPlexAnnotation>();
+
+            return rows.Select(a =>
+            {
+                TmtExperimentalDesign.TryParseSampleType(a.SampleType, out var sampleType);
+                return new TmtPlexAnnotation
+                {
+                    Tag = a.Tag,
+                    SampleName = Escape(a.SampleName),
+                    Condition = Escape(a.Condition),
+                    BiologicalReplicate = a.BiologicalReplicate,
+                    SampleType = sampleType
+                };
+            }).ToList();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
