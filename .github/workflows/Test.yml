@@ -117,7 +117,10 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Run GuiFunctions.Core tests with coverage
-        run: dotnet test ./MetaMorpheus/GuiFunctions.Core.Tests/GuiFunctions.Core.Tests.csproj --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+        # Same exclusion as the Windows unittests job: this project globs Test/GuiTests, so a live
+        # external-service test added there would otherwise join this run and let a third party's
+        # outage redden three platforms at once.
+        run: dotnet test ./MetaMorpheus/GuiFunctions.Core.Tests/GuiFunctions.Core.Tests.csproj --configuration Release --verbosity normal --filter "Category!=ExternalService" --collect:"XPlat Code Coverage"
 
       # Its own flag, so this is not confused with the Windows-only unittests run that covers the same
       # source through Test.csproj.
