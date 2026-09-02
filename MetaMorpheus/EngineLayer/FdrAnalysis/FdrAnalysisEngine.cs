@@ -1,5 +1,6 @@
 ﻿using Chromatography.RetentionTimePrediction;
 using Chromatography.RetentionTimePrediction.Chronologer;
+using Chromatography.RetentionTimePrediction.SSRCalc;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
 using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
@@ -7,6 +8,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -16,6 +18,10 @@ namespace EngineLayer.FdrAnalysis
             new Lazy<ChronologerRetentionTimePredictor>(
                 () => new ChronologerRetentionTimePredictor(),
                 System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+
+        // When non-null, GetChronologer() calls this factory instead of the real Lazy<>.
+        // Used exclusively by unit tests to inject a throwing factory without touching the readonly field.
+        internal static Func<ChronologerRetentionTimePredictor> _chronologerFactoryOverride = null;
 
         private List<SpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
@@ -423,11 +429,50 @@ namespace EngineLayer.FdrAnalysis
 
             return predictorName switch
             {
-                "Chronologer" => _chronologerInstance.Value,
-                "Prosit2019iRT" => new Prosit2019iRT(),
-                "Prosit2020iRTTMT" => new Prosit2020iRTTMT(),
+                RTPredictorNames.Chronologer => GetChronologer(),
+                RTPredictorNames.SSRCalc => new SSRCalc3RetentionTimePredictor(),
+                RTPredictorNames.Prosit2019iRT => new Prosit2019iRT(),
+                RTPredictorNames.Prosit2020iRTTMT => new Prosit2020iRTTMT(),
                 _ => null
             };
+        }
+
+        private static bool _alreadyWarnedAboutChronologer = false;
+
+        /// <summary>
+        /// Chronologer runs on TorchSharp, whose native libraries aren't present in every installation.
+        /// When they're missing, we return null (as GetRTPredictor already does for unrecognized predictors) so that
+        /// PEP falls back to the default retention time predictor. A missing predictor should cost PEP accuracy,
+        /// not the entire search.
+        /// </summary>
+        internal static IRetentionTimePredictor GetChronologer()
+        {
+            try
+            {
+                return _chronologerFactoryOverride != null
+                    ? _chronologerFactoryOverride()
+                    : _chronologerInstance.Value;
+            }
+            catch (Exception e)
+            {
+                if (_alreadyWarnedAboutChronologer)
+                {
+                    return null;
+                }
+                _alreadyWarnedAboutChronologer = true;
+                if (e is DllNotFoundException || e.InnerException is DllNotFoundException)
+                {
+                    WarnStatic("Chronologer retention time prediction was skipped because its native libraries could not be loaded (" + e.Message.Trim() +
+                        "). PEP will be calculated using the SSRCalc3 retention time predictor instead, and will be less accurate. " +
+                        "Uninstalling, then reinstalling MetaMorpheus should restore the missing files.");
+                }
+                else
+                {
+                    WarnStatic("Chronologer retention time prediction was skipped due to an exception (" + e.Message.Trim() +
+                        "). PEP will be calculated using the SSRCalc3 retention time predictor instead, and will be less accurate." );
+                }
+                return null;
+            }
         }
 
         /// <summary>
