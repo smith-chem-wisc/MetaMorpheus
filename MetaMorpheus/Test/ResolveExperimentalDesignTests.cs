@@ -1,10 +1,12 @@
-using EngineLayer;
+﻿using EngineLayer;
 using MetaMorpheusCommandLine;
 using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Nett;
+using TaskLayer;
 
 namespace Test
 {
@@ -185,14 +187,16 @@ namespace Test
         }
 
         /// <summary>
-        /// Not normalizing, so an unreadable design is recoverable -- by discarding it. That is
-        /// destructive, so it only happens on an explicit yes.
+        /// Not normalizing, so an unreadable design is recoverable -- by not reading it. Agreeing
+        /// continues the run and LEAVES THE FILE ALONE. The prompt only ever asked about continuing,
+        /// so deleting was an answer to a question nobody was asked; see #2256, and #2780 for the
+        /// same change on the GUI side.
         /// </summary>
         [TestCase("y")]
         [TestCase("YES")]
-        public static void AnUnreadableDesignIsDeletedOnlyWhenTheUserAgrees(string answer)
+        public static void AgreeingContinuesWithoutTheDesignAndKeepsTheFile(string answer)
         {
-            string folder = NewFolder("CmdDesignDelete" + answer);
+            string folder = NewFolder("CmdDesignContinue" + answer);
             string spectra = Path.Combine(folder, "file.1.mzML");
             string designPath = WriteClassicDesign(folder, spectra, valid: false);
 
@@ -202,8 +206,8 @@ namespace Test
                 reportToConsole: true, write: written.Add, readLine: () => answer);
 
             Assert.That(code == Continue);
-            Assert.That(!File.Exists(designPath), "Agreeing deletes the design");
-            Assert.That(written.Any(w => w.Contains("Delete and continue empty?")));
+            Assert.That(File.Exists(designPath), "Continuing must never destroy the user's design");
+            Assert.That(written.Any(w => w.Contains("Continue without an experimental design?")));
             Assert.That(written.Any(w => w.StartsWith("First error: ")));
 
             Directory.Delete(folder, true);
@@ -212,7 +216,7 @@ namespace Test
         [TestCase("n")]
         [TestCase("")]
         [TestCase(null)]
-        public static void DecliningToDeleteStopsTheRunAndKeepsTheFile(string answer)
+        public static void DecliningStopsTheRunAndKeepsTheFile(string answer)
         {
             string folder = NewFolder("CmdDesignKeep" + (answer ?? "null").Length);
             string spectra = Path.Combine(folder, "file.1.mzML");
@@ -229,13 +233,15 @@ namespace Test
         }
 
         /// <summary>
-        /// At verbosity "none" there is nobody to ask, so the recoverable case recovers itself. This
-        /// is pre-existing behaviour and is deliberately pinned: it deletes a user's file unprompted.
+        /// At verbosity "none" there is nobody to ask, so the recoverable case recovers itself -- by
+        /// continuing without the design, NOT by deleting it. This previously destroyed the file with
+        /// no prompt and no record, which meant `-v none` changed what the run did to the user's
+        /// input rather than only what it printed. A verbosity flag does not carry that authority.
         /// </summary>
         [Test]
-        public static void AtVerbosityNoneAnUnreadableDesignIsDeletedWithoutAsking()
+        public static void AtVerbosityNoneAnUnreadableDesignIsSkippedNotDeleted()
         {
-            string folder = NewFolder("CmdDesignQuietDelete");
+            string folder = NewFolder("CmdDesignQuietSkip");
             string spectra = Path.Combine(folder, "file.1.mzML");
             string designPath = WriteTmtDesign(folder, spectra, valid: false);
             bool asked = false;
@@ -246,7 +252,71 @@ namespace Test
 
             Assert.That(code == Continue);
             Assert.That(!asked, "There is nobody to prompt at verbosity none");
-            Assert.That(!File.Exists(designPath));
+            Assert.That(File.Exists(designPath), "-v none must not delete the user's design file");
+
+            Directory.Delete(folder, true);
+        }
+        /// <summary>
+        /// Every other test in this fixture calls ResolveExperimentalDesign directly, which leaves the
+        /// wiring unproven: Run could drop the returned exit code, never call the gate, or resolve the
+        /// design directory from somewhere other than the spectra. This drives
+        /// MetaMorpheusCommandLine.Program.Main so the gate is reached the way a user reaches it.
+        ///
+        /// The design file here is malformed rather than absent, and that is what makes the assertion
+        /// discriminating. An absent design stops the run from any directory -- so a gate pointed at
+        /// the working directory would still return 5, and a test asserting only the exit code would
+        /// pass while the directory logic was wrong. A malformed design beside the spectra separates
+        /// them: read from the right directory the console carries that file's own parse error, and
+        /// read from anywhere else it carries "no design present" instead.
+        ///
+        /// Exit code 5 and not 2 is what separates the design gate from settings validation, the other
+        /// way this argument list can stop early. The refusal is also the only path safely drivable
+        /// through Main, since every other outcome returns 0 and starts an actual search -- which is
+        /// why the .mzML can be empty. That the run stops before anything opens it is the point.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void MainStopsANormalizingSearchWhoseDesignFileCannotBeRead()
+        {
+            string folder = NewFolder("CmdMainDesignGate");
+
+            string spectra = Path.Combine(folder, "file.1.mzML");
+            File.WriteAllText(spectra, string.Empty);
+
+            string database = Path.Combine(folder, "db.fasta");
+            File.WriteAllText(database, string.Empty);
+
+            // Beside the spectra, and unreadable. Only a gate looking here reports this file's error.
+            WriteTmtDesign(folder, spectra, valid: false);
+
+            // Normalization is the one thing that makes a design file mandatory.
+            SearchTask searchTask = new SearchTask();
+            searchTask.SearchParameters.Normalize = true;
+            string taskPath = Path.Combine(folder, "SearchTask.toml");
+            Toml.WriteFile(searchTask, taskPath, MetaMorpheusTask.tomlConfig);
+
+            string output = Path.Combine(folder, "output");
+
+            TextWriter originalOut = Console.Out;
+            StringWriter captured = new StringWriter();
+            int exitCode;
+
+            try
+            {
+                Console.SetOut(captured);
+                exitCode = Program.Main(new[] { "-s", spectra, "-d", database, "-t", taskPath, "-o", output });
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+
+            Assert.That(exitCode == Stop,
+                "A normalizing search whose design cannot be read must stop, and stop with the gate's code");
+            Assert.That(captured.ToString().Contains("Biological Replicate"),
+                "The design beside the spectra was not the one read -- the gate resolved a different directory");
+            Assert.That(!Directory.Exists(output),
+                "The search ran anyway -- Run did not honour the gate's exit code");
 
             Directory.Delete(folder, true);
         }
