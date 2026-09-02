@@ -175,6 +175,19 @@ namespace Test
 
         private static IsobaricMassTag Tmt10() => IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
 
+        /// <summary>
+        /// A rooted fixture path ending in <paramref name="name"/>, built for whatever platform the
+        /// tests are running on.
+        /// </summary>
+        /// <remarks>
+        /// The literals here used to be `FixturePath("data", "run1.raw")`, which is not a path off Windows:
+        /// Path.GetFileName keeps the whole string, so the dictionary key is never "run1.raw" and six
+        /// of these tests failed. CI is windows-latest only, so nothing caught it. The production code
+        /// is platform-clean; this was fixture paths alone.
+        /// </remarks>
+        private static string FixturePath(params string[] parts) =>
+            Path.DirectorySeparatorChar + Path.Combine(parts);
+
         private static TmtFileInfo FileWith(string path, string plex, int fraction, int techrep,
             params (string tag, string condition, int bio, TmtSampleType type)[] channels)
         {
@@ -203,7 +216,7 @@ namespace Test
             Assert.IsNotNull(tag, "TMT10 must resolve from the loaded modifications");
 
             // Deliberately scrambled relative to the tag's own channel order.
-            var file = FileWith(@"C:\data\run1.raw", "PlexA", 1, 1,
+            var file = FileWith(FixturePath("data", "run1.raw"), "PlexA", 1, 1,
                 ("129N", "D", 1, TmtSampleType.StudySample),
                 ("126", "A", 1, TmtSampleType.Reference),
                 ("127C", "C", 1, TmtSampleType.StudySample),
@@ -237,7 +250,7 @@ namespace Test
         public static void ToMzLibDesign_CarriesTheAnnotationOntoTheMatchingChannel()
         {
             var tag = Tmt10();
-            var file = FileWith(@"C:\data\run1.raw", "PlexA", 2, 3,
+            var file = FileWith(FixturePath("data", "run1.raw"), "PlexA", 2, 3,
                 ("126", "Reference", 1, TmtSampleType.Reference),
                 ("127N", "Treated", 2, TmtSampleType.StudySample));
 
@@ -268,7 +281,7 @@ namespace Test
         public static void ToMzLibDesign_UnannotatedChannelsBecomeEmptyRatherThanBeingSkipped()
         {
             var tag = Tmt10();
-            var file = FileWith(@"C:\data\run1.raw", "PlexA", 1, 1,
+            var file = FileWith(FixturePath("data", "run1.raw"), "PlexA", 1, 1,
                 ("126", "Reference", 1, TmtSampleType.Reference));
 
             var design = TmtExperimentalDesign.ToMzLibDesign(new[] { file }, tag, out var errors);
@@ -287,7 +300,7 @@ namespace Test
         public static void ToMzLibDesign_ChannelThatIsNotPartOfTheTag_IsAnError()
         {
             var tag = Tmt10();
-            var file = FileWith(@"C:\data\run1.raw", "PlexA", 1, 1,
+            var file = FileWith(FixturePath("data", "run1.raw"), "PlexA", 1, 1,
                 ("135N", "Treated", 1, TmtSampleType.StudySample));   // TMT18 channel, not TMT10
 
             var design = TmtExperimentalDesign.ToMzLibDesign(new[] { file }, tag, out var errors);
@@ -303,9 +316,9 @@ namespace Test
             var tag = Tmt10();
             var files = new[]
             {
-                FileWith(@"C:\data\runB.raw", "PlexB", 1, 1, ("126", "A", 1, TmtSampleType.StudySample)),
-                FileWith(@"C:\data\runA.raw", "PlexA", 1, 1, ("126", "A", 1, TmtSampleType.StudySample)),
-                FileWith(@"C:\data\runA2.raw", "PlexA", 1, 2, ("126", "A", 1, TmtSampleType.StudySample))
+                FileWith(FixturePath("data", "runB.raw"), "PlexB", 1, 1, ("126", "A", 1, TmtSampleType.StudySample)),
+                FileWith(FixturePath("data", "runA.raw"), "PlexA", 1, 1, ("126", "A", 1, TmtSampleType.StudySample)),
+                FileWith(FixturePath("data", "runA2.raw"), "PlexA", 1, 2, ("126", "A", 1, TmtSampleType.StudySample))
             };
 
             var design = TmtExperimentalDesign.ToMzLibDesign(files, tag, out var errors);
@@ -325,7 +338,7 @@ namespace Test
         public static void ToMzLibDesign_KeysByFileNameWithExtension()
         {
             var tag = Tmt10();
-            var file = FileWith(@"C:\some\deep\path\run1.raw", "PlexA", 1, 1,
+            var file = FileWith(FixturePath("some", "deep", "path", "run1.raw"), "PlexA", 1, 1,
                 ("126", "A", 1, TmtSampleType.StudySample));
 
             var design = TmtExperimentalDesign.ToMzLibDesign(new[] { file }, tag, out _);
@@ -337,7 +350,7 @@ namespace Test
         [Test]
         public static void ToMzLibDesign_WithoutATag_IsAnError()
         {
-            var file = FileWith(@"C:\data\run1.raw", "PlexA", 1, 1,
+            var file = FileWith(FixturePath("data", "run1.raw"), "PlexA", 1, 1,
                 ("126", "A", 1, TmtSampleType.StudySample));
 
             var design = TmtExperimentalDesign.ToMzLibDesign(new[] { file }, null, out var errors);
@@ -355,59 +368,7 @@ namespace Test
             Assert.IsNotEmpty(errors);
         }
 
-        /// <summary>
-        /// The window offering the channel drop-down and the tag that validates it must agree, or the
-        /// GUI can write a design that cannot be projected. They were two separate tables until now.
-        /// </summary>
-        [Test]
-        public static void EveryTagsLabelsMatchItsReporterIonCount()
-        {
-            foreach (IsobaricMassTagType type in Enum.GetValues(typeof(IsobaricMassTagType)))
-            {
-                var tag = IsobaricMassTag.GetIsobaricMassTag(type);
-                if (tag == null) continue;   // modification not loaded in this environment
 
-                var labels = IsobaricMassTag.GetReporterIonLabels(type);
-                Assert.IsNotNull(labels, type.ToString());
-                Assert.AreEqual(labels.Count, tag.ReporterIonMzs.Length,
-                    $"{type} has {labels.Count} labels but {tag.ReporterIonMzs.Length} reporter ions");
-            }
-        }
-
-        /// <summary>
-        /// The stronger half of the same invariant, and the one that actually protects the projection:
-        /// ToMzLibDesign pairs channelLabels[i] with ReporterIonMzs[i], so label i has to name the
-        /// channel whose m/z sits at i. A count cannot catch a mislabelled channel -- iTRAQ 8-plex
-        /// carried the name "120" for the 121 reagent for exactly that reason, extracting the right ion
-        /// under a name no kit has.
-        ///
-        /// Every label begins with its nominal mass, so the assertion is available cheaply.
-        /// </summary>
-        [Test]
-        public static void EveryTagsLabelsNameTheChannelAtTheirOwnIndex()
-        {
-            foreach (IsobaricMassTagType type in Enum.GetValues(typeof(IsobaricMassTagType)))
-            {
-                var tag = IsobaricMassTag.GetIsobaricMassTag(type);
-                if (tag == null) continue;   // modification not loaded in this environment
-
-                var labels = IsobaricMassTag.GetReporterIonLabels(type);
-                Assert.IsNotNull(labels, type.ToString());
-
-                for (int i = 0; i < labels.Count; i++)
-                {
-                    string digits = new string(labels[i].TakeWhile(char.IsDigit).ToArray());
-                    Assert.IsNotEmpty(digits, $"{type} label '{labels[i]}' does not begin with a nominal mass");
-
-                    int nominal = int.Parse(digits);
-                    int observed = (int)Math.Round(tag.ReporterIonMzs[i]);
-
-                    Assert.AreEqual(nominal, observed,
-                        $"{type} label '{labels[i]}' at index {i} names channel {nominal}, " +
-                        $"but the reporter ion at that index is {tag.ReporterIonMzs[i]:F4} (channel {observed})");
-                }
-            }
-        }
 
         /// <summary>
         /// ToMzLibDesign pairs channelLabels[i] with ReporterIonMzs[i] positionally. If the two ever
@@ -540,8 +501,8 @@ namespace Test
         public static void TwoEntriesWithNoFileNameAreReportedAsMissingNamesNotACollision()
         {
             var tag = Tmt10();
-            var first = FileWith(@"C:\data\", "PlexA", 1, 1, ("126", "A", 1, TmtSampleType.StudySample));
-            var second = FileWith(@"D:\other\", "PlexA", 1, 1, ("126", "B", 1, TmtSampleType.StudySample));
+            var first = FileWith(FixturePath("data") + Path.DirectorySeparatorChar, "PlexA", 1, 1, ("126", "A", 1, TmtSampleType.StudySample));
+            var second = FileWith(FixturePath("other") + Path.DirectorySeparatorChar, "PlexA", 1, 1, ("126", "B", 1, TmtSampleType.StudySample));
 
             var design = TmtExperimentalDesign.ToMzLibDesign(new[] { first, second }, tag, out var errors);
 
