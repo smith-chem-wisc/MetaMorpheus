@@ -870,7 +870,10 @@ namespace Test
             Assert.That(itraq4Labels, Is.EqualTo(new List<string> { "114", "115", "116", "117" }));
 
             var itraq8Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.iTRAQ8);
-            Assert.That(itraq8Labels, Is.EqualTo(new List<string> { "113", "114", "115", "116", "117", "118", "119", "120" }));
+            // "121", not "120": 8-plex has no 120 channel. See EveryTagsLabelsNameTheChannelAtTheirOwnIndex,
+            // which checks every label against the reporter ion at its own index rather than against a
+            // hardcoded list -- a hardcoded list can only ever pin whatever was there when it was written.
+            Assert.That(itraq8Labels, Is.EqualTo(new List<string> { "113", "114", "115", "116", "117", "118", "119", "121" }));
 
             var dileu4Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.diLeu4);
             Assert.That(dileu4Labels, Is.EqualTo(new List<string> { "115", "116", "117", "118" }));
@@ -986,6 +989,15 @@ namespace Test
         }
 
         [Test]
+        /// <remarks>
+        /// The absence asserted here describes master, where QuantificationAnalysis returns before
+        /// quantifying anything for a multiplex search, so no group is ever assigned intensities. It is
+        /// not a statement that TMT output should have no intensity columns -- when the isobaric path
+        /// starts populating them, this expectation is the one to revisit, and the companion to add is
+        /// the design-file-present case, which nothing covers today.
+        ///
+        /// The AllSame() assertion below is the one that stays true either way.
+        /// </remarks>
         public static void TestTmtProteinGroupsHaveCountColumnsButNoIntensityColumns()
         {
             // Spectral counts and count-based occupancy are per spectra file, so TMT gets them like any
@@ -1029,6 +1041,62 @@ namespace Test
             {
                 if (Directory.Exists(outputFolder))
                     Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// The invariant a hardcoded label list cannot express: GetReporterIonLabels(i) has to name the
+        /// channel whose reporter ion sits at ReporterIonMzs[i], because everything downstream pairs the
+        /// two positionally. A count check cannot catch a mislabelled channel -- iTRAQ 8-plex carried the
+        /// name "120" for the 121 reagent for exactly that reason, extracting the correct ion under a name
+        /// no kit sells.
+        ///
+        /// Every label begins with its nominal mass, so the assertion is available cheaply. This is the
+        /// guard that makes the fix safe rather than merely correct today.
+        /// </summary>
+        [Test]
+        public static void EveryTagsLabelsNameTheChannelAtTheirOwnIndex()
+        {
+            foreach (IsobaricMassTagType type in Enum.GetValues(typeof(IsobaricMassTagType)))
+            {
+                var tag = IsobaricMassTag.GetIsobaricMassTag(type);
+                if (tag == null) continue;   // modification not loaded in this environment
+
+                var labels = IsobaricMassTag.GetReporterIonLabels(type);
+                Assert.That(labels, Is.Not.Null, type.ToString());
+                Assert.That(labels.Count, Is.EqualTo(tag.ReporterIonMzs.Length),
+                    $"{type} has {labels.Count} labels but {tag.ReporterIonMzs.Length} reporter ions");
+
+                for (int i = 0; i < labels.Count; i++)
+                {
+                    string digits = new string(labels[i].TakeWhile(char.IsDigit).ToArray());
+                    Assert.That(digits, Is.Not.Empty,
+                        $"{type} label '{labels[i]}' does not begin with a nominal mass");
+
+                    int nominal = int.Parse(digits);
+                    int observed = (int)Math.Round(tag.ReporterIonMzs[i]);
+
+                    Assert.That(observed, Is.EqualTo(nominal),
+                        $"{type} label '{labels[i]}' at index {i} names channel {nominal}, but the reporter "
+                        + $"ion at that index is {tag.ReporterIonMzs[i]:F4} (channel {observed})");
+                }
+
+                // The nominal mass cannot separate an N channel from a C channel -- 127N and 127C are
+                // both "127" -- so a swapped suffix would pass everything above while pairing each with
+                // the other's ion. They are told apart by mass: at one nominal mass the N form is the
+                // lighter, and ReporterIonMzs is sorted ascending, so N must come first.
+                for (int i = 1; i < labels.Count; i++)
+                {
+                    string prev = labels[i - 1], curr = labels[i];
+                    bool sameNominal = new string(prev.TakeWhile(char.IsDigit).ToArray())
+                                    == new string(curr.TakeWhile(char.IsDigit).ToArray());
+                    if (!sameNominal) continue;
+
+                    if (prev.EndsWith("C") && curr.EndsWith("N"))
+                        Assert.Fail($"{type} orders '{prev}' before '{curr}' at index {i - 1}, but the N form "
+                                    + $"is the lighter of the pair and the reporter ions ascend "
+                                    + $"({tag.ReporterIonMzs[i - 1]:F4} then {tag.ReporterIonMzs[i]:F4})");
+                }
             }
         }
     }
