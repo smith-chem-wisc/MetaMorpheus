@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -138,6 +138,28 @@ namespace EngineLayer
                     $"Embedded resource '{resourceName}' was not found in {assembly.GetName().Name}.");
 
             return BannerAndHeaderFrom(stream, headerPrefix);
+        }
+
+        /// <summary>
+        /// The whole of an embedded template, verbatim -- for a file whose format has no header row to
+        /// stop at, so <see cref="BannerAndHeaderFrom(Assembly, string, string)"/> has nothing to derive.
+        /// A glycan database is one: it is a bare list of glycans, so its template is a hand-written
+        /// banner of comment lines and the rules of rule 2 are met by the banner alone.
+        /// </summary>
+        /// <remarks>
+        /// The template is still an embedded resource rather than a string literal here, so that what the
+        /// user is handed is reviewable as a file and cannot drift from the format it documents.
+        /// </remarks>
+        public static string EmbeddedText(Assembly assembly, string resourceName)
+        {
+            Stream stream = assembly.GetManifestResourceStream(resourceName)
+                ?? throw new MetaMorpheusException(
+                    $"Embedded resource '{resourceName}' was not found in {assembly.GetName().Name}.");
+
+            using (var reader = new StreamReader(stream))
+            {
+                return reader.ReadToEnd();
+            }
         }
 
         /// <summary>

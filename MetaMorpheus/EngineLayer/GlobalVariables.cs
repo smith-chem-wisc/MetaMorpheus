@@ -58,6 +58,9 @@ namespace EngineLayer
         private const string EmbeddedProteasesResourceName = "Proteomics.ProteolyticDigestion.proteases.tsv";
         private const string EmbeddedRnasesResourceName = "Transcriptomics.Digestion.rnases.tsv";
 
+        /// <summary>Template seeded into the user's OGlycan_Custom.gdb. Embedded in EngineLayer.</summary>
+        private const string EmbeddedCustomOGlycanResourceName = "EngineLayer.Glycan_Mods.OGlycan_Custom.gdb";
+
         /// <summary>Template seeded into Mods\CustomModifications.txt and Mods\RnaCustomModifications.txt.</summary>
         /// <remarks>
         /// The first line is the title CustomModWindow writes when it creates the file itself, so the GUI's
@@ -83,6 +86,18 @@ namespace EngineLayer
         public static string CustomProteasePath => Path.Combine(DataDir, "proteases_custom.tsv");
         public static string CustomRnasePath => Path.Combine(DataDir, "rnase_custom.tsv");
         public static string CustomMonosaccharidePath => Path.Combine(DataDir, "MonosaccharidesCustom.tsv");
+
+        /// <summary>
+        /// The user's own O-glycan database, offered in the GlycoSearch task beside the shipped ones.
+        /// </summary>
+        /// <remarks>
+        /// At the DataDir root rather than under Glycan_Mods\OGlycan\, for the same reason
+        /// MonosaccharidesCustom.tsv is: Product.wxs gives Glycan_Mods and both of its subfolders a
+        /// &lt;RemoveFolder On="both"/&gt;, so the installer owns those folders and a user's file in one of
+        /// them is not somewhere we should be putting it. The cost is that it is not picked up by the
+        /// directory sweep in LoadGlycans and has to be added to OGlycanDatabasePaths by name.
+        /// </remarks>
+        public static string CustomOGlycanDatabasePath => Path.Combine(DataDir, "OGlycan_Custom.gdb");
 
         public static bool StopLoops { get; set; }
         public static string MetaMorpheusVersion { get; private set; }
@@ -525,12 +540,27 @@ namespace EngineLayer
             GlycanDatabase.EnsureCustomMonosaccharideFileExists(CustomMonosaccharidePath);
             GlycanDatabase.LoadCustomMonosaccharides(CustomMonosaccharidePath);
 
+            // Seed the user's own database before anything reads it. It is header-less and its template is
+            // all comment lines, so a freshly seeded file contributes no glycans and the two steps below are
+            // independent of it. See CustomDataFile for the recipe every custom file follows.
+            CustomDataFile.EnsureExists(CustomOGlycanDatabasePath,
+                () => CustomDataFile.EmbeddedText(typeof(GlobalVariables).Assembly, EmbeddedCustomOGlycanResourceName),
+                "custom O-glycan database");
+
             OGlycanDatabasePaths = new List<string>();
             NGlycanDatabasePaths = new List<string>();
 
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"OGlycan")))
             {
                 OGlycanDatabasePaths.Add(glycanFile);
+            }
+
+            // Added by name because it deliberately does not live in the swept folder -- see
+            // CustomOGlycanDatabasePath. Guarded so that a seeding failure earlier cannot put a path to a
+            // file that is not there into the list the task window offers.
+            if (File.Exists(CustomOGlycanDatabasePath))
+            {
+                OGlycanDatabasePaths.Add(CustomOGlycanDatabasePath);
             }
 
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
