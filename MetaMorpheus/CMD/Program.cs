@@ -304,8 +304,7 @@ namespace MetaMorpheusCommandLine
                             "occurred reading it. Do you wish to continue with an empty experimental design? (This will delete your experimental design file) y/n" +
                             "\nThe error was: " + errors.First());
 
-                            // null when there is nothing to read, exactly as at the Thermo licence
-                            // prompt above; treat "could not be asked" as declining to delete the file.
+                            // null when nothing can be read: a question that could not be asked declines
                             var result = Console.ReadLine()?.Trim();
 
                             if (result != null

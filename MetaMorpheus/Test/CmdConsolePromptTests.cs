@@ -1,4 +1,4 @@
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+﻿using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -205,6 +205,45 @@ namespace Test
                     "-o", Path.Combine(folder, "output"));
 
                 Assert.AreEqual(3, result.ExitCode, "a padded 'n' is a refusal, not an unreadable answer");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// The other side of the same prompt: "y" is a decision, so the design file is deleted and the
+        /// run continues. Without this the y-branch is never taken by any test and the condition
+        /// guarding it is only half exercised - a guard nothing ever passes through is not a guard.
+        /// </summary>
+        [Test]
+        [TestCase("y")]
+        [TestCase("yes")]
+        [TestCase("  YES  ")]
+        public void AnsweringYesToAnUnparsableExperimentalDesignDeletesIt(string answer)
+        {
+            string folder = FreshFolder("CmdExperimentalDesignAccepted" + answer.Trim().ToLowerInvariant());
+
+            try
+            {
+                string spectraFile = MakeEmptyFile(folder, "spectra.mzML");
+
+                string designPath = Path.Combine(folder, GlobalVariables.ExperimentalDesignFileName);
+                File.WriteAllText(designPath,
+                    "FileName	Condition	Biorep	Fraction	Techrep" + Environment.NewLine
+                    + "spectra.mzML	condition	1" + Environment.NewLine);
+
+                var result = RunCli(answer + Environment.NewLine,
+                    "-t", SearchTaskTomlPath(),
+                    "-s", spectraFile,
+                    "-d", TestDataPath("smalldb.fasta"),
+                    "-o", Path.Combine(folder, "output"));
+
+                Assert.IsFalse(File.Exists(designPath),
+                    "answering yes is a decision to discard the design, and must be honoured");
+                Assert.AreNotEqual(5, result.ExitCode,
+                    "5 means the design blocked the run; it did not, because the user agreed to drop it");
             }
             finally
             {
