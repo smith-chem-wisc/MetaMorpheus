@@ -23,11 +23,14 @@ namespace EngineLayer
     ///     This is the rule that actually protects the user's work; everything else supports it.
     ///   </description></item>
     ///   <item><description>
-    ///     <b>Seed a documented template, not an empty file and not a copy of the data.</b> The
-    ///     template is the shipped sibling's comment banner plus its header row, and no data rows --
-    ///     so the user opens a file that explains its own format and has nothing to delete first.
-    ///     <see cref="BannerAndHeaderFrom(Stream, string)"/> derives exactly that from the shipped file,
-    ///     which keeps the two from drifting.
+    ///     <b>Seed a documented template, not an empty file and not a copy of the data.</b> Whatever
+    ///     shape it takes it carries no data rows, so the user opens a file that explains its own format
+    ///     and has nothing to delete first. Where the file has a shipped sibling that opens with a banner
+    ///     and a header row, <see cref="BannerAndHeaderFrom(Stream, string)"/> derives the template from
+    ///     it, which keeps the two from drifting. Where it does not -- a glycan database is a bare list,
+    ///     with no header row to stop at and no bannered sibling to derive from -- the template is a
+    ///     hand-written banner, read whole with <see cref="EmbeddedText(Assembly, string)"/>. It is still
+    ///     a file in the repository rather than a string literal, so it is reviewed like one.
     ///   </description></item>
     ///   <item><description>
     ///     <b>The template ships inside an assembly, never as a file on disk.</b> It must not appear
