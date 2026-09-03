@@ -31,6 +31,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> GlycanTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
+        private bool _syncingGlycanCheckState;
         private CustomFragmentationWindow CustomFragmentationWindow;
         private DeconHostViewModel DeconHostViewModel;
 
@@ -294,7 +295,10 @@ namespace MetaMorpheusGUI
             }
 
             // Last, and required: the group checkboxes are only pulled into agreement with their children here.
-            foreach (var ye in GlycanTypeForTreeViewObservableCollection)
+            // Skipped for an empty database: VerifyCheckState leaves Use null when there is nothing to
+            // inspect, and null renders as the indeterminate box -- so a database holding no glycans would
+            // be the only one that looked partly selected.
+            foreach (var ye in GlycanTypeForTreeViewObservableCollection.Where(db => db.Children.Count > 0))
             {
                 ye.VerifyCheckState();
             }
@@ -580,8 +584,15 @@ namespace MetaMorpheusGUI
 
                 foreach (var glycan in database.Value)
                 {
-                    theDatabase.Children.Add(new ModForTreeViewModel(
-                        GlycanToolTip(glycan), false, glycan.IdWithMotif, false, theDatabase, GlycanLabel(glycan)));
+                    var node = new ModForTreeViewModel(
+                        GlycanToolTip(glycan), false, glycan.IdWithMotif, false, theDatabase, GlycanLabel(glycan));
+                    node.PropertyChanged += GlycanUseChanged;
+                    theDatabase.Children.Add(node);
+                }
+
+                if (theDatabase.Children.Count == 0)
+                {
+                    theDatabase.Use = false;
                 }
             }
 
@@ -666,14 +677,56 @@ namespace MetaMorpheusGUI
             return expanded.ToString();
         }
 
+        /// <summary>
+        /// Keeps the database checkbox and the summary in step with the glycans underneath them.
+        /// </summary>
+        /// <remarks>
+        /// ModForTreeViewModel.Use notifies only itself -- nothing tells the parent a child changed, and
+        /// VerifyCheckState is a manual pull the window has to make. The modification trees only ever make
+        /// it while restoring a saved task, which is why a group there still reads as fully checked right
+        /// after you uncheck something inside it. Subscribing here fixes that for the glycan tree without
+        /// touching the shared view-models, which MetaDraw also uses.
+        ///
+        /// The re-entrancy guard is required, not defensive: VerifyCheckState assigns the parent's Use, and
+        /// a non-null assignment cascades back down to every child, each of which raises PropertyChanged
+        /// again. Checking the last box in a group would otherwise recurse forever.
+        /// </remarks>
+        private void GlycanUseChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (_syncingGlycanCheckState || e.PropertyName != nameof(ModForTreeViewModel.Use))
+            {
+                return;
+            }
+
+            _syncingGlycanCheckState = true;
+            try
+            {
+                if (sender is ModForTreeViewModel glycan && glycan.Parent != null && glycan.Parent.Children.Count > 0)
+                {
+                    glycan.Parent.VerifyCheckState();
+                }
+
+                UpdateGlycanSelectionSummary();
+            }
+            finally
+            {
+                _syncingGlycanCheckState = false;
+            }
+        }
+
         private void UpdateGlycanSelectionSummary()
         {
             int selected = GlycanTypeForTreeViewObservableCollection.Sum(db => db.Children.Count(c => c.Use));
             int total = GlycanTypeForTreeViewObservableCollection.Sum(db => db.Children.Count);
 
+            int databases = GlycanTypeForTreeViewObservableCollection.Count(db => db.Children.Any(c => c.Use));
+
+            // "entries", not "glycans": a glycan is listed once per attachment site, so the 12 lines of
+            // OGlycan.gdb are 24 rows here (on S and on T). Counting them as glycans invites the reader to
+            // compare this number with the file and find it wrong.
             GlycanSelectionSummary.Content = selected == 0
-                ? string.Format(CultureInfo.InvariantCulture, "   none checked — the whole selected database will be searched ({0} glycans available)", total)
-                : string.Format(CultureInfo.InvariantCulture, "   {0} of {1} glycans checked", selected, total);
+                ? string.Format(CultureInfo.InvariantCulture, "   none checked — the whole selected database will be searched ({0} entries available)", total)
+                : string.Format(CultureInfo.InvariantCulture, "   {0} of {1} entries checked, across {2} database{3}", selected, total, databases, databases == 1 ? "" : "s");
         }
 
         private void TextChanged_Glycan(object sender, TextChangedEventArgs args)

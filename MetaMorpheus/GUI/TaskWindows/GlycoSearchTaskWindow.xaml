@@ -152,6 +152,8 @@
                             Pick individual glycans instead of a whole database. Each database above appears here as a group;
                             checking a group is the same as searching that entire database, which is the default.
                             Leaving every box unchecked also searches the whole selected database.
+                            A glycan is listed once per attachment site, so the same composition appears more
+                            than once -- on S and on T, for instance.
                         </TextBlock>
                     </GroupBox.ToolTip>
                     <Expander x:Name="GlycanSelectionExpander">
@@ -188,17 +190,18 @@
                                 </TextBox>
                                 <Label x:Name="GlycanSelectionSummary" Content="" Foreground="Gray" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <TreeView x:Name="glycanTreeView" Grid.Row="1" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400">
+                            <TreeView x:Name="glycanTreeView" Grid.Row="1" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400"
+                                      VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
                                 <TreeView.Resources>
                                     <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
-                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                            <CheckBox IsChecked="{Binding Use}" />
+                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}" AutomationProperties.Name="{Binding DisplayName}">
+                                            <CheckBox IsChecked="{Binding Use}" AutomationProperties.Name="{Binding DisplayName}" />
                                             <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" />
                                         </StackPanel>
                                     </HierarchicalDataTemplate>
                                     <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
-                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                            <CheckBox IsChecked="{Binding Use}" />
+                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}" AutomationProperties.Name="{Binding DisplayName}">
+                                            <CheckBox IsChecked="{Binding Use}" AutomationProperties.Name="{Binding DisplayName}" />
                                             <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
                                     </DataTemplate>
@@ -206,6 +209,7 @@
                                 <TreeView.ItemContainerStyle>
                                     <Style TargetType="TreeViewItem">
                                         <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
+                                        <Setter Property="AutomationProperties.Name" Value="{Binding DisplayName}"/>
                                     </Style>
                                 </TreeView.ItemContainerStyle>
                             </TreeView>
