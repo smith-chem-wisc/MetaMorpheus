@@ -30,6 +30,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
+        private GlycanSelectionViewModel GlycanSelectionViewModel;
         private CustomFragmentationWindow CustomFragmentationWindow;
         private DeconHostViewModel DeconHostViewModel;
 
@@ -76,6 +77,7 @@ namespace MetaMorpheusGUI
 
             CmbOGlycanDatabase.ItemsSource = GlobalVariables.OGlycanDatabasePaths.Select(p=> Path.GetFileName(p));
             CmbNGlycanDatabase.ItemsSource = GlobalVariables.NGlycanDatabasePaths.Select(p => Path.GetFileName(p));
+
 
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
@@ -265,6 +267,16 @@ namespace MetaMorpheusGUI
             {
                 ye.VerifyCheckState();
             }
+
+            // The tree is built here, not in PopulateChoices, because it needs the saved selection.
+            // GlobalVariables is read on this side of the boundary; the view model takes the glycans
+            // as an argument so a test can hand it its own.
+            GlycanSelectionViewModel = new GlycanSelectionViewModel(
+                GlobalVariables.OGlycansByDatabase.Concat(GlobalVariables.NGlycansByDatabase),
+                task._glycoSearchParameters.SelectedGlycans);
+            glycanTreeView.DataContext = GlycanSelectionViewModel.Databases;
+            GlycanSelectionSummary.DataContext = GlycanSelectionViewModel;
+
             WritePrunedDBCheckBox.IsChecked = task._glycoSearchParameters.WritePrunedDataBase;
             UpdateModSelectionGrid();
         }
@@ -312,6 +324,8 @@ namespace MetaMorpheusGUI
 
             TheTask._glycoSearchParameters.OGlycanDatabasefile = CmbOGlycanDatabase.SelectedItem.ToString();
             TheTask._glycoSearchParameters.NGlycanDatabasefile = CmbNGlycanDatabase.SelectedItem.ToString();
+
+            TheTask._glycoSearchParameters.SelectedGlycans = GlycanSelectionViewModel.ToSelectedGlycans();
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
@@ -513,6 +527,12 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void TextChanged_Glycan(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.GlycanSearch = true;
+        }
+
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
             SearchModifications.SetTimer();
@@ -537,6 +557,13 @@ namespace MetaMorpheusGUI
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
+            }
+
+            if (SearchModifications.GlycanSearch)
+            {
+                // Searches the row label, not just the identifier, so "HexNAc", "2222" and "H5N4A2" all work.
+                SearchModifications.FilterTree(SearchGlycan, glycanTreeView, GlycanSelectionViewModel.Databases, m => m.DisplayName);
+                SearchModifications.GlycanSearch = false;
             }
         }
 

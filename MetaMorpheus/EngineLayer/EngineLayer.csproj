@@ -20,17 +20,25 @@
 
   <ItemGroup>
     <None Remove="Glycan_Mods\MonosaccharidesCustom.tsv" />
+    <None Remove="Glycan_Mods\OGlycan_Custom.gdb" />
+    <None Remove="Glycan_Mods\NGlycan_Custom.gdb" />
   </ItemGroup>
   
+  <!-- Templates for the user-editable custom files. Embedded, deliberately: they must NOT carry a
+       CopyToOutputDirectory rule and must NOT appear in Product.wxs as a <File>, because either one
+       lets a build or an installer overwrite the copy the user has edited. That was #2752. The whole
+       recipe is written down on EngineLayer\Util\CustomDataFile.cs. -->
   <ItemGroup>
     <EmbeddedResource Include="Glycan_Mods\MonosaccharidesCustom.tsv" />
+    <EmbeddedResource Include="Glycan_Mods\OGlycan_Custom.gdb" />
+    <EmbeddedResource Include="Glycan_Mods\NGlycan_Custom.gdb" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
-    <PackageReference Include="mzLib" Version="1.0.588" />
+    <PackageReference Include="mzLib" Version="1.0.589" />
     <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="SQLite.Interop.dll" Version="1.0.103" />
