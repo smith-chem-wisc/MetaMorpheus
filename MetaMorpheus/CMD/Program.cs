@@ -12,6 +12,10 @@ using System.Text.RegularExpressions;
 using EngineLayer.DatabaseLoading;
 using Omics.Modifications;
 using TaskLayer;
+// Aliased rather than imported: `using Readers` collides with IO.ThermoRawFileReader over
+// ThermoRawFileReaderLicence, which this file uses, and CS0104 is not worth a whole namespace.
+using SdrfQuantAudit = Readers.SdrfQuantAudit;
+using SdrfQuantAuditor = Readers.SdrfQuantAuditor;
 
 namespace MetaMorpheusCommandLine
 {
@@ -119,6 +123,11 @@ namespace MetaMorpheusCommandLine
                 CommandLineSettings.GenerateDefaultTaskTomls(settings.OutputFolder);
 
                 return errorCode;
+            }
+
+            if (settings.AuditSdrf != null)
+            {
+                return AuditSdrf(settings, Console.Out);
             }
 
             // --acceptThermoLicence records the agreement without asking for it, for the situations that
@@ -420,6 +429,50 @@ namespace MetaMorpheusCommandLine
         /// The data directory and the output writer are parameters rather than reached for through
         /// Console and GlobalVariables so that this can be exercised directly, Run() being private.
         /// </summary>
+        /// <summary>
+        /// Prints what one SDRF document says about quantification, and runs nothing else.
+        ///
+        /// The failure this exists to catch is silent. A file whose comment[label] names the reagent kit
+        /// ("TMT10plex" on every row) rather than the channel parses cleanly and validates cleanly, and
+        /// then yields one channel for a ten-channel experiment. So does a file with two rows per
+        /// (data file, channel), or one that declares no isobaric modification at all. None of that is a
+        /// structural defect, so the SDRF validator is right not to report it -- it is a defect in what
+        /// the annotation MEANS, and the only way a user finds out today is a wrong number downstream.
+        ///
+        /// All the reading is mzLib's SdrfQuantAuditor; this prints its report. Scoped to every SDRF
+        /// rather than to TMT, because "this is not an isobaric experiment" is a useful answer to get.
+        /// </summary>
+        /// <returns>0 when the report was written, 4 when the document could not be read.</returns>
+        public static int AuditSdrf(CommandLineSettings settings, TextWriter output)
+        {
+            SdrfQuantAudit audit;
+
+            try
+            {
+                audit = SdrfQuantAuditor.Audit(settings.AuditSdrf, settings.AuditDataDirectory);
+            }
+            catch (Exception e)
+            {
+                // The auditor does not throw on a document it can read; getting here means it could not
+                // be read at all -- not an SDRF, truncated, locked. Reported with the path, because the
+                // usual cause is pointing at the wrong file.
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    output.WriteLine("The SDRF file could not be read: " + settings.AuditSdrf
+                                     + Environment.NewLine + e.Message);
+                }
+
+                return 4;
+            }
+
+            // Written whatever the verbosity, including 'none'. -v suppresses MetaMorpheus talking about
+            // itself; the report is the thing that was asked for, and a run that produced it silently
+            // would have produced nothing at all.
+            output.WriteLine(audit.ToReport());
+
+            return 0;
+        }
+
         public static bool AgreeToThermoLicence(CommandLineSettings settings, string dataDirectory, TextWriter output)
         {
             if (!settings.AcceptThermoLicence)
