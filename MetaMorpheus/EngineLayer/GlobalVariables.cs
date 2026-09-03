@@ -61,6 +61,9 @@ namespace EngineLayer
         /// <summary>Template seeded into the user's OGlycan_Custom.gdb. Embedded in EngineLayer.</summary>
         private const string EmbeddedCustomOGlycanResourceName = "EngineLayer.Glycan_Mods.OGlycan_Custom.gdb";
 
+        /// <summary>Template seeded into the user's NGlycan_Custom.gdb. Embedded in EngineLayer.</summary>
+        private const string EmbeddedCustomNGlycanResourceName = "EngineLayer.Glycan_Mods.NGlycan_Custom.gdb";
+
         /// <summary>Template seeded into Mods\CustomModifications.txt and Mods\RnaCustomModifications.txt.</summary>
         /// <remarks>
         /// The first line is the title CustomModWindow writes when it creates the file itself, so the GUI's
@@ -98,6 +101,12 @@ namespace EngineLayer
         /// directory sweep in LoadGlycans and has to be added to OGlycanDatabasePaths by name.
         /// </remarks>
         public static string CustomOGlycanDatabasePath => Path.Combine(DataDir, "OGlycan_Custom.gdb");
+
+        /// <summary>
+        /// The user's own N-glycan database, offered in the GlycoSearch task beside the shipped ones.
+        /// At the DataDir root for the same reason as <see cref="CustomOGlycanDatabasePath"/>.
+        /// </summary>
+        public static string CustomNGlycanDatabasePath => Path.Combine(DataDir, "NGlycan_Custom.gdb");
 
         public static bool StopLoops { get; set; }
         public static string MetaMorpheusVersion { get; private set; }
@@ -547,6 +556,10 @@ namespace EngineLayer
                 () => CustomDataFile.EmbeddedText(typeof(GlobalVariables).Assembly, EmbeddedCustomOGlycanResourceName),
                 "custom O-glycan database");
 
+            CustomDataFile.EnsureExists(CustomNGlycanDatabasePath,
+                () => CustomDataFile.EmbeddedText(typeof(GlobalVariables).Assembly, EmbeddedCustomNGlycanResourceName),
+                "custom N-glycan database");
+
             OGlycanDatabasePaths = new List<string>();
             NGlycanDatabasePaths = new List<string>();
 
@@ -566,6 +579,11 @@ namespace EngineLayer
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
             {
                 NGlycanDatabasePaths.Add(glycanFile);
+            }
+
+            if (File.Exists(CustomNGlycanDatabasePath))
+            {
+                NGlycanDatabasePaths.Add(CustomNGlycanDatabasePath);
             }
 
             //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.

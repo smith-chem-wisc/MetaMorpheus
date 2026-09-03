@@ -21,6 +21,7 @@
   <ItemGroup>
     <None Remove="Glycan_Mods\MonosaccharidesCustom.tsv" />
     <None Remove="Glycan_Mods\OGlycan_Custom.gdb" />
+    <None Remove="Glycan_Mods\NGlycan_Custom.gdb" />
   </ItemGroup>
   
   <!-- Templates for the user-editable custom files. Embedded, deliberately: they must NOT carry a
@@ -30,6 +31,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Glycan_Mods\MonosaccharidesCustom.tsv" />
     <EmbeddedResource Include="Glycan_Mods\OGlycan_Custom.gdb" />
+    <EmbeddedResource Include="Glycan_Mods\NGlycan_Custom.gdb" />
   </ItemGroup>
 
   <ItemGroup>

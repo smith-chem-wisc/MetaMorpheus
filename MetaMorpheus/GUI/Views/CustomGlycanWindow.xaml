@@ -5,14 +5,27 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Add glycan to custom O-glycan database" Height="300" Width="470" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+        Title="Add glycan to a custom glycan database" Height="345" Width="470" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <StackPanel Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10,10,10,0">
 
             <TextBlock TextWrapping="Wrap" Width="430" Margin="0,0,0,8">
-                Adds one glycan to your own O-glycan database. It is offered in the GlycoSearch task beside
-                the databases MetaMorpheus ships, which are never modified.
+                Adds one glycan to your own glycan database. It is offered in the GlycoSearch task beside the
+                databases MetaMorpheus ships, which are never modified.
             </TextBlock>
+
+            <!-- Which database -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <Label Content="Database" Width="60"></Label>
+                <Label Content="*" Foreground="Red" FontWeight="Bold"/>
+                <ComboBox x:Name="databaseComboBox" Width="330" Height="22" SelectedIndex="0">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Which of your custom databases the glycan is added to" />
+                    </ToolTipService.ToolTip>
+                    <ComboBoxItem Content="O-glycan  (OGlycan_Custom.gdb)" />
+                    <ComboBoxItem Content="N-glycan  (NGlycan_Custom.gdb)" />
+                </ComboBox>
+            </StackPanel>
 
             <!-- The glycan itself -->
             <StackPanel Orientation="Horizontal">
@@ -20,14 +33,14 @@
                 <Label Content="*" Foreground="Red" FontWeight="Bold"/>
                 <TextBox x:Name="glycanTextBox" Width="330" Height="22" VerticalContentAlignment="Center">
                     <ToolTipService.ToolTip>
-                        <ToolTip Content="A structure, e.g. (N(H(A))) -- or a composition, e.g. HexNAc(1)Hex(1)NeuAc(1)" />
+                        <ToolTip Content="A structure, e.g. (N(H(A))) -- or a composition, e.g. HexNAc(2)Hex(5)" />
                     </ToolTipService.ToolTip>
                     <TextBox.Style>
                         <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
                             <Style.Resources>
                                 <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                     <VisualBrush.Visual>
-                                        <Label Content="ex: '(N(H(A)))'  or  'HexNAc(1)Hex(1)NeuAc(1)'"  Foreground="Gray" />
+                                        <Label Content="ex: '(N(H(A)))'  or  'HexNAc(2)Hex(5)'"  Foreground="Gray" />
                                     </VisualBrush.Visual>
                                 </VisualBrush>
                             </Style.Resources>
@@ -50,7 +63,8 @@
             <TextBlock TextWrapping="Wrap" Width="430" Margin="0,10,0,0" Foreground="#555555">
                 <Bold>Structure</Bold> format nests single-character codes and is what OGlycan.gdb uses:
                 H Hex, N HexNAc, A NeuAc, G NeuGc, F Fuc, P Phospho, S Sulfo, Y Na, C Ac, X Xylose, K Kdn.<LineBreak/>
-                <Bold>Composition</Bold> format is a name and a count repeated, with no branching.<LineBreak/>
+                <Bold>Composition</Bold> format is a name and a count repeated, with no branching, and is what
+                NGlycan.gdb uses.<LineBreak/>
                 A database is read entirely as one format or the other, so a glycan has to match whatever is
                 already in the file.
             </TextBlock>

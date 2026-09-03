@@ -913,9 +913,9 @@
                             <Button Grid.Row="3" Grid.Column="1" Content="Create new crosslinker" 
                                     HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomCrosslinker_Click" />
 
-                            <Button Grid.Row="4" Grid.Column="1" Content="Create new O-glycan" 
-                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomOGlycan_Click"
-                                    ToolTip="Add a glycan to your own O-glycan database, which is offered beside the ones MetaMorpheus ships"/>
+                            <Button Grid.Row="4" Grid.Column="1" Content="Create new glycan" 
+                                    HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomGlycan_Click"
+                                    ToolTip="Add a glycan to your own O-glycan or N-glycan database, which are offered beside the ones MetaMorpheus ships"/>
 
                             <Button Grid.Row="5" Grid.Column="1" Content="Close program and open global settings" 
                                     HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenSettings_Click" />

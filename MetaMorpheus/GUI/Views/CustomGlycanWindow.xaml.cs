@@ -6,7 +6,8 @@ using System.Windows;
 namespace MetaMorpheusGUI
 {
     /// <summary>
-    /// Interaction logic for CustomGlycanWindow.xaml -- adds one glycan to the user's own O-glycan database.
+    /// Interaction logic for CustomGlycanWindow.xaml -- adds one glycan to the user's own O-glycan or
+    /// N-glycan database.
     /// </summary>
     /// <remarks>
     /// The window collects and sanity-checks; <see cref="GlycanDatabase.PersistCustomGlycan"/> is what
@@ -20,6 +21,13 @@ namespace MetaMorpheusGUI
             InitializeComponent();
         }
 
+        /// <summary>Whether the O-glycan database is the one selected. Index 0 is O, index 1 is N.</summary>
+        private bool IsOGlycanSelected => databaseComboBox.SelectedIndex == 0;
+
+        private string SelectedDatabasePath => IsOGlycanSelected
+            ? GlobalVariables.CustomOGlycanDatabasePath
+            : GlobalVariables.CustomNGlycanDatabasePath;
+
         private void SaveCustomGlycan_Click(object sender, RoutedEventArgs e)
         {
             string glycanText = glycanTextBox.Text.Trim();
@@ -29,10 +37,10 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            string databasePath = GlobalVariables.CustomOGlycanDatabasePath;
+            string databasePath = SelectedDatabasePath;
             try
             {
-                GlycanDatabase.PersistCustomGlycan(glycanText, databasePath, true);
+                GlycanDatabase.PersistCustomGlycan(glycanText, databasePath, IsOGlycanSelected);
             }
             catch (Exception ex)
             {
