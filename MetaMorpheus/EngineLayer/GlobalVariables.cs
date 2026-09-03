@@ -129,6 +129,28 @@ namespace EngineLayer
         public static List<string> OGlycanDatabasePaths { get; private set; }
         public static List<string> NGlycanDatabasePaths { get; private set; }
 
+        /// <summary>
+        /// The O-glycans of every database in <see cref="OGlycanDatabasePaths"/>, keyed by file name and
+        /// ordered by mass.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="AllModsKnown"/> also holds every glycan, but flattens all databases together and so
+        /// cannot say which file a glycan came from. The task window groups its glycan tree by database, so
+        /// it needs the provenance this keeps. Keyed by file name -- not full path -- because that is what
+        /// the task parameters persist and what the database combo boxes already display.
+        ///
+        /// Loaded with ToGenerateIons:false, exactly like the AllModsKnown population below, so these are
+        /// for DISPLAY ONLY: their Ions are null, which also makes Glycan.Equals throw on them. The search
+        /// re-loads its glycans with ions; see GlycoSearchEngine.
+        /// </remarks>
+        public static Dictionary<string, List<Glycan>> OGlycansByDatabase { get; private set; }
+
+        /// <summary>
+        /// The N-glycans of every database in <see cref="NGlycanDatabasePaths"/>, keyed by file name and
+        /// ordered by mass. Display-only, for the same reasons as <see cref="OGlycansByDatabase"/>.
+        /// </summary>
+        public static Dictionary<string, List<Glycan>> NGlycansByDatabase { get; private set; }
+
         public static void SetUpGlobalVariables()
         {
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp", ".msl" };
@@ -588,9 +610,16 @@ namespace EngineLayer
 
             //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
             //The reason why not include Glycan into modification database is for users to apply their own database.
+            OGlycansByDatabase = new Dictionary<string, List<Glycan>>();
+            NGlycansByDatabase = new Dictionary<string, List<Glycan>>();
+
             foreach (var path in OGlycanDatabasePaths)
             {
-                var oGlycans = GlycanDatabase.LoadGlycan(path, false, true);
+                var oGlycans = GlycanDatabase.LoadGlycan(path, false, true).ToList();
+                // Recorded per database, because the flattening below loses which file each glycan came from.
+                // Enumerate the LOADED OBJECTS, not the file's lines: a structure-format database can yield
+                // several Glycan objects from one line (Glycan.Struct2Glycan).
+                OGlycansByDatabase[Path.GetFileName(path)] = oGlycans.OrderBy(g => g.Mass).ToList();
                 foreach (var glycan in oGlycans)
                 {
                     if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
@@ -602,7 +631,8 @@ namespace EngineLayer
             }
             foreach (var path in NGlycanDatabasePaths)
             {
-                var nGlycans = GlycanDatabase.LoadGlycan(path, false, false);
+                var nGlycans = GlycanDatabase.LoadGlycan(path, false, false).ToList();
+                NGlycansByDatabase[Path.GetFileName(path)] = nGlycans.OrderBy(g => g.Mass).ToList();
                 foreach (var glycan in nGlycans)
                 {
                     if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))

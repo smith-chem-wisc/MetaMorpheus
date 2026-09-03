@@ -30,6 +30,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
+        private readonly ObservableCollection<ModTypeForTreeViewModel> GlycanTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private CustomFragmentationWindow CustomFragmentationWindow;
         private DeconHostViewModel DeconHostViewModel;
 
@@ -76,6 +77,7 @@ namespace MetaMorpheusGUI
 
             CmbOGlycanDatabase.ItemsSource = GlobalVariables.OGlycanDatabasePaths.Select(p=> Path.GetFileName(p));
             CmbNGlycanDatabase.ItemsSource = GlobalVariables.NGlycanDatabasePaths.Select(p => Path.GetFileName(p));
+            PopulateGlycanTree();
 
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
@@ -265,6 +267,39 @@ namespace MetaMorpheusGUI
             {
                 ye.VerifyCheckState();
             }
+
+            foreach (var glycan in task._glycoSearchParameters.SelectedGlycans ?? new List<(string, string)>())
+            {
+                var theDatabase = GlycanTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(glycan.Item1));
+                if (theDatabase != null)
+                {
+                    var theGlycan = theDatabase.Children.FirstOrDefault(b => b.ModName.Equals(glycan.Item2));
+                    if (theGlycan != null)
+                    {
+                        theGlycan.Use = true;
+                    }
+                    else
+                    {
+                        // The database is still here but no longer holds this glycan -- surfaced in red,
+                        // the same way the modification trees surface a mod this install does not have.
+                        theDatabase.Children.Add(new ModForTreeViewModel("UNKNOWN GLYCAN!", true, glycan.Item2, true, theDatabase));
+                    }
+                }
+                else
+                {
+                    theDatabase = new ModTypeForTreeViewModel(glycan.Item1, true);
+                    GlycanTypeForTreeViewObservableCollection.Add(theDatabase);
+                    theDatabase.Children.Add(new ModForTreeViewModel("UNKNOWN GLYCAN!", true, glycan.Item2, true, theDatabase));
+                }
+            }
+
+            // Last, and required: the group checkboxes are only pulled into agreement with their children here.
+            foreach (var ye in GlycanTypeForTreeViewObservableCollection)
+            {
+                ye.VerifyCheckState();
+            }
+            UpdateGlycanSelectionSummary();
+
             WritePrunedDBCheckBox.IsChecked = task._glycoSearchParameters.WritePrunedDataBase;
             UpdateModSelectionGrid();
         }
@@ -312,6 +347,15 @@ namespace MetaMorpheusGUI
 
             TheTask._glycoSearchParameters.OGlycanDatabasefile = CmbOGlycanDatabase.SelectedItem.ToString();
             TheTask._glycoSearchParameters.NGlycanDatabasefile = CmbNGlycanDatabase.SelectedItem.ToString();
+
+            // Only the leaves are read back, and always from the master collection rather than the tree's
+            // DataContext -- so a selection made while the search box is filtered is still saved in full.
+            TheTask._glycoSearchParameters.SelectedGlycans = new List<(string, string)>();
+            foreach (var database in GlycanTypeForTreeViewObservableCollection)
+            {
+                TheTask._glycoSearchParameters.SelectedGlycans.AddRange(
+                    database.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
+            }
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
@@ -513,6 +557,131 @@ namespace MetaMorpheusGUI
             }
         }
 
+        /// <summary>
+        /// Fills the glycan tree: one group per glycan database, its glycans as checkable children.
+        /// </summary>
+        /// <remarks>
+        /// Grouped by DATABASE rather than by ModificationType (which is what the modification trees group
+        /// by, and which would put every O-glycan in one bucket regardless of the file it came from).
+        /// Checking a group is therefore the same statement as picking that database in the combo box above.
+        ///
+        /// Reuses ModTypeForTreeViewModel/ModForTreeViewModel unchanged -- a glycan is a Modification, so
+        /// the existing nodes already fit and no glycan-specific view-model is needed.
+        /// </remarks>
+        private void PopulateGlycanTree()
+        {
+            foreach (var database in GlobalVariables.OGlycansByDatabase.Concat(GlobalVariables.NGlycansByDatabase))
+            {
+                // DisplayName is the bare file name on purpose: it is half of the persisted key
+                // (databaseFileName, IdWithMotif) that the read-back projects and the engine matches on,
+                // so decorating it here -- with a count, say -- would break both.
+                var theDatabase = new ModTypeForTreeViewModel(database.Key, false);
+                GlycanTypeForTreeViewObservableCollection.Add(theDatabase);
+
+                foreach (var glycan in database.Value)
+                {
+                    theDatabase.Children.Add(new ModForTreeViewModel(
+                        GlycanToolTip(glycan), false, glycan.IdWithMotif, false, theDatabase, GlycanLabel(glycan)));
+                }
+            }
+
+            glycanTreeView.DataContext = GlycanTypeForTreeViewObservableCollection;
+            UpdateGlycanSelectionSummary();
+        }
+
+        /// <summary>
+        /// The row label: the identifier, the expanded composition, and the mass.
+        /// </summary>
+        /// <remarks>
+        /// IdWithMotif alone is a composition code ("H5N4A2 on N"), which is unreadable unless you already
+        /// know the letters, and unsearchable in the terms people actually use -- typing "HexNAc" would
+        /// match nothing. Spelling the monosaccharides out and appending the mass makes both work, because
+        /// the tree searches this label.
+        /// </remarks>
+        private static string GlycanLabel(Glycan glycan)
+        {
+            var expanded = ExpandComposition(glycan.Composition);
+            var mass = glycan.Mass / 1E5; // Glycan.Mass is monoisotopic mass scaled by 1e5
+
+            return string.IsNullOrEmpty(expanded)
+                ? string.Format(CultureInfo.InvariantCulture, "{0}   —   {1:F2} Da", glycan.IdWithMotif, mass)
+                : string.Format(CultureInfo.InvariantCulture, "{0}   —   {1}   —   {2:F2} Da", glycan.IdWithMotif, expanded, mass);
+        }
+
+        private static string GlycanToolTip(Glycan glycan)
+        {
+            var lines = new List<string>
+            {
+                "Composition: " + glycan.Composition,
+                "Expanded:    " + ExpandComposition(glycan.Composition),
+                string.Format(CultureInfo.InvariantCulture, "Mass:        {0:F5} Da", glycan.Mass / 1E5),
+                "Type:        " + glycan.Type,
+            };
+
+            // Only structure-format databases carry a structure string; composition databases leave it null.
+            if (!string.IsNullOrEmpty(glycan.Struc))
+            {
+                lines.Add("Structure:   " + glycan.Struc);
+            }
+
+            return string.Join(Environment.NewLine, lines);
+        }
+
+        /// <summary>
+        /// Turns a composition code such as "H5N4A2" into "Hex(5)HexNAc(4)NeuAc(2)".
+        /// </summary>
+        /// <remarks>
+        /// Built from Glycan.NameCharDic so custom monosaccharides registered at startup are spelled out
+        /// too, rather than silently falling back to their letter.
+        /// </remarks>
+        private static string ExpandComposition(string composition)
+        {
+            if (string.IsNullOrWhiteSpace(composition))
+            {
+                return string.Empty;
+            }
+
+            var nameByCode = new Dictionary<char, string>();
+            foreach (var entry in Glycan.NameCharDic)
+            {
+                nameByCode[entry.Value.Item1] = entry.Key;
+            }
+
+            var expanded = new System.Text.StringBuilder();
+            int i = 0;
+            while (i < composition.Length)
+            {
+                char code = composition[i++];
+                int start = i;
+                while (i < composition.Length && char.IsDigit(composition[i]))
+                {
+                    i++;
+                }
+
+                var count = i > start ? composition.Substring(start, i - start) : "1";
+                expanded.Append(nameByCode.TryGetValue(code, out var name) ? name : code.ToString())
+                        .Append('(').Append(count).Append(')');
+            }
+
+            return expanded.ToString();
+        }
+
+        private void UpdateGlycanSelectionSummary()
+        {
+            int selected = GlycanTypeForTreeViewObservableCollection.Sum(db => db.Children.Count(c => c.Use));
+            int total = GlycanTypeForTreeViewObservableCollection.Sum(db => db.Children.Count);
+
+            GlycanSelectionSummary.Content = selected == 0
+                ? string.Format(CultureInfo.InvariantCulture, "   none checked — the whole selected database will be searched ({0} glycans available)", total)
+                : string.Format(CultureInfo.InvariantCulture, "   {0} of {1} glycans checked", selected, total);
+        }
+
+        private void TextChanged_Glycan(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.GlycanSearch = true;
+        }
+
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
             SearchModifications.SetTimer();
@@ -537,6 +706,13 @@ namespace MetaMorpheusGUI
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
+            }
+
+            if (SearchModifications.GlycanSearch)
+            {
+                // Searches the row label, not just the identifier, so "HexNAc", "2222" and "H5N4A2" all work.
+                SearchModifications.FilterTree(SearchGlycan, glycanTreeView, GlycanTypeForTreeViewObservableCollection, m => m.DisplayName);
+                SearchModifications.GlycanSearch = false;
             }
         }
 

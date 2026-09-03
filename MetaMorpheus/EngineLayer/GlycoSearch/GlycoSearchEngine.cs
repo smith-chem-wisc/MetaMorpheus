@@ -23,6 +23,7 @@ namespace EngineLayer.GlycoSearch
         private readonly bool OxoniumIonFilter; // To filt Oxonium Ion before searching a spectrum as glycopeptides. If we filter spectrum, it must contain oxonium ions such as 204 (HexNAc). 
         private readonly string _oglycanDatabase;
         private readonly string _nglycanDatabase;
+        private readonly List<(string, string)> _selectedGlycans; // (database file name, glycan IdWithMotif); null/empty = whole database
         private readonly GlycanBox[] GlycanBoxes; // GlycanBoxes for glycan search.
 
         private readonly Tolerance PrecusorSearchMode;
@@ -45,7 +46,8 @@ namespace EngineLayer.GlycoSearch
         // The constructor for GlycoSearchEngine, we can load the parameter for the searhcing like mode, topN, maxOGlycanNum, oxoniumIonFilter, datsbase, etc.
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
-             string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds)
+             string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds,
+             List<(string, string)> selectedGlycans = null)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalGsms = globalCsms;
@@ -55,6 +57,7 @@ namespace EngineLayer.GlycoSearch
             this.OxoniumIonFilter = oxoniumIonFilter;
             this._oglycanDatabase = oglycanDatabase;
             this._nglycanDatabase = nglycanDatabase;
+            this._selectedGlycans = selectedGlycans;
             SecondFragmentIndex = secondFragmentIndex;
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
             ProductSearchMode = new SinglePpmAroundZeroSearchMode(20); //For Oxonium ion only
@@ -62,23 +65,23 @@ namespace EngineLayer.GlycoSearch
 
             if (glycoSearchType == GlycoSearchType.OGlycanSearch) //if we do the O-glycan search, we need to load the O-glycan database and generate the glycoBox.
             {
-                GlycanBox.GlobalOGlycans = LoadGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, _oglycanDatabase, "O-glycan", true);
+                GlycanBox.GlobalOGlycans = ApplySelection(LoadGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, _oglycanDatabase, "O-glycan", true), _oglycanDatabase);
                 GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray(); //generate glycan box for O-glycan search
                 GlycanBoxes = GlycanBox.OGlycanBoxes;
                 GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
             }
             else if (glycoSearchType == GlycoSearchType.NGlycanSearch) //because the there is only one glycan in N-glycanpeptide, so we don't need to build the n-glycanBox here.
             {
-                NGlycans = LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, _nglycanDatabase, "N-glycan", false).OrderBy(p => p.Mass).ToArray();
+                NGlycans = ApplySelection(LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, _nglycanDatabase, "N-glycan", false), _nglycanDatabase).OrderBy(p => p.Mass).ToArray();
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
             else if (glycoSearchType == GlycoSearchType.N_O_GlycanSearch) //search both N-glycan and O-glycan is still not tested and build completely yet.
             {
-                GlycanBox.GlobalOGlycans = LoadGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, _oglycanDatabase, "O-glycan", true);
+                GlycanBox.GlobalOGlycans = ApplySelection(LoadGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, _oglycanDatabase, "O-glycan", true), _oglycanDatabase);
                 GlycanBox.GlobalNGlycans = new Dictionary<int, Glycan>();
                 // For N-glycan, we use negative index to distinguish with O-glycan.
-                var nGlycans = LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, _nglycanDatabase, "N-glycan", false).OrderBy(p => p.Mass);
+                var nGlycans = ApplySelection(LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, _nglycanDatabase, "N-glycan", false), _nglycanDatabase).OrderBy(p => p.Mass);
                 int indexForNGlycan = -1;
                 foreach (var nGlycan in nGlycans)
                 {
@@ -115,6 +118,45 @@ namespace EngineLayer.GlycoSearch
         /// An empty database is now rejected up front, which matters more since a user can be handed one: a
         /// freshly seeded custom database is all banner and no glycans until they add some.
         /// </remarks>
+        /// <summary>
+        /// Narrows a loaded database to the glycans the user checked in the task window, if any.
+        /// </summary>
+        /// <remarks>
+        /// Applied HERE, before the glycans reach GlycanBox.GlobalOGlycans and before any box is built,
+        /// because GlycanBox identifies a glycan by its POSITION in that array
+        /// (BuildOGlycanBoxes enumerates Range(0, GlobalOGlycans.Length)). Filtering after the array is
+        /// assigned would silently re-point every box at a different glycan. Filtering here means the
+        /// dense re-index falls out for free.
+        ///
+        /// It is deliberately not applied inside GlycanDatabase.LoadGlycan: GlobalVariables shares that
+        /// method to populate AllModsKnown for MetaDraw, which must keep seeing every glycan.
+        ///
+        /// A selection naming none of THIS database means the whole database, so choosing individual
+        /// O-glycans does not silently narrow the N-glycan side too.
+        /// </remarks>
+        private Glycan[] ApplySelection(Glycan[] loaded, string databaseFileName)
+        {
+            if (_selectedGlycans == null || _selectedGlycans.Count == 0)
+            {
+                return loaded;
+            }
+
+            var wanted = new HashSet<string>(_selectedGlycans
+                .Where(s => s.Item1 == databaseFileName)
+                .Select(s => s.Item2));
+
+            if (wanted.Count == 0)
+            {
+                return loaded;
+            }
+
+            var subset = loaded.Where(g => wanted.Contains(g.IdWithMotif)).ToArray();
+
+            // Every checked glycan is gone from the file it named. Falling back to the whole database beats
+            // handing BuildOGlycanBoxes an empty array, whose failure surfaces much later and elsewhere.
+            return subset.Length == 0 ? loaded : subset;
+        }
+
         private static Glycan[] LoadGlycanDatabase(List<string> databasePaths, string databaseFileName, string kind, bool isOGlycan)
         {
             string path = databasePaths.FirstOrDefault(p => System.IO.Path.GetFileName(p) == databaseFileName);

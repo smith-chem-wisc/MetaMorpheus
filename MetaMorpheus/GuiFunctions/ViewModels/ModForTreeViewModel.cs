@@ -99,6 +99,24 @@ namespace GuiFunctions
                 Background = new SolidColorBrush(Colors.Transparent);
         }
 
+        /// <summary>
+        /// As the constructor above, but with an explicit <see cref="DisplayName"/>.
+        /// </summary>
+        /// <remarks>
+        /// The other constructor derives DisplayName from modName, which is right when the identifier is
+        /// already readable ("Oxidation on M"). A glycan's identifier is a composition code -- "H5N4A2 on N"
+        /// -- so its row needs a label the reader can actually use, while ModName stays the key the task
+        /// parameters persist and the tree restores by.
+        /// </remarks>
+        public ModForTreeViewModel(string toolTip, bool use, string modName, bool bad, ModTypeForTreeViewModel parent, string displayName)
+            : this(toolTip, use, modName, bad, parent)
+        {
+            if (!string.IsNullOrWhiteSpace(displayName))
+            {
+                DisplayName = displayName;
+            }
+        }
+
         #endregion
 
         /// <summary>
