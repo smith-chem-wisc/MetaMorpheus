@@ -43,6 +43,12 @@ namespace MetaMorpheusCommandLine
         [Option("acceptThermoLicence", HelpText = "[Optional] Agree to the Thermo RawFileReader licence, which is required to read .raw files, and record the agreement. Prints the licence and does not prompt, so it can be used where no console is available to answer one. May be given on its own as a setup step, or alongside a run.")]
         public bool AcceptThermoLicence { get; set; }
 
+        [Option("auditSdrf", HelpText = "[Optional] Path to an SDRF file to audit for what it says about quantification. Read-only: prints a report and exits without running anything. Reports whether the design is channel-level, kit-only or not isobaric at all; the channels found and the plex they imply; where the plex came from; whether an isobaric modification is declared; and which of the eleven per-channel facts are present, absent or unparseable. Given on its own, so no task, database or spectra file is required.")]
+        public string AuditSdrf { get; set; }
+
+        [Option("auditData", HelpText = "[Optional] Folder of downloaded data files to check the SDRF's comment[data file] entries against, reported as found or missing. Only meaningful with --auditSdrf.")]
+        public string AuditDataDirectory { get; set; }
+
         public enum VerbosityType { none, minimal, normal };
 
         public void ValidateCommandLineSettings()
@@ -59,6 +65,32 @@ namespace MetaMorpheusCommandLine
             if (GenerateDefaultTomls || RunMicroVignette)
             {
                 return;
+            }
+
+            // --auditSdrf reads one file and prints what it found. It runs nothing, writes nothing and
+            // needs no output folder, so holding it to a run's requirements would only stop it working.
+            // Its own inputs are checked here rather than at the point of use, so a typo comes back as
+            // a settings error before any setup happens.
+            if (AuditSdrf != null)
+            {
+                if (!File.Exists(AuditSdrf))
+                {
+                    throw new MetaMorpheusException("The SDRF file to audit was not found: " + AuditSdrf);
+                }
+
+                if (AuditDataDirectory != null && !Directory.Exists(AuditDataDirectory))
+                {
+                    throw new MetaMorpheusException("The data folder to audit against was not found: " + AuditDataDirectory);
+                }
+
+                return;
+            }
+
+            // --auditData without --auditSdrf says to check data files against nothing. Rejected rather
+            // than ignored, because silently dropping it looks identical to auditing with it.
+            if (AuditDataDirectory != null)
+            {
+                throw new MetaMorpheusException("--auditData is only meaningful with --auditSdrf.");
             }
 
             // --acceptThermoLicence on its own is a setup step - record the agreement and stop - so it
