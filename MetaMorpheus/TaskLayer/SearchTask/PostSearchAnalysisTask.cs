@@ -227,27 +227,7 @@ namespace TaskLayer
             // 2. Figure out which PSMs the library didn't cover and predict only those.
             //    Deduplicate on (FullSequence, PrecursorCharge) — different CEs for the
             //    same peptide/charge would otherwise spawn redundant API calls.
-            var needsPrediction = new Dictionary<(string, int), FragmentIntensityPredictionInput>();
-            foreach (var psm in psmsToScore)
-            {
-                var key = (psm.FullSequence, psm.ScanPrecursorCharge);
-                if (lookup.ContainsKey(key) || needsPrediction.ContainsKey(key))
-                    continue;
-
-                int collisionEnergy = 30;
-                if (psm.Ms2Scan != null
-                    && int.TryParse(psm.Ms2Scan.HcdEnergy, out int parsedEnergy))
-                {
-                    collisionEnergy = parsedEnergy;
-                }
-
-                needsPrediction[key] = new FragmentIntensityPredictionInput(
-                    FullSequence: psm.FullSequence,
-                    PrecursorCharge: psm.ScanPrecursorCharge,
-                    CollisionEnergy: collisionEnergy,
-                    InstrumentType: null,
-                    FragmentationType: null);
-            }
+            var needsPrediction = BuildPredictionInputs(psmsToScore, lookup);
 
             if (needsPrediction.Count == 0 || !Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle)
                 return lookup;
@@ -258,10 +238,33 @@ namespace TaskLayer
             var inputs = needsPrediction.Values.ToList();
             model.Predict(inputs);
 
-            // 4. Build a mapping from ValidatedFullSequence back to original FullSequence
-            //    so we can find the right lookup key for each predicted spectrum.
+            var predictedSpectra = model.GenerateLibrarySpectraFromPredictions(
+                new double?[model.Predictions.Count],
+                out _);
+
+            MergePredictedSpectra(model.Predictions, predictedSpectra, lookup);
+            return lookup;
+        }
+
+        /// <summary>
+        /// Files predicted spectra into the lookup under the key the PSMs will query with.
+        ///
+        /// A predicted spectrum comes back keyed by ValidatedFullSequence, which is the UNIMOD form
+        /// the prediction service accepted, while PSMs look themselves up by their own FullSequence.
+        /// Without mapping back through the predictions, every prediction for a modified peptide
+        /// would be filed under a key nothing ever asks for - present in the lookup, and invisible.
+        ///
+        /// Real library entries already in the lookup win: a measured spectrum beats a predicted one.
+        ///
+        /// Pure, and separate from the request, so it can be tested without the network.
+        /// </summary>
+        internal static void MergePredictedSpectra(
+            IEnumerable<PeptideFragmentIntensityPrediction> predictions,
+            IEnumerable<LibrarySpectrum> predictedSpectra,
+            Dictionary<(string, int), LibrarySpectrum> lookup)
+        {
             var validatedToOriginal = new Dictionary<string, string>();
-            foreach (var prediction in model.Predictions)
+            foreach (var prediction in predictions)
             {
                 if (prediction.ValidatedFullSequence != null)
                 {
@@ -269,26 +272,57 @@ namespace TaskLayer
                 }
             }
 
-            var predictedSpectra = model.GenerateLibrarySpectraFromPredictions(
-                new double?[model.Predictions.Count],
-                out _);
-
             foreach (var spectrum in predictedSpectra)
             {
-                // The spectrum.Sequence might be in UNIMOD format (ValidatedFullSequence),
-                // but we need to look it up using the original format for consistency
-                // with how PSMs will query the lookup.
                 string originalSequence = validatedToOriginal.GetValueOrDefault(spectrum.Sequence, spectrum.Sequence);
                 var key = (originalSequence, spectrum.ChargeState);
 
-                // Real-library entries already in `lookup` take precedence; only add
-                // predicted spectra where nothing's there yet.
                 if (!lookup.ContainsKey(key))
                     lookup[key] = spectrum;
             }
-
-            return lookup;
         }
+
+        /// <summary>
+        /// Which PSMs the library did not cover, as one prediction request each. Deduplicated on
+        /// (FullSequence, PrecursorCharge): the same peptide and charge acquired at different
+        /// collision energies would otherwise spawn redundant calls for the same answer.
+        ///
+        /// Separate from the request itself so it can be unit tested. Everything here is a pure
+        /// function of the PSMs and the library lookup; only the Predict call that consumes it
+        /// needs the network.
+        /// </summary>
+        internal static Dictionary<(string, int), FragmentIntensityPredictionInput> BuildPredictionInputs(
+            List<SpectralMatch> psmsToScore,
+            Dictionary<(string, int), LibrarySpectrum> lookup)
+        {
+            var needsPrediction = new Dictionary<(string, int), FragmentIntensityPredictionInput>();
+            foreach (var psm in psmsToScore)
+            {
+                var key = (psm.FullSequence, psm.ScanPrecursorCharge);
+                if (lookup.ContainsKey(key) || needsPrediction.ContainsKey(key))
+                    continue;
+
+                needsPrediction[key] = new FragmentIntensityPredictionInput(
+                    FullSequence: psm.FullSequence,
+                    PrecursorCharge: psm.ScanPrecursorCharge,
+                    CollisionEnergy: ResolveCollisionEnergy(psm),
+                    InstrumentType: null,
+                    FragmentationType: null);
+            }
+
+            return needsPrediction;
+        }
+
+        /// <summary>
+        /// The collision energy to predict at. Prosit needs a number, and the scan only carries one
+        /// for HCD data that recorded it, so 30 is the fallback - a mid-range HCD energy rather than
+        /// a meaningful default. Ms2Scan is null on any PSM that did not come through a path which
+        /// set it, so the null check is the normal case, not a defensive one.
+        /// </summary>
+        internal static int ResolveCollisionEnergy(SpectralMatch psm) =>
+            psm.Ms2Scan != null && int.TryParse(psm.Ms2Scan.HcdEnergy, out int parsedEnergy)
+                ? parsedEnergy
+                : 30;
 
         internal List<SpectralMatch> GetSpectralMatchesWithoutComputedSpectralAngle()
         {
