@@ -16,16 +16,10 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CustomFragmentationWindow : Window
     {
-        private bool isRna;
         private ObservableCollection<BoolStringClass> TheList { get; set; }
 
-        public CustomFragmentationWindow() : this(null)
+        public CustomFragmentationWindow(List<ProductType> list)
         {
-        }
-
-        public CustomFragmentationWindow(List<ProductType> list, bool isRna = false)
-        {
-            this.isRna = isRna;
             InitializeComponent();
             PopulateChoices();
 
@@ -38,6 +32,15 @@ namespace MetaMorpheusGUI
                     r.IsSelected = true;
                 }
             }
+
+            // Update options on mode change
+            GuiGlobalParamsViewModel.Instance.PropertyChanged += (sender, args) =>
+            {
+                if (args.PropertyName == nameof(GuiGlobalParamsViewModel.IsRnaMode))
+                {
+                    PopulateChoices();
+                }
+            };
 
             base.Closing += this.OnClosing;
         }
@@ -54,7 +57,7 @@ namespace MetaMorpheusGUI
             knownProductTypes.Remove(ProductType.Ycore);
             knownProductTypes.Remove(ProductType.Y);
 
-            if (isRna)
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
             {
                 knownProductTypes.Remove(ProductType.aStar);
                 knownProductTypes.Remove(ProductType.aDegree);
@@ -87,7 +90,7 @@ namespace MetaMorpheusGUI
 
             foreach (ProductType productType in knownProductTypes)
             {
-                var tooltip = isRna
+                var tooltip = GuiGlobalParamsViewModel.Instance.IsRnaMode
                     ? Omics.Fragmentation.Oligo.DissociationTypeCollection
                         .GetRnaMassShiftFromProductType(productType).ToString("F4") + " Da; "
                     : DissociationTypeCollection.GetMassShiftFromProductType(productType).ToString("F4") +
@@ -110,7 +113,7 @@ namespace MetaMorpheusGUI
         private void Save_Click(object sender, RoutedEventArgs e)
         {
             var selectedIons = TheList.Where(p => p.IsSelected).Select(p => p.Type);
-            if (isRna)
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
                 Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
             else
                 DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
