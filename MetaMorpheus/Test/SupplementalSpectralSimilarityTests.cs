@@ -712,5 +712,64 @@ namespace Test
         }
 
         #endregion
+
+        #region Prosit opt-in
+
+        /// <summary>
+        /// Prediction is a call to Koina, a third-party web service. A search that would otherwise
+        /// run entirely offline must not start depending on someone else's uptime unless the user
+        /// asked for it, so the default has to stay off.
+        /// </summary>
+        [Test]
+        public void PredictedSpectraAreOffByDefault()
+        {
+            Assert.That(new SearchParameters().UsePredictedSpectraForSpectralAngle, Is.False);
+        }
+
+        /// <summary>
+        /// With the flag off and no library, nothing can be scored, so every PSM keeps the -1
+        /// sentinel. The timing assertion is the real point: a remote prediction round trip cannot
+        /// finish in this budget, so a regression that re-enables the call by default fails here
+        /// rather than by quietly slowing every search down.
+        /// </summary>
+        [Test]
+        public void WithPredictionsOffNothingIsRequestedAndPsmsKeepTheSentinel()
+        {
+            var psms = new List<SpectralMatch>
+            {
+                CreateMockPsm("PEPTIDER", 2),
+                CreateMockPsm("TESTSEQ", 3)
+            };
+            _parameters.AllSpectralMatches = psms;
+            _parameters.SearchParameters.UsePredictedSpectraForSpectralAngle = false;
+
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            Assert.DoesNotThrow(() => _task.ComputeSpectrumSimilarity(null));
+            stopwatch.Stop();
+
+            Assert.That(psms.All(psm => psm.SpectralAngle == -1), Is.True,
+                "with no library and predictions off there is nothing to score against");
+            Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(2000),
+                "no network call should have been made");
+        }
+
+        /// <summary>
+        /// Turning the flag on must not change the failure contract: a service that is down, rate
+        /// limiting, or rejecting a sequence leaves the PSM at -1 rather than losing the search.
+        /// Categorised as ExternalService because it does reach Koina when the service is up.
+        /// </summary>
+        [Test]
+        [Category("ExternalService")]
+        public void WithPredictionsOnAServiceFailureStillLeavesTheSearchIntact()
+        {
+            var psms = new List<SpectralMatch> { CreateMockPsm("PEPTIDER", 2) };
+            _parameters.AllSpectralMatches = psms;
+            _parameters.SearchParameters.UsePredictedSpectraForSpectralAngle = true;
+
+            Assert.DoesNotThrow(() => _task.ComputeSpectrumSimilarity(null));
+            Assert.That(psms.First().SpectralAngle, Is.GreaterThanOrEqualTo(-1));
+        }
+
+        #endregion
     }
 }

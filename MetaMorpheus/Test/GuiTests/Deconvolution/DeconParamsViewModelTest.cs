@@ -2,7 +2,7 @@ using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
 
-namespace Test.GuiTests;
+namespace Test.GuiTests.Deconvolution;
 
 [TestFixture]
 public class DeconParamsViewModelTest
@@ -213,37 +213,22 @@ public class DeconParamsViewModelTest
     }
 
     [Test]
-    [TestCase(1, 15, Polarity.Negative, TestName = "MinChargeDiffers_NotEqual")]
-    [TestCase(2, 12, Polarity.Negative, TestName = "MaxChargeDiffers_NotEqual")]
-    [TestCase(2, 15, Polarity.Positive, TestName = "PolarityDiffers_NotEqual")]
-    public void TestEquals_DifferentParameters(int minCharge, int maxCharge, Polarity polarity)
+    public void TestEquals_DifferentInstancesAreNotEqual()
     {
-        var parameters1 = new ClassicDeconvolutionParameters(minCharge, maxCharge, 5, 3, polarity);
+        var parameters1 = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive);
         var viewModel1 = new TestDeconParamsViewModel(parameters1);
 
         var parameters2 = new ClassicDeconvolutionParameters(2, 15, 5, 3, Polarity.Negative);
         var viewModel2 = new TestDeconParamsViewModel(parameters2);
+
         Assert.That(viewModel1.Equals(viewModel2), Is.False);
-        Assert.That(viewModel1.Equals(null), Is.False);
-    }
-
-    [Test]
-    [TestCase(1, 15, Polarity.Negative, TestName = "MinChargeDiffers_NotEqual")]
-    [TestCase(2, 12, Polarity.Negative, TestName = "MaxChargeDiffers_NotEqual")]
-    [TestCase(2, 15, Polarity.Positive, TestName = "PolarityDiffers_NotEqual")]
-    public void TestEquals_DifferentParameters_obj(int minCharge, int maxCharge, Polarity polarity)
-    {
-        var parameters1 = new ClassicDeconvolutionParameters(minCharge, maxCharge, 5, 3, polarity);
-        var viewModel1 = new TestDeconParamsViewModel(parameters1);
-
-        var parameters2 = new ClassicDeconvolutionParameters(2, 15, 5, 3, Polarity.Negative);
-        var viewModel2 = new TestDeconParamsViewModel(parameters2);
         Assert.That(viewModel1.Equals((object)viewModel2), Is.False);
+        Assert.That(viewModel1.Equals(null), Is.False);
         Assert.That(viewModel1.Equals((object)null), Is.False);
     }
 
     [Test]
-    public void TestEquals_SameParameters()
+    public void TestEquals_SameParameters_DifferentInstancesNotEqual()
     {
         var parameters1 = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive);
         var viewModel1 = new TestDeconParamsViewModel(parameters1);

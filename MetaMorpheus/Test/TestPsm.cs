@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.Localization;
@@ -742,8 +742,95 @@ namespace Test
                     psms.Add(psm);
                 }
             }
-            SpectralMatch psmScan23 = psms.ToArray()[33];
+SpectralMatch psmScan23 = psms.ToArray()[33];
             Assert.That(psmScan23.PrecursorScanEnvelopePeakCount, Is.EqualTo(4));
         }
+
+        [Test]
+        public static void TestTrimProteinMatchesRemovesNonParsimoniousParents()
+        {
+            // Create two proteins with the same peptide sequence via digestion
+            var protein1 = new Protein("PEPTIDEKPEPTIDER", "PROTEIN1", "ORGANISM");
+            var protein2 = new Protein("PEPTIDEKPEPTIDER", "PROTEIN2", "ORGANISM");
+
+            DigestionParams digestionParams = new DigestionParams();
+            var peptides1 = protein1.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
+            var peptides2 = protein2.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
+
+            // Get the shared peptide
+            var sharedPeptide = peptides1.First();
+            var sharedPeptide2 = peptides2.First();
+
+            // Create scan
+            MsDataFile myMsDataFile = new TestDataFile(sharedPeptide, "quadratic");
+            MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, sharedPeptide.MonoisotopicMass, 1, null, new CommonParameters());
+
+            // Create matched fragment ions
+            var theoreticalIons = new List<Product>();
+            sharedPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theoreticalIons);
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalIons, new CommonParameters());
+
+            // Create PSM with first hypothesis
+            SpectralMatch psm = new PeptideSpectralMatch(sharedPeptide, 0, 1, 1, scan, new CommonParameters(), matchedIons);
+
+            // Add second hypothesis with second protein using AddOrReplace (same score so ambiguity is kept)
+            psm.AddOrReplace(sharedPeptide2, 1, 0, true, matchedIons);
+
+            psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+            psm.ResolveAllAmbiguities();
+
+            int countBefore = psm.BestMatchingBioPolymersWithSetMods.Count();
+            Assert.That(countBefore, Is.EqualTo(2));
+
+            // Create parsimonious set containing only protein1
+            var parsimoniousProteins = new HashSet<IBioPolymer> { protein1 };
+
+            int removed = psm.TrimProteinMatches(parsimoniousProteins);
+
+            Assert.That(removed, Is.GreaterThanOrEqualTo(1));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.LessThan(countBefore));
         }
+
+        [Test]
+        public static void TestAddProteinMatchAddsNewAndRejectsDuplicate()
+        {
+            // Create two proteins with same peptide sequence
+            var protein1 = new Protein("PEPTIDEKPEPTIDER", "PROTEIN1", "ORGANISM");
+            var protein2 = new Protein("PEPTIDEKPEPTIDER", "PROTEIN2", "ORGANISM");
+
+            DigestionParams digestionParams = new DigestionParams();
+            var peptides1 = protein1.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
+            var peptides2 = protein2.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
+
+            var peptide1 = peptides1.First();
+            var peptide2 = peptides2.First();
+
+            // Create scan
+            MsDataFile myMsDataFile = new TestDataFile(peptide1, "quadratic");
+            MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, peptide1.MonoisotopicMass, 1, null, new CommonParameters());
+
+            // Create matched fragment ions
+            var theoreticalIons = new List<Product>();
+            peptide1.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theoreticalIons);
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalIons, new CommonParameters());
+
+            // Create PSM with first hypothesis
+            SpectralMatch psm = new PeptideSpectralMatch(peptide1, 0, 1, 1, scan, new CommonParameters(), matchedIons);
+            psm.ResolveAllAmbiguities();
+
+            // Create second hypothesis manually (different parent protein)
+            var secondHypothesis = new EngineLayer.SpectrumMatch.SpectralMatchHypothesis(0, peptide2, matchedIons, 1.0);
+
+            bool firstAdd = psm.AddProteinMatch(secondHypothesis);
+            Assert.That(firstAdd, Is.True);
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
+
+            // Try adding the same hypothesis again - should be rejected
+            bool secondAdd = psm.AddProteinMatch(secondHypothesis);
+Assert.That(secondAdd, Is.False);
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
+        }
+    }
 }

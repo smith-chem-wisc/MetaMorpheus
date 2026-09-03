@@ -223,7 +223,7 @@ namespace EngineLayer
         /// <param name="targetDecoy"></param>
         public GlycanBox(int[] ids, bool Istarget = true):base(ids)
         {
-            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[Glycan.KindCapacity];
             foreach (var id in ModIds) //ModIds is the same as ids.
             {
                 for (int i = 0; i < kind.Length; i++)   
@@ -249,7 +249,7 @@ namespace EngineLayer
         {
             OGlycanIds = oGlycanIds;
             NGlycanId = nGlycanIds;
-            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[Glycan.KindCapacity];
 
             if (!oGlycanIds.IsNullOrEmpty())
             {
