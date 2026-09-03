@@ -207,6 +207,16 @@ namespace MetaMorpheusCommandLine
                 }
             }
 
+            // anything else startup noticed, such as a custom protease that collided with a built-in
+            foreach (var warning in GlobalVariables.StartupWarnings)
+            {
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    Console.WriteLine(warning);
+                }
+            }
+            GlobalVariables.StartupWarnings.Clear();
+
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
 
             var tasks = settings.Tasks.ToList();
