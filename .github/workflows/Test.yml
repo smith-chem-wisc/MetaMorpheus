@@ -11,10 +11,18 @@ env:
   DOTNET_FRAMEWORK: net10.0
 
 jobs:
-  test:
-    name: Test on Windows
+  # The suite is split across two runners purely for wall clock. The partition is on fixture name and
+  # is exhaustive by construction: a test either matches ~Test.TestOGlyco or matches !~Test.TestOGlyco.
+  # TestOGlyco is the half chosen because it holds OGlycoTest_Run5_WriteDecoys, which alone is ~32% of
+  # the suite's runtime, and because it is NOT one of the fixtures sharing EverythingRunnerEngineTestCase
+  # -- so neither runner rebuilds a cached search the other already built.
+  #
+  # These are separate jobs, not NUnit parallelism. Each runner still executes its own tests
+  # sequentially in one process, so tests that share an output folder (TESTGlycoData is used by five
+  # test files) never run concurrently. In-process parallelism is not safe in this suite.
+  test-glyco:
+    name: Test on Windows (glyco)
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v4
       - name: Setup .NET
@@ -23,17 +31,46 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
-        
+
       - name: Build
         run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration Release
-        
-      - name: Install Coverlet for code coverage
-        run: dotnet add ./MetaMorpheus/Test/Test.csproj package coverlet.collector -v 6.0.2
-        
+
       - name: Run unit tests with coverage
         # Exclude live external-service tests (UniProt, etc.) from the required run; they run in the
-        # separate, non-blocking external-service-tests job below.
-        run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --verbosity normal --filter "Category!=ExternalService" --collect:"XPlat Code Coverage"
+        # separate, non-blocking external-service-tests job below. --settings makes a filter that
+        # matches nothing fail rather than silently pass; see the runsettings file for why.
+        run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --no-build --verbosity normal --filter "Category!=ExternalService&FullyQualifiedName~Test.TestOGlyco" --settings .github\no-empty-test-run.runsettings --collect:"XPlat Code Coverage"
+
+      # Both halves upload. Codecov merges uploads for the same commit, so a single upload would
+      # report the suite as covering only its own half and sink the project/patch percentages.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          flags: unittests
+          fail_ci_if_error: true
+
+  test-core:
+    name: Test on Windows (core)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+
+      - name: Build
+        run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration Release
+
+      - name: Run unit tests with coverage
+        # Exclude live external-service tests (UniProt, etc.) from the required run; they run in the
+        # separate, non-blocking external-service-tests job below. --settings makes a filter that
+        # matches nothing fail rather than silently pass; see the runsettings file for why.
+        run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --no-build --verbosity normal --filter "Category!=ExternalService&FullyQualifiedName!~Test.TestOGlyco" --settings .github\no-empty-test-run.runsettings --collect:"XPlat Code Coverage"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -41,6 +78,24 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
           flags: unittests
+          fail_ci_if_error: true
+
+  # Aggregator so the required status check keeps its existing name. Branch protection can go on
+  # keeping "Test on Windows" required without a settings change; this fails if either half failed
+  # or was skipped.
+  test:
+    name: Test on Windows
+    runs-on: ubuntu-latest
+    needs: [ test-glyco, test-core ]
+    if: ${{ !cancelled() }}
+    steps:
+      - name: Check both halves passed
+        run: |
+          echo "glyco=${{ needs.test-glyco.result }} core=${{ needs.test-core.result }}"
+          if [ "${{ needs.test-glyco.result }}" != "success" ] || [ "${{ needs.test-core.result }}" != "success" ]; then
+            echo "::error::One or both halves of the Windows test suite did not pass."
+            exit 1
+          fi
 
   # Runs tests that depend on live external web services (UniProt, ...). Kept separate and
   # intentionally NOT a required status check, so a third-party outage never blocks a PR. The tests

@@ -359,6 +359,15 @@ namespace EngineLayer
             WarnHandler?.Invoke(this, new StringEventArgs(v, NestedIds));
         }
 
+        /// <summary>
+        /// Static counterpart to <see cref="Warn(string)"/>, for warnings raised from static contexts,
+        /// where no engine instance (and therefore no nested id) is available
+        /// </summary>
+        protected static void WarnStatic(string v)
+        {
+            WarnHandler?.Invoke(null, new StringEventArgs(v, null));
+        }
+
         protected void Status(string v)
         {
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, NestedIds));

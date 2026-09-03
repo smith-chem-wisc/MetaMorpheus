@@ -7,10 +7,15 @@ using EngineLayer;
 namespace Test
 {
     /// <summary>
-    /// The command line asks two yes/no questions, and both used to dereference
-    /// Console.ReadLine() unguarded. When there is no console to answer from - a CI job, a
-    /// container, a cluster batch job, anything with stdin redirected or closed - ReadLine()
-    /// returns null and the run died with a NullReferenceException instead of explaining itself.
+    /// The Thermo licence prompt dereferences Console.ReadLine() unguarded. When there is no
+    /// console to answer from - a CI job, a container, a cluster batch job, anything with stdin
+    /// redirected or closed - ReadLine() returns null and the run died with a
+    /// NullReferenceException instead of explaining itself.
+    ///
+    /// The experimental-design prompt had the same defect and is NOT covered here: #2775 moved it
+    /// into Program.ResolveExperimentalDesign with an injectable readLine, so it is tested
+    /// in-process and far more cheaply by ResolveExperimentalDesignTests - including the null
+    /// answer. This fixture covers only the prompt that still reads the console directly.
     ///
     /// These run the real CLI as a separate process rather than calling Program.Main in-process,
     /// for two reasons. It is the honest version of the condition under test: the process really
@@ -205,84 +210,6 @@ namespace Test
                     "-o", Path.Combine(folder, "output"));
 
                 Assert.AreEqual(3, result.ExitCode, "a padded 'n' is a refusal, not an unreadable answer");
-            }
-            finally
-            {
-                Directory.Delete(folder, true);
-            }
-        }
-
-        /// <summary>
-        /// The other side of the same prompt: "y" is a decision, so the design file is deleted and the
-        /// run continues. Without this the y-branch is never taken by any test and the condition
-        /// guarding it is only half exercised - a guard nothing ever passes through is not a guard.
-        /// </summary>
-        [Test]
-        [TestCase("y")]
-        [TestCase("yes")]
-        [TestCase("  YES  ")]
-        public void AnsweringYesToAnUnparsableExperimentalDesignDeletesIt(string answer)
-        {
-            string folder = FreshFolder("CmdExperimentalDesignAccepted" + answer.Trim().ToLowerInvariant());
-
-            try
-            {
-                string spectraFile = MakeEmptyFile(folder, "spectra.mzML");
-
-                string designPath = Path.Combine(folder, GlobalVariables.ExperimentalDesignFileName);
-                File.WriteAllText(designPath,
-                    "FileName	Condition	Biorep	Fraction	Techrep" + Environment.NewLine
-                    + "spectra.mzML	condition	1" + Environment.NewLine);
-
-                var result = RunCli(answer + Environment.NewLine,
-                    "-t", SearchTaskTomlPath(),
-                    "-s", spectraFile,
-                    "-d", TestDataPath("smalldb.fasta"),
-                    "-o", Path.Combine(folder, "output"));
-
-                Assert.IsFalse(File.Exists(designPath),
-                    "answering yes is a decision to discard the design, and must be honoured");
-                Assert.AreNotEqual(5, result.ExitCode,
-                    "5 means the design blocked the run; it did not, because the user agreed to drop it");
-            }
-            finally
-            {
-                Directory.Delete(folder, true);
-            }
-        }
-
-        /// <summary>
-        /// The second prompt: an experimental design that will not parse, and no console to ask
-        /// whether it may be deleted. This is the site that still threw after the licence prompt was
-        /// fixed. Refusing to answer must leave the user's file on disk.
-        /// </summary>
-        [Test]
-        public void UnparsableExperimentalDesignWithNoConsoleReturnsFiveAndKeepsTheFile()
-        {
-            string folder = FreshFolder("CmdExperimentalDesignNoConsole");
-
-            try
-            {
-                // .mzML, so the Thermo licence gate is not in the way of the prompt under test
-                string spectraFile = MakeEmptyFile(folder, "spectra.mzML");
-
-                // a data row with three cells where five are required
-                string designPath = Path.Combine(folder, GlobalVariables.ExperimentalDesignFileName);
-                File.WriteAllText(designPath,
-                    "FileName\tCondition\tBiorep\tFraction\tTechrep" + Environment.NewLine
-                    + "spectra.mzML\tcondition\t1" + Environment.NewLine);
-
-                var result = RunCli(null,
-                    "-t", SearchTaskTomlPath(),
-                    "-s", spectraFile,
-                    "-d", TestDataPath("smalldb.fasta"),
-                    "-o", Path.Combine(folder, "output"));
-
-                Assert.AreEqual(5, result.ExitCode);
-                Assert.IsFalse(result.Output.Contains("NullReferenceException"),
-                    "the unanswerable prompt must be reported, not thrown");
-                Assert.IsTrue(File.Exists(designPath),
-                    "an unanswerable prompt must not delete the user's experimental design");
             }
             finally
             {
