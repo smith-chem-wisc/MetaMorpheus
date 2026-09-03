@@ -188,7 +188,7 @@
                                         </Style>
                                     </TextBox.Style>
                                 </TextBox>
-                                <Label x:Name="GlycanSelectionSummary" Content="" Foreground="Gray" VerticalAlignment="Center"/>
+                                <Label x:Name="GlycanSelectionSummary" Content="{Binding Summary}" Foreground="Gray" VerticalAlignment="Center"/>
                             </StackPanel>
                             <TreeView x:Name="glycanTreeView" Grid.Row="1" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400"
                                       VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
