@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -232,6 +232,31 @@ internal sealed partial class MainWindowViewModel : ObservableObject, IDisposabl
     }
 
     /// <summary>Adds spectra paths chosen by the view, which owns the file dialog.</summary>
+    // Lives on the view model, not on MainWindow, on purpose. MainWindow carries
+    // [ExcludeFromCodeCoverage] because a file picker cannot be unit tested, and these two
+    // properties are the testable part of that feature - the same reason GuiFunctions exists
+    // separately from the WPF GUI project. Keeping them here means the two platform invariants
+    // below are pinned by a test instead of only by a comment.
+    /// <summary>
+    /// Built from GlobalVariables rather than written out, so the picker cannot drift from what the
+    /// application accepts. Two things this gets right that a hand-written list did not:
+    ///
+    ///   * The entries are lowercase. Avalonia's FreeDesktop backend passes these to the XDG portal as
+    ///     GlobStyle globs, and portal matching is case-sensitive, so "*.mzML" hides sample.mzml on
+    ///     Linux - the platform this exists for. Windows and macOS match case-insensitively, so it
+    ///     would never reproduce locally on either.
+    ///   * ".d" is excluded. Bruker data is a directory and OpenFilePickerAsync cannot select one;
+    ///     users pick the .tdf inside it and AddSpectraFiles maps that back to the folder.
+    /// </summary>
+    public static string[] SpectraPatterns => GlobalVariables.AcceptedSpectraFormats
+        .Where(extension => extension != ".d")
+        .Select(extension => "*" + extension)
+        .ToArray();
+
+    public static string[] DatabasePatterns => GlobalVariables.AcceptedDatabaseFormats
+        .SelectMany(extension => new[] { "*" + extension, "*" + extension + ".gz" })
+        .ToArray();
+
     public void AddSpectraFiles(IEnumerable<string> paths)
     {
         foreach (string path in paths.Where(IsSupportedSpectraFile).Select(ToBrukerFolderIfInside))
