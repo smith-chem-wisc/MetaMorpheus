@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using EngineLayer.Util;
 using IO.ThermoRawFileReader;
 using Microsoft.Win32;
@@ -207,15 +207,7 @@ namespace MetaMorpheusGUI
                 }
 
                 UpdateOutputFolderTextbox();
-
-                // After SpectraFiles updated, seed TMT design state from any design files next to the raw files
-                try
-                {
-                    var rawPaths = SpectraFiles.Select(sf => sf.FilePath).Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
-                    MetaMorpheusGUI.TmtExperimentalDesignWindow.SeedFromDesignFiles(rawPaths);
-                }
-                catch { /* ignore */ }
-
+                SeedTmtExperimentalDesign();
                 dataGridSpectraFiles.Items.Refresh();
             }
         }
@@ -535,16 +527,6 @@ namespace MetaMorpheusGUI
             {
                 AddPreRunFiles(openPicker.FileNames);
             }
-
-            // After SpectraFiles updated, seed TMT design state from any design files next to the raw files
-            try
-            {
-                var rawPaths = SpectraFiles.Select(sf => sf.FilePath).Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
-                MetaMorpheusGUI.TmtExperimentalDesignWindow.SeedFromDesignFiles(rawPaths);
-            }
-            catch { /* ignore */ }
-
-            dataGridSpectraFiles.Items.Refresh();
         }
 
         /// <summary>
@@ -612,54 +594,9 @@ namespace MetaMorpheusGUI
                 Title = "TMT Experimental Design"
             };
 
-            if (dialog.ShowDialog() == true)
-            {
-                // Integrate files from design window into SpectraFiles list
-                foreach (var design in dialog.GetResults())
-                {
-                    // Add or update the spectra file entry
-                    var existing = SpectraFiles.FirstOrDefault(sf =>
-                        string.Equals(sf.FilePath, design.FilePath, StringComparison.OrdinalIgnoreCase));
-
-                    if (existing == null)
-                    {
-                        // RawDataForDataGrid assumed to have a constructor taking file path (adjust if different)
-                        var newRaw = new RawDataForDataGrid(design.FilePath)
-                        {
-                            Use = true // make available for tasks
-                        };
-                        SpectraFiles.Add(newRaw);
-                    }
-                    else
-                    {
-                        existing.Use = true;
-                    }
-
-                    // Detect file-specific parameter TOML in the same folder
-                    // Try both: replacing extension with .toml and appending .toml
-                    string toml1 = Path.ChangeExtension(design.FilePath, ".toml");
-                    string toml2 = design.FilePath + ".toml";
-                    string tomlToUse = null;
-
-                    if (File.Exists(toml1))
-                        tomlToUse = toml1;
-                    else if (File.Exists(toml2))
-                        tomlToUse = toml2;
-
-                    if (tomlToUse != null)
-                    {
-                        // Update display / internal state using existing logic
-                        UpdateFileSpecificParamsDisplay(tomlToUse);
-                    }
-                }
-
-                // Refresh UI bindings
-                dataGridSpectraFiles.Items.Refresh();
-
-                // If there is existing GUI state logic that needs to run when spectra set changes
-                UpdateGuiOnPreRunChange();
-            }
+            dialog.ShowDialog();
         }
+
         /// <summary>
         /// Event fires when the "Add Protein Database" button is clicked.
         /// </summary>
@@ -1756,17 +1693,22 @@ namespace MetaMorpheusGUI
                 AddPreRunFileRecursiveHelper(path);
             }
 
-            // NEW: After all files are added, seed TMT design from TmtDesign.txt (if present next to raw files)
-            try
-            {
-                var rawPaths = SpectraFiles.Select(sf => sf.FilePath)
-                                           .Where(p => !string.IsNullOrWhiteSpace(p))
-                                           .ToList();
-                MetaMorpheusGUI.TmtExperimentalDesignWindow.SeedFromDesignFiles(rawPaths);
-            }
-            catch { /* ignore */ }
-
+            SeedTmtExperimentalDesign();
             UpdateGuiOnPreRunChange();
+        }
+
+        /// <summary>
+        /// Refreshes the TMT experimental design state from any TmtDesign.txt sitting next to the
+        /// CHECKED spectra files. Seeding from every file in the grid warned about files the user had
+        /// deliberately unchecked, while the design window only ever lists the checked ones.
+        /// </summary>
+        private void SeedTmtExperimentalDesign()
+        {
+            TmtExperimentalDesignWindow.SeedFromDesignFiles(
+                SpectraFiles.Where(sf => sf.Use)
+                            .Select(sf => sf.FilePath)
+                            .Where(p => !string.IsNullOrWhiteSpace(p))
+                            .ToList());
         }
 
         private void AddPreRunFileRecursiveHelper(string path)
@@ -2286,7 +2228,7 @@ namespace MetaMorpheusGUI
         {
             foreach (MenuItem item in ((ContextMenu)this.Resources["ProteinDatabaseContextMenu"]).Items)
             {
-                switch ( item.Header.ToString())
+                switch (item.Header.ToString())
                 {
                     case "Set as contaminant database": item.IsEnabled = enable; break;
                     case "Set as non-contaminant database": item.IsEnabled = enable; break;
@@ -2368,7 +2310,5 @@ namespace MetaMorpheusGUI
                 MessageBox.Show(
                     $"Cannot find proteome directory ${GuiGlobalParamsViewModel.Instance.ProteomeDirectory}{Environment.NewLine}See settings tab to update directory path");
         }
-
-
     }
 }

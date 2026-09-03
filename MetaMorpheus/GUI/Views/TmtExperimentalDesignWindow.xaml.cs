@@ -1,4 +1,3 @@
-﻿using System;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,28 +6,36 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
 using EngineLayer;
 
 namespace MetaMorpheusGUI
 {
+    /// <summary>
+    /// Authors TmtDesign.txt for the spectra files currently selected on the main window.
+    /// </summary>
+    /// <remarks>
+    /// The shape follows <see cref="ExperimentalDesignWindow"/>, which owns ExperimentalDesign.tsv:
+    /// the file on disk is the single source of truth, the dialog annotates a file set it does not
+    /// own, and the whole design is written exactly once, on Save, only after it validates. This
+    /// window used to diverge on all three counts -- it could add spectra files itself, it persisted
+    /// into process-lifetime statics, and its Save wrote nothing at all while the annotate dialog
+    /// wrote a design of its own -- which is why the grid and the file could disagree.
+    /// </remarks>
     public partial class TmtExperimentalDesignWindow : Window
     {
         private readonly ObservableCollection<TmtDesignRow> _rows = new();
         private readonly ObservableCollection<RawDataForDataGrid> _spectraFiles;
-        public record TmtDesignResult(string FilePath, int Fraction, int TechnicalReplicate, string Plex);
-        private Point _dragStart;
-        private TmtDesignRow _dragSource;
-        private readonly Dictionary<string, List<PlexAnnotation>> _plexAnnotations = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, List<PlexAnnotation>> _plexAnnotations =
+            new(StringComparer.OrdinalIgnoreCase);
 
-        // Persist design across dialog opens during app lifetime
-        private static readonly Dictionary<string, string> s_fileToPlex = new(StringComparer.OrdinalIgnoreCase);
-        private static readonly Dictionary<string, List<PlexAnnotation>> s_plexAnnotations = new(StringComparer.OrdinalIgnoreCase);
-
-        // NEW: Per-file full state (fraction, tech rep, plex)
+        // Carried across dialog opens within one session so a part-authored design survives a
+        // Cancel. The FILE is still the source of truth: SeedFromDesignFiles refreshes both of
+        // these from disk whenever the spectra-file list changes.
         private record FileDesignState(int Fraction, int TechnicalReplicate, string Plex);
-        private static readonly Dictionary<string, FileDesignState> s_fileState = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, FileDesignState> s_fileState =
+            new(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, List<PlexAnnotation>> s_plexAnnotations =
+            new(StringComparer.OrdinalIgnoreCase);
 
         public TmtExperimentalDesignWindow(ObservableCollection<RawDataForDataGrid> spectraFiles)
         {
@@ -43,85 +50,30 @@ namespace MetaMorpheusGUI
                     + "The grid below shows only what could be loaded." + Environment.NewLine + Environment.NewLine
                     + string.Join(Environment.NewLine, s_seedErrors),
                     "TMT experimental design", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                // Cleared once shown, or the same warning reappears every time the window is opened
+                // even though nothing was re-read.
+                s_seedErrors.Clear();
             }
 
-            // seed rows with existing SpectraFiles.Use == true
+            // One row per checked spectra file. The row set is not editable here -- files are added
+            // and removed on the main window, which is the only place that applies the extension
+            // allowlist and the Thermo RawFileReader licence agreement.
             foreach (var file in _spectraFiles.Where(p => p.Use).Select(p => p.FilePath))
             {
                 var row = new TmtDesignRow(file);
-                // prefer full saved state if available
                 if (s_fileState.TryGetValue(file, out var st))
                 {
                     row.Fraction = st.Fraction;
                     row.TechnicalReplicate = st.TechnicalReplicate;
                     row.Plex = st.Plex ?? "";
                 }
-                else if (s_fileToPlex.TryGetValue(file, out var savedPlex)) // legacy support if only Plex was saved
-                {
-                    row.Plex = savedPlex;
-                }
                 _rows.Add(row);
             }
 
-            // seed annotations cache for this window instance
             foreach (var kv in s_plexAnnotations)
                 _plexAnnotations[kv.Key] = new List<PlexAnnotation>(kv.Value);
         }
-
-        public IReadOnlyList<TmtDesignResult> GetResults()
-        {
-            return _rows
-                .Select(r => new TmtDesignResult(r.FilePath, r.Fraction, r.TechnicalReplicate, r.Plex ?? string.Empty))
-                .ToList();
-        }
-
-        #region Drag/drop add files
-        private void Window_Drop(object sender, DragEventArgs e)
-        {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
-                return;
-
-            CommitPendingEdits();
-
-            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            if (files == null) return;
-
-            foreach (var path in files)
-            {
-                if (Directory.Exists(path))
-                {
-                    foreach (var f in Directory.EnumerateFiles(path))
-                        AddFileIfNotExists(f);
-                }
-                else if (File.Exists(path))
-                    AddFileIfNotExists(path);
-            }
-
-            DgTmt.Items.Refresh();
-        }
-
-        private void AddFileIfNotExists(string path)
-        {
-            if (_rows.Any(r => string.Equals(r.FilePath, path, StringComparison.OrdinalIgnoreCase)))
-                return;
-
-            var row = new TmtDesignRow(path);
-            if (s_fileState.TryGetValue(path, out var st))
-            {
-                row.Fraction = st.Fraction;
-                row.TechnicalReplicate = st.TechnicalReplicate;
-                row.Plex = st.Plex ?? "";
-            }
-            else
-            {
-                // initialize new: fraction increments from current max; techRep = 1; plex empty
-                int nextFraction = _rows.Any() ? _rows.Max(r => r.Fraction) : 0; // first becomes 1
-                row.Fraction = nextFraction + 1;
-                row.TechnicalReplicate = 1;
-            }
-            _rows.Add(row);
-        }
-        #endregion
 
         #region Validation
         private string ValidateDesign()
@@ -131,8 +83,22 @@ namespace MetaMorpheusGUI
 
             CommitPendingEdits();
 
+            // A file with no plex passes every check below -- they are all scoped to a plex -- and
+            // then does not appear in the written design at all, because the design is built by
+            // grouping on plex. Silently dropping a file the user can see in the grid is worse than
+            // refusing to save.
+            var unplexed = _rows.Where(r => string.IsNullOrWhiteSpace(r.Plex)).ToList();
+            if (unplexed.Any())
+            {
+                return "Every file must be assigned a Plex. Missing for: "
+                    + string.Join(", ", unplexed.Select(r => Path.GetFileName(r.FilePath)));
+            }
+
             if (_rows.Any(r => r.TechnicalReplicate < 1))
                 return "Technical Replicate values must be >= 1.";
+
+            if (_rows.Any(r => r.Fraction < 1))
+                return "Fraction values must be >= 1.";
 
             // Every check below is scoped to one plex, because _rows spans plexes and a plex is its
             // own labelling experiment. Unscoped, two files in different plexes both sitting at
@@ -142,11 +108,9 @@ namespace MetaMorpheusGUI
             // round trip: SeedFromDesignFiles stores fraction, replicate and plex per file, so a
             // two-plex design the parser accepts loaded into this grid and then could not be saved
             // back out. TmtExperimentalDesign keys its own per-file state on plex the same way.
-            foreach (var plexGroup in _rows.GroupBy(r => r.Plex ?? string.Empty, StringComparer.OrdinalIgnoreCase))
+            foreach (var plexGroup in _rows.GroupBy(r => r.Plex.Trim(), StringComparer.OrdinalIgnoreCase))
             {
-                string plexLabel = string.IsNullOrWhiteSpace(plexGroup.Key)
-                    ? "Files with no plex assigned"
-                    : $"Plex {plexGroup.Key}";
+                string plexLabel = $"Plex {plexGroup.Key}";
 
                 var distinctFractions = plexGroup.Select(r => r.Fraction).Distinct().OrderBy(i => i).ToList();
                 if (distinctFractions.First() != 1)
@@ -177,85 +141,6 @@ namespace MetaMorpheusGUI
         }
         #endregion
 
-        #region Row drag reorder
-        private void Row_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            _dragStart = e.GetPosition(null);
-            if (e.OriginalSource is DependencyObject dep)
-            {
-                var row = FindAncestor<DataGridRow>(dep);
-                _dragSource = row?.Item as TmtDesignRow;
-            }
-        }
-
-        private void Row_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (e.LeftButton != MouseButtonState.Pressed || _dragSource == null)
-                return;
-
-            var diff = e.GetPosition(null) - _dragStart;
-            if (Math.Abs(diff.X) < SystemParameters.MinimumHorizontalDragDistance &&
-                Math.Abs(diff.Y) < SystemParameters.MinimumVerticalDragDistance)
-                return;
-
-            DragDrop.DoDragDrop(DgTmt, _dragSource, DragDropEffects.Move);
-        }
-
-        private void Row_DragOver(object sender, DragEventArgs e)
-        {
-            if (!e.Data.GetDataPresent(typeof(TmtDesignRow)))
-            {
-                e.Effects = DragDropEffects.None;
-                e.Handled = true;
-                return;
-            }
-            e.Effects = DragDropEffects.Move;
-            e.Handled = true;
-        }
-
-        private void Row_Drop(object sender, DragEventArgs e)
-        {
-            if (!e.Data.GetDataPresent(typeof(TmtDesignRow)))
-                return;
-
-            var source = (TmtDesignRow)e.Data.GetData(typeof(TmtDesignRow));
-            if (source == null) return;
-
-            var target = ResolveTargetRow(e.OriginalSource);
-            if (target == null || target == source) return;
-
-            int sourceIndex = _rows.IndexOf(source);
-            int targetIndex = _rows.IndexOf(target);
-            if (sourceIndex < 0 || targetIndex < 0) return;
-
-            _rows.RemoveAt(sourceIndex);
-            _rows.Insert(targetIndex, source);
-
-            DgTmt.SelectedItem = source;
-            DgTmt.Items.Refresh();
-        }
-
-        private TmtDesignRow ResolveTargetRow(object originalSource)
-        {
-            if (originalSource is DependencyObject dep)
-            {
-                var row = FindAncestor<DataGridRow>(dep);
-                return row?.Item as TmtDesignRow;
-            }
-            return null;
-        }
-
-        private static T FindAncestor<T>(DependencyObject current) where T : DependencyObject
-        {
-            while (current != null)
-            {
-                if (current is T t) return t;
-                current = VisualTreeHelper.GetParent(current);
-            }
-            return null;
-        }
-        #endregion
-
         #region Editing
         private void DgTmt_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
@@ -268,6 +153,10 @@ namespace MetaMorpheusGUI
                 var tb = e.EditingElement as TextBox;
                 if (tb == null) return;
 
+                // The two integer columns bind with the default UpdateSourceTrigger (LostFocus)
+                // rather than PropertyChanged, so cancelling here genuinely rejects the edit. Under
+                // PropertyChanged the source had already been written by the time this ran and
+                // e.Cancel reverted nothing.
                 if (colHeader == "Fraction")
                 {
                     if (!int.TryParse(tb.Text, out var val) || val < 1)
@@ -297,11 +186,15 @@ namespace MetaMorpheusGUI
         {
             CommitPendingEdits();
 
+            // OrdinalIgnoreCase throughout. The grid deduped plex names case-insensitively while the
+            // dictionary handed to the annotate window was rebuilt with the default comparer, so
+            // "PLEX1" in the design file and "Plex1" in the grid opened a blank annotation grid and
+            // then wrote it over the real annotations.
             var plexNames = _rows
-                .Select(r => (r.Plex ?? string.Empty).Trim())
+                .Select(r => r.Plex.Trim())
                 .Where(s => !string.IsNullOrEmpty(s))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(s => s)
+                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             if (!plexNames.Any())
@@ -310,33 +203,16 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            var plexFileMap = _rows
-                .Where(r => !string.IsNullOrWhiteSpace(r.Plex))
-                .GroupBy(r => r.Plex.Trim())
-                .ToDictionary(g => g.Key,
-                    g => g
-                        .OrderBy(x => x.Fraction)
-                        .ThenBy(x => x.TechnicalReplicate)
-                        .Select(x =>
-                        {
-                            _plexAnnotations.TryGetValue(x.Plex.Trim(), out var anns);
-                            return new PlexFileEntry(x.FilePath, x.Fraction, x.Plex.Trim(), x.TechnicalReplicate, anns);
-                        })
-                        .ToList());
-
             var dialog = new AnnotatePlexWindow(plexNames,
-                _plexAnnotations.ToDictionary(k => k.Key, v => v.Value.ToList()),
-                plexFileMap)
+                _plexAnnotations.ToDictionary(k => k.Key, v => v.Value.ToList(), StringComparer.OrdinalIgnoreCase))
             {
                 Owner = this
             };
 
-            if (dialog.ShowDialog() == true &&
-                !string.IsNullOrEmpty(dialog.SavedPlexName) &&
-                dialog.SavedAnnotations != null)
+            if (dialog.ShowDialog() == true)
             {
-                _plexAnnotations[dialog.SavedPlexName] = dialog.SavedAnnotations;
-                s_plexAnnotations[dialog.SavedPlexName] = new List<PlexAnnotation>(dialog.SavedAnnotations);
+                foreach (var kv in dialog.SavedAnnotationsByPlex)
+                    _plexAnnotations[kv.Key] = new List<PlexAnnotation>(kv.Value);
             }
         }
         #endregion
@@ -353,6 +229,7 @@ namespace MetaMorpheusGUI
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             CommitPendingEdits();
+
             var err = ValidateDesign();
             if (err != null)
             {
@@ -360,13 +237,67 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            // persist per-file full state and plex choices for next open
-            foreach (var r in _rows)
+            var design = BuildDesign();
+
+            // A run refuses to start when both design files sit in one folder, because nothing there
+            // could say which of them the user meant (CMD.Program.ResolveExperimentalDesign, and the
+            // main window's own pre-run check). Both writers target the first spectra file's
+            // directory and the two authoring buttons sit side by side, so warn here rather than let
+            // the run be the first place this is discovered.
+            var designDirectory = Directory.GetParent(design[0].FullFilePathWithExtension)!.FullName;
+            var classicDesignPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
+            if (File.Exists(classicDesignPath))
             {
-                s_fileState[r.FilePath] = new FileDesignState(r.Fraction, r.TechnicalReplicate, r.Plex?.Trim() ?? "");
-                if (!string.IsNullOrWhiteSpace(r.Plex))
-                    s_fileToPlex[r.FilePath] = r.Plex.Trim();
+                var proceed = MessageBox.Show(
+                    $"{GlobalVariables.ExperimentalDesignFileName} is already in this folder:"
+                    + Environment.NewLine + designDirectory + Environment.NewLine + Environment.NewLine
+                    + "Only one experimental design file may be present when a run starts. With both, "
+                    + "MetaMorpheus stops and asks for one of them to be removed." + Environment.NewLine + Environment.NewLine
+                    + $"Save {GlobalVariables.TmtExperimentalDesignFileName} anyway?",
+                    "Two experimental designs", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+
+                if (proceed != MessageBoxResult.OK)
+                    return;
             }
+
+            string savePath;
+            try
+            {
+                savePath = TmtExperimentalDesign.Write(design);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to write file: " + ex.Message, "Cannot Save");
+                return;
+            }
+
+            // Read the design straight back through the same parser a command-line run uses, so a
+            // file this window reports as saved is one a run can actually load. This window's own
+            // validation and the parser's are not the same set of rules, and the parser is the one
+            // that decides whether the design works.
+            TmtExperimentalDesign.Read(savePath,
+                design.Select(f => f.FullFilePathWithExtension).ToList(), out var readErrors);
+
+            if (readErrors.Count > 0)
+            {
+                MessageBox.Show(
+                    "The design was written, but reading it back reported:" + Environment.NewLine + Environment.NewLine
+                    + string.Join(Environment.NewLine, readErrors),
+                    "Saved design does not load", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            else
+            {
+                int plexCount = design.Select(f => f.Plex).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+                MessageBox.Show(
+                    $"Saved TMT design ({design.Count} file(s), {plexCount} plex(es)) to:"
+                    + Environment.NewLine + savePath,
+                    "Saved");
+            }
+
+            foreach (var r in _rows)
+                s_fileState[r.FilePath] = new FileDesignState(r.Fraction, r.TechnicalReplicate, r.Plex.Trim());
+            foreach (var kv in _plexAnnotations)
+                s_plexAnnotations[kv.Key] = new List<PlexAnnotation>(kv.Value);
 
             DialogResult = true;
             Close();
@@ -377,6 +308,61 @@ namespace MetaMorpheusGUI
             DialogResult = false;
             Close();
         }
+        #endregion
+
+        #region Building the design
+        /// <summary>
+        /// The grid and the annotations as one <see cref="TmtFileInfo"/> list covering every plex, so
+        /// that <see cref="TmtExperimentalDesign.Write"/> rewrites a complete design rather than a
+        /// fragment. A plex with no annotations yet is still emitted, as the file-only placeholder row
+        /// Read understands, so a part-authored design does not lose its files.
+        /// </summary>
+        private List<TmtFileInfo> BuildDesign()
+        {
+            var files = new List<TmtFileInfo>();
+
+            foreach (var plexGroup in _rows
+                         .GroupBy(r => r.Plex.Trim(), StringComparer.OrdinalIgnoreCase)
+                         .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                _plexAnnotations.TryGetValue(plexGroup.Key, out var annotationRows);
+                var annotations = ToModelAnnotations(annotationRows);
+
+                foreach (var row in plexGroup.OrderBy(r => r.Fraction).ThenBy(r => r.TechnicalReplicate))
+                    files.Add(new TmtFileInfo(row.FilePath, plexGroup.Key, row.Fraction, row.TechnicalReplicate, annotations));
+            }
+
+            return files;
+        }
+
+        /// <summary>
+        /// Grid rows to model annotations. Sample Type goes through
+        /// <see cref="TmtExperimentalDesign.TryParseSampleType"/>, the single place that interprets the
+        /// spelling, and the free-text cells keep the tab/newline scrubbing this window has always
+        /// applied: the model's writer does not escape, so dropping it would let a pasted tab split a row.
+        /// </summary>
+        private static IReadOnlyList<TmtPlexAnnotation> ToModelAnnotations(List<PlexAnnotation> rows)
+        {
+            if (rows == null)
+                return Array.Empty<TmtPlexAnnotation>();
+
+            return rows.Select(a =>
+            {
+                TmtExperimentalDesign.TryParseSampleType(a.SampleType, out var sampleType);
+                return new TmtPlexAnnotation
+                {
+                    Tag = a.Tag,
+                    SampleName = Escape(a.SampleName),
+                    Condition = Escape(a.Condition),
+                    BiologicalReplicate = a.BiologicalReplicate,
+                    SampleType = sampleType
+                };
+            }).ToList();
+        }
+
+        private static string Escape(string s) =>
+            string.IsNullOrEmpty(s) ? "" :
+            s.Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ');
         #endregion
 
         #region Row model
@@ -423,7 +409,7 @@ namespace MetaMorpheusGUI
                 set
                 {
                     if (_plex == value) return;
-                    _plex = value;
+                    _plex = value ?? "";
                     OnPropertyChanged(nameof(Plex));
                 }
             }
@@ -448,7 +434,15 @@ namespace MetaMorpheusGUI
         /// </summary>
         private static readonly List<string> s_seedErrors = new();
 
-        // Load TMT design .txt files in same folders as the provided raw files and seed caches
+        /// <summary>
+        /// Loads TmtDesign.txt from the folders holding the given spectra files and refreshes the
+        /// per-file state and per-plex annotations from it.
+        /// </summary>
+        /// <param name="rawFilePaths">
+        /// The CHECKED spectra files only. Passing every file in the grid produced a "design did not
+        /// contain the file(s)" warning naming files the user had deliberately unchecked, and the
+        /// window itself only ever lists the checked ones.
+        /// </param>
         public static void SeedFromDesignFiles(IEnumerable<string> rawFilePaths)
         {
             s_seedErrors.Clear();
@@ -477,25 +471,30 @@ namespace MetaMorpheusGUI
                 // unrecognised Sample Type, or no row naming a file in this run. Discarding the list
                 // here opened a partial design, or an empty grid indistinguishable from having no
                 // design at all, and said nothing.
-                var tmtFiles = TmtExperimentalDesign.Read(designPath, filesInDir, out var readErrors);
-                foreach (var error in readErrors)
+                List<TmtFileInfo> tmtFiles;
+                try
                 {
-                    s_seedErrors.Add($"{designPath}: {error}");
+                    tmtFiles = TmtExperimentalDesign.Read(designPath, filesInDir, out var readErrors);
+                    foreach (var error in readErrors)
+                        s_seedErrors.Add($"{designPath}: {error}");
+                }
+                catch (Exception ex)
+                {
+                    // Read returns the problems it can describe and throws the ones it cannot -- an
+                    // unreadable or locked file. Both belong in the same list; swallowing the throw
+                    // left the grid silently unseeded.
+                    s_seedErrors.Add($"{designPath}: {ex.Message}");
+                    continue;
                 }
 
-                // Persist file state (Fraction, TechRep, Plex)
                 foreach (var fi in tmtFiles)
                 {
-                    s_fileState[fi.FullFilePathWithExtension] = new FileDesignState(fi.Fraction, fi.TechnicalReplicate, fi.Plex ?? "");
-                    if (!string.IsNullOrWhiteSpace(fi.Plex))
-                        s_fileToPlex[fi.FullFilePathWithExtension] = fi.Plex.Trim();
-                }
+                    s_fileState[fi.FullFilePathWithExtension] =
+                        new FileDesignState(fi.Fraction, fi.TechnicalReplicate, fi.Plex ?? "");
 
-                // Persist annotations per plex using GUI model
-                foreach (var fi in tmtFiles)
-                {
                     if (string.IsNullOrWhiteSpace(fi.Plex)) continue;
-                    var list = fi.Annotations.Select(a => new PlexAnnotation
+
+                    s_plexAnnotations[fi.Plex] = fi.Annotations.Select(a => new PlexAnnotation
                     {
                         Tag = a.Tag,
                         SampleName = a.SampleName,
@@ -503,8 +502,6 @@ namespace MetaMorpheusGUI
                         BiologicalReplicate = a.BiologicalReplicate,
                         SampleType = EngineLayer.TmtExperimentalDesign.ToDesignFileValue(a.SampleType)
                     }).ToList();
-
-                    s_plexAnnotations[fi.Plex] = list; // overwrite with last occurrence for that plex
                 }
             }
         }
