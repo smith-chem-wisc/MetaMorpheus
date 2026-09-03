@@ -397,9 +397,16 @@ namespace EngineLayer
                 // Parsed exactly as LoadStructureGlycan would parse it: Struct2Glycan is the only thing that
                 // knows whether the nesting describes a tree it can actually build.
                 List<Glycan> parsed = Glycan.Struct2Glycan(entry, 1, isOGlycan);
-                if (parsed == null || parsed.Count == 0)
+
+                // "()" parses happily into a glycan of nothing, whose mass is zero. Searching for it is
+                // meaningless and it would widen every box it landed in, so it is refused here rather than
+                // left for the user to wonder about. The empty case is folded in: Struct2Glycan either
+                // throws or yields glycans, so "nothing came back" and "nothing in what came back" are the
+                // same answer to the user.
+                if (parsed == null || parsed.Count == 0 || parsed.All(g => g.Kind.Sum(count => (int)count) == 0))
                 {
-                    throw new MetaMorpheusException($"Could not add the glycan \"{entry}\": it did not parse into any glycan.");
+                    throw new MetaMorpheusException(
+                        $"Could not add the glycan \"{entry}\": it contains no monosaccharides.");
                 }
             }
             catch (MetaMorpheusException)
@@ -428,6 +435,7 @@ namespace EngineLayer
             CaptureCollection names = match.Groups["name"].Captures;
             CaptureCollection counts = match.Groups["count"].Captures;
             HashSet<string> seen = new HashSet<string>(StringComparer.Ordinal);
+            int total = 0;
 
             for (int i = 0; i < names.Count; i++)
             {
@@ -449,6 +457,14 @@ namespace EngineLayer
                     throw new MetaMorpheusException(
                         $"Could not add the glycan \"{entry}\": the count for '{name}' must be a whole number between 0 and 255.");
                 }
+                total += count;
+            }
+
+            // Same reason as the structure case: a composition that totals nothing is a zero-mass glycan.
+            if (total == 0)
+            {
+                throw new MetaMorpheusException(
+                    $"Could not add the glycan \"{entry}\": it contains no monosaccharides.");
             }
         }
 

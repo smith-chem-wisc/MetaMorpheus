@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using NUnit.Framework;
@@ -349,6 +349,152 @@ namespace Test
             var ex = Assert.Throws<MetaMorpheusException>(
                 () => GlycanDatabase.PersistCustomGlycan("Hex(1)Hex(2)", path, false));
             Assert.That(ex.Message, Does.Contain("more than once"));
+        }
+
+
+        /// <summary>
+        /// Nothing at all, whitespace, and null are the same refusal. The window blocks the first two, but
+        /// the engine is what a CLI or a later caller reaches.
+        /// </summary>
+        [Test]
+        public static void AnEmptyOrNullGlycanIsRefused()
+        {
+            string path = Path_("empty_entry.gdb");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.PersistCustomGlycan(null, path, true)).Message, Does.Contain("no glycan was given"));
+                Assert.That(Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.PersistCustomGlycan("   ", path, true)).Message, Does.Contain("no glycan was given"));
+                Assert.That(File.Exists(path), Is.False);
+            });
+        }
+
+        /// <summary>
+        /// One glycan per line. A tab would be read as the start of the name/mass columns the shipped .txt
+        /// databases carry, and a newline would smuggle in a second entry that never passed validation.
+        /// </summary>
+        [Test]
+        public static void AGlycanCarryingATabOrANewlineIsRefused()
+        {
+            string path = Path_("tabbed.gdb");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.PersistCustomGlycan("(N(H))\tN1H1", path, true)).Message, Does.Contain("one glycan per line"));
+                Assert.That(Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.PersistCustomGlycan("(N(H))\r\n(N(A))", path, true)).Message, Does.Contain("one glycan per line"));
+                Assert.That(File.Exists(path), Is.False);
+            });
+        }
+
+        /// <summary>
+        /// A glycan that validates but cannot be written is reported naming the file, rather than leaving
+        /// the user believing it was saved. Forced portably by putting a directory where the file goes.
+        /// </summary>
+        [Test]
+        public static void AGlycanThatCannotBeWrittenIsReportedByName()
+        {
+            string path = Path_("unwritable.gdb");
+            Directory.CreateDirectory(path); // a directory where the database should be
+
+            var ex = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.PersistCustomGlycan("(N(H))", path, true));
+
+            Assert.That(ex.Message, Does.Contain("unwritable.gdb"));
+        }
+
+        /// <summary>
+        /// Counts are stored in a byte, so one above 255 cannot be represented. It is refused rather than
+        /// silently wrapping to a different glycan.
+        /// </summary>
+        [Test]
+        public static void ACountTooLargeToStoreIsRefused()
+        {
+            string path = Path_("big_count.gdb");
+
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomGlycan("Hex(300)", path, false));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(ex.Message, Does.Contain("between 0 and 255"));
+                Assert.That(File.Exists(path), Is.False);
+            });
+        }
+
+        /// <summary>
+        /// "()" balances, uses only legal characters, and parses -- into a glycan of nothing, whose mass is
+        /// zero. Searching for it is meaningless and it would widen every box it landed in. Same for a
+        /// composition that totals nothing.
+        /// </summary>
+        [Test]
+        public static void AGlycanWithNoMonosaccharidesIsRefused()
+        {
+            string path = Path_("empty_glycan.gdb");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.PersistCustomGlycan("()", path, true)).Message, Does.Contain("no monosaccharides"));
+                Assert.That(Assert.Throws<MetaMorpheusException>(
+                    () => GlycanDatabase.PersistCustomGlycan("Hex(0)", path, false)).Message, Does.Contain("no monosaccharides"));
+                Assert.That(File.Exists(path), Is.False);
+            });
+        }
+
+        /// <summary>
+        /// A structure whose nesting the tree builder cannot follow comes back as a NullReferenceException
+        /// from Struct2Glycan. It is reported as a refusal naming the entry, not raised at the user as a
+        /// null reference.
+        /// </summary>
+        [Test]
+        public static void AStructureTheTreeBuilderCannotFollowIsRefusedNotThrownRaw()
+        {
+            string path = Path_("bad_nesting.gdb");
+
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomGlycan("(N())", path, true));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(ex.Message, Does.Contain("(N())"));
+                Assert.That(File.Exists(path), Is.False);
+            });
+        }
+
+        /// <summary>
+        /// The format guard works in both directions -- a structure is refused by a composition database
+        /// just as a composition is refused by a structure one.
+        /// </summary>
+        [Test]
+        public static void AStructureIsRefusedByACompositionDatabase()
+        {
+            string path = Path_("composition_db.gdb");
+            File.WriteAllLines(path, new[] { "# banner", "HexNAc(2)Hex(5)" });
+
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomGlycan("(N(H))", path, false));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(ex.Message, Does.Contain("composition"));
+                Assert.That(ex.Message, Does.Contain("structure"));
+            });
+        }
+
+        /// <summary>
+        /// A template that is not embedded is reported by the name that was asked for, so a dropped
+        /// EmbeddedResource entry says which one rather than failing as a null stream somewhere later.
+        /// </summary>
+        [Test]
+        public static void AMissingEmbeddedTemplateIsReportedByName()
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => CustomDataFile.EmbeddedText(typeof(GlobalVariables).Assembly, "EngineLayer.Glycan_Mods.NotAThing.gdb"));
+
+            Assert.That(ex.Message, Does.Contain("EngineLayer.Glycan_Mods.NotAThing.gdb"));
         }
 
         // ---------------------------------------------------------------------------------------------
