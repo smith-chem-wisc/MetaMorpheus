@@ -208,6 +208,8 @@ namespace MetaMorpheusGUI
                 }
 
                 UpdateOutputFolderTextbox();
+                SeedTmtExperimentalDesign();
+                dataGridSpectraFiles.Items.Refresh();
             }
         }
 
@@ -583,6 +585,16 @@ namespace MetaMorpheusGUI
         private void SetExperimentalDesign_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new ExperimentalDesignWindow(SpectraFiles);
+            dialog.ShowDialog();
+        }
+        private void SetTmtExperimentalDesign_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new TmtExperimentalDesignWindow(SpectraFiles)
+            {
+                Owner = this,
+                Title = "TMT Experimental Design"
+            };
+
             dialog.ShowDialog();
         }
 
@@ -1706,7 +1718,23 @@ namespace MetaMorpheusGUI
             {
                 AddPreRunFileRecursiveHelper(path);
             }
+
+            SeedTmtExperimentalDesign();
             UpdateGuiOnPreRunChange();
+        }
+
+        /// <summary>
+        /// Refreshes the TMT experimental design state from any TmtDesign.txt sitting next to the
+        /// CHECKED spectra files. Seeding from every file in the grid warned about files the user had
+        /// deliberately unchecked, while the design window only ever lists the checked ones.
+        /// </summary>
+        private void SeedTmtExperimentalDesign()
+        {
+            TmtExperimentalDesignWindow.SeedFromDesignFiles(
+                SpectraFiles.Where(sf => sf.Use)
+                            .Select(sf => sf.FilePath)
+                            .Where(p => !string.IsNullOrWhiteSpace(p))
+                            .ToList());
         }
 
         private void AddPreRunFileRecursiveHelper(string path)
@@ -2268,6 +2296,7 @@ namespace MetaMorpheusGUI
             AddDefaultContaminantsButton.IsEnabled = enable;
             AddSpectraButton.IsEnabled = enable;
             SetFileSpecificSettingsButton.IsEnabled = enable;
+            SetTmtExperimentalDesignButton.IsEnabled = enable;
             SetExperimentalDesignButton.IsEnabled = enable;
             AddSearchTaskButton.IsEnabled = enable;
             AddCalibTaskButton.IsEnabled = enable;
