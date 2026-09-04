@@ -256,6 +256,37 @@ namespace Test
             float maxPsmIntensity = Math.Min(50, (float)Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(52.0).Within(0.05));
+            // A retention time the predictor COULD produce must be marked available.
+            Assert.That(maxPsmData.HasHydrophobicity, Is.EqualTo(1));
+
+            // And a peptidoform the predictor cannot represent must be marked UNavailable, rather than being
+            // scored as though its predicted hydrophobicity were zero. Zero is a real and extreme value on this
+            // scale, so the old `?? 0` turned "could not predict" into the maximum z-score, which the model reads
+            // as strong evidence against the candidate. See PsmData.HasHydrophobicity.
+            var unpredictableEngine = new PepAnalysisEngine(nonNullPsms, "standard", fsp,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"), new NeverPredictsRetentionTime());
+            foreach (var p in unpredictableEngine.GetType().GetProperties())
+            {
+                switch (p.Name)
+                {
+                    case "FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified":
+                        p.SetValue(unpredictableEngine, fileSpecificRetTimeHI_behavior);
+                        break;
+                    case "FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified":
+                        p.SetValue(unpredictableEngine, fileSpecificRetTemHI_behaviorModifiedPeptides);
+                        break;
+                    case "ChargeStateMode":
+                        p.SetValue(unpredictableEngine, chargeStateMode);
+                        break;
+                    case "FileSpecificMedianFragmentMassErrors":
+                        p.SetValue(unpredictableEngine, massError);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            var unpredictableData = unpredictableEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(unpredictableData.HasHydrophobicity, Is.EqualTo(0));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
@@ -713,7 +744,7 @@ namespace Test
                 "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch",
                 "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity",
                 "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide",
-                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle",
+                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle", "HasHydrophobicity",
                 "PrecursorDeconvolutionScore"
             };
             Assert.That(trainingInfoStandard, Is.EqualTo(expectedTrainingInfoStandard));
@@ -784,9 +815,10 @@ namespace Test
                 PrecursorFractionalIntensity = 26,
                 InternalIonCount = 27,
                 PrecursorDeconvolutionScore = 28,
+                HasHydrophobicity = 29,
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22\t28";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22\t29\t28";
             Assert.That(pd.ToString("standard"), Is.EqualTo(standardToString));
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27";
