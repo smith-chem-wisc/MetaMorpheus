@@ -411,18 +411,10 @@ namespace GuiFunctions
             return new SolidColorBrush(Color.FromArgb(color.A, color.R, color.G, color.B));
         }
 
+        // The OxyColor resolution lives on MetaDrawSettings; this is only the WPF conversion on top.
         public static SolidColorBrush ParseColorBrushFromName(string name)
         {
-            string cleanedName = name.Replace(" ", "");
-            var foundColor = MetaDrawSettings.PossibleColors.FirstOrDefault(p => p.Value == cleanedName).Key;
-            return ParseColorBrushFromOxyColor(foundColor == default ? MetaDrawSettings.FallbackColor : foundColor);
-        }
-
-        public static OxyColor ParseOxyColorFromName(string name)
-        {
-            string cleanedName = name.Replace(" ", "");
-            var foundColor = MetaDrawSettings.PossibleColors.FirstOrDefault(p => p.Value == cleanedName).Key;
-            return foundColor == default ? MetaDrawSettings.FallbackColor : foundColor;
+            return ParseColorBrushFromOxyColor(MetaDrawSettings.ParseOxyColorFromName(name));
         }
 
         public static Color ParseColorFromOxyColor(OxyColor color)

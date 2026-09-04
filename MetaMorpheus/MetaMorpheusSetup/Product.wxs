@@ -176,6 +176,14 @@
       <Component Id="src_GUIFunctions.pdb" Guid="F12F9001-1B3D-433D-8C9F-C8BA91A06074">
         <File Id="src_GUIFunctions.pdb" Name="GUIFunctions.pdb" Source="$(var.GUI_TargetDir)GUIFunctions.pdb" />
       </Component>
+      <!-- The UI-free half of GuiFunctions. GuiFunctions.dll references it, so the installed GUI cannot
+           start without it - this is a runtime dependency, not an optional extra. -->
+      <Component Id="src_GuiFunctions.Core.dll" Guid="81EB4A66-29C4-4120-A342-CC9CBD11E5C3">
+        <File Id="src_GuiFunctions.Core.dll" Name="GuiFunctions.Core.dll" Source="$(var.GUI_TargetDir)GuiFunctions.Core.dll" />
+      </Component>
+      <Component Id="src_GuiFunctions.Core.pdb" Guid="4C1D4703-2D7D-486D-AD11-4C52258608BC">
+        <File Id="src_GuiFunctions.Core.pdb" Name="GuiFunctions.Core.pdb" Source="$(var.GUI_TargetDir)GuiFunctions.Core.pdb" />
+      </Component>
       <Component Id="src_FlashLFQ.dll" Guid="69e33379-5301-49db-8913-4d777ed5a5f9">
         <File Id="src_FlashLFQ.dll" Name="FlashLFQ.dll" Source="$(var.GUI_TargetDir)FlashLFQ.dll" />
       </Component>
@@ -266,6 +274,11 @@
       </Component>
       <Component Id="src_OxyPlot.Wpf.dll" Guid="2052508D-D83C-45D7-8C9C-9211F97A8949">
         <File Id="src_OxyPlot.Wpf.dll" Name="OxyPlot.Wpf.dll" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.dll" />
+      </Component>
+      <!-- New in OxyPlot.Wpf 2.2.0, which split this out of OxyPlot.Wpf.dll. Loaded at runtime, so
+           MetaDraw cannot open without it. -->
+      <Component Id="src_OxyPlot.Wpf.Shared.dll" Guid="0CDD74F9-FF57-4AF2-BDA5-7E52199DD170">
+        <File Id="src_OxyPlot.Wpf.Shared.dll" Name="OxyPlot.Wpf.Shared.dll" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.Shared.dll" />
       </Component>
       <Component Id="src_itext.barcodes.dll" Guid="4CC3D87C-FA1E-4301-B0B9-4E1EE3DFC4F2">
         <File Id="src_itext.barcodes.dll" Name="itext.barcodes.dll" Source="$(var.GUI_TargetDir)itext.barcodes.dll" />

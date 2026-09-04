@@ -84,7 +84,7 @@ namespace Test.MetaDraw
             var spectrumDescriptionValues = MetaDrawSettings.SpectrumDescription
                 .Select(p => $"{p.Key},{p.Value}").ToList();
             var bpCoverageValues = MetaDrawSettings.BioPolymerCoverageColors
-                .Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList();
+                .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
 
             Assert.That(!snapshot.ProductTypeToColorValues.Except(colorValues).Any());
             Assert.That(!snapshot.BetaProductTypeToColorValues.Except(betaColorValues).Any());
@@ -162,7 +162,7 @@ namespace Test.MetaDraw
             spectrumDescriptionValues = MetaDrawSettings.SpectrumDescription
                 .Select(p => $"{p.Key},{p.Value}").ToList();
             bpCoverageValues = MetaDrawSettings.BioPolymerCoverageColors
-                .Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList();
+                .Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList();
             Assert.That(!snapshot.ProductTypeToColorValues.Except(colorValues).Any());
             Assert.That(!snapshot.BetaProductTypeToColorValues.Except(betaColorValues).Any());
             Assert.That(!snapshot.ModificationTypeToColorValues.Except(modificationColorValues).Any());
@@ -457,7 +457,7 @@ namespace Test.MetaDraw
             Assert.That(MetaDrawSettings.InternalIonColor == OxyColors.Blue);
             Assert.That(MetaDrawSettings.UnannotatedPeakColor == OxyColors.Blue);
             Assert.That(MetaDrawSettings.DataVisualizationColorOrder.First() == OxyColors.Red);
-            Assert.That(MetaDrawSettings.BioPolymerCoverageColors.First().Value.ToOxyColor() == OxyColors.Red);
+            Assert.That(MetaDrawSettings.BioPolymerCoverageColors.First().Value == OxyColors.Red);
         }
 
         [Test]
@@ -1047,9 +1047,9 @@ namespace Test.MetaDraw
             var colorBrushfromNameBad = DrawnSequence.ParseColorBrushFromName("humbug");
             Assert.That(colorBrushfromNameBad.Color == Colors.Aqua);
 
-            var oxyFromName = DrawnSequence.ParseOxyColorFromName(oxyBlue.GetColorName());
+            var oxyFromName = MetaDrawSettings.ParseOxyColorFromName(oxyBlue.GetColorName());
             Assert.That(oxyFromName == oxyBlue);
-            var oxyFromNameBad = DrawnSequence.ParseOxyColorFromName("gobbledygook");
+            var oxyFromNameBad = MetaDrawSettings.ParseOxyColorFromName("gobbledygook");
             Assert.That(oxyFromNameBad == MetaDrawSettings.FallbackColor);
 
             var colorFromOxy = DrawnSequence.ParseColorFromOxyColor(oxyBlue);
