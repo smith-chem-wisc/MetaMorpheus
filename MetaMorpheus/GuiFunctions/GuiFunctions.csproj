@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
+    <ProjectReference Include="..\GuiFunctions.Core\GuiFunctions.Core.csproj" />
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
   </ItemGroup>
 
