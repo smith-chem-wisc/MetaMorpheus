@@ -44,6 +44,37 @@
 #                          Leave blank or omit the column for no extra
 #                          diagnostic ions.
 #
+#                          These ions also act as STRICT custom oxonium ions
+#                          when the oxonium-ion filter is enabled (Glyco search
+#                          parameter "Oxonium Ion Filter"). Under that filter a
+#                          candidate is rejected if such an ion is observed in
+#                          the spectrum but the candidate lacks this
+#                          monosaccharide, or if the candidate contains this
+#                          monosaccharide but the ion is absent. Ion prevalence
+#                          depends on collision energy, instrument and glycan
+#                          structure, so validate an ion against your own
+#                          acquisition conditions before relying on it to filter.
+#
+#                          "Observed" means a matched peak whose intensity is
+#                          above 2% of the HexNAc 138.055 diagnostic ion -- the
+#                          same relative-intensity test the built-in oxonium
+#                          rules use -- so a lone noise peak at the ion's m/z
+#                          cannot wipe out a scan.
+#
+#                          An ion may NOT duplicate a built-in oxonium ion, nor
+#                          one already claimed by another custom monosaccharide
+#                          in this file. Anything within 0.01 Da of one of those
+#                          is an error and the file will fail to load, naming
+#                          the offending line. The built-in oxonium ions are:
+#                              109.02895  115.03951  126.05550  127.03952
+#                              138.05550  144.06607  163.06064  168.06607
+#                              186.07663  204.08720  274.09268  290.08759
+#                              292.10324  308.09816  366.14002  657.23544
+#                              673.23035
+#                          A shared ion would read as "observed" on nearly every
+#                          glycopeptide spectrum, and the strict rule would then
+#                          reject every candidate lacking your monosaccharide.
+#
 #   5. Description         Optional. Free text for human readers. Ignored by
 #                          the parser. Use it to record source, formula, or
 #                          a note about the residue.
