@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework; 
@@ -961,6 +961,46 @@ namespace Test
 
             // clean up
             Directory.Delete(folderPath, true);
+        }
+
+        /// <summary>
+        /// A PSM that is ambiguous when parsimony starts is excluded from it, but parsimony's own
+        /// trimming can leave it unambiguous. Quantification then accepts it, so it must still be
+        /// matched to the protein group its proteins landed in rather than reported as UNDEFINED.
+        /// </summary>
+        [Test]
+        public static void QuantifiedPeptideResolvedByParsimonyGetsItsProteinGroup()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestIssue2218");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "hela_snip_for_unitTest.fasta");
+
+            var searchTask = new SearchTask();
+
+            new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task", searchTask) },
+                new List<string> { spectraFile },
+                new List<DbForTask> { new DbForTask(database, false) },
+                outputFolder).Run();
+
+            string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "Task", "AllQuantifiedPeptides.tsv"));
+            int proteinGroupColumn = Array.IndexOf(lines[0].Split('\t'), "Protein Groups");
+            Assert.That(proteinGroupColumn, Is.GreaterThanOrEqualTo(0));
+
+            var undefined = lines.Skip(1)
+                .Select(line => line.Split('\t'))
+                .Where(cells => cells[proteinGroupColumn] == "UNDEFINED")
+                .ToList();
+            Assert.That(undefined, Is.Empty, "quantified peptides with no protein group: "
+                + string.Join(", ", undefined.Select(cells => cells[0])));
+
+            // this is the peptide parsimony disambiguates; it belongs to the beta-tubulin group
+            var tubulin = lines.Skip(1)
+                .Select(line => line.Split('\t'))
+                .Single(cells => cells[1] == "EAESCDCLQGFQLTHSLGGGTGSGMGTLLISK");
+            Assert.That(tubulin[proteinGroupColumn], Does.Contain("P04350"));
+
+            Directory.Delete(outputFolder, true);
         }
     }
 }
