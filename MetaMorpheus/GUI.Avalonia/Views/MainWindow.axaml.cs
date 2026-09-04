@@ -1,4 +1,5 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics;
 using System.Linq;
 using Avalonia.Controls;
@@ -11,31 +12,30 @@ using MetaMorpheusAvalonia.ViewModels;
 namespace MetaMorpheusAvalonia.Views;
 
 /// <summary>Only the parts that genuinely need a window: file pickers and opening a browser.</summary>
+// Excluded from coverage deliberately, matching how the WPF GUI is treated.
+//
+// PRECEDENT: Test.csproj references CMD, EngineLayer, GuiFunctions and TaskLayer - but NOT
+// GUI.csproj. The WPF views are therefore never loaded by the test host, never instrumented, and
+// contribute nothing to the coverage denominator: Codecov reports 0 files under MetaMorpheus/GUI/
+// and 79 under MetaMorpheus/GuiFunctions/. That split is the whole point of GuiFunctions - the
+// logic was moved out of the views so that it COULD be covered, leaving behind only the parts that
+// cannot meaningfully be unit tested.
+//
+// GUI.Avalonia cannot use the same mechanism, because its tests construct real windows headlessly
+// and so must reference this project. [ExcludeFromCodeCoverage] is the equivalent, and is already
+// the house instrument for untestable code (~20 files on master carry it, e.g. the design-time
+// view models in GuiFunctions/ViewModels/Deconvolution).
+//
+// THE RULE THIS ENCODES: if something here can be tested, it does not belong here - it belongs on
+// the view model, where it is covered like the rest of GuiFunctions. That is why SpectraPatterns
+// and DatabasePatterns now live on MainWindowViewModel rather than in this file. Do not add logic
+// to a class carrying this attribute in order to avoid writing a test for it.
+[ExcludeFromCodeCoverage]
 public partial class MainWindow : Window
 {
     private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext;
 
     public MainWindow() => AvaloniaXamlLoader.Load(this);
-
-    /// <summary>
-    /// Built from GlobalVariables rather than written out, so the picker cannot drift from what the
-    /// application accepts. Two things this gets right that a hand-written list did not:
-    ///
-    ///   * The entries are lowercase. Avalonia's FreeDesktop backend passes these to the XDG portal as
-    ///     GlobStyle globs, and portal matching is case-sensitive, so "*.mzML" hides sample.mzml on
-    ///     Linux - the platform this exists for. Windows and macOS match case-insensitively, so it
-    ///     would never reproduce locally on either.
-    ///   * ".d" is excluded. Bruker data is a directory and OpenFilePickerAsync cannot select one;
-    ///     users pick the .tdf inside it and AddSpectraFiles maps that back to the folder.
-    /// </summary>
-    private static string[] SpectraPatterns => GlobalVariables.AcceptedSpectraFormats
-        .Where(extension => extension != ".d")
-        .Select(extension => "*" + extension)
-        .ToArray();
-
-    private static string[] DatabasePatterns => GlobalVariables.AcceptedDatabaseFormats
-        .SelectMany(extension => new[] { "*" + extension, "*" + extension + ".gz" })
-        .ToArray();
 
     private async void OnAddSpectraClick(object sender, RoutedEventArgs e)
     {
@@ -45,7 +45,7 @@ public partial class MainWindow : Window
             AllowMultiple = true,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Spectra") { Patterns = SpectraPatterns },
+                new FilePickerFileType("Spectra") { Patterns = MainWindowViewModel.SpectraPatterns },
             },
         });
         ViewModel.AddSpectraFiles(files.Select(f => f.Path.LocalPath));
@@ -59,7 +59,7 @@ public partial class MainWindow : Window
             AllowMultiple = true,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Databases") { Patterns = DatabasePatterns },
+                new FilePickerFileType("Databases") { Patterns = MainWindowViewModel.DatabasePatterns },
             },
         });
         ViewModel.AddDatabases(files.Select(f => f.Path.LocalPath));
