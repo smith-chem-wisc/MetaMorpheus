@@ -172,7 +172,12 @@ namespace EngineLayer
             }
         }
 
-        internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
+        /// <summary>Column name for the Tailor score. Kept local rather than added to mzLib's
+        /// SpectrumMatchFromTsvHeader so this change stays inside one repository; it belongs there
+        /// once mzLib cuts a release.</summary>
+        internal const string TailorScoreHeader = "Tailor Score";
+
+        internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeTailorScoreColumn = false)
         {
             s[SpectrumMatchFromTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
             s[SpectrumMatchFromTsvHeader.Ms2ScanNumber] = psm == null ? " " : psm.ScanNumber.ToString(CultureInfo.InvariantCulture);
@@ -190,6 +195,9 @@ namespace EngineLayer
                 s[SpectrumMatchFromTsvHeader.CollisionEnergy] = psm == null ? " " : psm.CollisionalEnergy.HasValue ? psm.CollisionalEnergy.Value.ToString("F2", CultureInfo.InvariantCulture) : "N/A";
             s[SpectrumMatchFromTsvHeader.Score] = psm == null ? " " : psm.Score.ToString("F3", CultureInfo.InvariantCulture);
             s[SpectrumMatchFromTsvHeader.DeltaScore] = psm == null ? " " : psm.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
+            // Blank, not zero, for a spectrum that could not be calibrated -- see TailorScoreCalculator.
+            if (includeTailorScoreColumn)
+                s[TailorScoreHeader] = psm == null ? " " : double.IsNaN(psm.TailorScore) ? " " : psm.TailorScore.ToString("F4", CultureInfo.InvariantCulture);
             s[SpectrumMatchFromTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch / MassDiffAcceptor.NotchScalar)).ResolvedString;
         }
 
