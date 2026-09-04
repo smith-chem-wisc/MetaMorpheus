@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Configurations>Debug;Release</Configurations>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
-    <PackageReference Include="mzLib" Version="1.0.584" />
+    <PackageReference Include="mzLib" Version="1.0.588" />
     <PackageReference Include="NetSerializer" Version="4.1.2" />
     <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="SQLite.Interop.dll" Version="1.0.103" />
