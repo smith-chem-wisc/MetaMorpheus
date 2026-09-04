@@ -617,6 +617,7 @@ namespace Test
             Assert.That(multipleParams.Parameters.First(), Is.TypeOf<ClassicDeconvolutionParameters>());
             Assert.That(multipleParams.Parameters.Last(), Is.TypeOf<IsoDecDeconvolutionParameters>());
             Assert.That(searchTaskLoaded.CommonParameters.ProductDeconvolutionParameters, Is.TypeOf<ClassicDeconvolutionParameters>());
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
         }
 
         [Test]
