@@ -32,6 +32,21 @@ namespace Test
     [TestFixture]
     public static class XLTest
     {
+        /// <summary>
+        /// XlTest_MoreComprehensive forces FdrAnalysisEngine.QvalueThresholdOverride on so that PEP runs on
+        /// its small psm set, and reset it on its last line. That reset is skipped whenever an assertion
+        /// before it fails, and the flag is process-wide static: FdrAnalysisEngine reads it to decide whether
+        /// to force PEP and how to compute q-values, so leaking it changes the q-values of every test that
+        /// runs afterwards. It did exactly that here - one assertion in this test failing took 21 MetaDraw
+        /// tests down with it, because their q-value filter then accepted nothing. A teardown cannot be
+        /// skipped by a failing assertion.
+        /// </summary>
+        [TearDown]
+        public static void ResetQvalueThresholdOverride()
+        {
+            typeof(FdrAnalysisEngine).GetProperty("QvalueThresholdOverride").SetValue(null, false);
+        }
+
         [Test]
         public static void TestDissociationTypeGenerateSameTypeOfIons()
         {
@@ -177,8 +192,7 @@ namespace Test
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
-            var indexedFragments = indexResults.FragmentIndex.Where(p => p != null).SelectMany(v => v).ToList();
-            Assert.That(indexedFragments.Count, Is.EqualTo(82));
+            Assert.That(indexResults.FragmentIndex.EntryCount, Is.EqualTo(82));
             Assert.That(indexResults.PeptideIndex.Count, Is.EqualTo(3));
 
             //Get MS2 scans.
@@ -539,12 +553,17 @@ namespace Test
                 }
             }
 
-            Assert.That(inter, Is.EqualTo(435));
-            Assert.That(intra, Is.EqualTo(215));
-            Assert.That(single, Is.EqualTo(318));
-            Assert.That(loop, Is.EqualTo(18));
+            // Counts before any FDR filtering, so they include every match with a positive score. They moved
+            // when the precursor window's lower bound was corrected: candidates sitting exactly on the
+            // window's lower edge used to be clipped, and scoring them turns some Single matches into Inter
+            // ones by finding a beta partner. Of 13 interlinks gained, 8 are decoys, which is what an
+            // unfiltered count of weak matches looks like. At 1 % FDR, below, Inter and Intra do not move.
+            Assert.That(inter, Is.EqualTo(447));
+            Assert.That(intra, Is.EqualTo(212));
+            Assert.That(single, Is.EqualTo(310));
+            Assert.That(loop, Is.EqualTo(17));
             Assert.That(deadend, Is.EqualTo(0));
-            Assert.That(deadendH2O, Is.EqualTo(82));
+            Assert.That(deadendH2O, Is.EqualTo(81));
             Assert.That(deadendNH2, Is.EqualTo(0));
             Assert.That(deadendTris, Is.EqualTo(0));
             Assert.That(unnasignedCrossType, Is.EqualTo(0));
@@ -581,8 +600,11 @@ namespace Test
                 }
             }
 
-            Assert.That(inter, Is.EqualTo(53));
-            Assert.That(intra, Is.EqualTo(81));
+            // PEP-derived, so these two were measured on CI rather than locally: a local replica of this test
+            // reproduces the raw and the 1 % FDR blocks exactly but not this one, and a guessed value here
+            // would have been indistinguishable from a real regression. Inter 53 -> 41, Intra 81 -> 78.
+            Assert.That(inter, Is.EqualTo(41));
+            Assert.That(intra, Is.EqualTo(78));
             Assert.That(unnasignedCrossType, Is.EqualTo(0));
 
             // We have pretty high peptide-level q values for crosslinks, so we need to up the cut-off is we want PEP to run
@@ -640,12 +662,14 @@ namespace Test
                 }
             }
 
+            // At 1 % FDR the crosslinks themselves are unchanged by the window correction - Inter, Intra and
+            // Loop all hold - and the attrition is in the non-crosslinked classes.
             Assert.That(inter, Is.EqualTo(55));
             Assert.That(intra, Is.EqualTo(83));
-            Assert.That(single, Is.EqualTo(229));
+            Assert.That(single, Is.EqualTo(221));
             Assert.That(loop, Is.EqualTo(8));
             Assert.That(deadend, Is.EqualTo(0));
-            Assert.That(deadendH2O, Is.EqualTo(62));
+            Assert.That(deadendH2O, Is.EqualTo(61));
             Assert.That(deadendNH2, Is.EqualTo(0));
             Assert.That(deadendTris, Is.EqualTo(0));
             Assert.That(unnasignedCrossType, Is.EqualTo(0));
@@ -743,7 +767,10 @@ namespace Test
             Assert.That(singleCsmPsmData.BetaIntensity, Is.EqualTo(0));
             Assert.That(singleCsmPsmData.ComplementaryIonCount, Is.EqualTo(2).Within(0.1));
             Assert.That(singleCsmPsmData.DeltaScore, Is.EqualTo(8).Within(0.1));
-            Assert.That(singleCsmPsmData.HydrophobicityZScore, Is.EqualTo(5).Within(0.1));
+            // Hydrophobicity is scored against the distribution of the other matches in the same retention
+            // time bin, so this shifts when the set of Single matches does - 318 to 310 raw, 229 to 221 at
+            // 1 % FDR. Same csm otherwise: its delta score, ion counts and mass error are unchanged.
+            Assert.That(singleCsmPsmData.HydrophobicityZScore, Is.EqualTo(4).Within(0.1));
             Assert.That(singleCsmPsmData.Intensity, Is.EqualTo(0).Within(0.1));
             Assert.That(singleCsmPsmData.IsDeadEnd, Is.EqualTo(0));
             Assert.That(singleCsmPsmData.IsInter, Is.EqualTo(0));
@@ -837,10 +864,13 @@ namespace Test
                 }
             }
 
+            // After ComputeXlinkQandPValues, at 1 % FDR. Inter and Intra hold; only Single moves, for the
+            // same reason it does in the block above - the window correction scores candidates that used to
+            // be clipped, and some of them are weak Single matches that FDR then removes.
             Assert.That(unnasignedCrossType, Is.EqualTo(0));
             Assert.That(inter, Is.EqualTo(40));
             Assert.That(intra, Is.EqualTo(49));
-            Assert.That(single, Is.EqualTo(231));
+            Assert.That(single, Is.EqualTo(223));
             Assert.That(loop, Is.EqualTo(0));
             Assert.That(deadend, Is.EqualTo(0));
             Assert.That(deadendH2O, Is.EqualTo(0));
@@ -926,7 +956,7 @@ namespace Test
         {
             var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
 
-            Assert.That(() => new CrosslinkSearchEngine([], [], [], [], [], 1, commonParameters, [], new Crosslinker(), 1, false, false, false, false, [], [], 1, [], []),
+            Assert.That(() => new CrosslinkSearchEngine([], [], [], null, null, 1, commonParameters, [], new Crosslinker(), 1, false, false, false, false, [], [], 1, [], []),
                 Throws.TypeOf<ArgumentException>()
                     .With.Message.Contain("Cross-link search engine does not currently support digestion of type"));
         }
