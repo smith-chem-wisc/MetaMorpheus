@@ -1,4 +1,5 @@
-﻿using Omics.Fragmentation;
+﻿using Omics;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Text;
@@ -7,7 +8,7 @@ namespace EngineLayer.Indexing
 {
     public class IndexingResults : MetaMorpheusEngineResults
     {
-        public IndexingResults(List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, IndexingEngine indexParams) : base(indexParams)
+        public IndexingResults(List<IBioPolymerWithSetMods> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, IndexingEngine indexParams) : base(indexParams)
         {
             PeptideIndex = peptideIndex;
             FragmentIndex = fragmentIndex;
@@ -16,7 +17,7 @@ namespace EngineLayer.Indexing
 
         public List<int>[] FragmentIndex { get; private set; }
         public List<int>[] PrecursorIndex { get; private set; }
-        public List<PeptideWithSetModifications> PeptideIndex { get; private set; }
+        public List<IBioPolymerWithSetMods> PeptideIndex { get; private set; }
 
         public override string ToString()
         {
@@ -32,3 +33,4 @@ namespace EngineLayer.Indexing
         }
     }
 }
+
