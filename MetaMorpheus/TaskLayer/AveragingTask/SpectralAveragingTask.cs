@@ -64,6 +64,8 @@ namespace TaskLayer
                 var originalFileExtension = GlobalVariables.GetFileExtension(originalUnaveragedFilepath);
                 if (originalFileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase) || BrukerDataDirectory.IsInnerFileExtension(originalFileExtension))
                 {
+                    // record it, or the new experimental design names a -averaged.mzML that was never written
+                    unsuccessfulyAveragedFilePaths.Add(originalUnaveragedFilepath);
                     Warn("Averaging for " + originalFileExtension + " files is not supported.");
                     FinishedDataFile(originalUnaveragedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepath });
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion }));
@@ -153,7 +155,9 @@ namespace TaskLayer
             {
                 var originalUnaveragedFilePath = unaveragedSpectraFile.FullFilePathWithExtension;
                 var originalUnaveragedFilenameWithoutExtension = GlobalVariables.GetFilenameWithoutExtension(originalUnaveragedFilePath);
-                string averagedFilePath = Path.Combine(outputFolder, originalUnaveragedFilenameWithoutExtension + AveragingSuffix + ".mzML");
+                // ToSafeOutputPath here too, or a name the run loop trimmed is named untrimmed.
+                string averagedFilePath = Path.Combine(outputFolder, originalUnaveragedFilenameWithoutExtension + AveragingSuffix + ".mzML")
+                    .ToSafeOutputPath(AveragingSuffix + ".mzML");
 
                 var averagedSpectraFile = new SpectraFileInfo(averagedFilePath,
                     unaveragedSpectraFile.Condition, unaveragedSpectraFile.BiologicalReplicate, unaveragedSpectraFile.TechnicalReplicate, unaveragedSpectraFile.Fraction);

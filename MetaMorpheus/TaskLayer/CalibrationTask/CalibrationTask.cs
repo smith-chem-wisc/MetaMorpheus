@@ -551,14 +551,18 @@ namespace TaskLayer
             foreach (SpectraFileInfo originalSpectraFile in oldExperDesign)
             {
                 var originalFileName = originalSpectraFile.FilenameWithoutExtension;
-                var k = unsuccessfullyCalibratedFilePaths.FirstOrDefault(fn => fn.Contains(originalFileName));
+                // Compare whole names, not substrings: "run_1" is a substring of "run_10", so a
+                // substring match hands run_1's design row the file belonging to run_10.
+                var k = unsuccessfullyCalibratedFilePaths.FirstOrDefault(
+                    fn => GlobalVariables.GetFilenameWithoutExtension(fn) == originalFileName);
                 if (k != null)
                 {
                     newExperDesign.Add(new SpectraFileInfo(k, originalSpectraFile.Condition, originalSpectraFile.BiologicalReplicate, originalSpectraFile.TechnicalReplicate, originalSpectraFile.Fraction));
                 }
                 else
                 {
-                    SpectraFileInfo calibratedSpectraFile = new(Path.Combine(outputFolder, originalFileName + CalibSuffix + ".mzML"),
+                    // ToSafeOutputPath here too, or a name the run loop trimmed is named untrimmed.
+                    SpectraFileInfo calibratedSpectraFile = new(Path.Combine(outputFolder, originalFileName + CalibSuffix + ".mzML").ToSafeOutputPath(CalibSuffix + ".mzML"),
                     originalSpectraFile.Condition, originalSpectraFile.BiologicalReplicate, originalSpectraFile.TechnicalReplicate, originalSpectraFile.Fraction);
                     newExperDesign.Add(calibratedSpectraFile);
                 }
