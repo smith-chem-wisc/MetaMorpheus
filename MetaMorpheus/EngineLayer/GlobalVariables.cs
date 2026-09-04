@@ -1,4 +1,4 @@
-global using obo = Omics.Modifications.IO.obo;
+﻿global using obo = Omics.Modifications.IO.obo;
 using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer.GlycoSearch;
@@ -46,6 +46,37 @@ namespace EngineLayer
 
         public static List<string> ErrorsReadingMods;
 
+        /// <summary>
+        /// Non-fatal things the user should know about that were noticed while starting up, and that are
+        /// not about reading a modification. Surfaced beside <see cref="ErrorsReadingMods"/> by both front
+        /// ends. Kept separate because that list's name is a promise about what is in it.
+        /// </summary>
+        public static List<string> StartupWarnings { get; private set; } = new List<string>();
+
+        // mzLib keeps these as private constants, so the names are repeated rather than referenced.
+        // They are the shipped files whose banner and header row seed the custom counterparts.
+        private const string EmbeddedProteasesResourceName = "Proteomics.ProteolyticDigestion.proteases.tsv";
+        private const string EmbeddedRnasesResourceName = "Transcriptomics.Digestion.rnases.tsv";
+
+        /// <summary>Template seeded into Mods\CustomModifications.txt and Mods\RnaCustomModifications.txt.</summary>
+        /// <remarks>
+        /// The first line is the title CustomModWindow writes when it creates the file itself, so the GUI's
+        /// append path and this template agree. The rest are '#' banner lines, which the modification format
+        /// treats as comments -- see the shipped Mods.txt, which opens the same way.
+        /// </remarks>
+        private static string CustomModificationsTemplate(string analyte) =>
+            "Custom Modifications" + Environment.NewLine +
+            "################################## " + analyte + " modifications you add are stored here." + Environment.NewLine +
+            "################################## Modifications added through the GUI are appended below this banner." + Environment.NewLine +
+            "################################## One entry per modification, terminated by a line containing only //" + Environment.NewLine +
+            "##################################   ID   <name>            the modification's name" + Environment.NewLine +
+            "##################################   TG   <residues>        target, e.g. S or T or Y" + Environment.NewLine +
+            "##################################   PP   <location>        Anywhere. / N-terminal. / C-terminal. / Peptide N-terminal. / Peptide C-terminal." + Environment.NewLine +
+            "##################################   CF   <formula>         chemical formula, e.g. H1 N1 O2" + Environment.NewLine +
+            "##################################   MM   <mass>            monoisotopic mass, if no formula is given" + Environment.NewLine +
+            "##################################   MT   <type>            the group it is listed under" + Environment.NewLine +
+            "################################## See Mods.txt in this folder for worked examples." + Environment.NewLine;
+
         // File locations
         public static string DataDir { get; private set; }
         public static string UserSpecifiedDataDir { get; set; }
@@ -87,6 +118,8 @@ namespace EngineLayer
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
             TmtExperimentalDesignFileName = "TmtDesign.txt";
             SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };
+
+            StartupWarnings = new List<string>();
 
             SetMetaMorpheusVersion();
             SetUpDataDirectory();
@@ -396,6 +429,13 @@ namespace EngineLayer
 
             // load custom crosslinkers
             string customCrosslinkerLocation = Path.Combine(DataDir, @"Data", @"CustomCrosslinkers.tsv");
+
+            // Header row only, with no banner: LoadCrosslinkers skips line 1 and parses every line after
+            // it, so a comment banner here would be read as a crosslinker and throw on its columns.
+            CustomDataFile.EnsureExists(customCrosslinkerLocation,
+                () => CustomDataFile.BannerAndHeaderFromFile(crosslinkerLocation, "Name\t"),
+                "custom crosslinker");
+
             if (File.Exists(customCrosslinkerLocation))
             {
                 AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
@@ -413,6 +453,11 @@ namespace EngineLayer
             PsiModDeserialized = Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
             var formalChargesDictionary = Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
+
+            // Seeded before the sweep below picks it up. The template is a title line plus a '#' banner,
+            // so it contributes no modifications until the user or the GUI adds one.
+            CustomDataFile.EnsureExists(Path.Combine(DataDir, @"Mods", "CustomModifications.txt"),
+                () => CustomModificationsTemplate("Protein"), "custom modification");
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
@@ -458,6 +503,8 @@ namespace EngineLayer
             }
 
             var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
+            CustomDataFile.EnsureExists(customModsPath,
+                () => CustomModificationsTemplate("RNA"), "custom RNA modification");
             if (File.Exists(customModsPath))
             {
                 AddMods(ModificationLoader.ReadModsFromFile(customModsPath, out var errorMods), false, true);
@@ -593,49 +640,30 @@ namespace EngineLayer
 
         private static void LoadDigestionAgents()
         {
+            // Seed first, then load: the template is header-only, so a freshly seeded file contributes
+            // nothing and the two steps are independent. See CustomDataFile for the recipe every custom
+            // file follows.
+            CustomDataFile.EnsureExists(CustomProteasePath,
+                () => CustomDataFile.BannerAndHeaderFrom(typeof(ProteaseDictionary).Assembly,
+                    EmbeddedProteasesResourceName, "Name\t"),
+                "custom protease");
+
+            CustomDataFile.EnsureExists(CustomRnasePath,
+                () => CustomDataFile.BannerAndHeaderFrom(typeof(RnaseDictionary).Assembly,
+                    EmbeddedRnasesResourceName, "Name\t"),
+                "custom rnase");
+
             if (File.Exists(CustomProteasePath))
             {
                 try
                 {
                     var mods = ProteaseDictionary.LoadEmbeddedProteaseMods();
                     var result = ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, mods);
+                    ReportSkippedCustomEntries(result.Skipped, "protease", CustomProteasePath);
                 }
                 catch (Exception e)
                 {
                     throw new MetaMorpheusException($"Error loading custom proteases with error message: {e.Message}", e);
-                }
-            }
-            else
-            {
-                try
-                {
-                    var assembly = typeof(ProteaseDictionary).Assembly;
-
-                    // private hard-coded string path in MzLib
-                    string EmbeddedProteaseResourceName = "Proteomics.ProteolyticDigestion.proteases.tsv"; 
-
-                    var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
-                    var reader = new StreamReader(stream);
-
-                    string fileContent = reader.ReadToEnd();
-                    string[] lines = fileContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-                    bool foundHeader = false;
-                    using var sw = new StreamWriter(File.Create(CustomProteasePath));
-                    foreach (string line in lines) 
-                    {
-                        if (!foundHeader && !line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
-                        {
-                            sw.WriteLine(line);
-                            foundHeader = true;
-                            break;
-                        }
-                        sw.WriteLine(line);
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw new MetaMorpheusException($"Error creating default custom protease file with error message: {e.Message}", e);
                 }
             }
 
@@ -644,45 +672,31 @@ namespace EngineLayer
                 try
                 {
                     var result = RnaseDictionary.LoadAndMergeCustomRnases(CustomRnasePath);
+                    ReportSkippedCustomEntries(result.Skipped, "rnase", CustomRnasePath);
                 }
                 catch (Exception e)
                 {
                     throw new MetaMorpheusException($"Error loading custom rnases with error message: {e.Message}", e);
                 }
             }
-            else
+        }
+
+        /// <summary>
+        /// mzLib refuses to let a custom digestion agent shadow one of its own, and reports the collision
+        /// through <c>CustomDigestionAgentLoadResult.Skipped</c> rather than throwing, specifically so the
+        /// caller can tell the user. Nothing consumed that before, so a user who named a custom protease
+        /// "trypsin" got silence and a protease that was not theirs.
+        /// </summary>
+        private static void ReportSkippedCustomEntries(IReadOnlyList<string> skipped, string kind, string path)
+        {
+            if (skipped == null || skipped.Count == 0)
             {
-                try
-                {
-                    var assembly = typeof(RnaseDictionary).Assembly;
-
-                    // private hard-coded string path in MzLib
-                    string EmbeddedProteaseResourceName = "Transcriptomics.Digestion.rnases.tsv";
-
-                    var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
-                    var reader = new StreamReader(stream);
-
-                    string fileContent = reader.ReadToEnd();
-                    string[] lines = fileContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-                    bool foundHeader = false;
-                    using var sw = new StreamWriter(File.Create(CustomRnasePath));
-                    foreach (string line in lines)
-                    {
-                        if (!foundHeader && !line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
-                        {
-                            sw.WriteLine(line);
-                            foundHeader = true;
-                            break;
-                        }
-                        sw.WriteLine(line);
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw new MetaMorpheusException($"Error creating default custom rnase file with error message: {e.Message}", e);
-                }
+                return;
             }
+
+            StartupWarnings.Add($"{skipped.Count} custom {kind}(s) in {Path.GetFileName(path)} were ignored because "
+                + $"a built-in {kind} already uses the same name: {string.Join(", ", skipped.Select(p => "'" + p + "'"))}. "
+                + $"Rename them in {path} if you meant to define your own.");
         }
     }
 }

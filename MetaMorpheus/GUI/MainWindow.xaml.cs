@@ -1645,6 +1645,13 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs(error, null));
             }
             GlobalVariables.ErrorsReadingMods.Clear();
+
+            // and anything else startup noticed, such as a custom protease that collided with a built-in
+            foreach (var warning in GlobalVariables.StartupWarnings)
+            {
+                NotificationHandler(null, new StringEventArgs(warning, null));
+            }
+            GlobalVariables.StartupWarnings.Clear();
         }
 
         private void UpdateOutputFolderTextbox()
