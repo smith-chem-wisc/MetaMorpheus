@@ -930,12 +930,20 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
             }
 
+            // only checked spectra files are run, so only they may define the experimental design
+            List<string> spectraFilePathsToUse = SpectraFiles.Where(p => p.Use).Select(p => p.FilePath).ToList();
+            if (!spectraFilePathsToUse.Any())
+            {
+                NotificationHandler(null, new StringEventArgs("You need to check at least one spectra file!", null));
+                return;
+            }
+
             // check that experimental design is defined if normalization is enabled
             var searchTasks = PreRunTasks
                 .Where(p => p.metaMorpheusTask.TaskType == MyTask.Search)
                 .Select(p => (SearchTask)p.metaMorpheusTask);
 
-            string pathToExperDesign = Directory.GetParent(SpectraFiles.First().FilePath).FullName;
+            string pathToExperDesign = Directory.GetParent(spectraFilePathsToUse.First()).FullName;
             pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
 
             if (!File.Exists(pathToExperDesign))
@@ -949,7 +957,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, SpectraFiles.Select(p => p.FilePath).ToList(), out var errors);
+                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, spectraFilePathsToUse, out var errors);
 
                 if (errors.Any())
                 {
@@ -960,15 +968,15 @@ namespace MetaMorpheusGUI
                     }
                     else
                     {
+                        // Proceed without reading the file rather than deleting it. The prompt only ever
+                        // offered to continue without an experimental design, and deleting was both
+                        // undisclosed and irreversible -- and it did not affect the run either way, since
+                        // PostSearchAnalysisTask resolves the design from the used-file list itself.
                         var result = MessageBox.Show("An experimental design file was found, but an error " +
-                            "occurred reading it. Do you wish to continue with an empty experimental design?" +
+                            "occurred reading it. Do you wish to continue without an experimental design?" +
                             "\nThe error was: " + errors.First(), "Error", MessageBoxButton.YesNo);
 
-                        if (result == MessageBoxResult.Yes)
-                        {
-                            File.Delete(pathToExperDesign);
-                        }
-                        else
+                        if (result != MessageBoxResult.Yes)
                         {
                             return;
                         }
@@ -1031,7 +1039,7 @@ namespace MetaMorpheusGUI
 
             // everything is ready to run
             EverythingRunnerEngine a = new EverythingRunnerEngine(InProgressTasks.Select(b => (b.DisplayName, b.Task)).ToList(),
-                SpectraFiles.Where(b => b.Use).Select(b => b.FilePath).ToList(),
+                spectraFilePathsToUse,
                 ProteinDatabases.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant, b.DecoyIdentifier)).ToList(),
                 outputFolder);
 
