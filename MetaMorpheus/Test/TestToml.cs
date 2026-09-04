@@ -603,6 +603,23 @@ namespace Test
         }
 
         [Test]
+        public static void TestToml_MultipleDeconvolutionType_ParsesFromToml()
+        {
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            var tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "RnaSearchTask_MultipleDecon.toml");
+
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+
+            Assert.That(searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters, Is.TypeOf<MultipleDeconParameters>());
+            var multipleParams = (MultipleDeconParameters)searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters;
+
+            Assert.That(multipleParams.Parameters.Count(), Is.EqualTo(2));
+            Assert.That(multipleParams.Parameters.First(), Is.TypeOf<ClassicDeconvolutionParameters>());
+            Assert.That(multipleParams.Parameters.Last(), Is.TypeOf<IsoDecDeconvolutionParameters>());
+            Assert.That(searchTaskLoaded.CommonParameters.ProductDeconvolutionParameters, Is.TypeOf<ClassicDeconvolutionParameters>());
+        }
+
+        [Test]
         public static void TestToml_AverageResidueModel_FailsOnBadType()
         {
             var searchTask = new SearchTask();
