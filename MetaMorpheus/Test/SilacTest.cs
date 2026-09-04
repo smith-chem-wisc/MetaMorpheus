@@ -1,18 +1,23 @@
 ﻿using EngineLayer;
+using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
-using NUnit.Framework; 
+using MzLibUtil;
+using NUnit.Framework;
+using Omics;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Omics.Modifications;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using EngineLayer.DatabaseLoading;
-using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Omics;
-using Omics.Digestion;
 
 namespace Test
 {
@@ -58,8 +63,17 @@ namespace Test
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.That(output.Length, Is.EqualTo(2));
-            Assert.That(output[0].Contains("Modification Info List\tIntensity_silac(R+3.988)\tIntensity_silac(R+10.008)")); //test that two files were made and no light file
-            Assert.That(output[1].Contains("875000.0000000009\t437500.00000000047")); //test the heavier intensity is half that of the heavy (per the raw file)
+            Assert.That(output[0].Contains("Intensity_silac(R+3.988)\tIntensity_silac(R+10.008)")); //test that two conditions were made and no light condition
+            Assert.That(output[0].Contains("SpectralCount_silac(R+3.988)"), Is.False); //invented files carry no spectra, so no PSM-derived columns
+
+            // Every channel here is invented, so without carrying the acquired file alongside them this run
+            // would report no counts at all - master reported occupancy for it unconditionally.
+            string[] noLightHeader = output[0].Split('\t');
+            Assert.That(noLightHeader, Does.Contain("SpectralCount_silac"));
+            Assert.That(noLightHeader, Does.Contain("CountOccupancy_silac"));
+            Assert.That(output[1].Split('\t')[Array.IndexOf(noLightHeader, "SpectralCount_silac")], Is.Not.Empty);
+            Assert.That(output[1].Contains("875000.0000000009")); //test the heavy intensity
+            Assert.That(output[1].Contains("437500.00000000047")); //test the heavier intensity is half that of the heavy (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -132,8 +146,9 @@ namespace Test
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.That(output.Length, Is.EqualTo(2));
-            Assert.That(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014 & R+6.020)")); //test that two files were made
-            Assert.That(output[1].Contains("1374999.999999999\t687499.9999999995")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.That(output[0].Contains("SpectralCount_silac\tIntensity_silac\tCountOccupancy_silac\tIntensity_silac(K+8.014 & R+6.020)")); //test that two conditions were made
+            Assert.That(output[1].Contains("1374999.999999999")); //test the light intensity
+            Assert.That(output[1].Contains("687499.9999999995")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -223,8 +238,38 @@ namespace Test
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"\TestSilac\AllQuantifiedProteinGroups.tsv");
             Assert.That(output.Length, Is.EqualTo(2));
-            Assert.That(output[0].Contains("Intensity_silac\tIntensity_silacPart2\tIntensity_silac(K+8.014)\tIntensity_silacPart2(K+8.014)")); //test that two files were made
-            Assert.That(output[1].Contains("875000.0000000009\t875000.0000000009\t437500.00000000047\t437500.00000000047")); //test the heavy intensity is half that of the light (per the raw file)
+            // All four channels report an intensity, but only the two real files get PSM-derived columns:
+            // a label channel is an inference from one spectrum, not a separate acquisition, so it has no
+            // spectral count and nothing to compute count occupancy from.
+            Assert.That(output[0].Contains(
+                "SpectralCount_silac\tIntensity_silac\tCountOccupancy_silac\t" +
+                "SpectralCount_silacPart2\tIntensity_silacPart2\tCountOccupancy_silacPart2\t" +
+                "Intensity_silac(K+8.014)\t" +
+                "Intensity_silacPart2(K+8.014)")); //test that all four conditions were made
+            Assert.That(output[1].Contains("875000.0000000009")); //test the light intensities (both files)
+            Assert.That(output[1].Contains("437500.00000000047")); //test the heavy intensity is half that of the light (per the raw file)
+
+            // Intensity occupancy is not reported for label-based runs at all: the per-channel areas sit
+            // under invented files, so a share taken from the real file would weight light and heavy
+            // identifications by the light channel alone.
+            string[] silacHeader = output[0].Split('\t');
+            Assert.That(silacHeader.Any(h => h.StartsWith("IntensityOccupancy_")), Is.False);
+
+            foreach (string channel in new[] { "silac(K+8.014)", "silacPart2(K+8.014)" })
+            {
+                Assert.That(silacHeader, Does.Contain("Intensity_" + channel));
+                Assert.That(silacHeader, Does.Not.Contain("SpectralCount_" + channel));
+                Assert.That(silacHeader, Does.Not.Contain("CountOccupancy_" + channel));
+            }
+
+            // The real files keep theirs, so the suppression is per channel rather than per run.
+            foreach (string realFile in new[] { "silac", "silacPart2" })
+            {
+                Assert.That(silacHeader, Does.Contain("SpectralCount_" + realFile));
+                Assert.That(silacHeader, Does.Contain("CountOccupancy_" + realFile));
+            }
+
+            Assert.That(output.Select(l => l.Split('\t').Length).AllSame(), Is.True);
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"\TestSilac\AllQuantifiedPeptides.tsv");
@@ -522,7 +567,19 @@ namespace Test
             Assert.That(output[1].Contains("\tPEPTK(+8.014)IDEK\t") && output[1].Contains("\t875000\t")); //Doesn't matter where the +8.014 is, just matters that it's mixed (one is light, one is heavy)
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
-            Assert.That(output[1].Contains("\t\t\t\t1\t")); //check that no intensity is present when only a single missed cleavage value exists
+            // No intensity when only a single missed-cleavage value exists. Resolved by column name rather
+            // than by tab position, so it survives changes to which columns a turnover run reports.
+            string[] missingPeaksHeader = output[0].Split('\t');
+            string[] missingPeaksRow = output[1].Split('\t');
+            var intensityColumns = missingPeaksHeader
+                .Select((name, index) => (name, index))
+                .Where(column => column.name.StartsWith("Intensity_"))
+                .ToList();
+            Assert.That(intensityColumns, Is.Not.Empty);
+            foreach (var column in intensityColumns)
+            {
+                Assert.That(missingPeaksRow[column.index], Is.Empty, column.name);
+            }
             Assert.That(output[1].Contains("\t1\tPEPTKIDEK\tPEPTKIDEK\t")); //check that the sequence coverage isn't PEPTaIDEa
             Assert.That(output[1].Contains("\t1\tPEPTKIDEK(+8.014)\t")); //check that the peptide id'd has the +8
 
@@ -669,6 +726,40 @@ namespace Test
 
             //Test no crash in weird situations
             SilacConversions.SilacConversionsPostQuantification(null, null, null, new List<SpectraFileInfo>(), null, new HashSet<IDigestionParams>(), null, new List<PeptideSpectralMatch>(), new Dictionary<string, int>(), true);
+        }
+
+        /// <summary>
+        /// Verifies that the SILAC clone constructor preserves IsobaricMassTagReporterIonIntensities
+        /// and PeptideFdrInfo, both of which were previously dropped during cloning.
+        /// </summary>
+        [Test]
+        public static void TestSilacClonePreservesQuantAndFdrData()
+        {
+            var protein = new Protein("PEPTIDE", "ACCESSION");
+            var pwsm = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 7, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var scan = new Ms2ScanWithSpecificMass(
+                new TestDataFile(pwsm, "quadratic").GetOneBasedScan(2), 100, 1, null, new CommonParameters());
+
+            var psm = new PeptideSpectralMatch(pwsm, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+
+            // Set fields that the clone constructor must preserve
+            var reporterIons = new double[] { 100.0, 200.0, 300.0 };
+            typeof(PeptideSpectralMatch).BaseType.GetProperty("IsobaricMassTagReporterIonIntensities", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+                .SetValue(psm, reporterIons);
+            psm.PeptideFdrInfo = new FdrInfo { QValue = 0.05, PEP = 0.1 };
+
+            // Clone (SILAC path)
+            var clone = psm.Clone(new List<SpectralMatchHypothesis>
+            {
+                new SpectralMatchHypothesis(0, pwsm, new List<MatchedFragmentIon>(), 10)
+            });
+
+            // Assertions
+            Assert.That(clone.IsobaricMassTagReporterIonIntensities, Is.EqualTo(reporterIons));
+            Assert.That(clone.PeptideFdrInfo, Is.Not.Null);
+            Assert.That(clone.PeptideFdrInfo.QValue, Is.EqualTo(0.05));
+            Assert.That(clone.PeptideFdrInfo.PEP, Is.EqualTo(0.1));
         }
     }
 }
