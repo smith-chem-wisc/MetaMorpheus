@@ -2034,5 +2034,191 @@ namespace Test
             File.Delete(xmlName);
             File.Delete(mzmlName);
         }
+
+        /// <summary>
+        /// A C-terminal variable modification found by Accepts must land on the truncated peptide's
+        /// C-terminus regardless of where in the protein that peptide starts. The key used to be an
+        /// absolute protein coordinate, so it was only correct for peptides starting at residue 3.
+        /// The parameter is where the matched peptide begins in the protein.
+        /// </summary>
+        [Test]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(5)]
+        public static void TestNonSpecificEnzymeSearchTerminalModPlacementSingleN(int startResidue)
+        {
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                SearchTarget = true,
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                LocalFdrCategories = new List<FdrCategory> { FdrCategory.NonSpecific }
+            };
+            DigestionParams dp = new DigestionParams("singleN", minPeptideLength: 5,
+                fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None);
+            CommonParameters CommonParameters = new CommonParameters(
+                dissociationType: DissociationType.HCD, digestionParams: dp, scoreCutoff: 5,
+                precursorMassTolerance: new PpmTolerance(5), addCompIons: true);
+
+            ModificationMotif.TryGetMotif("K", out ModificationMotif kMotif);
+            Modification cTerminalMod = new Modification(_originalId: "TerminalProbe", _modificationType: "TestTerminal",
+                _target: kMotif, _locationRestriction: "C-terminal.", _monoisotopicMass: 42.010565);
+            var variableModifications = new List<Modification> { cTerminalMod };
+            var fixedModifications = new List<Modification>();
+
+            // The searched peptide is always AAAAAK; a glycine prefix moves where it starts in the
+            // protein, which is the coordinate the old key depended on. Glycine differs in mass from
+            // alanine, so a window starting at residue 1 cannot match the same precursor.
+            PeptideWithSetModifications guiltyPwsm = new PeptideWithSetModifications(
+                "AAAAAK-[TestTerminal:TerminalProbe on K]",
+                new Dictionary<string, Modification> { { "TerminalProbe on K", cTerminalMod } });
+            var fragments = new List<Product>();
+            guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
+
+            var myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
+            string prefix = new string('G', startResidue - 1);
+            var proteinList = new List<Protein> { new Protein(prefix + "AAAAAK" + new string('G', 10), null) };
+
+            SpectralMatch bestPsm = RunNonSpecificEngine(proteinList, variableModifications, fixedModifications,
+                CommonParameters, SearchParameters, myMsDataFile);
+
+            Assert.That(bestPsm, Is.Not.Null);
+            bestPsm.ResolveAllAmbiguities();
+            // The mod must render at the C-terminus ("-[...]"), not on an interior residue, and must
+            // still be present at all -- an out-of-range key silently drops it from the sequence.
+            Assert.That(bestPsm.FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
+        }
+
+        /// <summary>
+        /// The mirror case: an N-terminal variable modification on a singleC search must land on the
+        /// truncated peptide's N-terminus (key 1), not on its first residue.
+        /// </summary>
+        [Test]
+        public static void TestNonSpecificEnzymeSearchTerminalModPlacementSingleC()
+        {
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                SearchTarget = true,
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                LocalFdrCategories = new List<FdrCategory> { FdrCategory.NonSpecific }
+            };
+            DigestionParams dp = new DigestionParams("singleC", minPeptideLength: 5,
+                fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None);
+            CommonParameters CommonParameters = new CommonParameters(
+                dissociationType: DissociationType.HCD, digestionParams: dp, scoreCutoff: 5,
+                precursorMassTolerance: new PpmTolerance(5), addCompIons: true);
+
+            ModificationMotif.TryGetMotif("K", out ModificationMotif kMotif);
+            Modification nTerminalMod = new Modification(_originalId: "TerminalProbe", _modificationType: "TestTerminal",
+                _target: kMotif, _locationRestriction: "N-terminal.", _monoisotopicMass: 42.010565);
+            var variableModifications = new List<Modification> { nTerminalMod };
+            var fixedModifications = new List<Modification>();
+
+            PeptideWithSetModifications guiltyPwsm = new PeptideWithSetModifications(
+                "[TestTerminal:TerminalProbe on K]KAAAAAAA",
+                new Dictionary<string, Modification> { { "TerminalProbe on K", nTerminalMod } });
+            var fragments = new List<Product>();
+            guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
+
+            var myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
+            var proteinList = new List<Protein> { new Protein("GGK" + new string('A', 7), null) };
+
+            SpectralMatch bestPsm = RunNonSpecificEngine(proteinList, variableModifications, fixedModifications,
+                CommonParameters, SearchParameters, myMsDataFile);
+
+            Assert.That(bestPsm, Is.Not.Null);
+            bestPsm.ResolveAllAmbiguities();
+            Assert.That(bestPsm.FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
+        }
+
+        /// <summary>
+        /// Issue #2400: a modification already occupying the key Accepts wanted for the terminal mod
+        /// threw "An item with the same key has already been added". Both modifications must survive.
+        /// </summary>
+        [Test]
+        public static void TestNonSpecificEnzymeSearchTerminalModDoesNotCollide()
+        {
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                SearchTarget = true,
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                LocalFdrCategories = new List<FdrCategory> { FdrCategory.NonSpecific }
+            };
+            DigestionParams dp = new DigestionParams("singleN", minPeptideLength: 5,
+                fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None);
+            CommonParameters CommonParameters = new CommonParameters(
+                dissociationType: DissociationType.HCD, digestionParams: dp, scoreCutoff: 5,
+                precursorMassTolerance: new PpmTolerance(5), addCompIons: true);
+
+            ModificationMotif.TryGetMotif("M", out ModificationMotif mMotif);
+            ModificationMotif.TryGetMotif("K", out ModificationMotif kMotif);
+            Modification oxidation = new Modification(_originalId: "Oxidation", _modificationType: "TestVariable",
+                _target: mMotif, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915);
+            Modification cTerminalMod = new Modification(_originalId: "TerminalProbe", _modificationType: "TestTerminal",
+                _target: kMotif, _locationRestriction: "C-terminal.", _monoisotopicMass: 42.010565);
+            var variableModifications = new List<Modification> { oxidation, cTerminalMod };
+            var fixedModifications = new List<Modification>();
+
+            // Oxidation on the M occupies the mod key the old code reused for the terminal mod.
+            PeptideWithSetModifications guiltyPwsm = new PeptideWithSetModifications(
+                "AAAAAAAAM[TestVariable:Oxidation on M]K-[TestTerminal:TerminalProbe on K]",
+                new Dictionary<string, Modification>
+                {
+                    { "Oxidation on M", oxidation },
+                    { "TerminalProbe on K", cTerminalMod }
+                });
+            var fragments = new List<Product>();
+            guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
+
+            var myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
+            var proteinList = new List<Protein> { new Protein("AAAAAAAAMK" + new string('G', 10), null) };
+
+            SpectralMatch bestPsm = null;
+            Assert.DoesNotThrow(() => bestPsm = RunNonSpecificEngine(proteinList, variableModifications,
+                fixedModifications, CommonParameters, SearchParameters, myMsDataFile));
+
+            Assert.That(bestPsm, Is.Not.Null);
+            bestPsm.ResolveAllAmbiguities();
+            Assert.That(bestPsm.FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
+        }
+
+        /// <summary>
+        /// Shared setup for the non-specific terminal-modification tests: index the proteins, run the
+        /// engine over a single scan, and hand back the best match for the NonSpecific FDR category.
+        /// </summary>
+        private static SpectralMatch RunNonSpecificEngine(List<Protein> proteinList,
+            List<Modification> variableModifications, List<Modification> fixedModifications,
+            CommonParameters commonParameters, SearchParameters searchParameters, MsDataFile myMsDataFile)
+        {
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null,
+                1, DecoyType.None, commonParameters, null, searchParameters.MaxFragmentSize, true,
+                new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var indexResults = (IndexingResults)indexEngine.Run();
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters())
+                .OrderBy(b => b.PrecursorMass).ToArray();
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(commonParameters.PrecursorMassTolerance,
+                searchParameters.MassDiffAcceptorType, searchParameters.CustomMdac);
+
+            SpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            for (int i = 0; i < allPsmsArrays.Length; i++)
+            {
+                allPsmsArrays[i] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            }
+
+            List<int>[] coisolationIndex = new List<int>[listOfSortedms2Scans.Length];
+            for (int i = 0; i < listOfSortedms2Scans.Length; i++)
+            {
+                coisolationIndex[i] = new List<int> { i };
+            }
+
+            new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex,
+                indexResults.PeptideIndex, indexResults.FragmentIndex, indexResults.PrecursorIndex, 0,
+                commonParameters, null, variableModifications, massDiffAcceptor,
+                searchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+
+            return allPsmsArrays[(int)FdrCategory.NonSpecific].FirstOrDefault(p => p != null);
+        }
+
     }
 }
