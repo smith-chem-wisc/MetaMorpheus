@@ -168,7 +168,18 @@ namespace MetaMorpheusCommandLine
                 // write the Thermo RawFileReader licence agreement
                 Console.WriteLine(ThermoRawFileReaderLicence.ThermoLicenceText);
                 Console.WriteLine("\nIn order to search Thermo .raw files, you must agree to the above terms. Do you agree to the above terms? y/n\n");
-                string res = Console.ReadLine().ToLowerInvariant();
+                // null when there is nothing to read: redirected or closed stdin, as in a CI or batch run
+                string res = Console.ReadLine()?.Trim().ToLowerInvariant();
+                if (res == null)
+                {
+                    Console.WriteLine("No response could be read, because MetaMorpheus is not running interactively. Searching Thermo .raw files requires agreeing to the terms above.");
+                    Console.WriteLine("To agree without a console, pipe a response (echo y | metamorpheus ...) or set UserHasAgreedToThermoRawFileReaderLicence to true in " + Path.Combine(GlobalVariables.DataDir, @"settings.toml") + ".");
+                    Console.WriteLine("You can still search .mzML and .mgf files without agreeing to the Thermo licence.");
+                    // 5 already means "experimental design failure" three times over below; a licence
+                    // prompt that could not be asked has to be distinguishable from that.
+                    errorCode = 6;
+                    return errorCode;
+                }
                 if (res == "y")
                 {
                     var newGlobalSettings = new GlobalSettings
