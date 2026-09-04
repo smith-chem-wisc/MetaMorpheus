@@ -17,6 +17,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Navigation;
 using Omics.Modifications;
 using TaskLayer;
@@ -38,6 +39,9 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> SelectedProteinDatabaseFiles = new ObservableCollection<ProteinDbForDataGrid>();
         private ObservableCollection<InRunTask> InProgressTasks;
+        private Point DragStartPoint;
+        private PreRunTask TaskToDrag;
+        private TreeViewItem DropIndicatorItem;
         public static string NewestKnownMetaMorpheusVersion { get; private set; }
 
         public MainWindow()
@@ -893,18 +897,202 @@ namespace MetaMorpheusGUI
                 // renames the tasks in the new correct order (Task1, Task2, etc.)
                 UpdateGuiOnPreRunChange();
 
-                var item = tasksTreeView.ItemContainerGenerator.ContainerFromItem(taskToMove);
-                if (item != null)
-                {
-                    ((TreeViewItem)item).IsSelected = true;
-                }
+                SelectTaskInTreeViews(taskToMove);
+            }
+        }
 
-                item = taskSummary.ItemContainerGenerator.ContainerFromItem(taskToMove);
-                if (item != null)
+        /// <summary>
+        /// Re-selects a task in both task tree views after it has been moved.
+        /// </summary>
+        private void SelectTaskInTreeViews(PreRunTask task)
+        {
+            foreach (var treeView in new[] { tasksTreeView, taskSummary })
+            {
+                if (treeView.ItemContainerGenerator.ContainerFromItem(task) is TreeViewItem item)
                 {
-                    ((TreeViewItem)item).IsSelected = true;
+                    item.IsSelected = true;
                 }
             }
+        }
+
+        /// <summary>
+        /// Records which task the left button went down on, and where, so that a drag can be told apart from a click.
+        /// </summary>
+        private void TaskTreeView_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            DragStartPoint = e.GetPosition(null);
+            TaskToDrag = GetTreeViewItemContaining(e.OriginalSource)?.DataContext as PreRunTask;
+        }
+
+        /// <summary>
+        /// Begins a drag once the mouse has moved far enough from where the left button went down.
+        /// </summary>
+        private void TaskTreeView_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed)
+            {
+                // the press a drag could have started from is over, so it is no longer a candidate
+                TaskToDrag = null;
+                return;
+            }
+
+            if (TaskToDrag == null || !TasksCanBeReordered(sender as TreeView))
+            {
+                return;
+            }
+
+            Vector dragDistance = e.GetPosition(null) - DragStartPoint;
+            if (Math.Abs(dragDistance.X) < SystemParameters.MinimumHorizontalDragDistance
+                && Math.Abs(dragDistance.Y) < SystemParameters.MinimumVerticalDragDistance)
+            {
+                return;
+            }
+
+            // the task is taken from the press, not from whatever is under the cursor once the threshold is passed
+            PreRunTask taskToDrag = TaskToDrag;
+            TaskToDrag = null;
+
+            DragDrop.DoDragDrop((TreeView)sender, new DataObject(typeof(PreRunTask), taskToDrag), DragDropEffects.Move);
+            ClearDropIndicator();
+        }
+
+        /// <summary>
+        /// Draws a line showing where the dragged task would land.
+        /// </summary>
+        private void TaskTreeView_DragOver(object sender, DragEventArgs e)
+        {
+            ClearDropIndicator();
+
+            var treeView = sender as TreeView;
+
+            // anything that isn't a task reorder (e.g. dropping files onto the window) is left to bubble up
+            if (GetDraggedTask(e, treeView) == null)
+            {
+                return;
+            }
+
+            e.Effects = DragDropEffects.Move;
+            e.Handled = true;
+
+            var targetItem = GetTreeViewItemContaining(e.OriginalSource);
+            bool lineAboveTarget = targetItem != null && IsInUpperHalf(targetItem, e);
+
+            // hovering past the last task draws the line below it, matching the drop-at-the-end behavior
+            targetItem ??= treeView.ItemContainerGenerator.ContainerFromIndex(PreRunTasks.Count - 1) as TreeViewItem;
+            if (targetItem == null)
+            {
+                return;
+            }
+
+            DropIndicatorItem = targetItem;
+            targetItem.BorderBrush = SystemColors.HighlightBrush;
+            targetItem.BorderThickness = lineAboveTarget ? new Thickness(0, 2, 0, 0) : new Thickness(0, 0, 0, 2);
+        }
+
+        private void TaskTreeView_DragLeave(object sender, DragEventArgs e)
+        {
+            ClearDropIndicator();
+        }
+
+        /// <summary>
+        /// Moves the dragged task to the position it was dropped on.
+        /// </summary>
+        private void TaskTreeView_Drop(object sender, DragEventArgs e)
+        {
+            ClearDropIndicator();
+
+            // anything that isn't a task reorder (e.g. dropping files onto the window) is left to bubble up
+            PreRunTask draggedTask = GetDraggedTask(e, sender as TreeView);
+            if (draggedTask == null)
+            {
+                return;
+            }
+
+            e.Handled = true;
+
+            int oldPosition = PreRunTasks.IndexOf(draggedTask);
+            var targetItem = GetTreeViewItemContaining(e.OriginalSource);
+
+            // dropping past the last task moves it to the end of the list
+            int newPosition = PreRunTasks.Count;
+            if (targetItem?.DataContext is PreRunTask targetTask)
+            {
+                newPosition = PreRunTasks.IndexOf(targetTask) + (IsInUpperHalf(targetItem, e) ? 0 : 1);
+            }
+
+            // the dragged task is removed from its old position before being re-inserted
+            if (oldPosition < newPosition)
+            {
+                newPosition--;
+            }
+
+            if (oldPosition < 0 || newPosition < 0 || oldPosition == newPosition)
+            {
+                return;
+            }
+
+            PreRunTasks.Move(oldPosition, newPosition);
+
+            // renames the tasks in the new correct order (Task1, Task2, etc.)
+            UpdateGuiOnPreRunChange();
+
+            SelectTaskInTreeViews(draggedTask);
+        }
+
+        /// <summary>
+        /// Returns the task being dragged, or null if this drag is not a task reorder that the tree view can accept.
+        /// </summary>
+        private PreRunTask GetDraggedTask(DragEventArgs e, TreeView treeView)
+        {
+            if (!TasksCanBeReordered(treeView) || e.Data == null || !e.Data.GetDataPresent(typeof(PreRunTask)))
+            {
+                return null;
+            }
+
+            var task = e.Data.GetData(typeof(PreRunTask)) as PreRunTask;
+
+            return task != null && PreRunTasks.Contains(task) ? task : null;
+        }
+
+        /// <summary>
+        /// Tasks can only be reordered before a run; during a run the tree views are bound to InProgressTasks.
+        /// </summary>
+        private bool TasksCanBeReordered(TreeView treeView)
+        {
+            return treeView != null && ReferenceEquals(treeView.DataContext, PreRunTasks) && PreRunTasks.Count > 1;
+        }
+
+        private static bool IsInUpperHalf(TreeViewItem item, DragEventArgs e)
+        {
+            return e.GetPosition(item).Y < item.ActualHeight / 2;
+        }
+
+        private void ClearDropIndicator()
+        {
+            if (DropIndicatorItem == null)
+            {
+                return;
+            }
+
+            DropIndicatorItem.ClearValue(Control.BorderBrushProperty);
+            DropIndicatorItem.ClearValue(Control.BorderThicknessProperty);
+            DropIndicatorItem = null;
+        }
+
+        /// <summary>
+        /// Walks up from a hit-tested element to the tree view item that contains it, if any.
+        /// </summary>
+        private static TreeViewItem GetTreeViewItemContaining(object source)
+        {
+            DependencyObject current = source as DependencyObject;
+
+            while (current != null && !(current is TreeViewItem))
+            {
+                // VisualTreeHelper throws on non-visuals (e.g. a Run inside a TextBlock)
+                current = current is Visual ? VisualTreeHelper.GetParent(current) : LogicalTreeHelper.GetParent(current);
+            }
+
+            return current as TreeViewItem;
         }
 
         /// <summary>
