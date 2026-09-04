@@ -50,7 +50,6 @@ namespace GuiFunctions
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
             // Use unique temp file names to ensure thread safety
-            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), Path.GetRandomFileName() + "." + MetaDrawSettings.ExportType);
             string tempStationarySequencePngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), Path.GetRandomFileName() + "_annotation.png");
             string tempPtmLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), Path.GetRandomFileName() + "_legend.png");
             List<System.Drawing.Bitmap> bitmaps = new();
@@ -92,9 +91,7 @@ namespace GuiFunctions
                 encoder.Save(file);
             }
 
-            // export model as png and load both stationary and model as bitmap
-            ExportToPng(tempModelPath, (int)width, (int)height);
-            bitmaps.Add(new System.Drawing.Bitmap(tempModelPath));
+            bitmaps.Add(MetaDrawLogic.ConvertUIElementToBitmap(PlotView, System.IO.Path.GetDirectoryName(path)));
             points.Add(new Point(0, 0));
 
             var tempStatSequenceBitmap = new System.Drawing.Bitmap(tempStationarySequencePngPath);
@@ -137,7 +134,6 @@ namespace GuiFunctions
             // combine the bitmaps
             System.Drawing.Bitmap combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points);
             tempStatSequenceBitmap.Dispose();
-            File.Delete(tempModelPath);
             File.Delete(tempStationarySequencePngPath);
             File.Delete(tempPtmLegendPngPath);
             ExportPlot(path, combinedBitmaps, width, height);

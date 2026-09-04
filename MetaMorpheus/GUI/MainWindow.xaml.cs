@@ -38,6 +38,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> SelectedProteinDatabaseFiles = new ObservableCollection<ProteinDbForDataGrid>();
         private ObservableCollection<InRunTask> InProgressTasks;
+        private ProteaseGuru.Gui.MainWindow? _proteaseGuruWindow;
         public static string NewestKnownMetaMorpheusVersion { get; private set; }
 
         public MainWindow()
@@ -1238,9 +1239,16 @@ namespace MetaMorpheusGUI
                 var selectedItem = (TabItem)MainWindowTabControl.SelectedItem;
                 var selectedItemHeader = selectedItem.Header.ToString();
 
-                if (selectedItemHeader == "Visualize")
+                switch (selectedItemHeader)
                 {
-                    MenuItem_MetaDraw_Click(sender, e);
+                    case "Visualize":
+                        MenuItem_MetaDraw_Click(sender, e);
+                        break;
+                    case "ProteaseGuru":
+                        {
+                            OpenProteaseGuru_Click(sender, e);
+                            break;
+                        }
                 }
             }
         }
@@ -1336,6 +1344,24 @@ namespace MetaMorpheusGUI
                 MetaDraw metaDrawGui = new MetaDraw(filesToLoad);
                 metaDrawGui.Show();
             }
+        }
+
+        private void OpenProteaseGuru_Click(object sender, RoutedEventArgs e)
+        {
+            // ProteaseGuru relies on process-wide static state (static events, GlobalVariables,
+            // NotificationService singleton, shared DispatcherTimer), so only one window is safe.
+            if (_proteaseGuruWindow is { IsLoaded: true })
+            {
+                if (_proteaseGuruWindow.WindowState == WindowState.Minimized)
+                    _proteaseGuruWindow.WindowState = WindowState.Normal;
+                _proteaseGuruWindow.Activate();
+                _proteaseGuruWindow.Focus();
+                return;
+            }
+
+            _proteaseGuruWindow = new ProteaseGuru.Gui.MainWindow();
+            _proteaseGuruWindow.Closed += (_, _) => _proteaseGuruWindow = null;
+            _proteaseGuruWindow.Show();
         }
 
         private void MenuItem_ResetDefaults_Click(object sender, RoutedEventArgs e)

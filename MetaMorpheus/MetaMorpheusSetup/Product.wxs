@@ -1,4 +1,4 @@
-﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <!--Shorthand way of getting the install directory-->
   <?define GUI_TargetDir=$(var.GUI.TargetDir)?>
   <?define CMD_TargetDir=$(var.CMD.TargetDir)?>
@@ -439,8 +439,32 @@
 		<Component Id="src_PredictionClients.dll" Guid="C6398A43-F845-47C2-9F35-0BB2435AFE16">
 			<File Id="src_PredictionClients.dll" Name="PredictionClients.dll" Source="$(var.GUI_TargetDir)PredictionClients.dll" />
 		</Component>
-
-      <!--Commandline Components-->
+		<Component Id="src_ProteaseGuru.Engine.dll" Guid="be5f7976-a458-4795-aea6-46fdc80f24f8">
+			<File Id="src_ProteaseGuru.Engine.dll" Name="ProteaseGuru.Engine.dll" Source="$(var.GUI_TargetDir)ProteaseGuru.Engine.dll" />
+		</Component>
+		<Component Id="src_ProteaseGuru.Tasks.dll" Guid="12936dfe-69f3-462f-9c07-5a84d8e81dd2">
+			<File Id="src_ProteaseGuru.Tasks.dll" Name="ProteaseGuru.Tasks.dll" Source="$(var.GUI_TargetDir)ProteaseGuru.Tasks.dll" />
+		</Component>
+		<Component Id="src_ProteaseGuru.Gui.dll" Guid="56b3800c-17f4-4a8b-a8d1-e8c0e62828f0">
+			<File Id="src_ProteaseGuru.Gui.dll" Name="ProteaseGuru.Gui.dll" Source="$(var.GUI_TargetDir)ProteaseGuru.Gui.dll" />
+		</Component>
+		<Component Id="src_ProteaseGuru.GuiFunctions.dll" Guid="b5cae3e1-f169-4e6a-be20-48b7ccb95dca">
+			<File Id="src_ProteaseGuru.GuiFunctions.dll" Name="ProteaseGuru.GuiFunctions.dll" Source="$(var.GUI_TargetDir)ProteaseGuru.GuiFunctions.dll" />
+		</Component>
+ 		<Component Id="src_HarfBuzzSharp.dll" Guid="735de1c4-c216-452c-9111-0506a287da2c">
+ 			<File Id="src_HarfBuzzSharp.dll" Name="HarfBuzzSharp.dll" Source="$(var.GUI_TargetDir)HarfBuzzSharp.dll" />
+ 		</Component>
+ 		<Component Id="src_OxyPlot.SkiaSharp.dll" Guid="c4f4e8f0-eddb-42b6-a5c3-0d1842e274f1">
+ 			<File Id="src_OxyPlot.SkiaSharp.dll" Name="OxyPlot.SkiaSharp.dll" Source="$(var.GUI_TargetDir)OxyPlot.SkiaSharp.dll" />
+ 		</Component>
+ 		<Component Id="src_OxyPlot.Wpf.Shared.dll" Guid="0c641ced-9b7a-45df-a8aa-40c05e223d5c">
+ 			<File Id="src_OxyPlot.Wpf.Shared.dll" Name="OxyPlot.Wpf.Shared.dll" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.Shared.dll" />
+ 		</Component>
+ 		<Component Id="src_SkiaSharp.HarfBuzz.dll" Guid="20e0e4de-b7c9-4072-98ae-7dbcee6d725c">
+ 			<File Id="src_SkiaSharp.HarfBuzz.dll" Name="SkiaSharp.HarfBuzz.dll" Source="$(var.GUI_TargetDir)SkiaSharp.HarfBuzz.dll" />
+ 		</Component>
+ 
+       <!--Commandline Components-->
       <Component Id="src_CMD.deps.json" Guid="92190CCF-0138-4F0B-9356-02C914D5A439">
         <File Id="src_CMD.deps.json" Name="CMD.deps.json" Source="$(var.CMD_TargetDir)CMD.deps.json" />
       </Component>
@@ -528,10 +552,13 @@
         <File Id="src_libiompstubs5md.dll" Name="libiompstubs5md.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\libiompstubs5md.dll" />
       </Component>
       <!--Native backing library for the managed SkiaSharp.dll, which ships but has no native pair.-->
-      <Component Id="src_libSkiaSharp.dll" Guid="08B9E210-A08C-457F-9618-7D7DBEFE233A">
-        <File Id="src_libSkiaSharp.dll" Name="libSkiaSharp.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\libSkiaSharp.dll" />
-      </Component>
-    </ComponentGroup>
+       <Component Id="src_libSkiaSharp.dll" Guid="08B9E210-A08C-457F-9618-7D7DBEFE233A">
+         <File Id="src_libSkiaSharp.dll" Name="libSkiaSharp.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\libSkiaSharp.dll" />
+       </Component>
+       <Component Id="src_libHarfBuzzSharp.dll" Guid="bf709c45-360f-4a93-b15f-e607dd785c36">
+         <File Id="src_libHarfBuzzSharp.dll" Name="libHarfBuzzSharp.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\libHarfBuzzSharp.dll" />
+       </Component>
+     </ComponentGroup>
   </Fragment>
 
   <!--Build the App Mods folder-->
