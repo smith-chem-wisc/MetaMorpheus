@@ -258,7 +258,7 @@ namespace MetaMorpheusCommandLine
             }
 
             List<string> startingRawFilenameList = settings.Spectra.Select(b => Path.GetFullPath(b)).ToList();
-            List<DbForTask> startingXmlDbFilenameList = settings.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
+            List<DbForTask> startingXmlDbFilenameList = settings.Databases.Select(b => new DbForTask(Path.GetFullPath(b), DbForTask.LooksLikeContaminant(b))).ToList();
 
             // check that an experimental design is defined if normalization is enabled
             var searchTasks = taskList
@@ -429,17 +429,6 @@ namespace MetaMorpheusCommandLine
             {
                 MyWriter.WriteLine(str);
             }
-        }
-
-        private static bool IsContaminant(string b)
-        {
-            if (b.ToUpper().Contains("contaminant".ToUpper())
-                || b.ToUpper().Contains("CRAP"))
-            {
-                return true;
-            }
-
-            return false;
         }
 
         private static void MyTaskEngine_startingSingleTaskHander(object sender, SingleTaskEventArgs e)
