@@ -15,7 +15,7 @@ namespace EngineLayer.CrosslinkSearch
             List<int> possibleCrosslinkerPositions, double otherPeptideMass, PeptideWithSetModifications peptide)
         {
             List<double> massesToLocalize = new List<double>();
-            if (crosslinker.Cleavable && crosslinker.CleaveDissociationTypes.Contains(dissociationType))
+            if (crosslinker.IsCleavedBy(dissociationType))
             {
                 massesToLocalize.Add(crosslinker.CleaveMassShort);
                 massesToLocalize.Add(crosslinker.CleaveMassLong);
