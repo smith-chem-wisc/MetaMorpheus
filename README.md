@@ -39,7 +39,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 ## Spectra Requirements
 
 * One of the following formats:
-   * Thermo .raw (Windows and Linux only)
+   * Thermo .raw (Windows, macOS and Linux)
    * .mzML file in centroid mode. Please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[How to convert files to .mzML](https://www.youtube.com/watch?v=hOJ6ibCA5Pk) video on YouTube.
    * .mgf
 * MS1 and MS2 scans
