@@ -121,6 +121,7 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
+            FastaHeaderParsingSettings.SetFromParameters(task.CommonParameters.FastaHeaderParsing);
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbAddCompIon.IsChecked = task.CommonParameters.AddCompIons;
@@ -352,7 +353,8 @@ namespace MetaMorpheusGUI
                 listOfModsFixed: listOfModsFixed,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 precursorDeconParams: precursorDeconvolutionParameters,
-                productDeconParams: productDeconvolutionParameters);
+                productDeconParams: productDeconvolutionParameters,
+                fastaHeaderParsing: FastaHeaderParsingSettings.ToParameters());
 
             TheTask.CommonParameters = commonParamsToSave;
 

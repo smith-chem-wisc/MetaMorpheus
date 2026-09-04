@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;
@@ -70,6 +70,7 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
+            FastaHeaderParsingSettings.SetFromParameters(task.CommonParameters.FastaHeaderParsing);
             GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
             DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
                 TheTask.CommonParameters.ProductDeconvolutionParameters,
@@ -362,7 +363,8 @@ namespace MetaMorpheusGUI
                     precursorDeconParams: precursorDeconvolutionParameters,
                     productDeconParams: productDeconvolutionParameters,
                     precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic,
-                    useProvidedPrecursorInfo: useProvidedPrecursorInfo);
+                    useProvidedPrecursorInfo: useProvidedPrecursorInfo,
+                    fastaHeaderParsing: FastaHeaderParsingSettings.ToParameters());
                 TheTask.CommonParameters = commonParamsToSave;
             }
             else //bottom-up
@@ -385,7 +387,8 @@ namespace MetaMorpheusGUI
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,
                     productDeconParams: productDeconvolutionParameters,
-                    precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic);
+                    precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic,
+                    fastaHeaderParsing: FastaHeaderParsingSettings.ToParameters());
                 TheTask.CommonParameters = commonParamsToSave;
             }
 

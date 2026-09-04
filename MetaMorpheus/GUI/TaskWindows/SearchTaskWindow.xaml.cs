@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using GuiFunctions;
 using MassSpectrometry;
@@ -195,6 +195,7 @@ namespace MetaMorpheusGUI
         /// <param name="task"></param>
         private void UpdateFieldsFromTask(SearchTask task)
         {
+            FastaHeaderParsingSettings.SetFromParameters(task.CommonParameters.FastaHeaderParsing);
             GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
@@ -673,7 +674,8 @@ namespace MetaMorpheusGUI
                 productDeconParams: productDeconvolutionParameters,
                 precursorMassMatchMode: _massDifferenceAcceptorViewModel.PrecursorMassMatchMode,
                 fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
-                rtPredictorName: rtPredictorModelName);
+                rtPredictorName: rtPredictorModelName,
+                fastaHeaderParsing: FastaHeaderParsingSettings.ToParameters());
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {
