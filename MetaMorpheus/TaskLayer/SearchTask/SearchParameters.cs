@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
 using Omics.Modifications;
@@ -34,6 +34,7 @@ namespace TaskLayer
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             MaxFragmentSize = DefaultMaxFragmentSize;
             MinAllowedInternalFragmentLength = 0;
+            UsePredictedSpectraForSpectralAngle = false;
             WriteMzId = true;
             WritePepXml = false;
             IncludeModMotifInMzid = false;
@@ -106,6 +107,14 @@ namespace TaskLayer
         public bool WriteContaminants { get; set; }
         public bool WriteIndividualFiles { get; set; }
         public bool WriteSpectralLibrary { get; set; }
+        /// <summary>
+        /// Opt in to filling missing spectral angles with Prosit-predicted spectra. Off by
+        /// default because it is a call to a third-party web service (Koina) on every search:
+        /// a search that would otherwise run offline should not start depending on someone
+        /// else's uptime unless the user asked for it. Angles from a real spectral library are
+        /// unaffected and still computed either way.
+        /// </summary>
+        public bool UsePredictedSpectraForSpectralAngle { get; set; }
         public bool UpdateSpectralLibrary { get; set; }
         public bool CompressIndividualFiles { get; set; }
         public List<SilacLabel> SilacLabels { get; set; }
