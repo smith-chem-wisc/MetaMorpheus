@@ -421,7 +421,9 @@ namespace TaskLayer
             // rather than throwing. Reported here because the loss is otherwise invisible: the peptide and
             // protein tables simply total less than the per-PSM reporter columns, and in the worst case --
             // every peptide in the search shared between two groups -- they total zero while the raw
-            // table looks perfectly healthy.
+            // table looks perfectly healthy. The exclusion itself is mzLib's: one sequence found in two
+            // proteins is two unequal PeptideWithSetModifications, so the engine's unambiguous filter
+            // drops it. Tracked as smith-chem-wisc/mzLib#1280; this warning stands whatever comes of it.
             if (results.AmbiguousSpectralMatchesExcluded > 0)
             {
                 Warn($"{results.AmbiguousSpectralMatchesExcluded} spectral match(es) were left out of " +
