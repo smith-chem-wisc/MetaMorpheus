@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using EngineLayer;
 using MetaMorpheusCommandLine;
 using Nett;
@@ -865,5 +866,112 @@ namespace Test
                 GlobalVariables.GlobalSettings = globalSettingsBackup;
             }
         }
+
+        /// <summary>
+        /// Regression test for #2788. MetaMorpheusEngine's and MetaMorpheusTask's events are static, so
+        /// handlers a command line run leaves attached fire for whatever the process runs next: CMD
+        /// wrote console output into unrelated runs, and threw inside them, because GetId() joins
+        /// NestedIds and NestedIds is null for an engine no task started. Eleven unrelated tests failed
+        /// that way once a CMD test ran ahead of them in the same session.
+        ///
+        /// The run here is deliberately a no-op - one task file with a TaskType CMD does not recognise,
+        /// which it skips, leaving no task to read the spectra or the database. Those two are stubs with
+        /// the extensions validation insists on, and everything lives in a scratch folder because
+        /// MetaMorpheus writes beside its inputs.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void TestCommandLineDetachesItsEventHandlers()
+        {
+            string scratch = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "CmdEventSubscriptions_" + Guid.NewGuid().ToString("N"));
+            string outputFolder = Path.Combine(scratch, "output");
+            Directory.CreateDirectory(outputFolder);
+
+            string spectra = Path.Combine(scratch, "NoTaskReadsThis.mzML");
+            string database = Path.Combine(scratch, "NoTaskReadsThis.fasta");
+            string taskToml = Path.Combine(scratch, "UnknownTaskType.toml");
+            File.WriteAllText(spectra, string.Empty);
+            File.WriteAllText(database, string.Empty);
+            File.WriteAllText(taskToml, "TaskType = \"NotATaskType\"" + Environment.NewLine);
+
+            var analyteTypeBeforeTest = GlobalVariables.AnalyteType;
+
+            try
+            {
+                int exitCode = Program.Main(new[]
+                    { "-s", spectra, "-d", database, "-t", taskToml, "-o", outputFolder });
+
+                // the run has to reach the event wiring for anything below to mean something
+                Assert.That(exitCode, Is.EqualTo(0), "the run did not complete");
+                Assert.That(File.Exists(Path.Combine(outputFolder, "allResults.txt")),
+                    "the run stopped before EverythingRunnerEngine, so it never reached the wiring");
+
+                Assert.That(CmdHandlersStillAttached(), Is.Empty,
+                    "the command line left handlers attached to static engine and task events");
+
+                // the shape the leak took: an engine started outside a task, so its NestedIds is null
+                Assert.That(() => new NoOpEngine().Run(), Throws.Nothing);
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = analyteTypeBeforeTest;
+                Directory.Delete(scratch, true);
+            }
+        }
+
+        /// <summary>
+        /// Whatever CMD still has attached to the static engine and task events, as
+        /// "Event -&gt; HandlerMethod", read off the backing fields of the events it subscribes to.
+        /// Empty is the only acceptable answer once Run has returned.
+        /// </summary>
+        private static List<string> CmdHandlersStillAttached()
+        {
+            var events = new (Type Owner, string Name)[]
+            {
+                (typeof(MetaMorpheusEngine), "WarnHandler"),
+                (typeof(MetaMorpheusEngine), "OutProgressHandler"),
+                (typeof(MetaMorpheusEngine), "StartingSingleEngineHander"),
+                (typeof(MetaMorpheusEngine), "FinishedSingleEngineHandler"),
+                (typeof(MetaMorpheusTask), "WarnHandler"),
+                (typeof(MetaMorpheusTask), "LogHandler"),
+                (typeof(MetaMorpheusTask), "StartingSingleTaskHander"),
+                (typeof(MetaMorpheusTask), "FinishedSingleTaskHandler"),
+                (typeof(MetaMorpheusTask), "FinishedWritingFileHandler")
+            };
+
+            var attached = new List<string>();
+
+            foreach ((Type owner, string name) in events)
+            {
+                FieldInfo backingField = owner.GetField(name,
+                    BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+                Assert.That(backingField, Is.Not.Null,
+                    owner.Name + "." + name + " is no longer a field-like event; update this test");
+
+                Delegate[] subscribers = ((Delegate)backingField.GetValue(null))?.GetInvocationList()
+                    ?? Array.Empty<Delegate>();
+
+                attached.AddRange(subscribers
+                    .Where(subscriber => subscriber.Method.DeclaringType == typeof(Program))
+                    .Select(subscriber => owner.Name + "." + name + " -> " + subscriber.Method.Name));
+            }
+
+            return attached;
+        }
+
+        /// <summary>
+        /// Raises the engine events and does nothing else. NestedIds is null, as it is for any engine
+        /// that a task did not start.
+        /// </summary>
+        private class NoOpEngine : MetaMorpheusEngine
+        {
+            public NoOpEngine() : base(new CommonParameters(), new List<(string, CommonParameters)>(), null)
+            {
+            }
+
+            protected override MetaMorpheusEngineResults RunSpecific() => new MetaMorpheusEngineResults(this);
+        }
+
     }
 }
