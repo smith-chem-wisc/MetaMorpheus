@@ -3,6 +3,12 @@ using EngineLayer.DatabaseLoading;
 using MassSpectrometry;
 using Nett;
 using NUnit.Framework;
+using Omics;
+using Omics.Fragmentation;
+using Omics.Modifications;
+using Omics.SpectralMatch;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using Quantification;
 using System;
 using System.Collections.Generic;
@@ -23,6 +29,9 @@ namespace Test
     {
         private static readonly string[] Tmt11Channels =
             { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" };
+
+        /// <summary>The staged spectra file's name without extension, which prefixes every sample column.</summary>
+        private const string StagedMzmlName = "VA084TQ_6";
 
         /// <summary>
         /// Writes a TmtDesign.txt beside <paramref name="stagedMzmlPath"/> annotating every channel of
@@ -106,8 +115,15 @@ namespace Test
                 Assert.That(header[0], Is.EqualTo("Protein Group"));
                 Assert.That(header.Length, Is.EqualTo(1 + Tmt11Channels.Length),
                     "one column per TMT11 channel, even for channels the design left unannotated");
-                Assert.That(header.Skip(1).Distinct().Count(), Is.EqualTo(Tmt11Channels.Length),
-                    "sample columns must be distinguishable");
+
+                // By identity, not by count and distinctness. Counting and de-duplicating passes just as
+                // happily on a design rotated by one channel, which is the desync worth catching: the
+                // values would still look plausible and would be under the wrong sample.
+                for (int channel = 0; channel < Tmt11Channels.Length; channel++)
+                {
+                    Assert.That(header[1 + channel], Is.EqualTo($"{StagedMzmlName}_{Tmt11Channels[channel]}"),
+                        "column order must follow the plex's channel order, not merely be distinct");
+                }
 
                 var firstRow = proteinLines[1].Split('\t').Skip(1).Select(double.Parse).ToList();
                 Assert.That(firstRow, Has.Count.EqualTo(Tmt11Channels.Length));
@@ -117,6 +133,8 @@ namespace Test
                 Assert.That(File.Exists(Path.Combine(searchOut, GlobalVariables.TmtExperimentalDesignFileName)), Is.True);
 
                 AssertPeptideValuesAreTheSumOfTheirRawValues(searchOut);
+                AssertProteinTableKeepsItsColumnsAndGainsChannelIntensities(searchOut);
+                AssertQuantifiedGroupsAreTheGroupsTheProteinTableShows(searchOut, proteinLines);
             }
             finally
             {
@@ -132,9 +150,12 @@ namespace Test
         /// <remarks>
         /// A positional comparison is valid here because the run has one spectra file, so the peptide
         /// matrix's columns are that file's channels in ascending reporter m/z -- the same order
-        /// <c>Reporter_1..Reporter_n</c> are written in. If MetaMorpheus's intensity array and the
-        /// design's ISampleInfo array ever stopped agreeing on that order, the totals would still look
-        /// plausible but would land in the wrong columns, and this is what would catch it.
+        /// <c>Reporter_1..Reporter_n</c> are written in.
+        ///
+        /// It does NOT catch a desync between MetaMorpheus's intensity array and the design's
+        /// ISampleInfo array: this compares index j on one side to index j on the other, so a design
+        /// rotated by a channel agrees with itself and the totals still balance. The header assertion
+        /// in the caller, which names the channel each column must belong to, is what catches that.
         /// </remarks>
         private static void AssertPeptideValuesAreTheSumOfTheirRawValues(string searchOut)
         {
@@ -179,6 +200,62 @@ namespace Test
             }
 
             Assert.That(compared, Is.GreaterThan(0), "no peptide in the peptide table was found in the raw table");
+        }
+
+        /// <summary>
+        /// AllProteinGroups.tsv must come out of a quantified run with MORE columns than an unquantified
+        /// one, not fewer.
+        /// </summary>
+        /// <remarks>
+        /// The engine delivers its results by assigning IntensitiesBySample and SamplesForQuantification
+        /// on each group, and both setters clear the cached SampleGroupResults. MetaMorpheus's copy of the
+        /// protein header reads that cache without rebuilding it, unlike mzLib's base header, so before
+        /// the analysis repopulated it the file silently lost its SpectralCount_ and CountOccupancy_
+        /// columns and never gained the Intensity_ ones -- with every remaining column unchanged, which is
+        /// why nothing else here noticed.
+        /// </remarks>
+        private static void AssertProteinTableKeepsItsColumnsAndGainsChannelIntensities(string searchOut)
+        {
+            var lines = File.ReadAllLines(Path.Combine(searchOut, "AllProteinGroups.tsv"));
+            Assert.That(lines, Has.Length.GreaterThan(1), "at least one protein group must be written");
+
+            var header = lines[0].Split('\t');
+
+            foreach (string channel in Tmt11Channels)
+            {
+                string label = $"{StagedMzmlName}_{channel}";
+                Assert.That(header, Contains.Item($"SpectralCount_{label}"),
+                    "the count columns must survive quantification");
+                Assert.That(header, Contains.Item($"CountOccupancy_{label}"),
+                    "the occupancy columns must survive quantification");
+                Assert.That(header, Contains.Item($"Intensity_{label}"),
+                    "the per-channel intensity columns the parameters comment promises must appear");
+            }
+
+            foreach (var line in lines.Skip(1))
+            {
+                Assert.That(line.Split('\t'), Has.Length.EqualTo(header.Length),
+                    "every row must carry the columns the header advertises");
+            }
+        }
+
+        /// <summary>
+        /// The quantification tables and the protein table must agree about which groups exist. The PSMs
+        /// handed to the engine are filtered to targets below threshold, so handing it every group put
+        /// rows in ProteinGroupQuantification.tsv -- decoys, groups above the q-value threshold -- that
+        /// AllProteinGroups.tsv suppresses.
+        /// </summary>
+        private static void AssertQuantifiedGroupsAreTheGroupsTheProteinTableShows(string searchOut, string[] proteinQuantLines)
+        {
+            var written = File.ReadAllLines(Path.Combine(searchOut, "AllProteinGroups.tsv"))
+                .Skip(1)
+                .Select(line => line.Split('\t')[0])
+                .ToList();
+
+            var quantified = proteinQuantLines.Skip(1).Select(line => line.Split('\t')[0]).ToList();
+
+            Assert.That(quantified, Is.EquivalentTo(written),
+                "the quantified groups must be exactly the groups AllProteinGroups.tsv shows");
         }
 
         /// <summary>
@@ -554,6 +631,102 @@ namespace Test
                 MetaMorpheusTask.WarnHandler -= handler;
                 if (Directory.Exists(root)) Directory.Delete(root, true);
             }
+        }
+
+        /// <summary>
+        /// The case neither TMT fixture can reach, and the reason the excluded-match warning exists.
+        /// mzLib quantifies only a match that identifies exactly one biopolymer, and one sequence found in
+        /// two proteins is two unequal objects, so a peptide shared between two protein groups is dropped.
+        /// Every "Shared Peptides" cell in both fixture databases is empty, so nothing else here exercises
+        /// it -- and the failure is quiet: the raw table stays intact while the roll-ups total less, or,
+        /// when every peptide is shared, nothing at all.
+        /// </summary>
+        /// <remarks>
+        /// The exclusion itself is mzLib's to fix. What belongs here is saying that it happened: the engine
+        /// already counts the dropped matches and reports the count on a SUCCESSFUL run, which this
+        /// analysis previously read only in the failure branch -- so a total loss produced a clean search
+        /// and no warning at all.
+        /// </remarks>
+        [Test]
+        public static void PeptideSharedBetweenTwoProteins_WarnsThatMatchesWereExcluded()
+        {
+            string folder = StageFolder("TmtGuardSharedPeptide");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var proteinA = new Protein("PEPTIDEKPEPTIDER", "PROTEINA", "ORGANISM");
+                var proteinB = new Protein("PEPTIDEKPEPTIDER", "PROTEINB", "ORGANISM");
+                var digestionParams = new DigestionParams();
+                var fromA = proteinA.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+                var fromB = proteinB.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+
+                var psm = SharedPeptidePsm(rawPath, fromA, fromB);
+
+                // Unique peptides is deliberately empty: the two proteins are indistinguishable, so the
+                // sequence belongs to the group without being unique to either protein in it.
+                var group = new ProteinGroup(
+                    new HashSet<IBioPolymer> { proteinA, proteinB },
+                    new HashSet<IBioPolymerWithSetMods> { fromA, fromB },
+                    new HashSet<IBioPolymerWithSetMods>())
+                {
+                    AllPsmsBelowOnePercentFDR = new HashSet<ISpectralMatch> { psm }
+                };
+
+                var (warnings, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { psm },
+                    proteinGroups: new List<ProteinGroup> { group });
+
+                Assert.That(parameters.MultiplexQuantificationResults, Is.Not.Null,
+                    "the run succeeds, which is exactly why the loss has to be said out loud");
+                Assert.That(parameters.MultiplexQuantificationResults.AmbiguousSpectralMatchesExcluded, Is.EqualTo(1),
+                    "the one match, shared between two proteins, is the one the engine drops");
+                Assert.That(warnings, Has.Exactly(1).Contains("did not identify exactly one biopolymer"));
+                Assert.That(warnings, Has.Exactly(1).Contains("shared between two protein groups"),
+                    "the warning has to name the cause, or a user cannot act on it");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// One PSM carrying TMT11 reporter ions whose sequence was found in two proteins. Both candidates
+        /// are kept -- equal scores, reportAllAmbiguity -- which is what makes the match ambiguous to
+        /// mzLib's filter without making its BaseSequence ambiguous to MetaMorpheus's, so it passes
+        /// includeAmbiguous: false and is dropped later.
+        /// </summary>
+        private static SpectralMatch SharedPeptidePsm(string rawPath, IBioPolymerWithSetMods fromA, IBioPolymerWithSetMods fromB)
+        {
+            var tag = IsobaricMassTag.GetIsobaricMassTag("TMT11");
+            double[] reporterMzs = tag.ReporterIonMzs.ToArray();
+            double[] reporterIntensities = Enumerable.Range(1, reporterMzs.Length).Select(i => 1000.0 * i).ToArray();
+
+            var dataScan = new MsDataScan(
+                new MzSpectrum(reporterMzs, reporterIntensities, false),
+                oneBasedScanNumber: 1, msnOrder: 2, isCentroid: true,
+                polarity: Polarity.Positive, retentionTime: 10.0,
+                scanWindowRange: null, scanFilter: "f",
+                mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: reporterIntensities.Sum(),
+                injectionTime: 1.0, noiseData: null, nativeId: "scan=1",
+                selectedIonMz: 500.0, selectedIonChargeStateGuess: 2,
+                selectedIonIntensity: 1, isolationMZ: 500.0, isolationWidth: 2,
+                dissociationType: DissociationType.HCD, oneBasedPrecursorScanNumber: null,
+                selectedIonMonoisotopicGuessMz: 500.0);
+
+            var scan = new Ms2ScanWithSpecificMass(dataScan, 500.0, 2, rawPath, new CommonParameters());
+
+            // Before the PSM is built: the spectral match copies the array off the scan in its constructor.
+            scan.SetIsobaricMassTagReporterIonIntensities(tag);
+
+            SpectralMatch psm = new PeptideSpectralMatch(fromA, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.AddOrReplace(fromB, 10, 0, true, new List<MatchedFragmentIon>());
+            psm.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
+            psm.ResolveAllAmbiguities();
+            return psm;
         }
 
         #endregion
