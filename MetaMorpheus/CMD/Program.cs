@@ -73,7 +73,24 @@ namespace MetaMorpheusCommandLine
             return errorCode;
         }
 
+        /// <summary>
+        /// Runs the command line, detaching CMD's handlers from the engine and task events on the way
+        /// out. Those events are static, so a subscription outlives the call: anything the process runs
+        /// afterwards would fire CMD's console handlers, in a context they were not written for.
+        /// </summary>
         private static int Run(CommandLineSettings settings)
+        {
+            try
+            {
+                return RunTasks(settings);
+            }
+            finally
+            {
+                UnsubscribeFromEngineAndTaskEvents();
+            }
+        }
+
+        private static int RunTasks(CommandLineSettings settings)
         {
             int errorCode = 0;
 
@@ -151,16 +168,7 @@ namespace MetaMorpheusCommandLine
                 settings.Tasks.Add(Path.Combine(settings.OutputFolder, "SearchTask.toml"));
             }
 
-            MetaMorpheusEngine.WarnHandler += WarnHandler;
-            MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
-            MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
-            MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
-
-            MetaMorpheusTask.WarnHandler += WarnHandler;
-            MetaMorpheusTask.LogHandler += LogHandler;
-            MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
-            MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
-            MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
+            SubscribeToEngineAndTaskEvents();
 
             bool containsRawFiles = settings.Spectra.Select(v => Path.GetExtension(v).ToLowerInvariant()).Any(v => v == ".raw");
             if (containsRawFiles && !GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence)
@@ -420,6 +428,44 @@ namespace MetaMorpheusCommandLine
             }
 
             return 5;
+        }
+
+        /// <summary>
+        /// Attaches CMD's console output to the engine and task events. Detaches first, so a second
+        /// call in the same process does not leave every handler attached twice.
+        /// </summary>
+        private static void SubscribeToEngineAndTaskEvents()
+        {
+            UnsubscribeFromEngineAndTaskEvents();
+
+            MetaMorpheusEngine.WarnHandler += WarnHandler;
+            MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
+            MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
+            MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
+
+            MetaMorpheusTask.WarnHandler += WarnHandler;
+            MetaMorpheusTask.LogHandler += LogHandler;
+            MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
+            MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
+            MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
+        }
+
+        private static void UnsubscribeFromEngineAndTaskEvents()
+        {
+            MetaMorpheusEngine.WarnHandler -= WarnHandler;
+            MetaMorpheusEngine.OutProgressHandler -= MyEngine_outProgressHandler;
+            MetaMorpheusEngine.StartingSingleEngineHander -= MyEngine_startingSingleEngineHander;
+            MetaMorpheusEngine.FinishedSingleEngineHandler -= MyEngine_finishedSingleEngineHandler;
+
+            MetaMorpheusTask.WarnHandler -= WarnHandler;
+            MetaMorpheusTask.LogHandler -= LogHandler;
+            MetaMorpheusTask.StartingSingleTaskHander -= MyTaskEngine_startingSingleTaskHander;
+            MetaMorpheusTask.FinishedSingleTaskHandler -= MyTaskEngine_finishedSingleTaskHandler;
+            MetaMorpheusTask.FinishedWritingFileHandler -= MyTaskEngine_finishedWritingFileHandler;
+
+            // the indent and the pending-progress flag are the handlers' own state between events
+            MyWriter.Indent = 0;
+            InProgress = false;
         }
 
         private static void WriteMultiLineIndented(string toWrite)
