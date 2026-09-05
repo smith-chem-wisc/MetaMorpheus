@@ -1,4 +1,5 @@
 using EngineLayer;
+using EngineLayer.Util;
 using IO.ThermoRawFileReader;
 using Microsoft.Win32;
 using MzLibUtil;
@@ -206,6 +207,8 @@ namespace MetaMorpheusGUI
                 }
 
                 UpdateOutputFolderTextbox();
+                SeedTmtExperimentalDesign();
+                dataGridSpectraFiles.Items.Refresh();
             }
         }
 
@@ -512,7 +515,13 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddSpectraFile_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*ms2.msalign;*.tdf;*.tdf_bin)|*.raw;*.mzML;*.mgf;*ms2.msalign;*.tdf;*.tdf_bin");
+            // derived from GlobalVariables.AcceptedSpectraFormats so a newly supported format cannot silently go missing
+            // from this dialog. ".d" is a directory and is not selectable in a file picker; ".msalign" is narrowed to
+            // "*ms2.msalign" because AddPreRunFile rejects MS1 align files.
+            string filterString = string.Join(";", GlobalVariables.AcceptedSpectraFormats
+                .Where(ext => ext != BrukerDataDirectory.DotD)
+                .Select(ext => ext == ".msalign" ? "*ms2.msalign" : "*" + ext));
+            var openPicker = StartOpenFileDialog($"Spectra Files({filterString})|{filterString}");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -575,6 +584,16 @@ namespace MetaMorpheusGUI
         private void SetExperimentalDesign_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new ExperimentalDesignWindow(SpectraFiles);
+            dialog.ShowDialog();
+        }
+        private void SetTmtExperimentalDesign_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new TmtExperimentalDesignWindow(SpectraFiles)
+            {
+                Owner = this,
+                Title = "TMT Experimental Design"
+            };
+
             dialog.ShowDialog();
         }
 
@@ -1335,6 +1354,12 @@ namespace MetaMorpheusGUI
             dialog.ShowDialog();
         }
 
+        private void AddCustomMonosaccharide_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new CustomMonosaccharideWindow();
+            dialog.ShowDialog();
+        }
+
         private void AddCustomAminoAcid_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new CustomAminoAcidWindow();
@@ -1667,7 +1692,23 @@ namespace MetaMorpheusGUI
             {
                 AddPreRunFileRecursiveHelper(path);
             }
+
+            SeedTmtExperimentalDesign();
             UpdateGuiOnPreRunChange();
+        }
+
+        /// <summary>
+        /// Refreshes the TMT experimental design state from any TmtDesign.txt sitting next to the
+        /// CHECKED spectra files. Seeding from every file in the grid warned about files the user had
+        /// deliberately unchecked, while the design window only ever lists the checked ones.
+        /// </summary>
+        private void SeedTmtExperimentalDesign()
+        {
+            TmtExperimentalDesignWindow.SeedFromDesignFiles(
+                SpectraFiles.Where(sf => sf.Use)
+                            .Select(sf => sf.FilePath)
+                            .Where(p => !string.IsNullOrWhiteSpace(p))
+                            .ToList());
         }
 
         private void AddPreRunFileRecursiveHelper(string path)
@@ -1679,41 +1720,27 @@ namespace MetaMorpheusGUI
             }  
             if (Directory.Exists(path))
             {
-                // .d folders are usually timsTOF data - if it's a valid timsTOF file, don't recurse into it
-                if (path.EndsWith(".d", StringComparison.OrdinalIgnoreCase) 
-                    && AddOrWarnTimsTofDirectory(path))
+                // .d folders are Bruker data - if it's a valid Bruker data file, don't recurse into it
+                if (path.EndsWith(".d", StringComparison.OrdinalIgnoreCase)
+                    && AddOrWarnBrukerDirectory(path))
                     return; // base case 2
                 foreach (var entry in Directory.EnumerateFileSystemEntries(path))
                     AddPreRunFileRecursiveHelper(entry);
             }
         }
 
-        private bool AddOrWarnTimsTofDirectory(string directoryPath)
+        private bool AddOrWarnBrukerDirectory(string directoryPath)
         {
-            if (IsValidTimsTofDirectory(directoryPath))
+            if (BrukerDataDirectory.IsValid(directoryPath))
             {
                 AddPreRunFile(directoryPath);
                 return true;
             }
             else
             {
-                NotificationHandler(null, new StringEventArgs($"{directoryPath} is not a valid timsTOF data file.", null));
+                NotificationHandler(null, new StringEventArgs($"{directoryPath} is not a valid Bruker data file.", null));
             }
             return false;
-        }
-
-        /// <summary>
-        /// Determines whether the specified directory is a valid timsTOF data directory.
-        /// </summary>
-        /// <param name="directoryPath">The full path to the directory to validate. The path must end with the ".d" extension.</param>
-        /// <returns>true if the directory exists, ends with ".d", and contains both "analysis.tdf" and "analysis.tdf_bin" files;
-        /// otherwise, false.</returns>
-        public bool IsValidTimsTofDirectory(string directoryPath)
-        {
-            return directoryPath.EndsWith(".d", StringComparison.OrdinalIgnoreCase)
-                && Directory.Exists(directoryPath)
-                && File.Exists(Path.Combine(directoryPath, "analysis.tdf"))
-                && File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin"));
         }
 
         private void AddPreRunFile(string filePath)
@@ -1792,17 +1819,19 @@ namespace MetaMorpheusGUI
                         NotificationHandler(null, new StringEventArgs("MS1 align file type not currently supported " + theExtension, null));
                     }
                     break;
-                case ".tdf":
+                case ".baf":     // Bruker qTOF
+                case ".tdf":     // Bruker timsTOF
                 case ".tdf_bin":
-                    // for Bruker timsTof files, the .tdf and .tdf_bin files are in a ".d" directory 
-                    // the fileReader is designed to take the path to the .d directory instead of the individual files
-                    var parent = Path.GetDirectoryName(filePath);
-                    if (!IsValidTimsTofDirectory(parent))
+                case ".tsf":     // Bruker timsTOF, TIMS disabled
+                case ".tsf_bin":
+                    // these all live inside a ".d" directory, and the file reader is designed to take the path to that
+                    // directory rather than to the individual files
+                    if (!BrukerDataDirectory.TryGetParentDotDFolder(filePath, out string dotDFolder))
                     {
-                        NotificationHandler(null, new StringEventArgs($"{parent} is not a valid timsTOF data file; {filePath} could not be added.", null));
+                        NotificationHandler(null, new StringEventArgs($"{Path.GetDirectoryName(filePath)} is not a valid Bruker data file; {filePath} could not be added.", null));
                         return;
                     }
-                    filePath = parent; // change the file path to the .d directory so that it can be properly read by the file reader
+                    filePath = dotDFolder;
                     goto case ".d";
                 case ".d": // Bruker data files are directories that contain .d files
                     NotificationHandler(null, new StringEventArgs("Quantification and calibration are not currently supported for Bruker data files. All other features of MetaMorpheus will function.", null));
@@ -2241,6 +2270,7 @@ namespace MetaMorpheusGUI
             AddDefaultContaminantsButton.IsEnabled = enable;
             AddSpectraButton.IsEnabled = enable;
             SetFileSpecificSettingsButton.IsEnabled = enable;
+            SetTmtExperimentalDesignButton.IsEnabled = enable;
             SetExperimentalDesignButton.IsEnabled = enable;
             AddSearchTaskButton.IsEnabled = enable;
             AddCalibTaskButton.IsEnabled = enable;

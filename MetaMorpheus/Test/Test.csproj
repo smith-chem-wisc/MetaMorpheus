@@ -28,7 +28,7 @@
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
-    <PackageReference Include="mzLib" Version="1.0.585" />
+    <PackageReference Include="mzLib" Version="1.0.588" />
     <PackageReference Include="NUnit" Version="4.1.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
@@ -433,6 +433,103 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestData\snippet.d\analysis.tdf_bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- Regular (non-tims) Bruker qTOF .d data (analysis.baf), for BrukerFileReader tests -->
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\DensViewPos.ami">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\LockInfo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\ProjectCreationHelper">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\Storage.mcf_idx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\SyncHelper">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\analysis.baf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\analysis.baf_idx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\analysis.baf_xtr">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\analysis.sqlite">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\calib.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\demo_line_for_austin.m\desktop.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\demo_line_for_austin.m\lock.file">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\demo_line_for_austin.m\microTOFQMaxAcquisition.method">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\demo_line_for_austin.m\submethods.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\centroid_1x_MS1_4x_autoMS2.d\desktop.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\DensViewPos.ami">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\DensViewPosBgnd.ami">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\LockInfo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\ProjectCreationHelper">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\Storage.mcf_idx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\SyncHelper">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\analysis.baf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\analysis.baf_idx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\analysis.baf_xtr">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\analysis.sqlite">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\calib.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\demo_line_for_austin.m\desktop.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\demo_line_for_austin.m\lock.file">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\demo_line_for_austin.m\microTOFQMaxAcquisition.method">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\demo_line_for_austin.m\submethods.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\desktop.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\profile_1x_MS1_4x_autoMS2.d\linespectra">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestData\SpectralLibrarySearch\1-81.raw">
