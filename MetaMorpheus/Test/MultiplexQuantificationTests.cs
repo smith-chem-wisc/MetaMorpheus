@@ -340,12 +340,19 @@ namespace Test
             string outputFolder,
             List<SpectralMatch> allSpectralMatches = null,
             List<ProteinGroup> proteinGroups = null,
-            string multiplexModId = "TMT11")
+            string multiplexModId = "TMT11",
+            bool writeDecoys = true,
+            bool writeHighQValuePsms = true)
         {
             var task = new PostSearchAnalysisTask { CommonParameters = new CommonParameters() };
             var parameters = new PostSearchAnalysisParameters
             {
-                SearchParameters = new SearchParameters { MultiplexModId = multiplexModId },
+                SearchParameters = new SearchParameters
+                {
+                    MultiplexModId = multiplexModId,
+                    WriteDecoys = writeDecoys,
+                    WriteHighQValuePsms = writeHighQValuePsms
+                },
                 CurrentRawFileList = currentRawFileList,
                 AllSpectralMatches = allSpectralMatches ?? new List<SpectralMatch>(),
                 OutputFolder = outputFolder,
@@ -694,6 +701,204 @@ namespace Test
         }
 
         /// <summary>
+        /// A search whose protein groups are all suppressed from AllProteinGroups.tsv has nothing to
+        /// quantify onto. Quantifying anyway would fill ProteinGroupQuantification.tsv with groups the
+        /// protein table does not show -- the disagreement the writer's own predicate was adopted to
+        /// prevent -- so the whole analysis declines rather than writing a table of held-back groups.
+        /// </summary>
+        [Test]
+        public static void NoProteinGroupPassesTheOutputFilters_WarnsAndSkips()
+        {
+            string folder = StageFolder("TmtGuardNoWritableGroup");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                string output = StageOutput(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var protein = new Protein("PEPTIDEK", "PROTEINA", "ORGANISM");
+                var peptide = FirstPeptideOf(protein);
+                var psm = ReporterIonPsm(rawPath, peptide);
+
+                // Above the q-value threshold, with high-q-value output off: one setting away from a
+                // search that writes this group, which is what makes it a group a user actually meets.
+                var group = GroupOf(protein, new[] { peptide }, new[] { psm }, qValue: 0.5);
+
+                var (warnings, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, output,
+                    allSpectralMatches: new List<SpectralMatch> { psm },
+                    proteinGroups: new List<ProteinGroup> { group },
+                    writeHighQValuePsms: false);
+
+                Assert.That(warnings, Has.Exactly(1).Contains("No protein group survived the filters"));
+                Assert.That(parameters.MultiplexQuantificationResults, Is.Null);
+                Assert.That(File.Exists(Path.Combine(output, QuantificationWriter.ProteinGroupFileName)), Is.False,
+                    "declining must leave no quantification table behind");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// The groups held back from quantification still have to carry this run's channel columns.
+        /// AllProteinGroups.tsv writes ONE header, from the first group, and then a row per group, so a
+        /// quantified group and a suppressed one that disagree about their columns produce a file whose
+        /// rows do not line up with its header -- and which group sorts first is not something this
+        /// method controls.
+        /// </summary>
+        /// <remarks>
+        /// A decoy group with decoy output turned off is the case every real search produces the moment
+        /// a user unticks the box, and neither TMT fixture reaches it: with the default settings every
+        /// group passes the writer's predicate, so every group is quantified and none is held back.
+        /// </remarks>
+        [Test]
+        public static void GroupsHeldBackFromQuantification_KeepTheColumnsTheQuantifiedGroupsHave()
+        {
+            string folder = StageFolder("TmtGuardHeldBackGroup");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var target = new Protein("PEPTIDEK", "PROTEINA", "ORGANISM");
+                var targetPeptide = FirstPeptideOf(target);
+                var psm = ReporterIonPsm(rawPath, targetPeptide);
+                var quantified = GroupOf(target, new[] { targetPeptide }, new[] { psm });
+
+                var decoy = new Protein("PEPTIDEK", "DECOY_PROTEINA", "ORGANISM", isDecoy: true);
+                var decoyPeptide = FirstPeptideOf(decoy);
+                var heldBack = GroupOf(decoy, new[] { decoyPeptide }, System.Array.Empty<SpectralMatch>());
+
+                var (warnings, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { psm },
+                    proteinGroups: new List<ProteinGroup> { quantified, heldBack },
+                    writeDecoys: false);
+
+                var results = parameters.MultiplexQuantificationResults;
+                Assert.That(results, Is.Not.Null, "the target group is quantifiable, so the run must succeed");
+                Assert.That(results.ProteinIntensities.Keys, Is.EquivalentTo(new[] { quantified }),
+                    "the decoy group must not reach the engine at all");
+
+                Assert.That(heldBack.SamplesForQuantification, Is.EquivalentTo(results.Samples),
+                    "a group the engine never saw still has to describe this run's channels");
+                Assert.That(heldBack.IntensitiesBySample, Is.Empty,
+                    "and has to describe them with no values, rather than with measured zeroes");
+
+                Assert.That(heldBack.GetTabSeparatedHeader(), Is.EqualTo(quantified.GetTabSeparatedHeader()),
+                    "the header is written once, from whichever group sorts first, so both must agree on it");
+                foreach (var group in new[] { quantified, heldBack })
+                {
+                    Assert.That(group.ToString().Split('\t'),
+                        Has.Length.EqualTo(group.GetTabSeparatedHeader().Split('\t').Length),
+                        "every row must carry the columns its own header advertises");
+                }
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// mzLib's engine reports a refusal rather than throwing, and this analysis has to pass that on:
+        /// a run that produced nothing must not be stored as results for the writers to read.
+        /// </summary>
+        /// <remarks>
+        /// Every guard above this one fires first in a real search, so the refusal is provoked directly,
+        /// with the input the parameters comment names -- no output directory -- over matches whose file
+        /// paths are bare names, which is the one case the engine's own fallback refuses to guess from.
+        /// The failed design copy asserted alongside it is that same missing folder seen once more, and
+        /// it proves the analysis reached the engine rather than stopping at the copy.
+        /// </remarks>
+        [Test]
+        public static void EngineRefusesTheInputs_WarnsAndStoresNoResults()
+        {
+            string folder = StageFolder("TmtGuardEngineRefuses");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var protein = new Protein("PEPTIDEK", "PROTEINA", "ORGANISM");
+                var peptide = FirstPeptideOf(protein);
+                var psm = ReporterIonPsm("VA084TQ_6.mzML", peptide);   // a bare name, not a path
+                var group = GroupOf(protein, new[] { peptide }, new[] { psm });
+
+                var (warnings, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, outputFolder: null,
+                    allSpectralMatches: new List<SpectralMatch> { psm },
+                    proteinGroups: new List<ProteinGroup> { group });
+
+                Assert.That(warnings, Has.Exactly(1).Contains("Could not copy the TMT design file"));
+                Assert.That(warnings, Has.Exactly(1).Contains("Multiplex quantification did not run"));
+                Assert.That(warnings, Has.Exactly(1).Contains("OutputDirectory"),
+                    "the engine's own summary is what tells a user which input it refused");
+                Assert.That(parameters.MultiplexQuantificationResults, Is.Null,
+                    "a refused run must not be stored, or the writers read a result that never happened");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// A match whose scan never had reporter ions extracted is left out rather than quantified as a
+        /// row of nothing. Both matches here are targets below threshold, so MetaMorpheus's own PSM
+        /// filter keeps both and the reporter ion test is the only thing that separates them.
+        /// </summary>
+        [Test]
+        public static void MatchWithoutReporterIons_IsLeftOutOfQuantification()
+        {
+            string folder = StageFolder("TmtGuardMixedReporterIons");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                string output = StageOutput(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var protein = new Protein("PEPTIDEKPEPTIDER", "PROTEINA", "ORGANISM");
+                var peptides = protein
+                    .Digest(new DigestionParams(), new List<Modification>(), new List<Modification>())
+                    .Cast<IBioPolymerWithSetMods>()
+                    .ToList();
+                var withReporters = peptides.First(p => p.BaseSequence == "PEPTIDEK");
+                var withoutReporters = peptides.First(p => p.BaseSequence == "PEPTIDER");
+
+                var quantifiable = ReporterIonPsm(rawPath, withReporters);
+                var unquantifiable = ReporterIonPsm(rawPath, withoutReporters, withReporterIons: false, scanNumber: 2);
+                Assert.That(unquantifiable.IsobaricMassTagReporterIonIntensities, Is.Null,
+                    "the fixture only means anything if this match really carries no reporter ions");
+
+                var group = GroupOf(protein, peptides, new[] { quantifiable, unquantifiable });
+
+                var (warnings, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, output,
+                    allSpectralMatches: new List<SpectralMatch> { quantifiable, unquantifiable },
+                    proteinGroups: new List<ProteinGroup> { group });
+
+                Assert.That(parameters.MultiplexQuantificationResults, Is.Not.Null,
+                    "one match carries reporter ions, so the run must still happen");
+                Assert.That(parameters.MultiplexQuantificationResults.PeptideIntensities.Keys,
+                    Is.EquivalentTo(new[] { withReporters }),
+                    "only the match that carried reporter ions may reach the peptide table");
+
+                var rawLines = File.ReadAllLines(Path.Combine(output, QuantificationWriter.RawFileName));
+                int sequenceColumn = System.Array.IndexOf(rawLines[0].Split('\t'), "FullSequence");
+                Assert.That(rawLines.Skip(1).Select(line => line.Split('\t')[sequenceColumn]),
+                    Is.EqualTo(new[] { quantifiable.FullSequence }),
+                    "and the per-PSM snapshot must show that same one match");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
         /// One PSM carrying TMT11 reporter ions whose sequence was found in two proteins. Both candidates
         /// are kept -- equal scores, reportAllAmbiguity -- which is what makes the match ambiguous to
         /// mzLib's filter without making its BaseSequence ambiguous to MetaMorpheus's, so it passes
@@ -701,32 +906,85 @@ namespace Test
         /// </summary>
         private static SpectralMatch SharedPeptidePsm(string rawPath, IBioPolymerWithSetMods fromA, IBioPolymerWithSetMods fromB)
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag("TMT11");
-            double[] reporterMzs = tag.ReporterIonMzs.ToArray();
-            double[] reporterIntensities = Enumerable.Range(1, reporterMzs.Length).Select(i => 1000.0 * i).ToArray();
-
-            var dataScan = new MsDataScan(
-                new MzSpectrum(reporterMzs, reporterIntensities, false),
-                oneBasedScanNumber: 1, msnOrder: 2, isCentroid: true,
-                polarity: Polarity.Positive, retentionTime: 10.0,
-                scanWindowRange: null, scanFilter: "f",
-                mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: reporterIntensities.Sum(),
-                injectionTime: 1.0, noiseData: null, nativeId: "scan=1",
-                selectedIonMz: 500.0, selectedIonChargeStateGuess: 2,
-                selectedIonIntensity: 1, isolationMZ: 500.0, isolationWidth: 2,
-                dissociationType: DissociationType.HCD, oneBasedPrecursorScanNumber: null,
-                selectedIonMonoisotopicGuessMz: 500.0);
-
-            var scan = new Ms2ScanWithSpecificMass(dataScan, 500.0, 2, rawPath, new CommonParameters());
-
-            // Before the PSM is built: the spectral match copies the array off the scan in its constructor.
-            scan.SetIsobaricMassTagReporterIonIntensities(tag);
+            var scan = ReporterIonScan(rawPath);
 
             SpectralMatch psm = new PeptideSpectralMatch(fromA, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm.AddOrReplace(fromB, 10, 0, true, new List<MatchedFragmentIon>());
             psm.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
             psm.ResolveAllAmbiguities();
             return psm;
+        }
+
+        /// <summary>The first peptide <paramref name="protein"/> digests to under default settings.</summary>
+        private static IBioPolymerWithSetMods FirstPeptideOf(Protein protein) =>
+            protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+
+        /// <summary>
+        /// A protein group over one protein, with every one of its peptides unique to it -- which is what
+        /// keeps these fixtures clear of the shared-peptide exclusion the test above covers.
+        /// </summary>
+        private static ProteinGroup GroupOf(Protein protein, IEnumerable<IBioPolymerWithSetMods> peptides,
+            IEnumerable<SpectralMatch> psms, double qValue = 0)
+        {
+            var peptideSet = new HashSet<IBioPolymerWithSetMods>(peptides);
+            return new ProteinGroup(
+                new HashSet<IBioPolymer> { protein },
+                peptideSet,
+                new HashSet<IBioPolymerWithSetMods>(peptideSet))
+            {
+                AllPsmsBelowOnePercentFDR = new HashSet<ISpectralMatch>(psms),
+                QValue = qValue
+            };
+        }
+
+        /// <summary>
+        /// One unambiguous PSM on <paramref name="peptide"/>, target and below threshold, whose scan
+        /// carries TMT11 reporter ions unless <paramref name="withReporterIons"/> says otherwise.
+        /// </summary>
+        private static SpectralMatch ReporterIonPsm(string rawPath, IBioPolymerWithSetMods peptide,
+            bool withReporterIons = true, int scanNumber = 1)
+        {
+            var scan = ReporterIonScan(rawPath, scanNumber, withReporterIons);
+            SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
+            psm.ResolveAllAmbiguities();
+            return psm;
+        }
+
+        /// <summary>
+        /// An MS2 scan whose spectrum is the TMT11 reporter ion region, with the intensities extracted
+        /// onto it as a search would -- or left unextracted, which is what a match carrying no reporter
+        /// ions looks like from here.
+        /// </summary>
+        /// <remarks>
+        /// Extraction has to happen before the PSM is built: the spectral match copies the array off the
+        /// scan in its constructor.
+        /// </remarks>
+        private static Ms2ScanWithSpecificMass ReporterIonScan(string rawPath, int scanNumber = 1, bool withReporterIons = true)
+        {
+            var tag = IsobaricMassTag.GetIsobaricMassTag("TMT11");
+            double[] reporterMzs = tag.ReporterIonMzs.ToArray();
+            double[] reporterIntensities = Enumerable.Range(1, reporterMzs.Length).Select(i => 1000.0 * i).ToArray();
+
+            var dataScan = new MsDataScan(
+                new MzSpectrum(reporterMzs, reporterIntensities, false),
+                oneBasedScanNumber: scanNumber, msnOrder: 2, isCentroid: true,
+                polarity: Polarity.Positive, retentionTime: 10.0,
+                scanWindowRange: null, scanFilter: "f",
+                mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: reporterIntensities.Sum(),
+                injectionTime: 1.0, noiseData: null, nativeId: $"scan={scanNumber}",
+                selectedIonMz: 500.0, selectedIonChargeStateGuess: 2,
+                selectedIonIntensity: 1, isolationMZ: 500.0, isolationWidth: 2,
+                dissociationType: DissociationType.HCD, oneBasedPrecursorScanNumber: null,
+                selectedIonMonoisotopicGuessMz: 500.0);
+
+            var scan = new Ms2ScanWithSpecificMass(dataScan, 500.0, 2, rawPath, new CommonParameters());
+            if (withReporterIons)
+            {
+                scan.SetIsobaricMassTagReporterIonIntensities(tag);
+            }
+
+            return scan;
         }
 
         #endregion
