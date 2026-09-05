@@ -1,5 +1,9 @@
 ﻿using Easy.Common.Extensions;
 using EngineLayer;
+using Omics.BioPolymerGroup;
+using Omics.SpectralMatch;
+using Quantification.Strategies;
+using Quantification;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
@@ -249,6 +253,233 @@ namespace TaskLayer
             }
         }
 
+        /// <summary>
+        /// Runs isobaric (TMT/iTRAQ) quantification through mzLib's <see cref="QuantificationEngine"/>.
+        /// </summary>
+        /// <remarks>
+        /// Before this existed, multiplex quantification stopped at the PSM level: reporter-ion
+        /// intensities were extracted during the search and written as extra columns in the .psmtsv, and
+        /// nothing rolled them up to peptides or proteins. This is the step that closes that gap.
+        ///
+        /// The three inputs the engine needs are now satisfied directly, with no .psmtsv round trip:
+        /// <see cref="SpectralMatch"/> implements <c>ISpectralMatch</c> (its <c>Intensities</c> are the
+        /// reporter-ion intensities), <see cref="ProteinGroup"/> implements <c>IBioPolymerGroup</c>, and
+        /// <see cref="TmtExperimentalDesign.ToMzLibDesign"/> projects TmtDesign.txt onto
+        /// <c>IExperimentalDesign</c>.
+        ///
+        /// Nothing here is fatal. A missing or unreadable design file leaves the search exactly as it
+        /// was — the reporter-ion columns still reach the .psmtsv — because a TMT search without a
+        /// channel-to-sample mapping is a legitimate thing to run.
+        /// </remarks>
+        private void MultiplexQuantificationAnalysis()
+        {
+            if (Parameters.CurrentRawFileList.IsNullOrEmpty())
+            {
+                return;
+            }
+
+            string designDirectory = Directory.GetParent(Parameters.CurrentRawFileList.First())?.FullName;
+            string tmtDesignPath = designDirectory == null
+                ? null
+                : Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+
+            if (tmtDesignPath == null || !File.Exists(tmtDesignPath))
+            {
+                Warn($"No {GlobalVariables.TmtExperimentalDesignFileName} found next to the spectra files, so " +
+                     "reporter ion intensities were written per PSM but not quantified per channel.");
+                return;
+            }
+
+            Status("Quantifying multiplex channels...", Parameters.SearchTaskId);
+
+            // Copy the design into the output folder, as the label-free path does for ExperimentalDesign,
+            // so a result folder records the design it was quantified under.
+            try
+            {
+                string copiedDesign = Path.Combine(Parameters.OutputFolder, Path.GetFileName(tmtDesignPath));
+                File.Copy(tmtDesignPath, copiedDesign, overwrite: true);
+                FinishedWritingFile(copiedDesign, new List<string> { Parameters.SearchTaskId });
+            }
+            catch
+            {
+                Warn("Could not copy the TMT design file to the search task output. That's ok, the search will continue");
+            }
+
+            var tmtFiles = TmtExperimentalDesign.Read(tmtDesignPath, Parameters.CurrentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("Error reading TMT design file: " + designErrors.First() + ". Skipping multiplex quantification");
+                return;
+            }
+
+            var tag = IsobaricMassTag.GetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId);
+            var experimentalDesign = TmtExperimentalDesign.ToMzLibDesign(tmtFiles, tag, out var projectionErrors);
+            if (experimentalDesign == null || projectionErrors.Any())
+            {
+                Warn("Could not build a quantification design from the TMT design file: " +
+                     (projectionErrors.FirstOrDefault() ?? "unknown error") + ". Skipping multiplex quantification");
+                return;
+            }
+
+            // includeAmbiguous: false is the unambiguous filter the design calls for. A PSM that could be
+            // more than one peptide would otherwise have its channel intensities credited to whichever
+            // candidate happened to sort first.
+            var filteredPsms = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+                CommonParameters,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
+                includeHighQValuePsms: false);
+
+            var quantifiablePsms = filteredPsms
+                .Where(psm => psm.IsobaricMassTagReporterIonIntensities is { Length: > 0 })
+                .ToList();
+
+            if (quantifiablePsms.Count == 0)
+            {
+                Warn("No spectral matches carried reporter ion intensities. Skipping multiplex quantification");
+                return;
+            }
+
+            if (ProteinGroups.IsNullOrEmpty())
+            {
+                Warn("Multiplex quantification needs protein groups, which this search did not produce " +
+                     "(parsimony may be off). Skipping multiplex quantification");
+                return;
+            }
+
+            // Quantify only the groups that AllProteinGroups.tsv will actually show. The PSMs above are
+            // filtered to targets below threshold; leaving the groups unfiltered put rows in
+            // ProteinGroupQuantification.tsv -- decoy groups, and groups above the q-value threshold --
+            // that the protein table suppresses, so the two files disagreed about which groups exist.
+            // The predicate is the writer's own, so the two cannot drift apart.
+            double proteinQValueThreshold = ProteinGroupQValueThreshold(filteredPsms.FilterType);
+            var quantifiableProteinGroups = ProteinGroups
+                .Where(proteinGroup => ProteinGroupIsWritten(proteinGroup, proteinQValueThreshold))
+                .ToList();
+
+            if (quantifiableProteinGroups.Count == 0)
+            {
+                Warn("No protein group survived the filters that decide what reaches AllProteinGroups.tsv, " +
+                     "so there is nothing to quantify onto. Skipping multiplex quantification");
+                return;
+            }
+
+            var peptides = quantifiablePsms
+                .SelectMany(psm => psm.GetIdentifiedBioPolymersWithSetMods())
+                .Distinct()
+                .ToList();
+
+            var quantParameters = new QuantificationParameters
+            {
+                // Deliberately conservative: sum reporter intensities up to peptides and proteins and
+                // normalize nothing. Every strategy mzLib offers -- reference-channel normalization in
+                // particular, which this design file can already describe via its Sample Type column --
+                // is a user-facing choice, and none of them should start applying themselves silently.
+                SpectralMatchNormalizationStrategy = new NoNormalization(),
+                SpectralMatchToPeptideRollUpStrategy = new SumRollUp(),
+                PeptideNormalizationStrategy = new NoNormalization(),
+                CollapseStrategy = new NoCollapse(),
+                CollapseAggregationStrategy = new SumAggregation(),
+                PeptideToProteinRollUpStrategy = new SumRollUp(),
+                ProteinNormalizationStrategy = new NoNormalization(),
+
+                // The same switch the label-free path reads, and the same GUI checkbox, which is labelled
+                // for quantification rather than for LFQ. Off by default, so a protein group left with no
+                // unique peptides quantifies to nothing -- the existing label-free behaviour, not
+                // something the isobaric path should decide differently on its own.
+                UseSharedPeptidesForProteinQuant = Parameters.SearchParameters.UseSharedPeptidesForLFQ,
+
+                // Set explicitly. Left empty, the engine falls back to writing beside the spectra files,
+                // which is right for a caller that has no output folder of its own and wrong for a task
+                // that does.
+                OutputDirectory = Parameters.OutputFolder,
+                WriteRawInformation = true,
+                WritePeptideInformation = true,
+                WriteProteinInformation = true
+            };
+
+            var engine = new QuantificationEngine(
+                quantParameters,
+                experimentalDesign,
+                quantifiablePsms.Cast<ISpectralMatch>().ToList(),
+                peptides,
+                quantifiableProteinGroups.Cast<IBioPolymerGroup>().ToList());
+
+            var results = engine.Run();
+
+            if (!results.Success)
+            {
+                Warn("Multiplex quantification did not run: " + results.Summary);
+                return;
+            }
+
+            Parameters.MultiplexQuantificationResults = results;
+
+            // The engine drops any match it cannot attribute to exactly one biopolymer, and counts them
+            // rather than throwing. Reported here because the loss is otherwise invisible: the peptide and
+            // protein tables simply total less than the per-PSM reporter columns, and in the worst case --
+            // every peptide in the search shared between two groups -- they total zero while the raw
+            // table looks perfectly healthy. The exclusion itself is mzLib's: one sequence found in two
+            // proteins is two unequal PeptideWithSetModifications, so the engine's unambiguous filter
+            // drops it. Tracked as smith-chem-wisc/mzLib#1280; this warning stands whatever comes of it.
+            if (results.AmbiguousSpectralMatchesExcluded > 0)
+            {
+                Warn($"{results.AmbiguousSpectralMatchesExcluded} spectral match(es) were left out of " +
+                     "multiplex quantification because they did not identify exactly one biopolymer, so the " +
+                     "peptide and protein tables total less than the reporter ion columns in the .psmtsv. A " +
+                     "peptide shared between two protein groups is the usual cause");
+            }
+
+            // Rebuild the per-group column schema the engine's write-back invalidated: assigning
+            // IntensitiesBySample and SamplesForQuantification clears the cached SampleGroupResults, and
+            // this copy of the protein header reads that cache without rebuilding it, unlike mzLib's base
+            // header. Left alone, AllProteinGroups.tsv loses its SpectralCount_ and CountOccupancy_
+            // columns and never gains the Intensity_ ones this method exists to produce. Same fix, and the
+            // same reason, as the label-free path's loop.
+            //
+            // The groups held back above are given this run's channels with no values, so that the header
+            // and every row agree on the columns however the groups happen to sort. The engine hands every
+            // group it received a dictionary -- empty when nothing was measured -- so a null one is
+            // exactly a group that was held back.
+            foreach (var proteinGroup in ProteinGroups)
+            {
+                if (proteinGroup.IntensitiesBySample == null)
+                {
+                    proteinGroup.SamplesForQuantification = results.Samples.ToList();
+                    proteinGroup.IntensitiesBySample = new Dictionary<ISampleInfo, double>();
+                }
+
+                proteinGroup.PopulateSampleGroupResults();
+            }
+
+            foreach (string writtenFile in results.WrittenFiles.Where(f => f != null))
+            {
+                FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
+            }
+        }
+
+        /// <summary>
+        /// The q-value threshold a protein group is held to for output, which follows whichever filter
+        /// type the PSMs were filtered under.
+        /// </summary>
+        private double ProteinGroupQValueThreshold(FilterType filterType) => filterType switch
+        {
+            FilterType.PepQValue => CommonParameters.PepQValueThreshold,
+            _ => CommonParameters.QValueThreshold
+        };
+
+        /// <summary>
+        /// True when a protein group will be written to AllProteinGroups.tsv under the current search
+        /// parameters. Shared with <see cref="WriteProteinGroupsToTsv"/>, so quantification cannot end up
+        /// covering a different set of groups than the protein table shows.
+        /// </summary>
+        private bool ProteinGroupIsWritten(EngineLayer.ProteinGroup proteinGroup, double qValueThreshold) =>
+            (Parameters.SearchParameters.WriteDecoys || !proteinGroup.IsDecoy)
+            && (Parameters.SearchParameters.WriteContaminants || !proteinGroup.IsContaminant)
+            && (Parameters.SearchParameters.WriteHighQValuePsms || proteinGroup.QValue <= qValueThreshold);
+
         private void QuantificationAnalysis()
         {
             try
@@ -266,6 +497,8 @@ namespace TaskLayer
                     {
                         Parameters.MultiplexModification = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
                     }
+
+                    MultiplexQuantificationAnalysis();
                     return;
                 }
 
@@ -1705,20 +1938,14 @@ namespace TaskLayer
             if (proteinGroups != null && proteinGroups.Any())
             {
                 // Set threshold based on the filter type being used
-                double qValueThreshold = filterType switch
-                {
-                    FilterType.PepQValue => CommonParameters.PepQValueThreshold,
-                    _ => CommonParameters.QValueThreshold
-                };
+                double qValueThreshold = ProteinGroupQValueThreshold(filterType);
 
                 using (StreamWriter output = new StreamWriter(filePath))
                 {
                     output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
                     for (int i = 0; i < proteinGroups.Count; i++)
                     {
-                        if ((!Parameters.SearchParameters.WriteDecoys && proteinGroups[i].IsDecoy) ||
-                            (!Parameters.SearchParameters.WriteContaminants && proteinGroups[i].IsContaminant) ||
-                            (!Parameters.SearchParameters.WriteHighQValuePsms && proteinGroups[i].QValue > qValueThreshold))
+                        if (!ProteinGroupIsWritten(proteinGroups[i], qValueThreshold))
                         {
                             continue;
                         }
