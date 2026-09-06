@@ -1829,5 +1829,67 @@ namespace Test
 
         }
 
+
+        // Glyco searches with quantification off returned before any spectral count was populated, and
+        // the individual-file protein reports are written before quantification would run at all - so
+        // both lost the occupancy columns master wrote unconditionally.
+        [Test]
+        public static void GlycoCountBasedOccupancySurvivesQuantificationOff()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestGlycoCountOnly");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.DoQuantification = false;
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
+            string spectraFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML");
+            string spectraFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML");
+
+            try
+            {
+                new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) },
+                    new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
+
+                string taskFolder = Path.Combine(outputFolder, "Task");
+
+                var combined = File.ReadAllLines(Path.Combine(taskFolder, "_AllProteinGroups.tsv"));
+                Assert.That(combined.Length, Is.GreaterThan(1));
+
+                // One pair of count columns per spectra file, and nothing intensity-derived: quantification
+                // never ran, so there is no intensity to report.
+                var combinedHeader = combined[0].Split('\t');
+                Assert.That(combinedHeader.Count(h => h.StartsWith("SpectralCount_")), Is.EqualTo(2));
+                Assert.That(combinedHeader.Count(h => h.StartsWith("CountOccupancy_")), Is.EqualTo(2));
+                Assert.That(combinedHeader.Any(h => h.StartsWith("Intensity_")), Is.False);
+                Assert.That(combinedHeader.Any(h => h.StartsWith("IntensityOccupancy_")), Is.False);
+                Assert.That(combined.Select(l => l.Split('\t').Length).AllSame(), Is.True);
+
+                var individualReports = Directory
+                    .GetFiles(taskFolder, "*_AllProteinGroups.tsv", SearchOption.AllDirectories)
+                    .Where(f => Path.GetDirectoryName(f) != taskFolder)
+                    .ToList();
+                Assert.That(individualReports.Count, Is.EqualTo(2));
+
+                foreach (var report in individualReports)
+                {
+                    var lines = File.ReadAllLines(report);
+                    Assert.That(lines.Length, Is.GreaterThan(1), report);
+
+                    // One file per report, so one pair of columns.
+                    var header = lines[0].Split('\t');
+                    Assert.That(header.Count(h => h.StartsWith("SpectralCount_")), Is.EqualTo(1), report);
+                    Assert.That(header.Count(h => h.StartsWith("CountOccupancy_")), Is.EqualTo(1), report);
+                    Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True, report);
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
     }
 }

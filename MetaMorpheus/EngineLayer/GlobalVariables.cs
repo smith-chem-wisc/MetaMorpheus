@@ -51,6 +51,7 @@ namespace EngineLayer
         public static string UserSpecifiedDataDir { get; set; }
         public static string CustomProteasePath => Path.Combine(DataDir, "proteases_custom.tsv");
         public static string CustomRnasePath => Path.Combine(DataDir, "rnase_custom.tsv");
+        public static string CustomMonosaccharidePath => Path.Combine(DataDir, "MonosaccharidesCustom.tsv");
 
         public static bool StopLoops { get; set; }
         public static string MetaMorpheusVersion { get; private set; }
@@ -68,6 +69,7 @@ namespace EngineLayer
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get; private set; }
         public static string ExperimentalDesignFileName { get; private set; }
+        public static string TmtExperimentalDesignFileName { get; private set; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
         public static List<string> OGlycanDatabasePaths { get; private set; }
@@ -83,6 +85,7 @@ namespace EngineLayer
             AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
+            TmtExperimentalDesignFileName = "TmtDesign.txt";
             SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };
 
             SetMetaMorpheusVersion();
@@ -471,10 +474,11 @@ namespace EngineLayer
         private static void LoadGlycans()
         {
             // Custom monosaccharides must be registered FIRST so any custom tokens are recognized
-            // by the glycan-database parsers below. The file is optional; if it does not exist,
-            // LoadCustomMonosaccharides is a no-op.
-            string customMonosaccharidePath = Path.Combine(DataDir, @"Glycan_Mods", "MonosaccharidesCustom.tsv");
-            GlycanDatabase.LoadCustomMonosaccharides(customMonosaccharidePath);
+            // by the glycan-database parsers below. EnsureCustomMonosaccharideFileExists seeds the
+            // file (from the embedded template, or a carried-over legacy copy) if it's missing, so
+            // LoadCustomMonosaccharides always has a file to read here.
+            GlycanDatabase.EnsureCustomMonosaccharideFileExists(CustomMonosaccharidePath);
+            GlycanDatabase.LoadCustomMonosaccharides(CustomMonosaccharidePath);
 
             OGlycanDatabasePaths = new List<string>();
             NGlycanDatabasePaths = new List<string>();

@@ -457,7 +457,7 @@ namespace TaskLayer
 
                             var parentScan = parentScans[i];
 
-                            if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                            if (commonParameters.DissociationType == DissociationType.LowCID)
                             {
                                 lock (parentScan.TheScan)
                                 {
@@ -465,14 +465,19 @@ namespace TaskLayer
                                     {
                                         parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
                                     }
+
+                                    // Chimeric precursors share one spectrum but each carries its own
+                                    // metadata, so every wrapper has to re-read the count, not just the
+                                    // one that happened to do the pre-processing. Inside the lock so the
+                                    // count never comes from a half-rewritten spectrum.
+                                    parentScan.RefreshPeakCount();
                                 }
                             }
 
                             foreach (var childScan in parentScan.ChildScans)
                             {
-                                if (((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID)
+                                if ((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID)
                                     || (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID))
-                                && !childScan.TheScan.MassSpectrum.XcorrProcessed)
                                 { 
                                     lock (childScan.TheScan)
                                     {
@@ -480,6 +485,8 @@ namespace TaskLayer
                                         {
                                             childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
                                         }
+
+                                        childScan.RefreshPeakCount();
                                     }
                                 }
                             }

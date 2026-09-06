@@ -56,6 +56,16 @@ namespace EngineLayer.SpectrumMatch
         }
 
         /// <summary>
+        /// Drops PSMs whose monoisotopic mass did not resolve, returning how many were dropped.
+        /// A resolved sequence does not imply a resolved mass, so callers that require a mass
+        /// (quantification) must screen for it separately.
+        /// </summary>
+        public int RemovePsmsWithoutResolvedMass()
+        {
+            return FilteredPsmsList.RemoveAll(psm => !psm.BioPolymerWithSetModsMonoisotopicMass.HasValue);
+        }
+
+        /// <summary>
         /// Returns the number of PSMs that passed the filtering criteria
         /// </summary>
         public int TargetPsmsAboveThreshold => FilteredPsmsList.Count(psm => !psm.IsDecoy && !psm.IsContaminant && AboveThreshold(psm));

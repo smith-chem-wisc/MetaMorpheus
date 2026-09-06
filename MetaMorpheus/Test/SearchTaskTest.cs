@@ -10,10 +10,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EngineLayer.DatabaseLoading;
+using Omics;
 using Omics.Digestion;
 using Omics.Modifications;
 using Readers;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -273,31 +275,283 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalizationExperDesign");
             string experimentalDesignFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
-            using (StreamWriter output = new StreamWriter(experimentalDesignFile))
-            {
-                output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
-                output.WriteLine("PrunedDbSpectra.mzml" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
-            }
             DbForTask db = new DbForTask(myDatabase, false);
 
-            // run the task
-            Directory.CreateDirectory(folderPath);
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            try
+            {
+                using (StreamWriter output = new StreamWriter(experimentalDesignFile))
+                {
+                    output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
+                    output.WriteLine("PrunedDbSpectra.mzml" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
+                }
 
-            Directory.Delete(folderPath, true);
+                // run the task
+                Directory.CreateDirectory(folderPath);
+                searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            // delete the exper design and try again. this should skip quantification
-            File.Delete(experimentalDesignFile);
+                Directory.Delete(folderPath, true);
 
-            // run the task
-            Directory.CreateDirectory(folderPath);
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+                // delete the exper design and try again. this should skip quantification
+                File.Delete(experimentalDesignFile);
 
-            // PSMs should be present but no quant output
-            Assert.That(!File.Exists(Path.Combine(folderPath, "AllQuantifiedPeptides.tsv")));
-            Assert.That(File.Exists(Path.Combine(folderPath, "AllPSMs.psmtsv")));
+                // run the task
+                Directory.CreateDirectory(folderPath);
+                searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            Directory.Delete(folderPath, true);
+                // PSMs should be present but no quant output
+                Assert.That(!File.Exists(Path.Combine(folderPath, "AllQuantifiedPeptides.tsv")));
+                Assert.That(File.Exists(Path.Combine(folderPath, "AllPSMs.psmtsv")));
+
+                Directory.Delete(folderPath, true);
+            }
+            finally
+            {
+                // Always remove the ExperimentalDesign.tsv we wrote into shared TestData\, even
+                // on assertion/exception, so subsequent tests in the same suite run don't pick
+                // up a stale file (which would silently break quantification for them).
+                if (File.Exists(experimentalDesignFile)) File.Delete(experimentalDesignFile);
+                if (Directory.Exists(folderPath)) Directory.Delete(folderPath, true);
+            }
+        }
+
+        // Malformed exp design (Normalize=false) -> quant skipped, protein-groups TSV has no dynamic quant columns.
+        // Filename remains AllQuantifiedProteinGroups.tsv because it's driven by DoLabelFreeQuantification, not by quant success.
+        [Test]
+        public static void PostSearchMalformedExperimentalDesignSkipsQuant()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = false,
+                    DoParsimony = true
+                },
+                CommonParameters = new(precursorDeconParams: new IsoDecDeconvolutionParameters())
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMalformedExpDesign");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string mzmlPath = Path.Combine(inputFolder, "PrunedDbSpectra.mzml");
+            string fastaPath = Path.Combine(inputFolder, "DbForPrunedDb.fasta");
+            string expDesignPath = Path.Combine(inputFolder, "ExperimentalDesign.tsv");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzmlPath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), fastaPath, true);
+
+            // Lists an unrelated file so ReadExperimentalDesign emits errors.
+            using (StreamWriter w = new StreamWriter(expDesignPath))
+            {
+                w.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
+                w.WriteLine("UnrelatedFile.mzml\tcondition\t1\t1\t1");
+            }
+
+            try
+            {
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(fastaPath, false) }, new List<string> { mzmlPath }, "normal");
+
+                Assert.That(File.Exists(Path.Combine(outputFolder, "AllQuantifiedPeptides.tsv")), Is.False);
+
+                string pgPath = Path.Combine(outputFolder, "AllQuantifiedProteinGroups.tsv");
+                Assert.That(File.Exists(pgPath), Is.True);
+                var lines = File.ReadAllLines(pgPath);
+                Assert.That(lines.Length, Is.GreaterThan(1));
+                var header = lines[0];
+                // Quantification is skipped, so nothing intensity-derived is reported. Spectral counts
+                // and count-based occupancy need no quantification and are reported per spectra file.
+                Assert.That(header.Contains("SpectralCount_"), Is.True);
+                Assert.That(header.Contains("CountOccupancy_"), Is.True);
+                Assert.That(header.Contains("Intensity_"), Is.False);
+                Assert.That(header.Contains("IntensityOccupancy_"), Is.False);
+                Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True);
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
+        // Count-only occupancy across more than one spectra file. Each protein group used to derive
+        // its columns from the files its own PSMs came from, so a group seen in only one of two files
+        // wrote a short row while the writer emitted the first group's header - sliding Number of PSMs
+        // and every column after it two positions left. The single-file guard above cannot see this.
+        [Test]
+        public static void PostSearchCountOnlyMultiFileWritesOneSchema()
+        {
+            var uniqueToFirst = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>());
+            var uniqueToSecond = new PeptideWithSetModifications("MYRIADPEPTIDER", new Dictionary<string, Modification>());
+            var inBothFiles = new PeptideWithSetModifications("ANOTHERLONGPEPTIDEK", new Dictionary<string, Modification>());
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestCountOnlyMultiFile");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+
+            string mzmlPathA = Path.Combine(inputFolder, "countOnlyA.mzML");
+            string mzmlPathB = Path.Combine(inputFolder, "countOnlyB.mzML");
+            MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(
+                new TestDataFile(new List<IBioPolymerWithSetMods> { uniqueToFirst, inBothFiles }), mzmlPathA, false);
+            MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(
+                new TestDataFile(new List<IBioPolymerWithSetMods> { uniqueToSecond, inBothFiles }), mzmlPathB, false);
+
+            string xmlPath = Path.Combine(inputFolder, "countOnlyDb.xml");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(),
+                new List<Protein>
+                {
+                    new Protein(uniqueToFirst.BaseSequence, "accA"),
+                    new Protein(uniqueToSecond.BaseSequence, "accB"),
+                    new Protein(inBothFiles.BaseSequence, "accShared")
+                }, xmlPath);
+
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoLabelFreeQuantification = false,
+                    DoParsimony = true
+                }
+            };
+
+            try
+            {
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlPath, false) },
+                    new List<string> { mzmlPathA, mzmlPathB }, "normal");
+
+                string pgPath = Path.Combine(outputFolder, "AllProteinGroups.tsv");
+                Assert.That(File.Exists(pgPath), Is.True);
+
+                var lines = File.ReadAllLines(pgPath);
+                Assert.That(lines.Length, Is.GreaterThan(2));
+
+                var headerFields = lines[0].Split('\t');
+                Assert.That(headerFields, Does.Contain("SpectralCount_countOnlyA"));
+                Assert.That(headerFields, Does.Contain("SpectralCount_countOnlyB"));
+                Assert.That(headerFields, Does.Contain("CountOccupancy_countOnlyA"));
+                Assert.That(headerFields, Does.Contain("CountOccupancy_countOnlyB"));
+                Assert.That(headerFields.Any(f => f.StartsWith("Intensity_")), Is.False);
+
+                Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True);
+
+                // Guards the guard: if every group happened to be seen in both files the row widths
+                // would agree even with per-group schemas, and the assertion above would prove nothing.
+                int countA = Array.IndexOf(headerFields, "SpectralCount_countOnlyA");
+                int countB = Array.IndexOf(headerFields, "SpectralCount_countOnlyB");
+                var rows = lines.Skip(1).Select(l => l.Split('\t')).ToList();
+                Assert.That(rows.Any(r => (r[countA] == "0") != (r[countB] == "0")), Is.True,
+                    "every protein group was observed in both files, so the shared schema went untested");
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
+        // No exp design + Normalize=false -> defaults built, LFQ runs, dynamic columns appear.
+        // Complements PostSearchNormalizeTest (no exp design + Normalize=true -> skip).
+        [Test]
+        public static void PostSearchNoExpDesignNoNormalizeRunsQuant()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = false,
+                    DoParsimony = true
+                },
+                CommonParameters = new(precursorDeconParams: new IsoDecDeconvolutionParameters())
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNoExpDesignNoNormalize");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string mzmlPath = Path.Combine(inputFolder, "PrunedDbSpectra.mzml");
+            string fastaPath = Path.Combine(inputFolder, "DbForPrunedDb.fasta");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzmlPath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), fastaPath, true);
+
+            try
+            {
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(fastaPath, false) }, new List<string> { mzmlPath }, "normal");
+
+                string pgPath = Path.Combine(outputFolder, "AllQuantifiedProteinGroups.tsv");
+                Assert.That(File.Exists(pgPath), Is.True);
+                var lines = File.ReadAllLines(pgPath);
+                Assert.That(lines.Length, Is.GreaterThan(1));
+                var header = lines[0];
+
+                Assert.That(header.Contains("SpectralCount_"), Is.True);
+                Assert.That(header.Contains("CountOccupancy_"), Is.True);
+                Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True);
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
+        // Per-file (individual) protein-group TSVs must carry the same quant/occupancy columns as the
+        // combined AllQuantifiedProteinGroups.tsv, computed from each file's own intensities. Guards the
+        // regression where ConstructSubsetProteinGroup left the subset's SampleGroupResults unpopulated,
+        // silently dropping every quant column from the individual-file output.
+        [Test]
+        public static void PostSearchIndividualFileProteinGroupsHaveQuantColumns()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = false,
+                    DoParsimony = true,
+                    WriteIndividualFiles = true
+                },
+                CommonParameters = new(precursorDeconParams: new IsoDecDeconvolutionParameters())
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestIndividualPgQuantColumns");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string fastaPath = Path.Combine(inputFolder, "DbForPrunedDb.fasta");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), fastaPath, true);
+
+            // Two spectra files so individual-file results are written (requires more than one file).
+            string mzml1 = Path.Combine(inputFolder, "PrunedDbSpectra1.mzml");
+            string mzml2 = Path.Combine(inputFolder, "PrunedDbSpectra2.mzml");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzml1, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzml2, true);
+
+            try
+            {
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(fastaPath, false) },
+                    new List<string> { mzml1, mzml2 }, "normal");
+
+                // Combined file: quant ran, so dynamic columns are present (sanity check).
+                string combinedPath = Path.Combine(outputFolder, "AllQuantifiedProteinGroups.tsv");
+                Assert.That(File.Exists(combinedPath), Is.True);
+                Assert.That(File.ReadAllLines(combinedPath)[0].Contains("Intensity_"), Is.True);
+
+                // Individual-file protein-group TSVs must also carry the quant/occupancy columns,
+                // each computed from that file's own intensity.
+                string individualFolder = Path.Combine(outputFolder, "Individual File Results");
+                var individualPgFiles = Directory.GetFiles(individualFolder, "*_ProteinGroups.tsv");
+                Assert.That(individualPgFiles.Length, Is.EqualTo(2));
+
+                foreach (var pgFile in individualPgFiles)
+                {
+                    var lines = File.ReadAllLines(pgFile);
+                    Assert.That(lines.Length, Is.GreaterThan(1), $"{pgFile} has no data rows");
+                    string header = lines[0];
+
+                    Assert.That(header.Contains("SpectralCount_"), Is.True, $"{pgFile} missing SpectralCount_ column");
+                    Assert.That(header.Contains("Intensity_"), Is.True, $"{pgFile} missing Intensity_ column");
+                    Assert.That(header.Contains("CountOccupancy_"), Is.True, $"{pgFile} missing CountOccupancy_ column");
+                    Assert.That(header.Contains("IntensityOccupancy_"), Is.True, $"{pgFile} missing IntensityOccupancy_ column");
+
+                    // header and every data row must agree on the column count
+                    Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True, $"{pgFile} has inconsistent column counts");
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
         }
 
         /// <summary>
