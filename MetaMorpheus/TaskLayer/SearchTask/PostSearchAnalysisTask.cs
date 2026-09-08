@@ -1436,10 +1436,17 @@ namespace TaskLayer
 
                 // Per-file quant/occupancy columns on the subset groups, so the individual-file report
                 // carries the same schema as the combined one, computed from this file's own PSMs.
+                // Unconditional. The guard this replaced read FilesForQuantification, which is a
+                // SpectraFileInfo-only view: on a multiplex run every group carries isobaric samples
+                // and no spectra file, so ConstructSubsetProteinGroup finds nothing to match and leaves
+                // the subset's sample list unset -- and the guard then skipped the one call that would
+                // have given it columns. A subset with no samples is not a subset with nothing to say:
+                // mzLib groups its PSMs by source file and reports the counts, which is exactly what an
+                // individual-file table wants. Groups that DO carry files are unaffected, so the
+                // label-free path behaves as before.
                 foreach (var subsetProteinGroup in subsetProteinGroupsForThisFile)
                 {
-                    if (subsetProteinGroup.FilesForQuantification != null)
-                        subsetProteinGroup.PopulateSampleGroupResults();
+                    subsetProteinGroup.PopulateSampleGroupResults();
                 }
 
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
