@@ -632,6 +632,9 @@
                             HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,211,0"/>
 
+                    <Button x:Name="SetTmtExperimentalDesignButton" Grid.Row="2" Content="SET TMT EXPERIMENTAL DESIGN" Click="SetTmtExperimentalDesign_Click"
+                            HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,613,0"/>
+
                     <Button Name="SetExperimentalDesignButton" Grid.Row="2" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" 
                             HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,412,0"/>
