@@ -504,6 +504,13 @@ namespace Test
                 Assert.That(warnings, Has.Exactly(1).Contains("Error reading TMT design file"));
                 Assert.That(warnings, Has.Exactly(1).Contains("Biological Replicate"));
                 Assert.That(parameters.MultiplexQuantificationResults, Is.Null);
+
+                // The mirror of NoPsmCarriesReporterIons_WarnsAndSkips, which asserts the positive: a
+                // design the search could READ is archived even when it then declines to quantify. One
+                // it could not read is not, because the results folder would then advertise a design
+                // nothing was quantified under.
+                Assert.That(File.Exists(Path.Combine(StageOutput(folder), GlobalVariables.TmtExperimentalDesignFileName)),
+                    Is.False, "a design that could not be read must not be archived beside the results");
             }
             finally
             {

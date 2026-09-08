@@ -292,24 +292,30 @@ namespace TaskLayer
 
             Status("Quantifying multiplex channels...", Parameters.SearchTaskId);
 
+            var tmtFiles = TmtExperimentalDesign.Read(tmtDesignPath, Parameters.CurrentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("Error reading TMT design file: " + designErrors.First() + ". Skipping multiplex quantification");
+                return;
+            }
+
             // Copy the design into the output folder, as the label-free path does for ExperimentalDesign,
-            // so a result folder records the design it was quantified under.
+            // so a result folder records the design it was quantified under. AFTER the read, not before:
+            // a design that could not be parsed was not quantified under anything, and archiving it
+            // anyway left it in the results folder and announced it through FinishedWritingFile while
+            // this method was on its way out.
             try
             {
                 string copiedDesign = Path.Combine(Parameters.OutputFolder, Path.GetFileName(tmtDesignPath));
                 File.Copy(tmtDesignPath, copiedDesign, overwrite: true);
                 FinishedWritingFile(copiedDesign, new List<string> { Parameters.SearchTaskId });
             }
-            catch
+            catch (Exception e)
             {
-                Warn("Could not copy the TMT design file to the search task output. That's ok, the search will continue");
-            }
-
-            var tmtFiles = TmtExperimentalDesign.Read(tmtDesignPath, Parameters.CurrentRawFileList, out var designErrors);
-            if (designErrors.Any())
-            {
-                Warn("Error reading TMT design file: " + designErrors.First() + ". Skipping multiplex quantification");
-                return;
+                // Named, not swallowed: a user whose archive failed can act on "access is denied" and
+                // can do nothing with "could not copy".
+                Warn("Could not copy the TMT design file to the search task output: " + e.Message +
+                     ". That's ok, the search will continue");
             }
 
             var tag = IsobaricMassTag.GetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId);
@@ -324,10 +330,16 @@ namespace TaskLayer
             // includeAmbiguous: false is the unambiguous filter the design calls for. A PSM that could be
             // more than one peptide would otherwise have its channel intensities credited to whichever
             // candidate happened to sort first.
+            //
+            // includeContaminants follows WriteContaminants, the same switch ProteinGroupIsWritten reads
+            // below. Passing true unconditionally made the quantified set wider than the written set at
+            // the PSM and peptide levels but not the protein level: with the box unticked, contaminant
+            // peptides appeared in RawQuantification.tsv and PeptideQuantification.tsv while their
+            // groups were absent from ProteinGroupQuantification.tsv.
             var filteredPsms = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                 CommonParameters,
                 includeDecoys: false,
-                includeContaminants: true,
+                includeContaminants: Parameters.SearchParameters.WriteContaminants,
                 includeAmbiguous: false,
                 includeAmbiguousMods: false,
                 includeHighQValuePsms: false);
