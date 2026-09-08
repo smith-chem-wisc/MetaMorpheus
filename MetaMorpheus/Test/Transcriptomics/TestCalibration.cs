@@ -48,9 +48,11 @@ public class TestCalibration
     }
 
     [Test]
+    [NonParallelizable]
     public void CalibrationTask_ReducesMassError()
     {
         var previousAnalyteType = GlobalVariables.AnalyteType;
+        GlobalVariables.AnalyteType = AnalyteType.Oligo;
 
         // Arrange
         try
