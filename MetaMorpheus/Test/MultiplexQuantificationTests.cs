@@ -259,6 +259,100 @@ namespace Test
         }
 
         /// <summary>
+        /// The individual-file protein tables must keep their count columns on a multi-file TMT run.
+        /// </summary>
+        /// <remarks>
+        /// Every other end-to-end test here searches ONE spectra file, so the individual-file branch is
+        /// never entered. It needs more than one raw file and WriteIndividualFiles on -- the ordinary
+        /// shape of a multi-plex or fractionated TMT experiment -- and without it the tables came out
+        /// with no SpectralCount_ or CountOccupancy_ columns at all, well-formed and two columns short.
+        ///
+        /// The columns here are per SPECTRA FILE, not per channel, and that is deliberate: a subset
+        /// group describes exactly one file, and a reporter channel has no spectral count of its own.
+        /// The combined table's per-channel columns are asserted separately by
+        /// <see cref="AssertProteinTableKeepsItsColumnsAndGainsChannelIntensities"/>.
+        /// </remarks>
+        [Test]
+        public static void TwoFileTmtSearch_IndividualFileProteinTablesKeepTheirCountColumns()
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtMultiplexQuantTwoFile");
+            string dataFolder = Path.Combine(root, "data");
+            string outputFolder = Path.Combine(root, "out");
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+            Directory.CreateDirectory(dataFolder);
+
+            try
+            {
+                string source = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\VA084TQ_6.mzML");
+                var stagedNames = new[] { "TmtFileA", "TmtFileB" };
+                var stagedPaths = stagedNames.Select(name =>
+                {
+                    string staged = Path.Combine(dataFolder, name + ".mzML");
+                    File.Copy(source, staged);
+                    return staged;
+                }).ToList();
+
+                // One plex per file: each file is its own labelling experiment, so its channels carry
+                // their own samples. Sample names are unique across the design, which Read enforces.
+                var rows = stagedPaths.SelectMany((path, file) => Tmt11Channels.Select((tag, i) =>
+                    $"{path}\tPlex{file + 1}\tSample{stagedNames[file]}{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t1\t1\tstudy sample"));
+                File.WriteAllLines(
+                    Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
+                    new[] { TmtExperimentalDesign.Header }.Concat(rows));
+
+                var searchTask = Toml.ReadFile<SearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                    MetaMorpheusTask.tomlConfig);
+                searchTask.SearchParameters.DoParsimony = true;
+                searchTask.SearchParameters.WriteIndividualFiles = true;
+
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                    stagedPaths,
+                    new List<DbForTask>
+                    {
+                        new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta"), false)
+                    },
+                    outputFolder).Run();
+
+                string individualFolder = Path.Combine(outputFolder, "search", "Individual File Results");
+                foreach (string name in stagedNames)
+                {
+                    string table = Path.Combine(individualFolder, name + "_ProteinGroups.tsv");
+                    Assert.That(File.Exists(table), Is.True, $"{name} must get its own protein table");
+
+                    var lines = File.ReadAllLines(table);
+                    var header = lines[0].Split('\t');
+
+                    // By identity, not by count: a table carrying the OTHER file's column would also
+                    // have one of each, and would be describing a file these rows are not about.
+                    Assert.That(header.Where(h => h.StartsWith("SpectralCount_")),
+                        Is.EqualTo(new[] { $"SpectralCount_{name}" }),
+                        "the individual-file table must carry this file's spectral count column");
+                    Assert.That(header.Where(h => h.StartsWith("CountOccupancy_")),
+                        Is.EqualTo(new[] { $"CountOccupancy_{name}" }),
+                        "the individual-file table must carry this file's count occupancy column");
+
+                    // A subset group holds one file's PSMs and no channel, so there is no per-file
+                    // intensity for it to report -- an Intensity_ column here would be empty by
+                    // construction.
+                    Assert.That(header.Any(h => h.StartsWith("Intensity_")), Is.False,
+                        "an individual-file table has no per-file intensity to report");
+
+                    foreach (var line in lines.Skip(1))
+                    {
+                        Assert.That(line.Split('\t'), Has.Length.EqualTo(header.Length),
+                            "every row must carry the columns the header advertises");
+                    }
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
+        }
+
+        /// <summary>
         /// Quantification is additive, not a replacement: the reporter ion columns that were the only
         /// TMT output before must still be in the .psmtsv, and the protein table's channel columns must
         /// agree with them in number.
