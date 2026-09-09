@@ -566,11 +566,17 @@ namespace Test
                     new List<string> { RawPathIn(folder) }, StageOutput(folder));
 
                 Assert.That(warnings, Has.Count.EqualTo(1),
-                    "the design itself archived cleanly, so declining is the only thing to report");
+                    "the read fails before anything is copied, so declining is the only thing to report");
                 Assert.That(warnings, Has.Exactly(1).Contains("Error reading TMT design file"));
                 Assert.That(warnings, Has.Exactly(1).Contains("name a file in this run"),
                     "the user has to be told the design is pointed at the wrong place");
                 Assert.That(parameters.MultiplexQuantificationResults, Is.Null);
+
+                // This reports through designErrors like an unparseable design does, so the copy is
+                // skipped here too. Said out loud because the reason above stopped being that the
+                // design archived cleanly the moment the copy moved below the read.
+                Assert.That(File.Exists(Path.Combine(StageOutput(folder), GlobalVariables.TmtExperimentalDesignFileName)),
+                    Is.False, "a design that names no file in this run is not archived either");
             }
             finally
             {
