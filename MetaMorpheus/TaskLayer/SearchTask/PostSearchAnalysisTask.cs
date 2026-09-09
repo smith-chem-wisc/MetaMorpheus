@@ -1512,10 +1512,72 @@ namespace TaskLayer
             }
         }
 
+        /// <summary>
+        /// Removes contaminant rows from the FlashLFQ-authored tables when the user asked not to write
+        /// contaminants, so AllQuantifiedPeptides.tsv and AllQuantifiedPeaks.tsv agree with the tables
+        /// beside them instead of contradicting them. WriteContaminants already reaches the protein
+        /// table (ProteinGroupIsWritten) and MetaMorpheus's own PSM and peptide tables; these two are
+        /// written by mzLib from FlashLfqResults, which has no contaminant concept, so the filter has
+        /// to be applied here.
+        ///
+        /// A sequence is dropped only when EVERY spectral match carrying it is a contaminant. One
+        /// shared with a target protein keeps its row, because SpectralMatch.IsContaminant is
+        /// Any(parent.IsContaminant) and the peptide tables beside these apply the same rule.
+        ///
+        /// DELIBERATELY AT WRITE TIME, not by narrowing peptideSequencesForQuantification above.
+        /// That list becomes FlashLfqEngine.PeptideModifiedSequencesToQuantify, which mzLib consults
+        /// INSIDE quantification rather than only on the way out - peak filtering at
+        /// FlashLfqEngine.cs:711, :948, :996, :1116, and MBR peak selection at :1400-1428, where set
+        /// membership decides which of two peaks sharing an apex survives. Narrowing it can therefore
+        /// move target intensities. Filtering here cannot: the engine sees exactly what it saw before.
+        ///
+        /// Safe to mutate the results object because every consumer that reads a NUMBER out of it has
+        /// already run - protein group intensities at QuantificationAnalysis (the IntensitiesByFile
+        /// assignment), DistributeQuantifiedIntensities, and WriteProteinResults all precede this in
+        /// Run(). Nothing after this reads FlashLfqResults.
+        /// </summary>
+        private void RemoveContaminantsFromQuantificationTables()
+        {
+            if (Parameters.SearchParameters.WriteContaminants)
+            {
+                return;
+            }
+
+            var sequencesWithATargetMatch = new HashSet<string>(Parameters.AllSpectralMatches
+                .Where(psm => !psm.IsContaminant && psm.FullSequence != null)
+                .Select(psm => psm.FullSequence));
+
+            var contaminantOnlySequences = new HashSet<string>(Parameters.AllSpectralMatches
+                .Where(psm => psm.IsContaminant && psm.FullSequence != null)
+                .Select(psm => psm.FullSequence)
+                .Where(sequence => !sequencesWithATargetMatch.Contains(sequence)));
+
+            if (contaminantOnlySequences.Count == 0)
+            {
+                return;
+            }
+
+            foreach (string sequence in contaminantOnlySequences)
+            {
+                Parameters.FlashLfqResults.PeptideModifiedSequences.Remove(sequence);
+            }
+
+            // A peak carries every identification that resolved to it, so it is a contaminant row only
+            // when none of them is a sequence still being written.
+            foreach (var file in Parameters.FlashLfqResults.Peaks.Keys.ToList())
+            {
+                Parameters.FlashLfqResults.Peaks[file].RemoveAll(peak =>
+                    peak.Identifications.Count > 0
+                    && peak.Identifications.All(id => contaminantOnlySequences.Contains(id.ModifiedSequence)));
+            }
+        }
+
         private void WriteFlashLFQResults()
         {
             if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
             {
+                RemoveContaminantsFromQuantificationTables();
+
                 // write peaks
                 WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
 
