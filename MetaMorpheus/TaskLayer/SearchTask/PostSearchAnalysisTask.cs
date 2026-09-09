@@ -336,21 +336,35 @@ namespace TaskLayer
             // the PSM and peptide levels but not the protein level: with the box unticked, contaminant
             // peptides appeared in RawQuantification.tsv and PeptideQuantification.tsv while their
             // groups were absent from ProteinGroupQuantification.tsv.
-            var filteredPsms = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+            FilteredPsms FilterMatches(bool includeContaminants) => FilteredPsms.Filter(
+                Parameters.AllSpectralMatches,
                 CommonParameters,
                 includeDecoys: false,
-                includeContaminants: Parameters.SearchParameters.WriteContaminants,
+                includeContaminants: includeContaminants,
                 includeAmbiguous: false,
                 includeAmbiguousMods: false,
                 includeHighQValuePsms: false);
 
-            var quantifiablePsms = filteredPsms
-                .Where(psm => psm.IsobaricMassTagReporterIonIntensities is { Length: > 0 })
-                .ToList();
+            static bool CarriesReporterIons(SpectralMatch psm) =>
+                psm.IsobaricMassTagReporterIonIntensities is { Length: > 0 };
+
+            var filteredPsms = FilterMatches(Parameters.SearchParameters.WriteContaminants);
+
+            var quantifiablePsms = filteredPsms.Where(CarriesReporterIons).ToList();
 
             if (quantifiablePsms.Count == 0)
             {
-                Warn("No spectral matches carried reporter ion intensities. Skipping multiplex quantification");
+                // Name the filter that emptied the set. With the contaminant box unticked, every
+                // reporter-bearing match in a run can be a contaminant, and the plain wording then
+                // blames the data for what the filter above removed. Asked only on the way out, so a
+                // run that quantifies never pays for the second filter.
+                bool contaminantsCarriedThemAll = !Parameters.SearchParameters.WriteContaminants
+                    && FilterMatches(includeContaminants: true).Any(CarriesReporterIons);
+
+                Warn(contaminantsCarriedThemAll
+                    ? "Every spectral match that carried reporter ion intensities was a contaminant, and " +
+                      "contaminants are not being written. Skipping multiplex quantification"
+                    : "No spectral matches carried reporter ion intensities. Skipping multiplex quantification");
                 return;
             }
 

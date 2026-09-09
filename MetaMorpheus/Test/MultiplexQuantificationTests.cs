@@ -436,6 +436,7 @@ namespace Test
             List<ProteinGroup> proteinGroups = null,
             string multiplexModId = "TMT11",
             bool writeDecoys = true,
+            bool writeContaminants = true,
             bool writeHighQValuePsms = true)
         {
             var task = new PostSearchAnalysisTask { CommonParameters = new CommonParameters() };
@@ -445,6 +446,7 @@ namespace Test
                 {
                     MultiplexModId = multiplexModId,
                     WriteDecoys = writeDecoys,
+                    WriteContaminants = writeContaminants,
                     WriteHighQValuePsms = writeHighQValuePsms
                 },
                 CurrentRawFileList = currentRawFileList,
@@ -896,6 +898,105 @@ namespace Test
                         Has.Length.EqualTo(group.GetTabSeparatedHeader().Split('\t').Length),
                         "every row must carry the columns its own header advertises");
                 }
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// The contaminant switch has to reach the PSM filter and the protein-group filter together. It
+        /// governs what AllProteinGroups.tsv shows, and quantifying a wider set than that wrote
+        /// contaminant peptides into RawQuantification.tsv and PeptideQuantification.tsv while their
+        /// groups were missing from ProteinGroupQuantification.tsv -- three tables disagreeing about
+        /// whether contaminants are part of this search.
+        /// </summary>
+        /// <remarks>
+        /// Both directions are asserted because the default is on: with the box ticked a contaminant is
+        /// quantified like anything else, and only the unticked run may drop it. Neither TMT fixture can
+        /// reach either case -- no contaminant is in the fixture databases -- so this is the only place
+        /// the behaviour is pinned.
+        /// </remarks>
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void ContaminantMatches_AreQuantifiedOnlyWhenTheirGroupsAreWritten(bool writeContaminants)
+        {
+            string folder = StageFolder("TmtGuardContaminants" + writeContaminants);
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var target = new Protein("PEPTIDEK", "PROTEINA", "ORGANISM");
+                var targetPeptide = FirstPeptideOf(target);
+                var targetPsm = ReporterIonPsm(rawPath, targetPeptide);
+                var targetGroup = GroupOf(target, new[] { targetPeptide }, new[] { targetPsm });
+
+                var contaminant = new Protein("PEPTIDERPEPTIDEK", "CONTAMINANTA", "ORGANISM", isContaminant: true);
+                var contaminantPeptide = FirstPeptideOf(contaminant);
+                var contaminantPsm = ReporterIonPsm(rawPath, contaminantPeptide, scanNumber: 2);
+                var contaminantGroup = GroupOf(contaminant, new[] { contaminantPeptide }, new[] { contaminantPsm });
+
+                Assert.That(contaminantPsm.IsContaminant, Is.True, "the fixture only means anything if the match is flagged");
+                Assert.That(contaminantGroup.IsContaminant, Is.True, "and so is the group the writer filters on");
+
+                var (_, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { targetPsm, contaminantPsm },
+                    proteinGroups: new List<ProteinGroup> { targetGroup, contaminantGroup },
+                    writeContaminants: writeContaminants);
+
+                var results = parameters.MultiplexQuantificationResults;
+                Assert.That(results, Is.Not.Null, "the target group is quantifiable either way, so the run must succeed");
+
+                Assert.That(results.ProteinIntensities.Keys, Is.EquivalentTo(writeContaminants
+                        ? new[] { targetGroup, contaminantGroup }
+                        : new[] { targetGroup }),
+                    "the groups quantified must be exactly the groups AllProteinGroups.tsv will show");
+                Assert.That(results.PeptideIntensities.Keys.Contains(contaminantPeptide), Is.EqualTo(writeContaminants),
+                    "the peptide table has to agree with the protein table about contaminants");
+
+                Assert.That(results.ProteinIntensities.Keys, Does.Contain(targetGroup),
+                    "the contaminant switch must not touch the target half of the search");
+                Assert.That(results.PeptideIntensities.Keys, Does.Contain(targetPeptide));
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// The guard that reports an empty quantifiable set has to name the filter that emptied it. With
+        /// contaminants excluded and every reporter-bearing match a contaminant, "no spectral matches
+        /// carried reporter ion intensities" blames the data for what a setting one line above removed --
+        /// and the user's fix is a checkbox, not another search.
+        /// </summary>
+        [Test]
+        public static void EveryReporterIonMatchIsAContaminant_NamesTheFilterRatherThanTheData()
+        {
+            string folder = StageFolder("TmtGuardAllContaminant");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var contaminant = new Protein("PEPTIDEK", "CONTAMINANTA", "ORGANISM", isContaminant: true);
+                var peptide = FirstPeptideOf(contaminant);
+                var psm = ReporterIonPsm(rawPath, peptide);
+                var group = GroupOf(contaminant, new[] { peptide }, new[] { psm });
+
+                var (warnings, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { psm },
+                    proteinGroups: new List<ProteinGroup> { group },
+                    writeContaminants: false);
+
+                Assert.That(warnings, Has.Exactly(1).Contains("was a contaminant"));
+                Assert.That(warnings, Has.None.Contains("No spectral matches carried reporter ion intensities"),
+                    "the matches did carry them; the contaminant filter is what removed them");
+                Assert.That(parameters.MultiplexQuantificationResults, Is.Null);
             }
             finally
             {
