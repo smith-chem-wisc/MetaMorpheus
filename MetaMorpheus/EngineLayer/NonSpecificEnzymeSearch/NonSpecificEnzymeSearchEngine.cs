@@ -350,17 +350,20 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (fragmentationTerminus == FragmentationTerminus.N)
                     {
                         int endResidue = peptide.OneBasedStartResidue + fragment.FragmentNumber - 1; //-1 for one based index
+                        // Mod keys are peptide-relative: 1 is the N-terminus, 2 the first residue, length+2 the C-terminus.
+                        int cTerminusModKey = fragment.FragmentNumber + 2;
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();
                         foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus)
                         {
-                            if (mod.Key < endResidue - peptide.OneBasedStartResidue + 3) //check if we cleaved it off, +1 for N-terminus being mod 1 and first residue being mod 2, +1 again for the -1 on end residue for one based index, +1 (again) for the one-based start residue
+                            if (mod.Key < cTerminusModKey) //check if we cleaved it off
                             {
                                 updatedMods.Add(mod.Key, mod.Value);
                             }
                         }
                         if (terminalMod != null)
                         {
-                            updatedMods.Add(endResidue, terminalMod);
+                            // The filter above admits only keys below this one, so it is always free.
+                            updatedMods.Add(cTerminusModKey, terminalMod);
                         }
                         updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue, endResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }
@@ -377,9 +380,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 updatedMods.Add(key, mod.Value);
                             }
                         }
-                        if (terminalMod != null && !updatedMods.Keys.Contains(startResidue - 1))
+                        if (terminalMod != null)
                         {
-                            updatedMods.Add(startResidue - 1, terminalMod);
+                            // Key 1 is the peptide N-terminus; the shift above only produces keys of 2 or more.
+                            updatedMods.Add(1, terminalMod);
                         }
                         updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, startResidue, peptide.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }
@@ -421,11 +425,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 //add the terminal mod
                                 if (fragmentationTerminus == FragmentationTerminus.N)
                                 {
-                                    updatedMods[peptide.OneBasedEndResidue + 1] = terminalMod;
+                                    updatedMods[peptide.Length + 2] = terminalMod;
                                 }
                                 else
                                 {
-                                    updatedMods[peptide.OneBasedStartResidue - 1] = terminalMod;
+                                    updatedMods[1] = terminalMod;
                                 }
 
                                 PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue, peptide.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, peptide.NumFixedMods);
