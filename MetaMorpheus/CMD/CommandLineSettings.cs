@@ -43,7 +43,7 @@ namespace MetaMorpheusCommandLine
         [Option("acceptThermoLicence", HelpText = "[Optional] Agree to the Thermo RawFileReader licence, which is required to read .raw files, and record the agreement. Prints the licence and does not prompt, so it can be used where no console is available to answer one. May be given on its own as a setup step, or alongside a run.")]
         public bool AcceptThermoLicence { get; set; }
 
-        [Option("auditSdrf", HelpText = "[Optional] Path to an SDRF file to audit for what it says about quantification. Read-only: prints a report and exits without running anything. Reports whether the design is channel-level, kit-only or not isobaric at all; the channels found and the plex they imply; where the plex came from; whether an isobaric modification is declared; and which of the eleven per-channel facts are present, absent or unparseable. Given on its own, so no task, database or spectra file is required.")]
+        [Option("auditSdrf", HelpText = "[Optional] Path to an SDRF file to audit for what it says about quantification. Read-only: prints a report and exits without running anything. Reports whether the design is channel-level, kit-only or not isobaric at all; the channels found and the plex they imply; where the plex came from; whether an isobaric modification is declared; and which of the eleven per-channel facts are present, absent or unparseable. Runs on its own: no task, database or spectra file is required, and it cannot be given alongside a run.")]
         public string AuditSdrf { get; set; }
 
         [Option("auditData", HelpText = "[Optional] Folder of downloaded data files to check the SDRF's comment[data file] entries against, reported as found or missing. Only meaningful with --auditSdrf.")]
@@ -56,6 +56,31 @@ namespace MetaMorpheusCommandLine
             Spectra = _spectra == null ? new List<string>() : _spectra.ToList();
             Tasks = _tasks == null ? new List<string>() : _tasks.ToList();
             Databases = _databases == null ? new List<string>() : _databases.ToList();
+
+            // --auditSdrf reads one file, prints what it says and runs nothing else, so anything asking
+            // for work alongside it is a contradiction. Refused rather than resolved by precedence, for
+            // the same reason --auditData alone is refused below: honouring one flag and silently
+            // dropping the other looks identical to honouring both, and exit 0 over an empty output
+            // folder is indistinguishable from a successful run to anything checking the exit code.
+            // Checked before every other rule so that it holds even for the flags that return early.
+            // -o, -v and --mmsettings stay allowed: they modify a run, they do not ask for one.
+            if (AuditSdrf != null)
+            {
+                List<string> asksForWorkAsWell = new List<string>();
+
+                if (Tasks.Count > 0) { asksForWorkAsWell.Add("-t"); }
+                if (Databases.Count > 0) { asksForWorkAsWell.Add("-d"); }
+                if (Spectra.Count > 0) { asksForWorkAsWell.Add("-s"); }
+                if (GenerateDefaultTomls) { asksForWorkAsWell.Add("-g"); }
+                if (RunMicroVignette) { asksForWorkAsWell.Add("--test"); }
+                if (AcceptThermoLicence) { asksForWorkAsWell.Add("--acceptThermoLicence"); }
+
+                if (asksForWorkAsWell.Count > 0)
+                {
+                    throw new MetaMorpheusException("--auditSdrf reads one file and runs nothing else, so it cannot be given with "
+                        + string.Join(", ", asksForWorkAsWell) + ". Run the audit on its own.");
+                }
+            }
 
             if ((GenerateDefaultTomls || RunMicroVignette) && OutputFolder == null)
             {

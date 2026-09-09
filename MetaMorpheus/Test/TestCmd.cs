@@ -1085,6 +1085,95 @@ namespace Test
             Assert.That(settings.OutputFolder, Is.Null);
         }
 
+        // The other direction, which is the one that used to be wrong: --auditSdrf alongside a run
+        // took both flags, honoured the audit and threw the run away at exit 0 -- indistinguishable
+        // from a successful search to anything checking the exit code. Refused, for the reason
+        // --auditData alone is refused.
+        [Test]
+        public static void TestAuditSdrfIsRefusedAlongsideARun()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = WriteChannelLevelSdrf(ScratchDataDirectory),
+                _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") },
+                _spectra = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml") },
+                OutputFolder = ScratchDataDirectory
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("cannot be given with"));
+            Assert.That(thrown.Message, Does.Contain("-t"));
+            Assert.That(thrown.Message, Does.Contain("-d"));
+            Assert.That(thrown.Message, Does.Contain("-s"));
+        }
+
+        // -g returns from validation before the audit is looked at, so this also pins that the refusal
+        // is checked FIRST: without that, -g -o folder --auditSdrf <path that does not exist> wrote six
+        // tomls, printed no report, never checked the path and exited 0.
+        [Test]
+        public static void TestAuditSdrfIsRefusedAlongsideGeneratingDefaultTomls()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = Path.Combine(ScratchDataDirectory, "no-such-file.sdrf.tsv"),
+                GenerateDefaultTomls = true,
+                OutputFolder = ScratchDataDirectory
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("cannot be given with"));
+            Assert.That(thrown.Message, Does.Contain("-g"));
+        }
+
+        // --test is a run like any other -- it just brings its own spectra file and database -- so the
+        // audit must not quietly consume it and leave the output folder empty.
+        [Test]
+        public static void TestAuditSdrfIsRefusedAlongsideTheMicroVignette()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = WriteChannelLevelSdrf(ScratchDataDirectory),
+                RunMicroVignette = true,
+                OutputFolder = ScratchDataDirectory
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("cannot be given with"));
+            Assert.That(thrown.Message, Does.Contain("--test"));
+        }
+
+        // --acceptThermoLicence records an agreement, which is a change to settings.toml rather than
+        // output on disk -- so honouring the audit instead left the licence unaccepted with nothing
+        // said, and the next .raw run would prompt or fail.
+        [Test]
+        public static void TestAuditSdrfIsRefusedAlongsideAcceptingTheThermoLicence()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = WriteChannelLevelSdrf(ScratchDataDirectory),
+                AcceptThermoLicence = true
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("cannot be given with"));
+            Assert.That(thrown.Message, Does.Contain("--acceptThermoLicence"));
+        }
+
+        // -o is deliberately still allowed. The audit writes nothing, so an output folder is unused
+        // rather than discarded work, and refusing it would only break the habit of passing -o.
+        [Test]
+        public static void TestAuditSdrfIsStillAllowedWithAnOutputFolder()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = WriteChannelLevelSdrf(ScratchDataDirectory),
+                OutputFolder = ScratchDataDirectory
+            };
+
+            Assert.DoesNotThrow(() => settings.ValidateCommandLineSettings());
+        }
+
         #endregion
     }
 }

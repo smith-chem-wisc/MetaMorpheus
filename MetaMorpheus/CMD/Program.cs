@@ -489,13 +489,6 @@ namespace MetaMorpheusCommandLine
         }
 
         /// <summary>
-        /// Carries out --acceptThermoLicence: prints the licence, records the agreement, and reports
-        /// whether this was the flag on its own, in which case the caller has no run to continue into.
-        /// Does nothing and reports false when the flag was not given.
-        /// The data directory and the output writer are parameters rather than reached for through
-        /// Console and GlobalVariables so that this can be exercised directly, Run() being private.
-        /// </summary>
-        /// <summary>
         /// Prints what one SDRF document says about quantification, and runs nothing else.
         ///
         /// The failure this exists to catch is silent. A file whose comment[label] names the reagent kit
@@ -539,6 +532,13 @@ namespace MetaMorpheusCommandLine
             return 0;
         }
 
+        /// <summary>
+        /// Carries out --acceptThermoLicence: prints the licence, records the agreement, and reports
+        /// whether this was the flag on its own, in which case the caller has no run to continue into.
+        /// Does nothing and reports false when the flag was not given.
+        /// The data directory and the output writer are parameters rather than reached for through
+        /// Console and GlobalVariables so that this can be exercised directly, Run() being private.
+        /// </summary>
         public static bool AgreeToThermoLicence(CommandLineSettings settings, string dataDirectory, TextWriter output)
         {
             if (!settings.AcceptThermoLicence)
