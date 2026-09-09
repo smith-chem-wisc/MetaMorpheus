@@ -168,9 +168,11 @@ public class DatabaseLoadingEngine(
         if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
         {
             um = null;
+            var headerRegexes = (commonParameters.FastaHeaderParsing ?? new FastaHeaderParsingParameters()).GetFieldRegexes();
             proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, out var dbErrors,
-                ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                ProteinDbLoader.UniprotOrganismRegex, commonParameters.MaxThreadsToUsePerFile, addTruncations: commonParameters.AddTruncations);
+                headerRegexes.Accession, headerRegexes.FullName, headerRegexes.Name, headerRegexes.GeneName,
+                headerRegexes.Organism, commonParameters.MaxThreadsToUsePerFile, addTruncations: commonParameters.AddTruncations,
+                organismIdRegex: headerRegexes.OrganismId);
         }
         else
         {

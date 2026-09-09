@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -46,6 +46,20 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
+        /// <summary>
+        /// Nett hands a bare ArgumentException to the caller on an unrecognized enum name, which does
+        /// not say what the legal values are.
+        /// </summary>
+        private static FastaHeaderFormat ParseFastaHeaderFormat(string value)
+        {
+            if (Enum.TryParse<FastaHeaderFormat>(value, true, out var parsed))
+                return parsed;
+
+            throw new MetaMorpheusException(
+                $"Unrecognized FASTA header format '{value}'. Valid values are: "
+                + string.Join(", ", Enum.GetNames<FastaHeaderFormat>()) + ".");
+        }
+
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
@@ -175,6 +189,12 @@ namespace TaskLayer
                 .CreateInstance(() => RnaFragmentationParams.Default))
             .ConfigureType<FragmentationParams>(type => type
                 .CreateInstance(() => new()))
+            .ConfigureType<FastaHeaderParsingParameters>(type => type
+                .CreateInstance(() => new FastaHeaderParsingParameters()))
+            .ConfigureType<FastaHeaderFormat>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.ToString())
+                    .FromToml(tmlString => ParseFastaHeaderFormat(tmlString.Value))))
         );
        
 
@@ -621,7 +641,8 @@ namespace TaskLayer
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
-                rtPredictorName: commonParams.RTPredictorName);
+                rtPredictorName: commonParams.RTPredictorName,
+                fastaHeaderParsing: commonParams.FastaHeaderParsing);
 
             return returnParams;
         }

@@ -368,6 +368,8 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
+                <local:FastaHeaderParsingControl x:Name="FastaHeaderParsingSettings" DockPanel.Dock="Top" />
+
                 <GroupBox Header="Output Options" DockPanel.Dock="Top">
                     <Expander x:Name="OutputExpander">
                         <StackPanel Orientation="Vertical">

@@ -1,0 +1,115 @@
+<UserControl x:Class="MetaMorpheusGUI.FastaHeaderParsingControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:MetaMorpheusGUI"
+             mc:Ignorable="d"
+             d:DesignHeight="260" d:DesignWidth="650">
+
+    <GroupBox Header="FASTA Header Parsing" DockPanel.Dock="Top">
+        <StackPanel Margin="5">
+            <StackPanel Orientation="Horizontal" Margin="5 2 0 2">
+                <Label Content="Header format:" Width="120" />
+                <ComboBox x:Name="FastaHeaderFormatComboBox" Width="130" HorizontalAlignment="Left"
+                          SelectionChanged="FastaHeaderFormatComboBox_SelectionChanged"
+                          ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                    <ComboBox.ToolTip>
+                        <TextBlock>
+                            How each FASTA defline is split into accession, name, gene and organism.
+                            <LineBreak />
+                            UniProt is the default and is what every previous version used.
+                            <LineBreak />
+                            Choose Custom to enter your own regular expressions below.
+                            <LineBreak />
+                            Auto lets the library detect UniProt, Ensembl or Gencode per file. It also
+                            changes Name to the short form (ADH1_YEAST rather than the description) and
+                            fills in the NCBI taxonomy id, so its output differs from UniProt.
+                            <LineBreak />
+                            Applies to .fasta databases only; a UniProt XML carries its own fields.
+                        </TextBlock>
+                    </ComboBox.ToolTip>
+                </ComboBox>
+                <TextBlock x:Name="PresetSummaryTextBlock" Margin="15 4 0 0" Foreground="Gray"
+                           FontStyle="Italic" FontSize="10" TextWrapping="Wrap" MaxWidth="380" />
+            </StackPanel>
+
+            <TextBlock Margin="5 6 5 2" TextWrapping="Wrap" Foreground="Gray" FontStyle="Italic" FontSize="10">
+                The first capture group of each expression becomes that field. Leave a box empty to skip
+                the field. An accession expression is required. A malformed expression is reported as a
+                warning before the run starts, not as a crash.
+            </TextBlock>
+
+            <Grid x:Name="CustomRegexGrid" Margin="5 2 5 2" IsEnabled="False">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="Accession:" Width="120" />
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="CustomAccessionRegexTextBox" Margin="0 2 0 2"
+                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                    <TextBox.ToolTip>
+                        <TextBlock>
+                            The identifier MetaMorpheus joins every output file on. Required.
+                            <LineBreak />
+                            Example, taking the RefSeq accession out of &gt;gi|16128008|ref|NP_414555.1| :
+                            &gt;.*\|(.*)\|
+                            <LineBreak />
+                            An accession containing a | breaks the multi-value columns in .psmtsv, so
+                            capture a field rather than a span of fields.
+                        </TextBlock>
+                    </TextBox.ToolTip>
+                </TextBox>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Full name:" Width="120" />
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="CustomFullNameRegexTextBox" Margin="0 2 0 2"
+                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                    <TextBox.ToolTip>
+                        <TextBlock>The descriptive name, written as the protein full name.</TextBlock>
+                    </TextBox.ToolTip>
+                </TextBox>
+
+                <Label Grid.Row="2" Grid.Column="0" Content="Name:" Width="120" />
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="CustomNameRegexTextBox" Margin="0 2 0 2"
+                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                    <TextBox.ToolTip>
+                        <TextBlock>The short entry name, e.g. AATM_RABIT in a UniProt defline.</TextBlock>
+                    </TextBox.ToolTip>
+                </TextBox>
+
+                <Label Grid.Row="3" Grid.Column="0" Content="Gene name:" Width="120" />
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="CustomGeneNameRegexTextBox" Margin="0 2 0 2"
+                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                    <TextBox.ToolTip>
+                        <TextBlock>The gene, written to the Gene Name column.</TextBlock>
+                    </TextBox.ToolTip>
+                </TextBox>
+
+                <Label Grid.Row="4" Grid.Column="0" Content="Organism:" Width="120" />
+                <TextBox Grid.Row="4" Grid.Column="1" x:Name="CustomOrganismRegexTextBox" Margin="0 2 0 2"
+                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                    <TextBox.ToolTip>
+                        <TextBlock>The species, written to the Organism column.</TextBlock>
+                    </TextBox.ToolTip>
+                </TextBox>
+
+                <Label Grid.Row="5" Grid.Column="0" Content="Organism ID:" Width="120" />
+                <TextBox Grid.Row="5" Grid.Column="1" x:Name="CustomOrganismIdRegexTextBox" Margin="0 2 0 2"
+                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                    <TextBox.ToolTip>
+                        <TextBlock>The NCBI taxonomy id, e.g. the 9986 in OX=9986.</TextBlock>
+                    </TextBox.ToolTip>
+                </TextBox>
+            </Grid>
+        </StackPanel>
+    </GroupBox>
+</UserControl>
