@@ -94,11 +94,13 @@ public class DatabaseLoadingEngine(
             {
                 dbBioPolymers = LoadOligoDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyOligoEntriesForThisDb, commonParameters, db.DecoyIdentifier);
                 emptyEntries += emptyOligoEntriesForThisDb;
+                AddUnknownModificationWarning(db, unknownModifications, errors);
             }
             else
             {
                 dbBioPolymers = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters, db.DecoyIdentifier);
                 emptyEntries += emptyProteinEntriesForThisDb;
+                AddUnknownModificationWarning(db, unknownModifications, errors);
             }
 
             foreach (var bioPol in dbBioPolymers)
@@ -124,6 +126,32 @@ public class DatabaseLoadingEngine(
         }
 
         return bioPolymerList;
+    }
+
+    /// <summary>
+    /// Reports modifications that a database annotated but that could not be matched to a known modification.
+    /// mzLib collects these while parsing and otherwise skips them silently, so without this the annotation is
+    /// dropped with no indication to the user (mzLib #417).
+    /// </summary>
+    /// <param name="db">The database the annotations came from; only its file name is reported.</param>
+    /// <param name="unknownModifications">Unmatched modifications keyed by the identifier the database used. Null for FASTA.</param>
+    /// <param name="errors">Warning list surfaced to the user by the caller.</param>
+    private static void AddUnknownModificationWarning(DbForTask db, Dictionary<string, Modification> unknownModifications, List<string> errors)
+    {
+        if (unknownModifications == null || unknownModifications.Count == 0)
+            return;
+
+        // Aggregated per database rather than per entry: mzLib keys the dictionary by modification id, so the
+        // annotated accessions are not recoverable here, and a database using an unknown id throughout would
+        // otherwise warn once per occurrence.
+        const int maxToName = 5;
+        var ids = unknownModifications.Keys.OrderBy(p => p, StringComparer.Ordinal).ToList();
+        string named = string.Join(", ", ids.Take(maxToName).Select(p => "'" + p + "'"));
+        if (ids.Count > maxToName)
+            named += $", and {ids.Count - maxToName} more";
+
+        errors.Add($"Warning: {ids.Count} annotated modification(s) in {Path.GetFileName(db.FilePath)} could not be "
+                   + $"matched to a known modification and were ignored: {named}");
     }
 
     public static IEnumerable<RNA> LoadOligoDb(string fileName, bool generateTargets, DecoyType decoyType,
