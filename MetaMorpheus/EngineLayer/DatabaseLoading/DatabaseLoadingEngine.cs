@@ -148,7 +148,20 @@ public class DatabaseLoadingEngine(
             GlobalVariables.AddMods(ProteinDbLoader.GetPtmListFromProteinXml(fileName), true, true);
             // TODO: Add in variant params when fixed in MzLib. 
             List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-            rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile, decoyIdentifier: decoyIdentifier);
+            // Named, not positional. LoadRnaXML orders these as (maxHeterozygousVariants, minAlleleDepth,
+            // maxThreads); LoadProteinXML below orders them as (maxThreads, maxHeterozygousVariants,
+            // minAlleleDepth). Passing the thread count positionally here bound it to
+            // maxHeterozygousVariants, so decoy generation ran at maxThreads = 1 and the variant
+            // combinatorics limit was whatever thread count the run happened to use. Every parameter
+            // involved is a defaulted int, so nothing warned. See #2762.
+            //
+            // maxHeterozygousVariants: 0 matches the protein path below rather than taking mzLib's
+            // default of 4 -- the value has to become something, and 0 is the choice already made here.
+            rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant,
+                GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods,
+                maxHeterozygousVariants: 0,
+                maxThreads: commonParameters.MaxThreadsToUsePerFile,
+                decoyIdentifier: decoyIdentifier);
         }
 
         emptyEntriesCount = rnaList.Count(p => p.BaseSequence.Length == 0);
