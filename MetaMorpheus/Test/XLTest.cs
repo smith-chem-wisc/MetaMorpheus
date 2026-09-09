@@ -53,6 +53,48 @@ namespace Test
             Assert.That(crosslinkerString == "testCrosslinker\tK\tK\tTrue\tCID|HCD|\t100\t25\t60\t0\t0\t50");
         }
 
+        /// <summary>
+        /// A custom crosslinker has to survive the save-and-reload the GUI puts it through:
+        /// CustomCrosslinkerWindow writes ToString(true), which spells the bool "True"/"False", while the
+        /// shipped Crosslinkers.tsv spells it "T"/"F". The reader has to read both, or an uncleavable
+        /// custom crosslinker comes back cleavable on the next launch.
+        /// </summary>
+        [Test]
+        public static void UncleavableCrosslinkerStaysUncleavableThroughAFileRoundTrip()
+        {
+            var asEntered = new Crosslinker("K", "K", "MyNonCleavable", false, "", 138.06808, 0, 0,
+                138.06808, 156.0786, 155.0946, 259.142);
+
+            string customCrosslinkerFile = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "XlTestData", "RoundTripCustomCrosslinkers.tsv");
+            Directory.CreateDirectory(Path.GetDirectoryName(customCrosslinkerFile));
+            File.WriteAllLines(customCrosslinkerFile, new[]
+            {
+                "Name\tCrosslinkAminoAcid\tCrosslinkerAminoAcid2\tCleavable\tDissociationType\tCrosslinkerTotalMass\tCrosslinkerShortMass\tCrosslinkerLongMass\tQuenchMassH2O\tQuenchMassNH2\tQuenchMassTris",
+                asEntered.ToString(true)
+            });
+
+            var reloaded = Crosslinker.LoadCrosslinkers(customCrosslinkerFile).Single();
+            Assert.That(reloaded.Cleavable, Is.False);
+            Assert.That(reloaded.CleaveDissociationTypes, Is.Empty);
+
+            // the bool alone gates signature-ion generation, so getting it wrong adds a theoretical M ion
+            // at the intact crosslinked precursor mass
+            var alphaPeptide = new Protein("PEPTIDEK", "").Digest(new DigestionParams(),
+                new List<Modification>(), new List<Modification>()).First();
+            var fragments = CrosslinkedPeptide.XlGetTheoreticalFragments(DissociationType.HCD, reloaded,
+                new List<int> { 7 }, 1000, alphaPeptide).Single().Item2;
+            Assert.That(fragments.Where(v => v.ProductType == ProductType.M), Is.Empty);
+
+            // the shipped T/F spelling still reads, in both directions
+            Assert.That(Crosslinker.ParseCrosslinkerFromString(
+                "shipped\tK\tK\tF\t\t138.06808\t0\t0\t156.0786\t155.0946\t259.142").Cleavable, Is.False);
+            Assert.That(Crosslinker.ParseCrosslinkerFromString(
+                "shipped\tK\tK\tT\tCID|HCD\t158.0038\t54.01056\t85.982635\t176.0143\t175.0303\t279.0777").Cleavable, Is.True);
+
+            File.Delete(customCrosslinkerFile);
+        }
+
         [Test]
         public static void XlTestXlPosCal()
         {
