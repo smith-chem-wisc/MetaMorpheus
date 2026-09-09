@@ -1071,6 +1071,41 @@ namespace Test
             Assert.That(thrown.Message, Does.Contain("--auditData is only meaningful with --auditSdrf"));
         }
 
+        // -g and --test return from validation before any later rule runs, so these pin that the
+        // refusal above is checked FIRST. Without that it held for the bare flag and not beside
+        // either of them: --auditData <folder> -g -o F wrote six tomls and --auditData <folder>
+        // --test -o F ran the vignette, both at exit 0 with the flag dropped and nothing said --
+        // which is the failure the bare-flag refusal exists to prevent, reached through the flags
+        // that were supposed to make it impossible. The accepting direction stays pinned by
+        // TestAuditSdrfCountsDataFilesFoundAndMissing, which validates both flags together.
+        [Test]
+        public static void TestAuditDataWithoutAuditSdrfIsRefusedAlongsideGeneratingDefaultTomls()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditDataDirectory = ScratchDataDirectory,
+                GenerateDefaultTomls = true,
+                OutputFolder = ScratchDataDirectory
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("--auditData is only meaningful with --auditSdrf"));
+        }
+
+        [Test]
+        public static void TestAuditDataWithoutAuditSdrfIsRefusedAlongsideTheMicroVignette()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditDataDirectory = ScratchDataDirectory,
+                RunMicroVignette = true,
+                OutputFolder = ScratchDataDirectory
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("--auditData is only meaningful with --auditSdrf"));
+        }
+
         // The audit runs on its own. Without this, validation would demand a task, a database and a
         // spectra file for a command that reads one text file and prints a report.
         [Test]

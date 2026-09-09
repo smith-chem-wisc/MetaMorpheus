@@ -82,6 +82,16 @@ namespace MetaMorpheusCommandLine
                 }
             }
 
+            // --auditData without --auditSdrf says to check data files against nothing. Rejected rather
+            // than ignored, because silently dropping it looks identical to auditing with it. Checked
+            // here, above the early return below, so that it holds for -g and --test too: those return
+            // before any later rule runs, so a guard placed after them refuses the bare flag and lets
+            // the same flag through unmentioned beside them.
+            if (AuditDataDirectory != null && AuditSdrf == null)
+            {
+                throw new MetaMorpheusException("--auditData is only meaningful with --auditSdrf.");
+            }
+
             if ((GenerateDefaultTomls || RunMicroVignette) && OutputFolder == null)
             {
                 throw new MetaMorpheusException("An output path must be specified with the -o parameter.");
@@ -109,13 +119,6 @@ namespace MetaMorpheusCommandLine
                 }
 
                 return;
-            }
-
-            // --auditData without --auditSdrf says to check data files against nothing. Rejected rather
-            // than ignored, because silently dropping it looks identical to auditing with it.
-            if (AuditDataDirectory != null)
-            {
-                throw new MetaMorpheusException("--auditData is only meaningful with --auditSdrf.");
             }
 
             // --acceptThermoLicence on its own is a setup step - record the agreement and stop - so it
