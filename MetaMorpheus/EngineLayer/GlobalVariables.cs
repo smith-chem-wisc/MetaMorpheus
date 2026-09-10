@@ -37,6 +37,25 @@ namespace EngineLayer
         private static List<Crosslinker> _KnownCrosslinkers;
         public static List<Modification> ProteaseMods = new List<Modification>();
 
+        /// <summary>
+        /// Files in the Mods folder that LoadModifications must skip. glyco.txt is turned into Glycan
+        /// objects by LoadTxtGlycan; RnaCustomModifications.txt is read into the separate RNA collection
+        /// by LoadRnaModifications; and RnaMods.txt is not read from disk at all -- the mzLib package
+        /// ships it into this folder as part of one opt-in group, but LoadRnaModifications takes the RNA
+        /// mods from mzLib's embedded copy instead, so reading the file here would double them into the
+        /// protein collection.
+        /// Matched by whole file name rather than by substring. The folder's contents now arrive from the
+        /// mzLib package rather than from this repository, so a file added upstream -- or a user's own
+        /// "MyGlycoScratch.txt" dropped in beside them -- must not be skipped silently on the strength of
+        /// containing "glyco" or "rna" somewhere in its name.
+        /// </summary>
+        private static readonly HashSet<string> ModFilesLoadedElsewhere = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "glyco.txt",
+            "RnaMods.txt",
+            "RnaCustomModifications.txt",
+        };
+
 
         //Characters that aren't amino acids, but are reserved for special uses (motifs, delimiters, mods, etc)
         private static char[] _InvalidAminoAcids;
@@ -416,15 +435,17 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
-                if (modFile.Contains("glyco.txt"))
+                if (ModFilesLoadedElsewhere.Contains(Path.GetFileName(modFile)))
                 {
-                    // Glycan modifications are handled separately in LoadGlycans()
                     continue;
                 }
-                if (modFile.Contains("Rna"))
-                    continue;
                 AddMods(ModificationLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
+
+            // Cleavage modifications live with proteases.tsv in mzLib; this is the only
+            // place they reach AllModsKnown.
+            ProteaseMods = ProteaseDictionary.LoadEmbeddedProteaseMods();
+            AddMods(ProteaseMods, false);
 
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
             AddMods(UnimodDeserialized.OfType<Modification>(), false);
@@ -445,17 +466,12 @@ namespace EngineLayer
             _AllRnaModTypesKnown = new HashSet<string>();
             AllRnaModsKnownDictionary = new Dictionary<string, Modification>();
 
-            // RNA Mods is an embedded resources: It gets packed into the DLL so we do not need to worry about the installer. 
-            var assembly = typeof(GlobalVariables).Assembly;
-            var resourceName = "EngineLayer.Mods.RnaMods.txt";
-
-            using (var stream = assembly.GetManifestResourceStream(resourceName))
-            using (var reader = new StreamReader(stream))
-            {
-                string fileContent = reader.ReadToEnd();
-                var mods = ModificationLoader.ReadModsFromString(fileContent, out var errors);
-                AddMods(mods, false, true);
-            }
+            // The RNA modifications come from mzLib's embedded copy, the same one this branch already
+            // takes the protease cleavage mods from. That keeps a single source of truth with
+            // Omics.dll while preserving the property #2752 established when it made these an
+            // embedded resource here: they are carried in an assembly, so no installer, repair or
+            // upgrade can leave them missing. A file in Mods\ could.
+            AddMods(Omics.Modifications.Mods.MetaMorpheusRnaModifications, false, true);
 
             var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
             if (File.Exists(customModsPath))
@@ -597,8 +613,12 @@ namespace EngineLayer
             {
                 try
                 {
-                    var mods = ProteaseDictionary.LoadEmbeddedProteaseMods();
-                    var result = ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, mods);
+                    // Result deliberately kept rather than discarded, to match the rnase call below.
+                    // mzLib reports a custom entry that collides with an embedded one through
+                    // CustomDigestionAgentLoadResult.Skipped instead of throwing, precisely so a caller
+                    // can warn the user; neither call site consumes it yet. Doing so is the subject of a
+                    // separate PR covering every custom file, not this one.
+                    var result = ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, ProteaseMods);
                 }
                 catch (Exception e)
                 {
