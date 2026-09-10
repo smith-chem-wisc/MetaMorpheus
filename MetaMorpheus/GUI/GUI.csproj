@@ -17,6 +17,8 @@
     <DebugSymbols>true</DebugSymbols>
     <ApplicationIcon>Icons\MMnice.ico</ApplicationIcon>
 	<EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- Indexing allocates tens of millions of short-lived objects; workstation GC cannot keep up. -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
 
 	<PropertyGroup>

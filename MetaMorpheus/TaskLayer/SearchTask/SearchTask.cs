@@ -268,6 +268,7 @@ namespace TaskLayer
             int completedFiles = 0;
             object indexLock = new object();
             object psmLock = new object();
+            int? decidedPartitions = null;
 
             Status("Searching files...", new List<string> { taskId });
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
@@ -378,19 +379,23 @@ namespace TaskLayer
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
-                    // Assume modern search is for proteins. 
+                    // Assume modern search is for proteins.
                     var proteinList = bioPolymerList.Cast<Protein>().ToList();
-                    for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
+                    // scoped to indexing/searching only, so the settings the task reports stay as configured
+                    CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, combinedParams, fixedModifications,
+                        variableModifications, SearchParameters.SilacLabels, SearchParameters.StartTurnoverLabel,
+                        SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref decidedPartitions);
+                    for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                     {
                         List<PeptideWithSetModifications> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions,
-                            ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / indexParams.TotalPartitions,
+                            ((currentPartition + 1) * proteinList.Count / indexParams.TotalPartitions) - (currentPartition * proteinList.Count / indexParams.TotalPartitions));
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                            SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, combinedParams, FileSpecificParameters,
+                            SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
                             SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
-                        List<int>[] fragmentIndex = null;
+                        FragmentIndex fragmentIndex = null;
                         List<int>[] precursorIndex = null;
 
                         lock (indexLock)
@@ -401,9 +406,9 @@ namespace TaskLayer
                         Status("Searching files...", taskId);
 
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
-                            combinedParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+                            indexParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
-                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
+                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
                         if (GlobalVariables.StopLoops) { break; }
                     }
                 }
@@ -453,22 +458,27 @@ namespace TaskLayer
                     foreach (CommonParameters paramToUse in paramsToUse)
                     {
                         var proteinList = bioPolymerList.Cast<Protein>().ToList();
+                        // scoped to indexing/searching only; paramToUse still carries the configured terminus
+                        // to the spectral-library step below
+                        CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, paramToUse, fixedModifications,
+                            variableModifications, SearchParameters.SilacLabels, SearchParameters.StartTurnoverLabel,
+                            SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref decidedPartitions);
 
                         //foreach database partition
-                        for (int currentPartition = 0; currentPartition < paramToUse.TotalPartitions; currentPartition++)
+                        for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                         {
                             List<PeptideWithSetModifications> peptideIndex = null;
 
-                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions,
-                                ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions))
+                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / indexParams.TotalPartitions,
+                                ((currentPartition + 1) * proteinList.Count / indexParams.TotalPartitions) - (currentPartition * proteinList.Count / indexParams.TotalPartitions))
                                 .ToList(); // assume that only proteins are used in non-specific search
 
-                            List<int>[] fragmentIndex = null;
+                            FragmentIndex fragmentIndex = null;
                             List<int>[] precursorIndex = null;
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
                             var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                                SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, paramToUse, FileSpecificParameters,
+                                SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
                                 SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
                             lock (indexLock)
                             {
@@ -478,10 +488,10 @@ namespace TaskLayer
                             Status("Searching files...", taskId);
 
                             new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, coisolationIndex, peptideIndex, fragmentIndex,
-                                precursorIndex, currentPartition, paramToUse, this.FileSpecificParameters, variableModifications, massDiffAcceptor,
+                                precursorIndex, currentPartition, indexParams, this.FileSpecificParameters, variableModifications, massDiffAcceptor,
                                 SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
-                            ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
+                            ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
                             if (GlobalVariables.StopLoops) { break; }
                         }
 

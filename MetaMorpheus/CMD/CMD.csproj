@@ -8,6 +8,8 @@
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <ApplicationIcon></ApplicationIcon>
+    <!-- Indexing allocates tens of millions of short-lived objects; workstation GC cannot keep up. -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
 
   <!-- PlatformTarget is deliberately left unset so the assembly is architecture-neutral (MSIL) and can be
