@@ -35,15 +35,15 @@ public class TestCalibration
             dissociationType: DissociationType.CID,
             deconvolutionMaxAssumedChargeState: -20,
             deconvolutionIntensityRatio: 3,
-            deconvolutionMassTolerance: new PpmTolerance(20),
-            precursorMassTolerance: new PpmTolerance(10),
+            deconvolutionMassTolerance: new PpmTolerance(10),
+            precursorMassTolerance: new PpmTolerance(5),
             productMassTolerance: new PpmTolerance(5),
             scoreCutoff: 5,
             totalPartitions: 1,
             maxThreadsToUsePerFile: 1,
             doPrecursorDeconvolution: true,
             useProvidedPrecursorInfo: false,
-            digestionParams: new RnaDigestionParams()
+            digestionParams: new RnaDigestionParams("top-down")
         );
     }
 
