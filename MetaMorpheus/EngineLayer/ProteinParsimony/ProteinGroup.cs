@@ -25,13 +25,13 @@ namespace EngineLayer
     /// the base class names.
     ///
     /// Score() is handled entirely by the base class.
-    /// CalculateSequenceCoverage() and GetTabSeparatedHeader() are hidden (via new) because
-    /// CalculateSequenceCoverage() accesses MetaMorpheus-specific SpectralMatch members
-    /// (GetAminoAcidCoverage, BestMatchingBioPolymersWithSetMods, FragmentCoveragePositionInPeptide)
-    /// that are not on the ISpectralMatch interface, and GetTabSeparatedHeader() uses
-    /// MetaMorpheus-specific column names and includes BestPeptidePEP.
-    /// Because ToString() overrides but GetTabSeparatedHeader() only hides, calling them through a
-    /// BioPolymerGroup reference pairs base column names with MetaMorpheus rows. Call both on ProteinGroup.
+    /// CalculateSequenceCoverage() is hidden (via new) because it accesses MetaMorpheus-specific
+    /// SpectralMatch members (GetAminoAcidCoverage, BestMatchingBioPolymersWithSetMods,
+    /// FragmentCoveragePositionInPeptide) that are not on the ISpectralMatch interface.
+    /// GetTabSeparatedHeader() OVERRIDES rather than hides. It still writes MetaMorpheus column names
+    /// and BestPeptidePEP, but because ToString() also overrides, the pair now dispatches together:
+    /// a BioPolymerGroup reference gets MetaMorpheus columns above MetaMorpheus rows instead of base
+    /// column names above MetaMorpheus rows.
     /// </summary>
     public class ProteinGroup : BioPolymerGroup
     {
@@ -152,6 +152,13 @@ namespace EngineLayer
         /// </summary>
         public HashSet<string> SearchedSpectraFilePaths { get; set; }
 
+        // The Intensity_ gate is BioPolymerGroup.HasAssignedSampleIntensities, inherited rather than
+        // restated. This class carried a private copy of the same expression while the base member was
+        // private; 1.0.589 exposes it as protected, so the copy is gone. Its reasoning -- why the gate
+        // is a property of the whole group and not the per-group SampleGroupResult.HasIntensityData,
+        // and why both SamplesForQuantification and IntensitiesBySample are required -- lives on the
+        // base member, which is now the only place it is written down.
+
         // Fails open: an unset path list or a group with no file info means we cannot tell, and dropping
         // columns on a guess is worse than keeping them.
         private bool WasSearched(SampleGroupResult group) =>
@@ -233,7 +240,7 @@ namespace EngineLayer
         /// MetaMorpheus TSV header with "Protein" column names and BestPeptidePEP.
         /// Quantification/occupancy columns use the base BioPolymerGroup SampleGroupResult format.
         /// </summary>
-        public new string GetTabSeparatedHeader()
+        public override string GetTabSeparatedHeader()
         {
             var sb = new StringBuilder();
             sb.Append("Protein Accession" + '\t');
@@ -261,7 +268,7 @@ namespace EngineLayer
 
                     if (searched)
                         sb.Append($"SpectralCount_{group.Label}\t");
-                    if (group.HasIntensityData)
+                    if (HasAssignedSampleIntensities)
                         sb.Append($"Intensity_{group.Label}\t");
                     if (searched)
                         sb.Append($"CountOccupancy_{group.Label}\t");
@@ -393,9 +400,11 @@ namespace EngineLayer
                         sb.Append("\t");
                     }
 
-                    if (group.HasIntensityData)
+                    if (HasAssignedSampleIntensities)
                     {
-                        if (group.Intensity > 0)
+                        // Empty rather than 0 when this group has nothing: the cell must not
+                        // assert a measurement that was not made.
+                        if (group.HasIntensityData && group.Intensity > 0)
                             sb.Append(group.Intensity);
                         sb.Append("\t");
                     }
