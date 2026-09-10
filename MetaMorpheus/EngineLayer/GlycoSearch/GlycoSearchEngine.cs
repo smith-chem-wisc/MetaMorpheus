@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EngineLayer.Util;
 using MassSpectrometry;
 using EngineLayer.SpectrumMatch;
 
@@ -120,11 +121,12 @@ namespace EngineLayer.GlycoSearch
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray(); // We can do the parallel search on different threads
             Parallel.ForEach(threads, (scanIndex) =>
             {
-                byte[] scoringTable = new byte[PeptideIndex.Count];
+                var scoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable);
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
 
-                byte[] secondScoringTable = new byte[PeptideIndex.Count]; // We didn't use that right now.
+                var secondScoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable); // We didn't use that right now.
                 List<int> childIdsOfPeptidesPossiblyObserved = new List<int>();
+                var scoreSorter = new DescendingScoreSorter();
 
                 List<int> idsOfPeptidesTopN = new List<int>();
                 byte scoreAtTopN = 0;
@@ -136,7 +138,7 @@ namespace EngineLayer.GlycoSearch
                     if (GlobalVariables.StopLoops) { return; }
 
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
-                    Array.Clear(scoringTable, 0, scoringTable.Length);
+                    scoringTable.BeginScan();
                     idsOfPeptidesPossiblyObserved.Clear();
                     idsOfPeptidesTopN.Clear();
 
@@ -183,7 +185,7 @@ namespace EngineLayer.GlycoSearch
                     {
                         scoreAtTopN = 0;
                         peptideCount = 0;
-                        foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p])) //from the higest score to the lowest score
+                        foreach (int id in scoreSorter.Sort(idsOfPeptidesPossiblyObserved, scoringTable)) //from the higest score to the lowest score
                         {
                             if (scoringTable[id] < (int)byteScoreCutoff) //if the score is lower than the cutoff, we can skip this peptide.
                             {
