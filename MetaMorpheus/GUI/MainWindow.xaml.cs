@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.Util;
 using IO.ThermoRawFileReader;
 using Microsoft.Win32;
@@ -1360,6 +1360,12 @@ namespace MetaMorpheusGUI
             dialog.ShowDialog();
         }
 
+        private void AddCustomGlycan_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new CustomGlycanWindow();
+            dialog.ShowDialog();
+        }
+
         private void AddCustomAminoAcid_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new CustomAminoAcidWindow();
@@ -1645,6 +1651,13 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs(error, null));
             }
             GlobalVariables.ErrorsReadingMods.Clear();
+
+            // and anything else startup noticed, such as a custom protease that collided with a built-in
+            foreach (var warning in GlobalVariables.StartupWarnings)
+            {
+                NotificationHandler(null, new StringEventArgs(warning, null));
+            }
+            GlobalVariables.StartupWarnings.Clear();
         }
 
         private void UpdateOutputFolderTextbox()

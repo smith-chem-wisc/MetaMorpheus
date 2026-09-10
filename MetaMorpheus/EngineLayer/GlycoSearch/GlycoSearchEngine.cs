@@ -62,24 +62,23 @@ namespace EngineLayer.GlycoSearch
 
             if (glycoSearchType == GlycoSearchType.OGlycanSearch) //if we do the O-glycan search, we need to load the O-glycan database and generate the glycoBox.
             {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
+                GlycanBox.GlobalOGlycans = LoadGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, _oglycanDatabase, "O-glycan", true);
                 GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray(); //generate glycan box for O-glycan search
                 GlycanBoxes = GlycanBox.OGlycanBoxes;
                 GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
             }
             else if (glycoSearchType == GlycoSearchType.NGlycanSearch) //because the there is only one glycan in N-glycanpeptide, so we don't need to build the n-glycanBox here.
             {
-                NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _nglycanDatabase).First(), true, false).OrderBy(p => p.Mass).ToArray();
+                NGlycans = LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, _nglycanDatabase, "N-glycan", false).OrderBy(p => p.Mass).ToArray();
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
             else if (glycoSearchType == GlycoSearchType.N_O_GlycanSearch) //search both N-glycan and O-glycan is still not tested and build completely yet.
             {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
+                GlycanBox.GlobalOGlycans = LoadGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, _oglycanDatabase, "O-glycan", true);
                 GlycanBox.GlobalNGlycans = new Dictionary<int, Glycan>();
                 // For N-glycan, we use negative index to distinguish with O-glycan.
-                var nGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanDatabasePaths.First(p => System.IO.Path.GetFileName(p) == _nglycanDatabase),
-                        true, false).OrderBy(p => p.Mass);
+                var nGlycans = LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, _nglycanDatabase, "N-glycan", false).OrderBy(p => p.Mass);
                 int indexForNGlycan = -1;
                 foreach (var nGlycan in nGlycans)
                 {
@@ -94,6 +93,46 @@ namespace EngineLayer.GlycoSearch
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
 
+        }
+
+        /// <summary>
+        /// Resolves a glycan database by file name and loads it, failing with something the user can act on.
+        /// </summary>
+        /// <remarks>
+        /// Both failures this replaces used to surface as <c>InvalidOperationException: Sequence contains no
+        /// elements</c>, which names neither the database nor the problem:
+        /// <list type="bullet">
+        ///   <item><description>
+        ///     a selected file that is no longer in the folder threw from the <c>.First()</c> on the path
+        ///     lookup, here in the constructor;
+        ///   </description></item>
+        ///   <item><description>
+        ///     a database holding no glycans built an EMPTY box array without complaint, and then threw much
+        ///     later from <c>GlycanBoxes.First().Mass</c> inside the parallel search loop -- or, if no scan
+        ///     reached that branch, returned zero results and looked like a search that simply found nothing.
+        ///   </description></item>
+        /// </list>
+        /// An empty database is now rejected up front, which matters more since a user can be handed one: a
+        /// freshly seeded custom database is all banner and no glycans until they add some.
+        /// </remarks>
+        private static Glycan[] LoadGlycanDatabase(List<string> databasePaths, string databaseFileName, string kind, bool isOGlycan)
+        {
+            string path = databasePaths.FirstOrDefault(p => System.IO.Path.GetFileName(p) == databaseFileName);
+            if (path == null)
+            {
+                throw new MetaMorpheusException(
+                    $"The {kind} database '{databaseFileName}' was not found. Available: {string.Join(", ", databasePaths.Select(System.IO.Path.GetFileName))}.");
+            }
+
+            Glycan[] glycans = GlycanDatabase.LoadGlycan(path, true, isOGlycan).ToArray();
+            if (glycans.Length == 0)
+            {
+                throw new MetaMorpheusException(
+                    $"The {kind} database '{databaseFileName}' contains no glycans, so there is nothing to search for. " +
+                    $"Add at least one glycan to it, or choose a different {kind} database.");
+            }
+
+            return glycans;
         }
 
         private Glycan[] NGlycans { get; }
