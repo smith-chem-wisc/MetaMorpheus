@@ -59,7 +59,10 @@
 #                          above 2% of the HexNAc 138.055 diagnostic ion -- the
 #                          same relative-intensity test the built-in oxonium
 #                          rules use -- so a lone noise peak at the ion's m/z
-#                          cannot wipe out a scan.
+#                          cannot wipe out a scan. On a spectrum with no
+#                          138.055 at all there is nothing to measure the
+#                          ion against, so the strict rule stands down for
+#                          that spectrum and rejects nothing.
 #
 #                          An ion may NOT duplicate a built-in oxonium ion, nor
 #                          one already claimed by another custom monosaccharide
