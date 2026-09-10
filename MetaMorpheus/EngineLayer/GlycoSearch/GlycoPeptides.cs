@@ -493,8 +493,10 @@ namespace EngineLayer.GlycoSearch
             // candidate -- or its monosaccharide present while the ion is absent -- rejects the spectrum.
             // "Observed" is the same relative-intensity test the built-in rules use (above the
             // OxoniumRelativeIntensityThreshold fraction of the HexNAc 138.055 ion), not bare presence,
-            // so one noise peak at a custom ion's m/z cannot wipe out a scan. Custom ions that duplicate
-            // a built-in oxonium m/z are rejected at registration in Glycan.RegisterCustomMonosaccharide.
+            // so one noise peak at a custom ion's m/z cannot wipe out a scan. A spectrum with no
+            // 138.055 reference at all has no basis for either verdict and the strict rule is skipped.
+            // Custom ions that duplicate a built-in oxonium m/z are rejected at registration in
+            // Glycan.RegisterCustomMonosaccharide.
             // Gated on HasCustomOxoniumIons so the default (no customs) path is unchanged.
             if (Glycan.HasCustomOxoniumIons)
             {
@@ -514,6 +516,17 @@ namespace EngineLayer.GlycoSearch
                         nameof(oxoniumIonsintensities));
                 }
 
+                // The relative-intensity test divides by the 138.055 HexNAc ion. With no 138.055 in the
+                // spectrum there is no denominator and so no evidence either way, and under the strict
+                // rule "no evidence" must mean "say nothing" rather than "not observed": hasSignal ==
+                // hasMono makes an unobserved ion a rejection for every candidate that carries the
+                // monosaccharide. Skipping the branch is the neutral outcome; returning not-observed
+                // only looks neutral because the built-in rules treat false that way. This is reachable,
+                // not theoretical -- 138.055 is a secondary fragment of 204.087 and is favoured at
+                // higher collision energy, so a low-energy HCD spectrum with a strong 204 and no 138 is
+                // ordinary.
+                bool hexNAcReferenceObserved = HexNAc_diagnostic > 0;
+
                 for (int j = 0; j < customOxoniumIons.Count; j++)
                 {
                     int kindIndex = customOxoniumIons[j].KindIndex;
@@ -523,6 +536,11 @@ namespace EngineLayer.GlycoSearch
                             $"Glycan box Kind[] has {glycanBox.Kind.Length} slots but custom monosaccharide index {kindIndex} was registered. " +
                             $"Kind[] must be sized to {nameof(Glycan)}.{nameof(Glycan.KindCapacity)}.",
                             nameof(glycanBox));
+                    }
+
+                    if (!hexNAcReferenceObserved)
+                    {
+                        continue;
                     }
 
                     bool hasSignal = CheckOxoniumPresence(oxoniumIonsintensities, builtInCount + j, HexNAc_diagnostic);
@@ -551,10 +569,11 @@ namespace EngineLayer.GlycoSearch
         /// of the HexNAc 138.055 diagnostic ion. A bare "intensity &gt; 0" test would let a single noise
         /// peak at the ion's m/z reject every candidate lacking the linked monosaccharide, since
         /// ScanOxoniumIonFilter records an intensity for any envelope inside the product tolerance.
-        /// A missing 138.055 reference is treated as "not observed" rather than dividing by zero. This
-        /// is a deliberate, and the only, divergence from the built-in comparisons, which would see
-        /// +Infinity there and call the ion observed: under strict semantics "observed" is a rejection
-        /// lever, and a spectrum with no HexNAc signal at all should not be able to pull it.
+        /// A missing 138.055 reference is reported as "not observed" rather than dividing by zero, which
+        /// diverges from the built-in comparisons -- they see +Infinity there and call the ion observed.
+        /// Neither verdict is neutral under the strict rule, so callers applying it must not use this
+        /// result when the reference is absent; <see cref="DiagonsticFilter"/> skips the custom branch
+        /// in that case rather than letting either answer become a rejection.
         /// </summary>
         internal static bool CheckOxoniumPresence(double[] oxoniumIonsintensities, int index, double hexNAcReferenceIntensity)
         {

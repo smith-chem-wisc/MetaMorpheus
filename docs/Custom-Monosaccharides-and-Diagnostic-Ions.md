@@ -14,6 +14,7 @@ Both are configured in a single tab-separated file: **`MonosaccharidesCustom.tsv
 ## Contents
 
 - [Quick start](#quick-start)
+- [Two ways in: the GUI dialog or the file](#two-ways-in-the-gui-dialog-or-the-file)
 - [Where the file lives](#where-the-file-lives)
 - [The file format](#the-file-format)
 - [Built-in monosaccharides (do not redefine)](#built-in-monosaccharides-do-not-redefine)
@@ -29,11 +30,11 @@ Both are configured in a single tab-separated file: **`MonosaccharidesCustom.tsv
 
 ## Quick start
 
-1. Open `Glycan_Mods/MonosaccharidesCustom.tsv` in the MetaMorpheus data directory.
-2. Add a row: a unique **name**, a unique **single-character code**, the **residue monoisotopic mass**, optionally a comma-separated list of **diagnostic ion m/z**, and an optional description.
-3. Reference the new monosaccharide (by name or code) in a glycan database file (`.gdb`).
-4. Restart MetaMorpheus, point your Glyco Search task at that database, and run.
-5. To make the diagnostic ions *filter* spectra, leave **`OxoniumIonFilt`** checked in the Glyco Search task.
+1. In the MetaMorpheus GUI, open the **Settings** tab and click **Create new monosaccharide**. Fill in the **Name**, **Single-Char Code**, a **Chemical Formula** *and/or* **Monoisotopic Mass**, and — for this feature — the **Diagnostic Ions (m/z)** box, then **Save Monosaccharide**.
+   (Prefer a text editor? Add the row to `MonosaccharidesCustom.tsv` by hand instead — see [Two ways in](#two-ways-in-the-gui-dialog-or-the-file).)
+2. Reference the new monosaccharide (by name or code) in a glycan database file (`.gdb`).
+3. Restart MetaMorpheus, point your Glyco Search task at that database, and run.
+4. To make the diagnostic ions *filter* spectra, leave **`OxoniumIonFilt`** checked in the Glyco Search task.
 
 ```
 Name	SingleCharCode	MonoisotopicMass	DiagnosticIonMasses	Description
@@ -42,18 +43,48 @@ HexA	U	176.03209	175.02482,157.01425	Hexuronic acid (GlcA, GalA)
 
 ---
 
+## Two ways in: the GUI dialog or the file
+
+Both routes write the same row to the same `MonosaccharidesCustom.tsv`, so pick whichever you prefer. The GUI is the shorter path for one sugar; the file is better for bulk edits, for version-controlling a lab-wide set, or for adding the explanatory comments the parser ignores.
+
+### The GUI dialog
+
+Main window → the **Settings** tab → **Create new monosaccharide**. The dialog has one field per TSV column:
+
+| Dialog field | TSV column | Required | Notes |
+|---|---|:---:|---|
+| **Name** | 1 · `Name` | ✅ | e.g. `HexA`. Used in composition-format glycans. |
+| **Single-Char Code** | 2 · `SingleCharCode` | ✅ | One ASCII letter, e.g. `U`. Used in structure-format glycans. |
+| **Chemical Formula** | — | ⬜ | e.g. `C6H8O6`. Converted to a mass on save; **takes precedence** over the mass box if both are filled. |
+| **Monoisotopic Mass** | 3 · `MonoisotopicMass` | ✅\* | Residue mass in Da, e.g. `176.03209`. \*Required unless you gave a formula. |
+| **Diagnostic Ions (m/z)** | 4 · `DiagnosticIonMasses` | ⬜ | Comma-separated observed m/z, e.g. `175.02482,157.01425`. **These are the custom oxonium ions** this guide is about — see [Part 3](#part-3--diagnostic--oxonium-ions-column-4). |
+| **Description** | 5 · `Description` | ⬜ | Free text; cite a source or note a formula. |
+
+**Save Monosaccharide** validates the entry, registers it for the current session, and appends it to the file. The same validation rules and error messages apply as when the file is loaded at startup (see [Validation & error messages](#validation--error-messages)) — including the rule that a diagnostic ion may not duplicate a built-in oxonium ion.
+
+> If the save reports that the monosaccharide is usable this session but could not be written to file, the file was not writable; fix the permissions and re-enter it, or the sugar will be gone next launch.
+
+### The file
+
+Same folder as everything else in the data directory — see below. **Open mods/data folder** on the same Settings tab takes you straight there.
+
+---
+
 ## Where the file lives
 
-`MonosaccharidesCustom.tsv` sits in the **`Glycan_Mods`** folder of the MetaMorpheus data directory, alongside the `OGlycan` and `NGlycan` database folders.
+`MonosaccharidesCustom.tsv` sits at the **top level of the MetaMorpheus data directory**, alongside `proteases_custom.tsv` and `rnase_custom.tsv`. (It used to live in the `Glycan_Mods` subfolder; it was moved so that an install, repair or upgrade cannot overwrite it. If you have an old copy under `Glycan_Mods`, MetaMorpheus copies it to the new location once, on first launch, and leaves the original alone.)
+
+The quickest way there is the **Settings** tab → **Open mods/data folder**.
 
 | Install type | Typical path |
 |---|---|
-| Windows GUI install | `%LOCALAPPDATA%\MetaMorpheus\Data\Glycan_Mods\MonosaccharidesCustom.tsv` |
-| Built from source | `…\MetaMorpheus\EngineLayer\Glycan_Mods\MonosaccharidesCustom.tsv` |
+| Windows GUI install | `%LOCALAPPDATA%\MetaMorpheus\MonosaccharidesCustom.tsv` |
+| Built from source / portable | `<build output folder>\MonosaccharidesCustom.tsv` |
+| Custom data directory | `<your data dir>\MonosaccharidesCustom.tsv` |
 
-The file ships with documentation and commented-out examples and **no active rows**, so out of the box nothing changes. It is loaded **once at startup**, **before** any glycan database is parsed, and is **shared by both O-glycan and N-glycan searches**.
+If the file is missing, MetaMorpheus writes a fresh documented template there on startup. It ships with documentation and commented-out examples and **no active rows**, so out of the box nothing changes. It is loaded **once at startup**, **before** any glycan database is parsed, and is **shared by both O-glycan and N-glycan searches**.
 
-> **You must restart MetaMorpheus after editing the file** for changes to take effect.
+> **You must restart MetaMorpheus after editing the file by hand** for changes to take effect. A monosaccharide added through the **Create new monosaccharide** dialog is registered immediately and needs no restart.
 
 ---
 
@@ -169,7 +200,7 @@ The Glyco Search task has a checkbox labelled **`OxoniumIonFilt`** (on by defaul
 | No | Yes | ❌ reject |
 | No | No | ✅ keep |
 
-"Observed" means a peak matching the ion's m/z was found within your **product-mass tolerance** **and** rising above **2% of the HexNAc 138.055 diagnostic ion** — the same relative-intensity test the built-in sialic-acid and HexHexNAc rules use. A bare presence test would let a single noise peak at a custom ion's m/z reject every candidate lacking that monosaccharide, for the whole scan. If the 138.055 reference is itself absent, custom ions are treated as not observed. If **any** listed ion disagrees with the candidate's composition, the candidate is rejected.
+"Observed" means a peak matching the ion's m/z was found within your **product-mass tolerance** **and** rising above **2% of the HexNAc 138.055 diagnostic ion** — the same relative-intensity test the built-in sialic-acid and HexHexNAc rules use. A bare presence test would let a single noise peak at a custom ion's m/z reject every candidate lacking that monosaccharide, for the whole scan. If the 138.055 reference is itself absent from the spectrum there is nothing to measure the ion against, so the strict rule stands down for that spectrum and rejects nothing — a low-energy HCD scan with a strong 204.087 and no 138.055 is ordinary, and neither verdict would be honest there. If **any** listed ion disagrees with the candidate's composition, the candidate is rejected.
 
 This runs **after** the built-in oxonium rules (the 138/144 ratio, the 204 requirement, the 274/292 sialic-acid and 366 HexHexNAc rules), which are unchanged.
 
@@ -187,7 +218,7 @@ Oxonium-ion prevalence depends on **collision energy, stepped-HCD settings, inst
 
 **Goal:** search for N-glycans containing hexuronic acid (HexA), and require its diagnostic ions when present.
 
-1. **Define the sugar with diagnostic ions** in `MonosaccharidesCustom.tsv`:
+1. **Define the sugar with diagnostic ions** — **Settings** tab → **Create new monosaccharide**, with `175.02482,157.01425` in **Diagnostic Ions (m/z)**; or add the row to `MonosaccharidesCustom.tsv` by hand:
 
    ```
    Name	SingleCharCode	MonoisotopicMass	DiagnosticIonMasses	Description
@@ -201,7 +232,7 @@ Oxonium-ion prevalence depends on **collision energy, stepped-HCD settings, inst
    HexNAc(2)Hex(5)HexA(1)
    ```
 
-3. **Restart MetaMorpheus.**
+3. **Restart MetaMorpheus** (only needed if you edited the TSV by hand; the dialog registers the sugar straight away).
 
 4. In the **Glyco Search** task: set the search type to N-glycan, point the **N-glycan database** at `NGlycan_HexA.gdb`, and leave **`OxoniumIonFilt`** checked.
 
@@ -236,7 +267,7 @@ A **missing file is not an error**.
 
 ## Tips & caveats
 
-- **Restart required.** The file is read once at startup.
+- **Restart required after hand-editing.** The file is read once at startup. The **Create new monosaccharide** dialog registers the sugar for the running session as well as writing it to the file, so it needs no restart.
 - **Mass is the residue mass** (free sugar minus one water), not the free monosaccharide mass.
 - **Defining ≠ using.** A custom monosaccharide does nothing until a glycan database references it and that database is selected in the task.
 - **Shared across O- and N-glycan searches** — names/codes must be globally unique.
@@ -246,6 +277,9 @@ A **missing file is not an error**.
 ---
 
 ## FAQ
+
+**GUI dialog or TSV file — is there any difference?**
+No. **Create new monosaccharide** writes exactly the row `MonosaccharidesCustom.tsv` expects, and both go through the same validation. The dialog also registers the sugar for the current session; a hand-edit needs a restart.
 
 **Do I have to provide diagnostic ions?**
 No. Column 4 is optional. Without it, the monosaccharide still works in databases; it just contributes no extra diagnostic ions.

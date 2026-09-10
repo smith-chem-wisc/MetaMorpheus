@@ -34,7 +34,10 @@ namespace Test
         private static void RestoreStartupMonosaccharides()
         {
             Glycan.ResetCustomMonosaccharides();
-            string shipped = Path.Combine(GlobalVariables.DataDir, "Glycan_Mods", "MonosaccharidesCustom.tsv");
+            // GlobalVariables.CustomMonosaccharidePath, not a hand-built path: the file moved out of
+            // Glycan_Mods to the data-directory root, and a stale literal here would silently restore
+            // nothing (File.Exists false) instead of the startup registrations.
+            string shipped = GlobalVariables.CustomMonosaccharidePath;
             if (File.Exists(shipped))
             {
                 GlycanDatabase.LoadCustomMonosaccharides(shipped);
@@ -296,6 +299,82 @@ namespace Test
                 // Candidate has no SugarU. Under bare presence this would have been rejected.
                 Assert.That(GlycoPeptides.DiagonsticFilter(intensities, BoxWithKind(new byte[Glycan.KindCapacity])),
                     Is.True);
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [Test]
+        public void DiagonsticFilter_NoHexNAcReference_MonoPresent_StrictRuleSkippedAndCandidateKept()
+        {
+            // The mirror of the noise footgun, arriving from the other side. With no 138.055 in the
+            // spectrum the relative-intensity test has no denominator, so there is no evidence that the
+            // custom ion is present or absent. Reporting "not observed" would not be neutral under
+            // hasSignal == hasMono -- it would reject every candidate that CARRIES the custom
+            // monosaccharide. A low-energy HCD spectrum with strong 204.087 and no 138.055 is ordinary,
+            // so the strict rule has to stand down rather than pick a side.
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { Ion512 });
+                int customIndex = Glycan.NameCharDic["SugarU"].Item2;
+
+                double[] intensities = new double[Glycan.AllOxoniumIonsIncludingCustoms.Length];
+                intensities[OxoniumIndex_R138] = 0;                  // no reference ion at all
+                byte[] kind = new byte[Glycan.KindCapacity];
+                kind[customIndex] = 1;                               // candidate DOES carry the sugar
+
+                Assert.That(GlycoPeptides.DiagonsticFilter(intensities, BoxWithKind(kind)), Is.True,
+                    "with no 138.055 reference the strict custom rule must not reject a candidate carrying the monosaccharide");
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [Test]
+        public void DiagonsticFilter_NoHexNAcReference_IonPeakPresentMonoAbsent_StrictRuleSkippedAndCandidateKept()
+        {
+            // Same spectrum condition from the other direction: a peak sits at the custom ion's m/z but
+            // there is no reference to size it against. Neither verdict is available, so neither
+            // population may be rejected.
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { Ion512 });
+
+                double[] intensities = new double[Glycan.AllOxoniumIonsIncludingCustoms.Length];
+                intensities[OxoniumIndex_R138] = 0;                  // no reference ion
+                intensities[Glycan.AllOxoniumIons.Length] = 500;     // custom ion slot has signal
+
+                Assert.That(GlycoPeptides.DiagonsticFilter(intensities, BoxWithKind(new byte[Glycan.KindCapacity])),
+                    Is.True);
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [Test]
+        public void DiagonsticFilter_NoHexNAcReference_UndersizedIntensityArray_StillThrows()
+        {
+            // The bounds guard is a programming-error check and must keep firing even on the spectra
+            // where the strict comparison itself stands down.
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { Ion512 });
+                int customIndex = Glycan.NameCharDic["SugarU"].Item2;
+
+                double[] tooShort = new double[Glycan.AllOxoniumIons.Length]; // no slot for the custom ion
+                byte[] kind = new byte[Glycan.KindCapacity];
+                kind[customIndex] = 1;
+
+                Assert.Throws<ArgumentException>(() => GlycoPeptides.DiagonsticFilter(tooShort, BoxWithKind(kind)));
             }
             finally
             {

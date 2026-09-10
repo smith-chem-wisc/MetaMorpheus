@@ -132,7 +132,9 @@ namespace Test
         private static void RestoreStartupMonosaccharides()
         {
             Glycan.ResetCustomMonosaccharides();
-            string shipped = System.IO.Path.Combine(GlobalVariables.DataDir, "Glycan_Mods", "MonosaccharidesCustom.tsv");
+            // See CustomOxoniumFilterTests.RestoreStartupMonosaccharides: the file lives at the
+            // data-directory root now, so ask GlobalVariables for it rather than rebuilding the path.
+            string shipped = GlobalVariables.CustomMonosaccharidePath;
             if (System.IO.File.Exists(shipped))
             {
                 GlycanDatabase.LoadCustomMonosaccharides(shipped);
