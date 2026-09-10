@@ -1,6 +1,7 @@
 ﻿using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using MzLibUtil;
+using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -38,14 +39,22 @@ namespace EngineLayer.CrosslinkSearch
         private readonly double[] PrecursorMassTable;
         private readonly double[] NextPrecursorMassTable;
 
-        public CrosslinkSearchEngine(List<CrosslinkSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
+        /// <summary>
+        /// Cross-link search is proteomics-only (it already refuses non-protein digestion below), so it
+        /// keeps a peptide-typed view of the index that ModernSearchEngine now holds as
+        /// IBioPolymerWithSetMods. Same objects, narrower type.
+        /// </summary>
+        protected new readonly List<PeptideWithSetModifications> PeptideIndex;
+
+        public CrosslinkSearchEngine(List<CrosslinkSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, IEnumerable<IBioPolymerWithSetMods> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             Crosslinker crosslinker, int CrosslinkSearchTopNum, bool CleaveAtCrosslinkSite, bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds, 
             List<(int, int, int)>[] candidates, int nextPartition, 
-            List<PeptideWithSetModifications> nextPeptideIndex, List<List<(double, int, double)>> precursorss)
+            IEnumerable<IBioPolymerWithSetMods> nextPeptideIndex, List<List<(double, int, double)>> precursorss)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
+            PeptideIndex = peptideIndex.Cast<PeptideWithSetModifications>().ToList();
             // We are going to make the assumption that the XL search engine is only ran with proteins. If implemented for other BioPolymers in the future, this should be revised. 
             if (commonParameters.DigestionParams is not DigestionParams)
                 throw new ArgumentException($"Cross-link search engine does not currently support digestion of type {commonParameters.DigestionParams.GetType().FullName}.");
@@ -60,18 +69,18 @@ namespace EngineLayer.CrosslinkSearch
 
             this.Candidates = candidates;
             this.NextPartition = nextPartition + 1;
-            this.NextPeptideIndex = nextPeptideIndex;
+            this.NextPeptideIndex = nextPeptideIndex?.Cast<PeptideWithSetModifications>().ToList();
 
             Precursorss = precursorss;
 
-            PrecursorMassTable = peptideIndex.Select(p => p.MonoisotopicMass).ToArray();
+            PrecursorMassTable = PeptideIndex.Select(p => p.MonoisotopicMass).ToArray();
             if (currentPartition == nextPartition || nextPartition == -1)
             {
                 NextPrecursorMassTable = PrecursorMassTable;
             }
             else
             {
-                NextPrecursorMassTable = nextPeptideIndex.Select(p => p.MonoisotopicMass).ToArray();
+                NextPrecursorMassTable = NextPeptideIndex.Select(p => p.MonoisotopicMass).ToArray();
             }
 
             SecondFragmentIndex = secondFragmentIndex;
@@ -141,7 +150,7 @@ namespace EngineLayer.CrosslinkSearch
                     var high_bound_limitation = scan.PrecursorMass + 5;
 
                     // first-pass scoring
-                    IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
+                    IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, base.PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
 
                     //child scan first - pass scoring
                     if (scan.ChildScans != null && CommonParameters.MS2ChildScanDissociationType != DissociationType.Unknown && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
@@ -157,7 +166,7 @@ namespace EngineLayer.CrosslinkSearch
                             childBinsToSearch.AddRange(x);
                         }
 
-                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
+                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, base.PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
 
                         foreach (var childId in childIdsOfPeptidesPossiblyObserved)
                         {

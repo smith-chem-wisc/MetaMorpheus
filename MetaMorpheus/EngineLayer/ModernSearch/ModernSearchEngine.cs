@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -15,19 +16,19 @@ namespace EngineLayer.ModernSearch
         protected List<int>[] FragmentIndex { get; private set; }
         protected readonly SpectralMatch[] PeptideSpectralMatches;
         protected readonly Ms2ScanWithSpecificMass[] ListOfSortedMs2Scans;
-        protected readonly List<PeptideWithSetModifications> PeptideIndex;
+        protected readonly List<IBioPolymerWithSetMods> PeptideIndex;
         protected readonly int CurrentPartition;
         protected readonly MassDiffAcceptor MassDiffAcceptor;
         protected readonly DissociationType DissociationType;
         protected readonly double MaxMassThatFragmentIonScoreIsDoubled;
 
-        public ModernSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
+        public ModernSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, IEnumerable<IBioPolymerWithSetMods> peptideIndex,
             List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled,
             List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
             ListOfSortedMs2Scans = listOfSortedms2Scans;
-            PeptideIndex = peptideIndex;
+            PeptideIndex = peptideIndex as List<IBioPolymerWithSetMods> ?? peptideIndex.ToList();
             FragmentIndex = fragmentIndex;
             CurrentPartition = currentPartition + 1;
             MassDiffAcceptor = massDiffAcceptor;
@@ -252,7 +253,7 @@ namespace EngineLayer.ModernSearch
         /// Returns the bin-index of the first peptide with a mass less than or equal to the specified mass. Returns 0 if there 
         /// are no peptides with masses smaller than the specified mass.
         /// </summary>
-        protected static int BinarySearchBinForPrecursorIndex(List<int> bin, double peptideMassToLookFor, List<PeptideWithSetModifications> peptideIndex)
+        protected static int BinarySearchBinForPrecursorIndex(List<int> bin, double peptideMassToLookFor, List<IBioPolymerWithSetMods> peptideIndex)
         {
             int m = 0;
             int l = 0;
@@ -338,7 +339,7 @@ namespace EngineLayer.ModernSearch
         /// </summary>
         protected SpectralMatch FineScorePeptide(int id, Ms2ScanWithSpecificMass scan, int scanIndex, List<Product> peptideTheorProducts)
         {
-            PeptideWithSetModifications peptide = PeptideIndex[id];
+            IBioPolymerWithSetMods peptide = PeptideIndex[id];
 
             peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts, CommonParameters.FragmentationParameters);
 
@@ -356,7 +357,11 @@ namespace EngineLayer.ModernSearch
             {
                 if (PeptideSpectralMatches[scanIndex] == null)
                 {
-                    PeptideSpectralMatches[scanIndex] = new PeptideSpectralMatch(peptide, notch, thisScore, scanIndex, scan, CommonParameters, matchedIons);
+                    // Same match-type switch ClassicSearchEngine makes, so a modern search over a
+                    // nucleic acid database reports oligos as OSMs instead of mislabelling them PSMs.
+                    PeptideSpectralMatches[scanIndex] = GlobalVariables.AnalyteType == AnalyteType.Oligo
+                        ? new OligoSpectralMatch(peptide, notch, thisScore, scanIndex, scan, CommonParameters, matchedIons)
+                        : new PeptideSpectralMatch(peptide, notch, thisScore, scanIndex, scan, CommonParameters, matchedIons);
                 }
                 else
                 {
@@ -399,7 +404,7 @@ namespace EngineLayer.ModernSearch
         /// Deprecated.
         /// </summary>
         protected void IndexedScoring(List<int>[] FragmentIndex, List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor,
-            double highestMassPeptideToLookFor, List<PeptideWithSetModifications> peptideIndex, MassDiffAcceptor massDiffAcceptor, double maxMassThatFragmentIonScoreIsDoubled, DissociationType dissociationType)
+            double highestMassPeptideToLookFor, List<IBioPolymerWithSetMods> peptideIndex, MassDiffAcceptor massDiffAcceptor, double maxMassThatFragmentIonScoreIsDoubled, DissociationType dissociationType)
         {
             // get all theoretical fragments this experimental fragment could be
             for (int i = 0; i < binsToSearch.Count; i++) //binsToSearch is the list of fragment in Spectra
