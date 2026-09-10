@@ -973,5 +973,349 @@ namespace Test
             protected override MetaMorpheusEngineResults RunSpecific() => new MetaMorpheusEngineResults(this);
         }
 
+        #region --auditSdrf
+
+        // A channel-level TMT SDRF: comment[label] names individual reporter channels, so the design is
+        // recoverable. Two data files, three channels each, with a plex column so the report has a plex
+        // source to name. Kept minimal on purpose -- mzLib owns the parsing and is tested there; what
+        // these tests cover is the verb: option parsing, validation, exit codes, and the report actually
+        // reaching the caller's writer.
+        private static string WriteChannelLevelSdrf(string directory)
+        {
+            string path = Path.Combine(directory, "channel-level.sdrf.tsv");
+            var lines = new List<string>
+            {
+                string.Join("\t", "source name", "comment[data file]", "comment[label]",
+                    "characteristics[biological replicate batch]", "comment[modification parameters]"),
+            };
+
+            foreach (var (file, plex) in new[] { ("run1.raw", "1"), ("run2.raw", "2") })
+            {
+                foreach (string channel in new[] { "TMT126", "TMT127N", "TMT127C" })
+                {
+                    lines.Add(string.Join("\t", "sample " + channel, file, channel, plex,
+                        "NT=TMT6plex;AC=UNIMOD:737;TA=K"));
+                }
+            }
+
+            File.WriteAllLines(path, lines);
+            return path;
+        }
+
+        [Test]
+        public static void TestAuditSdrfReportsAChannelLevelDesign()
+        {
+            string sdrfPath = WriteChannelLevelSdrf(ScratchDataDirectory);
+            var settings = new CommandLineSettings { AuditSdrf = sdrfPath };
+            settings.ValidateCommandLineSettings();
+
+            var written = new StringWriter();
+            int exitCode = Program.AuditSdrf(settings, written);
+            string report = written.ToString();
+
+            Assert.That(exitCode, Is.EqualTo(0));
+            Assert.That(report, Does.Contain("ChannelLevel"));
+            Assert.That(report, Does.Contain("TMT126"));
+            Assert.That(report, Does.Contain("TMT127N"));
+            // The plex column was populated, so the report must say where the plex came from rather than
+            // "none stated" -- that distinction is the whole reason PlexSource exists.
+            Assert.That(report, Does.Not.Contain("none stated"));
+            Assert.That(report, Does.Contain("facts:"));
+        }
+
+        // The silent failure the verb exists to catch: comment[label] names the KIT on every row, so the
+        // file parses and validates cleanly and then yields one channel for a six-channel experiment.
+        [Test]
+        public static void TestAuditSdrfNamesAKitOnlyDesignAsSuch()
+        {
+            string path = Path.Combine(ScratchDataDirectory, "kit-only.sdrf.tsv");
+            var lines = new List<string> { string.Join("\t", "source name", "comment[data file]", "comment[label]") };
+            for (int i = 1; i <= 6; i++)
+            {
+                lines.Add(string.Join("\t", "sample " + i, "run" + i + ".raw", "TMT6plex"));
+            }
+            File.WriteAllLines(path, lines);
+
+            var settings = new CommandLineSettings { AuditSdrf = path };
+            settings.ValidateCommandLineSettings();
+
+            var written = new StringWriter();
+            int exitCode = Program.AuditSdrf(settings, written);
+
+            Assert.That(exitCode, Is.EqualTo(0));
+            Assert.That(written.ToString(), Does.Contain("KitOnly"));
+        }
+
+        // --auditData is the half that looks at disk. A file present and a file absent must both be
+        // counted, or "0 found" cannot be told from "did not look".
+        [Test]
+        public static void TestAuditSdrfCountsDataFilesFoundAndMissing()
+        {
+            string sdrfPath = WriteChannelLevelSdrf(ScratchDataDirectory);
+            string dataDirectory = Path.Combine(ScratchDataDirectory, "data");
+            Directory.CreateDirectory(dataDirectory);
+            File.WriteAllText(Path.Combine(dataDirectory, "run1.raw"), string.Empty);
+
+            var settings = new CommandLineSettings { AuditSdrf = sdrfPath, AuditDataDirectory = dataDirectory };
+            settings.ValidateCommandLineSettings();
+
+            var written = new StringWriter();
+            int exitCode = Program.AuditSdrf(settings, written);
+
+            Assert.That(exitCode, Is.EqualTo(0));
+            Assert.That(written.ToString(), Does.Contain("data files"));
+            Assert.That(written.ToString(), Does.Contain("1 found, 1 missing"));
+        }
+
+        // The report is what was asked for, not MetaMorpheus talking about itself, so -v none must not
+        // swallow it. A silent audit and a failed audit would look identical.
+        [Test]
+        public static void TestAuditSdrfWritesTheReportEvenAtVerbosityNone()
+        {
+            string sdrfPath = WriteChannelLevelSdrf(ScratchDataDirectory);
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = sdrfPath,
+                Verbosity = CommandLineSettings.VerbosityType.none
+            };
+            settings.ValidateCommandLineSettings();
+
+            var written = new StringWriter();
+            Assert.That(Program.AuditSdrf(settings, written), Is.EqualTo(0));
+            Assert.That(written.ToString(), Does.Contain("SDRF quantification audit"));
+        }
+
+        // A file that is not an SDRF at all does NOT fail. The auditor's contract is to describe a
+        // document rather than reject one, so a text file with no SDRF columns comes back as a report
+        // saying it is not isobaric and that every fact is absent. That is the honest answer, and it is
+        // also how a user learns they pointed at the wrong file -- so it is pinned rather than left to
+        // look like a bug the next time someone reads it.
+        [Test]
+        public static void TestAuditSdrfDescribesAFileThatIsNotAnSdrf()
+        {
+            string path = Path.Combine(ScratchDataDirectory, "not-an-sdrf.tsv");
+            File.WriteAllText(path, "this file has no SDRF header at all");
+
+            var settings = new CommandLineSettings { AuditSdrf = path };
+            settings.ValidateCommandLineSettings();
+
+            var written = new StringWriter();
+            int exitCode = Program.AuditSdrf(settings, written);
+            string report = written.ToString();
+
+            Assert.That(exitCode, Is.EqualTo(0));
+            Assert.That(report, Does.Contain(path));
+            Assert.That(report, Does.Contain("NotIsobaric"));
+            Assert.That(report, Does.Contain("ABSENT"));
+            Assert.That(report, Does.Not.Contain("ok  "));
+        }
+
+        // The exit-4 path, which needs a document that cannot be read AT ALL rather than one that is
+        // merely empty of SDRF. Validation checks the file exists, so the only way to reach it is for the
+        // file to go away in between -- which is exactly the real case the guard is for: a file on a
+        // share, or one another process is rewriting. Deleting it after validation reproduces that
+        // deterministically, without depending on file locking behaviour that varies by platform.
+        [Test]
+        public static void TestAuditSdrfReportsADocumentItCannotRead()
+        {
+            string path = Path.Combine(ScratchDataDirectory, "vanishes.sdrf.tsv");
+            File.WriteAllText(path, "source name\tcomment[data file]\tcomment[label]");
+
+            // Verbosity is set explicitly because the [Option] Default only applies when the parser
+            // builds the object; an object initializer leaves it at the enum's default, which is none.
+            // The failure message is verbosity-gated like every other error in Program.cs -- only the
+            // report itself is unconditional, because that is the artifact rather than diagnostics.
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = path,
+                Verbosity = CommandLineSettings.VerbosityType.normal
+            };
+            settings.ValidateCommandLineSettings();
+            File.Delete(path);
+
+            var written = new StringWriter();
+            int exitCode = Program.AuditSdrf(settings, written);
+
+            Assert.That(exitCode, Is.EqualTo(4));
+            Assert.That(written.ToString(), Does.Contain("could not be read"));
+            Assert.That(written.ToString(), Does.Contain(path));
+        }
+
+        // Validation, not the auditor, must catch a path that does not exist -- so a typo comes back
+        // before any setup happens, and as a settings error rather than a read failure.
+        [Test]
+        public static void TestAuditSdrfRejectsAMissingFileBeforeReadingAnything()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = Path.Combine(ScratchDataDirectory, "no-such-file.sdrf.tsv")
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("was not found"));
+        }
+
+        [Test]
+        public static void TestAuditSdrfRejectsAMissingDataFolder()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = WriteChannelLevelSdrf(ScratchDataDirectory),
+                AuditDataDirectory = Path.Combine(ScratchDataDirectory, "no-such-folder")
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("data folder"));
+        }
+
+        // Ignoring --auditData on its own would look exactly like honouring it, so it is refused.
+        [Test]
+        public static void TestAuditDataWithoutAuditSdrfIsRefused()
+        {
+            var settings = new CommandLineSettings { AuditDataDirectory = ScratchDataDirectory };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("--auditData is only meaningful with --auditSdrf"));
+        }
+
+        // -g and --test return from validation before any later rule runs, so these pin that the
+        // refusal above is checked FIRST. Without that it held for the bare flag and not beside
+        // either of them: --auditData <folder> -g -o F wrote six tomls and --auditData <folder>
+        // --test -o F ran the vignette, both at exit 0 with the flag dropped and nothing said --
+        // which is the failure the bare-flag refusal exists to prevent, reached through the flags
+        // that were supposed to make it impossible. The accepting direction stays pinned by
+        // TestAuditSdrfCountsDataFilesFoundAndMissing, which validates both flags together.
+        [Test]
+        public static void TestAuditDataWithoutAuditSdrfIsRefusedAlongsideGeneratingDefaultTomls()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditDataDirectory = ScratchDataDirectory,
+                GenerateDefaultTomls = true,
+                OutputFolder = ScratchDataDirectory
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("--auditData is only meaningful with --auditSdrf"));
+        }
+
+        [Test]
+        public static void TestAuditDataWithoutAuditSdrfIsRefusedAlongsideTheMicroVignette()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditDataDirectory = ScratchDataDirectory,
+                RunMicroVignette = true,
+                OutputFolder = ScratchDataDirectory
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("--auditData is only meaningful with --auditSdrf"));
+        }
+
+        // The audit runs on its own. Without this, validation would demand a task, a database and a
+        // spectra file for a command that reads one text file and prints a report.
+        [Test]
+        public static void TestAuditSdrfNeedsNoTaskDatabaseOrSpectra()
+        {
+            var settings = new CommandLineSettings { AuditSdrf = WriteChannelLevelSdrf(ScratchDataDirectory) };
+
+            Assert.DoesNotThrow(() => settings.ValidateCommandLineSettings());
+            Assert.That(settings.Tasks, Is.Empty);
+            Assert.That(settings.Databases, Is.Empty);
+            Assert.That(settings.Spectra, Is.Empty);
+            Assert.That(settings.OutputFolder, Is.Null);
+        }
+
+        // The other direction, which is the one that used to be wrong: --auditSdrf alongside a run
+        // took both flags, honoured the audit and threw the run away at exit 0 -- indistinguishable
+        // from a successful search to anything checking the exit code. Refused, for the reason
+        // --auditData alone is refused.
+        [Test]
+        public static void TestAuditSdrfIsRefusedAlongsideARun()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = WriteChannelLevelSdrf(ScratchDataDirectory),
+                _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") },
+                _spectra = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml") },
+                OutputFolder = ScratchDataDirectory
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("cannot be given with"));
+            Assert.That(thrown.Message, Does.Contain("-t"));
+            Assert.That(thrown.Message, Does.Contain("-d"));
+            Assert.That(thrown.Message, Does.Contain("-s"));
+        }
+
+        // -g returns from validation before the audit is looked at, so this also pins that the refusal
+        // is checked FIRST: without that, -g -o folder --auditSdrf <path that does not exist> wrote six
+        // tomls, printed no report, never checked the path and exited 0.
+        [Test]
+        public static void TestAuditSdrfIsRefusedAlongsideGeneratingDefaultTomls()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = Path.Combine(ScratchDataDirectory, "no-such-file.sdrf.tsv"),
+                GenerateDefaultTomls = true,
+                OutputFolder = ScratchDataDirectory
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("cannot be given with"));
+            Assert.That(thrown.Message, Does.Contain("-g"));
+        }
+
+        // --test is a run like any other -- it just brings its own spectra file and database -- so the
+        // audit must not quietly consume it and leave the output folder empty.
+        [Test]
+        public static void TestAuditSdrfIsRefusedAlongsideTheMicroVignette()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = WriteChannelLevelSdrf(ScratchDataDirectory),
+                RunMicroVignette = true,
+                OutputFolder = ScratchDataDirectory
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("cannot be given with"));
+            Assert.That(thrown.Message, Does.Contain("--test"));
+        }
+
+        // --acceptThermoLicence records an agreement, which is a change to settings.toml rather than
+        // output on disk -- so honouring the audit instead left the licence unaccepted with nothing
+        // said, and the next .raw run would prompt or fail.
+        [Test]
+        public static void TestAuditSdrfIsRefusedAlongsideAcceptingTheThermoLicence()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = WriteChannelLevelSdrf(ScratchDataDirectory),
+                AcceptThermoLicence = true
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("cannot be given with"));
+            Assert.That(thrown.Message, Does.Contain("--acceptThermoLicence"));
+        }
+
+        // -o is deliberately still allowed. The audit writes nothing, so an output folder is unused
+        // rather than discarded work, and refusing it would only break the habit of passing -o.
+        [Test]
+        public static void TestAuditSdrfIsStillAllowedWithAnOutputFolder()
+        {
+            var settings = new CommandLineSettings
+            {
+                AuditSdrf = WriteChannelLevelSdrf(ScratchDataDirectory),
+                OutputFolder = ScratchDataDirectory
+            };
+
+            Assert.DoesNotThrow(() => settings.ValidateCommandLineSettings());
+        }
+
+        #endregion
     }
 }
