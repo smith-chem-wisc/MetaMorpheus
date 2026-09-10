@@ -20,10 +20,16 @@
 
   <ItemGroup>
     <None Remove="Glycan_Mods\MonosaccharidesCustom.tsv" />
+    <None Remove="Glycan_Mods\OGlycan_Custom.gdb" />
   </ItemGroup>
   
+  <!-- Templates for the user-editable custom files. Embedded, deliberately: they must NOT carry a
+       CopyToOutputDirectory rule and must NOT appear in Product.wxs as a <File>, because either one
+       lets a build or an installer overwrite the copy the user has edited. That was #2752. The whole
+       recipe is written down on EngineLayer\Util\CustomDataFile.cs. -->
   <ItemGroup>
     <EmbeddedResource Include="Glycan_Mods\MonosaccharidesCustom.tsv" />
+    <EmbeddedResource Include="Glycan_Mods\OGlycan_Custom.gdb" />
   </ItemGroup>
 
   <ItemGroup>
