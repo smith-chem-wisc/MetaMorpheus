@@ -16,6 +16,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CustomFragmentationWindow : Window
     {
+        private readonly PropertyChangedEventHandler _modeChanged;
         private ObservableCollection<BoolStringClass> TheList { get; set; }
 
         public CustomFragmentationWindow(List<ProductType> list)
@@ -34,13 +35,14 @@ namespace MetaMorpheusGUI
             }
 
             // Update options on mode change
-            GuiGlobalParamsViewModel.Instance.PropertyChanged += (sender, args) =>
+            _modeChanged = (sender, args) =>
             {
                 if (args.PropertyName == nameof(GuiGlobalParamsViewModel.IsRnaMode))
                 {
                     PopulateChoices();
                 }
             };
+            GuiGlobalParamsViewModel.Instance.PropertyChanged += _modeChanged;
 
             base.Closing += this.OnClosing;
         }
@@ -133,6 +135,8 @@ namespace MetaMorpheusGUI
                 this.Visibility = Visibility.Hidden;
                 e.Cancel = true;
             }
+
+            GuiGlobalParamsViewModel.Instance.PropertyChanged -= _modeChanged;
         }
 
         private void SelectAll_OnClick(object sender, RoutedEventArgs e)
