@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -31,6 +31,8 @@ using EngineLayer.Util;
 using EngineLayer.DIA;
 using EngineLayer.SpectrumMatch;
 using Omics.Fragmentation;
+
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Test")]
 
 namespace TaskLayer
 {
@@ -1333,7 +1335,7 @@ namespace TaskLayer
             }
         }
 
-        private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
+        internal static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
             foreach (var database in dbFilenameList)
             {
@@ -1342,7 +1344,9 @@ namespace TaskLayer
 
                 if (!Directory.Exists(indexDirectory.FullName))
                 {
-                    return null;
+                    // Keep looking. The index for a multi-database search is written beside the FIRST
+                    // database only, so returning here strands a usable cache sitting under a later one.
+                    continue;
                 }
 
                 // all directories in the same directory as the bioPolymer database
