@@ -571,12 +571,25 @@ namespace Test.MetaDraw
                 // Checks to see if the stationary sequence updated with the new positioning
                 string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
                 string fullSequence = modifiedBaseSeq;
-                var modDictionary = peptide.AllModsOneIsNterminus.Where(p => p.Key - 1 >= MetaDrawSettings.FirstAAonScreenIndex
-                    && p.Key - 1 < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).OrderByDescending(p => p.Key);
+                var modDictionary = peptide.AllModsOneIsNterminus.Where(p => p.Key == 1
+                        ? MetaDrawSettings.FirstAAonScreenIndex == 0
+                        : p.Key - 2 >= MetaDrawSettings.FirstAAonScreenIndex
+                          && p.Key - 2 < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)
+                    .OrderByDescending(p => p.Key);
                 foreach (var mod in modDictionary)
                 {
                     // if modification is within the visible region
                     fullSequence = fullSequence.Insert(mod.Key - 1 - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
+                }
+
+                var cTerminalMod = peptide.AllModsOneIsNterminus
+                    .Where(p => p.Key == psm.BaseSeq.Length + 2)
+                    .Select(p => p.Value)
+                    .FirstOrDefault();
+                if (cTerminalMod != null && MetaDrawSettings.NumberOfAAOnScreen > 0
+                    && MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen >= psm.BaseSeq.Length)
+                {
+                    fullSequence += "-[" + cTerminalMod.ModificationType + ":" + cTerminalMod.IdWithMotif + "]";
                 }
 
                 List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
@@ -603,6 +616,48 @@ namespace Test.MetaDraw
                 var expected = expectedBaseSequence + expectedIonAnnotations + expectedModCount + expectedNumberCount + expectedNumberLineConnectorCount;
                 Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, Is.EqualTo(expected));
             }
+        }
+
+        [Test]
+        public static void MetaDraw_StationarySequenceDrawsTerminalAndLastResidueMods()
+        {
+            string psmFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SequenceCoverageTestPSM.psmtsv");
+            var psm = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out _).First();
+
+            // "Serine amide on S" is the protein C-terminal sibling of the "Arginine amide on R" of issue 2330
+            var cTerminalMod = GlobalVariables.AllModsKnownDictionary["Serine amide on S"];
+            Assert.That(cTerminalMod.LocationRestriction, Is.EqualTo("C-terminal."));
+            Assert.That(psm.BaseSeq, Does.EndWith("S"));
+            Assert.That(psm.ToBioPolymerWithSetMods().AllModsOneIsNterminus.Keys, Is.EquivalentTo(new[] { 1, 7 }));
+
+            var withCTerminalMod = psm.ReplaceFullSequence(
+                psm.FullSequence + $"-[{cTerminalMod.ModificationType}:{cTerminalMod.IdWithMotif}]", psm.BaseSeq);
+            Assert.That(withCTerminalMod.ToBioPolymerWithSetMods().AllModsOneIsNterminus.Keys,
+                Is.EquivalentTo(new[] { 1, 7, psm.BaseSeq.Length + 2 }));
+
+            // whole peptide on screen: N-terminal, residue and C-terminal mods are all drawn
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
+            var stationary = new DrawnSequence(new Canvas(), withCTerminalMod, true);
+            Assert.That(stationary.SequenceDrawingCanvas.Children.OfType<Ellipse>().Count(), Is.EqualTo(3));
+
+            // scrolled to the end: only the C-terminal mod is on screen
+            MetaDrawSettings.FirstAAonScreenIndex = psm.BaseSeq.Length - 5;
+            MetaDrawSettings.NumberOfAAOnScreen = 5;
+            stationary = new DrawnSequence(new Canvas(), withCTerminalMod, true);
+            Assert.That(stationary.SequenceDrawingCanvas.Children.OfType<Ellipse>().Count(), Is.EqualTo(1));
+
+            // the modified residue is the last one on screen, so its mod is drawn along with the N-terminal mod
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = 6;
+            stationary = new DrawnSequence(new Canvas(), psm, true);
+            Assert.That(stationary.SequenceDrawingCanvas.Children.OfType<Ellipse>().Count(), Is.EqualTo(2));
+
+            // scrolled one residue past the modified residue, so neither mod is on screen
+            MetaDrawSettings.FirstAAonScreenIndex = 6;
+            MetaDrawSettings.NumberOfAAOnScreen = 20;
+            stationary = new DrawnSequence(new Canvas(), psm, true);
+            Assert.That(stationary.SequenceDrawingCanvas.Children.OfType<Ellipse>(), Is.Empty);
         }
 
         [Test]
