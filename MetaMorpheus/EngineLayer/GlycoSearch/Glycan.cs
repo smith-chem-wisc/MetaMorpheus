@@ -240,6 +240,16 @@ namespace EngineLayer
         // Emitted by GlycanDiagnosticIons whenever the glycan has count >= 1 at the custom index.
         private static Dictionary<int, int[]> _customDiagnosticIonsByIndex = new Dictionary<int, int[]>();
 
+        // Cached projections of _customDiagnosticIonsByIndex. Both are read on the hot path --
+        // CustomOxoniumIons once per candidate inside the glycan-box loop of GlycoSearchEngine, and
+        // AllOxoniumIonsIncludingCustoms once per scan -- so they are built once at registration time
+        // instead of being recomputed (and re-sorted, and re-allocated) on every read. The contents
+        // only ever change in RegisterCustomMonosaccharide and ResetCustomMonosaccharides, which both
+        // call RebuildCustomOxoniumCaches.
+        private static IReadOnlyList<(int MzScaled, int KindIndex)> _customOxoniumIons =
+            new List<(int, int)>();
+        private static int[] _allOxoniumIonsIncludingCustoms;
+
         /// <summary>
         /// Number of monosaccharide slots in the Kind[] array (built-ins + any registered customs).
         /// </summary>
@@ -301,6 +311,13 @@ namespace EngineLayer
                 throw new ArgumentException($"Single-char code '{code}' already exists (built-in or previously-registered).", nameof(code));
             if (!((code >= 'A' && code <= 'Z') || (code >= 'a' && code <= 'z')))
                 throw new ArgumentException($"Single-char code '{code}' must be an ASCII letter.", nameof(code));
+            if (diagnosticIonsScaled != null)
+            {
+                foreach (int ionScaled in diagnosticIonsScaled)
+                {
+                    RejectIfDiagnosticIonAlreadyClaimed(name, ionScaled);
+                }
+            }
 
             int newIndex = _kindEntries.Count;
             _kindEntries.Add((name, code, massScaled));
@@ -310,6 +327,48 @@ namespace EngineLayer
             }
             CharMassDic = BuildCharMassDic();
             NameCharDic = BuildNameCharDic();
+            RebuildCustomOxoniumCaches();
+        }
+
+        /// <summary>
+        /// Half-width, in scaled (1e5) units, of the window inside which two oxonium m/z values are
+        /// considered the same ion: 0.01 Da. Wider than any realistic product tolerance at these
+        /// masses (20 ppm at m/z 204 is 0.004 Da), so a user who writes "204.087" for the built-in
+        /// 204.08720 is still caught, while genuinely distinct diagnostic ions are not.
+        /// </summary>
+        private const int DiagnosticIonCollisionWindowScaled = 1000;
+
+        /// <summary>
+        /// A custom diagnostic ion that duplicates a built-in oxonium ion (or another custom's ion)
+        /// is rejected at registration. Under the strict custom-oxonium filter such an ion would be
+        /// "observed" on essentially every glycopeptide spectrum, rejecting every candidate that
+        /// lacks the custom monosaccharide -- a silent, near-total loss of results.
+        /// </summary>
+        private static void RejectIfDiagnosticIonAlreadyClaimed(string name, int ionScaled)
+        {
+            foreach (int builtIn in AllOxoniumIons)
+            {
+                if (Math.Abs(builtIn - ionScaled) <= DiagnosticIonCollisionWindowScaled)
+                {
+                    throw new ArgumentException(
+                        $"Diagnostic ion {(double)ionScaled / 1E5:F5} for monosaccharide '{name}' duplicates the built-in oxonium ion {(double)builtIn / 1E5:F5} (within 0.01 Da). " +
+                        "A custom diagnostic ion must be distinct from every built-in oxonium ion; a shared ion would be observed on nearly every glycopeptide spectrum and the strict filter would then reject every candidate lacking this monosaccharide.",
+                        nameof(name));
+                }
+            }
+            foreach (var kv in _customDiagnosticIonsByIndex)
+            {
+                foreach (int existing in kv.Value)
+                {
+                    if (Math.Abs(existing - ionScaled) <= DiagnosticIonCollisionWindowScaled)
+                    {
+                        throw new ArgumentException(
+                            $"Diagnostic ion {(double)ionScaled / 1E5:F5} for monosaccharide '{name}' duplicates the diagnostic ion {(double)existing / 1E5:F5} already registered for '{_kindEntries[kv.Key].CanonicalName}' (within 0.01 Da). " +
+                            "Each custom diagnostic ion must map to exactly one monosaccharide, otherwise the strict filter cannot be satisfied by any candidate.",
+                            nameof(name));
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -321,6 +380,7 @@ namespace EngineLayer
             _customDiagnosticIonsByIndex = new Dictionary<int, int[]>();
             CharMassDic = BuildCharMassDic();
             NameCharDic = BuildNameCharDic();
+            RebuildCustomOxoniumCaches();
         }
 
         /// <summary>
@@ -334,6 +394,63 @@ namespace EngineLayer
         /// </summary>
         public readonly static int[] AllOxoniumIons = new int[]
         {10902895, 11503951, 12605550, 12703952, 13805550, 14406607, 16306064, 16806607, 18607663, 20408720, 27409268, 29008759, 29210324, 30809816, 36614002, 65723544, 67323035};
+
+        /// <summary>
+        /// True when one or more custom monosaccharides registered diagnostic ions (column 4 of
+        /// MonosaccharidesCustom.tsv). Cheap gate so the default no-customs path allocates nothing.
+        /// </summary>
+        public static bool HasCustomOxoniumIons => _customDiagnosticIonsByIndex.Count > 0;
+
+        /// <summary>
+        /// Custom-monosaccharide diagnostic ions exposed as (observed m/z scaled by 1e5, Kind[] index)
+        /// pairs in a deterministic order (by Kind index, then declaration order). Empty unless customs
+        /// were registered. Consumed by the strict custom-oxonium branch of GlycoPeptides.DiagonsticFilter
+        /// and used to size the oxonium intensity list. No hydrogen offset is applied: values are observed
+        /// m/z, matching the convention of AllOxoniumIons and the MonosaccharidesCustom.tsv documentation.
+        /// </summary>
+        public static IReadOnlyList<(int MzScaled, int KindIndex)> CustomOxoniumIons => _customOxoniumIons;
+
+        /// <summary>
+        /// AllOxoniumIons with any CustomOxoniumIons appended (built-ins keep indices 0..N-1, customs
+        /// follow in CustomOxoniumIons order). When no customs are registered this returns the built-in
+        /// AllOxoniumIons array reference unchanged, so default search behavior is byte-identical.
+        /// </summary>
+        public static int[] AllOxoniumIonsIncludingCustoms => _allOxoniumIonsIncludingCustoms ?? AllOxoniumIons;
+
+        /// <summary>
+        /// Rebuilds the cached CustomOxoniumIons list and combined oxonium array from
+        /// _customDiagnosticIonsByIndex. Called only from RegisterCustomMonosaccharide and
+        /// ResetCustomMonosaccharides -- the only two places the custom set can change.
+        /// </summary>
+        private static void RebuildCustomOxoniumCaches()
+        {
+            if (_customDiagnosticIonsByIndex.Count == 0)
+            {
+                _customOxoniumIons = new List<(int, int)>();
+                _allOxoniumIonsIncludingCustoms = null; // AllOxoniumIonsIncludingCustoms returns the built-in array itself
+                return;
+            }
+
+            var list = new List<(int MzScaled, int KindIndex)>();
+            var keys = new List<int>(_customDiagnosticIonsByIndex.Keys);
+            keys.Sort();
+            foreach (int kindIndex in keys)
+            {
+                foreach (int ionScaled in _customDiagnosticIonsByIndex[kindIndex])
+                {
+                    list.Add((ionScaled, kindIndex));
+                }
+            }
+            _customOxoniumIons = list;
+
+            int[] combined = new int[AllOxoniumIons.Length + list.Count];
+            Array.Copy(AllOxoniumIons, combined, AllOxoniumIons.Length);
+            for (int j = 0; j < list.Count; j++)
+            {
+                combined[AllOxoniumIons.Length + j] = list[j].MzScaled;
+            }
+            _allOxoniumIonsIncludingCustoms = combined;
+        }
 
         /// <summary>
         /// Dictionary mapping N-glycan core ion indices to their monoisotopic mass (double).
