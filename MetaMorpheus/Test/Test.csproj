@@ -405,6 +405,9 @@
     <None Update="TestData\PrunedDbSpectra.mzml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\RnaSearchTask_MultipleDecon.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\semiTest.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

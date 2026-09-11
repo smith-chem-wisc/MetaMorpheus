@@ -603,6 +603,75 @@ namespace Test
         }
 
         [Test]
+        public static void TestToml_MultipleDeconvolutionType_ParsesFromToml()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+
+            try
+            {
+                var tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "RnaSearchTask_MultipleDecon.toml");
+                var searchTaskLoaded = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+
+                Assert.That(searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters, Is.TypeOf<MultipleDeconParameters>());
+                var multipleParams = (MultipleDeconParameters)searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters;
+
+                Assert.That(multipleParams.Parameters.Count(), Is.EqualTo(2));
+                Assert.That(multipleParams.MinAssumedChargeState, Is.EqualTo(-40));
+                Assert.That(multipleParams.MaxAssumedChargeState, Is.EqualTo(-1));
+                Assert.That(multipleParams.Polarity, Is.EqualTo(Polarity.Negative));
+                Assert.That(multipleParams.AverageResidueModel, Is.TypeOf<OxyriboAveragine>());
+                Assert.That(multipleParams.ExpectedIsotopeSpacing, Is.EqualTo(1.0033548381).Within(1e-10));
+                Assert.That(multipleParams.UseGenericScore, Is.False);
+
+                Assert.That(multipleParams.Parameters.First(), Is.TypeOf<ClassicDeconvolutionParameters>());
+                var firstClassic = (ClassicDeconvolutionParameters)multipleParams.Parameters.First();
+                Assert.That(firstClassic.DeconvolutionTolerancePpm, Is.EqualTo(10.0));
+                Assert.That(firstClassic.IntensityRatioLimit, Is.EqualTo(6.0));
+                Assert.That(firstClassic.MinAssumedChargeState, Is.EqualTo(-40));
+                Assert.That(firstClassic.MaxAssumedChargeState, Is.EqualTo(-1));
+                Assert.That(firstClassic.Polarity, Is.EqualTo(Polarity.Negative));
+                Assert.That(firstClassic.AverageResidueModel, Is.TypeOf<OxyriboAveragine>());
+                Assert.That(firstClassic.ExpectedIsotopeSpacing, Is.EqualTo(1.0033548381).Within(1e-10));
+                Assert.That(firstClassic.UseGenericScore, Is.False);
+
+                Assert.That(multipleParams.Parameters.Last(), Is.TypeOf<IsoDecDeconvolutionParameters>());
+                var lastIsoDec = (IsoDecDeconvolutionParameters)multipleParams.Parameters.Last();
+                Assert.That(lastIsoDec.PhaseRes, Is.EqualTo(8));
+                Assert.That(lastIsoDec.CssThreshold, Is.EqualTo(0.699999988079071f).Within(1e-6));
+                Assert.That(lastIsoDec.MatchTolerance, Is.EqualTo(5.0f));
+                Assert.That(lastIsoDec.MaxShift, Is.EqualTo(3));
+                Assert.That(lastIsoDec.MzWindow[0], Is.EqualTo(-1.04999995231628f).Within(1e-6));
+                Assert.That(lastIsoDec.MzWindow[1], Is.EqualTo(2.04999995231628f).Within(1e-6));
+                Assert.That(lastIsoDec.KnockdownRounds, Is.EqualTo(5));
+                Assert.That(lastIsoDec.MinAreaCovered, Is.EqualTo(0.200000002980232f).Within(1e-6));
+                Assert.That(lastIsoDec.DataThreshold, Is.EqualTo(0.0500000007450581f).Within(1e-6));
+                Assert.That(lastIsoDec.ReportMulitpleMonoisos, Is.False);
+                Assert.That(lastIsoDec.MinAssumedChargeState, Is.EqualTo(-40));
+                Assert.That(lastIsoDec.MaxAssumedChargeState, Is.EqualTo(-1));
+                Assert.That(lastIsoDec.Polarity, Is.EqualTo(Polarity.Negative));
+                Assert.That(lastIsoDec.AverageResidueModel, Is.TypeOf<Averagine>());
+                Assert.That(lastIsoDec.ExpectedIsotopeSpacing, Is.EqualTo(1.0033548381).Within(1e-10));
+                Assert.That(lastIsoDec.UseGenericScore, Is.False);
+
+                Assert.That(searchTaskLoaded.CommonParameters.ProductDeconvolutionParameters, Is.TypeOf<ClassicDeconvolutionParameters>());
+                var productClassic = (ClassicDeconvolutionParameters)searchTaskLoaded.CommonParameters.ProductDeconvolutionParameters;
+                Assert.That(productClassic.DeconvolutionTolerancePpm, Is.EqualTo(4.0));
+                Assert.That(productClassic.IntensityRatioLimit, Is.EqualTo(3.0));
+                Assert.That(productClassic.MinAssumedChargeState, Is.EqualTo(-30));
+                Assert.That(productClassic.MaxAssumedChargeState, Is.EqualTo(-1));
+                Assert.That(productClassic.Polarity, Is.EqualTo(Polarity.Negative));
+                Assert.That(productClassic.AverageResidueModel, Is.TypeOf<OxyriboAveragine>());
+                Assert.That(productClassic.ExpectedIsotopeSpacing, Is.EqualTo(1.0033548381).Within(1e-10));
+                Assert.That(productClassic.UseGenericScore, Is.False);
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        [Test]
         public static void TestToml_AverageResidueModel_FailsOnBadType()
         {
             var searchTask = new SearchTask();

@@ -99,6 +99,7 @@ namespace TaskLayer
                     {
                         "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
                         "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
+                        "Multiple" => tmlTable.Get<MultipleDeconParameters>(),
                         _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown Deconvolution Type: {tmlTable.Get<string>("DeconvolutionType")}")
                     })))
             // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
@@ -117,6 +118,14 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MinusOneAreasZero)
                 .IgnoreProperty(p => p.IsotopeThreshold)
                 .IgnoreProperty(p => p.ZScoreThreshold))
+            .ConfigureType<MultipleDeconParameters>(type => type
+                .CreateInstance(() => new MultipleDeconParameters(
+                    [new ClassicDeconvolutionParameters(1, 20, 4, 3)],
+                    1,
+                    20,
+                    Polarity.Positive,
+                    new Averagine(),
+                    1.0033548381)))
 
             // Convert average residue models to simple strings instead of tables, Nett makes all objects tables by default
             // The base class AverageResidue is used for Toml Reading. The derived classes are used for toml writing. 
