@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -273,10 +273,19 @@ namespace Test
             FileSpecificParameters fileSpecificParameters = new(fileSpecificToml);
             CommonParameters commonParameters = new();
 
+            // Ms1FeatureFilePath is inherently per-file (it names one file's external MS1 feature
+            // result), so it has no task-level twin to compare against. It is consumed in
+            // SetAllFileSpecificCommonParams into CommonParameters.AdditionalPrecursorDeconvolutionParameters,
+            // which is the property that actually reaches the engines.
+            var noCommonParametersTwin = new HashSet<string> { nameof(FileSpecificParameters.Ms1FeatureFilePath) };
+
             // foreach property in File Specific Parameters, ensure common parameters has a property with the same name
             foreach (var fileSpecificProperty in fileSpecificParameters.GetType().GetProperties())
             {
                 string fileSpecificPropertyName = fileSpecificProperty.Name;
+                if (noCommonParametersTwin.Contains(fileSpecificPropertyName))
+                    continue;
+
                 var commonProperty = commonParameters.GetType().GetProperty(fileSpecificPropertyName);
                 if (commonProperty is null)
                 {
