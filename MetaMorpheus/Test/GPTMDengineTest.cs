@@ -264,13 +264,13 @@ namespace Test
 
             Assert.That(variantProteins.Count, Is.EqualTo(2)); // target & decoy
             Assert.That(variantProteins[0].OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
-            List<int> foundResidueIndicies = variantProtein.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
+            List<int> foundResidueIndices = variantProtein.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
             List<int> expectedResidueIndices = new List<int>() { 1, 3 };
-            Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
+            Assert.That(foundResidueIndices, Is.EquivalentTo(expectedResidueIndices));
             Assert.That(variantDecoy.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
-            foundResidueIndicies = variantDecoy.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
+            foundResidueIndices = variantDecoy.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
             expectedResidueIndices = new List<int>() { 4, 6 }; //originally modified residues are now at the end in the decoy
-            Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
+            Assert.That(foundResidueIndices, Is.EquivalentTo(expectedResidueIndices));
 
             var thisOk = unknownModifications;//for debugging
             var commonParamsAtThisPoint = task1.CommonParameters.DigestionParams; //for debugging

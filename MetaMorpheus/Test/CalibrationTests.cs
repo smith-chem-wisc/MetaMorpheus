@@ -1,5 +1,10 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
+using EngineLayer.Calibration;
 using EngineLayer.DatabaseLoading;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
@@ -35,10 +40,10 @@ namespace Test
 
             // set up original spectra file (input to calibration)
             string nonCalibratedFilePath = Path.Combine(unitTestFolder, nonCalibratedFile);
-            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
 
             // protein db
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
 
             // set up original experimental design (input to calibration)
             SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
@@ -102,10 +107,10 @@ namespace Test
 
                 // set up original spectra file (input to calibration)
                 string nonCalibratedFilePath = Path.Combine(unitTestFolder, "filename1.mzML");
-                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
 
                 // protein db
-                string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+                string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
 
                 // run calibration
                 CalibrationTask calibrationTask = new();
@@ -168,10 +173,10 @@ namespace Test
 
             // set up original spectra file (input to calibration)
             string nonCalibratedFilePath = Path.Combine(unitTestFolder, "filename1.mzML");
-            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
 
             // protein db for a non-matching organism
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fa");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fa");
 
             // set up original experimental design (input to calibration)
             SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
@@ -205,14 +210,14 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
 
             // set up original spectra file (input to calibration)
-            string nonCalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.mzML");
+            string nonCalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mouseOne.mzML");
 
             // set up original experimental design (input to calibration)
             SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
             _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
 
             // protein db for a non-matching organism
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.xml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mouseOne.xml");
 
             CalibrationTask calibrationTask = new();
 
@@ -250,8 +255,8 @@ namespace Test
             calibrationTask.CalibrationParameters.SearchType = searchType;
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationLow");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TaGe_SA_A549_3_snip.fasta");
             Directory.CreateDirectory(outputFolder);
 
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
@@ -277,8 +282,8 @@ namespace Test
                 scoreCutoff: 1);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationLow");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
             Directory.CreateDirectory(outputFolder);
 
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
@@ -296,6 +301,34 @@ namespace Test
         }
 
         [Test]
+        public static void CalibrationRunsInMostAbundantMode()
+        {
+            // Exercises the most-abundant calibration path end to end: when PrecursorMassMatchMode is
+            // MostAbundant AND precursor deconvolution is on, calibration selects its PSMs with the apex
+            // (MostAbundantMassDiffAcceptor) acceptor rather than the zero-centered monoisotopic one.
+            // Start from the calibration defaults and flip only the two relevant fields, so all the
+            // calibration-appropriate parameters (digestion, mods, deconvolution settings) stay intact.
+            CalibrationTask calibrationTask = new CalibrationTask();
+            calibrationTask.CommonParameters.DoPrecursorDeconvolution = true;
+            calibrationTask.CommonParameters.PrecursorMassMatchMode = PrecursorMassMatchMode.MostAbundant;
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationMostAbundant");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
+            Directory.CreateDirectory(outputFolder);
+
+            // The run must complete and produce output; the apex acceptor is constructed during data-point
+            // acquisition regardless of how many PSMs are found.
+            Assert.DoesNotThrow(() =>
+                calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) },
+                    new List<string> { myFile }, "test"));
+            Assert.That(Directory.GetFiles(outputFolder, "*", SearchOption.AllDirectories).Length, Is.GreaterThan(0));
+
+            Directory.Delete(outputFolder, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+        }
+
+        [Test]
         [TestCase("filename1.1.mzML")]
         public static void ExperimentalDesignCalibrationAndSearch(string nonCalibratedFile)
         {
@@ -307,7 +340,7 @@ namespace Test
 
             // set up original spectra file (input to calibration)
             string nonCalibratedFilePath = Path.Combine(unitTestFolder, nonCalibratedFile);
-            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
 
             // set up original experimental design (input to calibration)
             SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
@@ -318,7 +351,7 @@ namespace Test
             SearchTask searchTask = new SearchTask();
 
             // protein db
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
 
             // run the tasks
             EverythingRunnerEngine a = new EverythingRunnerEngine(
@@ -348,9 +381,9 @@ namespace Test
 
             // set up original spectra file (input to calibration)
             string nonCalibratedFilePathOne = Path.Combine(unitTestFolder, "filename1.mzML");
-            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePathOne, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), nonCalibratedFilePathOne, true);
             string nonCalibratedFilePathTwo = Path.Combine(unitTestFolder, "filename2.mzML");
-            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML"), nonCalibratedFilePathTwo, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TaGe_SA_A549_3_snip.mzML"), nonCalibratedFilePathTwo, true);
 
             // set up original experimental design (input to calibration)
             SpectraFileInfo fileInfoOne = new(nonCalibratedFilePathOne, "condition1", 0, 0, 0);
@@ -362,7 +395,7 @@ namespace Test
             SearchTask searchTask = new SearchTask();
 
             // protein db
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
 
             // run the tasks
             EverythingRunnerEngine a = new EverythingRunnerEngine(
@@ -408,14 +441,14 @@ namespace Test
 
             // set up original spectra file (input to calibration)
             string nonCalibratedFilePath = Path.Combine(unitTestFolder, "filename1.mzML");
-            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
 
             // set up original BAD experimental design (input to calibration)
             string experimentalDesignPath = Path.Combine(unitTestFolder, "ExperimentalDesign.tsv");
             File.Copy(badExperimentalDesignPath, experimentalDesignPath, true);
 
             // protein db
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
 
             // run calibration
             CalibrationTask calibrationTask = new CalibrationTask();
@@ -451,10 +484,10 @@ namespace Test
 
             // set up original spectra file (input to calibration)
             string nonCalibratedFilePath = Path.Combine(unitTestFolder, "testfile.mzML");
-            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
 
             // protein db
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
 
             // run calibration with Modern Search
             CalibrationTask calibrationTask = new();
@@ -502,11 +535,11 @@ namespace Test
             // set up original spectra files (need separate copies to avoid file locking issues)
             string classicFilePath = Path.Combine(unitTestFolder, "classic_test.mzML");
             string modernFilePath = Path.Combine(unitTestFolder, "modern_test.mzML");
-            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), classicFilePath, true);
-            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), modernFilePath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), classicFilePath, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), modernFilePath, true);
 
             // protein db
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
 
             // run calibration with Classic Search
             CalibrationTask classicCalibrationTask = new();
@@ -686,7 +719,7 @@ namespace Test
             type.GetField("_fixedModifications", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(calibrationTask, new List<Modification>());
 
-            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
             type.GetField("_dbFilenameList", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(calibrationTask, new List<DbForTask> { new DbForTask(dbPath, false) });
 
@@ -718,6 +751,89 @@ namespace Test
                 "A warning should be emitted when non-protein entries are excluded from the search index");
             Assert.That(warnings.Any(w => w.Contains("Only protein sequences are supported by Modern Search")),
                 "Warning should indicate that Modern Search only supports protein sequences");
+        }
+
+        // ── Calibration precursor-tolerance robustness (most-abundant mode) ──────
+
+        private static SpectralMatch BuildPsmWithPrecursorMass(PeptideWithSetModifications pep, double precursorNeutralMass,
+            double? mostAbundantNeutralMass = null)
+        {
+            var spectrum = new MzSpectrum(new[] { precursorNeutralMass.ToMz(1) }, new[] { 1.0 }, false);
+            var scanData = new MsDataScan(spectrum, 1, 1, true, Polarity.Positive, 1.0, null, "", MZAnalyzerType.Orbitrap, 1.0, null, null, null);
+            var scan = new Ms2ScanWithSpecificMass(scanData, precursorNeutralMass.ToMz(1), 1, "file.raw", new CommonParameters(),
+                precursorMostAbundantMass: mostAbundantNeutralMass);
+            var psm = new PeptideSpectralMatch(pep, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            return psm;
+        }
+
+        /// <summary>
+        /// Most-abundant precursor matching admits PSMs whose deconvoluted monoisotopic peak is ±1–2
+        /// neutrons off (the apex notch set). Calibration must measure instrument drift, so the acceptor
+        /// strips those whole-isotopologue offsets out of the precursor error — otherwise the IQR is
+        /// inflated by ~67–134 ppm/neutron spikes and calibration writes runaway tolerances.
+        /// </summary>
+        [Test]
+        public static void CalibrationPrecursorError_StripsIsotopeOffsets_InMostAbundantMode()
+        {
+            var protein = new Protein("PEPTIDEKPEPTIDEKPEPTIDEK", "ACC");
+            var pep = new PeptideWithSetModifications(protein, new DigestionParams(), 1, protein.BaseSequence.Length,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            double mono = pep.MonoisotopicMass;
+
+            var averagine = new Averagine();
+            double apex = mono + MostAbundantMassDiffAcceptor.AveragineApexOffset(averagine, mono);
+            var apexParams = new CommonParameters(precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+
+            // Each PSM: the envelope's observed apex carries a few ppm of real drift and a k-neutron apex
+            // misprediction. The deconvoluted monoisotopic mass is correspondingly off by k neutrons — which
+            // is exactly the PSM population most-abundant mode exists to rescue.
+            int[] neutronOffsets = { 0, 1, -1, 2, -2 };
+            double[] driftPpm = { 1, 2, 3, 2, 1 };
+            var psms = new List<SpectralMatch>();
+            for (int i = 0; i < neutronOffsets.Length; i++)
+            {
+                double observedApex = apex * (1 + driftPpm[i] / 1e6) + neutronOffsets[i] * Constants.C13MinusC12;
+                double deconvolutedMono = mono * (1 + driftPpm[i] / 1e6) + neutronOffsets[i] * Constants.C13MinusC12;
+                psms.Add(BuildPsmWithPrecursorMass(pep, deconvolutedMono, observedApex));
+            }
+
+            var results = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0,
+                apexParams);
+
+            // The spread now reflects only the few-ppm drift, not the ±1–2 neutron offsets.
+            Assert.That(results.PsmPrecursorIqrPpmError, Is.LessThan(5));
+            Assert.That(Math.Abs(results.PsmPrecursorMedianPpmError), Is.LessThan(5));
+
+            // Control: read in the default monoisotopic mode, the same PSMs keep their raw neutron
+            // offsets — proving the correction, not the test data, is what tightens the spread.
+            var rawResults = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
+            Assert.That(rawResults.PsmPrecursorIqrPpmError, Is.GreaterThan(50));
+        }
+
+        /// <summary>
+        /// Guardrail: calibration must never write a precursor tolerance wider than the one it searched
+        /// with, even if the error distribution is pathologically wide.
+        /// </summary>
+        [Test]
+        public static void Calibration_DoesNotWidenToleranceBeyondSearched()
+        {
+            var protein = new Protein("PEPTIDEKPEPTIDEKPEPTIDEK", "ACC");
+            var pep = new PeptideWithSetModifications(protein, new DigestionParams(), 1, protein.BaseSequence.Length,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            double mono = pep.MonoisotopicMass;
+
+            // Wide sub-neutron precursor-error spread → computed tolerance far exceeds the searched 5 ppm.
+            double[] subNeutronDeltaDa = { -0.05, -0.02, 0.02, 0.05 };
+            var psms = subNeutronDeltaDa.Select(d => BuildPsmWithPrecursorMass(pep, mono + d)).ToList();
+            var results = new DataPointAquisitionResults(null, psms, new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
+
+            // The clamp is gated on most-abundant mode, where the runaway-tolerance risk lives.
+            var cp = new CommonParameters(precursorMassTolerance: new PpmTolerance(5), productMassTolerance: new PpmTolerance(20),
+                precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+            CalibrationTask.UpdateCombinedParameters(cp, results);
+
+            Assert.That(cp.PrecursorMassTolerance.Value, Is.LessThanOrEqualTo(5.0));
         }
 
     }

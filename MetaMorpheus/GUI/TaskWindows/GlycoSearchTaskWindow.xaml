@@ -508,6 +508,30 @@
                             </Style>
                         </Expander.Style>
                         <StackPanel>
+                            <GroupBox Header="Retention Time Predictor">
+                                <StackPanel Margin="5">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="1*" />
+                                        </Grid.ColumnDefinitions>
+                                        <RadioButton x:Name="ChronologerRadioButton" Grid.Column="0" HorizontalAlignment="Center"
+                                                     GroupName="RTPredictorType" Content="Chronologer"  IsChecked="True"
+                                                     ToolTip="Deep-learning retention time predictor. More accurate but noticeably slower." />
+                                        <RadioButton x:Name="SSRCalcRadioButton" Grid.Column="1" HorizontalAlignment="Center"
+                                                     GroupName="RTPredictorType" Content="SSRCalc"
+                                                     ToolTip="Classic hydrophobicity-based retention time calculator. Much faster, slightly less accurate." />
+                                        <RadioButton x:Name="Prosit2019iRTRadioButton" Grid.Column="2" HorizontalAlignment="Center"
+                                                     GroupName="RTPredictorType" Content="Prosit 2019 (network)"
+                                                     ToolTip="Deep-learning retention time predictor served via Koina (network required). Predicts indexed RT for unmodified/oxidized peptides." />
+                                        <RadioButton x:Name="Prosit2020iRTTMTRadioButton" Grid.Column="3" HorizontalAlignment="Center"
+                                                     GroupName="RTPredictorType" Content="Prosit 2020 (network)"
+                                                     ToolTip="Deep-learning retention time predictor served via Koina (network required). Same as Prosit2019iRT but trained for TMT-labeled peptides." />
+                                    </Grid>
+                                </StackPanel>
+                            </GroupBox>
                             <GroupBox Header="Pruned Database Writing">
                                 <StackPanel Margin="5">
                                     <CheckBox Margin="0 0 0 5" x:Name="WritePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">

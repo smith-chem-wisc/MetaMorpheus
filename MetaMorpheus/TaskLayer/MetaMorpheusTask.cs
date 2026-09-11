@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -387,11 +387,23 @@ namespace TaskLayer
 
                         foreach (var precursor in precursorSet)
                         {
+                            // The most-abundant (tallest) isotopologue mass of the deconvoluted envelope. Recorded
+                            // for every search, alongside the monoisotopic mass, because it is an observation and
+                            // not a search decision — the MassDiffAcceptor decides which of the two a search
+                            // matches on. Null when there is no envelope, or when the envelope reports no
+                            // most-abundant peak (the -1 sentinel, e.g. a neutral mass read from a pre-deconvoluted
+                            // file). (Isotopically unresolved high-mass species, which would instead be matched on
+                            // the average/centroid mass, are future work.)
+                            double? precursorMostAbundantMass = precursor.Envelope?.MostAbundantObservedNeutralMass > 0
+                                ? precursor.Envelope.MostAbundantObservedNeutralMass
+                                : null;
+
                             // assign precursor for this MS2 scan
                             var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.MonoisotopicPeakMz,
                                 precursor.Charge, fullFilePath, commonParameters, neutralExperimentalFragments,
                                 precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity,
-                                precursor.DeconvolutionScore);
+                                precursorMostAbundantMass: precursorMostAbundantMass,
+                                precursorDeconvolutionScore: precursor.DeconvolutionScore);
 
                             // assign precursors for MS2 child scans
                             if (ms2ChildScans != null)
@@ -406,7 +418,8 @@ namespace TaskLayer
                                     }
                                     var theChildScan = new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.MonoisotopicPeakMz,
                                         precursor.Charge, fullFilePath, commonParameters, childNeutralExperimentalFragments,
-                                        precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity);
+                                        precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity,
+                                        precursorMostAbundantMass: precursorMostAbundantMass);
                                     scan.ChildScans.Add(theChildScan);
                                 }
                             }
@@ -496,7 +509,7 @@ namespace TaskLayer
 
                             var parentScan = parentScans[i];
 
-                            if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                            if (commonParameters.DissociationType == DissociationType.LowCID)
                             {
                                 lock (parentScan.TheScan)
                                 {
@@ -504,14 +517,19 @@ namespace TaskLayer
                                     {
                                         parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
                                     }
+
+                                    // Chimeric precursors share one spectrum but each carries its own
+                                    // metadata, so every wrapper has to re-read the count, not just the
+                                    // one that happened to do the pre-processing. Inside the lock so the
+                                    // count never comes from a half-rewritten spectrum.
+                                    parentScan.RefreshPeakCount();
                                 }
                             }
 
                             foreach (var childScan in parentScan.ChildScans)
                             {
-                                if (((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID)
+                                if ((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID)
                                     || (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID))
-                                && !childScan.TheScan.MassSpectrum.XcorrProcessed)
                                 { 
                                     lock (childScan.TheScan)
                                     {
@@ -519,6 +537,8 @@ namespace TaskLayer
                                         {
                                             childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
                                         }
+
+                                        childScan.RefreshPeakCount();
                                     }
                                 }
                             }
@@ -606,24 +626,31 @@ namespace TaskLayer
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
+            DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
+            DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
+
+            // DoPrecursorDeconvolution and DoProductDeconvolution flow from CommonParameters only;
+            // file-specific PrecursorDeconvolutionParameters / ProductDeconvolutionParameters are stored
+            // independently and take effect when the corresponding Do* flag is true.
+
             // Resolve an external whole-file MS1 deconvolution result as the secondary precursor source
             // when the file-specific toml supplies a path (auto-discovery in RunTask stamps the resolved
             // path into fileSpecificParams.Ms1FeatureFilePath). Resolved before constructing returnParams
             // so it can flow through the constructor and the property's setter on CommonParameters can
-            // stay private (matching the class-header convention). Charge bounds inherit from commonParams'
-            // primary precursor decon params -- same reference that gets carried through to returnParams
-            // via precursorDeconParams: below.
+            // stay private (matching the class-header convention). Charge bounds inherit from the resolved
+            // precursor decon params above -- the same reference that gets carried through to returnParams
+            // via precursorDeconParams: below, so a file-specific override is honoured.
             DeconvolutionParameters additionalPrecursorDeconParams = commonParams.AdditionalPrecursorDeconvolutionParameters;
             if (!string.IsNullOrWhiteSpace(fileSpecificParams.Ms1FeatureFilePath))
             {
                 if (File.Exists(fileSpecificParams.Ms1FeatureFilePath))
                 {
-                    // PrecursorDeconvolutionParameters is always populated by the CommonParameters
-                    // constructor and the setter is private. Dot-access (not ?.) makes any future
+                    // The resolved precursor decon params are never null -- the CommonParameters
+                    // constructor guarantees the fallback. Dot-access (not ?.) makes any future
                     // refactor that nulls it surface as a NullReferenceException in the per-file
                     // try/catch around this call rather than silently falling back to (1, 12), which
                     // would strip out envelopes above charge 12 on top-down configs that set 60.
-                    var primary = commonParams.PrecursorDeconvolutionParameters;
+                    var primary = precursorDeconParams;
                     additionalPrecursorDeconParams = new Readers.FromFileDeconvolutionParameters(
                         fileSpecificParams.Ms1FeatureFilePath,
                         primary.MinAssumedChargeState,
@@ -677,10 +704,12 @@ namespace TaskLayer
                 maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
                 minVariantDepth: commonParams.MinVariantDepth,
                 addTruncations: commonParams.AddTruncations,
-                precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
-                productDeconParams: commonParams.ProductDeconvolutionParameters,
+                precursorDeconParams: precursorDeconParams,
+                productDeconParams: productDeconParams,
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
                 fragmentationParams: commonParams.FragmentationParameters,
+                precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
+                rtPredictorName: commonParams.RTPredictorName,
                 additionalPrecursorDeconParams: additionalPrecursorDeconParams);
 
             return returnParams;
@@ -712,6 +741,10 @@ namespace TaskLayer
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
             FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)>();
+
+            // The GUI re-runs the same task objects, so this survives between runs and would otherwise
+            // append a second copy of every sentence to AutoGeneratedManuscriptProse.txt.
+            ProseCreatedWhileRunning.Clear();
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
@@ -1221,10 +1254,14 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 bool includeOneOverK0Column = psms.Any(p => p.ScanOneOverK0.HasValue);
-                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column));
+                bool includeCollisionalEnergyColumn = psms.Any(p => p.CollisionalEnergy.HasValue);
+                // Only emit the most-abundant mass-error column when a run actually used most-abundant
+                // selection (its property is null otherwise), mirroring the data-driven gating above.
+                bool includeMostAbundantColumn = psms.Any(p => p.MostAbundantMassErrorPpm != null);
+                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
                 foreach (var psm in psms)
                 {
-                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column));
+                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
                 }
             }
         }

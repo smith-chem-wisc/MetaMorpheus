@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
@@ -194,11 +194,33 @@ namespace TaskLayer
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
         {
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalDataFile);
-            MassDiffAcceptor searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
-                new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
-                new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            // In most-abundant mode, find calibration PSMs with the apex acceptor. The calibration error
+            // itself is recomputed per-isotope from the identified peptide's theoretical distribution
+            // (DataPointAcquisitionEngine) and is independent of the precursor-matching convention.
+            // The apex acceptor is only usable when a most-abundant peak was actually observed, which
+            // requires precursor deconvolution. Calibration can run with deconvolution off (see ctor),
+            // and the scans then carry no most-abundant mass at all — so use the standard zero-centered
+            // (monoisotopic) acceptor there, and the scans' monoisotopic mass is what gets matched.
+            MassDiffAcceptor searchMode;
+            if (combinedParameters.UsesMostAbundantPeak()
+                && combinedParameters.DoPrecursorDeconvolution)
+            {
+                searchMode = new MostAbundantMassDiffAcceptor("mostAbundant", combinedParameters.PrecursorMassTolerance,
+                    combinedParameters.GetAverageResidue(),
+                    expectedIsotopeSpacing: combinedParameters.IsotopeSpacing());
+            }
+            else
+            {
+                searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
+                    new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
+                    new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            }
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.GetPrecursorMassForSearch(combinedParameters)).ToArray();
+            // A most-abundant search falls back to the monoisotopic mass for any scan with no observed apex.
+            // That is intended, but silent — report how often it happens so it is noticed.
+            string fallbackWarning = listOfSortedms2Scans.GetMonoisotopicFallbackWarning(combinedParameters, Path.GetFileName(originalDataFile));
+            if (fallbackWarning != null) { Warn(fallbackWarning); }
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
@@ -221,7 +243,10 @@ namespace TaskLayer
             }
 
             List<SpectralMatch> allPsms = allPsmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
-                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                // Rank equal-scoring matches by how close the precursor is to the candidate. The isotope
+                // offset a most-abundant search allowed is not "closeness" - left in, it would rank a match
+                // with a 1-neutron apex misprediction behind an inferior one.
+                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, combinedParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                 .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
 
             _ = new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, FileSpecificParameters, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }, doPEP: false).Run();
@@ -384,7 +409,7 @@ namespace TaskLayer
         {
             string fileExtension = Path.GetExtension(originalUncalibratedFilePath);
             string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-            if (fileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase))
+            if (fileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase) || BrukerDataDirectory.IsInnerFileExtension(fileExtension))
             {
                 _unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
                 // provide a message indicating why we couldn't calibrate
@@ -406,6 +431,18 @@ namespace TaskLayer
         {
             double newPrecursorPpmTolerance = Math.Round(PrecursorMultiplierForToml * acquisitionResults.PsmPrecursorIqrPpmError + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError), 1);
             double newProductPpmTolerance = Math.Round(ProductMultiplierForToml * acquisitionResults.PsmProductIqrPpmError + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1);
+
+            // Guardrail (most-abundant mode only): the neutron-misassignment error distribution can be
+            // pathologically wide there, and calibration must never write a tolerance wider than the one
+            // it searched with (that would explode the candidate space and memory in downstream
+            // GPTMD/Search). In default Monoisotopic mode the tolerance is left unclamped, preserving the
+            // historical multi-round calibration behavior.
+            if (combinedParams.UsesMostAbundantPeak())
+            {
+                newPrecursorPpmTolerance = Math.Min(newPrecursorPpmTolerance, combinedParams.PrecursorMassTolerance.Value);
+                newProductPpmTolerance = Math.Min(newProductPpmTolerance, combinedParams.ProductMassTolerance.Value);
+            }
+
             UpdateCombinedParameters(combinedParams, newPrecursorPpmTolerance, newProductPpmTolerance);
         }
 

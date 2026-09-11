@@ -14,9 +14,15 @@ namespace EngineLayer.HistogramAnalysis
 
         public List<Bin> FinalBins { get; private set; }
 
-        public void GenerateBins(List<SpectralMatch> targetAndDecoyMatches, double dc)
+        /// <summary>
+        /// Bins PSMs by their precursor mass shift. <paramref name="commonParameters"/> is what makes that
+        /// shift chemistry rather than an artifact: a most-abundant search accepts matches whose
+        /// deconvoluted monoisotopic peak is off by whole isotopologues, and read raw those would pile up as
+        /// spurious ~1-2 Da bins. Null (the default) reads the raw difference, as before.
+        /// </summary>
+        public void GenerateBins(List<SpectralMatch> targetAndDecoyMatches, double dc, CommonParameters commonParameters = null)
         {
-            List<double> listOfMassShifts = targetAndDecoyMatches.Where(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue).Select(b => b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value).OrderBy(b => b).ToList();
+            List<double> listOfMassShifts = targetAndDecoyMatches.Where(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue).Select(b => b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, commonParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();
             double maxMassShift = listOfMassShifts.Max();
 
@@ -88,7 +94,9 @@ namespace EngineLayer.HistogramAnalysis
             for (int i = 0; i < targetAndDecoyMatches.Count; i++)
             {
                 foreach (Bin bin in FinalBins)
-                    if (targetAndDecoyMatches[i].BioPolymerWithSetModsMonoisotopicMass.HasValue && Math.Abs(targetAndDecoyMatches[i].ScanPrecursorMass - targetAndDecoyMatches[i].BioPolymerWithSetModsMonoisotopicMass.Value - bin.MassShift) <= dc)
+                    if (targetAndDecoyMatches[i].BioPolymerWithSetModsMonoisotopicMass.HasValue
+                        && Math.Abs(targetAndDecoyMatches[i].GetObservedMonoisotopicMass(targetAndDecoyMatches[i].BioPolymerWithSetModsMonoisotopicMass.Value, commonParameters)
+                                    - targetAndDecoyMatches[i].BioPolymerWithSetModsMonoisotopicMass.Value - bin.MassShift) <= dc)
                         bin.Add(targetAndDecoyMatches[i]);
             }
 

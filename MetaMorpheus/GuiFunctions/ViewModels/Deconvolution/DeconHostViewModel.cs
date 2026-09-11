@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -38,93 +38,46 @@ public class DeconHostViewModel : BaseViewModel
         PrecursorDeconvolutionParametersList = new ObservableCollection<DeconParamsViewModel>();
         ProductDeconvolutionParametersList = new ObservableCollection<DeconParamsViewModel>();
 
+        // FromFile parameters are not supported in the GUI; treat them as null for list construction
+        bool precursorIsFromFile = initialPrecursorParameters?.DeconvolutionType == DeconvolutionType.FromFile;
+        bool productIsFromFile = initialProductParameters?.DeconvolutionType == DeconvolutionType.FromFile;
+
         // populate the lists by adding the default parameters for each deconvolution type or the provided parameters
         foreach (var deconType in Enum.GetValues<DeconvolutionType>())
         {
-            switch (deconType)
+            if (deconType == DeconvolutionType.ExampleNewDeconvolutionTemplate || deconType == DeconvolutionType.FromFile)
+                continue;
+
+            if (initialPrecursorParameters != null && !precursorIsFromFile && initialPrecursorParameters.DeconvolutionType == deconType)
+                PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel(true));
+            else
             {
-                case DeconvolutionType.ExampleNewDeconvolutionTemplate:
-                    continue;
+                var vm = deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, true);
+                if (vm != null)
+                    PrecursorDeconvolutionParametersList.Add(vm);
+            }
 
-                case DeconvolutionType.ClassicDeconvolution:
-
-                    // Precursor
-                    if (initialPrecursorParameters is { DeconvolutionType: DeconvolutionType.ClassicDeconvolution })
-                        PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel());
-                    else
-                    {
-                        var toAdd = GlobalVariables.AnalyteType switch
-                        {
-                            AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 12, 4, 3),
-                            AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 60, 4, 3),
-                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-20, -1, 4, 3, Polarity.Negative, new OxyriboAveragine()),
-                            _ => throw new ArgumentOutOfRangeException()
-                        };
-                        PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
-                    }
-                    
-                    // Product
-                    if (initialProductParameters is { DeconvolutionType: DeconvolutionType.ClassicDeconvolution })
-                        ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel());
-                    else
-                    {
-                        var toAdd = GlobalVariables.AnalyteType switch
-                        {
-                            AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 10, 4, 3),
-                            AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 10, 4, 3),
-                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-10, -1, 4, 3, Polarity.Negative, new OxyriboAveragine()),
-                            _ => throw new ArgumentOutOfRangeException()
-                        };
-                        ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());
-                    }
-
-                    break;
-
-                case DeconvolutionType.IsoDecDeconvolution:
-
-                    // Precursor
-                    if (initialPrecursorParameters is { DeconvolutionType: DeconvolutionType.IsoDecDeconvolution })
-                        PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel());
-                    else
-                    {
-                        var toAdd = GlobalVariables.AnalyteType switch
-                        {
-                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters() { MaxAssumedChargeState = 12},
-                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters() { MaxAssumedChargeState = 60 },
-                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative) { MaxAssumedChargeState = -20, MinAssumedChargeState = -1 },
-                            _ => throw new ArgumentOutOfRangeException()
-                        };
-                        PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
-                    }
-
-                    // Product
-                    if (initialProductParameters is { DeconvolutionType: DeconvolutionType.IsoDecDeconvolution })
-                        ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel());
-                    else
-                    {
-                        var toAdd = GlobalVariables.AnalyteType switch
-                        {
-                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false) { MaxAssumedChargeState = 10},
-                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false) { MaxAssumedChargeState = 10 },
-                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative, reportMultipleMonoisos: false) { MaxAssumedChargeState = -10, MinAssumedChargeState = -1 },
-                            _ => throw new ArgumentOutOfRangeException()
-                        };
-                        ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());
-                    }
-
-                    break;
+            if (initialProductParameters != null && !productIsFromFile && initialProductParameters.DeconvolutionType == deconType)
+                ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel(false));
+            else
+            {
+                var vm = deconType.GetDefaultViewModel(GlobalVariables.AnalyteType, false);
+                if (vm != null)
+                    ProductDeconvolutionParametersList.Add(vm);
             }
         }
 
         // If deconvolution parameters are not set, default to MetaMorpheus defaults
-        PrecursorDeconvolutionParameters = initialPrecursorParameters is null 
+        PrecursorDeconvolutionParameters = (initialPrecursorParameters is null || precursorIsFromFile)
             ? PrecursorDeconvolutionParametersList.First(x => x.DeconvolutionType == DeconvolutionType.ClassicDeconvolution) 
             : PrecursorDeconvolutionParametersList.First(x => x.Parameters == initialPrecursorParameters);
 
-        ProductDeconvolutionParameters = initialProductParameters is null 
+        ProductDeconvolutionParameters = (initialProductParameters is null || productIsFromFile)
             ? ProductDeconvolutionParametersList.First(x => x.DeconvolutionType == DeconvolutionType.ClassicDeconvolution)
             : ProductDeconvolutionParametersList.First(x => x.Parameters == initialProductParameters);
     }
+
+
 
     #region Common Parameters
 
@@ -154,7 +107,10 @@ public class DeconHostViewModel : BaseViewModel
     {
         foreach (var precursorParams in PrecursorDeconvolutionParametersList)
         {
-            precursorParams.MaxAssumedChargeState = newMaxCharge;
+            if (precursorParams is MultipleDeconParamsViewModel multiVm)
+                multiVm.SharedMaxAssumedChargeState = newMaxCharge;
+            else
+                precursorParams.MaxAssumedChargeState = newMaxCharge;
         }
         OnPropertyChanged(nameof(PrecursorDeconvolutionParametersList));
     }
@@ -163,7 +119,10 @@ public class DeconHostViewModel : BaseViewModel
     {
         foreach (var productParams in ProductDeconvolutionParametersList)
         {
-            productParams.MaxAssumedChargeState = newMaxCharge;
+            if (productParams is MultipleDeconParamsViewModel multiVm)
+                multiVm.SharedMaxAssumedChargeState = newMaxCharge;
+            else
+                productParams.MaxAssumedChargeState = newMaxCharge;
         }
         OnPropertyChanged(nameof(ProductDeconvolutionParametersList));
     }

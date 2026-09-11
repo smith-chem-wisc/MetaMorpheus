@@ -1,5 +1,9 @@
 ﻿using Easy.Common.Extensions;
 using EngineLayer;
+using Omics.BioPolymerGroup;
+using Omics.SpectralMatch;
+using Quantification.Strategies;
+using Quantification;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
@@ -16,7 +20,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using Chemistry;
 using EngineLayer.DatabaseLoading;
 using MzLibUtil;
 using Omics.Digestion;
@@ -39,7 +42,7 @@ namespace TaskLayer
         /// <summary>
         /// Used for storage of results for writing to Results.tsv. It is explained in the method ConstructResultsDictionary()
         /// </summary>
-        private Dictionary<(string,string),string> ResultsDictionary { get; set; }
+        private Dictionary<(string, string), string> ResultsDictionary { get; set; }
         /// <summary>
         /// Used for storage of results for writing digestion product counts to a .tsv. 
         /// </summary>
@@ -154,7 +157,6 @@ namespace TaskLayer
 
             Status($"Done estimating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} FDR!", Parameters.SearchTaskId);
         }
-
         private void DisambiguateSpectralMatches()
         {
             try
@@ -192,21 +194,13 @@ namespace TaskLayer
                 }
             }
 
-            var filteredPsmsForParsimony = FilteredPsms.Filter(Parameters.AllSpectralMatches,
-                commonParams: CommonParameters,
-                includeDecoys: true,
-                includeContaminants: true,
-                includeAmbiguous: false,
-                includeHighQValuePsms: false);
-
             // run parsimony
-            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(filteredPsmsForParsimony, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(Parameters.AllSpectralMatches, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
-            // Pass the FilterType and FilterThreshold from the filtered PSMs to ensure consistent filtering criteria
             ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
                 proteinAnalysisResults.ProteinGroups,
-                filteredPsmsForParsimony,
+                Parameters.AllSpectralMatches,
                 Parameters.SearchParameters.NoOneHitWonders,
                 Parameters.SearchParameters.ModPeptidesAreDifferent,
                 mergeIndistinguishableProteinGroups: true,
@@ -259,10 +253,269 @@ namespace TaskLayer
             }
         }
 
+        /// <summary>
+        /// Runs isobaric (TMT/iTRAQ) quantification through mzLib's <see cref="QuantificationEngine"/>.
+        /// </summary>
+        /// <remarks>
+        /// Before this existed, multiplex quantification stopped at the PSM level: reporter-ion
+        /// intensities were extracted during the search and written as extra columns in the .psmtsv, and
+        /// nothing rolled them up to peptides or proteins. This is the step that closes that gap.
+        ///
+        /// The three inputs the engine needs are now satisfied directly, with no .psmtsv round trip:
+        /// <see cref="SpectralMatch"/> implements <c>ISpectralMatch</c> (its <c>Intensities</c> are the
+        /// reporter-ion intensities), <see cref="ProteinGroup"/> implements <c>IBioPolymerGroup</c>, and
+        /// <see cref="TmtExperimentalDesign.ToMzLibDesign"/> projects TmtDesign.txt onto
+        /// <c>IExperimentalDesign</c>.
+        ///
+        /// Nothing here is fatal. A missing or unreadable design file leaves the search exactly as it
+        /// was — the reporter-ion columns still reach the .psmtsv — because a TMT search without a
+        /// channel-to-sample mapping is a legitimate thing to run.
+        /// </remarks>
+        private void MultiplexQuantificationAnalysis()
+        {
+            if (Parameters.CurrentRawFileList.IsNullOrEmpty())
+            {
+                return;
+            }
+
+            string designDirectory = Directory.GetParent(Parameters.CurrentRawFileList.First())?.FullName;
+            string tmtDesignPath = designDirectory == null
+                ? null
+                : Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+
+            if (tmtDesignPath == null || !File.Exists(tmtDesignPath))
+            {
+                Warn($"No {GlobalVariables.TmtExperimentalDesignFileName} found next to the spectra files, so " +
+                     "reporter ion intensities were written per PSM but not quantified per channel.");
+                return;
+            }
+
+            Status("Quantifying multiplex channels...", Parameters.SearchTaskId);
+
+            var tmtFiles = TmtExperimentalDesign.Read(tmtDesignPath, Parameters.CurrentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("Error reading TMT design file: " + designErrors.First() + ". Skipping multiplex quantification");
+                return;
+            }
+
+            // Copy the design into the output folder, as the label-free path does for ExperimentalDesign,
+            // so a result folder records the design it was quantified under. AFTER the read, not before:
+            // a design that could not be parsed was not quantified under anything, and archiving it
+            // anyway left it in the results folder and announced it through FinishedWritingFile while
+            // this method was on its way out.
+            try
+            {
+                string copiedDesign = Path.Combine(Parameters.OutputFolder, Path.GetFileName(tmtDesignPath));
+                File.Copy(tmtDesignPath, copiedDesign, overwrite: true);
+                FinishedWritingFile(copiedDesign, new List<string> { Parameters.SearchTaskId });
+            }
+            catch (Exception e)
+            {
+                // Named, not swallowed: a user whose archive failed can act on "access is denied" and
+                // can do nothing with "could not copy".
+                Warn("Could not copy the TMT design file to the search task output: " + e.Message +
+                     ". That's ok, the search will continue");
+            }
+
+            var tag = IsobaricMassTag.GetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId);
+            var experimentalDesign = TmtExperimentalDesign.ToMzLibDesign(tmtFiles, tag, out var projectionErrors);
+            if (experimentalDesign == null || projectionErrors.Any())
+            {
+                Warn("Could not build a quantification design from the TMT design file: " +
+                     (projectionErrors.FirstOrDefault() ?? "unknown error") + ". Skipping multiplex quantification");
+                return;
+            }
+
+            // includeAmbiguous: false is the unambiguous filter the design calls for. A PSM that could be
+            // more than one peptide would otherwise have its channel intensities credited to whichever
+            // candidate happened to sort first.
+            //
+            // includeContaminants follows WriteContaminants, the same switch ProteinGroupIsWritten reads
+            // below. Passing true unconditionally made the quantified set wider than the written set at
+            // the PSM and peptide levels but not the protein level: with the box unticked, contaminant
+            // peptides appeared in RawQuantification.tsv and PeptideQuantification.tsv while their
+            // groups were absent from ProteinGroupQuantification.tsv.
+            FilteredPsms FilterMatches(bool includeContaminants) => FilteredPsms.Filter(
+                Parameters.AllSpectralMatches,
+                CommonParameters,
+                includeDecoys: false,
+                includeContaminants: includeContaminants,
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
+                includeHighQValuePsms: false);
+
+            static bool CarriesReporterIons(SpectralMatch psm) =>
+                psm.IsobaricMassTagReporterIonIntensities is { Length: > 0 };
+
+            var filteredPsms = FilterMatches(Parameters.SearchParameters.WriteContaminants);
+
+            var quantifiablePsms = filteredPsms.Where(CarriesReporterIons).ToList();
+
+            if (quantifiablePsms.Count == 0)
+            {
+                // Name the filter that emptied the set. With the contaminant box unticked, every
+                // reporter-bearing match in a run can be a contaminant, and the plain wording then
+                // blames the data for what the filter above removed. Asked only on the way out, so a
+                // run that quantifies never pays for the second filter.
+                bool contaminantsCarriedThemAll = !Parameters.SearchParameters.WriteContaminants
+                    && FilterMatches(includeContaminants: true).Any(CarriesReporterIons);
+
+                Warn(contaminantsCarriedThemAll
+                    ? "Every spectral match that carried reporter ion intensities was a contaminant, and " +
+                      "contaminants are not being written. Skipping multiplex quantification"
+                    : "No spectral matches carried reporter ion intensities. Skipping multiplex quantification");
+                return;
+            }
+
+            if (ProteinGroups.IsNullOrEmpty())
+            {
+                Warn("Multiplex quantification needs protein groups, which this search did not produce " +
+                     "(parsimony may be off). Skipping multiplex quantification");
+                return;
+            }
+
+            // Quantify only the groups that AllProteinGroups.tsv will actually show. The PSMs above are
+            // filtered to targets below threshold; leaving the groups unfiltered put rows in
+            // ProteinGroupQuantification.tsv -- decoy groups, and groups above the q-value threshold --
+            // that the protein table suppresses, so the two files disagreed about which groups exist.
+            // The predicate is the writer's own, so the two cannot drift apart.
+            double proteinQValueThreshold = ProteinGroupQValueThreshold(filteredPsms.FilterType);
+            var quantifiableProteinGroups = ProteinGroups
+                .Where(proteinGroup => ProteinGroupIsWritten(proteinGroup, proteinQValueThreshold))
+                .ToList();
+
+            if (quantifiableProteinGroups.Count == 0)
+            {
+                Warn("No protein group survived the filters that decide what reaches AllProteinGroups.tsv, " +
+                     "so there is nothing to quantify onto. Skipping multiplex quantification");
+                return;
+            }
+
+            var peptides = quantifiablePsms
+                .SelectMany(psm => psm.GetIdentifiedBioPolymersWithSetMods())
+                .Distinct()
+                .ToList();
+
+            var quantParameters = new QuantificationParameters
+            {
+                // Deliberately conservative: sum reporter intensities up to peptides and proteins and
+                // normalize nothing. Every strategy mzLib offers -- reference-channel normalization in
+                // particular, which this design file can already describe via its Sample Type column --
+                // is a user-facing choice, and none of them should start applying themselves silently.
+                SpectralMatchNormalizationStrategy = new NoNormalization(),
+                SpectralMatchToPeptideRollUpStrategy = new SumRollUp(),
+                PeptideNormalizationStrategy = new NoNormalization(),
+                CollapseStrategy = new NoCollapse(),
+                CollapseAggregationStrategy = new SumAggregation(),
+                PeptideToProteinRollUpStrategy = new SumRollUp(),
+                ProteinNormalizationStrategy = new NoNormalization(),
+
+                // The same switch the label-free path reads, and the same GUI checkbox, which is labelled
+                // for quantification rather than for LFQ. Off by default, so a protein group left with no
+                // unique peptides quantifies to nothing -- the existing label-free behaviour, not
+                // something the isobaric path should decide differently on its own.
+                UseSharedPeptidesForProteinQuant = Parameters.SearchParameters.UseSharedPeptidesForLFQ,
+
+                // Set explicitly. Left empty, the engine falls back to writing beside the spectra files,
+                // which is right for a caller that has no output folder of its own and wrong for a task
+                // that does.
+                OutputDirectory = Parameters.OutputFolder,
+                WriteRawInformation = true,
+                WritePeptideInformation = true,
+                WriteProteinInformation = true
+            };
+
+            var engine = new QuantificationEngine(
+                quantParameters,
+                experimentalDesign,
+                quantifiablePsms.Cast<ISpectralMatch>().ToList(),
+                peptides,
+                quantifiableProteinGroups.Cast<IBioPolymerGroup>().ToList());
+
+            var results = engine.Run();
+
+            if (!results.Success)
+            {
+                Warn("Multiplex quantification did not run: " + results.Summary);
+                return;
+            }
+
+            Parameters.MultiplexQuantificationResults = results;
+
+            // The engine drops any match it cannot attribute to exactly one biopolymer, and counts them
+            // rather than throwing. Reported here because the loss is otherwise invisible: the peptide and
+            // protein tables simply total less than the per-PSM reporter columns, and in the worst case --
+            // every peptide in the search shared between two groups -- they total zero while the raw
+            // table looks perfectly healthy. The exclusion itself is mzLib's: one sequence found in two
+            // proteins is two unequal PeptideWithSetModifications, so the engine's unambiguous filter
+            // drops it. Tracked as smith-chem-wisc/mzLib#1280; this warning stands whatever comes of it.
+            if (results.AmbiguousSpectralMatchesExcluded > 0)
+            {
+                Warn($"{results.AmbiguousSpectralMatchesExcluded} spectral match(es) were left out of " +
+                     "multiplex quantification because they did not identify exactly one biopolymer, so the " +
+                     "peptide and protein tables total less than the reporter ion columns in the .psmtsv. A " +
+                     "peptide shared between two protein groups is the usual cause");
+            }
+
+            // Rebuild the per-group column schema the engine's write-back invalidated: assigning
+            // IntensitiesBySample and SamplesForQuantification clears the cached SampleGroupResults, and
+            // this copy of the protein header reads that cache without rebuilding it, unlike mzLib's base
+            // header. Left alone, AllProteinGroups.tsv loses its SpectralCount_ and CountOccupancy_
+            // columns and never gains the Intensity_ ones this method exists to produce. Same fix, and the
+            // same reason, as the label-free path's loop.
+            //
+            // The groups held back above are given this run's channels with no values, so that the header
+            // and every row agree on the columns however the groups happen to sort. The engine hands every
+            // group it received a dictionary -- empty when nothing was measured -- so a null one is
+            // exactly a group that was held back.
+            foreach (var proteinGroup in ProteinGroups)
+            {
+                if (proteinGroup.IntensitiesBySample == null)
+                {
+                    proteinGroup.SamplesForQuantification = results.Samples.ToList();
+                    proteinGroup.IntensitiesBySample = new Dictionary<ISampleInfo, double>();
+                }
+
+                proteinGroup.PopulateSampleGroupResults();
+            }
+
+            foreach (string writtenFile in results.WrittenFiles.Where(f => f != null))
+            {
+                FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
+            }
+        }
+
+        /// <summary>
+        /// The q-value threshold a protein group is held to for output, which follows whichever filter
+        /// type the PSMs were filtered under.
+        /// </summary>
+        private double ProteinGroupQValueThreshold(FilterType filterType) => filterType switch
+        {
+            FilterType.PepQValue => CommonParameters.PepQValueThreshold,
+            _ => CommonParameters.QValueThreshold
+        };
+
+        /// <summary>
+        /// True when a protein group will be written to AllProteinGroups.tsv under the current search
+        /// parameters. Shared with <see cref="WriteProteinGroupsToTsv"/>, so quantification cannot end up
+        /// covering a different set of groups than the protein table shows.
+        /// </summary>
+        private bool ProteinGroupIsWritten(EngineLayer.ProteinGroup proteinGroup, double qValueThreshold) =>
+            (Parameters.SearchParameters.WriteDecoys || !proteinGroup.IsDecoy)
+            && (Parameters.SearchParameters.WriteContaminants || !proteinGroup.IsContaminant)
+            && (Parameters.SearchParameters.WriteHighQValuePsms || proteinGroup.QValue <= qValueThreshold);
+
         private void QuantificationAnalysis()
         {
             try
             {
+                // Spectral counts and count-based occupancy need no quantification, so fill them in
+                // before every return below and before anything that can throw. Without an experimental
+                // design the columns are labelled per spectra file; the label-free path repopulates
+                // them with intensities once FlashLFQ has run.
+                PopulateCountBasedOccupancy();
+
                 if (Parameters.SearchParameters.DoMultiplexQuantification)
                 {
                     List<Modification> multiplexMods = Parameters.FixedModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
@@ -270,6 +523,8 @@ namespace TaskLayer
                     {
                         Parameters.MultiplexModification = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
                     }
+
+                    MultiplexQuantificationAnalysis();
                     return;
                 }
 
@@ -322,15 +577,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    spectraFileInfo = new List<SpectraFileInfo>();
-
-                    for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
-                    {
-                        var file = Parameters.CurrentRawFileList[i];
-
-                        // experimental design info passed in here for each spectra file
-                        spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: i, fraction: 0, techrep: 0));
-                    }
+                    spectraFileInfo = BuildUndefinedExperimentalDesign();
                 }
 
                 // get PSMs to pass to FlashLFQ
@@ -341,6 +588,15 @@ namespace TaskLayer
                     includeAmbiguous: false,
                     includeAmbiguousMods: false,
                     includeHighQValuePsms: false);
+
+                // FlashLFQ needs a mass. The filter above screens on sequence, which does not imply a
+                // resolved mass: a NaN residue mass, or two best matches whose mods share an IdWithMotif
+                // but not a mass, both leave BioPolymerWithSetModsMonoisotopicMass null.
+                int psmsWithoutMass = psmsForQuantification.RemovePsmsWithoutResolvedMass();
+                if (psmsWithoutMass > 0)
+                {
+                    Warn($"{psmsWithoutMass} PSM(s) were excluded from quantification because their monoisotopic mass could not be determined.");
+                }
 
                 // Only these peptides will be written to the AllQuantifiedPeptides.tsv output file
                 var peptideSequencesForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
@@ -364,7 +620,8 @@ namespace TaskLayer
                             string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
                             string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
 
-                        foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(v => v.FullSequence != null))
+                        foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>()
+                            .Where(v => v.FullSequence != null))
                         {
                             if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
                             {
@@ -527,6 +784,16 @@ namespace TaskLayer
                     //update the list for FlashLFQ
                     silacPsms.ForEach(x => x.ResolveAllAmbiguities()); //update the monoisotopic mass
                     psmsForQuantification.SetSilacFilteredPsms(silacPsms);
+
+                    // SetSilacFilteredPsms replaces the list wholesale, so the guard above ran against
+                    // PSMs that no longer exist. These were rebuilt from synthesised labeled sequences
+                    // after it, and ResolveAllAmbiguities can still leave the mass null, so screen again
+                    // rather than letting a null-mass PSM reach FlashLFQ by the back door.
+                    int silacPsmsWithoutMass = psmsForQuantification.RemovePsmsWithoutResolvedMass();
+                    if (silacPsmsWithoutMass > 0)
+                    {
+                        Warn($"{silacPsmsWithoutMass} SILAC PSM(s) were excluded from quantification because their monoisotopic mass could not be determined.");
+                    }
                 }
 
                 //group psms by file
@@ -535,25 +802,12 @@ namespace TaskLayer
                 // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
                 // the peptides should still be quantified but not considered for protein quantification
                 var undefinedPg = new ProteinGroup("UNDEFINED", "", "");
-                //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-                Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
-                Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
-
-                foreach (IDigestionParams dp in Parameters.ListOfDigestionParams)
-                {
-                    if (!proteaseSortedPsms.ContainsKey(dp.DigestionAgent))
-                    {
-                        proteaseSortedPsms.Add(dp.DigestionAgent, new List<SpectralMatch>());
-                    }
-                }
                 foreach (var psm in psmsForQuantification)
                 {
                     if (!psmToProteinGroups.ContainsKey(psm))
                     {
                         psmToProteinGroups.Add(psm, new List<ProteinGroup> { undefinedPg });
                     }
-
-                    proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
                 }
 
                 // pass PSM info to FlashLFQ
@@ -567,15 +821,18 @@ namespace TaskLayer
                         flashLFQIdentifications.Add(
                             new Identification(
                                 fileInfo: rawfileinfo,
-                                psm.BaseSequence, 
+                                psm.BaseSequence,
                                 psm.FullSequence,
-                                psm.BioPolymerWithSetModsMonoisotopicMass.Value, 
-                                psm.ScanRetentionTime, 
-                                psm.ScanPrecursorCharge, 
+                                psm.BioPolymerWithSetModsMonoisotopicMass.Value,
+                                psm.ScanRetentionTime,
+                                psm.ScanPrecursorCharge,
                                 psmToProteinGroups[psm],
                                 psmScore: psm.Score,
                                 qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
-                                decoy: psm.IsDecoy));
+                                decoy: psm.IsDecoy,
+                                // lets FlashLFQ keep match-between-runs within a digestion agent, while
+                                // normalization and protein quantification still span every file
+                                digestionAgentName: psm.DigestionParams.DigestionAgentName()));
                     }
                 }
 
@@ -597,25 +854,27 @@ namespace TaskLayer
                     Parameters.FlashLfqResults = flashLfqEngine.Run();
                 }
 
-                // get protein intensity back from FlashLFQ
-                if (ProteinGroups != null && Parameters.FlashLfqResults != null)
+                // Both are assigned unconditionally, even when FlashLFQ produced nothing: the columns are
+                // built per group, so a group that skipped assignment would emit a different set from the
+                // rest and the single header would stop describing every row.
+                if (ProteinGroups != null)
                 {
+                    var searchedFiles = new HashSet<string>(Parameters.CurrentRawFileList, StringComparer.OrdinalIgnoreCase);
+
                     foreach (var proteinGroup in ProteinGroups)
                     {
+                        proteinGroup.SearchedSpectraFilePaths = searchedFiles;
                         proteinGroup.FilesForQuantification = spectraFileInfo;
-                        proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
 
-                        foreach (var spectraFile in proteinGroup.FilesForQuantification)
+                        var intensities = new Dictionary<SpectraFileInfo, double>();
+                        foreach (var spectraFile in spectraFileInfo)
                         {
-                            if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
-                            {
-                                proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
-                            }
-                            else
-                            {
-                                proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
-                            }
+                            intensities.Add(spectraFile,
+                                Parameters.FlashLfqResults?.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup) == true
+                                    ? flashLfqProteinGroup.GetIntensity(spectraFile)
+                                    : 0);
                         }
+                        proteinGroup.IntensitiesByFile = intensities;
                     }
                 }
 
@@ -625,10 +884,167 @@ namespace TaskLayer
                     SilacConversions.SilacConversionsPostQuantification(allSilacLabels, startLabel, endLabel, spectraFileInfo, ProteinGroups, Parameters.ListOfDigestionParams,
                         Parameters.FlashLfqResults, Parameters.AllSpectralMatches.Cast<PeptideSpectralMatch>().ToList(), Parameters.SearchParameters.ModsToWriteSelection, quantifyUnlabeledPeptides);
                 }
+
+                // Populate SampleGroupResults AFTER all quant-state mutation (including SILAC
+                // re-labeling) so every PG carries the same dynamic-column schema for the writer.
+                // Built here rather than before the SILAC block above: SILAC rewrites the spectra-file
+                // list and reassigns peptides between files, so a map keyed off the pre-conversion
+                // files would no longer match the samples the protein groups now carry.
+                bool quantifiedPeptidesAvailable = DistributeQuantifiedIntensities(psmsForQuantification);
+
+                if (ProteinGroups != null)
+                {
+                    foreach (var proteinGroup in ProteinGroups)
+                    {
+                        proteinGroup.HasPeptideLevelQuantification = quantifiedPeptidesAvailable;
+                        proteinGroup.PopulateSampleGroupResults();
+                    }
+                }
             }
             catch (Exception e)
             {
+                try
+                {
+                    PopulateCountBasedOccupancy();
+                }
+                catch (Exception resetException)
+                {
+                    Warn("Could not restore count-based occupancy after the quantification failure: " + resetException.Message);
+                }
+
                 EngineCrashed("Quantification", e);
+            }
+        }
+
+        /// <summary>
+        /// Populates spectral counts and count-based occupancy from the PSMs alone, so those columns
+        /// survive searches where quantification is switched off, is skipped because the experimental
+        /// design could not be read, or fails partway through. The columns are per spectra file rather
+        /// than per reporter channel, so multiplex runs get them too: a channel carries no spectral
+        /// count of its own, but the file it was measured in does.
+        /// </summary>
+        private void PopulateCountBasedOccupancy()
+        {
+            if (ProteinGroups == null)
+            {
+                return;
+            }
+
+            // Every group needs the same file list. Left unset, each group derives its columns from
+            // the files its own PSMs came from, so a group absent from one file writes fewer columns
+            // than the header, and every static column after them shifts left.
+            var spectraFileInfo = BuildUndefinedExperimentalDesign();
+
+            foreach (var proteinGroup in ProteinGroups)
+            {
+                // Full reset, not just a repopulate: this also runs from the catch below, where some
+                // groups may already carry intensities from a partly-finished propagation. Leaving those
+                // in place would give them an Intensity_ column the other groups lack.
+                proteinGroup.IntensitiesByFile = null;
+                proteinGroup.HasPeptideLevelQuantification = false;
+                proteinGroup.FilesForQuantification = spectraFileInfo;
+                proteinGroup.PopulateSampleGroupResults();
+            }
+        }
+
+        /// <summary>
+        /// One <see cref="SpectraFileInfo"/> per raw file with no experimental design applied: no
+        /// condition, its own biological replicate, unfractionated. Shared by the count-only path and
+        /// by quantification when no design file is present, so the two label their columns alike.
+        /// </summary>
+        private List<SpectraFileInfo> BuildUndefinedExperimentalDesign()
+        {
+            var spectraFileInfo = new List<SpectraFileInfo>();
+
+            for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
+            {
+                var file = Parameters.CurrentRawFileList[i];
+
+                // experimental design info passed in here for each spectra file
+                spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: i, fraction: 0, techrep: 0));
+            }
+
+            return spectraFileInfo;
+        }
+
+        /// <summary>
+        /// Credits each quantified peptidoform's FlashLFQ peak area to the spectra that identified it
+        /// in that file, split evenly between them, so occupancy weights each feature once rather than
+        /// once per spectrum. Peptides identified but never quantified are left out rather than
+        /// entering as a measured zero. Returns false when quantification produced no results, which
+        /// leaves occupancy count-based.
+        /// </summary>
+        /// <remarks>
+        /// The split is across every filtered PSM of the form, so a protein group holding only some
+        /// of them sees a proportional share rather than the whole area. Weighting the forms directly
+        /// would avoid that, but the occupancy calculator sums per PSM.
+        /// </remarks>
+        private bool DistributeQuantifiedIntensities(FilteredPsms psmsForQuantification)
+        {
+            if (Parameters.FlashLfqResults == null)
+            {
+                return false;
+            }
+
+            // Label-based runs file each channel's area under a spectra file that quantification invented,
+            // which no PSM belongs to. Splitting from the real file instead would hand light and heavy
+            // identifications a share of the light channel alone. Occupancy stays count-based for SILAC
+            // until it has an estimator meant for labelled data.
+            if (Parameters.SearchParameters.SilacLabels != null)
+            {
+                return false;
+            }
+
+            // Keyed off the results' own file list, which SILAC rebuilds, so the lookup matches
+            // whatever files the peptides are filed under by the time occupancy is computed.
+            var filesByPath = new Dictionary<string, SpectraFileInfo>();
+            foreach (var file in Parameters.FlashLfqResults.SpectraFiles)
+            {
+                filesByPath[file.FullFilePathWithExtension] = file;
+            }
+
+            foreach (var form in psmsForQuantification
+                .Where(p => p.FullSequence != null)
+                .GroupBy(p => (p.FullFilePath, p.FullSequence)))
+            {
+                if (!filesByPath.TryGetValue(form.Key.FullFilePath, out var spectraFile)
+                    || !Parameters.FlashLfqResults.PeptideModifiedSequences.TryGetValue(form.Key.FullSequence, out var peptide))
+                {
+                    continue;
+                }
+
+                var detectionType = peptide.GetDetectionType(spectraFile);
+                if (detectionType == DetectionType.NotDetected
+                    || detectionType == DetectionType.MSMSIdentifiedButNotQuantified)
+                {
+                    continue;
+                }
+
+                double area = peptide.GetIntensity(spectraFile);
+                SplitAreaAcrossPsms(form.ToList(), area);
+            }
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// Splits one peptidoform's quantified area evenly across the spectra that identified it, so that
+        /// summing the shares back over those PSMs reconstitutes the area once rather than once per
+        /// spectrum. A non-positive area leaves the shares unset, which keeps a form that was identified
+        /// but never quantified out of occupancy instead of entering it as a measured zero.
+        /// </summary>
+        public static void SplitAreaAcrossPsms(IReadOnlyList<SpectralMatch> psms, double area)
+        {
+            if (area <= 0 || psms.Count == 0)
+            {
+                return;
+            }
+
+            double share = area / psms.Count;
+            foreach (var psm in psms)
+            {
+                psm.QuantifiedIntensityShare = share;
             }
         }
 
@@ -649,7 +1065,7 @@ namespace TaskLayer
                     {
                         Status("Running histogram analysis...", new List<string> { Parameters.SearchTaskId });
                         var myTreeStructure = new BinTreeStructure();
-                        myTreeStructure.GenerateBins(limitedpsms_with_fdr.FilteredPsmsList, Parameters.SearchParameters.HistogramBinTolInDaltons);
+                        myTreeStructure.GenerateBins(limitedpsms_with_fdr.FilteredPsmsList, Parameters.SearchParameters.HistogramBinTolInDaltons, CommonParameters);
                         var writtenFile = Path.Combine(Parameters.OutputFolder, "MassDifferenceHistogram.tsv");
                         WriteTree(myTreeStructure, writtenFile);
                         FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
@@ -837,14 +1253,14 @@ namespace TaskLayer
                     );
 
 
-                //group psms by peptide and charge, then write highest scoring PSM to dictionary
-                Dictionary<(string, int), SpectralMatch> psmSeqChargeDictionary = peptidesForSpectralLibrary
-                    .GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge))
-                    .ToDictionary(
-                        // Key is a (FullSequence, Charge) tuple
-                        keySelector: g => g.Key,
-                        // Value is the highest scoring psm in the group
-                        elementSelector: g => g.MaxBy(p => p.Score)); 
+            //group psms by peptide and charge, then write highest scoring PSM to dictionary
+            Dictionary<(string, int), SpectralMatch> psmSeqChargeDictionary = peptidesForSpectralLibrary
+                .GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge))
+                .ToDictionary(
+                    // Key is a (FullSequence, Charge) tuple
+                    keySelector: g => g.Key,
+                    // Value is the highest scoring psm in the group
+                    elementSelector: g => g.MaxBy(p => p.Score));
 
                 //load the original library
                 var originalLibrarySpectra = Parameters.SpectralLibrary.GetAllLibrarySpectra();
@@ -917,8 +1333,7 @@ namespace TaskLayer
                     includeHighQValuePsms: false);
 
                 //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
-                var fullSeqChargeGrouping =
-                    peptidesForSpectralLibrary.GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge));
+                var fullSeqChargeGrouping = peptidesForSpectralLibrary.GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge));
                 List<LibrarySpectrum> spectraLibrary = new();
                 foreach (var matchGroup in fullSeqChargeGrouping)
                 {
@@ -1032,10 +1447,9 @@ namespace TaskLayer
                     includeHighQValuePsms: false);
                 var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
 
-                // Pass the FilterType and FilterThreshold from the filtered PSMs to ensure consistent filtering criteria
                 ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
                     subsetProteinGroupsForThisFile,
-                    filteredPsmsByFile,
+                    psmsForThisFile,
                     Parameters.SearchParameters.NoOneHitWonders,
                     Parameters.SearchParameters.ModPeptidesAreDifferent,
                     false,
@@ -1045,6 +1459,21 @@ namespace TaskLayer
                     ).Run();
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
+
+                // Per-file quant/occupancy columns on the subset groups, so the individual-file report
+                // carries the same schema as the combined one, computed from this file's own PSMs.
+                // Unconditional. The guard this replaced read FilesForQuantification, which is a
+                // SpectraFileInfo-only view: on a multiplex run every group carries isobaric samples
+                // and no spectra file, so ConstructSubsetProteinGroup finds nothing to match and leaves
+                // the subset's sample list unset -- and the guard then skipped the one call that would
+                // have given it columns. A subset with no samples is not a subset with nothing to say:
+                // mzLib groups its PSMs by source file and reports the counts, which is exactly what an
+                // individual-file table wants. Groups that DO carry files are unaffected, so the
+                // label-free path behaves as before.
+                foreach (var subsetProteinGroup in subsetProteinGroupsForThisFile)
+                {
+                    subsetProteinGroup.PopulateSampleGroupResults();
+                }
 
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                 {
@@ -1202,7 +1631,7 @@ namespace TaskLayer
             new FdrAnalysisEngine(possibleVariantPsms, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
                 new List<string> { Parameters.SearchTaskId }, "variant_PSMs", doPEP: false).Run();
 
-            possibleVariantPsms
+            possibleVariantPsms = possibleVariantPsms
                 .OrderBy(p => p.FdrInfo.QValue)
                 .ThenByDescending(p => p.Score)
                 .ThenBy(p => p.FdrInfo.CumulativeTarget)
@@ -1520,8 +1949,7 @@ namespace TaskLayer
                 output.WriteLine(directions.ToString());
 
                 int idNumber = 0;
-                psmList.OrderByDescending(p => p.Score);
-                foreach (SpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
+                foreach (SpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null).OrderByDescending(p => p.Score))
                 {
                     foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods)
                     {
@@ -1543,20 +1971,14 @@ namespace TaskLayer
             if (proteinGroups != null && proteinGroups.Any())
             {
                 // Set threshold based on the filter type being used
-                double qValueThreshold = filterType switch
-                {
-                    FilterType.PepQValue => CommonParameters.PepQValueThreshold,
-                    _ => CommonParameters.QValueThreshold
-                };
+                double qValueThreshold = ProteinGroupQValueThreshold(filterType);
 
                 using (StreamWriter output = new StreamWriter(filePath))
                 {
                     output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
                     for (int i = 0; i < proteinGroups.Count; i++)
                     {
-                        if ((!Parameters.SearchParameters.WriteDecoys && proteinGroups[i].IsDecoy) ||
-                            (!Parameters.SearchParameters.WriteContaminants && proteinGroups[i].IsContaminant) ||
-                            (!Parameters.SearchParameters.WriteHighQValuePsms && proteinGroups[i].QValue > qValueThreshold))
+                        if (!ProteinGroupIsWritten(proteinGroups[i], qValueThreshold))
                         {
                             continue;
                         }
@@ -1598,7 +2020,7 @@ namespace TaskLayer
 
             if (Parameters.SearchParameters.DoParsimony)
             {
-                ResultsDictionary.Add(("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s"), ""); 
+                ResultsDictionary.Add(("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s"), "");
                 if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
                 {
                     foreach (var rawFile in Parameters.CurrentRawFileList)

@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uniprot xmlns="http://uniprot.org/uniprot" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://uniprot.org/uniprot http://www.uniprot.org/support/docs/uniprot.xsd">
+<!--
+  Local, offline mock of a UniProtKB XML "stream" response.
+  Stands in for a live download of Bacillus phage phi29 (proteome UP000001207)
+  so GuiFunctionsTest can exercise the ProteinDbLoader.LoadProteinXML path without
+  reaching rest.uniprot.org. Sequences are truncated/synthetic; only the file
+  structure and the number of entries (3) matter for the test.
+-->
+<entry dataset="Swiss-Prot" created="1986-07-21" modified="2021-09-29" version="1">
+<accession>P03680</accession>
+<name>MCP_BPPH2</name>
+<protein>
+<recommendedName>
+<fullName>Major capsid protein</fullName>
+</recommendedName>
+</protein>
+<gene>
+<name type="primary">8</name>
+</gene>
+<organism>
+<name type="scientific">Bacillus phage phi29</name>
+<dbReference type="NCBI Taxonomy" id="10756"/>
+</organism>
+<sequence length="20" mass="2100" checksum="0000000000000000" modified="1986-07-21" version="1">MAGKKQNIVLESAWRELVGK</sequence>
+</entry>
+<entry dataset="Swiss-Prot" created="1986-07-21" modified="2021-09-29" version="1">
+<accession>P03681</accession>
+<name>PORT_BPPH2</name>
+<protein>
+<recommendedName>
+<fullName>Head-tail connector protein</fullName>
+</recommendedName>
+</protein>
+<gene>
+<name type="primary">10</name>
+</gene>
+<organism>
+<name type="scientific">Bacillus phage phi29</name>
+<dbReference type="NCBI Taxonomy" id="10756"/>
+</organism>
+<sequence length="22" mass="2300" checksum="1111111111111111" modified="1986-07-21" version="1">MSKTLNEVLGQVADSFRTKGWK</sequence>
+</entry>
+<entry dataset="Swiss-Prot" created="1986-07-21" modified="2021-09-29" version="1">
+<accession>P03682</accession>
+<name>DPOL_BPPH2</name>
+<protein>
+<recommendedName>
+<fullName>DNA polymerase</fullName>
+</recommendedName>
+</protein>
+<gene>
+<name type="primary">2</name>
+</gene>
+<organism>
+<name type="scientific">Bacillus phage phi29</name>
+<dbReference type="NCBI Taxonomy" id="10756"/>
+</organism>
+<sequence length="24" mass="2600" checksum="2222222222222222" modified="1986-07-21" version="1">MPRKMYSCDFETTTKLDDCRVWAY</sequence>
+</entry>
+</uniprot>

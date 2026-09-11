@@ -1,20 +1,21 @@
 ﻿using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
-using Proteomics;
+using Omics;
+using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EngineLayer.DatabaseLoading;
-using Omics.Digestion;
-using Omics.Modifications;
+using System.Reflection;
 using TaskLayer;
-using Omics;
 
 namespace Test
 {
@@ -110,6 +111,36 @@ namespace Test
             //code coverage unit test for an unused abstract method in post search analysis
             var task = new PostSearchAnalysisTask();
             task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask>(), new List<string>(), "");
+        }
+
+        /// <summary>
+        /// WarnStatic is the static counterpart to Warn(string), used where no engine instance (and therefore
+        /// no nested id) is available. It must deliver the message to subscribers with a null NestedIDs.
+        /// </summary>
+        [Test]
+        public static void WarnStatic_WithSubscriber_DeliversMessageAndNullNestedIds()
+        {
+            MethodInfo warnStatic = typeof(MetaMorpheusEngine).GetMethod("WarnStatic",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(warnStatic, Is.Not.Null, "Expected protected static WarnStatic method.");
+
+            StringEventArgs received = null;
+            object senderSeen = new object();
+            EventHandler<StringEventArgs> handler = (o, e) => { received = e; senderSeen = o; };
+            MetaMorpheusEngine.WarnHandler += handler;
+            try
+            {
+                warnStatic.Invoke(null, new object[] { "native library warning" });
+
+                Assert.That(received, Is.Not.Null);
+                Assert.That(received.S, Is.EqualTo("native library warning"));
+                Assert.That(received.NestedIDs, Is.Null, "Static warnings carry no nested id.");
+                Assert.That(senderSeen, Is.Null, "Static warnings have no engine instance as sender.");
+            }
+            finally
+            {
+                MetaMorpheusEngine.WarnHandler -= handler;
+            }
         }
     }
 }

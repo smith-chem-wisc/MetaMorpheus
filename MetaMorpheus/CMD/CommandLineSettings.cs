@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using EngineLayer;
+using EngineLayer.Util;
 using Nett;
 using System;
 using System.Collections.Generic;
@@ -39,6 +40,15 @@ namespace MetaMorpheusCommandLine
         [Option("mmsettings", HelpText = "[Optional] Path to MetaMorpheus settings")]
         public string CustomDataDirectory { get; set; }
 
+        [Option("acceptThermoLicence", HelpText = "[Optional] Agree to the Thermo RawFileReader licence, which is required to read .raw files, and record the agreement. Prints the licence and does not prompt, so it can be used where no console is available to answer one. May be given on its own as a setup step, or alongside a run.")]
+        public bool AcceptThermoLicence { get; set; }
+
+        [Option("auditSdrf", HelpText = "[Optional] Path to an SDRF file to audit for what it says about quantification. Read-only: prints a report and exits without running anything. Reports whether the design is channel-level, kit-only or not isobaric at all; the channels found and the plex they imply; where the plex came from; whether an isobaric modification is declared; and which of the eleven per-channel facts are present, absent or unparseable. Runs on its own: no task, database or spectra file is required, and it cannot be given alongside a run.")]
+        public string AuditSdrf { get; set; }
+
+        [Option("auditData", HelpText = "[Optional] Folder of downloaded data files to check the SDRF's comment[data file] entries against, reported as found or missing. Only meaningful with --auditSdrf.")]
+        public string AuditDataDirectory { get; set; }
+
         public enum VerbosityType { none, minimal, normal };
 
         public void ValidateCommandLineSettings()
@@ -47,12 +57,74 @@ namespace MetaMorpheusCommandLine
             Tasks = _tasks == null ? new List<string>() : _tasks.ToList();
             Databases = _databases == null ? new List<string>() : _databases.ToList();
 
+            // --auditSdrf reads one file, prints what it says and runs nothing else, so anything asking
+            // for work alongside it is a contradiction. Refused rather than resolved by precedence, for
+            // the same reason --auditData alone is refused below: honouring one flag and silently
+            // dropping the other looks identical to honouring both, and exit 0 over an empty output
+            // folder is indistinguishable from a successful run to anything checking the exit code.
+            // Checked before every other rule so that it holds even for the flags that return early.
+            // -o, -v and --mmsettings stay allowed: they modify a run, they do not ask for one.
+            if (AuditSdrf != null)
+            {
+                List<string> asksForWorkAsWell = new List<string>();
+
+                if (Tasks.Count > 0) { asksForWorkAsWell.Add("-t"); }
+                if (Databases.Count > 0) { asksForWorkAsWell.Add("-d"); }
+                if (Spectra.Count > 0) { asksForWorkAsWell.Add("-s"); }
+                if (GenerateDefaultTomls) { asksForWorkAsWell.Add("-g"); }
+                if (RunMicroVignette) { asksForWorkAsWell.Add("--test"); }
+                if (AcceptThermoLicence) { asksForWorkAsWell.Add("--acceptThermoLicence"); }
+
+                if (asksForWorkAsWell.Count > 0)
+                {
+                    throw new MetaMorpheusException("--auditSdrf reads one file and runs nothing else, so it cannot be given with "
+                        + string.Join(", ", asksForWorkAsWell) + ". Run the audit on its own.");
+                }
+            }
+
+            // --auditData without --auditSdrf says to check data files against nothing. Rejected rather
+            // than ignored, because silently dropping it looks identical to auditing with it. Checked
+            // here, above the early return below, so that it holds for -g and --test too: those return
+            // before any later rule runs, so a guard placed after them refuses the bare flag and lets
+            // the same flag through unmentioned beside them.
+            if (AuditDataDirectory != null && AuditSdrf == null)
+            {
+                throw new MetaMorpheusException("--auditData is only meaningful with --auditSdrf.");
+            }
+
             if ((GenerateDefaultTomls || RunMicroVignette) && OutputFolder == null)
             {
                 throw new MetaMorpheusException("An output path must be specified with the -o parameter.");
             }
 
             if (GenerateDefaultTomls || RunMicroVignette)
+            {
+                return;
+            }
+
+            // --auditSdrf reads one file and prints what it found. It runs nothing, writes nothing and
+            // needs no output folder, so holding it to a run's requirements would only stop it working.
+            // Its own inputs are checked here rather than at the point of use, so a typo comes back as
+            // a settings error before any setup happens.
+            if (AuditSdrf != null)
+            {
+                if (!File.Exists(AuditSdrf))
+                {
+                    throw new MetaMorpheusException("The SDRF file to audit was not found: " + AuditSdrf);
+                }
+
+                if (AuditDataDirectory != null && !Directory.Exists(AuditDataDirectory))
+                {
+                    throw new MetaMorpheusException("The data folder to audit against was not found: " + AuditDataDirectory);
+                }
+
+                return;
+            }
+
+            // --acceptThermoLicence on its own is a setup step - record the agreement and stop - so it
+            // must not be held to the requirements of a run. Given alongside one it is only a modifier,
+            // and falls through to the usual validation.
+            if (AcceptThermoLicence && Tasks.Count < 1 && Databases.Count < 1 && Spectra.Count < 1)
             {
                 return;
             }
@@ -99,20 +171,13 @@ namespace MetaMorpheusCommandLine
 
             Spectra.AddRange(spectraFromDirectories);
 
-            // Correct .tdf/.tdf_bin file paths to their parent .d directory
-            // This handles the case where a user provides a path to a .tdf file directly
+            // Correct Bruker inner-file paths (analysis.baf, analysis.tdf/.tdf_bin, analysis.tsf/.tsf_bin) to their
+            // parent .d directory. This handles the case where a user provides a path to one of these files directly.
             for (int i = 0; i < Spectra.Count; i++)
             {
-                string ext = Path.GetExtension(Spectra[i]).ToLowerInvariant();
-                if (ext == ".tdf" || ext == ".tdf_bin")
+                if (BrukerDataDirectory.TryGetParentDotDFolder(Spectra[i], out string dotDFolder))
                 {
-                    string parentDir = Path.GetDirectoryName(Spectra[i]);
-                    if (parentDir != null && 
-                        parentDir.EndsWith(".d", StringComparison.OrdinalIgnoreCase) && 
-                        IsValidTimsTofDirectory(parentDir))
-                    {
-                        Spectra[i] = parentDir;
-                    }
+                    Spectra[i] = dotDFolder;
                 }
             }
 
@@ -120,15 +185,15 @@ namespace MetaMorpheusCommandLine
             Spectra = Spectra.Distinct().ToList();
 
             // remove spectra directories, after their spectra files have been added
-            // but keep .d directories as they are valid timsTOF spectra folders
-            Spectra.RemoveAll(p => Directory.Exists(p) && !p.EndsWith(".d", StringComparison.OrdinalIgnoreCase));
+            // but keep .d directories as they are valid Bruker spectra folders
+            Spectra.RemoveAll(p => Directory.Exists(p) && !BrukerDataDirectory.IsDotDPath(p));
 
             IEnumerable<string> fileNames = Tasks.Concat(Databases).Concat(Spectra);
 
             foreach (string filename in fileNames)
             {
                 // .d folders are directories, so we need to check for both files and .d directories
-                bool isDotDDirectory = filename.EndsWith(".d", StringComparison.OrdinalIgnoreCase) && Directory.Exists(filename);
+                bool isDotDDirectory = BrukerDataDirectory.IsDotDPath(filename) && Directory.Exists(filename);
                 if (!File.Exists(filename) && !isDotDDirectory)
                 {
                     throw new MetaMorpheusException("The following file does not exist: " + filename);
@@ -191,6 +256,11 @@ namespace MetaMorpheusCommandLine
 
                 GlycoSearchTask glyco = new GlycoSearchTask();
                 Toml.WriteFile(glyco, Path.Combine(folderLocation, @"GlycoSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                // The filename stem matches the output folder Program.cs creates for this task
+                // ("Task{N}AveragingTask"), keeping it consistent with the five above.
+                SpectralAveragingTask averaging = new SpectralAveragingTask();
+                Toml.WriteFile(averaging, Path.Combine(folderLocation, @"AveragingTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {
@@ -200,7 +270,7 @@ namespace MetaMorpheusCommandLine
 
         /// <summary>
         /// Recursively finds spectra files in a directory.
-        /// For .d folders (timsTOF data), only adds them if they are valid (contain required tdf/tsf files).
+        /// For .d folders (Bruker data), only adds them if they hold data mzLib can read.
         /// If a .d folder is invalid, recurses into it to find nested valid .d folders.
         /// </summary>
         private static void FindSpectraFilesRecursive(string path, List<string> spectraFiles, VerbosityType verbosity)
@@ -209,12 +279,10 @@ namespace MetaMorpheusCommandLine
             {
                 if (GlobalVariables.AcceptedSpectraFormats.Contains(GlobalVariables.GetFileExtension(path).ToLowerInvariant()))
                 {
-                    // If a .tdf or .tdf_bin file is found, check if the parent directory is a valid .d folder and add that instead
-                    if (new[] { ".tdf", ".tdf_bin" }.Contains(GlobalVariables.GetFileExtension(path).ToLowerInvariant()))
+                    // If a Bruker inner file is found, add its parent .d folder instead of the individual file
+                    if (BrukerDataDirectory.TryGetParentDotDFolder(path, out string dotDFolder))
                     {
-                        var parentDirectory = Directory.GetParent(path);
-                        if (GlobalVariables.GetFileExtension(parentDirectory.FullName).ToLowerInvariant() == ".d" && IsValidTimsTofDirectory(parentDirectory.FullName))
-                            path = parentDirectory.FullName; // add the .d folder instead of the individual tdf/tsf file
+                        path = dotDFolder;
                     }
 
                     spectraFiles.Add(path);
@@ -230,10 +298,10 @@ namespace MetaMorpheusCommandLine
             if (Directory.Exists(path))
             {
                 // Check if this is a .d folder
-                if (path.EndsWith(".d", StringComparison.OrdinalIgnoreCase))
+                if (BrukerDataDirectory.IsDotDPath(path))
                 {
-                    // Check if it's a valid timsTOF data folder
-                    if (IsValidTimsTofDirectory(path))
+                    // Check if it's a valid Bruker data folder (qTOF or timsTOF)
+                    if (BrukerDataDirectory.IsValid(path))
                     {
                         spectraFiles.Add(path);
 
@@ -254,19 +322,5 @@ namespace MetaMorpheusCommandLine
             }
         }
 
-        /// <summary>
-        /// Checks if a .d directory is a valid timsTOF data folder.
-        /// </summary>
-        private static bool IsValidTimsTofDirectory(string directoryPath)
-        {
-            // for data with tims enabled, we need to have both the .tdf and .tdf_bin files
-            if (File.Exists(Path.Combine(directoryPath, "analysis.tdf")) &&
-                File.Exists(Path.Combine(directoryPath, "analysis.tdf_bin")))
-            {
-                return true;
-            }
-
-            return false;
-        }
     }
 }

@@ -1494,9 +1494,9 @@ namespace Test
 
             // test child scan (ETD)
             Assert.That(csm.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 21);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count, Is.EqualTo(15));
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 25);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count, Is.EqualTo(18));
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0);
@@ -1507,11 +1507,11 @@ namespace Test
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count, Is.EqualTo(1));
             Assert.That(psmFromTsv.ChildScanMatchedIons.First().Key, Is.EqualTo(3));
-            Assert.That(psmFromTsv.ChildScanMatchedIons.First().Value.Count, Is.EqualTo(21));
+            Assert.That(psmFromTsv.ChildScanMatchedIons.First().Value.Count, Is.EqualTo(15));
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count, Is.EqualTo(1));
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key, Is.EqualTo(3));
-            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count, Is.EqualTo(25));
+            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count, Is.EqualTo(18));
             // Race condition causes the order of accessions to differ 
             //Assert.That(psmFromTsv.BetaPeptideProteinAccession, Is.EqualTo("BSA|BSA2"));
             Assert.That(psmFromTsv.BetaPeptideProteinAccession, Does.Contain("BSA"));

@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -84,9 +84,11 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GptmdTask task)
         {
+            GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
             DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
                 TheTask.CommonParameters.ProductDeconvolutionParameters,
                 TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
+            UseMostAbundantMassCheckBox.IsChecked = task.CommonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
                 ProteaseComboBox.SelectedItem = digestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings}
@@ -576,7 +578,8 @@ namespace MetaMorpheusGUI
                     minVariantDepth: minVariantDepth,
                     maxHeterozygousVariants: maxHeterozygousVariants,
                     precursorDeconParams: precursorDeconvolutionParameters,
-                    productDeconParams: productDeconvolutionParameters);
+                    productDeconParams: productDeconvolutionParameters,
+                    precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic);
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in GptmdModTypeForTreeViewObservableCollection)

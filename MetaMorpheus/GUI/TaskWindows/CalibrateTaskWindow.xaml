@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaMorpheusGUI.CalibrateTaskWindow"
+<Window x:Class="MetaMorpheusGUI.CalibrateTaskWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -436,6 +436,15 @@
                                 </Expander.Style>
                                 <StackPanel>
                                     <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
+                                    <CheckBox x:Name="UseMostAbundantMassCheckBox" Content="Use Most Abundant Mass" Margin="10,0,5,5"
+                                              ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <CheckBox.ToolTip>
+                                            <TextBlock>
+                                                Match precursor candidates by the most abundant observed isotopic mass instead of the monoisotopic mass.
+                                                Recommended for large (&gt;35 kDa) top-down proteoforms, where the monoisotopic peak is often undetectable.
+                                            </TextBlock>
+                                        </CheckBox.ToolTip>
+                                    </CheckBox>
                                 </StackPanel>
                             </Expander>
                         </GroupBox>
