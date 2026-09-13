@@ -1,4 +1,5 @@
 ﻿using Chemistry;
+using Chromatography.RetentionTimePrediction;
 using Chromatography.RetentionTimePrediction.Chronologer;
 using Chromatography.RetentionTimePrediction.SSRCalc;
 using EngineLayer;
@@ -936,6 +937,107 @@ namespace Test
             var result = method.Invoke(null, new object[] { "standard", fsp });
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Is.InstanceOf(expectedType));
+        }
+
+        private static IEnumerable<TestCaseData> GetChronologerFailureCases()
+        {
+            var dll = new DllNotFoundException("Unable to load DLL 'LibTorchSharp'");
+            // Explicit case names: NUnit's auto-generated names (from Exception.ToString()) collide and
+            // silently drop a case, so name each one. The argument is the exception the Chronologer factory throws.
+            yield return new TestCaseData(dll)
+                .SetName("GetChronologer_ReturnsNull_BareDllNotFoundException");
+            yield return new TestCaseData(new TypeInitializationException("TorchSharp.torch", dll))
+                .SetName("GetChronologer_ReturnsNull_WrappedInTypeInitializationException"); // the real TorchSharp shape
+            yield return new TestCaseData(new Exception("Other exception"))
+                .SetName("GetChronologer_ReturnsNull_OtherException");                       // any other construction failure
+        }
+
+        // GetChronologer's fallback hangs off two internal statics: the factory-override seam and an
+        // "already warned" latch. These helpers reach both via reflection so the tests can drive and reset them.
+        private static System.Reflection.FieldInfo ChronologerFactoryOverrideField() =>
+            typeof(FdrAnalysisEngine).GetField("_chronologerFactoryOverride",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+        private static System.Reflection.FieldInfo AlreadyWarnedAboutChronologerField() =>
+            typeof(FdrAnalysisEngine).GetField("_alreadyWarnedAboutChronologer",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+        [Test]
+        [NonParallelizable] // mutates the process-wide Chronologer statics
+        [TestCaseSource(nameof(GetChronologerFailureCases))]
+        public static void GetChronologer_NativeLibrariesMissing_ReturnsNull_DoesNotThrow(Exception thrownException)
+        {
+            // Inject a throwing factory via the internal _chronologerFactoryOverride seam so we can exercise
+            // the missing-native-library fallback without the TorchSharp natives present. Clear the
+            // "already warned" latch so each case actually takes the warning path, and restore both statics
+            // afterwards so the fault doesn't leak into other tests.
+            var overrideField = ChronologerFactoryOverrideField();
+            var warnedField = AlreadyWarnedAboutChronologerField();
+            Assert.That(overrideField, Is.Not.Null, "_chronologerFactoryOverride not found via reflection — signature changed?");
+            Assert.That(warnedField, Is.Not.Null, "_alreadyWarnedAboutChronologer not found via reflection — signature changed?");
+
+            var originalOverride = overrideField.GetValue(null);
+            var originalWarned = warnedField.GetValue(null);
+            try
+            {
+                warnedField.SetValue(null, false);
+                overrideField.SetValue(null,
+                    (Func<ChronologerRetentionTimePredictor>)(() => throw thrownException));
+
+                IRetentionTimePredictor result = null;
+                Assert.DoesNotThrow(() => result = FdrAnalysisEngine.GetChronologer());
+                Assert.That(result, Is.Null);
+            }
+            finally
+            {
+                overrideField.SetValue(null, originalOverride);   // don't leak the throwing factory into other tests
+                warnedField.SetValue(null, originalWarned);
+            }
+        }
+
+        [Test]
+        [NonParallelizable] // subscribes to the static WarnHandler and mutates the Chronologer statics
+        public static void GetChronologer_NativeLibrariesMissing_WarnsOnlyOncePerProcess()
+        {
+            // GetRTPredictor is called once per protease group, so without the _alreadyWarnedAboutChronologer
+            // latch a multi-protease search would emit the identical warning repeatedly. Verify the warning
+            // surfaces exactly once no matter how many times GetChronologer is invoked.
+            var overrideField = ChronologerFactoryOverrideField();
+            var warnedField = AlreadyWarnedAboutChronologerField();
+            Assert.That(overrideField, Is.Not.Null, "_chronologerFactoryOverride not found via reflection — signature changed?");
+            Assert.That(warnedField, Is.Not.Null, "_alreadyWarnedAboutChronologer not found via reflection — signature changed?");
+
+            var originalOverride = overrideField.GetValue(null);
+            var originalWarned = warnedField.GetValue(null);
+
+            int chronologerWarnings = 0;
+            EventHandler<StringEventArgs> handler = (sender, e) =>
+            {
+                if (e.S != null && e.S.Contains("Chronologer"))
+                    chronologerWarnings++;
+            };
+            MetaMorpheusEngine.WarnHandler += handler;
+            try
+            {
+                warnedField.SetValue(null, false);
+                overrideField.SetValue(null,
+                    (Func<ChronologerRetentionTimePredictor>)(
+                        () => throw new DllNotFoundException("Unable to load DLL 'LibTorchSharp'")));
+
+                for (int i = 0; i < 3; i++)
+                {
+                    Assert.That(FdrAnalysisEngine.GetChronologer(), Is.Null);
+                }
+
+                Assert.That(chronologerWarnings, Is.EqualTo(1),
+                    "The Chronologer fallback warning should be emitted only once per process.");
+            }
+            finally
+            {
+                MetaMorpheusEngine.WarnHandler -= handler;
+                overrideField.SetValue(null, originalOverride);
+                warnedField.SetValue(null, originalWarned);
+            }
         }
 
         [Test]
