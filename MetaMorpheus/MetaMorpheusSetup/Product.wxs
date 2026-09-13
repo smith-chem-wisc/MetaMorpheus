@@ -176,6 +176,14 @@
       <Component Id="src_GUIFunctions.pdb" Guid="F12F9001-1B3D-433D-8C9F-C8BA91A06074">
         <File Id="src_GUIFunctions.pdb" Name="GUIFunctions.pdb" Source="$(var.GUI_TargetDir)GUIFunctions.pdb" />
       </Component>
+      <!-- The UI-free half of GuiFunctions. GuiFunctions.dll references it, so the installed GUI cannot
+           start without it - this is a runtime dependency, not an optional extra. -->
+      <Component Id="src_GuiFunctions.Core.dll" Guid="81EB4A66-29C4-4120-A342-CC9CBD11E5C3">
+        <File Id="src_GuiFunctions.Core.dll" Name="GuiFunctions.Core.dll" Source="$(var.GUI_TargetDir)GuiFunctions.Core.dll" />
+      </Component>
+      <Component Id="src_GuiFunctions.Core.pdb" Guid="4C1D4703-2D7D-486D-AD11-4C52258608BC">
+        <File Id="src_GuiFunctions.Core.pdb" Name="GuiFunctions.Core.pdb" Source="$(var.GUI_TargetDir)GuiFunctions.Core.pdb" />
+      </Component>
       <Component Id="src_FlashLFQ.dll" Guid="69e33379-5301-49db-8913-4d777ed5a5f9">
         <File Id="src_FlashLFQ.dll" Name="FlashLFQ.dll" Source="$(var.GUI_TargetDir)FlashLFQ.dll" />
       </Component>
