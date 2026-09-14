@@ -2,6 +2,7 @@
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModernSearch;
 using Proteomics;
+using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -28,11 +29,18 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         readonly List<Modification> VariableTerminalModifications;
         readonly List<int>[] CoisolationIndex;
 
+        /// <summary>
+        /// Non-specific search is proteomics-only, so it keeps a peptide-typed view of the index that
+        /// ModernSearchEngine now holds as IBioPolymerWithSetMods. Same objects, narrower type.
+        /// </summary>
+        protected new readonly List<PeptideWithSetModifications> PeptideIndex;
+
         public NonSpecificEnzymeSearchEngine(SpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<int>[] coisolationIndex,
-            List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition,
+            IEnumerable<IBioPolymerWithSetMods> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition,
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
+            PeptideIndex = peptideIndex.Cast<PeptideWithSetModifications>().ToList();
             CoisolationIndex = coisolationIndex;
             PrecursorIndex = precursorIndex;
             MinimumPeptideLength = commonParameters.DigestionParams.MinLength;
