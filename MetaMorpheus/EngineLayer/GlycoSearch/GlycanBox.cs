@@ -108,22 +108,21 @@ namespace EngineLayer
         public static IEnumerable<GlycanBox> BuildChildOGlycanBoxes(int maxNum, int[] glycanIds, bool targetDecoy = true)
         {
             yield return new GlycanBox(new int[0], targetDecoy);
-            HashSet<string> seen = new HashSet<string>();
+            HashSet<int[]> seen = new HashSet<int[]>(IdSequenceComparer.Instance);
             for (int i = 1; i <= maxNum; i++)
             {
-                foreach (var idCombine in Glycan.GetKCombs(Enumerable.Range(0, maxNum), i)) //get all combinations of glycans on the peptide, ex. we have three glycosite and three glycan maybe on that (A,B,C) 
-                {                                                                           //the combination of glycans on the peptide can be (A),(A+B),(A+C),(B+C),(A+B+C) totally six 
-                    List<int> ids = new List<int>(); 
-                    foreach (var id in idCombine)    
+                foreach (var idCombine in Glycan.GetKCombs(Enumerable.Range(0, maxNum), i)) //get all combinations of glycans on the peptide, ex. we have three glycosite and three glycan maybe on that (A,B,C)
+                {                                                                           //the combination of glycans on the peptide can be (A),(A+B),(A+C),(B+C),(A+B+C) totally six
+                    int[] ids = new int[i];
+                    int n = 0;
+                    foreach (var id in idCombine)
                     {
-                        ids.Add(glycanIds[id]);      
+                        ids[n++] = glycanIds[id];
                     }
 
-                    if (!seen.Contains(string.Join(",", ids.Select(p => p.ToString()))))
+                    if (seen.Add(ids))
                     {
-                        seen.Add(string.Join(",", ids.Select(p => p.ToString())));
-
-                        GlycanBox glycanBox = new GlycanBox(ids.ToArray(), targetDecoy);
+                        GlycanBox glycanBox = new GlycanBox(ids, targetDecoy);
 
                         yield return glycanBox;
                     }
@@ -234,24 +233,42 @@ namespace EngineLayer
         public static IEnumerable<GlycanBox> BulidChildNOBoxes(int maxNum, int[] glycanIds, bool isTarget = true)
         {
             yield return new GlycanBox(new int[0], isTarget);
-            HashSet<string> seen = new HashSet<string>();
+            HashSet<int[]> seen = new HashSet<int[]>(IdSequenceComparer.Instance);
 
             for (int i = 1; i <= maxNum; i++)
             {
-                foreach (var idCombine in Glycan.GetKCombs(Enumerable.Range(0, maxNum), i)) //get all combinations of glycans on the peptide, ex. we have three glycosite and three glycan maybe on that (A,B,C) 
-                {                                                                           //the combination of glycans on the peptide can be (A),(A+B),(A+C),(B+C),(A+B+C) totally six 
-                    List<int> ids = new List<int>();
+                foreach (var idCombine in Glycan.GetKCombs(Enumerable.Range(0, maxNum), i)) //get all combinations of glycans on the peptide, ex. we have three glycosite and three glycan maybe on that (A,B,C)
+                {                                                                           //the combination of glycans on the peptide can be (A),(A+B),(A+C),(B+C),(A+B+C) totally six
+                    int[] ids = new int[i];
+                    int n = 0;
+                    int oGlycanCount = 0;
                     foreach (var id in idCombine)
                     {
-                        ids.Add(glycanIds[id]);
+                        ids[n] = glycanIds[id];
+                        if (ids[n] > -1)
+                        {
+                            oGlycanCount++;
+                        }
+                        n++;
                     }
 
-                    if (!seen.Contains(string.Join(",", ids.Select(p => p.ToString()))))
+                    if (seen.Add(ids))
                     {
-                        seen.Add(string.Join(",", ids.Select(p => p.ToString())));
-                        int[] oGlycanIds = ids.Where(p => p > -1).ToArray();
-                        // If there is no N-glycan on the peptide, the nGlycanid = 0;
-                        var nGlycanid = ids.FirstOrDefault(p => p < 0); 
+                        int[] oGlycanIds = new int[oGlycanCount];
+                        // If there is no N-glycan on the peptide, the nGlycanid = 0; otherwise it is the first negative id.
+                        int nGlycanid = 0;
+                        int o = 0;
+                        foreach (int id in ids)
+                        {
+                            if (id > -1)
+                            {
+                                oGlycanIds[o++] = id;
+                            }
+                            else if (nGlycanid == 0)
+                            {
+                                nGlycanid = id;
+                            }
+                        }
                         GlycanBox glycanBox = new GlycanBox(oGlycanIds,nGlycanid, isTarget);
 
                         yield return glycanBox;
@@ -325,6 +342,29 @@ namespace EngineLayer
                 Random random = new Random();
                 int shiftInd = random.Next(SugarShift.Length);
                 Mass = (double)(Glycan.GetMass(Kind) + SugarShift[shiftInd]) / 1E5;
+            }
+        }
+
+        /// <summary>
+        /// Equality of glycan id sequences by content and order, as comparing their comma-joined strings did.
+        /// </summary>
+        private sealed class IdSequenceComparer : IEqualityComparer<int[]>
+        {
+            public static readonly IdSequenceComparer Instance = new IdSequenceComparer();
+
+            public bool Equals(int[] x, int[] y)
+            {
+                return ReferenceEquals(x, y) || (x != null && y != null && x.AsSpan().SequenceEqual(y));
+            }
+
+            public int GetHashCode(int[] ids)
+            {
+                var hash = new HashCode();
+                foreach (int id in ids)
+                {
+                    hash.Add(id);
+                }
+                return hash.ToHashCode();
             }
         }
 

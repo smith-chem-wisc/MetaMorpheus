@@ -22,6 +22,36 @@ namespace Test
     public class GlycoSearchEngineTest
     {
         /// <summary>
+        /// The localization cache replaces LocalizationGraph.TryGetLeft and the first element of LocalizationGraph.GetDiff with
+        /// allocation-free versions; they must agree on every small multiset of glycan ids, including repeats and N-glycan ids.
+        /// </summary>
+        [Test]
+        public static void LocalizationCacheSetOperationsMatchLocalizationGraph()
+        {
+            var tryGetLeft = typeof(LocalizationGraph).GetMethod("TryGetLeft", BindingFlags.NonPublic | BindingFlags.Static);
+            var random = new System.Random(914);
+            for (int trial = 0; trial < 20000; trial++)
+            {
+                int[] whole = Enumerable.Range(0, random.Next(0, 5)).Select(_ => random.Next(-3, 4)).ToArray();
+                int[] part = Enumerable.Range(0, random.Next(0, 5)).Select(_ => random.Next(-3, 4)).ToArray();
+
+                bool expectedContains = (bool)tryGetLeft.Invoke(null, new object[] { whole, part });
+                Assert.That(GlycanBoxLocalizationCache.ContainsAll(whole, part), Is.EqualTo(expectedContains), $"whole [{string.Join(",", whole)}] part [{string.Join(",", part)}]");
+
+                if (expectedContains)
+                {
+                    int[] diff = LocalizationGraph.GetDiff(part, whole);
+                    int first = GlycanBoxLocalizationCache.FirstAdded(part, whole, out bool anyAdded);
+                    Assert.That(anyAdded, Is.EqualTo(diff.Length > 0));
+                    if (anyAdded)
+                    {
+                        Assert.That(first, Is.EqualTo(diff[0]), $"pre [{string.Join(",", part)}] current [{string.Join(",", whole)}]");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// SelectTopCandidates must keep exactly the ids, in exactly the order, that the engine's former selection did: a stable
         /// descending sort by byte score, skipping ids below the cutoff, stopping at the first id scoring below the topN-th.
         /// </summary>

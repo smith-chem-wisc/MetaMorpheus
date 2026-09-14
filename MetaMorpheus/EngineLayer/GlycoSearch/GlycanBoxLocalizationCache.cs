@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -79,25 +79,84 @@ namespace EngineLayer.GlycoSearch
         public GlycanBoxLocalizationCache(GlycanBox box)
         {
             var children = box.ChildGlycanBoxes;
-            var chart = LocalizationGraph.BuildValidChart(children);
             ValidChart = new bool[children.Length][];
             AddedMotif = new string[children.Length][];
             ChildMotifCounts = new MotifCount[children.Length];
             for (int y = 0; y < children.Length; y++)
             {
-                ValidChart[y] = chart[y];
+                ValidChart[y] = new bool[children.Length];
                 ChildMotifCounts[y] = new MotifCount(children[y].ModIds);
                 AddedMotif[y] = new string[children.Length];
                 for (int preY = 0; preY <= y; preY++)
                 {
-                    if (!ValidChart[y][preY])
+                    // As BuildValidChart: the later child holds at most one more mod and contains every mod of the earlier child.
+                    if (children[y].NumberOfMods <= children[preY].NumberOfMods + 1
+                        && (children[preY].NumberOfMods == 0 || ContainsAll(children[y].ModIds, children[preY].ModIds)))
                     {
-                        continue;
+                        ValidChart[y][preY] = true;
+                        int added = FirstAdded(children[preY].ModIds, children[y].ModIds, out bool anyAdded);
+                        AddedMotif[y][preY] = anyAdded ? GlycanBox.MotifOf(added) : null;
                     }
-                    var diff = LocalizationGraph.GetDiff(children[preY].ModIds, children[y].ModIds);
-                    AddedMotif[y][preY] = diff == null || diff.Length == 0 ? null : GlycanBox.MotifOf(diff[0]);
                 }
             }
+        }
+
+        /// <summary>
+        /// Whether <paramref name="whole"/> holds every id of <paramref name="part"/>, counting repeats; what
+        /// LocalizationGraph.TryGetLeft(whole, part) returns, without allocating.
+        /// </summary>
+        internal static bool ContainsAll(int[] whole, int[] part)
+        {
+            for (int i = 0; i < part.Length; i++)
+            {
+                // Check each distinct id once, at its first occurrence in part.
+                if (Array.IndexOf(part, part[i], 0, i) >= 0)
+                {
+                    continue;
+                }
+                if (Count(whole, part[i]) < Count(part, part[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// The first element of LocalizationGraph.GetDiff(pre, current), without allocating. GetDiff lists the ids of
+        /// <paramref name="current"/> left after removing those of <paramref name="pre"/>, grouped by id in the order each id first
+        /// appears in current, so its first element is the earliest-appearing id that current holds more times than pre.
+        /// <paramref name="pre"/> must be contained in current, as GetDiff also requires.
+        /// </summary>
+        internal static int FirstAdded(int[] pre, int[] current, out bool anyAdded)
+        {
+            for (int i = 0; i < current.Length; i++)
+            {
+                if (Array.IndexOf(current, current[i], 0, i) >= 0)
+                {
+                    continue;
+                }
+                if (Count(current, current[i]) > Count(pre, current[i]))
+                {
+                    anyAdded = true;
+                    return current[i];
+                }
+            }
+            anyAdded = false;
+            return 0;
+        }
+
+        private static int Count(int[] ids, int id)
+        {
+            int n = 0;
+            foreach (int x in ids)
+            {
+                if (x == id)
+                {
+                    n++;
+                }
+            }
+            return n;
         }
     }
 }

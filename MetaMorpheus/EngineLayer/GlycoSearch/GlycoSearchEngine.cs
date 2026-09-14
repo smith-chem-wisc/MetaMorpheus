@@ -481,35 +481,59 @@ namespace EngineLayer.GlycoSearch
 
             int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBoxMasses, possibleGlycanMassLow); // try to find the index that closet match to the "possibleGlycanMassLow" within the glycanBox
 
+            // No glycan box fits the precursor: nothing below would run, so skip the site search and fragmentation altogether.
+            if (iDLow >= GlycanBoxes.Length || !PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBoxes[iDLow].Mass))
+            {
+                return;
+            }
+
             SortedDictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, Motifs); //list all of the possible glycoslation site/postition
 
             var localizationScan = theScan;
             var toleranceForLocalizationScan = CommonParameters.ProductMassTolerance;
-            List<Product> products = new List<Product>(); // product list for the theoretical fragment ions
+            bool childScansCarryEtd = theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons);
 
-            //For HCD-pd-ETD or CD-pd-EThcD type of data, we generate the different rpoducts.
-            if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons))
+            //For HCD-pd-ETD or CD-pd-EThcD type of data, we localize on the child scan.
+            if (childScansCarryEtd)
             {
                 localizationScan = GetLocalizationScan(theScan);
                 // For the localization scan, if it is from ion trap, we will use a wider tolerance for the localization.
                 toleranceForLocalizationScan = localizationScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap2D ||
                     localizationScan.TheScan.MzAnalyzer == MZAnalyzerType.IonTrap3D ? CommonParameters.ProductMassTolerance_LowRes : CommonParameters.ProductMassTolerance;
-                theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
-            }
-
-            //For ETD type of data
-            if (theScan.ChildScans.Count == 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType, CommonParameters.CustomIons))
-            {
-                theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
             }
 
             //Localization for O-glycopeptides only works on ETD related dissociationtype
             //No localization can be done with MS2-HCD spectrum
             //TO THINK: there is a special situation. The HCD only scan from  HCD-pd-EThcD data can be a glycopeptide, but there is no ETD, so there is no localization. What to do with this?
             bool is_HCD_only_data = !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType, CommonParameters.CustomIons) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons);
-            if (is_HCD_only_data) // In the HCD, there is no Y  ion, so we don't need to consider the modification here.
+
+            // The theoretical fragments (product list) are only needed once a glycan box passes GraphCheck, so they are built then.
+            List<Product> products = null;
+            List<Product> GetProducts()
             {
-                theScanBestPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+                if (products != null)
+                {
+                    return products;
+                }
+                products = new List<Product>();
+
+                //For HCD-pd-ETD or CD-pd-EThcD type of data, we generate the different rpoducts.
+                if (childScansCarryEtd)
+                {
+                    theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+                }
+
+                //For ETD type of data
+                if (theScan.ChildScans.Count == 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType, CommonParameters.CustomIons))
+                {
+                    theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+                }
+
+                if (is_HCD_only_data) // In the HCD, there is no Y  ion, so we don't need to consider the modification here.
+                {
+                    theScanBestPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+                }
+                return products;
             }
 
             double bestLocalizedScore = 0;
@@ -529,9 +553,9 @@ namespace EngineLayer.GlycoSearch
                 }
                 if (GraphCheck(modPosMotifs, GlycanBoxes[iDLow])) // the glycosite number should be larger than the possible glycan number.
                 {
-                    siteFragments ??= GlycoPeptides.GetSiteFragmentMasses(products, modPos.Keys.ToArray());
+                    siteFragments ??= GlycoPeptides.GetSiteFragmentMasses(GetProducts(), modPos.Keys.ToArray());
                     LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBoxes[iDLow], GlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
-                    LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, toleranceForLocalizationScan, products, siteFragments); //create the localization graph with the glycan mass and the possible glycosite.
+                    LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, toleranceForLocalizationScan, GetProducts(), siteFragments); //create the localization graph with the glycan mass and the possible glycosite.
 
                     double currentLocalizationScore = localizationGraph.TotalScore;
                     if (currentLocalizationScore > bestLocalizedScore) //Try to find the best glycanBox with the highest score.
