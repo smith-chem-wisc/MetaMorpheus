@@ -22,6 +22,60 @@ namespace Test
     public class GlycoSearchEngineTest
     {
         /// <summary>
+        /// SelectTopCandidates must keep exactly the ids, in exactly the order, that the engine's former selection did: a stable
+        /// descending sort by byte score, skipping ids below the cutoff, stopping at the first id scoring below the topN-th.
+        /// </summary>
+        [Test]
+        public static void SelectTopCandidatesMatchesStableSortSelection()
+        {
+            var random = new System.Random(20260914);
+            int[] counts = new int[256];
+            var actual = new List<int> { -1 }; // must be cleared by the method
+            int[] topNs = { -1, 0, 1, 2, 5, 50, 1000 };
+
+            for (int trial = 0; trial < 2000; trial++)
+            {
+                int peptideCount = random.Next(1, 400);
+                byte[] scores = new byte[peptideCount];
+                // Few distinct scores forces ties; the full byte range exercises 0 and 255.
+                int maxScore = trial % 3 == 0 ? 256 : random.Next(1, 12);
+                for (int i = 0; i < peptideCount; i++)
+                {
+                    scores[i] = (byte)random.Next(0, maxScore);
+                }
+                var candidateIds = Enumerable.Range(0, peptideCount).OrderBy(_ => random.Next()).Take(random.Next(0, peptideCount + 1)).ToList();
+                int cutoff = random.Next(0, 5);
+                int topN = topNs[trial % topNs.Length];
+
+                var expected = new List<int>();
+                int scoreAtTopN = 0;
+                int kept = 0;
+                foreach (int id in candidateIds.OrderByDescending(p => scores[p]))
+                {
+                    if (scores[id] < cutoff)
+                    {
+                        continue;
+                    }
+                    kept++;
+                    if (kept == topN)
+                    {
+                        scoreAtTopN = scores[id];
+                    }
+                    if (scores[id] < scoreAtTopN)
+                    {
+                        break;
+                    }
+                    expected.Add(id);
+                }
+
+                GlycoSearchEngine.SelectTopCandidates(candidateIds, scores, cutoff, topN, counts, actual);
+
+                Assert.That(actual, Is.EqualTo(expected), $"trial {trial}, topN {topN}, cutoff {cutoff}");
+                Assert.That(counts, Is.All.EqualTo(0));
+            }
+        }
+
+        /// <summary>
         /// Registers a glycan database that ships in GlycoTestData with the global path list that
         /// GlycoSearchEngine resolves against.
         /// <para>
