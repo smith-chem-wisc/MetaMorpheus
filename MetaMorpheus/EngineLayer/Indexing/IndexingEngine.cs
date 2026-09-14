@@ -4,9 +4,11 @@ using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Omics;
@@ -21,6 +23,9 @@ namespace EngineLayer.Indexing
         private static readonly double WaterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
         private const int FragmentBinsPerDalton = 1000;
+
+        // keyed on a file's path, length and last write time; see ContentHash
+        private static readonly ConcurrentDictionary<string, string> ContentHashes = new();
         private readonly List<Protein> ProteinList;
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
@@ -59,13 +64,17 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Databases: " + string.Join(",", ProteinDatabases.OrderBy(p => p.Name).Select(p => p.Name + ":" + p.CreationTime)));
+            sb.AppendLine("Databases: " + DescribeDatabases(ProteinDatabases));
             sb.AppendLine("Partitions: " + CurrentPartition + "/" + CommonParameters.TotalPartitions);
             sb.AppendLine("Precursor Index: " + GeneratePrecursorIndex);
             sb.AppendLine("Search Decoys: " + DecoyType);
             sb.AppendLine("Number of proteins: " + ProteinList.Count);
-            sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
-            sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
+            sb.AppendLine("Fixed mods: " + DescribeModifications(FixedModifications));
+            sb.AppendLine("Variable mods: " + DescribeModifications(VariableModifications));
+            sb.AppendLine("Silac labels: " + DescribeSilacLabels(SilacLabels));
+            sb.AppendLine("Turnover labels: " + (TurnoverLabels == null
+                ? "none"
+                : DescribeSilacLabel(TurnoverLabels.Value.StartLabel) + ">" + DescribeSilacLabel(TurnoverLabels.Value.EndLabel)));
             sb.AppendLine("Dissociation Type: " + CommonParameters.DissociationType);
             sb.AppendLine("Contaminant Handling: " + TcAmbiguity);
 
@@ -85,6 +94,191 @@ namespace EngineLayer.Indexing
 
             sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// The identity of a modification list, for the index cache key.
+        /// </summary>
+        /// <remarks>
+        /// This names every modification instead of counting them. Counting was the defect: the cache key
+        /// is compared as literal text by <c>MetaMorpheusTask.SameSettings</c>, so two searches whose
+        /// modification lists differed but happened to be the same length produced the same key, and the
+        /// second search silently reused a peptide index built for the first one's modifications. The
+        /// index stores decorated <c>PeptideWithSetModifications</c>, so that index is wrong rather than
+        /// merely incomplete: a variable-mod swap loses every peptide bearing the new modification, and a
+        /// fixed-mod swap puts wrong masses in every entry.
+        ///
+        /// Each entry is the readable id followed by a short hash of the modification's complete definition
+        /// (<see cref="Modification.ToString"/>, i.e. its mods.txt record: target, location restriction,
+        /// chemical formula, monoisotopic mass, neutral losses, diagnostic ions). The id alone would miss
+        /// a user who edited a custom modification file in place, keeping the name and changing the mass;
+        /// the hash covers every field, and keeps covering fields added to Modification later.
+        ///
+        /// The list order is deliberately preserved rather than sorted. Modification enumeration is
+        /// truncated at MaxModificationIsoforms by a yield break in
+        /// <c>ProteolyticPeptide.GetModifiedPeptides</c>, so which isoforms survive can depend on the
+        /// order the modifications arrive in. Sorting here would let two orders share one key and reuse
+        /// each other's index. Preserving order can only cost a needless rebuild, never a wrong reuse.
+        /// </remarks>
+        internal static string DescribeModifications(IEnumerable<Modification> modifications)
+        {
+            if (modifications == null)
+            {
+                return "none";
+            }
+
+            return string.Join(",", modifications.Select(m =>
+                (m?.IdWithMotif ?? "unnamed") + "[" + ShortHash(m?.ToString()) + "]"));
+        }
+
+        /// <summary>
+        /// The identity of the SILAC label list, for the index cache key. Labels reach
+        /// <c>Protein.Digest</c> alongside the modifications and change which peptides land in the index,
+        /// but appeared nowhere in the key. <see cref="SilacLabel"/> does not override ToString, so the
+        /// fields are named here. Order is preserved for the same reason as the modifications.
+        /// </summary>
+        internal static string DescribeSilacLabels(IEnumerable<SilacLabel> labels)
+        {
+            if (labels == null)
+            {
+                return "none";
+            }
+
+            return string.Join(",", labels.Select(DescribeSilacLabel));
+        }
+
+        internal static string DescribeSilacLabel(SilacLabel label)
+        {
+            if (label == null)
+            {
+                return "none";
+            }
+
+            var sb = new StringBuilder();
+            sb.Append(label.OriginalAminoAcid).Append('>').Append(label.AminoAcidLabel)
+                .Append('(').Append(label.LabelChemicalFormula).Append(',').Append(label.MassDifference).Append(')');
+
+            if (label.AdditionalLabels != null)
+            {
+                foreach (SilacLabel additionalLabel in label.AdditionalLabels)
+                {
+                    sb.Append('+').Append(DescribeSilacLabel(additionalLabel));
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// A short, stable hash of a definition string, for use inside the index cache key.
+        /// </summary>
+        /// <remarks>
+        /// Line endings are normalised first. <see cref="Modification.ToString"/> builds its text with
+        /// AppendLine, which emits the writing machine's line ending, so the same modification would
+        /// otherwise hash differently on Windows and Linux and force a rebuild on nothing.
+        ///
+        /// Eight bytes separates the handful of modifications in a search many times over, and keeps the
+        /// key readable next to the id it qualifies. This is a cache key, not a security boundary.
+        /// </remarks>
+        internal static string ShortHash(string definition)
+        {
+            if (string.IsNullOrEmpty(definition))
+            {
+                return "none";
+            }
+
+            string normalized = definition.Replace("\r\n", "\n").Replace('\r', '\n');
+            byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(normalized));
+            return Convert.ToHexString(hash, 0, 8).ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// The identity of the database list, for the index cache key.
+        /// </summary>
+        /// <remarks>
+        /// Each database is named and then qualified by a hash of its content. The key previously used
+        /// the file name and its CreationTime, and CreationTime does not move when a file is edited in
+        /// place: regenerate or hand-edit a FASTA at the same path and every byte of the key stays the
+        /// same, so the search reuses an index built from the old proteins. The name on its own is not
+        /// an identity either, being a bare file name rather than a path.
+        ///
+        /// Hashing is gated on (path, length, last write time) and memoised, because ToString is called
+        /// once per candidate index folder per database per partition and hashing on every call would
+        /// cost minutes on a large proteome. Content still decides the key, so touching a database
+        /// without changing it re-hashes but does not invalidate the cache. Within one process a file
+        /// edited to exactly its former length and write time would keep its old hash; across processes
+        /// the memo starts empty.
+        ///
+        /// The list order is preserved rather than sorted, for the same reason the modification list is.
+        /// DatabaseLoadingEngine.LoadBioPolymers appends each database's entries in list order and
+        /// SearchTask slices that list by index to build partitions, so with more than one partition a
+        /// reordered database list puts different proteins in partition k. Sorting here, as the key used
+        /// to, lets those two orders share one key.
+        /// </remarks>
+        internal static string DescribeDatabases(IEnumerable<FileInfo> databases)
+        {
+            if (databases == null)
+            {
+                return "none";
+            }
+
+            return string.Join(",", databases.Select(DescribeDatabase));
+        }
+
+        internal static string DescribeDatabase(FileInfo database)
+        {
+            if (database == null)
+            {
+                return "none";
+            }
+
+            return database.Name + "[" + ContentHash(database) + "]";
+        }
+
+        /// <summary>
+        /// A short hash of a file's content, memoised so a database is read at most once per edit.
+        /// </summary>
+        /// <remarks>
+        /// A file that cannot be read falls back to hashing its stamp, which still moves when the file
+        /// is edited. Throwing would take down a cache-key comparison over a database the search is
+        /// about to fail on anyway, and returning a constant would let two unreadable files share a key.
+        /// </remarks>
+        internal static string ContentHash(FileInfo database)
+        {
+            // FileInfo caches its metadata from construction, and the same instance is used for every
+            // candidate folder, so an edit mid-run would otherwise go unnoticed.
+            database.Refresh();
+
+            if (!database.Exists)
+            {
+                return "missing";
+            }
+
+            // The separators are load-bearing: without them "<dir>/x1.fasta" of length 23 and
+            // "<dir>/x1.fasta2" of length 3 produce the same stamp, and the second file would be handed
+            // the first one's hash.
+            string stamp = database.FullName + "|" + database.Length + "|" + database.LastWriteTimeUtc.ToBinary();
+
+            if (ContentHashes.TryGetValue(stamp, out string cached))
+            {
+                return cached;
+            }
+
+            string hash;
+            try
+            {
+                using FileStream stream = database.OpenRead();
+                hash = Convert.ToHexString(SHA256.HashData(stream), 0, 8).ToLowerInvariant();
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Deliberately not memoised. A database locked by another process for a moment must not
+                // pin its stamp to the fallback for the life of the process.
+                return ShortHash(stamp);
+            }
+
+            ContentHashes[stamp] = hash;
+            return hash;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
