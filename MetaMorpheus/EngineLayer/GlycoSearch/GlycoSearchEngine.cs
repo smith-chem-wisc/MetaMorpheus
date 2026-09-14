@@ -24,6 +24,7 @@ namespace EngineLayer.GlycoSearch
         private readonly string _oglycanDatabase;
         private readonly string _nglycanDatabase;
         private readonly GlycanBox[] GlycanBoxes; // GlycanBoxes for glycan search.
+        private readonly double[] GlycanBoxMasses; // GlycanBoxes[i].Mass, built once so each candidate peptide does not copy it.
 
         private readonly Tolerance PrecusorSearchMode;
         private readonly MassDiffAcceptor ProductSearchMode;
@@ -95,9 +96,12 @@ namespace EngineLayer.GlycoSearch
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
 
+            GlycanBoxMasses = GlycanBoxes?.Select(p => p.Mass).ToArray();
+            NGlycanMasses = NGlycans?.Select(p => (double)p.Mass / 1E5).ToArray();
         }
 
         private Glycan[] NGlycans { get; }
+        private double[] NGlycanMasses { get; } // NGlycans[i].Mass in Da, built once so each candidate peptide does not copy it.
         //private Glycan[] DecoyGlycans { get; }
 
         /// <summary>
@@ -438,7 +442,7 @@ namespace EngineLayer.GlycoSearch
             // The glycanBoxes will be filtered by the oxonium ions. If the oxonium ions don't make sense, we will remove the glycanBox.
 
 
-            int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow); // try to find the index that closet match to the "possibleGlycanMassLow" within the glycanBox
+            int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBoxMasses, possibleGlycanMassLow); // try to find the index that closet match to the "possibleGlycanMassLow" within the glycanBox
 
             SortedDictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, Motifs); //list all of the possible glycoslation site/postition
 
@@ -564,7 +568,7 @@ namespace EngineLayer.GlycoSearch
                 return;
             }
 
-            int iDLow = GlycoPeptides.BinarySearchGetIndex(NGlycans.Select(p => (double)p.Mass / 1E5).ToArray(), possibleGlycanMassLow);
+            int iDLow = GlycoPeptides.BinarySearchGetIndex(NGlycanMasses, possibleGlycanMassLow);
             while (iDLow < NGlycans.Length && PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)NGlycans[iDLow].Mass / 1E5))
             {
                 double bestLocalizedScore = scoreCutOff;
