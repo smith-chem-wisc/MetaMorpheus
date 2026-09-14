@@ -861,6 +861,48 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Name="ProteaseGuruTab" Header="ProteaseGuru" TabIndex="0" Style="{StaticResource TabItemStyle}">
+                <Grid Style="{StaticResource PageGridStyle}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <!--Header label-->
+                    <Label Content="ProteaseGuru" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <!--This tab doesn't actually have any content, it just opens Protease Guru-->
+
+                    <TextBlock Grid.Row="2" Style="{StaticResource TextBlockStyle}">
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/ProteaseGuru" RequestNavigate="Hyperlink_RequestNavigate">
+                            ProteaseGuru
+                        </Hyperlink>  is an in silico digestion tool for the planning of bottom-up proteomic experiments. 
+                        <LineBreak/>
+                        ProteaseGuru allows for the digestion of one or more protein databases with as many proteases as desired.
+                        <LineBreak/>
+                        Results of the various proteolytic digests can be visualized with histograms as well as protein sequence coverage maps.
+                        <LineBreak/>
+                        <LineBreak/>
+                        
+                        Main features of ProteaseGuru include:
+                        <LineBreak/>
+                        
+                        ● Ability to digest more than one database for application with multi-species samples such as xenografts, virally infected host cells and microbiome samples.
+                        <LineBreak/>
+                        ● In silico digestion with as many proteases as desired!
+                        <LineBreak/>
+                        ● Ability to define custom proteases for digestion.
+                        <LineBreak/>
+                        ● Uniqueness of peptide sequences are determined both within a database and across all databases being analyzed.
+                        <LineBreak/>
+                        ● Visualization of whole proteome digestion results is enabled by the generation and ability to export histograms.
+                        <LineBreak/>
+                        ● Search for your proteins of interest and view their in silico digestion with a sequence coverage map with PTM and variant annotation!
+
+                    </TextBlock>
+                </Grid>
+            </TabItem>
+
             <!--Settings tab-->
             <TabItem Name="SettingsTab" Header="Settings" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">

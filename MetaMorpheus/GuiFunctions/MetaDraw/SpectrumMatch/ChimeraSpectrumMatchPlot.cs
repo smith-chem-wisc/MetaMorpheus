@@ -59,15 +59,12 @@ namespace GuiFunctions
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
-            var tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType);
             var tempLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "legend.png");
             List<System.Drawing.Bitmap> bitmaps = new();
             List<Point> points = new();
             var dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
-            // export model as png and load as bitmap
-            ExportToPng(tempModelPath, (int)width, (int)height);
-            bitmaps.Add(new System.Drawing.Bitmap(tempModelPath));
+            bitmaps.Add(MetaDrawLogic.ConvertUIElementToBitmap(PlotView, System.IO.Path.GetDirectoryName(path)));
             points.Add(new Point(0, 0));
 
             // Render legend as bitmap and export as png if used
@@ -95,7 +92,6 @@ namespace GuiFunctions
             // combine the bitmaps
             var combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points, true);
             bitmaps.ForEach(p => p.Dispose());
-            File.Delete(tempModelPath);
             File.Delete(tempLegendPngPath);
             ExportPlot(path, combinedBitmaps, width, height);
         }
