@@ -355,6 +355,63 @@ namespace EngineLayer
             return clone;
         }
 
+        /// <summary>
+        /// Copy with a different MaxThreadsToUsePerFile, for dividing a task's thread budget across spectra files searched at
+        /// once. Returns a new instance for the same reason as <see cref="CloneWithNewTotalPartitions"/>: the task's own
+        /// CommonParameters may be what a file was handed. Construct copies on one thread: the constructor reads and clears the
+        /// process-wide custom product-type list.
+        /// </summary>
+        public CommonParameters CloneWithNewMaxThreadsToUsePerFile(int maxThreadsToUsePerFile)
+        {
+            CommonParameters clone = new CommonParameters(
+                                TaskDescriptor,
+                                DissociationType,
+                                MS2ChildScanDissociationType,
+                                MS3ChildScanDissociationType,
+                                SeparationType,
+                                DoPrecursorDeconvolution,
+                                UseProvidedPrecursorInfo,
+                                DeconvolutionIntensityRatio,
+                                DeconvolutionMaxAssumedChargeState,
+                                ReportAllAmbiguity,
+                                AddCompIons,
+                                TotalPartitions,
+                                QValueThreshold,
+                                PepQValueThreshold,
+                                QValueCutoffForPepCalculation,
+                                ScoreCutoff,
+                                NumberOfPeaksToKeepPerWindow,
+                                MinimumAllowedIntensityRatioToBasePeak,
+                                WindowWidthThomsons,
+                                NumberOfWindows,
+                                NormalizePeaksAccrossAllWindows,
+                                TrimMs1Peaks,
+                                TrimMsMsPeaks,
+                                ProductMassTolerance,
+                                PrecursorMassTolerance,
+                                ProductMassTolerance_LowRes,
+                                DeconvolutionMassTolerance,
+                                maxThreadsToUsePerFile, //changed
+                                DigestionParams,
+                                ListOfModsVariable,
+                                ListOfModsFixed,
+                                AssumeOrphanPeaksAreZ1Fragments,
+                                MaxHeterozygousVariants,
+                                MinVariantDepth,
+                                AddTruncations,
+                                PrecursorDeconvolutionParameters,
+                                ProductDeconvolutionParameters,
+                                UseMostAbundantPrecursorIntensity,
+                                DIAparameters,
+                                FragmentationParameters,
+                                PrecursorMassMatchMode,
+                                RTPredictorName);
+
+            // As in CloneWithNewTotalPartitions: CustomIons is read from a global list by the constructor, not passed in.
+            clone.CustomIons = CustomIons;
+            return clone;
+        }
+
         public void SetCustomProductTypes()
         {
             DigestionParams.ProductsFromDissociationType()[MassSpectrometry.DissociationType.Custom] = CustomIons;
