@@ -59,12 +59,27 @@ namespace EngineLayer
         }
         public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum, bool buildDecoy)
         {
+            return BuildOGlycanBoxes(maxNum, buildDecoy, double.MaxValue);
+        }
+
+        /// <summary>
+        /// Default for <see cref="BuildOGlycanBoxes(int, bool, double)"/> and <see cref="BuildNOGlycanBoxes(int, bool, double)"/> as used by the search, in Da.
+        /// </summary>
+        public const double DefaultMaximumGlycanBoxMass = 4000;
+
+        /// <param name="maxBoxMass"> Boxes heavier than this (Da) are skipped before their child boxes are built. </param>
+        public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum, bool buildDecoy, double maxBoxMass)
+        {
 
             for (int i = 1; i <= maxNum; i++)
             {
                 foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, GlobalOGlycans.Length), i))
                 {
                     GlycanBox glycanBox = new GlycanBox(idCombine.ToArray());
+                    if (glycanBox.Mass > maxBoxMass)
+                    {
+                        continue;
+                    }
                     glycanBox.TargetDecoy = true;
                     glycanBox.ChildGlycanBoxes = BuildChildOGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
 
@@ -117,9 +132,15 @@ namespace EngineLayer
 
         public static IEnumerable<GlycanBox> BuildNOGlycanBoxes(int maxOGlycanNum, bool buildDecoy)
         {
+            return BuildNOGlycanBoxes(maxOGlycanNum, buildDecoy, double.MaxValue);
+        }
+
+        /// <param name="maxBoxMass"> Boxes heavier than this (Da) are skipped before their child boxes are built. </param>
+        public static IEnumerable<GlycanBox> BuildNOGlycanBoxes(int maxOGlycanNum, bool buildDecoy, double maxBoxMass)
+        {
             int[] oGlycansIds;
 
-            foreach (var box in AllNGlycanOnlyBox(buildDecoy))
+            foreach (var box in AllNGlycanOnlyBox(buildDecoy, maxBoxMass))
             {
                 yield return box;
             }
@@ -129,12 +150,29 @@ namespace EngineLayer
                 foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, GlobalOGlycans.Length), i))
                 {
                     oGlycansIds = idCombine.ToArray();
+                    // Most O/N pairings exceed the cap once the O-glycans alone are heavy, so screen on the summed
+                    // glycan masses (with a 1 Da margin) before allocating a box. The exact test below decides.
+                    double oGlycanMass = oGlycansIds.Sum(id => (double)GlobalOGlycans[id].Mass) / 1E5;
+                    if (oGlycanMass > maxBoxMass + 1)
+                    {
+                        continue;
+                    }
+                    List<int> keptNGlycanIds = new List<int>();
                     for (int j = 0; j < GlobalNGlycans.Count + 1; j++)
                     {
                         // the index for N-glycan will be start from -1, -2, -3...
                         // nglycanId = 0 means no glycan on the peptide.
                         int nglycanId = - j;
+                        if (nglycanId != 0 && oGlycanMass + (double)GlobalNGlycans[nglycanId].Mass / 1E5 > maxBoxMass + 1)
+                        {
+                            continue;
+                        }
                         GlycanBox glycanBox = new GlycanBox(oGlycansIds, nglycanId, true);
+                        if (glycanBox.Mass > maxBoxMass)
+                        {
+                            continue;
+                        }
+                        keptNGlycanIds.Add(nglycanId);
                         glycanBox.TargetDecoy = true;
                         glycanBox.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
                         yield return glycanBox;
@@ -142,9 +180,9 @@ namespace EngineLayer
 
                     if (buildDecoy)
                     {
-                        for (int j = 0; j < GlobalNGlycans.Count + 1; j++) 
+                        // A decoy is built only where its target composition survived the mass cap.
+                        foreach (int nglycanId in keptNGlycanIds)
                         {
-                            int nglycanId = -j;
                             GlycanBox glycanBox_decoy = new GlycanBox(oGlycansIds, nglycanId,false); // decoy glycanBox
                             glycanBox_decoy.TargetDecoy = false;
                             glycanBox_decoy.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
@@ -160,8 +198,9 @@ namespace EngineLayer
         /// </summary>
         /// <param name="buildDecoy"></param>
         /// <returns></returns>
-        private static IEnumerable<GlycanBox> AllNGlycanOnlyBox(bool buildDecoy)
+        private static IEnumerable<GlycanBox> AllNGlycanOnlyBox(bool buildDecoy, double maxBoxMass)
         {
+            List<int> keptNGlycanIds = new List<int>();
             // first consider the case when there is no N-glycan in the box.
             for (int j = 1; j < GlobalNGlycans.Count + 1; j++)
             {
@@ -169,15 +208,19 @@ namespace EngineLayer
                 // nglycanId = 0 means no glycan on the peptide.
                 int nglycanId = -j;
                 GlycanBox glycanBox = new GlycanBox(null, nglycanId, true);
+                if (glycanBox.Mass > maxBoxMass)
+                {
+                    continue;
+                }
+                keptNGlycanIds.Add(nglycanId);
                 glycanBox.TargetDecoy = true;
                 glycanBox.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
                 yield return glycanBox;
             }
             if (buildDecoy)
             {
-                for (int j = 1; j < GlobalNGlycans.Count + 1; j++)
+                foreach (int nglycanId in keptNGlycanIds)
                 {
-                    int nglycanId = -j;
                     GlycanBox glycanBox_decoy = new GlycanBox(null, nglycanId, false); // decoy glycanBox
                     glycanBox_decoy.TargetDecoy = false;
                     glycanBox_decoy.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();

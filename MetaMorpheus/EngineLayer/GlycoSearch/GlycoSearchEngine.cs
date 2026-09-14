@@ -45,7 +45,8 @@ namespace EngineLayer.GlycoSearch
         // The constructor for GlycoSearchEngine, we can load the parameter for the searhcing like mode, topN, maxOGlycanNum, oxoniumIonFilter, datsbase, etc.
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
-             string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds)
+             string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds,
+             double maxGlycanBoxMass = GlycanBox.DefaultMaximumGlycanBoxMass)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalGsms = globalCsms;
@@ -63,7 +64,7 @@ namespace EngineLayer.GlycoSearch
             if (glycoSearchType == GlycoSearchType.OGlycanSearch) //if we do the O-glycan search, we need to load the O-glycan database and generate the glycoBox.
             {
                 GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
-                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray(); //generate glycan box for O-glycan search
+                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray(); //generate glycan box for O-glycan search
                 GlycanBoxes = GlycanBox.OGlycanBoxes;
                 GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
             }
@@ -87,7 +88,7 @@ namespace EngineLayer.GlycoSearch
                     indexForNGlycan--;
                 }
 
-                GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray();
+                GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(_maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray();
                 GlycanBoxes = GlycanBox.NOGlycanBoxes;
                 GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
                 //TO THINK: Glycan Decoy database.
