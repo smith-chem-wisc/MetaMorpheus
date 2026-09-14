@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Threading;
+using EngineLayer.GlycoSearch;
 using MzLibUtil;
 
 namespace EngineLayer
@@ -324,6 +326,33 @@ namespace EngineLayer
                 int shiftInd = random.Next(SugarShift.Length);
                 Mass = (double)(Glycan.GetMass(Kind) + SugarShift[shiftInd]) / 1E5;
             }
+        }
+
+        /// <summary>
+        /// The motif (e.g. "S", "T", "Nxs", "Nxt") of a glycan id. Non-negative ids are O-glycans, negative ids are N-glycans.
+        /// </summary>
+        internal static string MotifOf(int modId)
+        {
+            return modId >= 0 ? GlobalOGlycans[modId].Target.ToString() : GlobalNGlycans[modId].Target.ToString();
+        }
+
+        private MotifCount _motifCount;
+        private GlycanBoxLocalizationCache _localizationCache;
+
+        /// <summary>
+        /// How many glycans in this box need each motif. Built on first use; a box is shared by all search threads.
+        /// </summary>
+        internal MotifCount GetMotifCount()
+        {
+            return LazyInitializer.EnsureInitialized(ref _motifCount, () => new MotifCount(ModIds));
+        }
+
+        /// <summary>
+        /// Everything the localization graph derives from this box's child boxes alone. Built on first use.
+        /// </summary>
+        internal GlycanBoxLocalizationCache GetLocalizationCache()
+        {
+            return LazyInitializer.EnsureInitialized(ref _localizationCache, () => new GlycanBoxLocalizationCache(this));
         }
 
         public string GlycanIdString // the composition of glycanBox. Example: [1,2,3] means glycan1 + glycan2 + glycan3 are on the peptide.

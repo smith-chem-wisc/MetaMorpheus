@@ -479,17 +479,22 @@ namespace EngineLayer.GlycoSearch
 
             List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>(); // if we also have ETD, then we will search the localization
 
-            while (iDLow < GlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBoxes[iDLow].Mass))) // verify the glycan mass is invaild (within the range and match with mass shift)
+            // These depend on the peptide alone, so every glycan box tried below shares them.
+            string[] modPosMotifs = modPos.Values.ToArray();
+            GlycoPeptides.SiteFragmentMasses[] siteFragments = null;
+
+            while (iDLow < GlycanBoxes.Length && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBoxes[iDLow].Mass))) // verify the glycan mass is invaild (within the range and match with mass shift)
             {
                 if (OxoniumIonFilter && !GlycoPeptides.DiagonsticFilter(oxoniumIonIntensities, GlycanBoxes[iDLow])) // if the filter is turned on, we need to check does the oxoiums make sense.
                 {
                     iDLow++; // if the oxonium ions don't make sense (there is no 204, or without their diagnostic ion), we can skip this glycan.
                     continue;
                 }
-                if (GraphCheck(modPos, GlycanBoxes[iDLow])) // the glycosite number should be larger than the possible glycan number.
+                if (GraphCheck(modPosMotifs, GlycanBoxes[iDLow])) // the glycosite number should be larger than the possible glycan number.
                 {
+                    siteFragments ??= GlycoPeptides.GetSiteFragmentMasses(products, modPos.Keys.ToArray());
                     LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBoxes[iDLow], GlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
-                    LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, toleranceForLocalizationScan, products); //create the localization graph with the glycan mass and the possible glycosite.
+                    LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, toleranceForLocalizationScan, products, siteFragments); //create the localization graph with the glycan mass and the possible glycosite.
 
                     double currentLocalizationScore = localizationGraph.TotalScore;
                     if (currentLocalizationScore > bestLocalizedScore) //Try to find the best glycanBox with the highest score.
@@ -643,6 +648,7 @@ namespace EngineLayer.GlycoSearch
         private List<GlycoSpectralMatch> MatchNGlycopeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
+            double[] oxoniumIonIntensities = null;
 
             for (int ind = 0; ind < idsOfPeptidesPossiblyObserved.Count; ind++)
             {
@@ -665,8 +671,8 @@ namespace EngineLayer.GlycoSearch
                         continue;
                     }
 
-                    //Filter by OxoniumIon
-                    var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode);
+                    //Filter by OxoniumIon. The intensities depend on the scan alone, so they are read once per scan.
+                    oxoniumIonIntensities ??= GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode);
 
                     //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
                     if (OxoniumIonFilter && oxoniumIonIntensities[OxoniumIon204Index] == 0)
@@ -703,6 +709,7 @@ namespace EngineLayer.GlycoSearch
         private List<GlycoSpectralMatch> MatchGlycopeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
+            double[] oxoniumIonIntensities = null;
 
 
             for (int ind = 0; ind < idsOfPeptidesPossiblyObserved.Count; ind++)
@@ -725,8 +732,8 @@ namespace EngineLayer.GlycoSearch
                         continue; // if the glycan mass difference is out of the range of the glycan box, we can skip this peptide.
                     }
 
-                    //Filter by OxoniumIon
-                    var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode);
+                    //Filter by OxoniumIon. The intensities depend on the scan alone, so they are read once per scan.
+                    oxoniumIonIntensities ??= GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode);
 
                     //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
                     if (OxoniumIonFilter && oxoniumIonIntensities[OxoniumIon204Index] == 0)
@@ -737,11 +744,12 @@ namespace EngineLayer.GlycoSearch
                     //Find O-Glycan
                     FindOGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
                 }
+            }
 
-                if (possibleMatches.Count != 0)
-                {
-                    possibleMatches = possibleMatches.OrderByDescending(p => p.Score).ToList();
-                }
+            // One stable sort after the loop orders the matches exactly as re-sorting after every candidate did.
+            if (possibleMatches.Count != 0)
+            {
+                possibleMatches = possibleMatches.OrderByDescending(p => p.Score).ToList();
             }
 
             return possibleMatches;
@@ -751,50 +759,17 @@ namespace EngineLayer.GlycoSearch
         /// Valid the Graph created by this modPos and glycanBox.
         /// Check if the motif in peptide is sufficient to cover the motif in glycanBox.
         /// </summary>
-        /// <param name="modPos"></param>
+        /// <param name="modPosMotifs"> The motif at each candidate glycosite of the peptide. </param>
         /// <param name="glycanBox"></param>
         /// <returns></returns>
-        private bool GraphCheck(SortedDictionary<int, string> modPos, GlycanBox glycanBox)
+        private static bool GraphCheck(string[] modPosMotifs, GlycanBox glycanBox)
         {
             // If the motifs number is less than the glycanBox, we can skip this graph.
-            if (modPos.Count < glycanBox.NumberOfMods)
+            if (modPosMotifs.Length < glycanBox.NumberOfMods)
                 return false;
 
-            // Calculate the motif in glycanBox.
-            var motifInBox = new Dictionary<string, int>();
-            foreach (var modId in glycanBox.ModIds)
-            {
-                var motif = modId >= 0? GlycanBox.GlobalOGlycans[modId].Target.ToString() : GlycanBox.GlobalNGlycans[modId].Target.ToString();
-
-                if (!motifInBox.ContainsKey(motif))
-                {
-                    motifInBox[motif] = 0;
-                }
-                motifInBox[motif]++;
-            }
-
-            // Calculate the motif in peptide.
-            var motifInPeptide = new Dictionary<string, int>();
-            var modPos_motif = modPos.Values.ToArray();
-            foreach (var motif in modPos_motif)
-            {
-                if (!motifInPeptide.ContainsKey(motif))
-                {
-                    motifInPeptide[motif] = 0;
-                }
-                motifInPeptide[motif]++;
-            }
-
             // Check if the motif in peptide is sufficient to cover the motif in glycanBox.
-            foreach (var motif in motifInBox)
-            {
-                if (!motifInPeptide.ContainsKey(motif.Key) || motifInPeptide[motif.Key] < motif.Value)
-                {
-                    return false; 
-                }
-            }
-
-            return true;
+            return glycanBox.GetMotifCount().CoveredBy(modPosMotifs, modPosMotifs.Length - 1);
         }
 
     }
