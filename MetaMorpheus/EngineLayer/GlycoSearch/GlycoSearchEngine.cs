@@ -65,12 +65,26 @@ namespace EngineLayer.GlycoSearch
             Indexing.FragmentIndex fragmentIndex, Indexing.FragmentIndex secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
              string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds,
              double maxGlycanBoxMass = GlycanBox.DefaultMaximumGlycanBoxMass, List<(int Partition, int PeptideId, byte Score)>[] candidates = null)
+            : this(globalCsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, commonParameters, fileSpecificParameters,
+                  GlycanSearchSpace.Build(oglycanDatabase, nglycanDatabase, glycoSearchType, maxOGlycanNum, maxGlycanBoxMass),
+                  oglycanDatabase, nglycanDatabase, glycoSearchTopNum, maxOGlycanNum, oxoniumIonFilter, nestedIds, candidates)
+        {
+        }
+
+        /// <summary>
+        /// Searches with glycans and glycan boxes already built by <see cref="GlycanSearchSpace.Build"/>, so a task searching several
+        /// spectra files builds them once rather than once per file.
+        /// </summary>
+        public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, IEnumerable<IBioPolymerWithSetMods> peptideIndex,
+            Indexing.FragmentIndex fragmentIndex, Indexing.FragmentIndex secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
+            GlycanSearchSpace glycanSearchSpace, string oglycanDatabase, string nglycanDatabase, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds,
+            List<(int Partition, int PeptideId, byte Score)>[] candidates = null)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.PeptideIndex = peptideIndex.Cast<PeptideWithSetModifications>().ToList();
             this.Candidates = candidates;
             this.GlobalGsms = globalCsms;
-            this.GlycoSearchType = glycoSearchType;
+            this.GlycoSearchType = glycanSearchSpace.GlycoSearchType;
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
             this.OxoniumIonFilter = oxoniumIonFilter;
@@ -80,45 +94,10 @@ namespace EngineLayer.GlycoSearch
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
             ProductSearchMode = new SinglePpmAroundZeroSearchMode(20); //For Oxonium ion only
 
-
-            if (glycoSearchType == GlycoSearchType.OGlycanSearch) //if we do the O-glycan search, we need to load the O-glycan database and generate the glycoBox.
-            {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
-                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray(); //generate glycan box for O-glycan search
-                GlycanBoxes = GlycanBox.OGlycanBoxes;
-                GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
-            }
-            else if (glycoSearchType == GlycoSearchType.NGlycanSearch) //because the there is only one glycan in N-glycanpeptide, so we don't need to build the n-glycanBox here.
-            {
-                // The single N-glycan is the whole box here, so the box mass cap applies to each glycan on its own.
-                NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _nglycanDatabase).First(), true, false)
-                    .Where(p => (double)p.Mass / 1E5 <= maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray();
-                //TO THINK: Glycan Decoy database.
-                //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
-            }
-            else if (glycoSearchType == GlycoSearchType.N_O_GlycanSearch) //search both N-glycan and O-glycan is still not tested and build completely yet.
-            {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
-                GlycanBox.GlobalNGlycans = new Dictionary<int, Glycan>();
-                // For N-glycan, we use negative index to distinguish with O-glycan.
-                var nGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanDatabasePaths.First(p => System.IO.Path.GetFileName(p) == _nglycanDatabase),
-                        true, false).OrderBy(p => p.Mass);
-                int indexForNGlycan = -1;
-                foreach (var nGlycan in nGlycans)
-                {
-                    GlycanBox.GlobalNGlycans.Add(indexForNGlycan, nGlycan);
-                    indexForNGlycan--;
-                }
-
-                GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(_maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray();
-                GlycanBoxes = GlycanBox.NOGlycanBoxes;
-                GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
-                //TO THINK: Glycan Decoy database.
-                //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
-            }
-
-            GlycanBoxMasses = GlycanBoxes?.Select(p => p.Mass).ToArray();
-            NGlycanMasses = NGlycans?.Select(p => (double)p.Mass / 1E5).ToArray();
+            GlycanBoxes = glycanSearchSpace.GlycanBoxes;
+            NGlycans = glycanSearchSpace.NGlycans;
+            GlycanBoxMasses = glycanSearchSpace.GlycanBoxMasses;
+            NGlycanMasses = glycanSearchSpace.NGlycanMasses;
         }
 
         private Glycan[] NGlycans { get; }
