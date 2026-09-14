@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Omics;
@@ -64,8 +65,12 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Precursor Index: " + GeneratePrecursorIndex);
             sb.AppendLine("Search Decoys: " + DecoyType);
             sb.AppendLine("Number of proteins: " + ProteinList.Count);
-            sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
-            sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
+            sb.AppendLine("Fixed mods: " + DescribeModifications(FixedModifications));
+            sb.AppendLine("Variable mods: " + DescribeModifications(VariableModifications));
+            sb.AppendLine("Silac labels: " + DescribeSilacLabels(SilacLabels));
+            sb.AppendLine("Turnover labels: " + (TurnoverLabels == null
+                ? "none"
+                : DescribeSilacLabel(TurnoverLabels.Value.StartLabel) + ">" + DescribeSilacLabel(TurnoverLabels.Value.EndLabel)));
             sb.AppendLine("Dissociation Type: " + CommonParameters.DissociationType);
             sb.AppendLine("Contaminant Handling: " + TcAmbiguity);
 
@@ -85,6 +90,102 @@ namespace EngineLayer.Indexing
 
             sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// The identity of a modification list, for the index cache key.
+        /// </summary>
+        /// <remarks>
+        /// This names every modification instead of counting them. Counting was the defect: the cache key
+        /// is compared as literal text by <c>MetaMorpheusTask.SameSettings</c>, so two searches whose
+        /// modification lists differed but happened to be the same length produced the same key, and the
+        /// second search silently reused a peptide index built for the first one's modifications. The
+        /// index stores decorated <c>PeptideWithSetModifications</c>, so that index is wrong rather than
+        /// merely incomplete: a variable-mod swap loses every peptide bearing the new modification, and a
+        /// fixed-mod swap puts wrong masses in every entry.
+        ///
+        /// Each entry is the readable id followed by a short hash of the modification's complete definition
+        /// (<see cref="Modification.ToString"/>, i.e. its mods.txt record: target, location restriction,
+        /// chemical formula, monoisotopic mass, neutral losses, diagnostic ions). The id alone would miss
+        /// a user who edited a custom modification file in place, keeping the name and changing the mass;
+        /// the hash covers every field, and keeps covering fields added to Modification later.
+        ///
+        /// The list order is deliberately preserved rather than sorted. Modification enumeration is
+        /// truncated at MaxModificationIsoforms by a yield break in
+        /// <c>ProteolyticPeptide.GetModifiedPeptides</c>, so which isoforms survive can depend on the
+        /// order the modifications arrive in. Sorting here would let two orders share one key and reuse
+        /// each other's index. Preserving order can only cost a needless rebuild, never a wrong reuse.
+        /// </remarks>
+        internal static string DescribeModifications(IEnumerable<Modification> modifications)
+        {
+            if (modifications == null)
+            {
+                return "none";
+            }
+
+            return string.Join(",", modifications.Select(m =>
+                (m?.IdWithMotif ?? "unnamed") + "[" + ShortHash(m?.ToString()) + "]"));
+        }
+
+        /// <summary>
+        /// The identity of the SILAC label list, for the index cache key. Labels reach
+        /// <c>Protein.Digest</c> alongside the modifications and change which peptides land in the index,
+        /// but appeared nowhere in the key. <see cref="SilacLabel"/> does not override ToString, so the
+        /// fields are named here. Order is preserved for the same reason as the modifications.
+        /// </summary>
+        internal static string DescribeSilacLabels(IEnumerable<SilacLabel> labels)
+        {
+            if (labels == null)
+            {
+                return "none";
+            }
+
+            return string.Join(",", labels.Select(DescribeSilacLabel));
+        }
+
+        internal static string DescribeSilacLabel(SilacLabel label)
+        {
+            if (label == null)
+            {
+                return "none";
+            }
+
+            var sb = new StringBuilder();
+            sb.Append(label.OriginalAminoAcid).Append('>').Append(label.AminoAcidLabel)
+                .Append('(').Append(label.LabelChemicalFormula).Append(',').Append(label.MassDifference).Append(')');
+
+            if (label.AdditionalLabels != null)
+            {
+                foreach (SilacLabel additionalLabel in label.AdditionalLabels)
+                {
+                    sb.Append('+').Append(DescribeSilacLabel(additionalLabel));
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// A short, stable hash of a definition string, for use inside the index cache key.
+        /// </summary>
+        /// <remarks>
+        /// Line endings are normalised first. <see cref="Modification.ToString"/> builds its text with
+        /// AppendLine, which emits the writing machine's line ending, so the same modification would
+        /// otherwise hash differently on Windows and Linux and force a rebuild on nothing.
+        ///
+        /// Eight bytes separates the handful of modifications in a search many times over, and keeps the
+        /// key readable next to the id it qualifies. This is a cache key, not a security boundary.
+        /// </remarks>
+        internal static string ShortHash(string definition)
+        {
+            if (string.IsNullOrEmpty(definition))
+            {
+                return "none";
+            }
+
+            string normalized = definition.Replace("\r\n", "\n").Replace('\r', '\n');
+            byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(normalized));
+            return Convert.ToHexString(hash, 0, 8).ToLowerInvariant();
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
