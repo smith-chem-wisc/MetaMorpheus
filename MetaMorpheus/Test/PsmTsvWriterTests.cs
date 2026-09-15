@@ -16,6 +16,8 @@ using EngineLayer.FdrAnalysis;
 using GuiFunctions;
 using System.Linq;
 using System.Reflection;
+using Transcriptomics;
+using Transcriptomics.Digestion;
 
 namespace Test
 {
@@ -716,6 +718,183 @@ namespace Test
             Assert.That(MetaDrawLogic.ShouldShowProFormaColumn(new List<SpectrumMatchFromTsv>()), Is.False);
         }
 
+        #region Oligo Terminus Columns
+
+        /// <summary>
+        /// Builds a single-hypothesis OSM for the oligo terminus column tests.
+        /// The oligo carries explicit, non-default 5'- and 3'-terminus formulas so the test
+        /// asserts the exact strings written, not the reader's fallbacks.
+        /// </summary>
+        private static OligoSpectralMatch BuildTerminiTestOsm(out OligoWithSetMods oligo)
+        {
+            ChemicalFormula fivePrime = ChemicalFormula.ParseFormula("O-3P-1");
+            ChemicalFormula threePrime = ChemicalFormula.ParseFormula("H2O4P");
+            oligo = BuildTestOligo("AAA", fivePrime, threePrime);
+
+            double mass = 12.0 + oligo.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var osm = new OligoSpectralMatch(oligo, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            osm.ResolveAllAmbiguities();
+            return osm;
+        }
+
+        /// <summary>
+        /// Builds an oligo over a parent with a non-null GeneNames list, so the full
+        /// AddPeptideSequenceData path (the geneString column) does not throw during serialization.
+        /// </summary>
+        private static OligoWithSetMods BuildTestOligo(string baseSequence, ChemicalFormula fivePrime, ChemicalFormula threePrime)
+        {
+            var rna = new RNA(baseSequence, "test_rna", geneNames: new List<System.Tuple<string, string>>());
+            return new OligoWithSetMods(baseSequence, n: rna, fivePrimeTerminus: fivePrime, threePrimeTerminus: threePrime);
+        }
+
+        /// <summary>
+        /// Oligo runs: the 5'-Terminus column is emitted immediately after Essential Sequence,
+        /// followed by 3'-Terminus, in both header and data row, and both carry the terminus
+        /// chemical-formula strings. Both AllOSMs and AllOligos go through this same
+        /// GetTabSeparatedHeader/ToString path, so this covers the columns in both output files.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_OligoSearch_ColumnsFollowEssentialSequenceAndCarryTerminusFormulas()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                var osm = BuildTerminiTestOsm(out OligoWithSetMods oligo);
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int essentialSequenceIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.EssentialSequence);
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                int threePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus);
+
+                // 5' first, then 3', immediately after Essential Sequence.
+                Assert.That(fivePrimeIndex, Is.EqualTo(essentialSequenceIndex + 1));
+                Assert.That(threePrimeIndex, Is.EqualTo(fivePrimeIndex + 1));
+
+                string[] rowSplits = osm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                // Header and data row stay in sync - the invariant the single analyte-type gate exists to protect.
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+
+                // Compared against the formula strings directly, so the assertions cannot move with
+                // the production code they are checking.
+                Assert.That(rowSplits[fivePrimeIndex], Is.EqualTo(oligo.FivePrimeTerminus.ThisChemicalFormula.Formula));
+                Assert.That(rowSplits[threePrimeIndex], Is.EqualTo(oligo.ThreePrimeTerminus.ThisChemicalFormula.Formula));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// Non-oligo runs: the terminus columns must appear in neither the header nor the data row.
+        /// Asserting the row's field count matches the header's is what actually defends the invariant -
+        /// a gate that diverged between the two would shift every downstream column by one.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        [TestCase(AnalyteType.Peptide)]
+        [TestCase(AnalyteType.Proteoform)]
+        public static void Termini_NonOligoSearch_ColumnsAbsent(AnalyteType analyteType)
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = analyteType;
+            try
+            {
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+
+                Assert.That(headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus), Is.EqualTo(-1));
+                Assert.That(headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus), Is.EqualTo(-1));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// Bottom-up (AnalyteType.Peptide): the terminus columns are absent from the header AND the
+        /// data row, and the two stay aligned - so a PSM file never carries a trailing empty pair of
+        /// cells and never shifts any existing column.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_BottomUpSearch_ColumnsAbsentFromRowAndRowStaysAligned()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
+            try
+            {
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                var psm = BuildProFormaTestPsm(out PeptideWithSetModifications peptide);
+                string[] rowSplits = psm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                Assert.That(rowSplits, Does.Not.Contain(SpectrumMatchFromTsvHeader.FivePrimeTerminus));
+                Assert.That(rowSplits, Does.Not.Contain(SpectrumMatchFromTsvHeader.ThreePrimeTerminus));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// The terminus columns resolve across ambiguous matches with the same Resolve(...) idiom as
+        /// the neighbouring sequence columns. With two oligos whose terminus formulas differ, that
+        /// idiom joins them with '|' - the branch a single-oligo test never enters.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_AmbiguousOligos_ValuesJoinedByPipe()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                // Same base sequence, different 5'-terminus - so the two terminus strings differ.
+                ChemicalFormula minusPhosphateFivePrime = ChemicalFormula.ParseFormula("O-3P-1");
+                ChemicalFormula otherFivePrime = ChemicalFormula.ParseFormula("PO4");
+                ChemicalFormula otherThreePrime = ChemicalFormula.ParseFormula("HO");
+                OligoWithSetMods oligoA = BuildTestOligo("AAA", minusPhosphateFivePrime, otherThreePrime);
+                OligoWithSetMods oligoB = BuildTestOligo("AAA", otherFivePrime, otherThreePrime);
+
+                double mass = 12.0 + oligoA.MonoisotopicMass.ToMz(1);
+                var scan = new Ms2ScanWithSpecificMass(
+                    new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                        0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                    mass, 1, "", new CommonParameters());
+
+                var ambiguousOsm = new OligoSpectralMatch(oligoA, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                ambiguousOsm.AddOrReplace(oligoB, 10, 0, true, new List<MatchedFragmentIon>());
+                ambiguousOsm.ResolveAllAmbiguities();
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                int threePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus);
+                string[] rowSplits = ambiguousOsm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                Assert.That(rowSplits[fivePrimeIndex], Does.Contain("|"));
+                Assert.That(rowSplits[fivePrimeIndex], Does.Contain(minusPhosphateFivePrime.Formula));
+                Assert.That(rowSplits[fivePrimeIndex], Does.Contain(otherFivePrime.Formula));
+                // The 3'-terminus is identical across both hypotheses, so it resolves to a single value.
+                Assert.That(rowSplits[threePrimeIndex], Is.EqualTo(otherThreePrime.Formula));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        #endregion
 
         #region Collisional Energy Tests
 
