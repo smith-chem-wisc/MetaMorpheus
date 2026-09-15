@@ -550,6 +550,9 @@ namespace TaskLayer
             switch (commonParams.DigestionParams)
             {
                 case DigestionParams digestionParams:
+                    // Every digestion setting a file does not override must be carried from the task. A field left out of
+                    // this list silently falls back to its constructor default for every file with file-specific settings;
+                    // the glycopeptide and SILAC flags used to be (see FileSpecificDigestionParamsTests).
                     fileSpecificDigestionParams = new DigestionParams(
                         protease: (fileSpecificParams.DigestionAgent ?? digestionParams.SpecificProtease).Name,
                         maxMissedCleavages: maxMissedCleavages, minPeptideLength: minPeptideLength,
@@ -557,7 +560,10 @@ namespace TaskLayer
                         maxModificationIsoforms: digestionParams.MaxModificationIsoforms,
                         initiatorMethionineBehavior: digestionParams.InitiatorMethionineBehavior,
                         fragmentationTerminus: digestionParams.FragmentationTerminus,
-                        searchModeType: digestionParams.SearchModeType);
+                        searchModeType: digestionParams.SearchModeType,
+                        generateUnlabeledProteinsForSilac: digestionParams.GeneratehUnlabeledProteinsForSilac,
+                        keepNGlycopeptide: digestionParams.KeepNGlycopeptide,
+                        keepOGlycopeptide: digestionParams.KeepOGlycopeptide);
                     break;
                 case RnaDigestionParams:
                     fileSpecificDigestionParams = new RnaDigestionParams(
