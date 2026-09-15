@@ -9,6 +9,7 @@ using EngineLayer.DatabaseLoading;
 using EngineLayer.DIA;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using NUnit.Framework;
 using Omics.Modifications;
 using Readers;
@@ -309,6 +310,172 @@ namespace Test
 
         #endregion
 
+        #region Isobaric searches
+
+        private static readonly string[] Tmt11Channels =
+            { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" };
+
+        /// <summary>
+        /// A channel is a PRIDE term, looked up rather than spelled. The accessions are the check:
+        /// PRIDE numbers 127C before 127N, so a resolver that walked the vocabulary in accession
+        /// order instead of by name would transpose them and still produce plausible-looking cells.
+        /// </summary>
+        [TestCase(IsobaricMassTagType.TMT11, "126", "PRIDE:0000516")]
+        [TestCase(IsobaricMassTagType.TMT11, "127N", "PRIDE:0000519")]
+        [TestCase(IsobaricMassTagType.TMT11, "127C", "PRIDE:0000518")]
+        [TestCase(IsobaricMassTagType.TMT6, "127", "PRIDE:0000517")]
+        [TestCase(IsobaricMassTagType.TMT18, "135N", "PRIDE:0000670")]
+        [TestCase(IsobaricMassTagType.iTRAQ8, "121", "PRIDE:0000538")]
+        [TestCase(IsobaricMassTagType.TMT10, " 131n ", "PRIDE:0000580")]
+        public static void AnIsobaricChannelResolvesToItsPrideTerm(IsobaricMassTagType tagType, string channel, string accession)
+        {
+            Assert.That(InvokeChannelLabel(tagType, channel)?.Accession, Is.EqualTo(accession));
+        }
+
+        /// <summary>
+        /// PRIDE defines no DiLeu channels, and a channel name that is not a real channel resolves to
+        /// nothing rather than to a term someone assembled from a prefix.
+        /// </summary>
+        [TestCase(IsobaricMassTagType.diLeu12, "115a")]
+        [TestCase(IsobaricMassTagType.TMT11, "999N")]
+        [TestCase(IsobaricMassTagType.TMT11, "")]
+        public static void AChannelPrideDoesNotDefineResolvesToNothing(IsobaricMassTagType tagType, string channel)
+        {
+            Assert.That(InvokeChannelLabel(tagType, channel), Is.Null);
+        }
+
+        /// <summary>
+        /// The whole isobaric feature, end to end, on the TMT11 fixture MultiplexQuantificationTests
+        /// uses. A TMT search with a TmtDesign.txt writes one row per sample per channel: the source
+        /// name is the design's sample, the label is the channel's PRIDE term, the rows run in
+        /// reporter m/z order, and an Empty channel gets no row.
+        ///
+        /// The document is then handed to mzLib's two independent readers of SDRF. The validator
+        /// checks the row key (source name + assay name + label) is unique; the quantification auditor
+        /// has to recognise a channel-level design from the file alone, which is what a later reader
+        /// projecting it back into a design will depend on.
+        /// </summary>
+        [Test]
+        public static void ATmtSearchWritesOneRowPerSamplePerChannel()
+        {
+            string root = RunTmtSearchWritingSdrf("SdrfOutput_TmtChannels", writeDesign: true,
+                out string output, out _);
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            var expectedChannels = Tmt11Channels.Take(Tmt11Channels.Length - 1).ToList();
+            Assert.That(document.Results.Count, Is.EqualTo(expectedChannels.Count),
+                "One row per annotated, non-empty channel of the one file this run searched.");
+
+            for (int i = 0; i < expectedChannels.Count; i++)
+            {
+                SdrfRow row = document.Results[i];
+                Assert.That(row["comment[label]"], Does.Contain("NT=TMT" + expectedChannels[i] + ";"),
+                    "Rows follow the plex's reporter m/z order, not the design file's row order.");
+                Assert.That(row["source name"], Is.EqualTo("Sample" + (i + 1)),
+                    "The source name is the sample the design put in this channel.");
+                Assert.That(row["comment[data file]"], Is.EqualTo("VA084TQ_6.mzML"));
+                Assert.That(row["assay name"], Is.EqualTo("run VA084TQ_6"),
+                    "Every channel of one file is one assay.");
+            }
+
+            Assert.That(document.Results.Any(r => r["comment[label]"].Contains("TMT131C")), Is.False,
+                "The Empty channel holds no sample and gets no row.");
+
+            SdrfValidationResult validation = SdrfValidator.Validate(document);
+            Assert.That(validation.Errors, Is.Empty, "mzLib's validator rejects the TMT SDRF: " + validation);
+
+            SdrfQuantAudit audit = SdrfQuantAuditor.Audit(document);
+            Assert.That(audit.Kind, Is.EqualTo(SdrfQuantKind.ChannelLevel), audit.ToReport());
+            Assert.That(audit.Channels, Has.Count.EqualTo(expectedChannels.Count), audit.ToReport());
+            Assert.That(audit.DuplicateFileLabelPairs, Is.Empty, audit.ToReport());
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// Without a TmtDesign.txt there is no channel-to-sample map, so the SDRF falls back to one row
+        /// per file with the label unresolved -- and the user is told so BEFORE the search, naming
+        /// the TMT design file rather than ExperimentalDesign.tsv, which an isobaric search never reads.
+        /// </summary>
+        [Test]
+        public static void ATmtSearchWithoutItsDesignDescribesEachFileOnce_AndSaysWhy()
+        {
+            string root = RunTmtSearchWritingSdrf("SdrfOutput_TmtNoDesign", writeDesign: false,
+                out string output, out List<string> warnings);
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            Assert.That(document.Results.Count, Is.EqualTo(1), "One row for the one file, as for any search.");
+            Assert.That(document.Results.Single()["comment[label]"], Is.EqualTo("not available"),
+                "No design means no channel to name, and a TMT run is never called label free.");
+
+            Assert.That(warnings.Any(w => w.Contains(GlobalVariables.TmtExperimentalDesignFileName)
+                                          && w.Contains("without its channels or samples")), Is.True,
+                "The fallback is announced, naming the file that would fix it: " + string.Join(" | ", warnings));
+            Assert.That(warnings.Any(w => w.Contains("no " + GlobalVariables.ExperimentalDesignFileName)), Is.False,
+                "An isobaric search does not read ExperimentalDesign.tsv, so its absence is not reported.");
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// Runs the TMT11 fixture MultiplexQuantificationTests uses, with SDRF output on, in a folder of
+        /// its own. With <paramref name="writeDesign"/>, a TmtDesign.txt goes beside the spectra: the
+        /// last channel is Empty, and the rows are written in reverse so document order cannot pass
+        /// for reporter m/z order. Returns the root folder to delete.
+        /// </summary>
+        private static string RunTmtSearchWritingSdrf(string folderName, bool writeDesign,
+            out string output, out List<string> warnings)
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, folderName);
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+            string dataFolder = Path.Combine(root, "data");
+            Directory.CreateDirectory(dataFolder);
+
+            string mzml = Path.Combine(dataFolder, "VA084TQ_6.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\VA084TQ_6.mzML"), mzml);
+
+            if (writeDesign)
+            {
+                var designRows = Tmt11Channels
+                    .Select((tag, i) => $"{mzml}\tPlex1\tSample{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t1\t1\t" +
+                                        (i == Tmt11Channels.Length - 1 ? "empty" : "study sample"))
+                    .Reverse();
+                File.WriteAllLines(Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
+                    new[] { TmtExperimentalDesign.Header }.Concat(designRows));
+            }
+
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
+            searchTask.SearchParameters.WriteSdrf = true;
+            searchTask.SearchParameters.DoParsimony = true;
+
+            output = Path.Combine(root, "out");
+            Directory.CreateDirectory(output);
+            string fasta = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta");
+
+            var captured = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => captured.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                searchTask.RunTask(output, new List<DbForTask> { new(fasta, false) }, new List<string> { mzml }, "tmt-sdrf");
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+
+            warnings = captured;
+            return root;
+        }
+
+        #endregion
+
         #region Helpers
 
         /// <summary>
@@ -332,6 +499,11 @@ namespace Test
             (CvParam)typeof(PostSearchAnalysisTask)
                 .GetMethod("ResolveLabel", BindingFlags.NonPublic | BindingFlags.Static)!
                 .Invoke(null, new object[] { searchParameters });
+
+        private static CvParam InvokeChannelLabel(IsobaricMassTagType tagType, string channel) =>
+            (CvParam)typeof(PostSearchAnalysisTask)
+                .GetMethod("ResolveChannelLabel", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { tagType, channel });
 
         /// <summary>
         /// A search whose parameters are cheap but not degenerate. Notch/parsimony settings match

@@ -638,9 +638,18 @@ namespace TaskLayer
             if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
                 return;
 
-            string designPath = Path.Combine(
-                Directory.GetParent(currentRawFileList.First()).ToString(),
-                GlobalVariables.ExperimentalDesignFileName);
+            string designDirectory = Directory.GetParent(currentRawFileList.First()).ToString();
+
+            // An isobaric search's samples live in TmtDesign.txt, one per channel, and the SDRF is
+            // written one row per channel from it. ExperimentalDesign.tsv is not consulted, so its
+            // absence is not a gap worth naming.
+            if (SearchParameters.DoMultiplexQuantification)
+            {
+                WarnAboutIsobaricSdrfGaps(designDirectory, currentRawFileList);
+                return;
+            }
+
+            string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
 
             if (!File.Exists(designPath))
             {
@@ -658,15 +667,46 @@ namespace TaskLayer
                          string.Join("; ", designErrors));
             }
 
-            // Labelled runs do not yet express comment[label]: SDRF wants one row per sample per
-            // channel. SILAC has no channel-to-sample mapping at all; isobaric runs have one in
-            // TmtDesign.txt, but the SDRF writer does not read it yet. Guessing would invent an
+            // SILAC cannot express comment[label]: SDRF wants one row per sample per channel, and
+            // MetaMorpheus has no channel-to-sample mapping for SILAC. Guessing would invent an
             // experimental design.
-            if (SearchParameters.DoMultiplexQuantification
-                || SearchParameters.SilacLabels?.Any() == true)
-                Warn("SDRF output on a labelled search: comment[label] is not filled in yet, because " +
-                     "the SDRF is written one row per file, not one row per channel. Every other column " +
+            if (SearchParameters.SilacLabels?.Any() == true)
+                Warn("SDRF output on a SILAC search: comment[label] is not filled in, because " +
+                     "MetaMorpheus has no map of which sample carries which label. Every other column " +
                      "will be written.");
+        }
+
+        /// <summary>
+        /// The isobaric half of <see cref="WarnAboutSdrfGaps"/>. Without a usable TmtDesign.txt the
+        /// SDRF falls back to one row per file with no channel or sample, which is worth knowing
+        /// before a long TMT search rather than after it.
+        /// </summary>
+        private void WarnAboutIsobaricSdrfGaps(string designDirectory, List<string> currentRawFileList)
+        {
+            string tmtDesignPath = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+
+            if (!File.Exists(tmtDesignPath))
+            {
+                Warn("SDRF output is on for an isobaric search, but there is no " +
+                     GlobalVariables.TmtExperimentalDesignFileName + " beside the spectra files (" + tmtDesignPath +
+                     "). The SDRF will describe each file once, without its channels or samples.");
+                return;
+            }
+
+            TmtExperimentalDesign.Read(tmtDesignPath, currentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("SDRF output is on, but " + GlobalVariables.TmtExperimentalDesignFileName +
+                     " cannot be used as it stands, so the SDRF will describe each file once, without its " +
+                     "channels or samples: " + string.Join("; ", designErrors));
+                return;
+            }
+
+            // PRIDE defines channel terms for TMT and iTRAQ only.
+            var tagType = IsobaricMassTag.GetTagTypeFromModificationId(SearchParameters.MultiplexModId);
+            if (tagType is IsobaricMassTagType.diLeu4 or IsobaricMassTagType.diLeu12)
+                Warn("SDRF output on a DiLeu search: every channel gets its own row, but comment[label] " +
+                     "cannot be filled in, because the PRIDE vocabulary defines no DiLeu channel terms.");
         }
 
 

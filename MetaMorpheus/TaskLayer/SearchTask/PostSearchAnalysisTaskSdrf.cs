@@ -77,7 +77,15 @@ namespace TaskLayer
             // that as though it were curated metadata is the worst thing this writer could do -- it
             // looks like data. So read the file, and if it is not there say so and describe only
             // what is actually known.
-            var design = ReadExperimentalDesignIfPresent();
+            //
+            // An isobaric search keeps its design in TmtDesign.txt instead, and that file is the only
+            // place the channel-to-sample map exists. When it is usable the SDRF gets one row per
+            // sample per channel, as the specification wants; when it is not, the search is described
+            // one row per file with the label left unresolved, exactly as before.
+            var isobaric = ReadIsobaricDesignIfPresent(out var tagType);
+            var design = isobaric is null
+                ? ReadExperimentalDesignIfPresent()
+                : new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase);
 
             var organism = ResolveOrganismFromSearchDatabase();
 
@@ -94,6 +102,14 @@ namespace TaskLayer
                 var common = FileSpecificParameters
                     ?.FirstOrDefault(f => string.Equals(f.FileName, fileName, StringComparison.OrdinalIgnoreCase))
                     .Parameters ?? CommonParameters;
+
+                if (isobaric is not null && isobaric.TryGetValue(Path.GetFullPath(rawFilePath), out var tmtFile))
+                {
+                    foreach (var row in BuildChannelRows(tmtFile, tagType!.Value, organism,
+                                 BuildAssay(rawFilePath, common, tmtFile.TechnicalReplicate, tmtFile.Fraction)))
+                        yield return row;
+                    continue;
+                }
 
                 design.TryGetValue(stem, out var sampleInfo);
 
@@ -112,24 +128,137 @@ namespace TaskLayer
                         : "factor value[condition]"
                 };
 
-                var assay = new SdrfAssay
+                var assay = BuildAssay(rawFilePath, common,
+                    technicalReplicate: (sampleInfo?.TechnicalReplicate ?? 0) + 1,
+                    fraction: (sampleInfo?.Fraction ?? 0) + 1);
+
+                yield return new SdrfRowInput(sample, assay);
+            }
+        }
+
+        /// <summary>
+        /// The assay half of a row: everything the search itself knows about one data file. Shared by
+        /// every channel row of an isobaric file, which is what makes those rows one assay.
+        /// </summary>
+        private SdrfAssay BuildAssay(string rawFilePath, CommonParameters common, int technicalReplicate, int fraction) =>
+            new SdrfAssay
+            {
+                DataFileName = Path.GetFileName(rawFilePath),
+                AssayName = "run " + Path.GetFileNameWithoutExtension(rawFilePath),
+                Instrument = ResolveInstrument(rawFilePath),
+                PrecursorMassTolerance = common.PrecursorMassTolerance,
+                ProductMassTolerance = common.ProductMassTolerance,
+                CleavageAgent = common.DigestionParams?.DigestionAgent,
+                FixedModifications = ResolveModifications(common.ListOfModsFixed),
+                VariableModifications = ResolveModifications(common.ListOfModsVariable),
+                DissociationType = common.DissociationType,
+                AcquisitionMethod = ResolveAcquisitionMethod(common),
+                TechnicalReplicate = technicalReplicate,
+                Fraction = fraction
+            };
+
+        /// <summary>
+        /// One row per annotated channel of an isobaric data file, in reporter m/z order.
+        ///
+        /// Read from <see cref="TmtFileInfo"/> rather than from mzLib's projection of it, because
+        /// <see cref="TmtExperimentalDesign.ToMzLibDesign"/> drops the sample name, and the sample name
+        /// is exactly what SDRF's <c>source name</c> is. TmtDesign.txt's replicate and fraction
+        /// numbers are already 1-based, so unlike ExperimentalDesign.tsv nothing is added to them.
+        ///
+        /// A channel marked Empty is skipped: it holds no sample, and without
+        /// <c>characteristics[sample type]</c> (not written yet) its row would read as a study sample.
+        /// A channel the design does not annotate is skipped for the same reason.
+        /// </summary>
+        private static IEnumerable<SdrfRowInput> BuildChannelRows(TmtFileInfo tmtFile, IsobaricMassTagType tagType,
+            CvParam organism, SdrfAssay assay)
+        {
+            var channelOrder = IsobaricMassTag.GetReporterIonLabels(tagType) ?? new List<string>();
+            int OrderOf(string tag)
+            {
+                int index = channelOrder.FindIndex(l => string.Equals(l, tag?.Trim(), StringComparison.OrdinalIgnoreCase));
+                return index < 0 ? int.MaxValue : index;
+            }
+
+            foreach (var annotation in tmtFile.Annotations
+                         .Where(a => a.SampleType != TmtSampleType.Empty)
+                         .OrderBy(a => OrderOf(a.Tag)))
+            {
+                var sample = new SdrfSample
                 {
-                    DataFileName = fileName,
-                    AssayName = "run " + stem,
-                    Instrument = ResolveInstrument(rawFilePath),
-                    PrecursorMassTolerance = common.PrecursorMassTolerance,
-                    ProductMassTolerance = common.ProductMassTolerance,
-                    CleavageAgent = common.DigestionParams?.DigestionAgent,
-                    FixedModifications = ResolveModifications(common.ListOfModsFixed),
-                    VariableModifications = ResolveModifications(common.ListOfModsVariable),
-                    DissociationType = common.DissociationType,
-                    AcquisitionMethod = ResolveAcquisitionMethod(common),
-                    TechnicalReplicate = (sampleInfo?.TechnicalReplicate ?? 0) + 1,
-                    Fraction = (sampleInfo?.Fraction ?? 0) + 1
+                    SourceName = annotation.SampleName,
+                    Organism = organism,
+                    BiologicalReplicate = annotation.BiologicalReplicate,
+                    Label = ResolveChannelLabel(tagType, annotation.Tag),
+                    FactorValue = annotation.Condition,
+                    FactorValueColumn = string.IsNullOrWhiteSpace(annotation.Condition)
+                        ? null
+                        : "factor value[condition]"
                 };
 
                 yield return new SdrfRowInput(sample, assay);
             }
+        }
+
+        /// <summary>
+        /// The parsed TmtDesign.txt keyed by full file path, or null when this is not an isobaric
+        /// search or its design cannot be used. Null makes the caller fall back to one row per file.
+        ///
+        /// Read again rather than shared with multiplex quantification, which keeps its parse in a
+        /// local: the file is small, and reading it here leaves the quantification path untouched.
+        /// No warning is raised on failure -- quantification has already named the problem, and
+        /// SearchTask.WarnAboutSdrfGaps named its consequence for the SDRF before the run.
+        /// </summary>
+        private Dictionary<string, TmtFileInfo> ReadIsobaricDesignIfPresent(out IsobaricMassTagType? tagType)
+        {
+            tagType = null;
+            if (!Parameters.SearchParameters.DoMultiplexQuantification || Parameters.CurrentRawFileList.Count == 0)
+                return null;
+
+            tagType = IsobaricMassTag.GetTagTypeFromModificationId(Parameters.SearchParameters.MultiplexModId);
+            if (tagType is null)
+                return null;
+
+            string designPath = Path.Combine(
+                Directory.GetParent(Parameters.CurrentRawFileList.First())!.ToString(),
+                GlobalVariables.TmtExperimentalDesignFileName);
+            if (!File.Exists(designPath))
+                return null;
+
+            var files = TmtExperimentalDesign.Read(designPath, Parameters.CurrentRawFileList, out var errors);
+            if (errors.Any())
+                return null;
+
+            var byPath = new Dictionary<string, TmtFileInfo>(StringComparer.OrdinalIgnoreCase);
+            foreach (var file in files)
+                byPath[Path.GetFullPath(file.FullFilePathWithExtension)] = file;
+            return byPath;
+        }
+
+        /// <summary>
+        /// A reporter channel as a PRIDE term: TMT11's "127N" is <c>TMT127N</c>, PRIDE:0000519.
+        ///
+        /// The design file writes the channel bare, so only the reagent family is added, and it comes
+        /// from the search's own tag type. The term itself is looked up in mzLib's pinned PRIDE
+        /// vocabulary, never constructed, so a channel PRIDE does not define resolves to nothing. That
+        /// is every DiLeu channel, which PRIDE has no terms for.
+        ///
+        /// TMTpro 18-plex channels share their names with TMT's in PRIDE (TMT126 ... TMT135N); PRIDE
+        /// distinguishes the kit, not the channel.
+        /// </summary>
+        private static CvParam ResolveChannelLabel(IsobaricMassTagType tagType, string channel)
+        {
+            string family = tagType switch
+            {
+                IsobaricMassTagType.TMT6 or IsobaricMassTagType.TMT10 or IsobaricMassTagType.TMT11
+                    or IsobaricMassTagType.TMT18 => "TMT",
+                IsobaricMassTagType.iTRAQ4 or IsobaricMassTagType.iTRAQ8 => "ITRAQ",
+                _ => null
+            };
+
+            if (family is null || string.IsNullOrWhiteSpace(channel))
+                return null;
+
+            return ControlledVocabulary.Pride.TryGetByName(family + channel.Trim(), out var term) ? term : null;
         }
 
         /// <summary>
@@ -204,11 +333,12 @@ namespace TaskLayer
         /// <summary>
         /// Only a genuinely label-free search is described as label free.
         ///
-        /// SDRF wants one row per sample per CHANNEL, and this writer emits one row per file. SILAC
-        /// has no channel-to-sample mapping in MetaMorpheus at all. Isobaric runs do, in
-        /// TmtDesign.txt, but expanding rows from it is not done here yet. Until it is, the label is
-        /// left unresolved and the coverage report shows it; guessing would invent an experimental
-        /// design.
+        /// This resolves the label for a row that describes a whole FILE. SDRF wants one row per sample
+        /// per channel for a labelled run. An isobaric run with a usable TmtDesign.txt gets those rows
+        /// from <see cref="BuildChannelRows"/> and never reaches here; one without falls back to a row
+        /// per file. SILAC has no channel-to-sample mapping in MetaMorpheus at all. Either way the
+        /// label is left unresolved and the coverage report shows it; guessing would invent an
+        /// experimental design.
         ///
         /// Returning "label free sample" for a labelled run would be worse than returning nothing:
         /// the column comes out fully populated with a confident falsehood, which
@@ -282,10 +412,14 @@ namespace TaskLayer
                 .Select(c => c.Column)
                 .ToList();
 
+            string designFileName = Parameters.SearchParameters.DoMultiplexQuantification
+                ? GlobalVariables.TmtExperimentalDesignFileName
+                : GlobalVariables.ExperimentalDesignFileName;
+
             if (uninformative.Any())
                 Warn("The SDRF was written, but these columns say nothing and cannot be mined: " +
                      string.Join(", ", uninformative) + ". Supply them in " +
-                     GlobalVariables.ExperimentalDesignFileName + " or an input SDRF.");
+                     designFileName + " or an input SDRF.");
         }
     }
 }
