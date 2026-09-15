@@ -461,11 +461,109 @@ namespace EngineLayer.ModernSearch
         }
 
         /// <summary>
+        /// Whether every peptide's mass, as the bin searches see it (undefined reads as negative infinity), is at or above the one
+        /// before it. The indexing engine sorts the index this way, which is what lets a mass bound become a peptide id bound.
+        /// </summary>
+        protected static bool IsSortedForBinSearch(List<IBioPolymerWithSetMods> peptideIndex)
+        {
+            for (int id = 1; id < peptideIndex.Count; id++)
+            {
+                if (MassForBinSearch(peptideIndex[id].MonoisotopicMass) < MassForBinSearch(peptideIndex[id - 1].MonoisotopicMass))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// The last peptide id whose mass, as the bin searches see it, is at or below <paramref name="peptideMassToLookFor"/>, or -1
+        /// if there is none. Only meaningful on an index for which <see cref="IsSortedForBinSearch"/> is true.
+        /// </summary>
+        protected static int LastPeptideIdAtOrBelow(List<IBioPolymerWithSetMods> peptideIndex, double peptideMassToLookFor)
+        {
+            int low = 0;
+            int high = peptideIndex.Count - 1;
+            int result = -1;
+
+            while (low <= high)
+            {
+                int mid = low + ((high - low) / 2);
+
+                if (MassForBinSearch(peptideIndex[mid].MonoisotopicMass) <= peptideMassToLookFor)
+                {
+                    result = mid;
+                    low = mid + 1;
+                }
+                else
+                {
+                    high = mid - 1;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// The position of the last id in the bin that is at or below <paramref name="maxPeptideId"/>, or -1 if there is none. Ids
+        /// ascend within a bin, so this is an integer search over the bin itself, with no peptide read.
+        /// </summary>
+        protected static int LastBinPositionAtOrBelowId(ReadOnlySpan<int> bin, int maxPeptideId)
+        {
+            int low = 0;
+            int high = bin.Length - 1;
+            int result = -1;
+
+            while (low <= high)
+            {
+                int mid = low + ((high - low) / 2);
+
+                if (bin[mid] <= maxPeptideId)
+                {
+                    result = mid;
+                    low = mid + 1;
+                }
+                else
+                {
+                    high = mid - 1;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// The last peptide index checked with <see cref="IsSortedForBinSearch"/> and the answer, so the check runs once per index
+        /// rather than once per scan. Held by reference: an index is built once and not changed while it is searched. Scans on
+        /// several threads may each check a new index once; they reach the same answer.
+        /// </summary>
+        private sealed record BinSearchOrder(List<IBioPolymerWithSetMods> PeptideIndex, bool Sorted);
+
+        private BinSearchOrder _binSearchOrder;
+
+        private bool PeptideIndexIsSortedForBinSearch(List<IBioPolymerWithSetMods> peptideIndex)
+        {
+            BinSearchOrder known = _binSearchOrder;
+            if (known == null || !ReferenceEquals(known.PeptideIndex, peptideIndex))
+            {
+                known = new BinSearchOrder(peptideIndex, IsSortedForBinSearch(peptideIndex));
+                _binSearchOrder = known;
+            }
+            return known.Sorted;
+        }
+
+        /// <summary>
         /// Deprecated.
         /// </summary>
         protected void IndexedScoring(Indexing.FragmentIndex FragmentIndex, List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor,
             double highestMassPeptideToLookFor, List<IBioPolymerWithSetMods> peptideIndex, MassDiffAcceptor massDiffAcceptor, double maxMassThatFragmentIonScoreIsDoubled, DissociationType dissociationType)
         {
+            // The window ends at the last peptide no heavier than the upper bound. On an index sorted by mass, as the indexing engine
+            // builds it, ids are in mass order, so that is one peptide id for the whole scan, and each bin's end is the last id at or
+            // below it: the same position the per-bin mass search finds, without reading a peptide in every bin.
+            bool windowEndsAtAPeptideId = !Double.IsInfinity(highestMassPeptideToLookFor) && PeptideIndexIsSortedForBinSearch(peptideIndex);
+            int lastPeptideIdInWindow = windowEndsAtAPeptideId ? LastPeptideIdAtOrBelow(peptideIndex, highestMassPeptideToLookFor) : -1;
+
             // get all theoretical fragments this experimental fragment could be
             for (int i = 0; i < binsToSearch.Count; i++) //binsToSearch is the list of fragment in Spectra
             {
@@ -484,8 +582,20 @@ namespace EngineLayer.ModernSearch
                 // get index for highest mass allowed
                 int highestPeptideMassIndex = peptideIdsInThisBin.Length - 1;
 
-                if (!Double.IsInfinity(highestMassPeptideToLookFor)) //check if the highest mass is infinity
+                if (windowEndsAtAPeptideId)
                 {
+                    highestPeptideMassIndex = LastBinPositionAtOrBelowId(peptideIdsInThisBin, lastPeptideIdInWindow);
+
+                    // nothing in this bin is light enough for the window
+                    if (highestPeptideMassIndex < 0)
+                    {
+                        continue;
+                    }
+                }
+                else if (!Double.IsInfinity(highestMassPeptideToLookFor)) //check if the highest mass is infinity
+                {
+                    // An index out of mass order cannot bound the window by id, so each bin is searched by mass. The walk below never
+                    // moves the end: the search already returns the last entry at or below the bound.
                     highestPeptideMassIndex = BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, highestMassPeptideToLookFor, peptideIndex); //get index for maximum monoisotopic allowed
 
                     // nothing in this bin is light enough for the window
