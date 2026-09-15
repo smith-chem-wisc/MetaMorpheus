@@ -25,7 +25,56 @@ namespace EngineLayer
         /// <summary>
         /// All possible child glycan box combinations derived from this glycan box.
         /// </summary>
-        public GlycanBox[] ChildGlycanBoxes { get; set; }
+        /// <remarks>
+        /// Boxes from <see cref="BuildOGlycanBoxes(int, bool, double)"/> and <see cref="BuildNOGlycanBoxes(int, bool, double)"/>
+        /// build these on first read. An N+O search makes hundreds of thousands of boxes with about 16 child boxes each, and
+        /// the localization graph reads them only for boxes that match a precursor mass. Building them all up front was most
+        /// of the box-building time and kept millions of objects alive for the whole search. Every read returns the same
+        /// array, which <see cref="LocalizationGraph"/> relies on. A box made directly with a constructor has none, and an
+        /// assigned array is returned as assigned.
+        /// </remarks>
+        public GlycanBox[] ChildGlycanBoxes
+        {
+            get
+            {
+                if (_childGlycanBoxes == null && _childBoxBuilder != ChildBoxBuilder.None)
+                {
+                    // Racing first reads may each build the array; only one is published and every read returns it.
+                    LazyInitializer.EnsureInitialized(ref _childGlycanBoxes, BuildChildGlycanBoxes);
+                }
+                return _childGlycanBoxes;
+            }
+            set
+            {
+                _childGlycanBoxes = value;
+            }
+        }
+
+        private GlycanBox[] _childGlycanBoxes;
+
+        /// <summary>
+        /// Which child builder a box made by the box builders uses on first read of <see cref="ChildGlycanBoxes"/>.
+        /// </summary>
+        private enum ChildBoxBuilder : byte
+        {
+            None,
+            OGlycan,
+            NOGlycan,
+        }
+
+        private ChildBoxBuilder _childBoxBuilder;
+
+        /// <summary>
+        /// True once this box holds its child boxes, whether built on read or assigned.
+        /// </summary>
+        internal bool HasBuiltChildGlycanBoxes => Volatile.Read(ref _childGlycanBoxes) != null;
+
+        private GlycanBox[] BuildChildGlycanBoxes()
+        {
+            return _childBoxBuilder == ChildBoxBuilder.OGlycan
+                ? BuildChildOGlycanBoxes(NumberOfMods, ModIds, TargetDecoy).ToArray()
+                : BulidChildNOBoxes(NumberOfMods, ModIds, TargetDecoy).ToArray();
+        }
 
         /// <summary>
         /// The global collection of all possible O-glycan boxes.
@@ -83,7 +132,7 @@ namespace EngineLayer
                         continue;
                     }
                     glycanBox.TargetDecoy = true;
-                    glycanBox.ChildGlycanBoxes = BuildChildOGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
+                    glycanBox._childBoxBuilder = ChildBoxBuilder.OGlycan;
 
                     yield return glycanBox;
 
@@ -91,7 +140,7 @@ namespace EngineLayer
                     {
                         GlycanBox glycanBox_decoy = new GlycanBox(idCombine.ToArray(),false); // decoy glycanBox
                         glycanBox_decoy.TargetDecoy = false;
-                        glycanBox_decoy.ChildGlycanBoxes = BuildChildOGlycanBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
+                        glycanBox_decoy._childBoxBuilder = ChildBoxBuilder.OGlycan;
                         yield return glycanBox_decoy;
                     }
                 }
@@ -175,7 +224,7 @@ namespace EngineLayer
                         }
                         keptNGlycanIds.Add(nglycanId);
                         glycanBox.TargetDecoy = true;
-                        glycanBox.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
+                        glycanBox._childBoxBuilder = ChildBoxBuilder.NOGlycan;
                         yield return glycanBox;
                     }
 
@@ -186,7 +235,7 @@ namespace EngineLayer
                         {
                             GlycanBox glycanBox_decoy = new GlycanBox(oGlycansIds, nglycanId,false); // decoy glycanBox
                             glycanBox_decoy.TargetDecoy = false;
-                            glycanBox_decoy.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
+                            glycanBox_decoy._childBoxBuilder = ChildBoxBuilder.NOGlycan;
                             yield return glycanBox_decoy;
                         }
                     }
@@ -215,7 +264,7 @@ namespace EngineLayer
                 }
                 keptNGlycanIds.Add(nglycanId);
                 glycanBox.TargetDecoy = true;
-                glycanBox.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycanBox.TargetDecoy).ToArray();
+                glycanBox._childBoxBuilder = ChildBoxBuilder.NOGlycan;
                 yield return glycanBox;
             }
             if (buildDecoy)
@@ -224,7 +273,7 @@ namespace EngineLayer
                 {
                     GlycanBox glycanBox_decoy = new GlycanBox(null, nglycanId, false); // decoy glycanBox
                     glycanBox_decoy.TargetDecoy = false;
-                    glycanBox_decoy.ChildGlycanBoxes = BulidChildNOBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
+                    glycanBox_decoy._childBoxBuilder = ChildBoxBuilder.NOGlycan;
                     yield return glycanBox_decoy;
                 }
             }
