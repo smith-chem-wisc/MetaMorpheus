@@ -1319,10 +1319,7 @@ namespace TaskLayer
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
             var ser = new NetSerializer.Serializer(messageTypes);
 
-            using (var file = File.Create(peptideIndexFileName))
-            {
-                ser.Serialize(file, peptideIndex);
-            }
+            WriteThroughTemporaryFile(peptideIndexFileName, file => ser.Serialize(file, peptideIndex));
         }
 
         /// <summary>
@@ -1396,17 +1393,35 @@ namespace TaskLayer
         /// </summary>
         private static void WriteFragmentIndex(FragmentIndex fragmentIndex, string fragmentIndexFileName)
         {
-            using var file = new FileStream(fragmentIndexFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20);
+            WriteThroughTemporaryFile(fragmentIndexFileName, file =>
+            {
+                Span<int> header = stackalloc int[4];
+                header[0] = FragmentIndexMagic;
+                header[1] = FragmentIndexFormatVersion;
+                header[2] = fragmentIndex.BinStart.Length;
+                header[3] = fragmentIndex.PeptideIds.Length;
+                file.Write(MemoryMarshal.AsBytes(header));
 
-            Span<int> header = stackalloc int[4];
-            header[0] = FragmentIndexMagic;
-            header[1] = FragmentIndexFormatVersion;
-            header[2] = fragmentIndex.BinStart.Length;
-            header[3] = fragmentIndex.PeptideIds.Length;
-            file.Write(MemoryMarshal.AsBytes(header));
+                WriteInt32Bulk(file, fragmentIndex.BinStart);
+                WriteInt32Bulk(file, fragmentIndex.PeptideIds);
+            });
+        }
 
-            WriteInt32Bulk(file, fragmentIndex.BinStart);
-            WriteInt32Bulk(file, fragmentIndex.PeptideIds);
+        /// <summary>
+        /// Writes under a temporary name and moves the file into place only once the write has finished, so a
+        /// cached index under its real name is always complete. Written straight to the real name, a write cut
+        /// short -- a killed process, a full disk -- left a valid header over a short payload, which the header
+        /// check in CheckFiles accepted: GenerateIndexes then rebuilt on every run, and GenerateSecondIndexes,
+        /// which has no recovery, crashed.
+        /// </summary>
+        private static void WriteThroughTemporaryFile(string fileName, Action<FileStream> write)
+        {
+            string partialFileName = fileName + ".partial";
+            using (var file = new FileStream(partialFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+            {
+                write(file);
+            }
+            File.Move(partialFileName, fileName, overwrite: true);
         }
 
         private static FragmentIndex ReadFragmentIndex(string fragmentIndexFileName)
@@ -1434,9 +1449,10 @@ namespace TaskLayer
         /// compressed layout needs. Kept in the same flat format as before.
         /// </summary>
         private static void WritePrecursorIndex(List<int>[] precursorIndex, string precursorIndexFileName)
-        {
-            using var file = new FileStream(precursorIndexFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20);
+            => WriteThroughTemporaryFile(precursorIndexFileName, file => WritePrecursorIndexPayload(precursorIndex, file));
 
+        private static void WritePrecursorIndexPayload(List<int>[] precursorIndex, FileStream file)
+        {
             var counts = new int[precursorIndex.Length];
             for (int i = 0; i < precursorIndex.Length; i++)
             {
@@ -1591,15 +1607,24 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// The magic and format version the readers check, read at folder-selection time. Any failure to get
-        /// at them is a miss, since the reader would fail on the same file.
+        /// The magic and format version the readers check, read at folder-selection time, and a file at least as
+        /// long as the header says its payload is. Any failure to get at them is a miss, since the reader would
+        /// fail on the same file.
+        ///
+        /// The length is what catches a truncated file: a write cut short keeps a valid header. The fragment index
+        /// is exactly its header plus two arrays whose lengths the header gives. The precursor index's bins are
+        /// variable, so only its counts array is known from the header, which still catches a file cut off
+        /// before the bins; reading every count to size the rest would cost a full read at selection time.
         /// </summary>
         private static bool HasReadableIndexHeader(string indexFileName, int expectedMagic)
         {
-            Span<int> header = stackalloc int[2];
+            bool isFragmentIndex = expectedMagic == FragmentIndexMagic;
+            Span<int> header = stackalloc int[isFragmentIndex ? 4 : 3];
+            long fileLength;
             try
             {
                 using var file = new FileStream(indexFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+                fileLength = file.Length;
                 file.ReadExactly(MemoryMarshal.AsBytes(header));
             }
             catch
@@ -1607,7 +1632,20 @@ namespace TaskLayer
                 return false;
             }
 
-            return header[0] == expectedMagic && header[1] == FragmentIndexFormatVersion;
+            if (header[0] != expectedMagic || header[1] != FragmentIndexFormatVersion)
+            {
+                return false;
+            }
+
+            long headerBytes = header.Length * sizeof(int);
+            if (isFragmentIndex)
+            {
+                // FragmentIndex needs at least one bin offset
+                return header[2] >= 1 && header[3] >= 0 &&
+                       fileLength == headerBytes + sizeof(int) * ((long)header[2] + header[3]);
+            }
+
+            return header[2] >= 0 && fileLength >= headerBytes + sizeof(int) * (long)header[2];
         }
 
         private static void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName)
